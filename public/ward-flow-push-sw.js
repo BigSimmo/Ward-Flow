@@ -10,15 +10,16 @@ const WARD_FLOW_PATH = "/mockups/ward-flow";
 const ALERTS_PATH = `${WARD_FLOW_PATH}/alerts`;
 const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
 
+/** Ward Flow itself or a page under it; not a sibling such as /mockups/ward-flow-digest. */
+function insideWardFlow(pathname) {
+  return pathname === WARD_FLOW_PATH || pathname.startsWith(`${WARD_FLOW_PATH}/`);
+}
+
 function wardFlowPath(value) {
   if (typeof value !== "string") return ALERTS_PATH;
   try {
     const url = new URL(value, self.location.origin);
-    if (
-      url.origin === self.location.origin &&
-      (url.pathname === WARD_FLOW_PATH || url.pathname.startsWith(`${WARD_FLOW_PATH}/`))
-    )
-      return url.pathname;
+    if (url.origin === self.location.origin && insideWardFlow(url.pathname)) return url.pathname;
   } catch {
     // Not a URL: use Alerts.
   }
@@ -66,7 +67,7 @@ self.addEventListener("notificationclick", (event) => {
       const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       for (const client of windows) {
         const open = new URL(client.url);
-        if (open.origin !== self.location.origin || !open.pathname.startsWith(WARD_FLOW_PATH)) continue;
+        if (open.origin !== self.location.origin || !insideWardFlow(open.pathname)) continue;
         try {
           const focused = await client.focus();
           if ("navigate" in focused) await focused.navigate(target);

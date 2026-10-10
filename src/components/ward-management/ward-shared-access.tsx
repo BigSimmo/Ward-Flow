@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { PublicClientApplication, type AccountInfo } from "@azure/msal-browser";
 import { SharedWorkspaceClient, type SharedView } from "./ward-shared-client";
-import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
+import {
+  PhonePushAccessContext,
+  releasePhonePush,
+  type PhonePushAccess,
+  type PhonePushApi,
+} from "./shell/ward-phone-push";
 import type { WardFlowEvent } from "./ward-flow-events";
 import styles from "./ward-shared-access.module.css";
 
@@ -17,6 +22,9 @@ export type WardSharedConnection = SharedView & {
   /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
   pushApi: PhonePushApi;
 };
+
+/** How long sign-out waits for this device's phone alerts to be released. */
+const PHONE_RELEASE_WAIT_MS = 2000;
 
 export function useWardShared(enabled: boolean): WardSharedConnection {
   const [view, setView] = useState<SharedView>({ snapshot: null, receivedAt: 0, status: "loading", error: null });
@@ -35,6 +43,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
     };
     return {
       pushKey: async () => connected().pushKey(),
+      pushStatus: async (endpoint) => connected().pushStatus(endpoint),
       pushSubscribe: async (subscription) => connected().pushSubscribe(subscription),
       pushUnsubscribe: async (endpoint) => connected().pushUnsubscribe(endpoint),
     };
@@ -122,12 +131,23 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       void auth.current?.loginRedirect({ scopes: [scope], prompt: "select_account" });
     },
     signOut: () => {
-      client.current?.dispose();
-      setView({ snapshot: null, receivedAt: 0, status: "loading", error: null });
-      setSignedIn(false);
-      void auth.current?.logoutRedirect({
-        account: account.current,
-        postLogoutRedirectUri: `${window.location.origin}/mockups/ward-flow`,
+      // Release this account's phone alerts for this device first, so the next account on a
+      // shared device does not receive them. Best effort and bounded: it never blocks sign-out.
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      void Promise.race([
+        releasePhonePush(pushApi),
+        new Promise<void>((resolve) => {
+          timer = setTimeout(resolve, PHONE_RELEASE_WAIT_MS);
+        }),
+      ]).then(() => {
+        clearTimeout(timer);
+        client.current?.dispose();
+        setView({ snapshot: null, receivedAt: 0, status: "loading", error: null });
+        setSignedIn(false);
+        void auth.current?.logoutRedirect({
+          account: account.current,
+          postLogoutRedirectUri: `${window.location.origin}/mockups/ward-flow`,
+        });
       });
     },
     retry: () => {

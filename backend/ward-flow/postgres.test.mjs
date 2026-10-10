@@ -202,15 +202,18 @@ test(
     const workspaceId = randomUUID();
     const sent = [];
     const outcome = { e2: "expired" };
+    const logs = [];
     const store = createWorkspaceStore(pool, {
       workspaceId,
       engine,
       clock: () => at,
+      log: (event) => logs.push(event),
+      deliveryWaitMs: 10_000,
       push: {
         send: async (row, payload) => {
           const name = row.endpoint.split("/").pop();
           sent.push({ name, payload });
-          return outcome[name] ?? "sent";
+          return { outcome: outcome[name] ?? "sent" };
         },
         payload: pushPayload,
         coordinatorIds: [actorA, actorB],
@@ -263,11 +266,133 @@ test(
       assert.deepEqual(delivered(), [], "an item still red is not announced twice");
       for (const { payload } of swept) assert.doesNotMatch(JSON.stringify(payload), /WF-|PT-|UM\d/);
 
+      assert.equal(await store.pushStatus(actorB, device("e3").endpoint), true);
+      assert.equal(await store.pushStatus(actorA, device("e3").endpoint), false, "ownership is per account");
       assert.equal(await store.unsubscribe(actorA, device("e3").endpoint), "not-found", "only the owner can revoke");
       assert.equal(await store.unsubscribe(actorB, device("e3").endpoint), "unsubscribed");
       at = new Date(start + 90 * 60_000);
       await store.sweepPush();
       assert.deepEqual(delivered(), ["e1"]);
+      assert.equal(await store.pushStatus(actorB, device("e3").endpoint), false, "a revoked record is not owned");
+      assert.deepEqual(logs, [], "nothing failed, so nothing is logged");
+    } finally {
+      await pool.end();
+    }
+  },
+);
+
+test(
+  "real PostgreSQL: phone push reaches every device, retries failures and never costs a change",
+  { skip: !url },
+  async (t) => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    const actorA = "11111111-1111-4111-8111-111111111111";
+    const actorB = "22222222-2222-4222-8222-222222222222";
+    const at = new Date("2026-10-07T10:00:00Z");
+    const jump = { type: "ADVANCE_CLOCK", role: "demo", minutes: 30 };
+    const keys = { p256dh: "p", auth: "a" };
+    function setup(options = {}) {
+      const workspaceId = randomUUID();
+      const sent = [];
+      const logs = [];
+      const store = createWorkspaceStore(pool, {
+        workspaceId,
+        engine: options.engine ?? engine,
+        clock: () => at,
+        log: (event) => logs.push(event),
+        deliveryWaitMs: options.deliveryWaitMs ?? 10_000,
+        push: {
+          send: async (row, payload) => {
+            sent.push(row.endpoint.split("/").pop());
+            return (await options.send?.(row, payload)) ?? { outcome: "sent" };
+          },
+          payload: pushPayload,
+          coordinatorIds: [actorA, actorB],
+          maxPerAccount: 10,
+        },
+      });
+      return { workspaceId, sent, logs, store };
+    }
+    try {
+      await migrate(pool);
+      await t.test("more than one page of subscriptions: every device is sent", async () => {
+        const { workspaceId, sent, store } = setup();
+        await store.read(actorA);
+        await pool.query(
+          "INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth) SELECT $1::uuid, $2::uuid, 'https://fcm.googleapis.com/fcm/send/' || $1::text || '-' || n, 'p', 'a' FROM generate_series(1, 205) AS n",
+          [workspaceId, actorB],
+        );
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.equal(new Set(sent).size, 205);
+        assert.equal(sent.length, 205);
+      });
+      await t.test("a temporary failure is retried by the next sweep; the log names no device", async () => {
+        let fail = true;
+        const { sent, logs, store } = setup({
+          send: async (row) =>
+            fail && row.endpoint.endsWith("/f1") ? { outcome: "failed", category: "status 429" } : undefined,
+        });
+        await store.read(actorA);
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/f1", ...keys });
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/f2", ...keys });
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
+        assert.deepEqual(logs, [
+          {
+            event: "ward_backend_push_delivery_failures",
+            sent: 1,
+            expired: 0,
+            failed: 1,
+            failures: { "status 429": 1 },
+          },
+        ]);
+        assert.doesNotMatch(JSON.stringify(logs), /fcm|https?:|Ward Flow:/);
+        fail = false;
+        await store.sweepPush();
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"], "both retried; the device collapses the repeat");
+        await store.sweepPush();
+        assert.deepEqual(sent, [], "announced once delivery succeeded");
+      });
+      await t.test("an evaluation error is logged and the command still commits", async () => {
+        const broken = {
+          ...engine,
+          actNowAlerts: () => {
+            throw Object.assign(new TypeError("unexpected state"), { code: "ENGINE" });
+          },
+        };
+        const { sent, logs, store } = setup({ engine: broken });
+        await store.read(actorA);
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/b1", ...keys });
+        const result = await store.command(actorA, randomUUID(), 1, jump);
+        assert.equal(result.status, 200);
+        assert.equal(result.body.snapshot.revision, 2);
+        assert.equal((await store.read(actorA)).revision, 2);
+        assert.deepEqual(sent, []);
+        assert.deepEqual(logs, [
+          {
+            event: "ward_backend_push_evaluation_failure",
+            errorName: "TypeError",
+            errorCode: "ENGINE",
+            message: "unexpected state",
+          },
+        ]);
+      });
+      await t.test("a slow push service does not hold the save response", async () => {
+        let release;
+        const held = new Promise((resolve) => {
+          release = resolve;
+        });
+        const { sent, store } = setup({ deliveryWaitMs: 50, send: async () => held });
+        await store.read(actorA);
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/s1", ...keys });
+        const started = performance.now();
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.ok(performance.now() - started < 1000, "returned before delivery finished");
+        assert.deepEqual(sent, ["s1"], "delivery had started");
+        release({ outcome: "sent" });
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      });
     } finally {
       await pool.end();
     }

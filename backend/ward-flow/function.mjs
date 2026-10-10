@@ -2,7 +2,7 @@ import { app } from "@azure/functions";
 import { randomUUID } from "node:crypto";
 import { readConfig } from "./config.mjs";
 import { openStorage, createStore } from "./database.mjs";
-import { createPush } from "./push.mjs";
+import { createPush, errorFields } from "./push.mjs";
 import { createAuthenticator } from "./auth.mjs";
 import { createHandler } from "./server.mjs";
 
@@ -95,12 +95,19 @@ app.http("wardFlowWorkspaceAction", {
 // Phone push: time alone can turn a row red (a wait passing its target), so a timer re-checks the
 // act-now list every five minutes. Registered only when shared mode and all three VAPID settings
 // are present, so an installation with the feature off pays for no extra invocations.
-export async function sweepPush(_timer, _context, getHandler = handler) {
+export async function sweepPush(
+  _timer,
+  _context,
+  getHandler = handler,
+  log = (event) => console.error(JSON.stringify(event)),
+) {
   try {
     await getHandler();
     await sharedStoreRef?.sweepPush();
-  } catch {
-    console.error(JSON.stringify({ event: "ward_backend_push_sweep_failure" }));
+  } catch (error) {
+    // Name, code (such as a PostgreSQL SQLSTATE) and a URL-free message tell a missing grant from
+    // an engine or configuration fault. Never an endpoint, key or payload.
+    log({ event: "ward_backend_push_sweep_failure", ...errorFields(error) });
   }
 }
 if (

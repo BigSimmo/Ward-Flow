@@ -1,9 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { generateKeyPairSync } from "node:crypto";
-import { ALERTS_PATH, createPushSender, freshAlerts, parseSubscription, pushPayload, readPushConfig } from "./push.mjs";
+import {
+  ALERTS_PATH,
+  createPushSender,
+  errorFields,
+  freshAlerts,
+  parseSubscription,
+  pushPayload,
+  readPushConfig,
+} from "./push.mjs";
 import { readConfig } from "./config.mjs";
 import { createHandler } from "./server.mjs";
+import { sweepPush } from "./function.mjs";
 
 // Invented keys generated for this test run only; never a deployed key.
 function vapidKeys() {
@@ -22,10 +31,9 @@ const env = {
   WARD_FLOW_VAPID_PRIVATE_KEY: keys.privateKey,
   WARD_FLOW_VAPID_SUBJECT: "mailto:ward-flow-demo@example.org",
 };
-const browserKeys = {
-  p256dh: Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 7)]).toString("base64url"),
-  auth: Buffer.alloc(16, 3).toString("base64url"),
-};
+// A browser's subscription key must be a real P-256 point; this one is generated per run.
+const browserKeys = { p256dh: keys.publicKey, auth: Buffer.alloc(16, 3).toString("base64url") };
+const offCurve = Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 7)]).toString("base64url");
 
 test("phone push is off unless all three VAPID settings are present", () => {
   assert.equal(readPushConfig({}), null);
@@ -42,6 +50,15 @@ test("malformed VAPID settings are refused rather than silently used", () => {
   assert.throws(() => readPushConfig({ ...env, WARD_FLOW_VAPID_PUBLIC_KEY: "not-a-key" }), /phone push/);
   assert.throws(() => readPushConfig({ ...env, WARD_FLOW_VAPID_PRIVATE_KEY: keys.publicKey }), /phone push/);
   assert.throws(() => readPushConfig({ ...env, WARD_FLOW_VAPID_SUBJECT: "http://example.org" }), /phone push/);
+});
+
+test("a VAPID public key from a different pair is refused with a clear error", () => {
+  const otherPair = vapidKeys();
+  assert.throws(
+    () => readPushConfig({ ...env, WARD_FLOW_VAPID_PUBLIC_KEY: otherPair.publicKey }),
+    /public and private keys are not a pair/,
+  );
+  assert.throws(() => readPushConfig({ ...env, WARD_FLOW_VAPID_PUBLIC_KEY: offCurve }), /not a pair/);
 });
 
 test("only a browser push service endpoint with valid keys is accepted", () => {
@@ -62,6 +79,8 @@ test("only a browser push service endpoint with valid keys is accepted", () => {
   const endpoint = "https://fcm.googleapis.com/fcm/send/abc";
   assert.equal(parseSubscription({ endpoint, keys: { ...browserKeys, auth: "short" } }), null);
   assert.equal(parseSubscription({ endpoint, keys: { ...browserKeys, p256dh: "a+b/c=" } }), null);
+  // Right length and prefix, but not on the curve: it could never encrypt, so it is never stored.
+  assert.equal(parseSubscription({ endpoint, keys: { ...browserKeys, p256dh: offCurve } }), null);
   assert.equal(parseSubscription({ endpoint }), null);
   assert.equal(parseSubscription(null), null);
   assert.equal(parseSubscription([endpoint]), null);
@@ -139,7 +158,10 @@ test("no patient name, UMRN, Ward Flow id, alert text or typed text reaches the 
 
 test("delivery reports sent, expired (404 or 410) or failed, with the fixed topic and payload", async () => {
   const calls = [];
-  const outcomes = [null, { statusCode: 410 }, { statusCode: 404 }, { statusCode: 429 }, new Error("socket")];
+  const socket = Object.assign(new Error("socket hang up https://fcm.googleapis.com/fcm/send/abc"), {
+    code: "ECONNRESET",
+  });
+  const outcomes = [null, { statusCode: 410 }, { statusCode: 404 }, { statusCode: 429 }, socket];
   const webpush = {
     sendNotification: async (...args) => {
       calls.push(args);
@@ -153,7 +175,13 @@ test("delivery reports sent, expired (404 or 410) or failed, with the fixed topi
   const payload = pushPayload([{ id: "x", site: "Royal Perth Hospital" }]);
   const results = [];
   for (let index = 0; index < outcomes.length; index += 1) results.push(await send(subscription, payload));
-  assert.deepEqual(results, ["sent", "expired", "expired", "failed", "failed"]);
+  assert.deepEqual(results, [
+    { outcome: "sent" },
+    { outcome: "expired" },
+    { outcome: "expired" },
+    { outcome: "failed", category: "status 429" },
+    { outcome: "failed", category: "Error ECONNRESET" },
+  ]);
   const [target, body, options] = calls[0];
   assert.deepEqual(target, { endpoint: subscription.endpoint, keys: browserKeys });
   assert.deepEqual(JSON.parse(body), payload);
@@ -209,6 +237,10 @@ function routes({ actor = coordinator, push = readPushConfig(env), limit = false
         calls.push(["unsubscribe", ...args]);
         return "unsubscribed";
       },
+      pushStatus: async (...args) => {
+        calls.push(["status", ...args]);
+        return true;
+      },
     },
     authenticate: async (token) => {
       if (!token) throw new Error("Unauthorised");
@@ -239,10 +271,14 @@ test("a signed-in coordinator subscribes and unsubscribes only their own device"
   const { calls, handler } = routes();
   const subscribed = await handler(call("push-subscribe", { subscription, actorId: other }));
   assert.equal(subscribed.status, 200);
-  assert.equal((await handler(call("push-unsubscribe", { endpoint: subscription.endpoint }))).status, 200);
+  const unsubscribed = await handler(call("push-unsubscribe", { endpoint: subscription.endpoint }));
+  assert.deepEqual(await unsubscribed.json(), { subscribed: false, revoked: true });
+  const status = await handler(call("push-status", { endpoint: subscription.endpoint }));
+  assert.deepEqual(await status.json(), { owned: true });
   assert.deepEqual(calls, [
     ["subscribe", coordinator, { endpoint: subscription.endpoint, ...browserKeys }],
     ["unsubscribe", coordinator, subscription.endpoint],
+    ["status", coordinator, subscription.endpoint],
   ]);
 });
 
@@ -250,6 +286,7 @@ test("push routes refuse other accounts, missing sign-in, bad subscriptions and 
   const outsider = routes({ actor: other });
   assert.equal((await outsider.handler(call("push-subscribe", { subscription }))).status, 403);
   assert.equal((await outsider.handler(call("push-key"))).status, 403);
+  assert.equal((await outsider.handler(call("push-status", { endpoint: subscription.endpoint }))).status, 403);
   assert.equal(outsider.calls.length, 0);
   const { calls, handler } = routes();
   assert.equal((await handler(call("push-subscribe", { subscription }, ""))).status, 401);
@@ -285,4 +322,37 @@ test("configuration turns phone push on only with the shared workspace and all t
   };
   assert.equal(readConfig(shared).push, null);
   assert.equal(readConfig({ ...shared, ...env }).push.publicKey, keys.publicKey);
+});
+
+test("error diagnostics carry name, code and a URL-free message only", () => {
+  const error = Object.assign(new Error("permission denied for table push_subscriptions at https://x.example/k"), {
+    code: "42501",
+  });
+  assert.deepEqual(errorFields(error), {
+    errorName: "Error",
+    errorCode: "42501",
+    message: "permission denied for table push_subscriptions at [url]",
+  });
+  assert.deepEqual(errorFields(undefined), { errorName: "Error", message: "" });
+});
+
+test("a failed sweep is logged with its cause, never silently", async () => {
+  const events = [];
+  const failing = Object.assign(new Error("relation does not exist"), { code: "42P01" });
+  await sweepPush(
+    null,
+    null,
+    async () => {
+      throw failing;
+    },
+    (event) => events.push(event),
+  );
+  assert.deepEqual(events, [
+    {
+      event: "ward_backend_push_sweep_failure",
+      errorName: "Error",
+      errorCode: "42P01",
+      message: "relation does not exist",
+    },
+  ]);
 });

@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import { Pool } from "pg";
 import { DefaultAzureCredential } from "@azure/identity";
-import { freshAlerts } from "./push.mjs";
+import { errorFields, freshAlerts } from "./push.mjs";
+
+const SUBSCRIPTION_PAGE = 200;
 
 export function createPostgresPool(config, credential = new DefaultAzureCredential()) {
   const pool = new Pool({
@@ -39,10 +41,23 @@ function canonical(value) {
 
 /**
  * @param push Optional phone push from push.mjs `createPush`: `{ send, payload, coordinatorIds,
- *   maxPerAccount }`. `send(subscription, payload)` resolves "sent" | "expired" | "failed".
+ *   maxPerAccount }`. `send(subscription, payload)` resolves `{ outcome }` as in push.mjs.
  *   Absent means the feature is off.
+ * @param log Structured diagnostics: closed event names and push.mjs `errorFields` only.
+ * @param deliveryWaitMs How long a command response waits for phone delivery before returning;
+ *   delivery carries on in the background after that.
  */
-export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => new Date(), push = null }) {
+export function createWorkspaceStore(
+  pool,
+  {
+    workspaceId,
+    engine,
+    clock = () => new Date(),
+    push = null,
+    log = (event) => console.error(JSON.stringify(event)),
+    deliveryWaitMs = 1500,
+  },
+) {
   const snapshot = (row, at) => ({
     dataMode: row.data_mode,
     revision: Number(row.revision),
@@ -85,8 +100,7 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
    * Inside the workspace lock: the act-now rows not announced at the last evaluation. The first
    * evaluation compares with `before` (the state the command started from), so turning the feature
    * on never announces alerts that were already there. A reset world starts a new baseline, as
-   * the open-tab notifier does. Recipients are the active subscriptions of accounts still named as
-   * coordinators, except the account that made the change.
+   * the open-tab notifier does. Returns the batch to deliver after commit, or null.
    */
   async function evaluatePush(client, world, before, at, excludeActorId) {
     if (!push) return null;
@@ -107,29 +121,59 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
     );
     const fresh = freshAlerts(previous, current);
     if (!fresh.length) return null;
-    const { rows } = await client.query(
-      "SELECT id, endpoint, p256dh, auth FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND data_mode='prototype' AND revoked_at IS NULL AND actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR actor_id <> $3::uuid) ORDER BY id LIMIT 200",
-      [workspaceId, push.coordinatorIds, excludeActorId],
-    );
-    return rows.length ? { payload: push.payload(fresh), subscriptions: rows } : null;
+    return { payload: push.payload(fresh), itemIds: fresh.map((alert) => alert.id), excludeActorId };
   }
-  /** After commit: deliver, drop subscriptions the push service reports gone, note successes. */
+  /**
+   * After commit: send to every active subscription of an account still named as coordinator,
+   * except the account that made the change, a page at a time so none is skipped. Subscriptions
+   * the push service reports gone are deleted; successes are noted.
+   *
+   * If any send fails for another reason (rate limit, timeout, outage), the batch's items leave
+   * the announced list so the next command or the five-minute sweep tries again. Recipients that
+   * already succeeded may then get the alert twice; the fixed Topic and notification tag collapse
+   * the repeat on the device, so it shows as one notification.
+   */
   async function deliver(batch) {
     if (!batch) return;
+    const counts = { sent: 0, expired: 0, failed: 0 };
+    const failures = {};
     try {
-      const outcomes = await Promise.all(batch.subscriptions.map((row) => push.send(row, batch.payload)));
-      const expired = batch.subscriptions.filter((_, index) => outcomes[index] === "expired").map((row) => row.id);
-      const sent = batch.subscriptions.filter((_, index) => outcomes[index] === "sent").map((row) => row.id);
-      if (expired.length)
-        await pool.query("DELETE FROM ward_flow.push_subscriptions WHERE id = ANY($1::bigint[])", [expired]);
-      if (sent.length)
-        await pool.query("UPDATE ward_flow.push_subscriptions SET last_success_at=$2 WHERE id = ANY($1::bigint[])", [
-          sent,
-          clock(),
-        ]);
-    } catch {
+      let after = 0;
+      for (;;) {
+        const { rows } = await pool.query(
+          "SELECT id, endpoint, p256dh, auth FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND data_mode='prototype' AND revoked_at IS NULL AND actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR actor_id <> $3::uuid) AND id > $4 ORDER BY id LIMIT $5",
+          [workspaceId, push.coordinatorIds, batch.excludeActorId, after, SUBSCRIPTION_PAGE],
+        );
+        if (!rows.length) break;
+        after = rows[rows.length - 1].id;
+        const results = await Promise.all(rows.map((row) => push.send(row, batch.payload)));
+        const expired = [];
+        const sent = [];
+        results.forEach((result, index) => {
+          counts[result.outcome] += 1;
+          if (result.outcome === "expired") expired.push(rows[index].id);
+          if (result.outcome === "sent") sent.push(rows[index].id);
+          if (result.outcome === "failed") failures[result.category] = (failures[result.category] ?? 0) + 1;
+        });
+        if (expired.length)
+          await pool.query("DELETE FROM ward_flow.push_subscriptions WHERE id = ANY($1::bigint[])", [expired]);
+        if (sent.length)
+          await pool.query("UPDATE ward_flow.push_subscriptions SET last_success_at=$2 WHERE id = ANY($1::bigint[])", [
+            sent,
+            clock(),
+          ]);
+        if (rows.length < SUBSCRIPTION_PAGE) break;
+      }
+      if (counts.failed) {
+        await pool.query(
+          "UPDATE ward_flow.push_baselines SET item_ids = COALESCE((SELECT jsonb_agg(value) FROM jsonb_array_elements_text(item_ids) AS value WHERE value <> ALL($2::text[])), '[]'::jsonb) WHERE workspace_id=$1",
+          [workspaceId, batch.itemIds],
+        );
+        log({ event: "ward_backend_push_delivery_failures", ...counts, failures });
+      }
+    } catch (error) {
       // A push is a courtesy after the committed change. Its failure never alters the command result.
-      console.error("Ward Flow phone push unavailable");
+      log({ event: "ward_backend_push_delivery_unavailable", ...counts, ...errorFields(error) });
     }
   }
   return {
@@ -163,6 +207,15 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
         [workspaceId, actorId, endpoint, clock()],
       );
       return rowCount ? "unsubscribed" : "not-found";
+    },
+    /** Whether this account has an active phone alert record for this device endpoint. */
+    async pushStatus(actorId, endpoint) {
+      if (!push) throw new Error("push-disabled");
+      const { rowCount } = await pool.query(
+        "SELECT 1 FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND actor_id=$2 AND endpoint=$3 AND revoked_at IS NULL",
+        [workspaceId, actorId, endpoint],
+      );
+      return rowCount > 0;
     },
     /** Time alone can turn a row red (a wait passing its target). The timer trigger calls this. */
     async sweepPush() {
@@ -234,7 +287,19 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
               row.payload,
               at,
             ]);
-            pushBatch = await evaluatePush(client, row.payload, before, at, actorId);
+            if (push) {
+              // Phone push must never cost the coordinator their change: an evaluation error rolls
+              // back to here, is logged, and the command still commits.
+              await client.query("SAVEPOINT push_evaluation");
+              try {
+                pushBatch = await evaluatePush(client, row.payload, before, at, actorId);
+                await client.query("RELEASE SAVEPOINT push_evaluation");
+              } catch (error) {
+                await client.query("ROLLBACK TO SAVEPOINT push_evaluation");
+                pushBatch = null;
+                log({ event: "ward_backend_push_evaluation_failure", ...errorFields(error) });
+              }
+            }
           }
         }
         const result = { outcome, commandRevision: Number(row.revision), ...(reason ? { error: reason } : {}) };
@@ -248,7 +313,18 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
         );
         return { status, body: { ...result, snapshot: snapshot(row, at) } };
       });
-      await deliver(pushBatch);
+      if (pushBatch) {
+        // Wait briefly so a quick delivery finishes in this invocation, but never hold the save
+        // response on a slow push service; delivery continues and the sweep retries what is lost.
+        let timer;
+        await Promise.race([
+          deliver(pushBatch),
+          new Promise((resolve) => {
+            timer = setTimeout(resolve, deliveryWaitMs);
+          }),
+        ]);
+        clearTimeout(timer);
+      }
       return response;
     },
   };

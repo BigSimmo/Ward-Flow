@@ -4,6 +4,8 @@
 // fixed page path only: never a patient name, UMRN, Ward Flow id, diagnosis, alert detail or
 // typed text (D-18). The server decides what is sent; the browser never supplies payload text.
 
+import { createECDH } from "node:crypto";
+
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
 // Known browser push services. A subscription endpoint is a URL the backend will POST to, so only
 // these hosts are accepted; anything else would let a signed-in account aim the server elsewhere.
@@ -35,7 +37,30 @@ export function readPushConfig(env = process.env) {
     !/^(mailto:[^\s@]+@[^\s@]+|https:\/\/[^\s]+)$/.test(subject)
   )
     throw new Error("Invalid phone push configuration");
+  // A pasted key from a different pair would sign every push with a key browsers never accepted.
+  let derived;
+  try {
+    const ecdh = createECDH("prime256v1");
+    ecdh.setPrivateKey(Buffer.from(privateKey, "base64url"));
+    derived = ecdh.getPublicKey();
+  } catch {
+    throw new Error("Invalid phone push configuration: the VAPID private key is not a P-256 key");
+  }
+  if (!derived.equals(Buffer.from(publicKey, "base64url")))
+    throw new Error("Invalid phone push configuration: the VAPID public and private keys are not a pair");
   return { publicKey, privateKey, subject };
+}
+
+/** Whether a base64url uncompressed key is a point on the P-256 curve; only such a key can encrypt. */
+function validPoint(value) {
+  try {
+    const probe = createECDH("prime256v1");
+    probe.generateKeys();
+    probe.computeSecret(Buffer.from(value, "base64url"));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** The stored form of a browser PushSubscription, or null when it is not one we accept. */
@@ -59,7 +84,7 @@ export function parseSubscription(value) {
   )
     return null;
   // P-256 public key (65 bytes, uncompressed) and a 16-byte auth secret, per RFC 8291.
-  if (decodedLength(keys.p256dh) !== 65 || decodedLength(keys.auth) !== 16) return null;
+  if (decodedLength(keys.p256dh) !== 65 || decodedLength(keys.auth) !== 16 || !validPoint(keys.p256dh)) return null;
   return { endpoint: url.href, p256dh: keys.p256dh, auth: keys.auth };
 }
 
@@ -94,8 +119,31 @@ export function pushPayload(alerts) {
 }
 
 /**
- * Sends one payload to one subscription. Resolves "sent", "expired" (the push service says the
- * subscription is gone: 404 or 410) or "failed". Never throws and never logs the endpoint.
+ * Log-safe fields for an error: class name, code (such as a PostgreSQL SQLSTATE or ECONNRESET)
+ * and a short message with any URL removed. Never an endpoint, key or payload.
+ */
+export function errorFields(error) {
+  const code = error?.code;
+  return {
+    errorName: typeof error?.name === "string" ? error.name.slice(0, 60) : "Error",
+    ...(typeof code === "string" || typeof code === "number" ? { errorCode: String(code).slice(0, 40) } : {}),
+    message: String(error?.message ?? "")
+      .replace(/https?:\/\/\S+/g, "[url]")
+      .slice(0, 160),
+  };
+}
+
+/** The reason a send failed, as a short category: "status 429" or "Error ECONNRESET". */
+function failureCategory(error) {
+  if (Number.isInteger(error?.statusCode)) return `status ${error.statusCode}`;
+  const { errorName, errorCode } = errorFields(error);
+  return errorCode ? `${errorName} ${errorCode}` : errorName;
+}
+
+/**
+ * Sends one payload to one subscription. Resolves `{ outcome: "sent" }`, `{ outcome: "expired" }`
+ * (the push service says the subscription is gone: 404 or 410) or `{ outcome: "failed", category }`.
+ * Never throws and never logs the endpoint.
  */
 export function createPushSender(config, webpush) {
   const vapidDetails = { subject: config.subject, publicKey: config.publicKey, privateKey: config.privateKey };
@@ -106,9 +154,11 @@ export function createPushSender(config, webpush) {
         JSON.stringify(payload),
         { vapidDetails, TTL: 3600, urgency: "high", topic: PUSH_TOPIC, timeout: 5000 },
       );
-      return "sent";
+      return { outcome: "sent" };
     } catch (error) {
-      return error?.statusCode === 404 || error?.statusCode === 410 ? "expired" : "failed";
+      return error?.statusCode === 404 || error?.statusCode === 410
+        ? { outcome: "expired" }
+        : { outcome: "failed", category: failureCategory(error) };
     }
   };
 }
