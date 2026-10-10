@@ -99,8 +99,8 @@ export async function sweepPush(_timer, _context, getHandler = handler) {
   try {
     await getHandler();
     await sharedStoreRef?.sweepPush();
-  } catch {
-    console.error(JSON.stringify({ event: "ward_backend_push_sweep_failure" }));
+  } catch (error) {
+    console.error(JSON.stringify({ event: "ward_backend_push_sweep_failure", cause: error?.message }));
   }
 }
 if (

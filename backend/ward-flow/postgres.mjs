@@ -108,10 +108,10 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
     const fresh = freshAlerts(previous, current);
     if (!fresh.length) return null;
     const { rows } = await client.query(
-      "SELECT id, endpoint, p256dh, auth FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND data_mode='prototype' AND revoked_at IS NULL AND actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR actor_id <> $3::uuid) ORDER BY id LIMIT 200",
+      "SELECT id, endpoint, p256dh, auth FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND data_mode='prototype' AND revoked_at IS NULL AND actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR actor_id <> $3::uuid) ORDER BY id",
       [workspaceId, push.coordinatorIds, excludeActorId],
     );
-    return rows.length ? { payload: push.payload(fresh), subscriptions: rows } : null;
+    return rows.length ? { payload: push.payload(fresh), subscriptions: rows, alertIds: fresh.map((alert) => alert.id) } : null;
   }
   /** After commit: deliver, drop subscriptions the push service reports gone, note successes. */
   async function deliver(batch) {
@@ -120,6 +120,12 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
       const outcomes = await Promise.all(batch.subscriptions.map((row) => push.send(row, batch.payload)));
       const expired = batch.subscriptions.filter((_, index) => outcomes[index] === "expired").map((row) => row.id);
       const sent = batch.subscriptions.filter((_, index) => outcomes[index] === "sent").map((row) => row.id);
+      const failed = outcomes.some((outcome) => outcome === "failed");
+      if (failed)
+        await pool.query(
+          "UPDATE ward_flow.push_baselines SET item_ids = item_ids - $2::text[], evaluated_at=$3 WHERE workspace_id=$1",
+          [workspaceId, batch.alertIds, clock()],
+        );
       if (expired.length)
         await pool.query("DELETE FROM ward_flow.push_subscriptions WHERE id = ANY($1::bigint[])", [expired]);
       if (sent.length)
@@ -127,9 +133,12 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
           sent,
           clock(),
         ]);
-    } catch {
+      const failedCount = outcomes.filter((outcome) => outcome === "failed").length;
+      if (failedCount)
+        console.error(JSON.stringify({ event: "ward_backend_push_delivery_failure", failed: failedCount }));
+    } catch (error) {
       // A push is a courtesy after the committed change. Its failure never alters the command result.
-      console.error("Ward Flow phone push unavailable");
+      console.error(JSON.stringify({ event: "ward_backend_push_delivery_storage_failure", cause: error?.message }));
     }
   }
   return {
@@ -234,7 +243,16 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
               row.payload,
               at,
             ]);
-            pushBatch = await evaluatePush(client, row.payload, before, at, actorId);
+            await client.query("SAVEPOINT push_evaluation");
+            try {
+              pushBatch = await evaluatePush(client, row.payload, before, at, actorId);
+              await client.query("RELEASE SAVEPOINT push_evaluation");
+            } catch (error) {
+              await client.query("ROLLBACK TO SAVEPOINT push_evaluation");
+              await client.query("RELEASE SAVEPOINT push_evaluation");
+              pushBatch = null;
+              console.error(JSON.stringify({ event: "ward_backend_push_evaluation_failure", cause: error?.message }));
+            }
           }
         }
         const result = { outcome, commandRevision: Number(row.revision), ...(reason ? { error: reason } : {}) };
@@ -248,7 +266,8 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
         );
         return { status, body: { ...result, snapshot: snapshot(row, at) } };
       });
-      await deliver(pushBatch);
+      // Delivery is post-commit courtesy work; do not hold the command response on push services.
+      void deliver(pushBatch);
       return response;
     },
   };
