@@ -299,9 +299,9 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 
 ## 15. Next steps
 
-1. **Load v9 in the app.** Done in phase 1: `src/app/ward-flow-v9-tokens.css` loads after the v6 tokens. Still to do: wire the one theme switch (v8 section 4) and a switch for Glare mode.
+1. ~~**Load v9 in the app** through one alias file after `globals.css`, and wire the one theme switch (v8 section 4).~~ **Complete (phase 1).** The app loads `src/app/ward-flow-v9-tokens.css` after `globals.css`.
 2. **Move the shared parts** onto it so every page lifts at once: hero chip, Badge, status words, tabs with the capsule, focus, live chip, toast and density.
-3. **Point the in-app Design showcase at the v9 tokens file**, so it can no longer teach v6.
+3. **Point the in-app Design showcase at an existing v9-backed app view**, so it can no longer teach v6; the standalone reference sheet is not in this branch.
 4. **Rebuild pages against v9**, weakest first, as the 10 October appraisal set out. Bring in each Elevate part with the first page that needs it.
 5. **Check Night shift mode for contrast** before it is built.
 
