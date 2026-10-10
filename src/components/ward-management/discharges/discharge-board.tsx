@@ -1222,6 +1222,55 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             </div>
           )}
         </Card>
+        {guarded.status === "allowed" && isPhone ? (
+          /* v10 phone: the two charts are one tap away as cards; each opens a sheet that scrolls
+             sideways with 48px tap columns. A tap highlights rows and closes the sheet. */
+          <div className={pageStyles.phChartCards} data-testid="ward-discharge-phone-chart-cards">
+            <PhoneListRow
+              name="Expected discharges per day"
+              meta={`Passed and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
+              value={chartDays.reduce((sum, day) => sum + day.expected + day.blocked, 0)}
+              onSelect={() => setPhoneChart("days")}
+            />
+            <PhoneListRow
+              name="Blocked by barrier"
+              meta={`${barrierCounts.filter((barrier) => barrier.count > 0).length} barriers`}
+              value={barrierCounts.reduce((sum, barrier) => sum + barrier.count, 0)}
+              onSelect={() => setPhoneChart("barriers")}
+            />
+            <PhoneSheet
+              open={phoneChart !== null}
+              onClose={() => setPhoneChart(null)}
+              title={phoneChart === "barriers" ? "Blocked by barrier" : "Expected discharges per day"}
+              description="Tap to highlight people in the list. Nobody is hidden."
+              height="tall"
+              className={pageStyles.phChartSheet}
+              data-testid="ward-discharge-phone-chart-sheet"
+            >
+              {phoneChart === "barriers" ? (
+                <DischargeBarrierBars
+                  barriers={barrierCounts}
+                  selected={highlight?.kind === "barrier" ? highlight.id : null}
+                  onSelect={(id) => {
+                    highlightOn({ kind: "barrier", id });
+                    setPhoneChart(null);
+                  }}
+                  onClear={() => setHighlight(null)}
+                />
+              ) : (
+                <DischargeDayChart
+                  days={chartDays}
+                  selected={highlight?.kind === "day" ? highlight.day : null}
+                  onSelect={(day) => {
+                    highlightOn({ kind: "day", day });
+                    setPhoneChart(null);
+                  }}
+                  onClear={() => setHighlight(null)}
+                />
+              )}
+            </PhoneSheet>
+          </div>
+        ) : null}
         <div className={pageStyles.workspace} data-detail-open={Boolean(selected || releaseId) || undefined}>
           <Card className={pageStyles.register} aria-labelledby="discharge-register-heading">
             <header className={pageStyles.panelHeader}>
@@ -2118,55 +2167,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             </aside>
           </div>
         </div>
-        {guarded.status === "allowed" && isPhone ? (
-          /* v10 phone: the two charts are one tap away as cards; each opens a sheet that scrolls
-             sideways with 48px tap columns. A tap highlights rows and closes the sheet. */
-          <div className={pageStyles.phChartCards} data-testid="ward-discharge-phone-chart-cards">
-            <PhoneListRow
-              name="Expected discharges per day"
-              meta={`Passed and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
-              value={chartDays.reduce((sum, day) => sum + day.expected + day.blocked, 0)}
-              onSelect={() => setPhoneChart("days")}
-            />
-            <PhoneListRow
-              name="Blocked by barrier"
-              meta={`${barrierCounts.filter((barrier) => barrier.count > 0).length} barriers`}
-              value={barrierCounts.reduce((sum, barrier) => sum + barrier.count, 0)}
-              onSelect={() => setPhoneChart("barriers")}
-            />
-            <PhoneSheet
-              open={phoneChart !== null}
-              onClose={() => setPhoneChart(null)}
-              title={phoneChart === "barriers" ? "Blocked by barrier" : "Expected discharges per day"}
-              description="Tap to highlight people in the list. Nobody is hidden."
-              height="tall"
-              className={pageStyles.phChartSheet}
-              data-testid="ward-discharge-phone-chart-sheet"
-            >
-              {phoneChart === "barriers" ? (
-                <DischargeBarrierBars
-                  barriers={barrierCounts}
-                  selected={highlight?.kind === "barrier" ? highlight.id : null}
-                  onSelect={(id) => {
-                    highlightOn({ kind: "barrier", id });
-                    setPhoneChart(null);
-                  }}
-                  onClear={() => setHighlight(null)}
-                />
-              ) : (
-                <DischargeDayChart
-                  days={chartDays}
-                  selected={highlight?.kind === "day" ? highlight.day : null}
-                  onSelect={(day) => {
-                    highlightOn({ kind: "day", day });
-                    setPhoneChart(null);
-                  }}
-                  onClear={() => setHighlight(null)}
-                />
-              )}
-            </PhoneSheet>
-          </div>
-        ) : null}
         {guarded.status === "allowed" && !isPhone ? (
           <div className={pageStyles.flowCharts}>
             <DischargeDayChart

@@ -4843,10 +4843,9 @@
     margin-left: 0;
   }
 
+  /* The Live pill sits in the actions row; pinned top right it ran over a long eyebrow. */
   .v6HeroActions > :first-child {
-    position: absolute;
-    top: var(--wf-s-3);
-    right: var(--wf-s-4);
+    flex: 0 0 auto;
   }
 
   /* The two page actions share the row; a long label takes its own row rather than being cut. */

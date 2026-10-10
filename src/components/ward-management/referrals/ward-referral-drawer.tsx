@@ -1587,6 +1587,18 @@ function WardReferralDrawerContent({
           {view === "new" ? (
             <>
               {sentReferralId ? null : (
+                /* v10 phone: a compact answer line, how many items are ready to send. Phone only. */
+                <p className={styles.phReady} data-testid="ward-referral-phone-ready">
+                  <StatusGlyph tone={readyDone === readyRows.length ? "success" : "neutral"} size={10} />
+                  <span className={styles.phReadyText}>
+                    <b>
+                      {readyDone} of {readyRows.length}
+                    </b>{" "}
+                    ready to send
+                  </span>
+                </p>
+              )}
+              {sentReferralId ? null : (
                 <div className={styles.destRow}>
                   <span className={styles.destLabel} id={`${sectionId}-refer-to`}>
                     Refer to
