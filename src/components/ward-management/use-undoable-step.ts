@@ -125,9 +125,17 @@ export function useUndoableStep({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, rejections]);
 
-  return function run(event: WardFlowEvent, step: UndoableStep) {
-    pendingRef.current = { prior: rejectionCountRef.current, ...step };
-    dispatch(event);
-    setToken((value) => value + 1);
+  return {
+    /** Dispatches `event` now, then offers Undo once the engine has accepted it. */
+    run(event: WardFlowEvent, step: UndoableStep) {
+      pendingRef.current = { prior: rejectionCountRef.current, ...step };
+      dispatch(event);
+      setToken((value) => value + 1);
+    },
+    /** Offers Undo for a step another component on the page has already recorded. */
+    offer(step: UndoableStep) {
+      pendingRef.current = { prior: rejectionCountRef.current, ...step };
+      setToken((value) => value + 1);
+    },
   };
 }

@@ -310,7 +310,7 @@ function CoordinatorScreenBody() {
   const toast = useToast();
   const patientOf = usePatientOf();
   const umrnText = useUmrnText();
-  const runStep = useUndoableStep({
+  const { run: runStep } = useUndoableStep({
     dispatch,
     rejections,
     now: liveNow,

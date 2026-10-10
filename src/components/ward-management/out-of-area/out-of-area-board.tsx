@@ -27,6 +27,8 @@ import { daysInBed, type Admission } from "@/components/ward-management/ward-adm
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
@@ -126,6 +128,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     movements,
     dispatch,
     dayZero,
+    rejections,
     repatriations: liveRepatriations,
   } = useWardFlow();
   const now = useWardFlowClock();
@@ -139,6 +142,14 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, RepatDraft>>({});
   const [repatNotice, setRepatNotice] = useState<string | null>(null);
+  // v10 pass 3: a recorded return offers Undo (`UNDO_REPATRIATION`) on the layout toast.
+  const { run: runStep } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: useRouteRole(),
+    onMessage: setRepatNotice,
+  });
   const [toolNote, setToolNote] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);
   const [region, setRegion] = useState<string | null>(null);
@@ -306,29 +317,37 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     ) {
       return;
     }
-    dispatch({
-      type: "RECORD_REPATRIATION",
-      role: "coordinator",
-      now,
-      admissionId,
-      homeHospital: draft.homeHospital,
-      receivingWardAgreed: draft.receivingWardAgreed,
-      mode: draft.mode,
-      provider: draft.provider,
-      cadNumber: draft.cadNumber.trim(),
-      transportLegalStatus: draft.transportLegalStatus,
-      estimatedAt,
-    });
+    const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
+    const movementFeedback = draft.receivingWardAgreed
+      ? " Return transfer movement queued for bed placement at home health service."
+      : " Return movement pending receiving ward agreement.";
+    const recorded = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}.`;
+    runStep(
+      {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now,
+        admissionId,
+        homeHospital: draft.homeHospital,
+        receivingWardAgreed: draft.receivingWardAgreed,
+        mode: draft.mode,
+        provider: draft.provider,
+        cadNumber: draft.cadNumber.trim(),
+        transportLegalStatus: draft.transportLegalStatus,
+        estimatedAt,
+      },
+      {
+        success: `${recorded}${movementFeedback}`,
+        undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
+        undone: `Return undone for ${patientOf(entry).displayName}. Nothing is recorded.`,
+      },
+    );
     setDrafts((current) => {
       const next = { ...current };
       delete next[admissionId];
       return next;
     });
-    const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
-    const movementFeedback = draft.receivingWardAgreed
-      ? " Return transfer movement queued for bed placement at home health service."
-      : " Return movement pending receiving ward agreement.";
-    setRepatNotice(`Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}.${movementFeedback}`);
+    setRepatNotice(`${recorded}${movementFeedback}`);
   }
 
   const planPatient = (entry: OutOfAreaEntry): PlanPatient => {

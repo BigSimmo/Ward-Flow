@@ -36,6 +36,7 @@ import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/compone
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -362,8 +363,18 @@ function mmss(ms: number): string {
  * the sheet builder, where what you see is what prints.
  */
 export function HandoverPage() {
-  const { movements, units, referrals, patients, admissions, bedReleases, dispatch, dayZero, handoverSignOffs } =
-    useWardFlow();
+  const {
+    movements,
+    units,
+    referrals,
+    patients,
+    admissions,
+    bedReleases,
+    dispatch,
+    dayZero,
+    handoverSignOffs,
+    rejections,
+  } = useWardFlow();
   const now = useWardFlowClock();
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
 
@@ -581,16 +592,26 @@ export function HandoverPage() {
 
   /* sign-off */
   const signedAt = handoverSignedAt(handoverSignOffs, shift, now);
+  // v10 pass 3: the sign-off is recorded at once and Undo takes it back (UNDO_HANDOVER_SIGN_OFF).
+  const { run: runStep } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: "coordinator",
+    onMessage: announceToWardShell,
+  });
   const handleSignOff = useCallback(() => {
-    const recorded = recordHandoverSignOff(dispatch, now);
-    if (recorded === null) {
-      announceToWardShell("Sign-off is not recorded.");
-      return;
-    }
-    announceToWardShell(
-      `Signed off as flow coordinator at ${formatInstantWithDay(recorded.at, now)}. Recorded in History.`,
+    const recorded = recordHandoverSignOff(
+      (event) =>
+        runStep(event, {
+          success: `Signed off as flow coordinator at ${formatInstantWithDay(now, now)}. Recorded in History.`,
+          undo: (at) => ({ type: "UNDO_HANDOVER_SIGN_OFF", role: "coordinator", now: at }),
+          undone: "Sign-off undone.",
+        }),
+      now,
     );
-  }, [dispatch, now]);
+    if (recorded === null) announceToWardShell("Sign-off is not recorded.");
+  }, [runStep, now]);
   const showSignOff = () => {
     setSheetOpen(false);
     setTab("pts");

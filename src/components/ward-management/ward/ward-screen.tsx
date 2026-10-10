@@ -388,7 +388,32 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   bed: check.bed,
                   success: "Undone. The bed and the person are back where they were.",
                 };
-                dispatch(boardUndoEvent(undo, nowRef.current));
+                // Literal types, one per kind, so the override-surface guard reads each one.
+                const at = nowRef.current;
+                if (undo.kind === "stay")
+                  dispatch({
+                    type: "UNDO_PLACE_IN_BED",
+                    role: "ward",
+                    now: at,
+                    admissionId: undo.admissionId,
+                    actingUnitId: undo.unitId,
+                  });
+                else if (undo.kind === "movement")
+                  dispatch({
+                    type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                    role: "ward",
+                    now: at,
+                    movementId: undo.movementId,
+                    actingUnitId: undo.unitId,
+                  });
+                else
+                  dispatch({
+                    type: "UNDO_REFERRAL_DECISION",
+                    role: "ward",
+                    now: at,
+                    referralId: undo.referralId,
+                    actingUnitId: undo.unitId,
+                  });
                 setBoardToken((token) => token + 1);
               },
             },

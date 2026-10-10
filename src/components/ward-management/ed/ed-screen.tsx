@@ -44,6 +44,8 @@ import {
   type UrgencyChangeReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import {
   TENTATIVE_DIAGNOSIS_BLOCKS,
@@ -1237,6 +1239,34 @@ function AttentionToneIcon({ tone }: { tone: "danger" | "warn" | "good" | "quiet
  * A test that renders this screen on its own has no provider; there the toast is skipped rather than
  * throwing. `useToast` always calls `useContext` before it throws, so hook order never changes.
  */
+type EdStepEvent = Extract<
+  WardFlowEvent,
+  {
+    type:
+      | "RECORD_ARRIVED_IN_DEPARTMENT"
+      | "RECORD_EXAMINATION"
+      | "RECORD_MEDICAL_CLEARANCE"
+      | "RECORD_TRANSPORT_NEED"
+      | "HANDOVER_READY";
+  }
+>;
+
+/** What the toast says once the engine accepts an ED next step. */
+function edStepSaid(event: EdStepEvent): string {
+  switch (event.type) {
+    case "RECORD_ARRIVED_IN_DEPARTMENT":
+      return "Marked arrived in department";
+    case "RECORD_EXAMINATION":
+      return "Examination recorded";
+    case "RECORD_MEDICAL_CLEARANCE":
+      return event.cleared ? "Recorded medically cleared" : "Recorded not medically cleared";
+    case "RECORD_TRANSPORT_NEED":
+      return event.needed ? "Recorded: transport needed" : "Recorded: no transport needed";
+    case "HANDOVER_READY":
+      return "Marked handover ready";
+  }
+}
+
 function useToastWhenMounted(): ToastApi | null {
   try {
     return useToast();
@@ -1453,6 +1483,16 @@ export function EdScreen({ edId }: EdScreenProps) {
    * the count before an Undo so a refused Undo can say why.
    */
   const toast = useToastWhenMounted();
+  // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
+  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
+  function recordEdStep(event: EdStepEvent) {
+    const subject = "referralId" in event ? { referralId: event.referralId } : { movementId: event.movementId };
+    runStep(event, {
+      success: edStepSaid(event),
+      undo: (at) => ({ type: "UNDO_ED_STEP", role: "ed", now: at, ...subject }),
+      undone: "Undone. Back as it was.",
+    });
+  }
   /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */
   const isPhone = useIsPhone();
   const [phonePane, setPhonePane] = useState<"board" | "needs" | "lists">("board");
@@ -2010,7 +2050,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         when: `waiting ${splitDuration(waiting)}`,
         actionLabel: "Mark arrived in department",
         onAction: () => {
-          dispatch({
+          recordEdStep({
             type: "RECORD_ARRIVED_IN_DEPARTMENT",
             role: "ed",
             now,
@@ -2531,7 +2571,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   function submitExamination(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!examinationOutcome) return;
-    dispatch({ type: "RECORD_EXAMINATION", role: "ed", now, movementId, outcome: examinationOutcome });
+    recordEdStep({ type: "RECORD_EXAMINATION", role: "ed", now, movementId, outcome: examinationOutcome });
     setExaminationOpenFor(undefined);
     setExaminationOutcome(undefined);
   }
@@ -3478,7 +3518,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                   blocked: handoverBlocked,
                                   describedBy: `ward-ed-handover-unavailable-${movement.id}`,
                                   run: () =>
-                                    dispatch({
+                                    recordEdStep({
                                       type: "HANDOVER_READY",
                                       role: "ed",
                                       now,
@@ -3961,7 +4001,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                         handoverBlocked
                                           ? ignoreUnavailableActivation
                                           : () =>
-                                              dispatch({
+                                              recordEdStep({
                                                 type: "HANDOVER_READY",
                                                 role: "ed",
                                                 now,
@@ -4028,7 +4068,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                         data-testid={`ward-ed-no-transport-needed-${movement.id}`}
                                         className={styles.acceptButton}
                                         onClick={() =>
-                                          dispatch({
+                                          recordEdStep({
                                             type: "RECORD_TRANSPORT_NEED",
                                             role: "ed",
                                             now,
@@ -5403,7 +5443,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                 className={styles.inboxBtn}
                                 data-testid={`ward-ed-inbox-clearance-yes-${referral.id}`}
                                 onClick={() =>
-                                  dispatch({
+                                  recordEdStep({
                                     type: "RECORD_MEDICAL_CLEARANCE",
                                     role: "ed",
                                     now,
@@ -5419,7 +5459,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                 className={styles.inboxBtn}
                                 data-testid={`ward-ed-inbox-clearance-no-${referral.id}`}
                                 onClick={() =>
-                                  dispatch({
+                                  recordEdStep({
                                     type: "RECORD_MEDICAL_CLEARANCE",
                                     role: "ed",
                                     now,
@@ -5715,7 +5755,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           className={styles.arrivedButton}
                           data-testid={`ward-ed-expects-arrived-${referral.id}`}
                           onClick={() =>
-                            dispatch({
+                            recordEdStep({
                               type: "RECORD_ARRIVED_IN_DEPARTMENT",
                               role: "ed",
                               now,

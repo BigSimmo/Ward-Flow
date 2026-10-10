@@ -74,6 +74,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
+  UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
 
 import { FormsPack, PACK_SLOTS, packCount, packForm, packOutstanding, packRequired } from "./officer-forms-pack";
@@ -479,7 +480,17 @@ export function OfficerScreen() {
 
   const [formModalJob, setFormModalJob] = useState<Movement | null>(null);
   const [toastMessage, setToastMessage] = useState<
-    { message: string } | { success: string; refused: string; priorRejections: number } | null
+    | { message: string }
+    | {
+        success: string;
+        refused: string;
+        priorRejections: number;
+        /** v10 pass 3: the journey whose transport step the toast's Undo takes back. */
+        undoMovementId?: string;
+        /** An Undo's own outcome: a refusal then gives the engine's reason. */
+        withReason?: boolean;
+      }
+    | null
   >(null);
   const [verifiedChecks, setVerifiedChecks] = useState<Record<string, boolean[]>>({});
   const [diversionOpen, setDiversionOpen] = useState(false);
@@ -645,9 +656,12 @@ export function OfficerScreen() {
 
   useEffect(() => {
     if (!toastMessage) return;
-    const timer = setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
+    const timer = setTimeout(
+      () => {
+        setToastMessage(null);
+      },
+      "undoMovementId" in toastMessage && toastMessage.undoMovementId ? UNDO_TOAST_MS : 3500,
+    );
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
@@ -665,12 +679,24 @@ export function OfficerScreen() {
   // Called straight after `dispatch` in the same handler, so `rejections` here is still the
   // pre-dispatch list. Each action calls `dispatch({ type: "..." })` itself, with a literal type,
   // so the override-surface guard can read every transport event.
-  const reportOutcome = (success: string, action: string, who: string) => {
+  const reportOutcome = (success: string, action: string, who: string, undoMovementId?: string) => {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     setToastMessage({
       success,
       refused: `${action} for ${who} was refused. See History, Refused.`,
       priorRejections: rejections.length,
+      ...(undoMovementId ? { undoMovementId } : {}),
+    });
+  };
+  // v10 pass 3: Undo takes back the step just recorded (UNDO_TRANSPORT_STEP, within the engine's window).
+  const undoTransportStep = (movementId: string) => {
+    const prior = rejections.length;
+    dispatch({ type: "UNDO_TRANSPORT_STEP", role: "officer", now, movementId });
+    setToastMessage({
+      success: "Undone. Back as it was.",
+      refused: "Undo was refused:",
+      priorRejections: prior,
+      withReason: true,
     });
   };
   const toastText =
@@ -679,8 +705,17 @@ export function OfficerScreen() {
       : "message" in toastMessage
         ? toastMessage.message
         : rejections.length > toastMessage.priorRejections
-          ? toastMessage.refused
+          ? toastMessage.withReason
+            ? `${toastMessage.refused} ${rejections[rejections.length - 1]?.reason ?? ""}.`
+            : toastMessage.refused
           : toastMessage.success;
+  const toastUndoFor =
+    toastMessage !== null &&
+    "undoMovementId" in toastMessage &&
+    toastMessage.undoMovementId !== undefined &&
+    rejections.length === toastMessage.priorRejections
+      ? toastMessage.undoMovementId
+      : undefined;
 
   const runAccepted = (movement: Movement) => {
     dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id });
@@ -688,11 +723,17 @@ export function OfficerScreen() {
       `Transport accepted for ${officerPatientName(movement)}.`,
       "Transport acceptance",
       officerPatientName(movement),
+      movement.id,
     );
   };
   const runEnRoute = (movement: Movement) => {
     dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id });
-    reportOutcome(`Transport en route for ${officerPatientName(movement)}.`, "En route", officerPatientName(movement));
+    reportOutcome(
+      `Transport en route for ${officerPatientName(movement)}.`,
+      "En route",
+      officerPatientName(movement),
+      movement.id,
+    );
   };
   const runCollected = (movement: Movement) => {
     dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id });
@@ -700,6 +741,7 @@ export function OfficerScreen() {
       `Patient collected for ${officerPatientName(movement)}. In transit.`,
       "Collection",
       officerPatientName(movement),
+      movement.id,
     );
   };
   const runDelivered = (movement: Movement) => {
@@ -708,6 +750,7 @@ export function OfficerScreen() {
       `Delivery recorded for ${officerPatientName(movement)}. Delivered to receiving unit.`,
       "Delivery",
       officerPatientName(movement),
+      movement.id,
     );
   };
 
@@ -1857,6 +1900,16 @@ export function OfficerScreen() {
       {toastText ? (
         <div className={styles.toast}>
           <StatusLine tone="success" title={toastText} />
+          {toastUndoFor ? (
+            <button
+              type="button"
+              className={styles.toastUndo}
+              data-testid="ward-officer-toast-undo"
+              onClick={() => undoTransportStep(toastUndoFor)}
+            >
+              Undo
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

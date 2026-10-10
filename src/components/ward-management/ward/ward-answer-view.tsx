@@ -173,7 +173,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   // v10 pass 3: Accept dispatches at once and offers Undo on the layout's toast; this page's own
   // toast line carries the outcome where no toast region is mounted.
   const routeRole = useRouteRole();
-  const runStep = useUndoableStep({
+  const { run: runStep } = useUndoableStep({
     dispatch,
     rejections,
     now,
