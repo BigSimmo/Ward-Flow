@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { Button, Card, CardHead, Sheet, StackBar, StatusGlyph, durMinutes, type StackSegment } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { shortlistCandidates } from "@/components/ward-management/ward-derivations";
@@ -54,9 +55,13 @@ export function HomeBedsReadyCard({
     [units, admissions, bedReleases, leaveBeds],
   );
   const shown = all ? rows : rows.slice(0, PHONE_WARDS_SHOWN);
+  // Ready counts never subtract a bed still being cleaned, so the card says how many are (owner ruling).
+  const pendingPreparation = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0);
+  const meta =
+    pendingPreparation > 0 ? `${rows.length} wards · ${pendingPreparation} being made ready` : `${rows.length} wards`;
   return (
     <Card className={styles.phoneBedsCard} aria-label="Beds ready">
-      <CardHead title="Beds ready" meta={`${rows.length} wards`} />
+      <CardHead title="Beds ready" meta={meta} />
       {rows.length === 0 ? (
         <p className={styles.emptyLine}>No ward has a bed ready now.</p>
       ) : (

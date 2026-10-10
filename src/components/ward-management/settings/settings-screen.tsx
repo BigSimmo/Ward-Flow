@@ -70,6 +70,7 @@ import {
   SILENT_WARD_FIRST_REMINDER_MINUTES,
   TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   TRANSPORT_BOOKED_TARGET_MINUTES,
+  UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
 import { DECISION_TARGET_STEPS } from "@/components/ward-management/ward-decision-targets";
 import {
@@ -157,9 +158,6 @@ function shortDuration(minutes: number): string {
   const rest = minutes % 60;
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
-
-/** How long the toast offers Undo after a save or a discard (the wf toast's 8 second window). */
-const SETTINGS_UNDO_MS = 8000;
 
 /** The settings a phone shows on its first screen (Find a setting lands there, not in a sheet). */
 const PHONE_QUICK_SETTINGS: ReadonlySet<string> = new Set(["theme", "glare", "density", "buzz"]);
@@ -412,7 +410,7 @@ export function SettingsScreen() {
       title: count === 1 ? "Rule saved and recorded." : `${count} rules saved and recorded.`,
       // Undo puts the rules back with a second recorded save, so the audit keeps both.
       undo: {
-        durationMs: SETTINGS_UNDO_MS,
+        durationMs: UNDO_TOAST_MS,
         onUndo: () => {
           dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: before });
           setDraft({ ...before });
@@ -428,7 +426,7 @@ export function SettingsScreen() {
     toast?.push({
       tone: "info",
       title: "Draft discarded.",
-      undo: { durationMs: SETTINGS_UNDO_MS, onUndo: () => setDraft(kept) },
+      undo: { durationMs: UNDO_TOAST_MS, onUndo: () => setDraft(kept) },
     });
   };
 

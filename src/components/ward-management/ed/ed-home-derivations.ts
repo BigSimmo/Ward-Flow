@@ -1,6 +1,7 @@
 // src/components/ward-management/ed/ed-home-derivations.ts
 import { minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { ED_TREND_SPAN_MINUTES, ED_TREND_STEP_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   type EmergencyDepartment,
   type HealthService,
@@ -248,9 +249,8 @@ export function groupByHealthService(summaries: readonly EdSummary[]): ServiceBa
   }));
 }
 
-/** The RowSpark window: 12 hours, one point every 2 hours, the last point now. */
-export const ED_TREND_SPAN_MINUTES = 12 * 60;
-export const ED_TREND_STEP_MINUTES = 2 * 60;
+/** The RowSpark window lives with the other operational defaults. */
+export { ED_TREND_SPAN_MINUTES, ED_TREND_STEP_MINUTES };
 
 /**
  * How many people were waiting at one department at each 2 hour point over the last 12 hours,

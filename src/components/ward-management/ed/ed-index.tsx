@@ -51,13 +51,21 @@ import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement, MovementStage } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  ED_TREND_SPAN_MINUTES,
+  ED_TREND_STEP_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
+
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { edShortName } from "@/components/ward-management/ward-sites";
 import { edHref, patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./ed-index.module.css";
+
+const trendSpanHours = ED_TREND_SPAN_MINUTES / 60;
+const trendStepHours = ED_TREND_STEP_MINUTES / 60;
 
 /**
  * All emergency departments (8 Oct 2026, the "A Cards" mockup plus its wait lanes). One hero band
@@ -787,7 +795,7 @@ function EdTable({
           <div role="row" className={cx(styles.tr, styles.th)} style={{ gridTemplateColumns: TABLE_COLUMNS }}>
             <span role="columnheader">Department</span>
             <span role="columnheader">Waiting, longest first</span>
-            <span role="columnheader">Last 12h</span>
+            <span role="columnheader">{`Last ${trendSpanHours}h`}</span>
             <span role="columnheader" className={styles.end}>
               No bed
             </span>
@@ -1131,11 +1139,11 @@ function EdPreview({
       />
       <section className={styles.previewSection} aria-labelledby="ed-preview-trend">
         <h3 id="ed-preview-trend" className={styles.eyebrow}>
-          Last 12 hours
+          {`Last ${trendSpanHours} hours`}
         </h3>
         <div className={styles.previewTrend}>
           <RowSpark values={row.trend} name={row.short} big testId="ed-row-spark" />
-          <span className={styles.meta}>{row.trend.join(" · ")} now · every 2h</span>
+          <span className={styles.meta}>{`${row.trend.join(" · ")} now · every ${trendStepHours}h`}</span>
         </div>
       </section>
       <section className={styles.previewSection} aria-labelledby="ed-preview-people">

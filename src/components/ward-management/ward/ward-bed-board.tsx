@@ -1,6 +1,7 @@
 "use client";
 
 import { Hand, LayoutGrid, List } from "lucide-react";
+import type { CSSProperties } from "react";
 
 import type { Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone, durMinutes } from "@/components/wf";
@@ -224,7 +225,7 @@ export function WardBedBoard({
               </div>
               <div
                 className={styles.cells}
-                style={{ ["--cols" as string]: String(isPhone ? 4 : pods.length > 1 ? 4 : 8) }}
+                style={{ "--cols": String(isPhone ? 4 : pods.length > 1 ? 4 : 8) } as CSSProperties}
               >
                 {pod.beds.map((bed) => {
                   const fits = bedFits(bed, picked, isMixed);

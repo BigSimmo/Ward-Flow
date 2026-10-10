@@ -6,10 +6,8 @@ import { useOptionalToast } from "@/components/wf";
 
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import type { WardFlowRole } from "../ward-flow-roles";
+import { UNDO_TOAST_MS } from "../ward-operational-defaults";
 import { roleLimitReason } from "../ward-role-permissions";
-
-/** How long the toast offers Undo (v10 pass 2 engine note: 8 s). The engine allows a little more. */
-export const REFERRAL_UNDO_TOAST_MS = 8000;
 
 export type ReferralDecisionAction = "ACCEPT_REFERRAL" | "DECLINE_REFERRAL";
 
@@ -59,7 +57,7 @@ export function useReferralDecisionUndo(role: WardFlowRole, actingUnitId?: strin
         tone: "success",
         title: watch.title,
         body: undoReason,
-        undo: undoReason ? undefined : { durationMs: REFERRAL_UNDO_TOAST_MS, onUndo: () => undo(watch.referralId) },
+        undo: undoReason ? undefined : { durationMs: UNDO_TOAST_MS, onUndo: () => undo(watch.referralId) },
         duration: undoReason ? undefined : 0,
       });
       return;

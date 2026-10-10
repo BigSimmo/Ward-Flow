@@ -426,6 +426,11 @@ describe("the breakpoint scale", () => {
     // v10 tablet portrait (10 Oct 2026): 769px to 1000px drops the rail; the bar's Menu opens the
     // full sidebar sheet. The exclusive complement of the phone's 48rem, as in ward-bar.module.css.
     "src/components/ward-management/shell/ward-rail.module.css: 48.0625",
+    // v10 Home (10 Oct 2026): the tablet-landscape split starts at the shell's 1001px boundary,
+    // the same literal 62.5625rem every page above registers.
+    "src/components/ward-management/coordinator/home.module.css: 62.5625",
+    // v10 Settings: touch targets grow to 44px on a coarse-pointer tablet, above the phone range.
+    "src/components/ward-management/settings/settings.module.css: 48.0625",
   ];
 
   it("introduces no breakpoint outside the known set", () => {

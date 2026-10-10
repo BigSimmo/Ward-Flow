@@ -139,6 +139,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
 
   const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
   const meeting = bedMeetingComparison(admissions ?? liveAdmissions, units, now);
+  // The bed meeting can be yesterday's on an early shift, so the clock names its day when it is not today.
+  const meetingAt = formatInstantWithDay(meeting.at, now);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, RepatDraft>>({});
@@ -523,8 +525,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             nextUpId={nextUp?.admission.id}
             since={
               <>
-                <MeetingTwin was={meeting.away} now={entries.length} at={meeting.at} /> since the{" "}
-                {formatInstant(meeting.at)} bed meeting · <b className={styles.mono}>{bedDays}</b> bed days
+                <MeetingTwin was={meeting.away} now={entries.length} atLabel={meetingAt} /> since the {meetingAt} bed
+                meeting · <b className={styles.mono}>{bedDays}</b> bed days
               </>
             }
             onCopy={copySummary}
@@ -639,13 +641,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           aside={
             <span className={styles.heroActs}>
               <span className={styles.since} data-testid="ward-out-of-area-since">
-                <span className={styles.sinceLabel}>Since the {formatInstant(meeting.at)} bed meeting</span>
+                <span className={styles.sinceLabel}>Since the {meetingAt} bed meeting</span>
                 <span className={styles.sinceTwin}>
-                  <MeetingTwin was={meeting.away} now={entries.length} at={meeting.at} />
+                  <MeetingTwin was={meeting.away} now={entries.length} atLabel={meetingAt} />
                   <span>away</span>
                 </span>
                 <span className={styles.sinceTwin}>
-                  <MeetingTwin was={meeting.passed} now={countOf("due")} at={meeting.at} />
+                  <MeetingTwin was={meeting.passed} now={countOf("due")} atLabel={meetingAt} />
                   <span>date passed</span>
                 </span>
               </span>
@@ -1150,12 +1152,12 @@ export function sinceArrivalLabel(entry: OutOfAreaEntry, now: Instant): string {
 }
 
 /** The shared DeltaTwin on the hero band, read against the morning bed meeting. */
-function MeetingTwin({ was, now, at }: { was: number; now: number; at: Instant }) {
+function MeetingTwin({ was, now, atLabel }: { was: number; now: number; atLabel: string }) {
   return (
     <DeltaTwin
       was={was}
       now={now}
-      label={`${was} at the ${formatInstant(at)} bed meeting, ${now} now`}
+      label={`${was} at the ${atLabel} bed meeting, ${now} now`}
       surface="hero"
       testId="ward-out-of-area-twin"
     />

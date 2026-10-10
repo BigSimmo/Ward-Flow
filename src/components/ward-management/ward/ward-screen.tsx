@@ -101,6 +101,7 @@ import {
   LATE_ARRIVAL_GRACE_MINUTES,
   LEAVE_BED_OPEN_WARNING_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
+  UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
@@ -135,9 +136,6 @@ function boardUndoEvent(undo: NonNullable<BoardCheck["undo"]>, now: Instant): Wa
     actingUnitId: undo.unitId,
   };
 }
-
-/** Undo lasts 8 seconds on screen (v10 Toast with Undo); the engine allows `UNDO_WINDOW_MINUTES`. */
-const BOARD_UNDO_MS = 8000;
 
 /** The router, or null where the screen renders outside the app router (a test or preview). */
 function useOptionalRouter(): ReturnType<typeof useRouter> | null {
@@ -380,7 +378,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         ? { body: `Undo: ${undoLimit}` }
         : {
             undo: {
-              durationMs: BOARD_UNDO_MS,
+              durationMs: UNDO_TOAST_MS,
               onUndo: () => {
                 boardCheckRef.current = {
                   prior: rejectionCountRef.current,
@@ -1142,7 +1140,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const heldBeds = [
     ...inboxEntries.flatMap((entry) =>
       entry.state === "accepted" && entry.heldBedNumber !== undefined
-        ? [{ bed: entry.heldBedNumber, name: resolvePatientIdentity({ patientId: entry.patientId }).displayName }]
+        ? [{ bed: entry.heldBedNumber, name: resolvePatientIdentity(entry).displayName }]
         : [],
     ),
     // v10 pass 3: a coordinator-sent person this ward accepted into a numbered bed.
@@ -1189,7 +1187,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       .filter((entry) => entry.state === "queued" && entry.withdrawnAt === undefined)
       .map((entry) => ({
         id: entry.id,
-        name: resolvePatientIdentity({ patientId: entry.patientId }).displayName,
+        name: resolvePatientIdentity(entry).displayName,
         sex: entry.destination.sex === "Female" ? "F" : entry.destination.sex === "Male" ? "M" : entry.destination.sex,
         waitedMinutes: Math.max(0, now - entry.raisedAt),
         secureBedNeeded: entry.destination.secureBedNeeded === true,

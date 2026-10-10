@@ -37,6 +37,11 @@ export const UNDO_WINDOW_MINUTES = 5;
  *  `UNDO_WINDOW_MINUTES` still decides whether an undo is accepted. */
 export const UNDO_TOAST_MS = 8000;
 
+/** All EDs trend (RowSpark) window: 12 hours, one point every 2 hours, the last point now. A display
+ *  window chosen for the prototype, not a clinical target. */
+export const ED_TREND_SPAN_MINUTES = 12 * MINUTES_PER_HOUR;
+export const ED_TREND_STEP_MINUTES = 2 * MINUTES_PER_HOUR;
+
 /** Minutes past the estimated arrival before a screen names a person as late. */
 export const LATE_ARRIVAL_GRACE_MINUTES = 60;
 
