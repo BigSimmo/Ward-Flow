@@ -88,7 +88,7 @@ export function StatisticsEdSwarm({
   const [width, setWidth] = useState(720);
   useEffect(() => {
     const box = boxRef.current;
-    if (!box) return;
+    if (!box || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(([entry]) => setWidth(Math.max(320, Math.round(entry.contentRect.width))));
     observer.observe(box);
     return () => observer.disconnect();
