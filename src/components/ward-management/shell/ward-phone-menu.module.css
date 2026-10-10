@@ -509,6 +509,14 @@
     background-image: none !important;
   }
 
+  /* Print every row of an open sheet rather than the part that fits its scroll box. */
+  .sheet,
+  .body {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
   .foot::before,
   .foot::after {
     display: none;
