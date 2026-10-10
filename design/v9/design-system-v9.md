@@ -42,7 +42,7 @@ At night a surface gets lighter as it rises, because shadows do not show on a da
 
 **Light parts on the hero.** `--wf-light-1` and `-2` are themed in v9: white by day, `#e9eef3` and `#d6dfe8` at night, so the light button and a pressed chip stop glaring on a night screen.
 
-**Glass.** About 80% opaque by owner choice: frosted and calm rather than see-through. Three tiers by role, one hairline, one 1px top highlight, one soft shadow. The v8 sheen and masked rim are gone. Saturate stays at 1.4, so red edges and service dots keep their colour as they pass beneath.
+**Glass.** About 80% opaque by owner choice: frosted and calm rather than see-through. Three tiers by role, one hairline, a bright 1px top edge, a soft sheen across the top half and one soft shadow (owner, 10 Oct: keep the Apple shine at 80% opacity). The masked rim is gone. Saturate stays at 1.4, so red edges and service dots keep their colour as they pass beneath.
 
 | Class          | Fill | Blur | Use                                                                         |
 | -------------- | ---- | ---- | --------------------------------------------------------------------------- |
@@ -72,7 +72,7 @@ Five sizes on a page. The 12px floor holds with no uppercase exception.
 
 28 is for sign-in and print only. 16 is retired; `--wf-fs-16` aliases 15 until nothing reads it. Nothing on a page is larger than 20, except inside a chart.
 
-**Figures.** Quantities (counts, percentages, durations) use Geist with tabular figures (`.num`), so columns still line up without the wide gaps mono leaves around a decimal point. Mono is for clock times, UMRNs and ids (`.clk`, `.id`, `.bd.id`, bed numbers).
+**Figures.** Figures stay in mono with tabular digits: counts, percentages, durations (`.num`), hero chips, stat values, clock times, UMRNs and ids (owner, 10 Oct: keeps the control room feel). Chart axis labels use Geist so charts read quietly.
 
 ## 5. Space, shape and size
 
@@ -162,9 +162,9 @@ Quick in, quicker out. Nothing moves without a reason, and nothing bounces on da
 | ---------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------- |
 | `.b`                                                 | `Button`                | Hover and press by colour steps. Press scale 0.97. Busy via `aria-busy`               |
 | `.pt`, `.pt.slide`                                   | `Tabs`, `Segmented`     | 30px items, 28 small. The sliding capsule moves under the selected item               |
-| `.hs`, `.hs.pill`                                    | `HeroStat`              | A compact chip: figure at 15 tabular, 12px glyph, label. Flat reports, raised presses |
-| `.st`                                                | `Stat`                  | Figure at 15 tabular                                                                  |
-| `.k`, `.tier`                                        | `Count`, `TierTile`     | Tabular Geist. T1 stays neutral (ruling, 10 Oct)                                      |
+| `.hs`, `.hs.pill`                                    | `HeroStat`              | A compact chip: figure at 15 mono, 12px glyph, label. Flat reports, raised presses    |
+| `.st`                                                | `Stat`                  | Figure at 15 mono                                                                     |
+| `.k`, `.tier`                                        | `Count`, `TierTile`     | Mono. T1 stays neutral (ruling, 10 Oct)                                               |
 | `.row`, `.li`                                        | Rows                    | Height from density. `.ra` row action. `.enter` and `.leave` motion. Inset focus ring |
 | `.card.click`                                        | `Card`                  | Hover steps the edge and shadow                                                       |
 | `.cols`, `.card-scroll`                              | `Columns` (new)         | Flush equal columns, `.follow` scrolls inside                                         |
@@ -188,7 +188,8 @@ Unchanged from v8 sections 9 and 10: legacy names alias `--wf-` roles and hold n
 - Phone is its own design (9 Oct).
 - Every page has a focal part, a part of its own and a page-specific hero (9 Oct).
 - Glass about 80% opaque (10 Oct).
-- Figures in tabular Geist, mono for clock times and ids (10 Oct).
+- Glass about 80% opaque with the sheen kept (10 Oct).
+- Figures stay in mono with tabular digits; chart axes in Geist (10 Oct).
 - Default rows 44, with dense 36 and touch 52 (10 Oct).
 - T1 pill neutral (10 Oct).
 - Tier time thresholds remain synthetic and need clinical sign-off.
@@ -207,26 +208,26 @@ Unchanged from v8 sections 9 and 10: legacy names alias `--wf-` roles and hold n
 
 ## Appendix: where the v8.2 rules went
 
-| v8.2 rule                          | v9                                          |
-| ---------------------------------- | ------------------------------------------- |
-| 1 Calm and dense                   | Principle 2, section 5                      |
-| 2 Every surface has an edge        | Section 3                                   |
-| 3 Glass for chrome, plus one panel | Principle 5, section 3                      |
-| 4 One hero band                    | Section 7                                   |
-| 5 One primary per area             | Section 9                                   |
-| 6 Colour lives in glyphs           | Principle 3, section 3                      |
-| 7 Shape carries status             | Principle 4, section 5                      |
-| 8 Signal, not explanation          | Section 1 voice                             |
-| 9 Live and honest                  | Principle 6, section 9                      |
-| 10 Labels never wrap               | Section 8 truncation                        |
-| 11 Colons mean clock time          | Section 9 content                           |
-| 12 Red means act now               | Principle 3                                 |
-| 13 Shape tells you what it does    | Principle 4                                 |
-| 14 Mono is for figures             | Section 4, now tabular Geist for quantities |
-| 15 Dashed means unavailable        | Principle 4, section 9 states               |
-| 16 Twelve is the floor             | Section 4                                   |
-| 17 Focal element                   | Principle 1                                 |
-| 18 Counts sit in hero chips        | Section 10 `.hs`                            |
-| 19 A part of its own               | Section 7 hero                              |
-| 20 Phone is its own design         | Section 7 phone                             |
-| 21 Every never needs a do          | How the principles are written              |
+| v8.2 rule                          | v9                             |
+| ---------------------------------- | ------------------------------ |
+| 1 Calm and dense                   | Principle 2, section 5         |
+| 2 Every surface has an edge        | Section 3                      |
+| 3 Glass for chrome, plus one panel | Principle 5, section 3         |
+| 4 One hero band                    | Section 7                      |
+| 5 One primary per area             | Section 9                      |
+| 6 Colour lives in glyphs           | Principle 3, section 3         |
+| 7 Shape carries status             | Principle 4, section 5         |
+| 8 Signal, not explanation          | Section 1 voice                |
+| 9 Live and honest                  | Principle 6, section 9         |
+| 10 Labels never wrap               | Section 8 truncation           |
+| 11 Colons mean clock time          | Section 9 content              |
+| 12 Red means act now               | Principle 3                    |
+| 13 Shape tells you what it does    | Principle 4                    |
+| 14 Mono is for figures             | Section 4, kept                |
+| 15 Dashed means unavailable        | Principle 4, section 9 states  |
+| 16 Twelve is the floor             | Section 4                      |
+| 17 Focal element                   | Principle 1                    |
+| 18 Counts sit in hero chips        | Section 10 `.hs`               |
+| 19 A part of its own               | Section 7 hero                 |
+| 20 Phone is its own design         | Section 7 phone                |
+| 21 Every never needs a do          | How the principles are written |

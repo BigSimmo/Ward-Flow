@@ -3,10 +3,10 @@
 
    v9 (10 Oct 2026) consolidates v8 to v8.2 and adds what the 10 October review found missing:
    1. Type: five page sizes 12, 13, 14, 15 and 20. 15 is for hero chip and key figures. 16 retires and
-      28 is for sign-in and print only. Quantities use Geist with tabular figures; mono is for clock
-      times, UMRNs and ids. Tracking is set per size and meta text is 500 weight.
+      28 is for sign-in and print only. Figures (counts, key values, clocks, ids) stay in mono with
+      tabular digits (owner, 10 Oct); chart axes use Geist. Tracking is set per size, meta is 500.
    2. Glass about 80% opaque in three tiers by role (bar 78, popover 82, sheet 86), blur 20 to 32,
-      saturate 1.4. One hairline and one top highlight; the sheen and masked rim are gone.
+      saturate 1.4. One hairline, a bright top edge and a soft sheen (owner, 10 Oct); no masked rim.
    3. Night surfaces step lighter as they rise (surface, raised, overlay). Light parts on the hero dim
       at night. Accent and primary have hover and press steps, so no control uses filter.
    4. Motion with roles: micro, press, enter, exit, sheet and live. Exits are quicker than entries.
@@ -274,6 +274,12 @@
   --wf-glass-pop: light-dark(rgba(255, 255, 255, 0.82), rgba(27, 39, 51, 0.82));
   --wf-glass-sheet: light-dark(rgba(255, 255, 255, 0.86), rgba(32, 45, 58, 0.86));
   --wf-glass-hl: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.1));
+  /* the sheen: a soft light fall across the top half of glass, for the Apple shine at 80% opacity */
+  --wf-sheen: linear-gradient(
+    180deg,
+    light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.07)),
+    transparent 46%
+  );
   /* deprecated v8 names, kept until nothing reads them */
   --wf-glass-thin: var(--wf-glass-bar);
   --wf-glass: var(--wf-glass-pop);
@@ -436,13 +442,14 @@
   line-height: var(--wf-lh-14);
   font-weight: 600;
 }
-/* 15 is for figures: hero chips and key values, in tabular Geist */
+/* 15 is for figures: hero chips and key values, in mono with tabular digits */
 .t-15 {
   font-size: var(--wf-fs-15);
   line-height: var(--wf-lh-15);
   font-weight: 600;
   letter-spacing: var(--wf-tr-15);
   font-variant-numeric: tabular-nums;
+  font-family: var(--wf-mono);
 }
 .t-20 {
   font-size: var(--wf-fs-20);
@@ -471,10 +478,10 @@
 .ink2 {
   color: var(--wf-ink-2);
 }
-/* v9: quantities (counts, percentages, durations) are Geist with tabular figures, so columns line
-   up without the wide gaps mono leaves around a decimal point. Mono is for clock times, UMRNs and ids. */
+/* Figures (counts, percentages, durations) are mono with tabular digits for the control room feel
+   (owner, 10 Oct). Chart axes stay in Geist so charts read quietly. */
 .num {
-  font-family: var(--wf-font);
+  font-family: var(--wf-mono);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
@@ -605,14 +612,15 @@
   color: var(--wf-ink-1);
   box-shadow: var(--wf-e1);
 }
-/* Glass, three tiers by role. One hairline, one top highlight, one soft shadow. Only ink-1 and ink-2
+/* Glass, three tiers by role. One hairline, a bright top edge, a soft sheen, one soft shadow. Only ink-1 and ink-2
    sit on glass. Saturate stays at 1.4 so red edges and service dots keep their colour beneath it.
    .glass is the popover tier (menus, popovers, the one glass panel in the page body).
    .glass.bar is for top bars and toolbars. .glass.sheet is for sheets, drawers and dialogs.
    Never put an animation with fill-mode forwards or both on an ancestor of glass: it stops the blur. */
 .glass {
   position: relative;
-  background: var(--wf-glass-pop);
+  background-color: var(--wf-glass-pop);
+  background-image: var(--wf-sheen);
   -webkit-backdrop-filter: blur(24px) saturate(1.4);
   backdrop-filter: blur(24px) saturate(1.4);
   border: 1px solid var(--wf-line-2);
@@ -622,13 +630,13 @@
 }
 .glass.bar,
 .glass.thin {
-  background: var(--wf-glass-bar);
+  background-color: var(--wf-glass-bar);
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
   backdrop-filter: blur(20px) saturate(1.4);
 }
 .glass.sheet,
 .glass.thick {
-  background: var(--wf-glass-sheet);
+  background-color: var(--wf-glass-sheet);
   -webkit-backdrop-filter: blur(32px) saturate(1.4);
   backdrop-filter: blur(32px) saturate(1.4);
   box-shadow:
@@ -867,7 +875,7 @@
 
 /* ---------- counts: circles. Always neutral, never a status by colour. 0 shows as 0. ---------- */
 .k {
-  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
   min-width: var(--wf-count);
   height: var(--wf-count);
@@ -892,7 +900,7 @@
   border-radius: var(--wf-r-pill);
   border: 1px solid var(--wf-line-3);
   background: var(--wf-surface);
-  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-2);
   letter-spacing: 0.02em;
@@ -1072,7 +1080,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 600 var(--wf-fs-13) var(--wf-font);
+  font: 600 var(--wf-fs-13) var(--wf-mono);
   font-variant-numeric: tabular-nums;
   border-left: 1px solid var(--wf-line);
   border-right: 1px solid var(--wf-line);
@@ -1557,7 +1565,7 @@ svg.gl {
   color: var(--wf-hero-ink);
 }
 .hs .v {
-  font: 600 var(--wf-fs-15)/1 var(--wf-font);
+  font: 600 var(--wf-fs-15)/1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--wf-tr-15);
 }
@@ -1654,7 +1662,7 @@ svg.gl {
   margin-left: var(--wf-s-3);
 }
 .st .v {
-  font: 600 var(--wf-fs-15)/var(--wf-lh-15) var(--wf-font);
+  font: 600 var(--wf-fs-15)/var(--wf-lh-15) var(--wf-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--wf-tr-15);
   white-space: nowrap;
