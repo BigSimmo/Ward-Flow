@@ -131,7 +131,7 @@
   letter-spacing: -0.02em;
 }
 .popoverHeading > span {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 .planInput {
@@ -173,7 +173,7 @@
 .planGuidance {
   margin: 7px 8px 3px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 .menuGroup {
@@ -183,7 +183,7 @@
 .menuGroup > h3 {
   margin: 0;
   padding: 8px 8px 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--muted);
 }
@@ -216,7 +216,7 @@
   font-weight: 600;
 }
 .reason {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
   color: var(--muted);
   padding: 8px;

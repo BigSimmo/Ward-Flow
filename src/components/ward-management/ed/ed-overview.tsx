@@ -1,9 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Plus } from "lucide-react";
 
-import { Hero, HeroStat, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
+import {
+  Button,
+  CheckingFoot,
+  Hero,
+  HeroStat,
+  StatusGlyph,
+  buttonClass,
+  cx,
+  type CheckingItem,
+  type WfTone,
+} from "@/components/wf";
 import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 
 import styles from "./ed-overview.module.css";
@@ -18,12 +29,21 @@ export type EdOverviewDepartment = {
   breaches: number;
 };
 
-export type EdOverviewFigure = { label: string; value: string | number; tone?: WfTone };
+/** A hero highlight chip (v10: at most five; this page uses four). Pressing one dims the other rows. */
+export type EdOverviewChip = { id: string; label: string; value: number; tone?: WfTone };
 
 type Props = {
   departmentId: string;
   departments: EdOverviewDepartment[];
-  figures: EdOverviewFigure[];
+  /** People on this department's psychiatry board: the answer title's figure. */
+  onBoard: number;
+  chips: EdOverviewChip[];
+  /** The pressed chip, or null when nothing is highlighted. */
+  highlight: string | null;
+  onHighlight: (id: string | null) => void;
+  /** "N of M past 24h, everyone stays on the board" while a chip is pressed. */
+  highlightNote?: ReactNode;
+  checks: CheckingItem[];
   onRaiseReferral: () => void;
   referralOpen?: boolean;
 };
@@ -41,7 +61,18 @@ function serviceShort(service: string): string {
  * Each tile is a link to that department; the current one carries `aria-current="page"`. A tile's
  * triangle means people there are past the access target; the count beside it says how many wait.
  */
-export function EdOverview({ departmentId, departments, figures, onRaiseReferral, referralOpen = false }: Props) {
+export function EdOverview({
+  departmentId,
+  departments,
+  onBoard,
+  chips,
+  highlight,
+  onHighlight,
+  highlightNote,
+  checks,
+  onRaiseReferral,
+  referralOpen = false,
+}: Props) {
   const current = departments.find((department) => department.id === departmentId);
   if (!current) return null;
 
@@ -54,10 +85,41 @@ export function EdOverview({ departmentId, departments, figures, onRaiseReferral
       <Hero
         level={1}
         eyebrow={`Emergency department · ${current.service}`}
-        title={shortName(current.name)}
-        stats={figures.map((figure) => (
-          <HeroStat key={figure.label} value={figure.value} label={figure.label} tone={figure.tone} />
-        ))}
+        title={
+          <>
+            {shortName(current.name)}{" "}
+            <span className={styles.answer}>
+              <b className={styles.answerNum}>{onBoard}</b> on the board
+            </span>
+          </>
+        }
+        bar={
+          <div className={styles.chips} role="group" aria-label="Highlight people on the board">
+            {chips.map((chip) => (
+              <HeroStat
+                key={chip.id}
+                inline
+                value={chip.value}
+                label={chip.label}
+                tone={chip.value > 0 ? chip.tone : undefined}
+                pressed={highlight === chip.id}
+                onToggle={() => onHighlight(highlight === chip.id ? null : chip.id)}
+              />
+            ))}
+          </div>
+        }
+        barAside={
+          highlight && highlightNote ? (
+            <span className={styles.note} aria-live="polite" data-testid="ward-ed-highlight-note">
+              <span>{highlightNote}</span>
+              <Button variant="onHero" size="sm" onClick={() => onHighlight(null)}>
+                Clear
+              </Button>
+            </span>
+          ) : null
+        }
+        foot={<CheckingFoot items={checks} />}
+        footAside={<span>Board updates once a minute</span>}
         aside={
           <button
             type="button"

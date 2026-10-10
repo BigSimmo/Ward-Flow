@@ -184,13 +184,14 @@ describe("an ED-initiated withdrawal stays on the board under its own chip", () 
     expect(screen.queryByTestId("ward-ed-examine-toggle-WF-002")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-ed-withdraw-referral-toggle-WF-002")).not.toBeInTheDocument();
 
-    // Filtering by "Withdrawn" shows it; filtering by "Not reviewed" (WF-002 was never examined)
-    // must not double-count a closed, withdrawn record.
+    // Filtering by "Withdrawn" highlights it; filtering by "Not reviewed" (WF-002 was never examined)
+    // must not double-count a closed, withdrawn record. v10 rule 5 (10 Oct 2026): board filters
+    // highlight and dim, so the row stays on the board and the filter that excludes it dims it.
     fireEvent.click(screen.getByRole("button", { name: /Withdrawn/ }));
-    expect(screen.getByTestId("ward-ed-patient-WF-002")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-ed-patient-WF-002")).not.toHaveAttribute("data-dim");
 
     fireEvent.click(screen.getByRole("button", { name: /Not reviewed/ }));
-    expect(screen.queryByTestId("ward-ed-patient-WF-002")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-ed-patient-WF-002")).toHaveAttribute("data-dim", "true");
   });
 
   it("does not show a ward name beside the withdrawal once an accepted referral is revoked", () => {

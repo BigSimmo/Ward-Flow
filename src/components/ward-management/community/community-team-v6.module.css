@@ -60,7 +60,7 @@
   margin: 0;
   padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-2);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -335,7 +335,7 @@ div.workspace > .side {
 .sideTitle {
   margin: 0;
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -421,7 +421,7 @@ div.workspace > .side {
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 .rosterWho {
@@ -545,5 +545,43 @@ div.workspace > .side {
      hero is one row shorter and the team name keeps the full width. */
   .standing > section > div:first-child > div:last-child:not(:first-child) {
     display: none;
+  }
+}
+
+/* v10 hero (10 Oct 2026): the caseload answer beside the team name, and four list chips. */
+.heroAnswer {
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-14);
+  white-space: nowrap;
+}
+
+.heroAnswer b {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--wf-hero-ink);
+}
+
+.heroStats[role="group"] {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+@media (max-width: 48rem) {
+  .heroStats[role="group"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--wf-s-2);
+  }
+
+  .heroStats[role="group"] > * {
+    min-width: 0;
+    padding: 0;
+    border-left: 0;
+  }
+
+  .heroStats[role="group"] button {
+    min-height: var(--wf-touch);
+    width: 100%;
   }
 }

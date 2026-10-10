@@ -512,8 +512,10 @@
 
 .acceptConfirmButton:disabled,
 .acceptConfirmButton[aria-disabled="true"] {
-  opacity: 0.5;
+  color: var(--wf-dim);
   cursor: not-allowed;
+  background: var(--wf-surface-2);
+  border-color: var(--wf-line);
 }
 
 .declineConfirmButton {
@@ -526,8 +528,8 @@
   padding: var(--ward-space-8) var(--ward-space-12);
   border: 0.0625rem solid var(--line);
   border-radius: var(--radius-md);
-  background: var(--danger-soft, var(--surface));
-  color: var(--danger, var(--ink));
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
   font-size: var(--t-1);
   font-weight: 600;
   cursor: pointer;
@@ -535,8 +537,10 @@
 
 .declineConfirmButton:disabled,
 .declineConfirmButton[aria-disabled="true"] {
-  opacity: 0.5;
+  color: var(--wf-dim);
   cursor: not-allowed;
+  background: var(--wf-surface-2);
+  border-color: var(--wf-line);
 }
 
 /* Admitted-table Actions cluster — drawing look (btnSm*) + 48px tap faces for book/cancel. */
@@ -667,9 +671,11 @@
 }
 
 .transportConfirmButton[aria-disabled="true"] {
-  opacity: 0.5;
+  color: var(--wf-dim);
   cursor: not-allowed;
   filter: none;
+  background: var(--wf-surface-2);
+  border-color: var(--wf-line);
 }
 
 /*
@@ -3019,7 +3025,9 @@ button.searchBox:hover {
 
 .btnSmPrimary[aria-disabled="true"] {
   cursor: not-allowed;
-  opacity: 0.55;
+  color: var(--wf-dim);
+  background: var(--wf-surface-2);
+  border-color: var(--wf-line);
 }
 
 .intakeForm {
@@ -3886,7 +3894,7 @@ button.searchBox:hover {
   gap: var(--wf-s-2);
   margin: 0;
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -3945,7 +3953,7 @@ button.searchBox:hover {
 
 .caseloadTitle {
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
