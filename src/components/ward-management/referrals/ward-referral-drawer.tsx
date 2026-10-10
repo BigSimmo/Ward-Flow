@@ -106,7 +106,7 @@ import {
   useReferralDraftAutosave,
 } from "./referral-draft-store";
 import { referralIsbarText, referralLetterText, type ReferralTextInput } from "./referral-letter";
-import { StatusGlyph, type WfTone } from "@/components/wf";
+import { Frac, StatusGlyph, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
@@ -3277,6 +3277,13 @@ function WardReferralDrawerContent({
                   <section className={styles.railCard}>
                     <div className={styles.railHead}>
                       <h3 className={styles.cardTitle}>Ready to send</h3>
+                      <Frac
+                        done={readyDone}
+                        total={readyRows.length}
+                        label="items ready to send"
+                        tone={readyDone === readyRows.length ? "success" : undefined}
+                        className={styles.railFrac}
+                      />
                       {kept || draftKeptAt !== null ? (
                         <button
                           type="button"
@@ -3327,7 +3334,9 @@ function WardReferralDrawerContent({
                     <div>
                       <p className={styles.eyebrow}>Already open</p>
                       <strong>{alreadyOpen ? "Yes" : "None"}</strong>
-                      <small>{alreadyOpen ? "Check before sending" : "No open referral"}</small>
+                      <small title={alreadyOpen ? "Check before sending" : "No open referral"}>
+                        {alreadyOpen ? "Check before sending" : "No open referral"}
+                      </small>
                     </div>
                   </section>
                   <button

@@ -28,7 +28,7 @@ describe("discharges board patient detail and navigation bridge", () => {
     renderBoard();
 
     // Switch to Admission records population
-    fireEvent.click(screen.getByRole("button", { name: /Admission records/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
 
     // Find the first admission record row
     const tbody = document.querySelector("table tbody");
@@ -68,7 +68,7 @@ describe("discharges board patient detail and navigation bridge", () => {
     fireEvent.click(bridgeButton);
 
     // Population should now have switched to Admission records and rendered full record
-    expect(screen.getByRole("button", { name: /Admission records/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^History/ })).toHaveAttribute("aria-pressed", "true");
     expect(within(details).getByText("Expected discharge")).toBeInTheDocument();
     expect(within(details).getByText("Date recorded")).toBeInTheDocument();
   });
@@ -76,7 +76,7 @@ describe("discharges board patient detail and navigation bridge", () => {
   it("supports keyboard activation on admission rows using Enter and Space", () => {
     renderBoard();
 
-    fireEvent.click(screen.getByRole("button", { name: /Admission records/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
 
     const tbody = document.querySelector("table tbody");
     const rows = within(tbody as HTMLElement).getAllByRole("row");

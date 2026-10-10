@@ -34,7 +34,6 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
@@ -68,9 +67,11 @@ import {
   ColumnChart,
   Count,
   EmptyState,
+  FilterChip,
   Hero,
   Kbd,
   LiveChip,
+  Sheet,
   StatusGlyph,
   TabPanel,
   Tabs,
@@ -113,6 +114,8 @@ import {
 } from "./referral-board-parts";
 import styles from "./referrals.module.css";
 import a from "./referral-board.module.css";
+import p from "./referral-board-phone.module.css";
+import { ReferralPhoneCard, ReferralPhoneChips, ReferralPhoneHero, ReferralPhoneTop } from "./referral-board-phone";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
@@ -403,17 +406,31 @@ const useSplitDetailLayout = createBrowserStore<boolean>(
   false,
 );
 
+/** v10 phone: its own design below 48rem. Desktop is the server value, so tests and SSR see it. */
+const PHONE_MEDIA_QUERY = "(max-width: 48rem)";
+const usePhoneLayout = createBrowserStore<boolean>(
+  (onStoreChange) => {
+    if (typeof window.matchMedia !== "function") return () => {};
+    const media = window.matchMedia(PHONE_MEDIA_QUERY);
+    media.addEventListener("change", onStoreChange);
+    return () => media.removeEventListener("change", onStoreChange);
+  },
+  () => (typeof window.matchMedia === "function" ? window.matchMedia(PHONE_MEDIA_QUERY).matches : false),
+  false,
+);
+
 type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "community" | "refused";
+const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed", "community", "refused"];
 type InspectorTab = "place" | "patient" | "timeline";
 type BoardSheet = "meeting" | "summary" | "keys" | null;
 
-const HIGHLIGHT_LABELS: readonly (readonly [HighlightKey, string])[] = [
+/** The hero's five highlight chips (v10: five at most). Refused once sits in the queue toolbar. */
+const HIGHLIGHT_LABELS: readonly (readonly [Exclude<HighlightKey, "refused">, string])[] = [
   ["overdue", "Overdue"],
   ["tier1", "Tier 1"],
   ["ward", "Ward bed"],
   ["ed", "ED"],
   ["community", "Community"],
-  ["refused", "Refused once"],
 ];
 
 function highlightTest(key: HighlightKey, referral: Referral, now: Instant): boolean {
@@ -470,6 +487,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   // "New referral" and rail) before anyone had chosen anything (f997ac75a1 + 81553692fb).
   const [chosenReferralId, setSelectedReferralId] = useState<string | null | undefined>(undefined);
   const splitDetailLayout = useSplitDetailLayout();
+  const phoneLayout = usePhoneLayout();
+  const [phoneSheet, setPhoneSheet] = useState<"axis" | "beds" | null>(null);
   const selectedReferralId =
     chosenReferralId === undefined
       ? defaultSelectFirst && splitDetailLayout
@@ -677,80 +696,139 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     >
       <main id="main-content" className={styles.main}>
         <h1 className="sr-only">Referrals</h1>
-        <div className={styles.v6HeroWrap} data-testid="ward-referral-kpis">
-          <Hero
-            eyebrow="Referrals"
-            title={`${queued.length} awaiting decision`}
-            titleMeta={
-              <span className={a.heroMeta}>
-                Oldest <b>{oldestClocks ? durMinutes(oldestClocks.sinceReferral) : "none"}</b>
-                {medianDecision !== undefined ? (
-                  <span className={a.heroMedian}>
-                    {" "}
-                    · median decision <b>{durMinutes(medianDecision)}</b>
-                  </span>
-                ) : null}
-              </span>
-            }
-            className={a.heroA}
-            aside={
-              <>
-                <LiveChip state="live" onHero />
-                <Link
-                  className={cx(buttonClass({ variant: "light", size: "sm" }), a.heroNew)}
-                  href={WARD_REFERRAL_INTAKE_HREF}
-                  data-testid="ward-referral-board-new"
-                >
-                  New referral
-                </Link>
-              </>
-            }
-            bar={
-              <div className={a.pills} role="group" aria-label="Highlight referrals">
-                {HIGHLIGHT_LABELS.map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={a.pill}
-                    aria-pressed={highlight === key}
-                    data-testid={`ward-referral-highlight-${key}`}
-                    onClick={() => {
-                      setSearchQuery("");
-                      setHighlight((current) => (current === key ? null : key));
-                    }}
-                  >
-                    <span className={a.pillCount}>{queued.filter((r) => highlightTest(key, r, now)).length}</span>
-                    {key === "overdue" ? <TriangleAlert size={12} aria-hidden="true" /> : null}
-                    {label}
-                  </button>
-                ))}
-              </div>
-            }
-            barAside={
-              <HeroTools
-                overdueCount={overdueQueued.length}
-                onNextOverdue={selectNextOverdue}
-                onMeeting={() => setSheet("meeting")}
+        {phoneLayout ? (
+          <ReferralPhoneTop>
+            <ReferralPhoneHero
+              count={queued.length}
+              oldest={oldestClocks ? durMinutes(oldestClocks.sinceReferral) : undefined}
+              median={medianDecision !== undefined ? durMinutes(medianDecision) : undefined}
+              overdue={overdueQueued.length}
+              tier1={queued.filter((r) => highlightTest("tier1", r, now)).length}
+              bedsReady={bedsSummary.cells.reduce((sum, cell) => sum + cell.value, 0)}
+              highlight={highlight}
+              onHighlight={(key) => {
+                setSearchQuery("");
+                setHighlight((current) => (current === key ? null : key));
+              }}
+              bedsOpen={phoneSheet === "beds"}
+              onBeds={() => setPhoneSheet("beds")}
+              onNextOverdue={selectNextOverdue}
+              onMeeting={() => setSheet("meeting")}
+            />
+            <ReferralPhoneChips
+              chips={(["ward", "ed", "community", "refused"] as const).map((key) => ({
+                key,
+                label: key === "refused" ? "Refused once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
+                count: queued.filter((r) => highlightTest(key, r, now)).length,
+              }))}
+              highlight={highlight}
+              onHighlight={(key) => {
+                const chosen = HIGHLIGHT_KEYS.find((k) => k === key);
+                if (!chosen) return;
+                setSearchQuery("");
+                setHighlight((current) => (current === chosen ? null : chosen));
+              }}
+            />
+            {queued.length > 0 ? (
+              <ReferralPhoneCard
+                title="Waiting time against due times"
+                meta="Due T1 1h · T2 4h · T3 24h · tap a mark to open"
+                expanded={phoneSheet === "axis"}
+                onOpen={() => setPhoneSheet("axis")}
               />
-            }
-            foot={
-              <div className={a.heroBand}>
-                <WaitRunway
-                  queued={queued}
-                  now={now}
-                  selectedId={selectedReferralId}
-                  isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
-                  nameOf={nameOf}
-                  onSelect={(id) => {
-                    setView("queue");
-                    handleSelect(id);
-                  }}
-                />
-                <BedsReady summary={bedsSummary} />
+            ) : null}
+            <Sheet
+              open={phoneSheet !== null}
+              onClose={() => setPhoneSheet(null)}
+              title={phoneSheet === "beds" ? "Beds ready statewide" : "Waiting time against due times"}
+              description="Due times are prototype defaults, pending clinical sign-off."
+            >
+              <div className={p.sheetHero}>
+                {phoneSheet === "axis" ? (
+                  <WaitRunway
+                    compact
+                    queued={queued}
+                    now={now}
+                    selectedId={selectedReferralId}
+                    isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
+                    nameOf={nameOf}
+                    onSelect={(id) => {
+                      setPhoneSheet(null);
+                      setView("queue");
+                      handleSelect(id);
+                    }}
+                  />
+                ) : null}
+                <BedsReady summary={bedsSummary} compact />
               </div>
-            }
-          />
-        </div>
+            </Sheet>
+          </ReferralPhoneTop>
+        ) : (
+          <div className={styles.v6HeroWrap} data-testid="ward-referral-kpis">
+            <Hero
+              eyebrow="Referrals"
+              title={`${queued.length} awaiting decision`}
+              titleMeta={
+                <span className={a.heroMeta}>
+                  Oldest <b>{oldestClocks ? durMinutes(oldestClocks.sinceReferral) : "none"}</b>
+                  {medianDecision !== undefined ? (
+                    <span className={a.heroMedian}>
+                      {" "}
+                      · median decision <b>{durMinutes(medianDecision)}</b>
+                    </span>
+                  ) : null}
+                </span>
+              }
+              className={a.heroA}
+              // v10: no New referral in the hero. The header's New referral is the page's one primary.
+              aside={<LiveChip state="live" onHero />}
+              bar={
+                <div className={a.pills} role="group" aria-label="Highlight referrals">
+                  {HIGHLIGHT_LABELS.map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={a.pill}
+                      aria-pressed={highlight === key}
+                      data-testid={`ward-referral-highlight-${key}`}
+                      onClick={() => {
+                        setSearchQuery("");
+                        setHighlight((current) => (current === key ? null : key));
+                      }}
+                    >
+                      <span className={a.pillCount}>{queued.filter((r) => highlightTest(key, r, now)).length}</span>
+                      {key === "overdue" ? <TriangleAlert size={12} aria-hidden="true" /> : null}
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              }
+              barAside={
+                <HeroTools
+                  overdueCount={overdueQueued.length}
+                  onNextOverdue={selectNextOverdue}
+                  onMeeting={() => setSheet("meeting")}
+                />
+              }
+              foot={
+                <div className={a.heroBand}>
+                  <WaitRunway
+                    queued={queued}
+                    now={now}
+                    selectedId={selectedReferralId}
+                    isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
+                    nameOf={nameOf}
+                    onSelect={(id) => {
+                      setView("queue");
+                      handleSelect(id);
+                    }}
+                  />
+                  <BedsReady summary={bedsSummary} />
+                </div>
+              }
+            />
+          </div>
+        )}
 
         <div className={cx(styles.registerLayout, a.layout)}>
           {selectedReferral ? (
@@ -791,6 +869,20 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     aria-label="Highlight referrals"
                   />
                 ) : null}
+                {/* v10: Refused once moved here from the hero, which keeps its five chips. */}
+                {view === "queue" ? (
+                  <FilterChip
+                    pressed={highlight === "refused"}
+                    onPressedChange={(pressed) => {
+                      setSearchQuery("");
+                      setHighlight(pressed ? "refused" : null);
+                    }}
+                    count={queued.filter((r) => highlightTest("refused", r, now)).length}
+                    className={a.toolbarChip}
+                  >
+                    <span data-testid="ward-referral-highlight-refused">Refused once</span>
+                  </FilterChip>
+                ) : null}
                 <span className={a.toolbarNote}>
                   {anyHighlight && view === "queue" ? (
                     <>
@@ -798,7 +890,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         <b>
                           {highlightedCount} of {queued.length}
                         </b>{" "}
-                        highlighted · all still shown
+                        highlighted · all rows stay
                       </span>
                       <Button variant="ghost" size="sm" onClick={clearHighlights}>
                         Clear
@@ -824,6 +916,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   allReferrals={referrals}
                   readmissionIndex={readmissionIndex}
                   isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
+                  isDimmed={(referral) => anyHighlight && !isHighlighted(referral)}
                 />
               </TabPanel>
               <TabPanel idPrefix="ward-referral-view" id="history" className={a.history} hidden={view !== "history"}>
@@ -859,7 +952,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 <button type="button" className={a.keyLink} onClick={() => setSheet("keys")}>
                   <Kbd>?</Kbd> all shortcuts
                 </button>
-                <span className={a.footNote}>Filters highlight. Every referral stays in the list.</span>
+                <span className={a.footNote}>Highlights dim rows. Every referral stays in the list.</span>
               </div>
             </Card>
           </div>
@@ -1113,6 +1206,7 @@ function QueuedSection({
   patients = [],
   readmissionIndex,
   isHighlighted = () => false,
+  isDimmed = () => false,
 }: {
   queued: Referral[];
   /** Every referral, not just the queue: a prior stay links to its person through its own referral. */
@@ -1125,6 +1219,8 @@ function QueuedSection({
   patients?: Patient[];
   readmissionIndex: ReturnType<typeof createReadmissionIndex>;
   isHighlighted?: (referral: Referral) => boolean;
+  /** v10: a highlight dims the rows it does not match (`data-dim`); every row stays in place. */
+  isDimmed?: (referral: Referral) => boolean;
 }) {
   const queuedResolverState = useMemo(
     () => ({ patients, referrals: allReferrals, movements }),
@@ -1181,10 +1277,12 @@ function QueuedSection({
                 return (
                   <tr
                     key={referral.id}
-                    className={cx(a.row, selected && a.rowOn, isHighlighted(referral) && a.rowHl)}
+                    className={cx(a.row, selected && a.rowOn)}
                     data-testid={`ward-referral-board-row-${referral.id}`}
                     data-referral-id={referral.id}
                     data-highlighted={isHighlighted(referral) ? "true" : undefined}
+                    data-dim={isDimmed(referral) ? "true" : undefined}
+                    data-overdue={isOverdue(referral, now) ? "true" : undefined}
                     onClick={() => onSelect(referral.id)}
                   >
                     <td>
@@ -1226,7 +1324,7 @@ function QueuedSection({
                       />
                       {referralNeedsGenderReview(referral) ? (
                         <span className={a.rowNote} data-testid={`ward-referral-board-review-${referral.id}`}>
-                          {GENDER_REVIEW_FLAG}
+                          <StatusGlyph tone="warning" size={8} /> {GENDER_REVIEW_FLAG}
                         </span>
                       ) : null}
                     </td>
@@ -1322,8 +1420,10 @@ function QueuedSection({
               return (
                 <li
                   key={referral.id}
-                  className={cx(a.card, selected && a.cardOn, isHighlighted(referral) && a.cardHl)}
+                  className={cx(a.card, selected && a.cardOn)}
                   data-highlighted={isHighlighted(referral) ? "true" : undefined}
+                  data-dim={isDimmed(referral) ? "true" : undefined}
+                  data-overdue={isOverdue(referral, now) ? "true" : undefined}
                 >
                   <button
                     type="button"

@@ -50,11 +50,33 @@ export function PatientFlightHeader({
   tabs: ReactNode;
   actions?: ReactNode;
 }) {
+  const idLine = (
+    <span className={styles.v6IdLine}>
+      {patient ? (
+        <>
+          <strong className={styles.v6Mono}>{patient.umrn}</strong>
+          <span>
+            {patientAgeYears(patient, displayToday)} y, {patient.sex ? patient.sex.toLowerCase() : "sex not recorded"}
+          </span>
+          <span>DOB {australianDate(patient.dateOfBirth)}</span>
+        </>
+      ) : (
+        <span>Demographics not recorded</span>
+      )}
+      {location ? <span>{location}</span> : null}
+      {patient?.confidential ? (
+        <span className={styles.v6Confidential} data-testid="ward-patient-confidential-pill">
+          Confidential
+        </span>
+      ) : null}
+    </span>
+  );
   return (
     <div className={styles.v6HeroWrap} data-testid="ward-person-identity" data-quiet={quiet}>
       <Hero
         level={1}
         className={quiet ? `${styles.v6Hero} ${styles.v6HeroQuiet}` : styles.v6Hero}
+        eyebrow={location ? `Patient · ${location}` : "Patient"}
         title={displayName}
         titleMeta={
           preferredName || statePill ? (
@@ -64,31 +86,9 @@ export function PatientFlightHeader({
             </>
           ) : undefined
         }
-        eyebrow={
-          <span className={styles.v6IdLine}>
-            {patient ? (
-              <>
-                <strong className={styles.v6Mono}>{patient.umrn}</strong>
-                <span>
-                  {patientAgeYears(patient, displayToday)} y,{" "}
-                  {patient.sex ? patient.sex.toLowerCase() : "sex not recorded"}
-                </span>
-                <span>DOB {australianDate(patient.dateOfBirth)}</span>
-              </>
-            ) : (
-              <span>Demographics not recorded</span>
-            )}
-            {location ? <span>{location}</span> : null}
-            {patient?.confidential ? (
-              <span className={styles.v6Confidential} data-testid="ward-patient-confidential-pill">
-                Confidential
-              </span>
-            ) : null}
-          </span>
-        }
         aside={
           <>
-            {facts}
+            <div className={styles.v6HeroActions}>{actions}</div>
             <div
               className={isLiveBedflow ? "sr-only" : styles.v6LiveState}
               role="status"
@@ -103,22 +103,24 @@ export function PatientFlightHeader({
         }
         bar={
           <div className={styles.v6HeroBar}>
+            {idLine}
+            {facts}
             {steps}
-            <div className={styles.v6HeroTabsRow}>
-              <ContextualBackLink
-                fallbackHref="/mockups/ward-flow"
-                className={buttonClass({ variant: "onHero", size: "sm", iconOnly: true })}
-                aria-label="Back to previous page"
-                data-testid="ward-patient-back-button"
-              >
-                <ArrowLeft size={16} aria-hidden="true" />
-              </ContextualBackLink>
-              {tabs}
-              <div className={styles.v6HeroActions}>{actions}</div>
-            </div>
           </div>
         }
       />
+      {/* v10: the record tabs leave the hero and sit on the page, under the band. */}
+      <div className={styles.v6HeroTabsRow}>
+        <ContextualBackLink
+          fallbackHref="/mockups/ward-flow"
+          className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
+          aria-label="Back to previous page"
+          data-testid="ward-patient-back-button"
+        >
+          <ArrowLeft size={16} aria-hidden="true" />
+        </ContextualBackLink>
+        {tabs}
+      </div>
     </div>
   );
 }

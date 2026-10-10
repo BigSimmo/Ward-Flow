@@ -79,7 +79,7 @@ function renderDischarges({ controls = false }: { controls?: boolean } = {}) {
 }
 
 function showAdmissionRecords() {
-  fireEvent.click(screen.getByRole("button", { name: /^Admission records \d+$/u }));
+  fireEvent.click(screen.getByRole("button", { name: /^History, admission records \d+$/u }));
 }
 
 function showLinkedPatients() {
@@ -142,7 +142,10 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     fireEvent.click(screen.getByTestId("ward-demo-controls-trigger"));
     fireEvent.click(screen.getByTestId("ward-demo-reset"));
 
-    expect(screen.getByRole("button", { name: /^Anonymous releases \d+$/u })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^Now, anonymous releases \d+$/u })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
 
@@ -154,8 +157,8 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
 
   it("keeps anonymous releases and admission records as separate counted populations", () => {
     renderDischarges();
-    const releases = screen.getByRole("button", { name: /^Anonymous releases \d+$/u });
-    const records = screen.getByRole("button", { name: /^Admission records \d+$/u });
+    const releases = screen.getByRole("button", { name: /^Now, anonymous releases \d+$/u });
+    const records = screen.getByRole("button", { name: /^History, admission records \d+$/u });
     const releaseCount = populationCount(releases);
     const recordCount = populationCount(records);
     expect(releaseCount).toBeGreaterThan(0);
@@ -203,7 +206,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
 
-    fireEvent.click(screen.getByRole("button", { name: /^Anonymous releases \d+$/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Now, anonymous releases \d+$/u }));
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
   });

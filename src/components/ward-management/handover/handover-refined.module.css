@@ -475,13 +475,14 @@
   color: var(--wf-ink-1);
 }
 
+/* v10: words neutral, the glyph before them carries the tone. */
 .next_act {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
   font-weight: 600;
 }
 
 .next_due {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .next_calm {
@@ -558,31 +559,22 @@
   color: var(--wf-ink-1);
 }
 
+/* v10: no tinted fills. Act now takes the thin full red edge; the rest a plain hairline. */
 .box_act {
-  background: color-mix(in srgb, var(--wf-danger) 9%, var(--wf-surface));
-  border-color: color-mix(in srgb, var(--wf-danger) 35%, transparent);
+  background: var(--wf-surface);
+  border-color: var(--wf-act-edge);
 }
 
-.box_act .nextLabel {
-  color: var(--wf-danger-ink);
-}
-
-.box_due {
-  background: color-mix(in srgb, var(--wf-warning) 9%, var(--wf-surface));
-  border-color: color-mix(in srgb, var(--wf-warning) 35%, transparent);
-}
-
-.box_due .nextLabel {
-  color: var(--wf-warning-ink);
-}
-
-.box_calm {
-  background: var(--wf-accent-tint);
-  border-color: color-mix(in srgb, var(--wf-accent) 22%, transparent);
-}
-
+.box_act .nextLabel,
+.box_due .nextLabel,
 .box_calm .nextLabel {
-  color: var(--wf-accent-ink);
+  color: var(--wf-ink-2);
+}
+
+.box_due,
+.box_calm {
+  background: var(--wf-surface);
+  border-color: var(--wf-line);
 }
 
 .stepper {
@@ -1052,4 +1044,80 @@
   inset: 50% 0 auto;
   height: var(--spacing-tap, 3rem);
   transform: translateY(-50%);
+}
+
+/* ---------------------------------------------------------------- v10 */
+
+/* Highlights never tint the rows they match; the rest dim by colour (data-dim). */
+.row[data-dim="true"] {
+  --wf-ink-1: var(--wf-dim);
+  --wf-ink-2: var(--wf-dim);
+  --wf-ink-3: var(--wf-dim);
+}
+
+/* Act now: a thin full red edge, no fill. */
+.row[data-act="true"] {
+  outline: 1px solid var(--wf-act-edge);
+  outline-offset: -1px;
+}
+
+/* Since you looked sits under the hero as one flush card. */
+.since {
+  padding: 0;
+}
+
+/* v10 hero chips: one row of pressable pills on the hero, never wrapping. */
+.heroPill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--wf-s-1);
+  height: var(--wf-h-sm, 28px);
+  padding: 0 var(--wf-s-3) 0 var(--wf-s-1);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.heroPill:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+  color: var(--wf-hero-ink);
+}
+
+.heroPill[aria-pressed="true"] {
+  border-color: var(--wf-hero-ink);
+  background: var(--wf-hero-ink);
+  color: var(--wf-hero-2);
+}
+
+.heroPill:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+.heroPillCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 var(--wf-s-1);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+}
+
+.heroPill[aria-pressed="true"] .heroPillCount {
+  background: var(--wf-hero-2);
+  color: var(--wf-hero-ink);
+}
+
+.gap {
+  font-family: var(--wf-font);
 }

@@ -83,7 +83,7 @@
 .refusal {
   margin: 0;
   padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
-  color: var(--wf-danger);
+  color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);
 }
 

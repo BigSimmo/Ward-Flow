@@ -521,9 +521,11 @@ function queuedCardIds(page: Page): Promise<string[]> {
  * the phone menu's + (10 Oct 2026), whose New referral opens the same slide-out in place.
  */
 async function openNewReferralFromBoard(page: Page) {
-  const boardNew = page.getByTestId("ward-referral-board-new");
-  if (await boardNew.isVisible()) {
-    await boardNew.click();
+  // v10 (10 Oct 2026): the board's hero no longer repeats New referral; the header's is the one.
+  const headerNew = page.getByTestId("ward-bar-primary-action");
+  if (await headerNew.isVisible()) {
+    await headerNew.click();
+    await page.getByTestId("ward-bar-primary-menu-ward").click();
     return;
   }
   // Phone (10 Oct 2026): New referral is behind the phone menu's raised +.
@@ -625,11 +627,12 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expect(page.getByTestId("ward-referral-board-screen")).toBeAttached();
   });
 
-  test("the board's New referral link opens the slide-out in place, without leaving the board", async ({ page }) => {
+  test("the header's New referral link opens the slide-out in place, without leaving the board", async ({ page }) => {
     await page.goto("/mockups/ward-flow/referrals", { waitUntil: "load" });
     await expect(page.getByTestId("ward-referral-board-screen")).toBeVisible({ timeout: 15_000 });
     await plantSentinel(page);
-    await page.getByTestId("ward-referral-board-new").click();
+    await page.getByTestId("ward-bar-primary-action").click();
+    await page.getByTestId("ward-bar-primary-menu-ward").click();
     await expect(page.getByTestId("ward-bar-referral-sheet")).toBeVisible();
     await expect(page).toHaveURL(/\/mockups\/ward-flow\/referrals$/);
     await expectNoReloadSince(page, "board -> referral slide-out");

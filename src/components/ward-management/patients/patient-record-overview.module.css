@@ -12,7 +12,7 @@
 }
 .heading span,
 .label {
-  font-size: 9px;
+  font-size: var(--wf-fs-12);
   font-weight: 750;
   letter-spacing: 0.09em;
   color: var(--muted);
@@ -86,7 +86,7 @@
 }
 .care p,
 .note {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   line-height: 1.6;
   color: var(--muted);
   margin: 0;
@@ -137,7 +137,7 @@
   display: block;
   color: var(--muted);
   margin-top: 5px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .hub button:hover {
   background: var(--surface-2);
@@ -183,7 +183,7 @@
 }
 .recordBadge {
   border-radius: 7px;
-  font-size: 9px;
+  font-size: var(--wf-fs-12);
   background: var(--surface-2);
   padding: 5px 8px;
 }
@@ -219,14 +219,14 @@
   font-size: 15px;
 }
 .care > p {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   line-height: 1.6;
 }
 .profile > button,
 .care > button {
   background: var(--surface);
   border-radius: 9px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   min-height: 44px;
 }
 .links {
@@ -242,10 +242,10 @@
   font-size: 12px;
 }
 .links small {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 .note {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 @media (max-width: 700px) {
   .hub {

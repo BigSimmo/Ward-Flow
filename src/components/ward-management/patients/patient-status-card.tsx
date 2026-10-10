@@ -176,7 +176,7 @@ function transportCell(
 }
 
 /** A demo instant as a calendar day, "Tue 14 Oct". */
-function dayLabel(instant: number, dayZero: Date): string {
+export function dayLabel(instant: number, dayZero: Date): string {
   return calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", {
     weekday: "short",
     day: "numeric",
@@ -682,7 +682,12 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
     status.cells.find((c) => !c.clear && c.action?.kind === "button")?.key;
   const word = status.meterWord ?? "clear";
   return (
-    <section className={styles.card} aria-label="Status" data-testid="ward-patient-status-card">
+    <section
+      className={styles.card}
+      aria-label="Status"
+      data-act={status.tone === "danger" || undefined}
+      data-testid="ward-patient-status-card"
+    >
       <div className={styles.head}>
         <span className={styles.verdict} data-testid="ward-patient-status-verdict">
           <StatusGlyph tone={status.tone} size={12} />

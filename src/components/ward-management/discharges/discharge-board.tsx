@@ -3,14 +3,13 @@ import { DischargeCareJourney } from "./discharge-care-journey";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight, ClipboardList, Copy, List, OctagonAlert, Plus, Printer, Truck, X } from "lucide-react";
+import { ChevronRight, ClipboardList, Copy, List, OctagonAlert, Printer, Truck, X } from "lucide-react";
 import { MissingValue } from "@/components/ui/missing-value";
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import {
   calendarDateOf,
   dayOf,
   formatInstant,
-  formatInstantWithDay,
   formatSheetMoment,
   type Instant,
 } from "@/components/ward-management/ward-clock";
@@ -37,9 +36,9 @@ import {
   Button,
   Card,
   EmptyState,
-  Field,
   FilterChip,
   Hero,
+  LiveChip,
   Select,
   StatusGlyph,
   TextInput,
@@ -49,6 +48,12 @@ import {
 } from "@/components/wf";
 
 import { DischargeFollowUp } from "./discharge-follow-up";
+import {
+  ReadyToLeave,
+  demoReadyTicks,
+  type ReadyToLeaveItemId,
+  type ReadyToLeaveUndo,
+} from "./discharge-ready-to-leave";
 import {
   DischargeBarrierBars,
   DischargeDayChart,
@@ -295,7 +300,9 @@ function barrierLabel(id: string): string {
 
 /** Days the chart covers after today; the column before them gathers every date already passed. */
 const CHART_DAYS_AHEAD = 14;
-type Highlight = { kind: "day"; day: DischargeDayKey } | { kind: "barrier"; id: string };
+/* v10: the hero status chips highlight too ("status"); only the tabs over the table narrow. */
+type Highlight =
+  { kind: "day"; day: DischargeDayKey } | { kind: "barrier"; id: string } | { kind: "status"; status: WorkStatus };
 type TableView = "list" | "barriers";
 
 /**
@@ -308,7 +315,7 @@ function matchesHighlight(
   blocker: string | null,
   now: Instant,
 ): boolean {
-  if (highlight === null) return false;
+  if (highlight === null || highlight.kind === "status") return false;
   if (highlight.kind === "barrier") return blocker !== null && barrierCategory(blocker) === highlight.id;
   if (expectedAt === null || !Number.isFinite(expectedAt)) return false;
   // Whole calendar days: an earlier time today stays in Today, Passed is an earlier date.
@@ -362,8 +369,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const { bedReleases, units, dayZero, readDischargeRecords, openDischargeRecord, readDischargeRecord, dispatch } =
     useWardFlow();
   const now = useWardFlowClock();
-  const [planningOpen, setPlanningOpen] = useState(false);
-  const [planningUnitId, setPlanningUnitId] = useState("");
   const [population, setPopulation] = useState<Population>("releases");
   const [status, setStatus] = useState<WorkStatus | "all">("all");
   const [service, setService] = useState("all");
@@ -385,7 +390,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const listRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const restoreFocusRef = useRef(false);
-  const planDropdownRef = useRef<HTMLDivElement>(null);
   const guarded = readDischargeRecords(RECORD_ACTOR);
   const records = guarded.status === "allowed" ? guarded.value : [];
   // Opens the linked stay once, on arrival; after that the coordinator's own choices stand.
@@ -451,11 +455,34 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       : (Object.fromEntries(
           WORK_ORDER.map((key) => [key, scopedRecords.filter((record) => recordStatus(record) === key).length]),
         ) as Record<WorkStatus, number>);
+  const releaseStatus = new Map<string, WorkStatus>(
+    GROUP_ORDER.flatMap((key) =>
+      releaseGroups[key].map((release) => [release.id, key === "discharged-today" ? "departed" : key] as const),
+    ),
+  );
   const recordLit = (record: DischargeRecord) =>
-    recordStage(record) !== "departed" &&
-    matchesHighlight(highlight, record.expectedDischargeAt, record.blockReason, now);
+    highlight?.kind === "status"
+      ? recordStatus(record) === highlight.status
+      : recordStage(record) !== "departed" &&
+        matchesHighlight(highlight, record.expectedDischargeAt, record.blockReason, now);
   const releaseLit = (release: BedRelease) =>
-    release.state !== "discharged" && matchesHighlight(highlight, release.expectedAt, release.blocker, now);
+    highlight?.kind === "status"
+      ? releaseStatus.get(release.id) === highlight.status
+      : release.state !== "discharged" && matchesHighlight(highlight, release.expectedAt, release.blocker, now);
+  // Highlights dim the rest; every row stays.
+  const dimmed = (lit: boolean) => (highlight !== null && !lit ? "true" : undefined);
+  const statusHighlight = highlight?.kind === "status" ? highlight.status : null;
+  const [readyTicks, setReadyTicks] = useState<Record<string, ReadyToLeaveItemId[]>>({});
+  const [readyChange, setReadyChange] = useState<(ReadyToLeaveUndo & { releaseId: string }) | null>(null);
+  const ticksFor = (id: string) => readyTicks[id] ?? demoReadyTicks(id);
+  const setTick = (id: string, itemId: ReadyToLeaveItemId, on: boolean) =>
+    setReadyTicks((current) => {
+      const list = current[id] ?? demoReadyTicks(id);
+      return {
+        ...current,
+        [id]: on ? [...list.filter((item) => item !== itemId), itemId] : list.filter((item) => item !== itemId),
+      };
+    });
   const litFirst = <T,>(list: T[], lit: (item: T) => boolean) =>
     highlight === null ? list : [...list.filter(lit), ...list.filter((item) => !lit(item))];
   const workOrderedRecords = scopedRecords
@@ -535,25 +562,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selected, releaseId]);
-  useEffect(() => {
-    if (!planningOpen) return;
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (planDropdownRef.current && !planDropdownRef.current.contains(e.target as Node)) {
-        setPlanningOpen(false);
-      }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setPlanningOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [planningOpen]);
   const focusDetail = () => {
     queueMicrotask(() => {
       const first = detailRef.current?.querySelector<HTMLElement>(
@@ -837,6 +845,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               key={row.id}
               data-selected={row.selected}
               data-highlighted={row.lit || undefined}
+              data-dim={dimmed(row.lit)}
               className={pageStyles.interactiveRow}
               tabIndex={0}
               onClick={(e) => row.open(e.currentTarget)}
@@ -924,43 +933,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         </p>
         <Hero
           className={pageStyles.phoneHero}
-          eyebrow={population === "releases" ? "Bed release" : "Admission records"}
+          eyebrow={population === "releases" ? "Bed release · all services" : "History · admission records"}
           title={`${openCount} ${openCount === 1 ? "discharge" : "discharges"} open`}
-          stats={
-            <div
-              className={pageStyles.kpiStrip}
-              data-testid="ward-discharge-kpi-strip"
-              role="region"
-              aria-label="Discharge pipeline summary filters"
-            >
-              {WORK_ORDER.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  data-testid={`ward-discharge-kpi-${key}`}
-                  className={pageStyles.kpi}
-                  aria-pressed={status === key}
-                  aria-label={`${kpiCardLabel(key, population)}: ${counts[key]}`}
-                  onClick={() => {
-                    setStatus(status === key ? "all" : key);
-                    clearSelection();
-                  }}
-                >
-                  <strong className={pageStyles.kpiValue}>{counts[key]}</strong>
-                  <span className={pageStyles.kpiLabel}>
-                    {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
-                    <span>{kpiCardLabel(key, population)}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
+          titleMeta={
+            <span className={pageStyles.bedDaysPast} data-testid="ward-discharge-bed-days-past">
+              <strong>{bedDaysPast}</strong> bed {bedDaysPast === 1 ? "day" : "days"} past the ward&rsquo;s date
+            </span>
           }
           aside={
             <div className={pageStyles.heroTools}>
-              <time className={pageStyles.asOf}>
-                <span className="sr-only">Board time: </span>
-                As of {formatInstantWithDay(now, now)}
-              </time>
+              <LiveChip state="live" onHero />
               <Button size="sm" variant="onHero" icon={Copy} onClick={copySummary} data-testid="ward-discharge-copy">
                 Copy summary
               </Button>
@@ -968,6 +950,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 size="sm"
                 variant="onHero"
                 icon={Printer}
+                className={pageStyles.desktopOnly}
                 onClick={() => window.print()}
                 data-testid="ward-discharge-print"
               >
@@ -979,81 +962,70 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             </div>
           }
           bar={
-            <div className={pageStyles.heroBar}>
-              <div className={pageStyles.populationSwitch} role="group" aria-label="Discharge population">
+            <div
+              className={pageStyles.kpiStrip}
+              data-testid="ward-discharge-kpi-strip"
+              role="region"
+              aria-label="Discharge pipeline highlights"
+            >
+              {WORK_ORDER.map((key) => (
                 <button
+                  key={key}
                   type="button"
-                  aria-pressed={population === "releases"}
+                  data-testid={`ward-discharge-kpi-${key}`}
+                  className={pageStyles.kpi}
+                  aria-pressed={statusHighlight === key}
+                  aria-label={`${kpiCardLabel(key, population)}: ${counts[key]}`}
                   onClick={() => {
-                    setPopulation("releases");
+                    setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
                     setStatus("all");
-                    setDestination("all");
-                    setBlockerCategory("all");
-                    setHighlight(null);
-                    clearSelection();
                   }}
                 >
-                  Anonymous releases <span className={pageStyles.popCount}>{bedReleases.length}</span>
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={population === "records"}
-                  onClick={() => {
-                    setPopulation("records");
-                    setStatus("all");
-                    setDestination("all");
-                    setBlockerCategory("all");
-                    setHighlight(null);
-                    clearSelection();
-                  }}
-                >
-                  Admission records{" "}
-                  <span className={pageStyles.popCount}>
-                    {guarded.status === "allowed" ? records.length : "Unavailable"}
+                  <strong className={pageStyles.kpiValue}>{counts[key]}</strong>
+                  <span className={pageStyles.kpiLabel}>
+                    {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
+                    <span>{kpiCardLabel(key, population)}</span>
                   </span>
                 </button>
-              </div>
-              <span className={pageStyles.bedDaysPast} data-testid="ward-discharge-bed-days-past">
-                <strong>{bedDaysPast}</strong> bed {bedDaysPast === 1 ? "day" : "days"} past the ward&rsquo;s date
-              </span>
+              ))}
             </div>
           }
           barAside={
-            <div className={pageStyles.planActionWrapper} ref={planDropdownRef}>
-              <Button
-                variant="light"
-                icon={Plus}
-                data-testid="ward-discharge-plan-departure"
-                aria-expanded={planningOpen}
-                onClick={() => setPlanningOpen(!planningOpen)}
+            <div className={pageStyles.populationSwitch} role="group" aria-label="Now or history">
+              <button
+                type="button"
+                aria-pressed={population === "releases"}
+                data-testid="ward-discharge-now"
+                onClick={() => {
+                  setPopulation("releases");
+                  setStatus("all");
+                  setDestination("all");
+                  setBlockerCategory("all");
+                  setHighlight(null);
+                  clearSelection();
+                }}
               >
-                Plan departure
-              </Button>
-              {planningOpen && (
-                <div className={pageStyles.planActionDropdown}>
-                  <Field label="Ward for departure planning" id="discharges-plan-ward">
-                    <Select value={planningUnitId} onChange={(event) => setPlanningUnitId(event.target.value)}>
-                      <option value="">Choose ward</option>
-                      {units.map((unit) => (
-                        <option key={unit.id} value={unit.id}>
-                          {unitLabel(unit, unit.id)}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                  {planningUnitId && units.some((unit) => unit.id === planningUnitId) && (
-                    <Link
-                      className={buttonClass({ size: "sm", variant: "sec" })}
-                      href={`/mockups/ward-flow/ward/${encodeURIComponent(planningUnitId)}?tab=departure-planning`}
-                    >
-                      Open ward departure planning
-                    </Link>
-                  )}
-                  <p className={pageStyles.planActionNote}>
-                    Choose the patient and departure time in the ward’s Decisions tab.
-                  </p>
-                </div>
-              )}
+                Now
+                <span className="sr-only">, anonymous releases {bedReleases.length}</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={population === "records"}
+                data-testid="ward-discharge-history"
+                onClick={() => {
+                  setPopulation("records");
+                  setStatus("all");
+                  setDestination("all");
+                  setBlockerCategory("all");
+                  setHighlight(null);
+                  clearSelection();
+                }}
+              >
+                History
+                <span className="sr-only">
+                  , admission records {guarded.status === "allowed" ? records.length : "unavailable"}
+                </span>
+              </button>
             </div>
           }
         />
@@ -1360,6 +1332,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             key={record.id}
                             data-selected={isSelected}
                             data-highlighted={recordLit(record) || undefined}
+                            data-dim={dimmed(recordLit(record))}
+                            data-act={recordStatus(record) === "blocked" || undefined}
                             onClick={(e) => openRecord(record, e.currentTarget)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
@@ -1456,6 +1430,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 data-release-id={release.id}
                                 data-selected={releaseId === release.id}
                                 data-highlighted={releaseLit(release) || undefined}
+                                data-dim={dimmed(releaseLit(release))}
+                                data-act={key === "blocked" || undefined}
                                 onClick={(e) => selectRelease(release.id, e.currentTarget)}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
@@ -1968,6 +1944,20 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                           informational and does not establish completion.
                         </p>
                       ) : null}
+                      <ReadyToLeave
+                        ticked={ticksFor(detailRelease.id)}
+                        onToggle={(itemId) => {
+                          const on = !ticksFor(detailRelease.id).includes(itemId);
+                          setTick(detailRelease.id, itemId, on);
+                          setReadyChange({ releaseId: detailRelease.id, itemId, ticked: on });
+                        }}
+                        lastChange={readyChange?.releaseId === detailRelease.id ? readyChange : null}
+                        onUndo={() => {
+                          if (readyChange) setTick(readyChange.releaseId, readyChange.itemId, !readyChange.ticked);
+                          setReadyChange(null);
+                        }}
+                        onDismiss={() => setReadyChange(null)}
+                      />
                     </div>
 
                     <div className={drawerTab === "barriers" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>

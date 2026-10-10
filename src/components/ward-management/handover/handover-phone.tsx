@@ -29,6 +29,7 @@ import {
   handoverAt,
   handoverHasPassed,
   handoverShift,
+  isActNow,
   isWaitingForBed,
   isbarLines,
   nextStep,
@@ -162,7 +163,11 @@ function PatientCard({
   const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
   const lines = isbarLines(row, ctx.now).filter((line) => line.key === "I" || line.key === "S" || line.key === "R");
   return (
-    <article className={`${styles.card} ${highlighted ? styles.hl : ""}`} data-testid="ward-handover-phone-card">
+    <article
+      className={`${styles.card} ${highlighted ? styles.hl : ""}`}
+      data-act={isActNow(row, ctx.now) ? "true" : undefined}
+      data-testid="ward-handover-phone-card"
+    >
       <header className={styles.cardHead}>
         <StatusGlyph tone={rowTone(row, ctx)} />
         <button type="button" className={styles.cardButton} onClick={() => onPick(row.id)}>

@@ -104,7 +104,8 @@ describe("Track C Referral Matching fixes", () => {
 
     // Initial button exists
     const initialButton = screen.getByTestId("ward-referral-match-accept-emergency_department");
-    expect(initialButton).toHaveTextContent(/Accept presentation \/ referral/i);
+    // v10 (10 Oct 2026): the panel's one primary reads "Accept presentation".
+    expect(initialButton).toHaveTextContent(/Accept presentation/i);
 
     // Clicking opens confirmation
     fireEvent.click(initialButton);

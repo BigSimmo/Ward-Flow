@@ -47,7 +47,7 @@ import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { referrals } from "@/components/ward-management/ward-movements";
 import { rulingsDemoOverlay } from "@/components/ward-management/ward-rulings-demo";
-import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import { WARD_NEW_REFERRAL_MENU, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import {
   NOT_RECORDED_LABEL,
   OUT_OF_AREA_BANDS,
@@ -323,17 +323,23 @@ describe("ReferralBoard", () => {
    * handler would satisfy a "the words New referral appear" check while breaking middle-click,
    * hover preview and every static reachability scan.
    */
-  it("offers New referral as a real link to the slide-out route, which the bar opens in place", () => {
+  /*
+   * v10 (10 Oct 2026, build guide Referrals): the hero's duplicate New referral is gone. The
+   * header's New referral is the page's one primary, and its menu keeps real links to the
+   * slide-out route, so the route stays reachable from inside the running app.
+   */
+  it("leaves New referral to the header, whose menu keeps real links to the slide-out route", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ReferralBoard />
       </WardFlowProvider>,
     );
-    const link = screen.getByTestId("ward-referral-board-new");
-    expect(link.tagName).toBe("A");
-    expect(link).toHaveAttribute("href", WARD_REFERRAL_INTAKE_HREF);
-    expect(link).toHaveAttribute("href", "/mockups/ward-flow/referrals/new");
-    expect(link.textContent?.trim()).toBe("New referral");
+    expect(screen.queryByTestId("ward-referral-board-new")).not.toBeInTheDocument();
+    expect(within(screen.getByTestId("ward-referral-kpis")).queryByText("New referral")).not.toBeInTheDocument();
+    expect(WARD_REFERRAL_INTAKE_HREF).toBe("/mockups/ward-flow/referrals/new");
+    for (const entry of WARD_NEW_REFERRAL_MENU) {
+      expect(entry.href.startsWith(WARD_REFERRAL_INTAKE_HREF)).toBe(true);
+    }
   });
 
   // M1 (fix round C): the figure must be bound to its OWN referral, not merely present. The
