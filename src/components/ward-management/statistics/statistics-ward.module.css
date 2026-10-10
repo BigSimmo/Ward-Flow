@@ -2,17 +2,17 @@
  * One ward in detail (v6). Layout and small text roles only; the cards, charts and tables come
  * from the wf primitives and statistics-v6.module.css. Tokens only.
  */
-.gridWide {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--wf-s-3);
-  align-items: start;
+/* Change ward and the previous/next stepper, side by side beside the title. */
+.titleTools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
 }
 
-@media (max-width: 1100px) {
-  .gridWide {
-    grid-template-columns: minmax(0, 1fr);
-  }
+/* The two charts under the bed map take the column's spare height, so the column ends flush. */
+.chartRow {
+  flex: 1 1 auto;
 }
 
 .unresolvedId {
@@ -65,7 +65,9 @@
 }
 
 .headFigure {
+  margin: 0;
   color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   white-space: nowrap;
 }
 
@@ -83,16 +85,6 @@
 .barriers {
   display: flex;
   flex-direction: column;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line-2);
-}
-
-.barriersHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
   gap: var(--wf-s-2);
 }
 
@@ -116,4 +108,12 @@
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+}
+
+/*
+ * The barriers list follows the referrals card beside it with no floor of its own, so a short
+ * list never makes the row taller than the referrals card; showing all reasons scrolls inside.
+ */
+.followShort.followShort {
+  --follow-min: 0px;
 }

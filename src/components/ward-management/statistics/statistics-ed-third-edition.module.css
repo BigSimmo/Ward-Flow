@@ -919,3 +919,71 @@
   height: 100%;
   background: var(--accent);
 }
+
+/* ─── Direction A (9 Oct 2026): the per-ED page in flush rows ─── */
+
+/* Change ED and the previous/next stepper, side by side beside the title. */
+.titleTools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+/*
+ * The wait list body. In a following column it takes the height the cards beside it set: the
+ * filters and the key stay put and only the table scrolls, its head held in view.
+ */
+.waitBody {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.waitBody > :first-child {
+  flex: none;
+}
+
+.waitChart {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.waitChart > :last-child {
+  flex: none;
+}
+
+.waitScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.waitScroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--wf-surface);
+}
+
+/* Name above UMRN, as every ED list shows a person. */
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.umrn {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+@media (max-width: 64rem) {
+  .waitScroll {
+    overflow-y: visible;
+  }
+}
