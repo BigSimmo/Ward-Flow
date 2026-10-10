@@ -32,7 +32,7 @@ import { ReferralQueueCards, ReferralQueueTable } from "./referral-queue-layouts
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
-import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
+import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
@@ -549,6 +549,11 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     () => createReadmissionIndex({ admissions, patients, referrals, movements, units }),
     [admissions, patients, referrals, movements, units],
   );
+  // The flag hides itself off the coordinator's routes; asked here too so the alerts group is not
+  // drawn around a flag that renders nothing.
+  const readmissionVisible = useReadmissionFlagVisible();
+  const selectedReadmission =
+    selectedReferral && readmissionVisible ? referralReadmissionFlag(selectedReferral, readmissionIndex) : null;
 
   const overdueQueued = queued.filter((referral) => isOverdue(referral, now));
   const oldestQueued =
@@ -959,10 +964,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   <ReferralAlerts
                     referral={selectedReferral}
                     readmission={
-                      <ReadmissionFlag
-                        flag={referralReadmissionFlag(selectedReferral, readmissionIndex)}
-                        expandable={false}
-                      />
+                      selectedReadmission ? <ReadmissionFlag flag={selectedReadmission} expandable={false} /> : null
                     }
                   />
                   {referralState(selectedReferral) === "queued" ? (

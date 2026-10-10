@@ -28,10 +28,12 @@ import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
 import {
   COHORTS,
   RECORDED_SEXES,
+  REFERRAL_GENDERS,
   type Cohort,
   type LegalStatus,
   type Movement,
   type MovementId,
+  type ReferralGender,
   type Unit,
 } from "../ward-model";
 import { patientCohort } from "../ward-patients";
@@ -59,9 +61,11 @@ const LOCKED_FIRST: readonly LegalStatus[] = ["Involuntary inpatient", "Detained
 /**
  * The booking seen as the movement `eligibility()` reads, so a conversion is checked by the same
  * gates as a pulled bed: gender designation first (no override path), then every suitability gate.
- * The booking records sex only, never gender, so `gender` stays unset: an undesignated ward takes
- * the person, a single-sex ward refuses until gender is recorded through a referral. `cohort` is
- * the age group the booking was made for, so an adult booked onto an older adult ward is refused.
+ * `gender` is the booking's own (the record's for a linked patient, picked for initials only), so a
+ * single-sex ward takes a matching booking (Josh, 9 October 2026). With none recorded, an
+ * undesignated ward takes the person and a single-sex ward refuses, as for a referral. `sex` is
+ * never read in its place. `cohort` is the age group the booking was made for, so an adult booked
+ * onto an older adult ward is refused.
  */
 function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Movement {
   return {
@@ -73,6 +77,7 @@ function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Mo
     cohort: planned.ageBand,
     security: LOCKED_FIRST.includes(planned.legalStatus) ? "Secure" : "Open",
     sex: planned.sex,
+    ...(planned.gender === undefined ? {} : { gender: planned.gender }),
     specialling: false,
     highAcuity: false,
     legalStatus: planned.legalStatus,
@@ -197,7 +202,14 @@ function bookingFieldsRefusal(
     return `${event.type} expectedStayDays must be a whole number of days within the form's bound`;
   if (!isPlannedAdmissionLegalStatus(event.legalStatus))
     return `${event.type} legalStatus must be chosen from the listed statuses`;
+  if (event.gender !== undefined && !(REFERRAL_GENDERS as readonly string[]).includes(event.gender))
+    return `${event.type} gender must be chosen from the listed genders`;
   return null;
+}
+
+/** The record's own gender for a linked patient, never the caller's; absent when not recorded. */
+function recordGender(state: WardFlowState, patientId: string): ReferralGender | undefined {
+  return state.patients.find((candidate) => candidate.id === patientId)?.gender;
 }
 
 /**
@@ -249,12 +261,16 @@ export function reducePlannedAdmissionEvent(
         if (initials === null)
           return reject(state, event, "BOOK_PLANNED_ADMISSION initials must be one to three letters");
       }
+      // A linked patient's gender is the record's, as their age group is: the event's own value
+      // is ignored. Initials only carry what the person booking picked, or nothing.
+      const gender = hasPatient ? recordGender(state, event.patientId as string) : event.gender;
       const sequence = state.plannedAdmissionSequence + 1;
       const booked: PlannedAdmission = {
         id: nextPlannedAdmissionId(sequence),
         patientId: hasPatient ? (event.patientId ?? null) : null,
         initials,
         sex: event.sex,
+        ...(gender === undefined ? {} : { gender }),
         reason: event.reason,
         unitId: event.unitId,
         expectedArrivalAt: event.expectedArrivalAt,
@@ -303,6 +319,10 @@ export function reducePlannedAdmissionEvent(
         const ageBand = linkedAgeBandRefusal(event, patient.dateOfBirth, planned.ageBand);
         if (ageBand) return reject(state, event, ageBand);
       }
+      // Linked: the record's gender, re-read. Initials only: the newly picked one, or the booking's
+      // own when the change names none.
+      const gender =
+        planned.patientId !== null ? recordGender(state, planned.patientId) : (event.gender ?? planned.gender);
       const changed: PlannedAdmission = {
         ...planned,
         reason: event.reason,
@@ -313,6 +333,8 @@ export function reducePlannedAdmissionEvent(
         changedAt: event.now,
         changeCount: planned.changeCount + 1,
       };
+      if (gender === undefined) delete changed.gender;
+      else changed.gender = gender;
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       return {
@@ -379,7 +401,12 @@ export function reducePlannedAdmissionEvent(
           event,
           `every free bed at ${unit.name} is still being made ready (${pending} pending); a patient cannot be admitted to a bed that is not open`,
         );
-      const view = plannedAdmissionMovementView(planned, unit);
+      // A linked booking reads the record's gender now, so a booking made before gender was kept
+      // on bookings (a seed, or an older save) is checked against the record too.
+      const view = plannedAdmissionMovementView(
+        planned.patientId === null ? planned : { ...planned, gender: recordGender(state, planned.patientId) },
+        unit,
+      );
       // `PULL_PATIENT` lets a recorded override reason take an open bed when no locked bed is free.
       // A booking has no override path, so the same fact is a plain refusal here.
       if (view.security === "Secure" && lockedBedsFree(unit) <= 0)
@@ -399,6 +426,8 @@ export function reducePlannedAdmissionEvent(
         movementId: null,
         patientId: planned.patientId,
         sex: planned.sex,
+        // The gender the ward gates just read, so the ward's counts and the departure follow it too.
+        ...(view.gender === undefined ? {} : { gender: view.gender }),
         homeRegion: null,
         tentativeDiagnosis: null,
         bedKind,
@@ -425,7 +454,7 @@ export function reducePlannedAdmissionEvent(
         empty: { ...unit.empty, value: unit.empty.value - 1, confirmedAt: event.now },
         allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1, confirmedAt: event.now },
         allocatableLocked: bedKind === "locked" ? Math.max(0, unit.allocatableLocked - 1) : unit.allocatableLocked,
-        sexMix: adjustSexMix(unit.sexMix, mixSexOf(undefined, planned.sex), 1),
+        sexMix: adjustSexMix(unit.sexMix, mixSexOf(view.gender, planned.sex), 1),
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";

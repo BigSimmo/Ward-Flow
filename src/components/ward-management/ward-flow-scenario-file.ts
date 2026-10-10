@@ -1,6 +1,11 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { isValidStoredWardFlowState, withInboxStreamADefaults } from "./ward-flow-storage-validation";
+import {
+  isValidStoredWardFlowState,
+  migrateStoredWardFlowState,
+  WARD_FLOW_STORED_STATE_VERSION,
+  withInboxStreamADefaults,
+} from "./ward-flow-storage-validation";
 
 /**
  * SAVE AND LOAD A DEMO SCENARIO AS A FILE (Josh, 4 October 2026, open-items list item 2).
@@ -23,7 +28,8 @@ import { isValidStoredWardFlowState, withInboxStreamADefaults } from "./ward-flo
 
 export const WARD_FLOW_SCENARIO_FILE_FORMAT = "ward-flow-demo-scenario";
 /** Bump only when the FILE's envelope changes. The world's own shape is versioned separately by the
- *  `stateVersion` the provider passes in (its browser-storage version), and both must match. */
+ *  `stateVersion` the provider passes in (its browser-storage version), and both must match, except
+ *  that a v6 world loads into this v7 build through the browser restore's own migration. */
 export const WARD_FLOW_SCENARIO_FILE_VERSION = 1;
 /** Generous for a synthetic world (a seeded day is well under 1 MB) and small enough that a wrong
  *  file picked by mistake is refused before it is parsed. */
@@ -103,12 +109,19 @@ export function readScenarioFile(text: string, stateVersion: number): ScenarioFi
     return { ok: false, reason: NOT_A_SCENARIO };
   const file = parsed as Record<string, unknown>;
   if (file.format !== WARD_FLOW_SCENARIO_FILE_FORMAT) return { ok: false, reason: NOT_A_SCENARIO };
-  if (file.version !== WARD_FLOW_SCENARIO_FILE_VERSION || file.stateVersion !== stateVersion)
-    return { ok: false, reason: WRONG_VERSION };
+  if (file.version !== WARD_FLOW_SCENARIO_FILE_VERSION) return { ok: false, reason: WRONG_VERSION };
+  // The same v6 -> v7 migration as a browser restore, and only into the version this build writes.
+  const stored =
+    file.stateVersion === stateVersion
+      ? file.state
+      : stateVersion === WARD_FLOW_STORED_STATE_VERSION
+        ? migrateStoredWardFlowState(file.state, file.stateVersion)
+        : null;
+  if (stored === null) return { ok: false, reason: WRONG_VERSION };
   const now = file.now;
-  if (typeof now !== "number" || !Number.isFinite(now) || !isValidStoredWardFlowState(file.state))
+  if (typeof now !== "number" || !Number.isFinite(now) || !isValidStoredWardFlowState(stored))
     return { ok: false, reason: DAMAGED };
-  const state = withInboxStreamADefaults(file.state);
+  const state = withInboxStreamADefaults(stored);
   // The provider also refuses a clock earlier than the scenario anchor: only a named few files may
   // read that constant (`tests/ward-flow-single-source.test.ts`).
   if (state.auditEvents.some((event) => event.at !== null && event.at > now)) return { ok: false, reason: DAMAGED };
