@@ -26,6 +26,9 @@ export type TooltipProps = {
   disabled?: boolean;
 };
 
+/** How long a tip stays after the pointer leaves its trigger or the tip, so the pointer can cross. */
+const TIP_GRACE_MS = 120;
+
 type Position = {
   left: number;
   top: number;
@@ -33,6 +36,108 @@ type Position = {
   maxWidth?: number;
   maxHeight?: number;
 };
+
+/** Where the tip goes: the asked side, flipped when the other side has more room, then clamped. */
+function resolveTipPosition(
+  triggerRect: DOMRect,
+  tooltipRect: DOMRect,
+  placement: NonNullable<TooltipProps["placement"]>,
+): Position {
+  const gap = placement === "right" ? 10 : 6;
+  const margin = 8;
+  const horizontalMargin = Math.min(margin, Math.max(0, window.innerWidth / 2));
+  const verticalMargin = Math.min(margin, Math.max(0, window.innerHeight / 2));
+  const maxWidth = Math.max(0, Math.min(320, window.innerWidth - horizontalMargin * 2));
+  const maxHeight = Math.max(0, window.innerHeight - verticalMargin * 2);
+  const width = Math.min(tooltipRect.width, maxWidth);
+  const height = Math.min(tooltipRect.height, maxHeight);
+  const roomAbove = triggerRect.top - verticalMargin;
+  const roomBelow = window.innerHeight - triggerRect.bottom - verticalMargin;
+  const roomRight = window.innerWidth - triggerRect.right - horizontalMargin;
+  const roomLeft = triggerRect.left - horizontalMargin;
+  const resolvedPlacement: Position["placement"] =
+    placement === "top" && roomAbove < height + gap && roomBelow > roomAbove
+      ? "bottom"
+      : placement === "bottom" && roomBelow < height + gap && roomAbove > roomBelow
+        ? "top"
+        : placement === "right" && roomRight < width + gap && roomLeft > roomRight
+          ? "left"
+          : placement;
+  const unclampedLeft =
+    resolvedPlacement === "right"
+      ? triggerRect.right + gap
+      : resolvedPlacement === "left"
+        ? triggerRect.left - width - gap
+        : triggerRect.left + triggerRect.width / 2 - width / 2;
+  const maximumLeft = Math.max(horizontalMargin, window.innerWidth - width - horizontalMargin);
+  const left = Math.max(horizontalMargin, Math.min(unclampedLeft, maximumLeft));
+  const desiredTop =
+    resolvedPlacement === "right" || resolvedPlacement === "left"
+      ? triggerRect.top + 2
+      : resolvedPlacement === "top"
+        ? triggerRect.top - height - gap
+        : triggerRect.bottom + gap;
+  const maximumTop = Math.max(verticalMargin, window.innerHeight - height - verticalMargin);
+  const top = Math.max(verticalMargin, Math.min(desiredTop, maximumTop));
+  return { left, top, placement: resolvedPlacement, maxWidth, maxHeight };
+}
+
+/**
+ * v9 section 8 (WCAG 1.4.13). Open while the trigger is hovered or focused, while the pointer is on
+ * the tip itself, and for a 120ms grace after the pointer leaves, so it can cross onto the tip
+ * (hoverable). Escape dismisses it until the next hover or focus (dismissible).
+ */
+function useTipOpen() {
+  const [hoverTrigger, setHoverTrigger] = useState(false);
+  const [hoverTip, setHoverTip] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [linger, setLinger] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    if (!linger) return;
+    const timer = setTimeout(() => setLinger(false), TIP_GRACE_MS);
+    return () => clearTimeout(timer);
+  }, [linger, hoverTrigger, hoverTip]);
+  const dismiss = useCallback(() => {
+    setLinger(false);
+    // The tip unmounts, so its own mouseleave never fires: clear its hover here.
+    setHoverTip(false);
+    setDismissed(true);
+  }, []);
+  return {
+    open: !dismissed && (focused || hoverTrigger || hoverTip || linger),
+    dismiss,
+    triggerEnter: () => {
+      setDismissed(false);
+      setHoverTrigger(true);
+    },
+    triggerLeave: () => {
+      setHoverTrigger(false);
+      setLinger(true);
+    },
+    triggerFocus: () => {
+      setDismissed(false);
+      setFocused(true);
+    },
+    triggerBlur: () => {
+      setFocused(false);
+      setLinger(false);
+    },
+    tipEnter: () => setHoverTip(true),
+    tipLeave: () => {
+      setHoverTip(false);
+      setLinger(true);
+    },
+  };
+}
+
+/** Runs the trigger's own handler first, then ours. */
+const compose =
+  <E,>(ours: (event: E) => void, theirs?: unknown) =>
+  (event: E) => {
+    if (typeof theirs === "function") (theirs as (event: E) => void)(event);
+    ours(event);
+  };
 
 export function Tooltip({
   children,
@@ -44,7 +149,8 @@ export function Tooltip({
   disabled = false,
 }: TooltipProps) {
   const id = useId();
-  const [open, setOpen] = useState(false);
+  const tip = useTipOpen();
+  const { open, dismiss } = tip;
   const visibleOpen = open && !disabled;
   const [position, setPosition] = useState<Position>({ left: 0, top: 0, placement });
   // Keep the first paint invisible until geometry is measured so the tooltip never
@@ -59,50 +165,11 @@ export function Tooltip({
   }
   const triggerWrapRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLSpanElement>(null);
-
   const updatePosition = useCallback(() => {
     const trigger = triggerWrapRef.current;
     const tooltip = tooltipRef.current;
     if (!trigger || !tooltip) return;
-    const triggerRect = trigger.getBoundingClientRect();
-    const tooltipRect = tooltip.getBoundingClientRect();
-    const gap = placement === "right" ? 10 : 6;
-    const margin = 8;
-    const horizontalMargin = Math.min(margin, Math.max(0, window.innerWidth / 2));
-    const verticalMargin = Math.min(margin, Math.max(0, window.innerHeight / 2));
-    const maxWidth = Math.max(0, Math.min(320, window.innerWidth - horizontalMargin * 2));
-    const maxHeight = Math.max(0, window.innerHeight - verticalMargin * 2);
-    const width = Math.min(tooltipRect.width, maxWidth);
-    const height = Math.min(tooltipRect.height, maxHeight);
-    const roomAbove = triggerRect.top - verticalMargin;
-    const roomBelow = window.innerHeight - triggerRect.bottom - verticalMargin;
-    const roomRight = window.innerWidth - triggerRect.right - horizontalMargin;
-    const roomLeft = triggerRect.left - horizontalMargin;
-    const resolvedPlacement: Position["placement"] =
-      placement === "top" && roomAbove < height + gap && roomBelow > roomAbove
-        ? "bottom"
-        : placement === "bottom" && roomBelow < height + gap && roomAbove > roomBelow
-          ? "top"
-          : placement === "right" && roomRight < width + gap && roomLeft > roomRight
-            ? "left"
-            : placement;
-    const unclampedLeft =
-      resolvedPlacement === "right"
-        ? triggerRect.right + gap
-        : resolvedPlacement === "left"
-          ? triggerRect.left - width - gap
-          : triggerRect.left + triggerRect.width / 2 - width / 2;
-    const maximumLeft = Math.max(horizontalMargin, window.innerWidth - width - horizontalMargin);
-    const left = Math.max(horizontalMargin, Math.min(unclampedLeft, maximumLeft));
-    const desiredTop =
-      resolvedPlacement === "right" || resolvedPlacement === "left"
-        ? triggerRect.top + 2
-        : resolvedPlacement === "top"
-          ? triggerRect.top - height - gap
-          : triggerRect.bottom + gap;
-    const maximumTop = Math.max(verticalMargin, window.innerHeight - height - verticalMargin);
-    const top = Math.max(verticalMargin, Math.min(desiredTop, maximumTop));
-    setPosition({ left, top, placement: resolvedPlacement, maxWidth, maxHeight });
+    setPosition(resolveTipPosition(trigger.getBoundingClientRect(), tooltip.getBoundingClientRect(), placement));
     setPositioned(true);
   }, [placement]);
 
@@ -136,33 +203,27 @@ export function Tooltip({
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.stopPropagation();
-      setOpen(false);
+      dismiss();
     };
     document.addEventListener("keydown", onKey);
     return () => {
       document.removeEventListener("keydown", onKey);
     };
-  }, [visibleOpen]);
+  }, [dismiss, visibleOpen]);
 
   if (!isValidElement(children)) return <>{children}</>;
 
   const childProps = children.props as Record<string, unknown>;
-  const compose =
-    <E,>(ours: (event: E) => void, theirs?: unknown) =>
-    (event: E) => {
-      if (typeof theirs === "function") (theirs as (event: E) => void)(event);
-      ours(event);
-    };
   const describedBy =
     [childProps["aria-describedby"], visibleOpen && !presentationOnly ? id : null].filter(Boolean).join(" ") ||
     undefined;
 
   const trigger = cloneElement(children, {
     "aria-describedby": describedBy,
-    onMouseEnter: compose(() => setOpen(true), childProps.onMouseEnter),
-    onMouseLeave: compose(() => setOpen(false), childProps.onMouseLeave),
-    onFocus: compose(() => setOpen(true), childProps.onFocus),
-    onBlur: compose(() => setOpen(false), childProps.onBlur),
+    onMouseEnter: compose(tip.triggerEnter, childProps.onMouseEnter),
+    onMouseLeave: compose(tip.triggerLeave, childProps.onMouseLeave),
+    onFocus: compose(tip.triggerFocus, childProps.onFocus),
+    onBlur: compose(tip.triggerBlur, childProps.onBlur),
   });
 
   return (
@@ -178,6 +239,8 @@ export function Tooltip({
             aria-label={presentationOnly ? undefined : content}
             data-testid="tooltip"
             data-placement={position.placement}
+            onMouseEnter={tip.tipEnter}
+            onMouseLeave={tip.tipLeave}
             style={{
               position: "fixed",
               left: position.left,

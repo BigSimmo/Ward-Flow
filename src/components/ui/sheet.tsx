@@ -99,6 +99,12 @@ type SheetBaseProps = {
 
 export type SheetProps = SheetBaseProps & SheetAccessibleName;
 
+/** The close button, unless it sits in a hidden header (`inert` or `aria-hidden`), where it cannot hold focus. */
+function usableCloseButton(button: HTMLButtonElement | null): HTMLButtonElement | null {
+  if (!button || button.closest('[inert], [aria-hidden="true"]')) return null;
+  return button;
+}
+
 /**
  * Responsive overlay: a bottom sheet on mobile (rises from the bottom, safe-area
  * aware, drag-grip) and a centred dialog from `sm:` up. CSS-only animation.
@@ -261,11 +267,14 @@ export function Sheet({
       getPanel: () => panelRef.current,
       // The close button is only a fallback: the controller upgrades to a
       // deferred `data-sheet-autofocus` child (lazy DocumentDrawer Find field /
-      // UtilityDrawer) as soon as it mounts.
+      // UtilityDrawer) as soon as it mounts. A sheet with its header hidden has no usable close
+      // button (it is absent, or inert inside the hidden header), so the dialog itself is the last
+      // resort: focus always enters the sheet (v9 section 8).
       resolveTarget: () =>
         initialFocusRef?.current ??
         panelRef.current?.querySelector<HTMLElement>('[data-sheet-autofocus="true"]') ??
-        closeRef.current,
+        usableCloseButton(closeRef.current) ??
+        panelRef.current,
     });
 
     function onKeyDown(event: KeyboardEvent) {
@@ -447,6 +456,7 @@ export function Sheet({
         data-mobile-header-safe-area={resolvedMobileHeaderSafeArea}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-labelledby={resolvedLabelledBy}
         aria-label={resolvedAriaLabel}
         aria-describedby={description || descriptionContent ? descId : undefined}

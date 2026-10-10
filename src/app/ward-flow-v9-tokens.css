@@ -100,6 +100,7 @@
   --wf-glass: var(--wf-glass-pop);
   --wf-glass-thick: var(--wf-glass-sheet);
   --wf-scrim: rgba(22, 30, 40, 0.14);
+  --wf-scrim-strong: rgba(22, 30, 40, 0.28);
   --wf-e-sel: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(16, 24, 40, 0.12), 0 0 0 1px var(--wf-line-ctl);
   --wf-e1-hover: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 20px -12px rgba(16, 24, 40, 0.24);
   --wf-focus-gap: var(--wf-surface);
@@ -137,6 +138,7 @@
   --wf-glass: var(--wf-glass-pop);
   --wf-glass-thick: var(--wf-glass-sheet);
   --wf-scrim: rgba(0, 0, 0, 0.4);
+  --wf-scrim-strong: rgba(0, 0, 0, 0.56);
   --wf-e-sel: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--wf-line-ctl);
   --wf-e1-hover: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 8px 20px -12px rgba(0, 0, 0, 0.6);
 }
@@ -170,6 +172,7 @@
     --wf-glass: var(--wf-glass-pop);
     --wf-glass-thick: var(--wf-glass-sheet);
     --wf-scrim: rgba(0, 0, 0, 0.4);
+    --wf-scrim-strong: rgba(0, 0, 0, 0.56);
     --wf-e-sel: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--wf-line-ctl);
     --wf-e1-hover: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 8px 20px -12px rgba(0, 0, 0, 0.6);
   }

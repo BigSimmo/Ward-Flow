@@ -57,7 +57,7 @@
 }
 
 .segItem {
-  height: 26px;
+  height: var(--wf-target);
   padding: 0 10px;
   border: 0;
   border-radius: var(--wf-r-xs);
@@ -101,7 +101,7 @@
 }
 
 .md .segItem {
-  height: 28px;
+  height: 30px;
   font-size: var(--wf-fs-13);
 }
 
@@ -253,6 +253,13 @@
   .segItem,
   .trk .segItem {
     height: 36px;
+    position: relative;
+  }
+  /* v9 section 5: on touch the 36px face reaches 44px through a hit area, not a bigger face. */
+  .segItem::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
   }
   .tab {
     height: 44px;

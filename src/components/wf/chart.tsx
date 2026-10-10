@@ -468,10 +468,9 @@ export function Donut({ value, size = 56, thickness = 6, fill = "data-1", text, 
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
   const v = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
-  // Round caps add thickness/2 at each end, so trim the dash by one thickness. Without this, 0% drew
-  // a dot and anything from about 96% looked full. A full ring uses butt caps so the ends meet.
-  const full = v >= 1;
-  const dash = full ? c : Math.max(0.001, c * v - thickness);
+  // Butt caps: the arc ends exactly at its value. Round caps drew a dot at 0% and closed the gap
+  // from about 96%, and trimming them still misread small values. 0% draws no arc at all.
+  const dash = c * v;
   const shown = text ?? `${Math.round(v * 100)}%`;
   return (
     <span
@@ -490,7 +489,7 @@ export function Donut({ value, size = 56, thickness = 6, fill = "data-1", text, 
             fill="none"
             stroke={fillVar(fill)}
             strokeWidth={thickness}
-            strokeLinecap={full ? "butt" : "round"}
+            strokeLinecap="butt"
             strokeDasharray={`${dash} ${c}`}
             transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />

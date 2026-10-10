@@ -232,10 +232,16 @@ describe("Donut", () => {
     };
     expect(arcs(0)).toHaveLength(1);
     expect(arcs(Number.NaN)).toHaveLength(1);
+    // v9: butt caps throughout, so the arc ends exactly at its value and 97% still shows a gap.
+    const dash = (circle: Element) => (circle.getAttribute("stroke-dasharray") ?? "").split(" ").map(Number);
     const nearlyFull = arcs(0.97)[1];
-    expect(nearlyFull.getAttribute("stroke-linecap")).toBe("round");
+    expect(nearlyFull.getAttribute("stroke-linecap")).toBe("butt");
+    const [nearlyDash, nearlyGap] = dash(nearlyFull);
+    expect(nearlyDash).toBeLessThan(nearlyGap);
     const full = arcs(1)[1];
     expect(full.getAttribute("stroke-linecap")).toBe("butt");
+    const [fullDash, fullGap] = dash(full);
+    expect(fullDash).toBeCloseTo(fullGap);
   });
 });
 

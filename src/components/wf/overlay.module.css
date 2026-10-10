@@ -200,6 +200,59 @@
   color: var(--wf-ink-3);
 }
 
+/* Undo hairline (v9 section 12, .toast.ud): a 2px line shrinks over the Undo window. The timer in
+   toast.tsx is the source of truth; the line mirrors it and pauses with it on hover or focus. It
+   rests at zero width, so the entry needs no fill-mode (which would stop the blur). The line is
+   inset from the corners rather than clipped, so focus rings inside the toast are never cut. */
+.toastUndo {
+  position: relative;
+}
+
+.undoBar {
+  position: absolute;
+  left: var(--wf-r-md);
+  right: var(--wf-r-md);
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--wf-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: wfUndoShrink var(--wf-undo-ms, 8000ms) linear;
+  pointer-events: none;
+}
+
+.toastUndo[data-paused="true"] .undoBar {
+  animation-play-state: paused;
+}
+
+.toastUndo:not([data-undo="running"]) .undoBar {
+  animation: none;
+}
+
+/* Time left in words: shown only under reduced motion, in place of the line. */
+.undoWords {
+  display: none;
+}
+
+@keyframes wfUndoShrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .undoBar {
+    display: none;
+  }
+  .undoWords {
+    display: inline;
+  }
+}
+
 @media (forced-colors: active) {
   .glass {
     border: 1px solid CanvasText;
@@ -207,5 +260,8 @@
   .item:focus-visible,
   .popover:focus-visible {
     outline: 2px solid CanvasText;
+  }
+  .undoBar {
+    background: CanvasText;
   }
 }

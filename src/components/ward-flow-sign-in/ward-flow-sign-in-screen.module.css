@@ -1,8 +1,8 @@
 /* src/components/ward-flow-sign-in/ward-flow-sign-in-screen.module.css
  *
  * v6 Sign in (7 October 2026, `design/pages-v6/SignIn.png`). v6 tokens only (`--wf-*`, global in
- * `src/app/ward-flow-v6-tokens.css`); night follows root `data-theme`, which the component mirrors
- * from `useTheme()`. This screen is deliberately outside `src/components/ward-management` (see the
+ * `src/app/ward-flow-v6-tokens.css`); night follows root `data-theme`, which the app's one theme
+ * switch (`@/lib/theme-client`, reached through `useTheme()`) sets, or the OS in Auto. This screen is deliberately outside `src/components/ward-management` (see the
  * component's own header comment), so it composes no ward token layer. Colour is a glyph, never a
  * fill; the selected role row carries the only accent stripe.
  */
