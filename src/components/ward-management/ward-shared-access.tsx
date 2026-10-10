@@ -59,9 +59,6 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
         const clientId = process.env.NEXT_PUBLIC_WARD_CLIENT_ID;
         const baseUrl = process.env.NEXT_PUBLIC_WARD_API_BASE_URL;
         const redirectUri = `${window.location.origin}/mockups/ward-flow`;
-        // Keep silent renewal on a minimal, same-origin page: it is registered
-        // in Entra ID specifically for MSAL's hidden-iframe callback.
-        const silentRedirectUri = `${window.location.origin}/auth/silent-renew`;
         if (
           !tenant ||
           !clientId ||
@@ -97,14 +94,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
           changed: (next) => {
             if (!closed) setView(next);
           },
-          token: async () =>
-            (
-              await instance.acquireTokenSilent({
-                account: selected,
-                scopes: [scope],
-                redirectUri: silentRedirectUri,
-              })
-            ).accessToken,
+          token: async () => (await instance.acquireTokenSilent({ account: selected, scopes: [scope] })).accessToken,
         });
         client.current = connection;
         await connection.refresh();

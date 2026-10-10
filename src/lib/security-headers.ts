@@ -38,8 +38,6 @@ export type ContentSecurityPolicyOptions = SecurityHeaderFlags & {
   nonce: string;
   // Extra connect-src origins for the shared Azure workspace (resolveSharedWorkspaceOrigins).
   sharedOrigins?: readonly string[];
-  // The MSAL silent-renewal callback is intentionally frameable by this origin.
-  frameAncestors?: "'none'" | "'self'";
 };
 
 /** Microsoft sign-in, which the shared workspace's MSAL client calls for tokens. */
@@ -69,7 +67,6 @@ export function buildContentSecurityPolicy({
   isLocalHttpRuntime,
   nonce,
   sharedOrigins = [],
-  frameAncestors = "'none'",
 }: ContentSecurityPolicyOptions): string {
   // Production: nonce + 'strict-dynamic' is the modern strict-CSP shape. CSP3
   // browsers ignore host allow-lists AND 'unsafe-inline' for scripts, running
@@ -94,7 +91,7 @@ export function buildContentSecurityPolicy({
     "default-src 'self'; " +
     "base-uri 'self'; " +
     "object-src 'none'; " +
-    `frame-ancestors ${frameAncestors}; ` +
+    "frame-ancestors 'none'; " +
     "form-action 'self'; " +
     upgradeInsecureRequests +
     // img-src/media-src/connect-src are same-origin only. The former clinical app's
@@ -109,11 +106,9 @@ export function buildContentSecurityPolicy({
     // not a configured Sentry integration. Add an external origin only with
     // an explicitly configured integration and its privacy review.
     `connect-src ${["'self'", ...sharedOrigins].join(" ")}; ` +
-    // MSAL renews tokens in a hidden frame once its refresh token lapses. The
-    // callback is same-origin; Microsoft hosts the interactive sign-in frame.
-    (sharedOrigins.includes(MICROSOFT_SIGN_IN_ORIGIN)
-      ? `frame-src 'self' ${MICROSOFT_SIGN_IN_ORIGIN}; `
-      : "") +
+    // No frame-src for MSAL's hidden renewal frame: it returns to this site, which refuses
+    // framing (frame-ancestors 'none', X-Frame-Options DENY), so once the refresh token lapses
+    // the coordinator signs in again rather than the site allowing itself to be framed.
     "worker-src 'self'; " +
     "manifest-src 'self'; " +
     scriptSrc +
