@@ -88,10 +88,10 @@ describe("what a desk can do comes from EVENT_ROLE", () => {
     expect(ward.cannot).toContainEqual({ label: "Refer to wards", by: "Flow coordinator" });
   });
 
-  it("the coordinator refers but does not book transport", () => {
+  it("the coordinator refers and books transport, since it may take every action (Josh, 10 Oct 2026)", () => {
     const coordinator = deskActions("coordinator");
     expect(coordinator.can).toContain("Refer to wards");
-    expect(coordinator.can).not.toContain("Book transport");
+    expect(coordinator.can).toContain("Book transport");
   });
 
   it("an ED can record medical clearance", () => {
