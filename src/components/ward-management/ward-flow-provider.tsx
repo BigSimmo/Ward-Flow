@@ -162,6 +162,8 @@ type WardFlowContextValue = {
   /** Stream A, 9 Oct 2026: inbox row ownership and snooze histories, read-only like the two above. */
   inboxOwnership: WardFlowState["inboxOwnership"];
   inboxSnoozes: WardFlowState["inboxSnoozes"];
+  /** Undo records, read-only: a toast's Undo names the exact step it was offered for. */
+  undoRecords?: WardFlowState["undoRecords"];
   /** Authored notices remain reducer-owned; Activity reads their existing audience and time. */
   notices: WardFlowState["notices"];
   morningRollupConfirmations: WardFlowState["morningRollupConfirmations"];
@@ -1081,6 +1083,7 @@ function WardFlowWorld({
       inboxCompletions: state.inboxCompletions,
       inboxOwnership: state.inboxOwnership,
       inboxSnoozes: state.inboxSnoozes,
+      undoRecords: state.undoRecords,
       notices: state.notices,
       morningRollupConfirmations: state.morningRollupConfirmations,
       resolvePatientIdentity: (subject) =>

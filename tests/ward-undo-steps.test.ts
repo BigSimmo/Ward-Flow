@@ -309,15 +309,20 @@ describe("override second sign-off", () => {
 });
 
 describe("an older Undo cannot take back a newer step", () => {
-  // Gitar review on PR #242: two Offers on one movement inside the toast window. The first toast's
-  // Undo names its own step, so it is refused rather than withdrawing the second Offer.
-  it("refuses an Undo naming a step other than the newest, and allows the newest", () => {
+  // Gitar and Qodo review on PR #242: two steps on one subject inside the toast window, often in the
+  // same whole minute. Each record carries its own rising number, and an Undo naming an older one
+  // is refused rather than taking back the newer step.
+  it("refuses an older step's Undo within the same minute by its record number", () => {
     const { applied, event } = step(seedWardFlowState(), "REFER_TO_UNITS");
-    const stale = { ...undoEventFor(event, "coordinator", NOW + 2), decidedAt: NOW - 1 } as WardFlowEvent;
-    const refused = wardFlowReducer(applied, stale);
-    expect(lastRefusal(applied, refused)).toBe("A later step replaced this one, so this Undo no longer applies");
-    const current = { ...undoEventFor(event, "coordinator", NOW + 2), decidedAt: NOW } as WardFlowEvent;
-    const undone = wardFlowReducer(applied, current);
+    const record = applied.undoRecords?.find((row) => row.kind === "step");
+    expect(record?.kind === "step" && typeof record.seq === "number").toBe(true);
+    const seq = record?.kind === "step" ? (record.seq ?? 0) : 0;
+    const base = undoEventFor(event, "coordinator", NOW + 2);
+    const stale = { ...base, recordSeq: seq - 1 } as WardFlowEvent;
+    expect(lastRefusal(applied, wardFlowReducer(applied, stale))).toBe(
+      "A later step replaced this one, so this Undo no longer applies",
+    );
+    const undone = wardFlowReducer(applied, { ...base, recordSeq: seq } as WardFlowEvent);
     expect(lastRefusal(applied, undone)).toBeUndefined();
     expect(world(undone)).toEqual(world(seedWardFlowState()));
   });

@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
 import { useToast, type ToastInput } from "@/components/wf";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Rejection } from "@/components/ward-management/ward-model";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
+import { stepUndoFor, undoStepSubjectId, type UndoStepType } from "@/components/ward-management/ward-undo";
 
 /** The part of a toast API this hook needs: a page passes its own, or the layout's is used. */
 export type UndoToastApi = { push: (toast: ToastInput) => string };
@@ -28,8 +30,8 @@ type Pending = {
   undo?: (now: Instant) => WardFlowEvent;
   /** What the toast says once the undo is accepted. */
   undone?: string;
-  /** When the step was recorded, so its Undo cannot take back a newer step on the same subject. */
-  decidedAt?: Instant;
+  /** The record number already kept for this undo and subject before the step, if any. */
+  priorSeq?: number;
 };
 
 export type UndoableStep = {
@@ -72,6 +74,8 @@ export function useUndoableStep({
   sayRefusal,
 }: UndoableStepOptions) {
   const layoutToast = useLayoutToast();
+  // Read where a provider exists; a screen rendered alone falls back to the step's time alone.
+  const undoRecords = useContext(WardFlowContext)?.undoRecords;
   const sink = toast ?? layoutToast;
   const pendingRef = useRef<Pending | null>(null);
   const [token, setToken] = useState(0);
@@ -102,7 +106,13 @@ export function useUndoableStep({
       sink.push({ tone: "info", title: pending.success });
       return;
     }
-    const undoType = build(nowRef.current).type;
+    const offered = build(nowRef.current);
+    const undoType = offered.type;
+    // The record this toast is for, so its Undo is refused once a newer step replaces it.
+    // Only a record newer than the one seen before the step is this step's; until the state shows
+    // it (a shared workspace replies a moment later), the Undo carries no number and is not refused.
+    const seq = stepUndoFor(undoRecords, undoType as UndoStepType, undoStepSubjectId(offered))?.seq;
+    const recordSeq = seq !== undefined && seq !== pending.priorSeq ? seq : undefined;
     const limit = roleLimitReason(routeRole, undoType);
     sink.push({
       tone: "success",
@@ -117,11 +127,10 @@ export function useUndoableStep({
                   prior: rejectionCountRef.current,
                   success: pending.undone ?? "Undone. Back as it was.",
                 };
-                const built = build(nowRef.current);
-                const undoEvent =
-                  pending.decidedAt === undefined
-                    ? built
-                    : ({ ...built, decidedAt: pending.decidedAt } as WardFlowEvent);
+                const undoEvent = {
+                  ...build(nowRef.current),
+                  ...(recordSeq === undefined ? {} : { recordSeq }),
+                } as WardFlowEvent;
                 dispatch(undoEvent);
                 setToken((value) => value + 1);
               },
@@ -135,11 +144,11 @@ export function useUndoableStep({
   return {
     /** Dispatches `event` now, then offers Undo once the engine has accepted it. */
     run(event: WardFlowEvent, step: UndoableStep) {
-      pendingRef.current = {
-        prior: rejectionCountRef.current,
-        ...step,
-        ...("now" in event ? { decidedAt: event.now } : {}),
-      };
+      const offered = step.undo?.(nowRef.current);
+      const priorSeq = offered
+        ? stepUndoFor(undoRecords, offered.type as UndoStepType, undoStepSubjectId(offered))?.seq
+        : undefined;
+      pendingRef.current = { prior: rejectionCountRef.current, ...step, priorSeq };
       dispatch(event);
       setToken((value) => value + 1);
     },

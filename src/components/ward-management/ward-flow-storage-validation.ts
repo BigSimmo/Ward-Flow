@@ -855,6 +855,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
           !actions ||
           !actions.includes(row.action as string) ||
           !text(row.subjectId) ||
+          !(row.seq === undefined || counter(row.seq)) ||
           !(row.unitId === null || unitIds.has(row.unitId)) ||
           !records(row.changes) ||
           !row.changes.every(

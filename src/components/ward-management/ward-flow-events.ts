@@ -2313,8 +2313,8 @@ export type WardFlowEvent =
       type: "UNDO_REFER_TO_UNITS";
       role: WardFlowRole;
       now: Instant;
-      /** When the step this Undo is for was recorded; a newer step on the same subject refuses it. */
-      decidedAt?: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
       movementId: string;
     }
   | {
@@ -2322,8 +2322,8 @@ export type WardFlowEvent =
       type: "UNDO_ACCEPT_IN_PRINCIPLE";
       role: WardFlowRole;
       now: Instant;
-      /** When the step this Undo is for was recorded; a newer step on the same subject refuses it. */
-      decidedAt?: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
       movementId: string;
       /** A ward undoing its own acceptance names itself. */
       actingUnitId?: string;
@@ -2333,8 +2333,8 @@ export type WardFlowEvent =
       type: "UNDO_LEGAL_FORM_RECORD";
       role: WardFlowRole;
       now: Instant;
-      /** When the step this Undo is for was recorded; a newer step on the same subject refuses it. */
-      decidedAt?: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
       movementId: string;
     }
   | {
@@ -2342,8 +2342,8 @@ export type WardFlowEvent =
       type: "UNDO_SUPPORT_NOTIFICATION";
       role: WardFlowRole;
       now: Instant;
-      /** When the step this Undo is for was recorded; a newer step on the same subject refuses it. */
-      decidedAt?: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
       movementId?: string;
       admissionId?: string;
     }
@@ -2352,8 +2352,8 @@ export type WardFlowEvent =
       type: "UNDO_REPATRIATION";
       role: WardFlowRole;
       now: Instant;
-      /** When the step this Undo is for was recorded; a newer step on the same subject refuses it. */
-      decidedAt?: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
       admissionId: string;
     }
   | {
@@ -2361,8 +2361,8 @@ export type WardFlowEvent =
       type: "UNDO_HANDOVER_SIGN_OFF";
       role: WardFlowRole;
       now: Instant;
-      /** When the step this Undo is for was recorded; a newer step on the same subject refuses it. */
-      decidedAt?: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
     }
   | {
       /**
@@ -2372,8 +2372,8 @@ export type WardFlowEvent =
       type: "UNDO_ED_STEP";
       role: WardFlowRole;
       now: Instant;
-      /** When the step this Undo is for was recorded; a newer step on the same subject refuses it. */
-      decidedAt?: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
       movementId?: string;
       referralId?: string;
     }
@@ -2382,8 +2382,8 @@ export type WardFlowEvent =
       type: "UNDO_TRANSPORT_STEP";
       role: WardFlowRole;
       now: Instant;
-      /** When the step this Undo is for was recorded; a newer step on the same subject refuses it. */
-      decidedAt?: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
       movementId: string;
       /** A ward undoing its own recorded arrival names itself. */
       actingUnitId?: string;

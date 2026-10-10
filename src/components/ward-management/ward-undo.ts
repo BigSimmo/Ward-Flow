@@ -100,6 +100,8 @@ export type StepUndo = {
   action: UndoableStepAction;
   subjectId: string;
   at: Instant;
+  /** Unique and rising for each step recorded, so an Undo names exactly the step it was offered for. */
+  seq?: number;
   role: WardFlowRole;
   /** The ward that acted, for a ward step that names its unit; `null` otherwise. */
   unitId: string | null;
@@ -144,6 +146,14 @@ const STEP_UNDO_IGNORED_KEYS: ReadonlySet<string> = new Set([
   "undoRecords",
 ]);
 
+/** The next step record number: above every record kept and above `floor` (the audit sequence). */
+export function nextStepUndoSeq(records: readonly UndoRecord[] | undefined, floor: number): number {
+  let highest = Number.isFinite(floor) ? floor : 0;
+  for (const record of records ?? [])
+    if (record.kind === "step" && (record.seq ?? 0) > highest) highest = record.seq ?? 0;
+  return highest + 1;
+}
+
 const isRow = (value: unknown): value is { id: string } =>
   typeof value === "object" &&
   value !== null &&
@@ -162,19 +172,8 @@ export function diffForStepUndo(before: object, next: object): StepChange[] {
     if (a === b || typeof b === "number") continue;
     if (Array.isArray(b) && (a === undefined || Array.isArray(a))) {
       const old = (a ?? []) as unknown[];
-      if ([...old, ...b].every(isRow)) {
-        const oldRows = old as { id: string }[];
-        const newRows = b as { id: string }[];
-        const oldById = new Map(oldRows.map((row) => [row.id, row]));
-        const newById = new Map(newRows.map((row) => [row.id, row]));
-        oldRows.forEach((row, index) => {
-          const after = newById.get(row.id);
-          if (after === row || (after !== undefined && sameRecord(after, row))) return;
-          changes.push({ slice, mode: "id", id: row.id, index, before: row, after: after ?? null });
-        });
-        newRows.forEach((row, index) => {
-          if (!oldById.has(row.id)) changes.push({ slice, mode: "id", id: row.id, index, before: null, after: row });
-        });
+      if (old.every(isRow) && b.every(isRow)) {
+        diffRows(slice, old as { id: string }[], b as { id: string }[], changes);
         continue;
       }
       if (old.length <= b.length && old.every((row, index) => row === b[index] || sameRecord(row, b[index]))) {
@@ -186,6 +185,33 @@ export function diffForStepUndo(before: object, next: object): StepChange[] {
     if (!sameRecord(a ?? null, b ?? null)) changes.push({ slice, mode: "whole", before: a ?? null, after: b ?? null });
   }
   return changes;
+}
+
+/**
+ * The id-keyed rows `next` changed. A reducer copies only the rows it touches, so rows that stand at
+ * the same place with the same id are compared in place (a shared reference costs nothing); the
+ * maps are built only when rows were added, removed or reordered.
+ */
+function diffRows(slice: string, oldRows: { id: string }[], newRows: { id: string }[], changes: StepChange[]) {
+  const aligned = oldRows.length === newRows.length && oldRows.every((row, index) => row.id === newRows[index].id);
+  if (aligned) {
+    oldRows.forEach((row, index) => {
+      const after = newRows[index];
+      if (after !== row && !sameRecord(after, row))
+        changes.push({ slice, mode: "id", id: row.id, index, before: row, after });
+    });
+    return;
+  }
+  const oldById = new Map(oldRows.map((row) => [row.id, row]));
+  const newById = new Map(newRows.map((row) => [row.id, row]));
+  oldRows.forEach((row, index) => {
+    const after = newById.get(row.id);
+    if (after === row || (after !== undefined && sameRecord(after, row))) return;
+    changes.push({ slice, mode: "id", id: row.id, index, before: row, after: after ?? null });
+  });
+  newRows.forEach((row, index) => {
+    if (!oldById.has(row.id)) changes.push({ slice, mode: "id", id: row.id, index, before: null, after: row });
+  });
 }
 
 /** Rule 2 for a step: whether any record it changed reads differently now. */
@@ -319,15 +345,21 @@ export function sameRecord(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (Array.isArray(a) || Array.isArray(b)) {
     if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
-    return a.every((item, index) => sameRecord(jsonScalar(item), jsonScalar(b[index])));
+    for (let index = 0; index < a.length; index += 1)
+      if (!sameRecord(jsonScalar(a[index]), jsonScalar(b[index]))) return false;
+    return true;
   }
-  if (a !== null && b !== null && typeof a === "object" && typeof b === "object") {
-    const left = Object.entries(a as Record<string, unknown>).filter(([, item]) => item !== undefined);
-    const right = b as Record<string, unknown>;
-    if (left.length !== Object.values(right).filter((item) => item !== undefined).length) return false;
-    return left.every(([key, item]) => Object.hasOwn(right, key) && sameRecord(item, right[key]));
+  const isObject = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object";
+  if (isObject(a) && isObject(b)) {
+    let members = 0;
+    for (const key in a) {
+      if (!Object.hasOwn(a, key) || a[key] === undefined) continue;
+      members += 1;
+      if (!Object.hasOwn(b, key) || !sameRecord(a[key], b[key])) return false;
+    }
+    for (const key in b) if (Object.hasOwn(b, key) && b[key] !== undefined) members -= 1;
+    return members === 0;
   }
-  const isObject = (value: unknown) => value !== null && typeof value === "object";
   if (isObject(a) || isObject(b) || a === undefined || b === undefined) return false;
-  return JSON.stringify(jsonScalar(a)) === JSON.stringify(jsonScalar(b));
+  return jsonScalar(a) === jsonScalar(b);
 }

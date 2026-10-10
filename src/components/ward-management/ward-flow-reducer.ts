@@ -28,6 +28,7 @@ import {
   type UndoRecord,
   applyStepUndo,
   diffForStepUndo,
+  nextStepUndoSeq,
   stepChangedSince,
   stepUndoFor,
   undoStepSubjectId,
@@ -2221,7 +2222,11 @@ function heldBedRefusal(
   const heldByReferral = state.referrals.some(
     (referral) =>
       referral.id !== exceptReferralId &&
-      !state.movements.some((movement) => movement.referralId === referral.id && movement.stage === "arrived") &&
+      // A patient who has arrived on THIS ward no longer needs the bed held; an arrival elsewhere does.
+      !state.movements.some(
+        (movement) =>
+          movement.referralId === referral.id && movement.stage === "arrived" && movement.acceptedUnitId === unit.id,
+      ) &&
       referral.destinations.some(
         (arm) =>
           arm.state === "accepted" &&
@@ -2291,6 +2296,7 @@ function withStepUndo(state: WardFlowState, next: WardFlowState, event: WardFlow
       action: event.type as StepUndo["action"],
       subjectId: undoStepSubjectId(event),
       at: event.now,
+      seq: nextStepUndoSeq(next.undoRecords, state.auditSequence),
       role: event.role,
       unitId,
       changes,
@@ -2535,7 +2541,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
       if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);
       // An older toast's Undo must not take back a newer step that replaced its record.
-      if (event.decidedAt !== undefined && record.at !== event.decidedAt)
+      if (event.recordSeq !== undefined && record.seq !== event.recordSeq)
         return reject(state, event, "A later step replaced this one, so this Undo no longer applies");
       const refusal =
         undoRoleRefusal(record, event.role, "actingUnitId" in event ? event.actingUnitId : undefined) ??
