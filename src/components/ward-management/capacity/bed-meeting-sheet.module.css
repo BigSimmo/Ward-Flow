@@ -82,7 +82,7 @@
 }
 
 .primaryButton:hover {
-  filter: brightness(1.08);
+  background: var(--wf-pri-2);
 }
 
 .openButton:focus-visible,
@@ -147,7 +147,7 @@
   margin: 0 0 var(--wf-s-1);
   padding-bottom: var(--wf-s-1);
   border-bottom: 1px solid var(--wf-line-2);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -156,7 +156,7 @@
 
 .subTitle {
   margin: var(--wf-s-3) 0 var(--wf-s-1);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;

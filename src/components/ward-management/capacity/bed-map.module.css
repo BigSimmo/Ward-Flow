@@ -84,7 +84,7 @@
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface-2);
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
   text-align: center;
 }
@@ -167,7 +167,7 @@
 }
 
 .serviceNameText {
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -214,7 +214,8 @@
 
 .serviceArrowBtn:disabled,
 .flankingArrow:disabled {
-  opacity: 0.4;
+  border-color: var(--wf-line);
+  color: var(--wf-dim);
   cursor: default;
 }
 
@@ -446,7 +447,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -476,7 +477,7 @@
 }
 
 .bayLabel {
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 

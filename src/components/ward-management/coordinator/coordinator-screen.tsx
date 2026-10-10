@@ -7,10 +7,8 @@ import { CheckingFoot, Hero, HeroStat, LiveChip, OccupancyRing, buttonClass } fr
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
 import { clockState, formatInstant } from "@/components/ward-management/ward-clock";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import {
-  BED_ALERT_THRESHOLD_PERCENT,
-  deriveServiceBedAlerts,
-} from "@/components/ward-management/shell/ward-service-bed-alerts";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
+import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { allDeclines, allOverrides, buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -311,14 +309,14 @@ export function CoordinatorScreen() {
   const tierOneInQueue = queue.filter((movement) => movement.urgency === 1).length;
   const dueWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
 
-  // v10 hero: the one ring on the page is statewide occupancy against the same alert line the
-  // sidebar uses, so the two never disagree.
+  // v10 hero: the one ring on the page is statewide occupancy, read from the same ward rows as the
+  // Capacity page's ring so the two pages show one figure, against the sidebar's alert line.
   const statewideOccupancy = useMemo(() => {
-    const services = deriveServiceBedAlerts(units, bedReleases, undefined, movements, now).services;
-    const total = services.reduce((sum, row) => sum + row.totalBeds, 0);
-    const occupied = services.reduce((sum, row) => sum + row.occupiedBeds, 0);
-    return total > 0 ? (occupied / total) * 100 : null;
-  }, [units, bedReleases, movements, now]);
+    const rows = networkWardRows(units, now, bedReleases, admissions, leaveBeds);
+    const beds = rows.reduce((sum, row) => sum + row.unit.beds, 0);
+    const occupied = rows.reduce((sum, row) => sum + row.occupied, 0);
+    return beds > 0 ? (occupied / beds) * 100 : null;
+  }, [units, now, bedReleases, admissions, leaveBeds]);
   // Checking foot: what this page watched, as counts. Never "All clear".
   const staleBedCounts = units.filter((unit) => now - unit.allocatable.confirmedAt > BED_COUNT_FRESH_MINUTES).length;
   const wardsNotReporting = units.filter(

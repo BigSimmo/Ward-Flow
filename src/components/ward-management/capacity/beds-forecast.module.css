@@ -62,7 +62,7 @@
 .tickLabel,
 .columnLabel {
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   fill: var(--wf-ink-3);
 }
 
