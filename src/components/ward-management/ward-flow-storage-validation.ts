@@ -19,7 +19,9 @@ import {
   BED_RELEASE_STATES,
   REFERRAL_ADDRESSING_STATES,
   ABSENCE_STEPS,
+  REFERRAL_DECLINE_REASONS,
 } from "./ward-model";
+import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
@@ -720,7 +722,33 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !finite(row.expiresAt) ||
       !finite(row.durationMinutes) ||
       row.durationMinutes <= 0 ||
-      !strings(row.acknowledgedUnits)
+      !strings(row.acknowledgedUnits) ||
+      // Global alerts, 10 Oct 2026: every new field is optional, so a version 7 save restores.
+      (row.kind !== undefined && !["directive", "bed_call", "pull_now"].includes(row.kind as string)) ||
+      (row.replies !== undefined &&
+        (!Array.isArray(row.replies) ||
+          !(row.replies as RecordValue[]).every(
+            // The banner looks up each answer and reason label, so an unknown one is refused here.
+            (reply) =>
+              object(reply) &&
+              text(reply.unitId) &&
+              Object.hasOwn(BROADCAST_ANSWER_LABELS, reply.answer as string) &&
+              finite(reply.at) &&
+              (reply.reason === undefined || REFERRAL_DECLINE_REASONS.includes(reply.reason as never)) &&
+              (reply.beds === undefined || finite(reply.beds)) &&
+              (reply.readyAt === undefined || finite(reply.readyAt)),
+          ))) ||
+      (row.movementId !== undefined && !text(row.movementId)) ||
+      (row.targetUnitIds !== undefined && !strings(row.targetUnitIds)) ||
+      (row.answerBy !== undefined && !finite(row.answerBy)) ||
+      // A count past the movement's history would hide a later pull, so it is refused.
+      (row.stageChangesAtDispatch !== undefined &&
+        !(
+          Number.isInteger(row.stageChangesAtDispatch) &&
+          (row.stageChangesAtDispatch as number) >= 0 &&
+          (row.stageChangesAtDispatch as number) <=
+            (state.movements.find((movement) => movement.id === row.movementId)?.stageChanges.length ?? Infinity)
+        ))
     )
       return false;
   }
