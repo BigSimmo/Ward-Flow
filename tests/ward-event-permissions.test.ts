@@ -463,6 +463,16 @@ describe("who may raise which event", () => {
     UNDO_AUDIT_REVIEW: ["coordinator"],
     PLACE_IN_BED: ["ward", "coordinator"],
     UNDO_PLACE_IN_BED: ["ward", "coordinator"],
+    // v10 pass 3 (Josh, 10 Oct 2026): each step undo carries its step's roles; the reducer narrows
+    // it to the role that acted (a ward to its own unit), or the coordinator.
+    UNDO_REFER_TO_UNITS: ["coordinator"],
+    UNDO_ACCEPT_IN_PRINCIPLE: ["ward", "coordinator"],
+    UNDO_LEGAL_FORM_RECORD: ["ed", "coordinator", "ward", "community"],
+    UNDO_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+    UNDO_REPATRIATION: ["coordinator"],
+    UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
+    UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
+    UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
   };
 
   it("covers every event that exists, so a new event cannot arrive unpermissioned", () => {

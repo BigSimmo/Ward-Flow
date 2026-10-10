@@ -28,6 +28,7 @@ import { WARD_SCENARIOS } from "./ward-scenarios";
 import { allEmergencyDepartments, siteByCode } from "./ward-sites";
 import { communityTeamById } from "./community/community-derivations";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
+import { UNDO_STEP_ACTIONS } from "./ward-undo";
 
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -843,6 +844,25 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
           !unitIds.has(row.unitId) ||
           !(row.beforeBed === null || bed(row.beforeBed)) ||
           !bed(row.afterBed)
+        )
+          return false;
+      } else if (row.kind === "step") {
+        // v10 pass 3: a step's before/after rows are state rows, already walked by `nested` above.
+        const actions = UNDO_STEP_ACTIONS[row.undoType as keyof typeof UNDO_STEP_ACTIONS] as
+          readonly string[] | undefined;
+        if (
+          !actions ||
+          !actions.includes(row.action as string) ||
+          !text(row.subjectId) ||
+          !(row.unitId === null || unitIds.has(row.unitId)) ||
+          !records(row.changes) ||
+          !row.changes.every(
+            (change) =>
+              text(change.slice) &&
+              ((change.mode === "id" && text(change.id) && counter(change.index) && "before" in change) ||
+                (change.mode === "append" && counter(change.start) && Array.isArray(change.rows)) ||
+                (change.mode === "whole" && "before" in change)),
+          )
         )
           return false;
       } else return false;

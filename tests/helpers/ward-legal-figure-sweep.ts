@@ -32,6 +32,7 @@ import {
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { ABSENCE_STEPS } from "@/components/ward-management/ward-model";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
+import { undoStepTypeFor } from "../../src/components/ward-management/ward-undo";
 import {
   seedWardFlowState,
   wardFlowReducer,
@@ -1580,6 +1581,30 @@ export function applyFirstAccepted(
  * and, through it, to `candidateEvents` — see that function's own doc comment for what `false`
  * proves and why it was missing.
  */
+/** The step undo for an accepted undoable `event`, applied to `applied`, when the reducer accepts it. */
+export function undoOf(
+  event: WardFlowEvent,
+  applied: WardFlowState,
+  now: number,
+): { type: WardFlowEvent["type"]; state: WardFlowState } | undefined {
+  const undoType = undoStepTypeFor(event.type);
+  if (!undoType) return undefined;
+  const fields = event as { movementId?: string; referralId?: string; admissionId?: string; actingUnitId?: string };
+  const actingUnitId =
+    event.type === "ACCEPT_IN_PRINCIPLE" && event.role === "ward" ? event.unitId : fields.actingUnitId;
+  const undo = {
+    type: undoType,
+    role: event.role,
+    now,
+    ...(fields.movementId !== undefined ? { movementId: fields.movementId } : {}),
+    ...(fields.referralId !== undefined ? { referralId: fields.referralId } : {}),
+    ...(fields.admissionId !== undefined ? { admissionId: fields.admissionId } : {}),
+    ...(actingUnitId !== undefined ? { actingUnitId } : {}),
+  } as WardFlowEvent;
+  const state = wardFlowReducer(applied, undo);
+  return state.rejections.length === applied.rejections.length ? { type: undoType, state } : undefined;
+}
+
 export function driveEveryEventAgainst(
   code: string,
   supplyDueAt = true,
@@ -1621,6 +1646,14 @@ export function driveEveryEventAgainst(
       const result = applyFirstAccepted(type, state, now, code, supplyDueAt);
       if (!result) continue;
       accepted.add(type);
+      // v10 pass 3 (10 Oct 2026): every undoable step is also taken back once, on a throwaway
+      // copy, so each step undo is driven through the reducer and checked like any other event.
+      // The sweep carries on from the step itself, never the undo, so progress is not lost.
+      const undone = undoOf(result.event, result.applied, now);
+      if (undone) {
+        accepted.add(undone.type);
+        offenders.push(...offendingFormsIn(undone.state, `${code} / ${undone.type} / supplyDueAt=${supplyDueAt}`));
+      }
       state = result.applied;
       offenders.push(...offendingFormsIn(state, `${code} / ${type} / supplyDueAt=${supplyDueAt}`));
     }
@@ -1786,6 +1819,23 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     ).toEqual([]);
     accepted.add("RECORD_SUPPORT_NOTIFICATION");
     offenders.push(...offendingFormsIn(supportRecorded, `RECORD_SUPPORT_NOTIFICATION(${code})`));
+    // v10 pass 3: and its undo, the same way the round-robin takes back every other undoable step.
+    const supportUndone = undoOf(
+      {
+        type: "RECORD_SUPPORT_NOTIFICATION",
+        role: EVENT_ROLE.RECORD_SUPPORT_NOTIFICATION[0],
+        now: NOW_ANCHOR,
+        occasion: "admission",
+        movementId: supportArrival!.id,
+        party: "carer",
+        outcome: "told",
+      },
+      supportRecorded,
+      NOW_ANCHOR,
+    );
+    expect(supportUndone, `UNDO_SUPPORT_NOTIFICATION refused (${code})`).toBeDefined();
+    accepted.add("UNDO_SUPPORT_NOTIFICATION");
+    offenders.push(...offendingFormsIn(supportUndone!.state, `UNDO_SUPPORT_NOTIFICATION(${code})`));
 
     // v10 pass 2 (10 Oct 2026): Undo and the Bed board. Each undo needs its own decision first,
     // which the round-robin cannot order, so all four are exercised here against a fresh seed —
@@ -2329,6 +2379,21 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     ).toEqual([]);
     accepted.add("PATIENT_ARRIVED");
     offenders.push(...offendingFormsIn(arrived, `PATIENT_ARRIVED(${code})`));
+    // v10 pass 3 (10 Oct 2026): the round-robin cannot reach the transport steps for every code,
+    // so their undo is driven here, on the arrival chain that does, and checked like the rest.
+    const arrivalUndone = undoOf(
+      {
+        type: "PATIENT_ARRIVED",
+        role: EVENT_ROLE.PATIENT_ARRIVED[0],
+        now: NOW_ANCHOR,
+        movementId: forArrival.movementId,
+      },
+      arrived,
+      NOW_ANCHOR,
+    );
+    expect(arrivalUndone, `UNDO_TRANSPORT_STEP after PATIENT_ARRIVED for Form ${code} was refused`).toBeDefined();
+    accepted.add("UNDO_TRANSPORT_STEP");
+    offenders.push(...offendingFormsIn(arrivalUndone!.state, `UNDO_TRANSPORT_STEP(${code})`));
   }
 
   // Non-vacuity 3: every movement-targeted event type was ACCEPTED against a movement carrying

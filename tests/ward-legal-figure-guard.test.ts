@@ -232,6 +232,10 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
   // measures a count of units, not a duration.
   PARALLEL_REFERRAL_CAP: "product owner's spec, docs/ward-flow-context.md — count of units, not a duration",
 
+  // v10 pass 3, 10 Oct 2026: the longest typed name or initials kept for an override's second
+  // sign-off. A software text-length limit on a form field, not a clinical or legal figure.
+  OVERRIDE_SIGN_OFF_NAME_MAX: "v10 pass 3 engine — characters in a typed sign-off name, a text-length limit only",
+
   // Task 7-wiring, 2026-09-16: the slider range around PARALLEL_REFERRAL_CAP above. Not an
   // independently sourced figure — its max IS the owner's own cap, so it cannot license a value
   // the owner has not already accepted.

@@ -60,6 +60,7 @@ import type {
   TransportLegalStatus,
   TransportProvider,
   AbsenceStep,
+  OverrideSignOff,
 } from "@/components/ward-management/ward-model";
 import type { WardScenario } from "@/components/ward-management/ward-scenarios";
 import type { InboxSnoozeReason } from "@/components/ward-management/ward-inbox-snooze";
@@ -391,6 +392,12 @@ export type WardFlowEvent =
        */
       overrideReason?: OverrideReason;
       /**
+       * v10 pass 3 (Josh, 10 Oct 2026): who gave the override's second sign-off, the acting role
+       * and a typed name or initials. Optional, kept only with a recorded override, and typed text:
+       * a dispatch carrying it locks browser storage (`eventCarriesTypedTextPayload`).
+       */
+      overrideSignOff?: OverrideSignOff;
+      /**
        * T12 (item 9, owner answer 9, 17 September 2026): the coordinator's own "checked with the
        * ward" confirmation for a `Non-binary` movement, paired with `genderPlacementChecked`
        * below — see `GenderPlacement`'s own doc comment (`ward-model.ts`) for the full rule.
@@ -424,6 +431,14 @@ export type WardFlowEvent =
       movementId: string;
       unitId: string;
       overrideReason?: OverrideReason;
+      /** v10 pass 3: the second sign-off on an override (see `REFER_TO_UNITS.overrideSignOff`). */
+      overrideSignOff?: OverrideSignOff;
+      /**
+       * v10 pass 3 (Josh, 10 Oct 2026): the ward Bed board places a coordinator-sent person in a
+       * numbered bed as it accepts. Stored as `Movement.heldBedNumber`; 1 to `Unit.beds`, and not a
+       * bed a current stay or another accepted movement on the unit already holds.
+       */
+      bedNumber?: number;
     }
   | {
       type: "PULL_PATIENT";
@@ -432,6 +447,8 @@ export type WardFlowEvent =
       movementId: string;
       unitId: string;
       overrideReason?: OverrideReason;
+      /** v10 pass 3: the second sign-off on an override (see `REFER_TO_UNITS.overrideSignOff`). */
+      overrideSignOff?: OverrideSignOff;
       /**
        * Item 10 (owner answers, 17 September 2026): the "Nurse unit manager consulted" tick, a
        * SECOND fact beside `overrideReason` — the high-acuity staffing gate needs both, and
@@ -2285,6 +2302,75 @@ export type WardFlowEvent =
       now: Instant;
       admissionId: string;
       actingUnitId?: string;
+    }
+  /*
+   * v10 pass 3 (Josh, 10 Oct 2026): the undoable steps (`UNDO_STEP_ACTIONS`, `ward-undo.ts`). Each
+   * takes back the newest of its listed actions on the subject it names, exactly, under the same
+   * three rules. Ids and instants only.
+   */
+  | {
+      /** Takes back the newest `REFER_TO_UNITS` on this movement (Home's Offer). */
+      type: "UNDO_REFER_TO_UNITS";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+    }
+  | {
+      /** Takes back the newest `ACCEPT_IN_PRINCIPLE` on this movement, its held bed with it. */
+      type: "UNDO_ACCEPT_IN_PRINCIPLE";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      /** A ward undoing its own acceptance names itself. */
+      actingUnitId?: string;
+    }
+  | {
+      /** Takes back the newest `RECORD_LEGAL_FORM_WRITTEN` or `RECORD_LEGAL_FORM_RECEIVED` on this movement. */
+      type: "UNDO_LEGAL_FORM_RECORD";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+    }
+  | {
+      /** Takes back the newest Tell record (`RECORD_SUPPORT_NOTIFICATION`) on this move or stay. */
+      type: "UNDO_SUPPORT_NOTIFICATION";
+      role: WardFlowRole;
+      now: Instant;
+      movementId?: string;
+      admissionId?: string;
+    }
+  | {
+      /** Takes back the newest `RECORD_REPATRIATION` on this stay. */
+      type: "UNDO_REPATRIATION";
+      role: WardFlowRole;
+      now: Instant;
+      admissionId: string;
+    }
+  | {
+      /** Takes back the newest handover sign-off. */
+      type: "UNDO_HANDOVER_SIGN_OFF";
+      role: WardFlowRole;
+      now: Instant;
+    }
+  | {
+      /**
+       * Takes back the newest ED board step on this movement or referral: arrived in the
+       * department, examination, medical clearance, transport need or handover ready.
+       */
+      type: "UNDO_ED_STEP";
+      role: WardFlowRole;
+      now: Instant;
+      movementId?: string;
+      referralId?: string;
+    }
+  | {
+      /** Takes back the newest transport stage step (accepted, en route, collected, arrived). */
+      type: "UNDO_TRANSPORT_STEP";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      /** A ward undoing its own recorded arrival names itself. */
+      actingUnitId?: string;
     };
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
@@ -2813,4 +2899,14 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // The ward Bed board: a ward moves stays between its own beds; the coordinator may do it anywhere.
   PLACE_IN_BED: ["ward", "coordinator"],
   UNDO_PLACE_IN_BED: ["ward", "coordinator"],
+  // v10 pass 3 (Josh, 10 Oct 2026): each step's undo carries the roles of the step it takes back.
+  // The reducer narrows it to the role that acted (a ward to its own unit), or the coordinator.
+  UNDO_REFER_TO_UNITS: ["coordinator"],
+  UNDO_ACCEPT_IN_PRINCIPLE: ["ward", "coordinator"],
+  UNDO_LEGAL_FORM_RECORD: ["ed", "coordinator", "ward", "community"],
+  UNDO_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+  UNDO_REPATRIATION: ["coordinator"],
+  UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
+  UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
+  UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
 };

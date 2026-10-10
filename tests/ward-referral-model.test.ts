@@ -665,6 +665,15 @@ describe("front-door contract — an ED may close to all admissions, never refus
     UNDO_AUDIT_REVIEW: false,
     PLACE_IN_BED: false,
     UNDO_PLACE_IN_BED: false,
+    // v10 pass 3: each step undo restores the state before one recorded step. None declines anybody.
+    UNDO_REFER_TO_UNITS: false,
+    UNDO_ACCEPT_IN_PRINCIPLE: false,
+    UNDO_LEGAL_FORM_RECORD: false,
+    UNDO_SUPPORT_NOTIFICATION: false,
+    UNDO_REPATRIATION: false,
+    UNDO_HANDOVER_SIGN_OFF: false,
+    UNDO_ED_STEP: false,
+    UNDO_TRANSPORT_STEP: false,
   };
 
   /**

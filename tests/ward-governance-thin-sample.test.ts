@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { effectivenessNumbers, MINIMUM_EFFECTIVENESS_SAMPLE } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { wardMovements } from "@/components/ward-management/ward-movements";
 
 /**
  * A MEDIAN OF ONE IS NOT PUBLISHED, EVEN WITH ITS BASIS BESIDE IT.
@@ -38,7 +39,19 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * Anyone who "fixes" it back has removed the ruling.
  */
 describe("the governance board refuses to publish a figure from a thin sample", () => {
-  const state = seedWardFlowState();
+  // v10 pass 3 (10 Oct 2026): the demo seed now adds synthetic referral and acceptance times to
+  // movements past "awaiting bed" (`withDemoStageTimes`), which gives the seed a healthy acceptance
+  // sample. This file proves the floor, so it reads the hand-authored record, with those synthetic
+  // times taken back off, exactly as the seed carried it before.
+  const seeded = seedWardFlowState();
+  const handAuthored = new Map(wardMovements.map((movement) => [movement.id, movement]));
+  const state = {
+    ...seeded,
+    movements: seeded.movements.map((movement) => {
+      const original = handAuthored.get(movement.id);
+      return { ...movement, referredAt: original?.referredAt, acceptedAt: original?.acceptedAt };
+    }),
+  };
   const live = effectivenessNumbers(state.movements);
 
   it("⚠️ IS ACTUALLY EXERCISED BY THE SEED — the acceptance median really is thin", () => {

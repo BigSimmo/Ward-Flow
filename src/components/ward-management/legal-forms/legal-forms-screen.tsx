@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus, UserRound } from "lucide-react";
 import {
   Button,
@@ -30,7 +30,7 @@ import { departmentLabel } from "@/components/ward-management/ward-absence-label
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -41,6 +41,7 @@ import {
   type SupportNotificationParty,
 } from "@/components/ward-management/ward-support-notifications";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardBarPageTools, wardBarToolStyles } from "@/components/ward-management/shell/ward-bar-page-tools";
 
@@ -135,6 +136,13 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     useWardFlow();
   const now = useWardFlowClock();
   const gate = useRoleGate();
+  // v10 pass 3: a recorded form time and a Tell record each offer Undo on the toast.
+  const { run: runStep, offer: offerUndo } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: useRouteRole(),
+  });
 
   const [view, setView] = useState<View>("clocks");
   const [highlight, setHighlight] = useState<Highlight>(null);
@@ -222,6 +230,25 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   );
   const partyCount = (party: SupportNotificationParty) =>
     tellSubjects.filter((subject) => subject.missing.includes(party)).length;
+  // A Tell record is made inside the sheet's checklist; Undo is offered here once it lands.
+  const tellOpen = tell !== null;
+  const tellCountRef = useRef(supportNotifications?.length ?? 0);
+  useEffect(() => {
+    const records = supportNotifications ?? [];
+    const grew = tellOpen && records.length > tellCountRef.current;
+    tellCountRef.current = records.length;
+    const record = grew ? records[records.length - 1] : undefined;
+    if (!record) return;
+    const target =
+      record.occasion === "discharge" ? { admissionId: record.subjectId } : { movementId: record.subjectId };
+    offerUndo({
+      success: `${SUPPORT_NOTIFICATION_PARTY_SHORT[record.party]} record saved`,
+      undo: (at) => ({ type: "UNDO_SUPPORT_NOTIFICATION", role: record.by, now: at, ...target }),
+      undone: "Tell record undone.",
+    });
+    // Only a new record while the sheet is open offers Undo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supportNotifications, tellOpen]);
   const tellNext = (party: SupportNotificationParty) => {
     const first = tellSubjects.find((subject) => subject.missing.includes(party));
     setTell({ party, key: first?.key ?? null });
@@ -250,7 +277,14 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const markReceived = (movement: Movement) => {
     if (!receivedGate.allowed) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
-    dispatch({ type: "RECORD_LEGAL_FORM_RECEIVED", role: "ed", now, movementId: movement.id });
+    runStep(
+      { type: "RECORD_LEGAL_FORM_RECEIVED", role: "ed", now, movementId: movement.id },
+      {
+        success: "Form marked received",
+        undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: "ed", now: at, movementId: movement.id }),
+        undone: "Received mark undone.",
+      },
+    );
   };
 
   // Form types in force, most first, each with its own data fill.
@@ -347,16 +381,24 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
       onSaveWritten={({ writtenAt, region, ageBand }) => {
         const formCode = selected.legalForm?.code;
         if (!isOwnedLegalFormCode(formCode)) return;
-        dispatch({
-          type: "RECORD_LEGAL_FORM_WRITTEN",
-          role: "coordinator",
-          now,
-          movementId: selected.id,
-          formCode,
-          writtenAt,
-          region,
-          ageBand,
-        });
+        const movementId = selected.id;
+        runStep(
+          {
+            type: "RECORD_LEGAL_FORM_WRITTEN",
+            role: "coordinator",
+            now,
+            movementId,
+            formCode,
+            writtenAt,
+            region,
+            ageBand,
+          },
+          {
+            success: "Form time recorded",
+            undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: "coordinator", now: at, movementId }),
+            undone: "Form time undone.",
+          },
+        );
       }}
       onMarkReceived={() => markReceived(selected)}
       markReceivedUnavailable={receivedGate.reason}

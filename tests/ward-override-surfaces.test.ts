@@ -405,6 +405,14 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
   // ⚠️ ITEM 37 (2026-09-17) split both console and drawer urgent-flag toggles into literal CLEAR
   // and FLAG dispatches, eliminating the 2 computed ternaries.
   // As a result, every dispatch(...) call under ward-management now declares a plain literal type.
+  //
+  // v10 pass 3 (10 Oct 2026): the shared Undo hook forwards events it is handed. Read on that date:
+  // every caller builds its step and its undo as object literals with a literal `type` at the call
+  // site, so the construction-site scan above still sees and counts each one.
+  "src/components/ward-management/use-undoable-step.ts :: event":
+    "useUndoableStep's run(): dispatches the step its caller built with a literal type",
+  "src/components/ward-management/use-undoable-step.ts :: build(nowRef.current)":
+    "useUndoableStep's toast Undo: dispatches the undo event its caller built with a literal type",
 };
 
 const wardManagementDispatchCalls = findWardManagementDispatchCalls();
@@ -605,7 +613,9 @@ describe("ward override-surface guard", () => {
     // 2) item 37 (owner-approved 2026-09-17) split both console and drawer computed urgent-flag
     //    ternaries into explicit literal CLEAR and FLAG dispatches.
     // Re-derived by running this file, not by arithmetic.
-    expect(nonLiteralDispatchCalls.length).toBe(0);
+    // 0 -> 2, v10 pass 3 (10 Oct 2026): the two forwarding calls in use-undoable-step.ts, each
+    // named with its reason in DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE.
+    expect(nonLiteralDispatchCalls.length).toBe(2);
   });
 
   /**
@@ -687,7 +697,9 @@ describe("ward override-surface guard", () => {
       // second is the override re-dispatch and carries one. Exactly the shape shortlist-panel.tsx
       // already had, which is why the (file, eventType) grouping is right: demanding a reason on
       // the first press would be demanding a justification before there is anything to justify.
-      "src/components/ward-management/ward/ward-screen.tsx::ACCEPT_IN_PRINCIPLE": 2,
+      // 2 -> 3, v10 pass 3 (10 Oct 2026): the Bed board places a coordinator-sent person in a
+      // numbered bed (ordinary acceptance with `bedNumber`, no reason before any refusal).
+      "src/components/ward-management/ward/ward-screen.tsx::ACCEPT_IN_PRINCIPLE": 3,
       // v10 pass 3: the Bed board's place in a bed (ordinary acceptance with a bed number).
       "src/components/ward-management/ward/ward-screen.tsx::ACCEPT_REFERRAL": 1,
       "src/components/ward-management/ward/ward-screen.tsx::PULL_PATIENT": 2,

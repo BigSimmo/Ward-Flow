@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+
 import {
   CheckingFoot,
   Hero,
@@ -64,8 +66,6 @@ const HANDOVER_HREF = "/mockups/ward-flow/handover";
 const SINCE_TIMELINE_LINES = 8;
 const DELAYS_HREF = "/mockups/ward-flow/delays";
 
-/** The Offer toast's Undo window (PASS2 engine wiring: the toast shows for 8 s). */
-const OFFER_UNDO_MS = 8000;
 /** Phone renders the first 20 queue rows; the rest are one tap away (v10 Home phone mockup). */
 const PHONE_QUEUE_ROWS = 20;
 
@@ -279,10 +279,9 @@ export function CoordinatorScreen() {
   }, [sheetPlacementOpen, setFocusMovementId]);
 
   /*
-   * Offer on a bedflow row (v10 Home): refers this patient to that ward, with Undo. The referral is
-   * held for the toast's Undo window and sent when the window ends (the toast's `onExpire`, which
-   * also runs if the toast is closed or pushed out), so Undo leaves no withdrawn referral, notice or
-   * audit row behind. The row reads Offered at once. A ward the engine would refuse a plain
+   * Offer on a bedflow row (v10 Home): refers this patient to that ward at once (`REFER_TO_UNITS`)
+   * and offers Undo on the toast (`UNDO_REFER_TO_UNITS`), so leaving the page never loses the
+   * offer. The row reads Offered from the recorded referral. A ward the engine would refuse a plain
    * referral for (a stage that cannot be referred, a gender placement still to record) is chosen
    * in Placement instead, which says why.
    */
@@ -291,26 +290,14 @@ export function CoordinatorScreen() {
   const toast = useOptionalToast();
   const patientOf = usePatientOf();
   const umrnText = useUmrnText();
-  const [pendingOffers, setPendingOffers] = useState<{ key: string; movementId: string; unitId: string }[]>([]);
-  // The refusal count when a held offer was sent; a later refusal says the offer was not sent.
-  const refusalWatchRef = useRef<number | undefined>(undefined);
-  const liveNowRef = useRef(liveNow);
-  const rejectionCountRef = useRef(rejections.length);
-  useEffect(() => {
-    liveNowRef.current = liveNow;
-    rejectionCountRef.current = rejections.length;
-  }, [liveNow, rejections.length]);
-  useEffect(() => {
-    const watch = refusalWatchRef.current;
-    if (watch === undefined || rejections.length <= watch) return;
-    const latest = rejections.at(-1);
-    refusalWatchRef.current = undefined;
-    toast?.push({
-      tone: "warning",
-      title: "Offer not sent",
-      body: latest ? umrnText(latest.reason) : "The engine refused it.",
-    });
-  }, [rejections, toast, umrnText]);
+  const { run: runStep } = useUndoableStep({
+    dispatch,
+    rejections,
+    now: liveNow,
+    routeRole: "coordinator",
+    toast,
+    sayRefusal: umrnText,
+  });
 
   function offer(movement: Movement, unitId: string) {
     const unit = units.find((candidate) => candidate.id === unitId);
@@ -331,43 +318,17 @@ export function CoordinatorScreen() {
       setRightPanel("placement");
       return;
     }
-    const send = () => {
-      refusalWatchRef.current = rejectionCountRef.current;
-      dispatch({
-        type: "REFER_TO_UNITS",
-        role: "coordinator",
-        now: liveNowRef.current,
-        movementId: movement.id,
-        unitIds: [unitId],
-      });
-    };
-    // Without the layout's toast (a test or preview) there is no Undo window: send at once.
-    if (!toast) {
-      send();
-      return;
-    }
-    const key = `${movement.id}:${unitId}:${liveNow}:${pendingOffers.length}`;
     if (previewMovement?.id === movement.id) selectMovement(movement.id);
     setSelectedUnitId(unitId);
-    setPendingOffers((current) => [...current, { key, movementId: movement.id, unitId }]);
     const who = patientOf(movement);
-    const drop = () => setPendingOffers((current) => current.filter((pending) => pending.key !== key));
-    toast.push({
-      tone: "info",
-      title: `Offered ${unit.name} to ${who.umrn}`,
-      body: "Sent to the ward when Undo closes.",
-      undo: {
-        durationMs: OFFER_UNDO_MS,
-        onUndo: () => {
-          drop();
-          toast.push({ tone: "info", title: "Offer withdrawn", body: `${unit.name} was not asked.` });
-        },
-        onExpire: () => {
-          drop();
-          send();
-        },
+    runStep(
+      { type: "REFER_TO_UNITS", role: "coordinator", now: liveNow, movementId: movement.id, unitIds: [unitId] },
+      {
+        success: `Offered ${unit.name} to ${who.umrn}`,
+        undo: (at) => ({ type: "UNDO_REFER_TO_UNITS", role: "coordinator", now: at, movementId: movement.id }),
+        undone: `Offer withdrawn. ${unit.name} is no longer asked.`,
       },
-    });
+    );
   }
 
   // The work list is network-wide and open movements only, never scoped to the ED filter.
@@ -505,10 +466,6 @@ export function CoordinatorScreen() {
     );
   }
 
-  const pendingOfferUnitId = panelMovement
-    ? pendingOffers.find((pending) => pending.movementId === panelMovement.id)?.unitId
-    : undefined;
-
   const bedflowNode = (
     <HomeBedflow
       movement={panelMovement}
@@ -523,7 +480,6 @@ export function CoordinatorScreen() {
       onOffer={(unitId) => {
         if (panelMovement) offer(panelMovement, unitId);
       }}
-      pendingOfferUnitId={pendingOfferUnitId}
       parallelReferralCap={configuration.parallelReferralCap}
       dischargesHeldUp={counts.discharges?.value ?? 0}
       service={service}

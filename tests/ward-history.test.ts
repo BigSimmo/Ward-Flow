@@ -24,7 +24,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // #159 adds RECORD_SUPPORT_NOTIFICATION (advisory carer/PSP/MHAS checklist).
       // Stream D planned admissions (book, change, cancel, convert).
       // Global alerts (10 Oct 2026) add RAISE_PULL_NOW and REPLY_BROADCAST_ALERT.
-      expect(allEventTypes.length).toBe(117);
+      // v10 pass 3 (10 Oct 2026) adds eight step undos (UNDO_REFER_TO_UNITS … UNDO_TRANSPORT_STEP).
+      expect(allEventTypes.length).toBe(125);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

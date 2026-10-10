@@ -1143,6 +1143,19 @@
   box-shadow: var(--wf-e2);
 }
 
+/* v10 pass 3: the toast's Undo, a full tap target. */
+.toastUndo {
+  min-height: var(--spacing-tap, 3rem);
+  margin-top: var(--wf-s-2);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 /*
  * ---- Phone (48rem and under), 9 Oct 2026 Transport page A ----
  * The officer's main device. Designed as its own layout, not the desktop stacked: the hero keeps

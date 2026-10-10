@@ -262,6 +262,33 @@ const actionLabels: Record<AuditEvent["action"], string> = {
   UNDO_AUDIT_REVIEW: "Undo review",
   PLACE_IN_BED: "Move to bed",
   UNDO_PLACE_IN_BED: "Undo bed move",
+  UNDO_REFER_TO_UNITS: "Undo referral to wards",
+  UNDO_ACCEPT_IN_PRINCIPLE: "Undo acceptance",
+  UNDO_LEGAL_FORM_RECORD: "Undo legal form record",
+  UNDO_SUPPORT_NOTIFICATION: "Undo Tell record",
+  UNDO_REPATRIATION: "Undo repatriation",
+  UNDO_HANDOVER_SIGN_OFF: "Undo handover sign-off",
+  UNDO_ED_STEP: "Undo ED step",
+  UNDO_TRANSPORT_STEP: "Undo transport step",
+};
+/** v10 pass 3: the step an undo took back, in words. */
+const UNDONE_STEP_LABELS: Partial<Record<string, string>> = {
+  REFER_TO_UNITS: "Refer to wards",
+  ACCEPT_IN_PRINCIPLE: "Accept in principle",
+  RECORD_LEGAL_FORM_WRITTEN: "Record form written",
+  RECORD_LEGAL_FORM_RECEIVED: "Mark form received",
+  RECORD_SUPPORT_NOTIFICATION: "Carer, PSP or MHAS record",
+  RECORD_REPATRIATION: "Repatriation record",
+  RECORD_HANDOVER_SIGN_OFF: "Handover sign-off",
+  RECORD_ARRIVED_IN_DEPARTMENT: "Arrived in the department",
+  RECORD_EXAMINATION: "Examination recorded",
+  RECORD_MEDICAL_CLEARANCE: "Medical clearance",
+  RECORD_TRANSPORT_NEED: "Transport need",
+  HANDOVER_READY: "Handover ready",
+  TRANSPORT_ACCEPTED: "Transport accepted",
+  TRANSPORT_EN_ROUTE: "Transport en route",
+  PATIENT_COLLECTED: "Patient collected",
+  PATIENT_ARRIVED: "Patient arrived",
 };
 const reviewLabels = { reviewed: "Reviewed", "follow-up-required": "Follow-up required" } as const;
 const display = (value: string | number | boolean | null | undefined) =>
@@ -383,6 +410,18 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
             facts={[
               ["Reason supplied", display(event.details.reason)],
               ["Override fact recorded", display(event.details.overrideFactRecorded)],
+              ...(event.details.secondSignOff
+                ? ([
+                    [
+                      "Second sign-off",
+                      `${event.details.secondSignOff.name}${
+                        event.details.secondSignOff.role
+                          ? `, ${WARD_FLOW_ROLE_LABELS[event.details.secondSignOff.role]}`
+                          : ""
+                      }`,
+                    ],
+                  ] as const)
+                : []),
               ["Prior gate verdict", "Not captured"],
             ]}
           />
@@ -538,7 +577,9 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
                 ? "Not recorded"
                 : event.details.undoneAction === "ACCEPT_REFERRAL"
                   ? "Accept referral"
-                  : "Decline referral",
+                  : event.details.undoneAction === "DECLINE_REFERRAL"
+                    ? "Decline referral"
+                    : (UNDONE_STEP_LABELS[event.details.undoneAction] ?? event.details.undoneAction),
             ],
             [
               "Decided at",

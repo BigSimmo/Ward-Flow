@@ -33,7 +33,15 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { inboxRowMovementId } from "./ward-inbox-reducer";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
-import { bedPlacementUndoFor, referralDecisionUndoFor } from "./ward-undo";
+import {
+  bedPlacementUndoFor,
+  referralDecisionUndoFor,
+  stepUndoFor,
+  undoStepSubjectId,
+  UNDO_STEP_TYPES,
+  type UndoableStepAction,
+  type UndoStepType,
+} from "./ward-undo";
 import { isSnoozeReason, type InboxSnoozeReason } from "./ward-inbox-snooze";
 import type { PatientId } from "./ward-patients";
 import {
@@ -103,6 +111,8 @@ export type OverrideDetails = {
   reason: OverrideReason | null;
   overrideFactRecorded: boolean;
   targets: readonly { unitId: string | null; outcome: "accepted" | "denied"; reasonCode: AuditReason }[];
+  /** v10 pass 3: the second sign-off kept with an accepted override; absent when none was given. */
+  secondSignOff?: { role: WardFlowRole | null; name: string };
 };
 export type BedReleaseAuditFacts = {
   state: BedRelease["state"] | null;
@@ -203,6 +213,12 @@ export type AuditEvent = AuditBase &
         details: { undoneAction: "ACCEPT_REFERRAL" | "DECLINE_REFERRAL" | null; decidedAt: Instant | null };
       }
     | {
+        // v10 pass 3: an undoable step taken back (`UNDO_STEP_ACTIONS`). The action and its time only.
+        category: "undo";
+        action: UndoStepType;
+        details: { undoneAction: UndoableStepAction | null; decidedAt: Instant | null };
+      }
+    | {
         // v10 pass 2: the ward Bed board's pick up and place, and its Undo. Bed numbers only.
         category: "bed-placement";
         action: "PLACE_IN_BED" | "UNDO_PLACE_IN_BED";
@@ -279,6 +295,14 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "UNDO_AUDIT_REVIEW":
       return "review";
     case "UNDO_REFERRAL_DECISION":
+    case "UNDO_REFER_TO_UNITS":
+    case "UNDO_ACCEPT_IN_PRINCIPLE":
+    case "UNDO_LEGAL_FORM_RECORD":
+    case "UNDO_SUPPORT_NOTIFICATION":
+    case "UNDO_REPATRIATION":
+    case "UNDO_HANDOVER_SIGN_OFF":
+    case "UNDO_ED_STEP":
+    case "UNDO_TRANSPORT_STEP":
       return "undo";
     case "PLACE_IN_BED":
     case "UNDO_PLACE_IN_BED":
@@ -494,6 +518,25 @@ export function appendAudit(
       };
       break;
     }
+    case "UNDO_REFER_TO_UNITS":
+    case "UNDO_ACCEPT_IN_PRINCIPLE":
+    case "UNDO_LEGAL_FORM_RECORD":
+    case "UNDO_SUPPORT_NOTIFICATION":
+    case "UNDO_REPATRIATION":
+    case "UNDO_HANDOVER_SIGN_OFF":
+    case "UNDO_ED_STEP":
+    case "UNDO_TRANSPORT_STEP": {
+      const record = UNDO_STEP_TYPES.includes(event.type)
+        ? stepUndoFor(before.undoRecords, event.type, undoStepSubjectId(event))
+        : undefined;
+      captured = {
+        ...base,
+        category: "undo",
+        action: event.type,
+        details: { undoneAction: record?.action ?? null, decidedAt: finiteInstant(record?.at) },
+      };
+      break;
+    }
     case "PLACE_IN_BED":
     case "UNDO_PLACE_IN_BED": {
       const bed = (state: WardFlowState) => {
@@ -561,6 +604,13 @@ export function appendAudit(
             reasonCode: decision.reasonCode,
           })),
       };
+      // v10 pass 3: the second sign-off, kept only with an override this event actually recorded.
+      const signOff = "overrideSignOff" in event ? event.overrideSignOff : undefined;
+      if (signOff !== undefined && decision.overrideFactRecorded === true && typeof signOff.name === "string")
+        details.secondSignOff = {
+          role: enumValue(Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[], signOff.role),
+          name: signOff.name.trim(),
+        };
       captured =
         event.type === "REFER_TO_UNITS" && event.overrideReason === undefined
           ? { ...base, category: "referral", action: event.type, details }

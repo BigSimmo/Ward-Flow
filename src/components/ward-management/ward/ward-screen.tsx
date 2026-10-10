@@ -70,6 +70,7 @@ import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diag
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { WardDailySheetDialog } from "@/components/ward-management/board/ward-daily-sheet";
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { WardNotificationCenter } from "./ward-notification-center";
 
 import { handoverScopeValue } from "@/components/ward-management/handover/handover-page";
@@ -109,8 +110,31 @@ type BoardCheck = {
   success: string;
   /** What Undo reverses; absent for an undo itself. */
   undo?:
-    { kind: "stay"; admissionId: string; unitId: string } | { kind: "referral"; referralId: string; unitId: string };
+    | { kind: "stay"; admissionId: string; unitId: string }
+    | { kind: "referral"; referralId: string; unitId: string }
+    | { kind: "movement"; movementId: string; unitId: string };
 };
+
+/** The undo event for what the Bed board placed or moved (v10 pass 2 and 3). */
+function boardUndoEvent(undo: NonNullable<BoardCheck["undo"]>, now: Instant): WardFlowEvent {
+  if (undo.kind === "stay")
+    return { type: "UNDO_PLACE_IN_BED", role: "ward", now, admissionId: undo.admissionId, actingUnitId: undo.unitId };
+  if (undo.kind === "movement")
+    return {
+      type: "UNDO_ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      now,
+      movementId: undo.movementId,
+      actingUnitId: undo.unitId,
+    };
+  return {
+    type: "UNDO_REFERRAL_DECISION",
+    role: "ward",
+    now,
+    referralId: undo.referralId,
+    actingUnitId: undo.unitId,
+  };
+}
 
 /** Undo lasts 8 seconds on screen (v10 Toast with Undo); the engine allows `UNDO_WINDOW_MINUTES`. */
 const BOARD_UNDO_MS = 8000;
@@ -348,7 +372,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       toast.push({ tone: "info", title: check.success });
       return;
     }
-    const undoLimit = roleLimitReason(routeRole, undo.kind === "stay" ? "UNDO_PLACE_IN_BED" : "UNDO_REFERRAL_DECISION");
+    const undoLimit = roleLimitReason(routeRole, boardUndoEvent(undo, nowRef.current).type);
     toast.push({
       tone: "success",
       title: check.success,
@@ -363,19 +387,29 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   bed: check.bed,
                   success: "Undone. The bed and the person are back where they were.",
                 };
+                // Literal types, one per kind, so the override-surface guard reads each one.
+                const at = nowRef.current;
                 if (undo.kind === "stay")
                   dispatch({
                     type: "UNDO_PLACE_IN_BED",
                     role: "ward",
-                    now: nowRef.current,
+                    now: at,
                     admissionId: undo.admissionId,
+                    actingUnitId: undo.unitId,
+                  });
+                else if (undo.kind === "movement")
+                  dispatch({
+                    type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                    role: "ward",
+                    now: at,
+                    movementId: undo.movementId,
                     actingUnitId: undo.unitId,
                   });
                 else
                   dispatch({
                     type: "UNDO_REFERRAL_DECISION",
                     role: "ward",
-                    now: nowRef.current,
+                    now: at,
                     referralId: undo.referralId,
                     actingUnitId: undo.unitId,
                   });
@@ -1105,11 +1139,19 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // in a numbered bed (`PLACE_IN_BED`) sit in that bed; every other tile keeps its place.
   // Read from this ward's own inbox projection (FD-23), never the full referrals array.
   const inboxEntries = wardReferralInbox?.(unit.id) ?? [];
-  const heldBeds = inboxEntries.flatMap((entry) =>
-    entry.state === "accepted" && entry.heldBedNumber !== undefined
-      ? [{ bed: entry.heldBedNumber, name: resolvePatientIdentity({ patientId: entry.patientId }).displayName }]
-      : [],
-  );
+  const heldBeds = [
+    ...inboxEntries.flatMap((entry) =>
+      entry.state === "accepted" && entry.heldBedNumber !== undefined
+        ? [{ bed: entry.heldBedNumber, name: resolvePatientIdentity({ patientId: entry.patientId }).displayName }]
+        : [],
+    ),
+    // v10 pass 3: a coordinator-sent person this ward accepted into a numbered bed.
+    ...accepted.flatMap((movement) =>
+      movement.heldBedNumber !== undefined && movement.stage !== "moving"
+        ? [{ bed: movement.heldBedNumber, name: resolvePatientIdentity(movement).displayName }]
+        : [],
+    ),
+  ];
   const recordedBeds = new Map(
     (admissions ?? []).flatMap((admission) =>
       admission.unitId === unit.id && admission.bedNumber !== undefined ? [[admission.id, admission.bedNumber]] : [],
@@ -1140,19 +1182,30 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     })
     .sort((left, right) => left.bedNumber - right.bedNumber);
 
-  // Bed board: the referrals waiting for this ward that it can place, straight from the inbox.
-  const boardWaiting: WaitingReferral[] = inboxEntries
-    .filter((entry) => entry.state === "queued" && entry.withdrawnAt === undefined)
-    .map((entry) => ({
-      id: entry.id,
-      name: resolvePatientIdentity({ patientId: entry.patientId }).displayName,
-      sex: entry.destination.sex === "Female" ? "F" : entry.destination.sex === "Male" ? "M" : entry.destination.sex,
-      waitedMinutes: Math.max(0, now - entry.raisedAt),
-      secureBedNeeded: entry.destination.secureBedNeeded === true,
-      blockedReason: wardTransferNeedsCoordinator(entry, unit.id, units)
-        ? "Coordinator accepts transfers from another hospital"
-        : undefined,
-    }));
+  // Bed board: the referrals waiting for this ward that it can place, straight from the inbox,
+  // then (v10 pass 3) the people the coordinator referred here, placed with ACCEPT_IN_PRINCIPLE.
+  const boardWaiting: WaitingReferral[] = [
+    ...inboxEntries
+      .filter((entry) => entry.state === "queued" && entry.withdrawnAt === undefined)
+      .map((entry) => ({
+        id: entry.id,
+        name: resolvePatientIdentity({ patientId: entry.patientId }).displayName,
+        sex: entry.destination.sex === "Female" ? "F" : entry.destination.sex === "Male" ? "M" : entry.destination.sex,
+        waitedMinutes: Math.max(0, now - entry.raisedAt),
+        secureBedNeeded: entry.destination.secureBedNeeded === true,
+        blockedReason: wardTransferNeedsCoordinator(entry, unit.id, units)
+          ? "Coordinator accepts transfers from another hospital"
+          : undefined,
+      })),
+    ...incoming.map((movement) => ({
+      kind: "movement" as const,
+      id: movement.id,
+      name: resolvePatientIdentity(movement).displayName,
+      sex: movement.sex === "Female" ? "F" : movement.sex === "Male" ? "M" : "Not recorded",
+      waitedMinutes: Math.max(0, now - (movement.referredAt ?? movement.openedAt)),
+      secureBedNeeded: movement.security === "Secure",
+    })),
+  ];
 
   const boardUnitId = unit.id;
 
@@ -1215,6 +1268,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         admissionId: pick.admissionId,
         bedNumber,
         actingUnitId: boardUnitId,
+      });
+    } else if (pick.kind === "movement") {
+      // v10 pass 3: a coordinator-sent person, accepted in principle into this numbered bed.
+      boardCheckRef.current = {
+        prior: rejections.length,
+        bed: bedNumber,
+        success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Accepted in principle.`,
+        undo: { kind: "movement", movementId: pick.movementId, unitId: boardUnitId },
+      };
+      dispatch({
+        type: "ACCEPT_IN_PRINCIPLE",
+        role: "ward",
+        now,
+        movementId: pick.movementId,
+        unitId: boardUnitId,
+        bedNumber,
       });
     } else {
       boardCheckRef.current = {
@@ -2090,11 +2159,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   beds={bedsList}
                   isMixed={isMixed}
                   waiting={boardWaiting}
-                  coordinatorReferrals={incoming.length}
-                  onAnswerOnHome={() => {
-                    setFlowTab("referrals");
-                    showHome("ward-awaiting-answer");
-                  }}
                   picked={boardPick}
                   onPick={pickOnBoard}
                   say={boardSay}

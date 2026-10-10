@@ -53,6 +53,9 @@ function firstOffer() {
 }
 
 describe("Home Offer with Undo", () => {
+  // v10 pass 3 (10 Oct 2026): Offer now refers at once and Undo takes it back through the engine
+  // (`UNDO_REFER_TO_UNITS`), replacing the old "hold for 8 s then send", which lost the offer when
+  // the page was left. The original two cases are kept, re-pinned to the new behaviour.
   it("marks the ward Offered at once and Undo leaves nothing sent", () => {
     const { bedflow, button, unitId } = firstOffer();
     fireEvent.click(button);
@@ -60,16 +63,17 @@ describe("Home Offer with Undo", () => {
     expect(within(bedflow).getByTestId(`ward-bedflow-offered-${unitId}`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(within(bedflow).queryByTestId(`ward-bedflow-offered-${unitId}`)).not.toBeInTheDocument();
-    expect(screen.getByText("Offer withdrawn")).toBeInTheDocument();
+    expect(screen.getByText(/^Offer withdrawn\./u)).toBeInTheDocument();
   });
 
-  it("sends the referral when the Undo window is closed without Undo", () => {
+  it("has sent the referral already, so closing the Undo window keeps it", () => {
     const { bedflow, button, unitId } = firstOffer();
     fireEvent.click(button);
     expect(screen.getByText(/^Offered .+ to UM\d{6}$/u)).toBeInTheDocument();
+    // Recorded at once: the row reads Offered from the referral itself before the toast closes.
+    expect(within(bedflow).getByTestId(`ward-bedflow-offered-${unitId}`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^Dismiss: Offered / }));
 
-    // Sent: the row still reads Offered, now from the recorded referral rather than the held offer.
     expect(within(bedflow).getByTestId(`ward-bedflow-offered-${unitId}`)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument();
   });
@@ -91,9 +95,14 @@ describe("Placement override needs a second sign-off", () => {
     expect(submit).toHaveAttribute("aria-disabled", "true");
 
     fireEvent.click(within(shortlist).getByTestId("ward-shortlist-override-second-sign-off"));
+    // v10 pass 3: who signed off is now recorded, so a typed name is required too.
+    expect(submit).toHaveAttribute("aria-disabled", "true");
+    fireEvent.change(within(shortlist).getByTestId("ward-shortlist-override-sign-off-name"), {
+      target: { value: "J. Synthetic" },
+    });
     expect(submit).not.toHaveAttribute("aria-disabled");
     expect(within(shortlist).getByTestId("ward-shortlist-override-second-sign-off-note")).toHaveTextContent(
-      "Not wired in this prototype.",
+      "Recorded with the override and its audit entry.",
     );
   });
 });

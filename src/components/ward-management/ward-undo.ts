@@ -49,10 +49,209 @@ export type BedPlacementUndo = {
   afterBed: number;
 };
 
-export type UndoRecord = ReferralDecisionUndo | BedPlacementUndo;
+/**
+ * **v10 pass 3 (Josh, 10 Oct 2026): the undoable steps.** Each undo event takes back the newest of
+ * its listed actions on one subject (a movement, a referral, a stay, or the whole network for a
+ * handover sign-off). The record is a generic before/after of exactly the records the step changed,
+ * so the undo restores them exactly and refuses when any of them has changed since.
+ */
+export const UNDO_STEP_ACTIONS = {
+  UNDO_REFER_TO_UNITS: ["REFER_TO_UNITS"],
+  UNDO_ACCEPT_IN_PRINCIPLE: ["ACCEPT_IN_PRINCIPLE"],
+  UNDO_LEGAL_FORM_RECORD: ["RECORD_LEGAL_FORM_WRITTEN", "RECORD_LEGAL_FORM_RECEIVED"],
+  UNDO_SUPPORT_NOTIFICATION: ["RECORD_SUPPORT_NOTIFICATION"],
+  UNDO_REPATRIATION: ["RECORD_REPATRIATION"],
+  UNDO_HANDOVER_SIGN_OFF: ["RECORD_HANDOVER_SIGN_OFF"],
+  UNDO_ED_STEP: [
+    "RECORD_ARRIVED_IN_DEPARTMENT",
+    "RECORD_EXAMINATION",
+    "RECORD_MEDICAL_CLEARANCE",
+    "RECORD_TRANSPORT_NEED",
+    "HANDOVER_READY",
+  ],
+  UNDO_TRANSPORT_STEP: ["TRANSPORT_ACCEPTED", "TRANSPORT_EN_ROUTE", "PATIENT_COLLECTED", "PATIENT_ARRIVED"],
+} as const;
+export type UndoStepType = keyof typeof UNDO_STEP_ACTIONS;
+export type UndoableStepAction = (typeof UNDO_STEP_ACTIONS)[UndoStepType][number];
+export const UNDO_STEP_TYPES = Object.keys(UNDO_STEP_ACTIONS) as UndoStepType[];
+
+/** The undo event that takes back `action`, or undefined when the action has no undo. */
+export function undoStepTypeFor(action: string): UndoStepType | undefined {
+  return UNDO_STEP_TYPES.find((type) => (UNDO_STEP_ACTIONS[type] as readonly string[]).includes(action));
+}
+
+/** One subject id from an event's own fields: movement, then referral, then stay; else the network. */
+export function undoStepSubjectId(event: object): string {
+  const fields = event as { movementId?: unknown; referralId?: unknown; admissionId?: unknown };
+  for (const value of [fields.movementId, fields.referralId, fields.admissionId])
+    if (typeof value === "string" && value.length > 0) return value;
+  return "network";
+}
+
+/** One changed record: by id inside a list of records, rows appended to a plain list, or a whole value. */
+export type StepChange =
+  | { slice: string; mode: "id"; id: string; index: number; before: unknown; after: unknown }
+  | { slice: string; mode: "append"; start: number; rows: unknown[] }
+  | { slice: string; mode: "whole"; before: unknown; after: unknown };
+
+export type StepUndo = {
+  kind: "step";
+  undoType: UndoStepType;
+  action: UndoableStepAction;
+  subjectId: string;
+  at: Instant;
+  role: WardFlowRole;
+  /** The ward that acted, for a ward step that names its unit; `null` otherwise. */
+  unitId: string | null;
+  changes: StepChange[];
+};
+
+export type UndoRecord = ReferralDecisionUndo | BedPlacementUndo | StepUndo;
 
 function subjectOf(record: UndoRecord): string {
+  if (record.kind === "step") return `step:${record.undoType}:${record.subjectId}`;
   return record.kind === "referral-decision" ? `referral:${record.referralId}` : `admission:${record.admissionId}`;
+}
+
+export function stepUndoFor(
+  records: readonly UndoRecord[] | undefined,
+  undoType: UndoStepType,
+  subjectId: string,
+): StepUndo | undefined {
+  return (records ?? []).find(
+    (record): record is StepUndo =>
+      record.kind === "step" && record.undoType === undoType && record.subjectId === subjectId,
+  );
+}
+
+/**
+ * State keys a step undo never snapshots: the audit trail, refusals, counters, the clock, the
+ * configuration and the undo records themselves. Ids are never reused, so counters stay where
+ * they are; `dischargeRevisions` only moves forward (a removed stay's entry is dropped on undo).
+ */
+const STEP_UNDO_IGNORED_KEYS: ReadonlySet<string> = new Set([
+  "worldGeneration",
+  "auditEvents",
+  "auditReviews",
+  "auditSequence",
+  "auditReviewSequence",
+  "auditCaptureStartedAt",
+  "rejections",
+  "clockOffsetMinutes",
+  "scenario",
+  "configuration",
+  "dischargeRevisions",
+  "undoRecords",
+]);
+
+const isRow = (value: unknown): value is { id: string } =>
+  typeof value === "object" &&
+  value !== null &&
+  !Array.isArray(value) &&
+  typeof (value as { id?: unknown }).id === "string";
+
+/** What `next` changed against `before`, record by record. Empty when nothing changed. */
+export function diffForStepUndo(before: object, next: object): StepChange[] {
+  const changes: StepChange[] = [];
+  const was = before as Record<string, unknown>;
+  const now = next as Record<string, unknown>;
+  for (const slice of Object.keys(now)) {
+    if (STEP_UNDO_IGNORED_KEYS.has(slice)) continue;
+    const a = was[slice];
+    const b = now[slice];
+    if (a === b || typeof b === "number") continue;
+    if (Array.isArray(b) && (a === undefined || Array.isArray(a))) {
+      const old = (a ?? []) as unknown[];
+      if ([...old, ...b].every(isRow)) {
+        const oldRows = old as { id: string }[];
+        const newRows = b as { id: string }[];
+        const oldById = new Map(oldRows.map((row) => [row.id, row]));
+        const newById = new Map(newRows.map((row) => [row.id, row]));
+        oldRows.forEach((row, index) => {
+          const after = newById.get(row.id);
+          if (after === row || (after !== undefined && sameRecord(after, row))) return;
+          changes.push({ slice, mode: "id", id: row.id, index, before: row, after: after ?? null });
+        });
+        newRows.forEach((row, index) => {
+          if (!oldById.has(row.id)) changes.push({ slice, mode: "id", id: row.id, index, before: null, after: row });
+        });
+        continue;
+      }
+      if (old.length <= b.length && old.every((row, index) => row === b[index] || sameRecord(row, b[index]))) {
+        if (b.length > old.length)
+          changes.push({ slice, mode: "append", start: old.length, rows: b.slice(old.length) });
+        continue;
+      }
+    }
+    if (!sameRecord(a ?? null, b ?? null)) changes.push({ slice, mode: "whole", before: a ?? null, after: b ?? null });
+  }
+  return changes;
+}
+
+/** Rule 2 for a step: whether any record it changed reads differently now. */
+export function stepChangedSince(state: object, record: StepUndo): boolean {
+  const current = state as Record<string, unknown>;
+  return record.changes.some((change) => {
+    const value = current[change.slice];
+    if (change.mode === "whole") return !sameRecord(value ?? null, change.after);
+    const list = Array.isArray(value) ? (value as unknown[]) : [];
+    if (change.mode === "append") {
+      const rows = list.slice(change.start, change.start + change.rows.length);
+      return rows.length !== change.rows.length || !sameRecord(rows, change.rows);
+    }
+    // A notice the step raised may since have been read; the undo withdraws it all the same.
+    if (change.slice === "notices" && change.before === null) return false;
+    const row = list.find((candidate) => isRow(candidate) && candidate.id === change.id);
+    return change.after === null ? row !== undefined : row === undefined || !sameRecord(row, change.after);
+  });
+}
+
+/**
+ * The state with the step taken back: each changed record returned to what it was, a created one
+ * removed, a removed one put back where it stood, appended rows taken off. One deliberate
+ * exception to "exactly": a unit's allocatable revision moves one past the current, never back, so
+ * a screen still holding the step's revision is refused rather than mistaken for current.
+ */
+export function applyStepUndo<S extends object>(state: S, record: StepUndo): S {
+  const next = { ...(state as Record<string, unknown>) };
+  for (const change of [...record.changes].reverse()) {
+    const value = next[change.slice];
+    if (change.mode === "whole") {
+      if (change.before === null) delete next[change.slice];
+      else next[change.slice] = structuredClone(change.before);
+      continue;
+    }
+    const list = Array.isArray(value) ? [...(value as unknown[])] : [];
+    if (change.mode === "append") {
+      list.splice(change.start, change.rows.length);
+      next[change.slice] = list;
+      continue;
+    }
+    const at = list.findIndex((candidate) => isRow(candidate) && candidate.id === change.id);
+    if (change.before === null) {
+      if (at >= 0) list.splice(at, 1);
+    } else {
+      let restored = structuredClone(change.before) as Record<string, unknown>;
+      if (change.slice === "units" && at >= 0) restored = withRevisionPast(restored, list[at]);
+      if (at >= 0) list[at] = restored;
+      else list.splice(Math.min(change.index, list.length), 0, restored);
+    }
+    next[change.slice] = list;
+  }
+  const revisions = next.dischargeRevisions as Record<string, number> | undefined;
+  const admissions = next.admissions as { id: string }[] | undefined;
+  if (revisions && admissions) {
+    const live = new Set(admissions.map((admission) => admission.id));
+    next.dischargeRevisions = Object.fromEntries(Object.entries(revisions).filter(([id]) => live.has(id)));
+  }
+  return next as S;
+}
+
+function withRevisionPast(restored: Record<string, unknown>, current: unknown): Record<string, unknown> {
+  const allocatable = restored.allocatable as Record<string, unknown> | undefined;
+  if (!allocatable) return restored;
+  const revision = (current as { allocatable?: { revision?: number } }).allocatable?.revision ?? 0;
+  return { ...restored, allocatable: { ...allocatable, revision: revision + 1 } };
 }
 
 /** Adds `record`, replacing any earlier record for the same subject: only the newest is undoable. */
