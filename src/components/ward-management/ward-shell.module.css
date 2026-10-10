@@ -192,6 +192,19 @@
     background: transparent;
   }
 
+  /* A pinned rail prints in full: no sticky, no height cap and no inner scroll that would cut its
+     cards off the page. Same specificity as the rail rules above, so this later block wins. */
+  .shell [data-wf-rail]:not([hidden]),
+  .shell [data-wf-rail]:has([data-wf-rail-body]):not([hidden]) {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .shell [data-wf-rail] [data-wf-rail-body] {
+    overflow: visible;
+  }
+
   /*
    * `.place` declares its own colour, so it cannot inherit a fix from `.shell` or from whichever
    * screen hosts `WardShellHeader` — a colour declared on an element itself cannot be overridden

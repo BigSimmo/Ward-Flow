@@ -1358,7 +1358,7 @@ export function PatientNowScreen({
                   ) : null}
                 </div>
                 {/* The shorter side column pins under the top bar once the columns sit side by side
-                    (they stack at 1080px and below). */}
+                    (they stack at 1120px and below). */}
                 <div className={styles.gbCol} data-wf-rail="1121">
                   {isLiveBedflow && liveMovement ? (
                     <PatientWhyCard
