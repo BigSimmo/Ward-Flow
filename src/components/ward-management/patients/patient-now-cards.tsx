@@ -1,7 +1,7 @@
 import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import type { ReactNode } from "react";
 import { Clock, MapPin, MessageSquare, Phone, Scale } from "lucide-react";
-import { Button, Card, CardBody, CardHead, StatusGlyph, type WfTone } from "@/components/wf";
+import { Button, Card, CardBody, CardHead, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -110,6 +110,51 @@ export function PatientLegalNowCard({
       time: clock(order.recordedAt),
     });
   const status = movement?.legalStatus ?? patient?.legalStatus;
+  const isPhone = useIsPhone();
+  if (isPhone)
+    /* v10 Patient, phone: "Legal now" and "All forms" head the section; each row is the form and
+     * when it was recorded, never a lapse time. */
+    return (
+      <section className={styles.phSection} data-testid="ward-patient-legal-now" aria-labelledby="pn-legal-now">
+        <div className={styles.phHeadRow}>
+          <h3 id="pn-legal-now" className={styles.phHead}>
+            Legal now
+          </h3>
+          <button type="button" className={styles.phLink} onClick={onAllForms}>
+            All forms
+          </button>
+        </div>
+        <ul className={styles.phList}>
+          <li className={styles.phItem}>
+            <StatusGlyph tone={status ? "info" : "neutral"} size={10} />
+            <span className={styles.phItemText}>
+              <strong>{status ?? "Legal status not recorded"}</strong>
+              <span>As recorded · no lapse time shown</span>
+            </span>
+          </li>
+          {rows.map((row) => (
+            <li key={row.code} className={styles.phItem}>
+              <StatusGlyph tone={row.tone} size={10} />
+              <span className={styles.phItemText}>
+                <strong>
+                  {row.code} · {row.name}
+                </strong>
+                <span>{row.time ? `In force · recorded ${row.time}` : "In force"}</span>
+              </span>
+            </li>
+          ))}
+          {!movement?.legalForm && movement ? (
+            <li className={styles.phItem}>
+              <StatusGlyph tone="neutral" size={10} />
+              <span className={styles.phItemText}>
+                <strong>No form recorded</strong>
+                <span>Record forms in Forms</span>
+              </span>
+            </li>
+          ) : null}
+        </ul>
+      </section>
+    );
   return (
     <Card data-testid="ward-patient-legal-now">
       <CardHead
@@ -160,7 +205,57 @@ export interface ContactRow {
 }
 
 /** Who to call now. Phone numbers are not held in this prototype, so there is no call button. */
-export function PatientContactsCard({ rows }: { rows: ContactRow[] }) {
+export function PatientContactsCard({ rows, framed = false }: { rows: ContactRow[]; framed?: boolean }) {
+  const isPhone = useIsPhone();
+  if (isPhone && framed)
+    /* v10 Movement, phone: "Who to call" is a card with its head inside, a phone glyph per row. */
+    return (
+      <section className={styles.phFramed} data-testid="ward-patient-who-to-call" aria-labelledby="pn-who-to-call">
+        <h3 id="pn-who-to-call" className={styles.phFramedHead}>
+          Who to call
+        </h3>
+        {rows.length > 0 ? (
+          <ul className={styles.phFramedList}>
+            {rows.map((row) => (
+              <li key={`${row.name}-${row.role}`} className={styles.phItem}>
+                <Phone size={16} aria-hidden="true" className={styles.phItemIcon} />
+                <span className={styles.phItemText}>
+                  <strong>{row.name}</strong>
+                  <span>{row.role}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className={styles.para}>No contacts recorded for this record.</p>
+        )}
+      </section>
+    );
+  if (isPhone)
+    /* v10 Patient, phone: "Who to call" heads a plain list, the name over the role. */
+    return (
+      <section className={styles.phSection} data-testid="ward-patient-who-to-call" aria-labelledby="pn-who-to-call">
+        <h3 id="pn-who-to-call" className={styles.phHead}>
+          Who to call
+        </h3>
+        {rows.length > 0 ? (
+          <ul className={styles.phList}>
+            {rows.map((row) => (
+              <li key={`${row.name}-${row.role}`} className={styles.phItem}>
+                <span className={styles.phItemText}>
+                  <strong>{row.name}</strong>
+                  <span>{row.role}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className={styles.phList}>
+            <span className={styles.para}>No contacts recorded for this record.</span>
+          </p>
+        )}
+      </section>
+    );
   return (
     <Card data-testid="ward-patient-who-to-call">
       <CardHead level={3} icon={Phone} title="Who to call" />
@@ -189,6 +284,41 @@ export function PatientContactsCard({ rows }: { rows: ContactRow[] }) {
  * held in this prototype, so the first two steps are said rather than offered as call buttons.
  */
 export function PatientLeaveCard({ dueBack, onMarkAbsent }: { dueBack: string; onMarkAbsent: () => void }) {
+  const isPhone = useIsPhone();
+  if (isPhone)
+    /* v10 Patient, phone: the three steps under a page heading, numbered, the last with its action. */
+    return (
+      <section className={styles.phSection} data-testid="ward-patient-leave-card" aria-labelledby="pn-leave-steps">
+        <h3 id="pn-leave-steps" className={styles.phHead}>
+          If not back by {dueBack}
+        </h3>
+        <ol className={styles.phList}>
+          <li className={styles.phItem}>
+            <span className={styles.phStep}>1</span>
+            <span className={styles.phItemText}>
+              <strong>Contact them and their carer</strong>
+              <span>Contact details are not held in this prototype</span>
+            </span>
+          </li>
+          <li className={styles.phItem}>
+            <span className={styles.phStep}>2</span>
+            <span className={styles.phItemText}>
+              <strong>Tell the treating psychiatrist</strong>
+            </span>
+          </li>
+          <li className={styles.phItem}>
+            <span className={styles.phStep}>3</span>
+            <span className={styles.phItemText}>
+              <strong>Treat as absent without leave</strong>
+              <span>Starts the missing person steps</span>
+            </span>
+            <Button size="sm" className={styles.phAction} onClick={onMarkAbsent}>
+              Mark absent
+            </Button>
+          </li>
+        </ol>
+      </section>
+    );
   return (
     <Card data-testid="ward-patient-leave-card">
       <CardHead level={3} icon={Clock} title={`If not back by ${dueBack}`} />

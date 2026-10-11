@@ -24,7 +24,7 @@ import {
   changeReasonLabels,
   type ReleasePullReason,
 } from "@/components/ward-management/ward-change-reasons";
-import { Button, Field, Select, StatusGlyph, buttonClass } from "@/components/wf";
+import { Button, Field, Select, StatusGlyph, buttonClass, useIsPhone } from "@/components/wf";
 
 import {
   alertActionFor,
@@ -84,6 +84,8 @@ export function AlertDetail({
   titleId?: string;
 }) {
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
+  const [activityOpen, setActivityOpen] = useState(false);
+  const isPhone = useIsPhone();
   const kind = alertKindOf(item.id);
   const group = alertGroupOf(item);
   const opened = raisedAt(item, movement);
@@ -158,6 +160,231 @@ export function AlertDetail({
     });
   }
   activity.sort((a, b) => b.at - a.at);
+
+  const pictureSection =
+    kind === "declines" && declines.length > 0 ? (
+      <section className={styles.detailSection} aria-label="Declines over time">
+        <div className={styles.sectionHead}>
+          <span className={styles.eyebrow}>Declines over time</span>
+          <span className={styles.quiet}>none accepted</span>
+        </div>
+        <DeclineLadder
+          now={now}
+          steps={declines.map((decline) => ({
+            id: `${decline.unitId}-${decline.at}`,
+            at: decline.at,
+            short: unitName(decline.unitId).split(" ")[0] ?? decline.unitId,
+            title: `${unitName(decline.unitId)}, ${declineReasonLabels[decline.reason] ?? decline.reason}, ${formatInstantWithDay(decline.at, now)}`,
+          }))}
+        />
+      </section>
+    ) : track.length > 0 ? (
+      <section className={styles.detailSection} aria-label="Recorded times">
+        <div className={styles.sectionHead}>
+          <span className={styles.eyebrow}>{kind === "hold" ? "Time in ED" : "Recorded times"}</span>
+          <span className={`${styles.quiet} ${styles.mono}`}>
+            {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
+          </span>
+        </div>
+        <WaitTrack points={track} now={now} />
+      </section>
+    ) : null;
+
+  const actionButtons = (
+    <>
+      {movement ? <PullNowButton movement={movement} /> : null}
+      <Button
+        size="sm"
+        icon={mine ? Check : UserRound}
+        disabledReason={mine ? "You own this alert" : undefined}
+        reasonDisplay="tooltip"
+        aria-label={mine ? `You own ${subjectLine}` : `Take ${subjectLine}`}
+        onClick={() => handlers.onTake(item)}
+      >
+        {mine ? "Yours" : "Take"}
+      </Button>
+      <Button
+        size="sm"
+        icon={seen ? Check : undefined}
+        disabledReason={seen ? "Already acknowledged" : undefined}
+        reasonDisplay="tooltip"
+        aria-label={seen ? `Acknowledged ${subjectLine}` : `Acknowledge ${subjectLine}`}
+        onClick={() => handlers.onAcknowledge(item)}
+      >
+        {seen ? "Seen" : "Acknowledge"}
+      </Button>
+      {snoozedUntil ? (
+        <Button
+          size="sm"
+          aria-label={`Return ${item.title} now, ${subject.displayName}`}
+          onClick={() => handlers.onReturn(item)}
+        >
+          Return now
+        </Button>
+      ) : (
+        <InboxSnoozeControl
+          subject={subjectLine}
+          actNow={inboxItemIsActNow(item.id)}
+          now={now}
+          variant="sec"
+          onSnooze={(until, reason) => handlers.onSnooze(item, until, reason)}
+        />
+      )}
+    </>
+  );
+
+  const activityList = (
+    <ul className={styles.activity}>
+      {activity.map((entry, index) => (
+        <li key={`${entry.at}-${index}`}>
+          <span className={styles.mono}>{formatInstantWithDay(entry.at, now)}</span>
+          <StatusGlyph tone={entry.done ? "success" : group === "act" ? "danger" : "warning"} size={9} />
+          <span>{entry.text}</span>
+        </li>
+      ))}
+    </ul>
+  );
+
+  if (isPhone) {
+    /* v10 Alerts, phone: who and how long under the sheet's title, the facts as a boxed grid, the
+     * recorded times as a card, the reason, the actions two by two, activity one tap away, and the
+     * Patient link with the one primary pinned at the foot. */
+    const phoneFacts: [string, string][] = facts.filter(([label]) => label !== "Owner" && label !== "Form due");
+    const legal = movement?.legalForm ? `Form ${movement.legalForm.code}` : subject.legalStatus;
+    if (!booking && legal) phoneFacts.push(["Legal status", legal]);
+    phoneFacts.push(["Owner", item.owner]);
+    const formDue = facts.find(([label]) => label === "Form due");
+    if (formDue) phoneFacts.push(formDue);
+    return (
+      <div className={`${styles.detail} ${styles.phDetail}`}>
+        <div className={styles.phWho}>
+          <h2 id={titleId} className={styles.phWhoName}>
+            {subject.displayName} <span className={styles.mono}>{subject.umrn}</span>
+          </h2>
+          <div className={styles.phChips}>
+            {group === "act" || group === "wait" ? (
+              <span className={styles.phChip}>
+                <StatusGlyph tone={group === "act" ? "danger" : "warning"} size={9} />
+                {group === "act" ? "Act now" : "Waiting"}
+              </span>
+            ) : null}
+            {opened !== undefined ? (
+              <span className={styles.phChip}>
+                open <span className={styles.mono}>{minutesText(Math.max(0, now - opened))}</span>
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        {declines.length > 0 ? null : (
+          <dl className={styles.phFacts} data-testid={booking ? "alerts-drawer-booking" : undefined}>
+            {phoneFacts.map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+
+        {pictureSection ? <div className={styles.phBox}>{pictureSection}</div> : null}
+
+        {declines.length > 0 ? (
+          <section className={styles.phBox} aria-label="Declined">
+            <div className={styles.detailSection}>
+              <div className={styles.sectionHead}>
+                <span className={styles.eyebrow}>Declined {declines.length}</span>
+              </div>
+              <ul className={styles.declineList}>
+                {declines.map((decline) => (
+                  <li key={`${decline.unitId}-${decline.at}`} className={styles.declineRow}>
+                    <StatusGlyph tone="neutral" size={9} />
+                    <span className={styles.declineText}>
+                      <span className={styles.declineUnit}>{unitName(decline.unitId)}</span>
+                      <span className={styles.quiet}>{declineReasonLabels[decline.reason] ?? decline.reason}</span>
+                    </span>
+                    <span className={styles.mono}>{formatInstantWithDay(decline.at, now)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        ) : null}
+
+        <InboxRowStatus
+          acknowledgements={acknowledgements}
+          ownership={ownership}
+          since={item.since}
+          target={movement ? decisionTargetReading(movement, now, configuration) : undefined}
+          now={now}
+          className={styles.detailStatus}
+        />
+
+        {snoozedUntil ? <p className={styles.quiet}>{snoozedLine(snoozedUntil, now)}</p> : null}
+        {!snoozedUntil && action.kind !== "link" ? (
+          <Field label="Reason for release" id={`alerts-release-${item.id}`}>
+            <Select
+              ref={releaseRef}
+              value={releaseReason}
+              onChange={(event) => setReleaseReason(event.target.value as ReleasePullReason | "")}
+            >
+              <option value="">Choose a reason</option>
+              {RELEASE_PULL_REASONS.map((reason) => (
+                <option key={reason} value={reason}>
+                  {changeReasonLabels[reason]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        ) : null}
+
+        <div className={styles.phActions}>{actionButtons}</div>
+        <Button size="sm" variant="ghost" icon={ArrowUpRight} disabledReason="Not wired in this prototype.">
+          Escalate
+        </Button>
+
+        {activity.length > 0 ? (
+          <section aria-label="Activity" className={styles.phActivity}>
+            <button
+              type="button"
+              className={styles.phActivityToggle}
+              aria-expanded={activityOpen}
+              onClick={() => setActivityOpen((open) => !open)}
+            >
+              {activityOpen ? "Hide activity" : "Show activity"}
+            </button>
+            {activityOpen ? activityList : null}
+          </section>
+        ) : null}
+
+        <div className={styles.phFoot}>
+          {subject.patientHref ? (
+            <Link className={buttonClass({ variant: "sec" })} href={subject.patientHref}>
+              Patient
+            </Link>
+          ) : null}
+          {snoozedUntil ? null : action.kind === "link" ? (
+            <Link className={buttonClass({ variant: "pri" })} href={action.href}>
+              {action.label}
+            </Link>
+          ) : (
+            <Button
+              variant="pri"
+              disabledReason={releaseReason === "" ? "Choose a reason first" : undefined}
+              reasonDisplay="tooltip"
+              onClick={() => {
+                if (releaseReason === "") return;
+                handlers.onRelease(item, releaseReason);
+                setReleaseReason("");
+              }}
+            >
+              Release bed
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.detail}>

@@ -450,7 +450,8 @@ export function HandoverPhone({
       <PhoneHero
         level={1}
         data-testid="ward-handover-phone-hero"
-        eyebrow={`${clock} ${current.label.toLowerCase()} · ${scopeLabel.toLowerCase()} · ${countdown}`}
+        eyebrow={`${clock} ${current.label.toLowerCase()} · ${scopeLabel.toLowerCase()}`}
+        chip={<span className={styles.heroCountdown}>{countdown}</span>}
         title={`${dueCount} to hand over`}
         sub={
           signedAt !== null

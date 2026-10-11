@@ -5448,3 +5448,16 @@
     grid-column: 1 / -1;
   }
 }
+
+/* v10 Patient, phone (11 Oct 2026): the stay strip under the three figures, outside a placement.
+ * Renders only on phone. */
+.phStayStrip {
+  width: 100%;
+  margin-top: var(--wf-s-1);
+}
+
+@media (max-width: 48rem) {
+  .phMoreRows > li {
+    min-width: 0;
+  }
+}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CalendarDays, DoorOpen, Stethoscope } from "lucide-react";
-import { Button, Card, CardHead, StatusGlyph } from "@/components/wf";
+import { Button, Card, CardHead, Sheet, StatusGlyph, useIsPhone } from "@/components/wf";
 import {
   MINUTES_PER_DAY,
   calendarDateOf,
@@ -54,6 +54,7 @@ export function PatientWardChangeCard({
   onSaveDischarge,
   refusal,
   roleLimit,
+  dischargeInBar = false,
 }: {
   now: Instant;
   dayZero: Date;
@@ -66,6 +67,8 @@ export function PatientWardChangeCard({
   refusal?: string;
   /** Why the route's role may not raise this event, or undefined. */
   roleLimit: (eventType: WardFlowEventType) => string | undefined;
+  /** v10 phone: the discharge date is the pinned bar's primary, so the chip row leaves it out. */
+  dischargeInBar?: boolean;
 }) {
   const [time, setTime] = useState("");
   const [day, setDay] = useState(0);
@@ -75,6 +78,9 @@ export function PatientWardChangeCard({
   const leaveLimit = roleLimit("RECORD_LEAVE_BED");
   const edLimit = roleLimit("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT");
   const dischargeLimit = roleLimit("UPDATE_EXPECTED_DISCHARGE");
+  /* v10 Patient, phone: "Record a change" is a heading over a row of chips, and the form rises
+   * as a bottom sheet with Cancel beside its one primary. Desktop and tablet keep the card. */
+  const isPhone = useIsPhone();
 
   function toggle(next: Exclude<WardChangeForm, "none">) {
     onFormChange(form === next ? "none" : next);
@@ -82,31 +88,30 @@ export function PatientWardChangeCard({
     setDay(0);
   }
 
-  return (
-    <Card data-testid="ward-patient-change-card" aria-labelledby="pn-ward-change">
-      <CardHead id="pn-ward-change" level={3} title="Record a change" meta="Ward" />
-      <div className={styles.changeRow}>
-        <Button
-          className={styles.tap}
-          size="sm"
-          icon={DoorOpen}
-          aria-pressed={form === "leave"}
-          disabledReason={leaveLimit}
-          reasonDisplay="tooltip"
-          onClick={() => toggle("leave")}
-        >
-          Start leave
-        </Button>
-        <Button
-          className={styles.tap}
-          size="sm"
-          icon={Stethoscope}
-          disabledReason={edLimit}
-          reasonDisplay="tooltip"
-          onClick={onGoneToEd}
-        >
-          Gone to ED
-        </Button>
+  const chipRow = (
+    <div className={styles.changeRow}>
+      <Button
+        className={styles.tap}
+        size="sm"
+        icon={DoorOpen}
+        aria-pressed={form === "leave"}
+        disabledReason={leaveLimit}
+        reasonDisplay="tooltip"
+        onClick={() => toggle("leave")}
+      >
+        Start leave
+      </Button>
+      <Button
+        className={styles.tap}
+        size="sm"
+        icon={Stethoscope}
+        disabledReason={edLimit}
+        reasonDisplay="tooltip"
+        onClick={onGoneToEd}
+      >
+        Gone to ED
+      </Button>
+      {dischargeInBar ? null : (
         <Button
           className={styles.tap}
           size="sm"
@@ -118,60 +123,107 @@ export function PatientWardChangeCard({
         >
           Discharge date
         </Button>
-      </div>
-      {form !== "none" ? (
-        <form
-          className={styles.changeForm}
-          aria-label={form === "leave" ? "Start leave" : "Set discharge date"}
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!future || parsed === undefined) return;
-            if (form === "leave") onRecordLeave(parsed, kind);
-            else onSaveDischarge(parsed);
-            setTime("");
-          }}
-        >
-          {form === "leave" ? (
-            <div className={styles.kindRow} role="group" aria-label="Kind of leave">
-              {(Object.keys(KIND_LABELS) as LeaveKind[]).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={styles.kindChoice}
-                  aria-pressed={kind === option}
-                  onClick={() => setKind(option)}
-                >
-                  {KIND_LABELS[option]}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <label className={styles.changeField}>
-            <span>Day</span>
-            <select value={day} onChange={(event) => setDay(Number(event.target.value))}>
-              {(form === "leave" ? LEAVE_DAYS : DISCHARGE_DAYS).map((option) => (
-                <option key={option} value={option}>
-                  {dayOptionLabel(option, now, dayZero)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles.changeField}>
-            <span>{form === "leave" ? "Expected back time" : "Expected discharge time"}</span>
-            <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
-          </label>
-          <p className={styles.changeHint} aria-live="polite">
-            {parsed === undefined
-              ? "Type the time"
-              : future
-                ? formatInstantWithDay(parsed, now)
-                : "That time has already passed"}
-          </p>
-          <Button className={styles.tap} type="submit" size="sm" variant="pri" disabled={!future}>
-            {form === "leave" ? "Record leave" : "Save date"}
-          </Button>
-        </form>
+      )}
+    </div>
+  );
+
+  const formElement = (
+    <form
+      id="pn-ward-change-form"
+      className={isPhone ? styles.phSheetForm : styles.changeForm}
+      aria-label={form === "leave" ? "Start leave" : "Set discharge date"}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!future || parsed === undefined) return;
+        if (form === "leave") onRecordLeave(parsed, kind);
+        else onSaveDischarge(parsed);
+        setTime("");
+      }}
+    >
+      {form === "leave" ? (
+        <div className={styles.kindRow} role="group" aria-label="Kind of leave">
+          {(Object.keys(KIND_LABELS) as LeaveKind[]).map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={styles.kindChoice}
+              aria-pressed={kind === option}
+              onClick={() => setKind(option)}
+            >
+              {KIND_LABELS[option]}
+            </button>
+          ))}
+        </div>
       ) : null}
+      <label className={styles.changeField}>
+        <span>Day</span>
+        <select value={day} onChange={(event) => setDay(Number(event.target.value))}>
+          {(form === "leave" ? LEAVE_DAYS : DISCHARGE_DAYS).map((option) => (
+            <option key={option} value={option}>
+              {dayOptionLabel(option, now, dayZero)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={styles.changeField}>
+        <span>{form === "leave" ? "Expected back time" : "Expected discharge time"}</span>
+        <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+      </label>
+      <p className={styles.changeHint} aria-live="polite">
+        {parsed === undefined
+          ? "Type the time"
+          : future
+            ? formatInstantWithDay(parsed, now)
+            : "That time has already passed"}
+      </p>
+      {isPhone ? null : (
+        <Button className={styles.tap} type="submit" size="sm" variant="pri" disabled={!future}>
+          {form === "leave" ? "Record leave" : "Save date"}
+        </Button>
+      )}
+    </form>
+  );
+
+  if (isPhone)
+    return (
+      <section className={styles.phSection} data-testid="ward-patient-change-card" aria-labelledby="pn-ward-change">
+        <h3 id="pn-ward-change" className={styles.phHead}>
+          Record a change
+        </h3>
+        {chipRow}
+        {refusal ? (
+          <p className={styles.refusal} role="alert">
+            <StatusGlyph tone="danger" size={9} /> Not recorded: {refusal}
+          </p>
+        ) : null}
+        <Sheet
+          open={form !== "none"}
+          onClose={() => onFormChange("none")}
+          title={form === "leave" ? "Start leave" : "Set discharge date"}
+          description={form === "leave" ? "Bed held while away" : "Typed by the ward"}
+          mobilePlacement="bottom"
+          testId="ward-patient-change-sheet"
+          footer={
+            <div className={styles.phSheetFoot}>
+              <Button className={styles.tap} onClick={() => onFormChange("none")}>
+                Cancel
+              </Button>
+              <Button className={styles.tap} type="submit" form="pn-ward-change-form" variant="pri" disabled={!future}>
+                {form === "leave" ? "Record leave" : "Save date"}
+              </Button>
+            </div>
+          }
+        >
+          {form !== "none" ? formElement : null}
+        </Sheet>
+      </section>
+    );
+
+  return (
+    <Card data-testid="ward-patient-change-card" aria-labelledby="pn-ward-change">
+      <CardHead id="pn-ward-change" level={3} title="Record a change" meta="Ward" />
+      {chipRow}
+      {form !== "none" ? formElement : null}
       {refusal ? (
         <p className={styles.refusal} role="alert">
           <StatusGlyph tone="danger" size={9} /> Not recorded: {refusal}

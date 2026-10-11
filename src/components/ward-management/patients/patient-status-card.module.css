@@ -244,3 +244,98 @@
   height: 48px;
   border-radius: 50%;
 }
+
+.head[hidden] {
+  display: none;
+}
+
+/* v10 Patient, phone (11 Oct 2026), outside a placement: each row is the icon, then "Label · Owner"
+ * over the value and its quiet line, with the one action at the end; a quiet foot line closes the
+ * card. `data-ph-quiet` and `.phFoot` render only on phone. */
+.cell[data-ph-quiet] {
+  position: relative;
+  padding: 10px var(--wf-s-3) 10px 44px;
+  row-gap: 1px;
+}
+
+.cell[data-ph-quiet] .label {
+  grid-column: 1;
+  gap: 0;
+}
+
+.cell[data-ph-quiet] .label > svg {
+  position: absolute;
+  top: 50%;
+  left: var(--wf-s-3);
+  width: 18px;
+  height: 18px;
+  color: var(--wf-ink-2);
+  transform: translateY(-50%);
+}
+
+.cell[data-ph-quiet] .owner {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.cell[data-ph-quiet] .owner::before {
+  content: "\00a0·\00a0";
+}
+
+.cell[data-ph-quiet] .value {
+  font-size: var(--wf-fs-15, 15px);
+  line-height: 22px;
+}
+
+.cell[data-ph-quiet] .sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell[data-ph-quiet] .action {
+  grid-row: 1 / span 4;
+  align-self: center;
+}
+
+.cell[data-ph-quiet] .action button {
+  min-height: 44px;
+  border-radius: var(--wf-r-pill);
+}
+
+.phFoot {
+  margin: 0;
+  padding: 10px var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+/* v10 Movement, phone: the verdict alone heads the card; the clear count is the hero's third
+ * figure, so the meter and meta leave the row. */
+@media (max-width: 48rem) {
+  .head {
+    min-height: 40px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .card[data-ph-placing] .meterGroup,
+  .card[data-ph-placing] .meta {
+    display: none;
+  }
+
+  .verdict {
+    font-size: var(--wf-fs-14);
+    line-height: 20px;
+  }
+}
+
+/* v10 phone: the pinned primary is a full 48px pill, over the small button's own height. */
+.phBar.phBar > button,
+.phBar.phBar > a {
+  height: 48px;
+  min-height: 48px;
+  font-size: var(--wf-fs-14);
+}

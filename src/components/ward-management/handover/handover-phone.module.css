@@ -585,8 +585,16 @@
   color: var(--wf-ink-1);
 }
 
+/* v10 phone mockup: the ready count is ink; colour is kept for state, not for a count. */
 .readyOn {
-  color: var(--wf-success-ink);
+  color: var(--wf-ink-1);
+}
+
+/* The time to the handover at the right end of the eyebrow line, in its own case. */
+.heroCountdown {
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  white-space: nowrap;
 }
 
 .readyWord {

@@ -1454,8 +1454,22 @@ table.censusTable {
   white-space: nowrap;
 }
 
+/* The glyph, the words and the count each keep 6px between them (the label is its own box). */
+.phoneChip.phoneChip > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.phoneChip.phoneChip[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
 .phoneChipCount {
-  margin-left: 6px;
+  margin-left: 0;
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / 1 var(--wf-mono);
 }

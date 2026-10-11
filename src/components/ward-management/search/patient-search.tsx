@@ -1322,7 +1322,7 @@ export function PatientSearchPage() {
               },
               {
                 id: "long",
-                label: "Highlight over 24 hours",
+                label: "Highlight waiting over 24 hours",
                 hint: `${highlightCounts.long} waiting`,
                 icon: Zap,
                 onAction: () => {
