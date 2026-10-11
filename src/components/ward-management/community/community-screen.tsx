@@ -575,7 +575,13 @@ export function CommunityScreen({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
   // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.
-  const [chosenTab, setActiveTab] = useState<ActiveTabType | null>(null);
+  const [chosenTab, setChosenTab] = useState<ActiveTabType | null>(null);
+  // Set once the reader picks a list; until then the default may follow the resolved viewport.
+  const readerPickedTab = useRef(false);
+  const setActiveTab = useCallback((tab: ActiveTabType) => {
+    readerPickedTab.current = true;
+    setChosenTab(tab);
+  }, []);
   const [activeDrawer, setActiveDrawer] = useState<DrawerType>(null);
   const [activeModalType, setActiveModalType] = useState<ModalType>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
@@ -601,6 +607,12 @@ export function CommunityScreen({
   const [switchOpen, setSwitchOpen] = useState(false);
   // Phone (v10): the waiting referral and the departure open as bottom sheets.
   const isPhone = useIsPhone();
+  // The first render (and hydration) reads the viewport as desktop. Once the phone query resolves,
+  // clear the held default so it is re-picked from the phone's own lists, unless the reader chose one.
+  // Only the viewport change does this; rows leaving a list never switch it under the reader.
+  useEffect(() => {
+    if (!readerPickedTab.current) setChosenTab(null);
+  }, [isPhone]);
   const [phoneReferralId, setPhoneReferralId] = useState<string | null>(null);
   const [phoneDeclining, setPhoneDeclining] = useState(false);
   const [phoneDepartureId, setPhoneDepartureId] = useState<string | null>(null);
@@ -915,7 +927,7 @@ export function CommunityScreen({
         window.location.href = communityTeamHref(target);
       }
     };
-  }, [referrals, liveReferrals, handleCompleteContact, handleConfirmAccept, handleConfirmDecline, now]);
+  }, [referrals, liveReferrals, handleCompleteContact, handleConfirmAccept, handleConfirmDecline, now, setActiveTab]);
 
   function intakeBlockedReason(draft: IntakeDraft): string | undefined {
     if (draft.ageBand === "") return "Choose an age band before sending this follow-up referral.";
@@ -1877,7 +1889,7 @@ export function CommunityScreen({
     (isPhone ? phoneRowCounts : tabCounts).find(([, count]) => count > 0)?.[0] ?? "tab-triage";
   // Held from the first render (React's "adjust state while rendering" pattern), so the list never
   // switches under the reader when the last row leaves it.
-  if (chosenTab === null) setActiveTab(firstListWithSomeone);
+  if (chosenTab === null) setChosenTab(firstListWithSomeone);
   const activeTab: ActiveTabType = chosenTab ?? firstListWithSomeone;
   const phoneListTab: Record<CommunityPhoneListId, ActiveTabType> = {
     waiting: "tab-triage",
