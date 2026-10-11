@@ -619,8 +619,10 @@ function ServiceGroup({
   const totalBeds = group.wards.reduce((sum, w) => sum + w.unit.beds, 0);
   const totalReady = group.wards.reduce((sum, w) => sum + w.ready, 0);
   const totalClosed = group.wards.reduce((sum, w) => sum + w.closed, 0);
-  const totalOccupied = group.wards.reduce((sum, w) => sum + w.occupied, 0);
-  const occPct = totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0;
+  // Occupied or Pulled, one decimal: the one occupancy count (`ward-occupancy.ts`) the rail and
+  // every other page print for the same service (device audit, 11 Oct 2026).
+  const totalInUse = group.wards.reduce((sum, w) => sum + w.occupied + w.pulled, 0);
+  const occPct = totalBeds > 0 ? ((totalInUse / totalBeds) * 100).toFixed(1) : "0.0";
 
   const checkScrollState = useCallback(() => {
     if (layout === "grid") {
@@ -831,7 +833,7 @@ function ServiceGroup({
                 { id: "pulled", value: ward.pulled, fill: "data-2", hatch: true, label: "Pulled" },
                 { id: "closed", value: ward.closed, fill: "closed", label: "Closed" },
               ]}
-              percent={ward.unit.beds > 0 ? (ward.occupied / ward.unit.beds) * 100 : null}
+              percent={ward.unit.beds > 0 ? ((ward.occupied + ward.pulled) / ward.unit.beds) * 100 : null}
               alertAt={BED_ALERT_THRESHOLD_PERCENT}
               fit={ward.ready > 0}
               dim={dimmed(ward.unit.id)}

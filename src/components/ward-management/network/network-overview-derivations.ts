@@ -96,8 +96,11 @@ export function largestShortfall(groups: readonly ServiceGroup[]): ServiceGroup 
   return worst;
 }
 
-/** Occupied share, one decimal place, or undefined for no beds. */
-export function occupiedPercent(occupied: number, beds: number): string | undefined {
+/**
+ * Occupancy, one decimal place, or undefined for no beds. Pass Occupied plus Pulled: the one
+ * occupancy count every page and the rail print (`ward-occupancy.ts`, device audit 11 Oct 2026).
+ */
+export function occupiedPercent(inUse: number, beds: number): string | undefined {
   if (beds <= 0) return undefined;
-  return `${((occupied / beds) * 100).toFixed(1)}%`;
+  return `${((inUse / beds) * 100).toFixed(1)}%`;
 }

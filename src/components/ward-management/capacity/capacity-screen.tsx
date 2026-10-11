@@ -8,6 +8,7 @@ import { LEAVING_DESTINATIONS } from "../ward-admissions";
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
+import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import type { DischargeOpenHandle, DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -203,7 +204,12 @@ export function CapacityScreen() {
   // nothing and stops the next figure added here inheriting a silent `[]`.
   const networkRows = networkWardRows(units, now, bedReleases, admissions, leaveBeds);
   const netTotals = networkTotals(networkRows);
-  const totalOccupied = networkRows.reduce((sum, row) => sum + row.occupied, 0);
+  // One occupancy count on every page and in the rail (`ward-occupancy.ts`, device audit 11 Oct 2026).
+  const occupancy = wardOccupancy(
+    networkRows.map((row) => row.unit),
+    admissions,
+    bedReleases,
+  );
   const selectedRow = networkRows.find((row) => row.unit.id === selectedUnitId);
   const totalLockedReady = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
   const totalOpenReady = netTotals.ready - totalLockedReady;
@@ -376,7 +382,7 @@ export function CapacityScreen() {
           lead={
             // v10 Capacity: the one ring on the page, ahead of the title.
             <OccupancyRing
-              percent={netTotals.beds > 0 ? (totalOccupied / netTotals.beds) * 100 : null}
+              percent={occupancy.percent}
               alertAt={BED_ALERT_THRESHOLD_PERCENT}
               scope={service ?? "Statewide"}
             />
