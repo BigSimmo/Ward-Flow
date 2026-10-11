@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
 
 import { ToastProvider } from "@/components/wf";
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
 import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
 import { WardBarMount } from "@/components/ward-management/shell/ward-bar";
+import { WARD_EARLY_TAP_SCRIPT } from "@/components/ward-management/shell/ward-early-tap";
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
@@ -101,9 +103,14 @@ import styles from "./ward-flow-layout.module.css";
  * `tests/ward-component-reachability.test.ts` â€” deleting a module is `docs/agents/dead-code-
  * deletion.md`'s decision, not this task's.
  */
-export default function WardFlowMockupLayout({ children }: { children: ReactNode }) {
+export default async function WardFlowMockupLayout({ children }: { children: ReactNode }) {
+  // The strict script-src needs the per-request nonce (src/proxy.ts) on our own inline script.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <WardFlowProvider>
+      {/* Remembers a header tap made before the app is ready, for the header to press once it is
+          (ward-early-tap.ts). It sits ahead of the header so it runs before the header is drawn. */}
+      <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }} />
       {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
           any page without each screen mounting its own region. */}
       <ToastProvider>

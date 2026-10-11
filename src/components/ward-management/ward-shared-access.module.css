@@ -28,6 +28,15 @@
   font-size: 0.875rem;
 }
 
+/*
+ * The header's Prototype pill replaces this bar once the app hydrates. The header's empty slot is
+ * already in the server HTML, so hide the bar from first paint wherever it exists; otherwise the
+ * page drew 73px of bar, then jumped up when it went. Pages without the header still show it.
+ */
+:global(body:has([data-wf-data-mode-slot])) .toolbar {
+  display: none;
+}
+
 .detail {
   display: block;
   margin-top: 0.2rem;
@@ -81,6 +90,7 @@
 }
 
 .pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -95,6 +105,15 @@
   font: 600 12px / 1 var(--wf-font, inherit);
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* Header touch (11 Oct 2026): the pill stays 28px, but presses up to 48px tall land on it. */
+.pill::after {
+  content: "";
+  position: absolute;
+  inset: 50% -4px auto;
+  height: var(--ward-tap, var(--spacing-tap, 3rem));
+  transform: translateY(-50%);
 }
 
 .pill:hover {

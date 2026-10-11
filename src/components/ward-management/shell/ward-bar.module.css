@@ -1293,7 +1293,7 @@
 
   /* The visible line is small; the hit area still reaches 48px tall. */
   .scopeBadgeBtn::before {
-    inset: -14px -8px;
+    inset: -15px -8px;
     border: 0;
     background: transparent;
     box-shadow: none;
@@ -2957,15 +2957,15 @@
 
 /* Tablet portrait (v10 shell, 10 Oct 2026, 769px to 1000px): no sidebar, so the Menu button shows
  * at the left of the header and opens the full sidebar as a 280px sheet over a scrim (the rail's
- * own sheet answers above 48rem). 44px target. Desktop above 1000px and the phone are unchanged. */
+ * own sheet answers above 48rem). 48px target. Desktop above 1000px and the phone are unchanged. */
 @media (min-width: 48.0625rem) and (max-width: 1000px) {
   .phoneOnly {
     display: inline-flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--wf-touch);
-    height: var(--wf-touch);
+    width: var(--ward-tap, var(--spacing-tap, 3rem));
+    height: var(--ward-tap, var(--spacing-tap, 3rem));
     margin-right: var(--wf-s-1);
     border: 0;
     border-radius: var(--wf-r-md);

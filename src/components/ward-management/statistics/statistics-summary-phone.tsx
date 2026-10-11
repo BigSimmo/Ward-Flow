@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, CalendarRange, Check, ChevronRight, Clock, Layers } from "lucide-react";
+import { Activity, Building2, CalendarRange, Check, ChevronRight, Clock, Layers } from "lucide-react";
 
 import {
   GroupHead,
@@ -23,7 +23,7 @@ import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 
 import { StatisticsNav } from "./statistics-nav";
-import { STATISTICS_OVERVIEW_HREF } from "./statistics-sections";
+import { STATISTICS_OVERVIEW_HREF, STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import styles from "./statistics-phone.module.css";
 
 /** One ward on the phone Summary, from the same figures the desktop pressure table reads. */
@@ -339,6 +339,15 @@ export function StatisticsSummaryPhone({
             <span className={styles.navText}>
               <b>More figures</b>
               <span>Blocked discharges, declines, pull to arrival</span>
+            </span>
+            <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
+          </Link>
+          {/* The phone chips stop at Weekly, so this row is a phone's way to each health service. */}
+          <Link className={styles.navRow} href={STATISTICS_SERVICES_HREF}>
+            <IconTile icon={Building2} />
+            <span className={styles.navText}>
+              <b>Services</b>
+              <span>Beds, referrals and waits for each health service</span>
             </span>
             <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
           </Link>

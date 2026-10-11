@@ -1967,7 +1967,10 @@
     padding: 0;
   }
 
+  /* The mark is 36px; the button round it is the full 48px touch target. */
   .rail[data-rail="closed"] .brandLink {
+    justify-content: center;
+    min-width: var(--ward-tap, var(--spacing-tap, 3rem));
     margin: 0 auto;
     border: 0;
     background: transparent;

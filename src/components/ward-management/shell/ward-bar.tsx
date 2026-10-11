@@ -116,6 +116,7 @@ import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPri
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
+import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WardDataModeSlot } from "../ward-shared-access";
 import styles from "./ward-bar.module.css";
 
@@ -569,6 +570,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     publishLiveClock(liveClockFace);
   }, [liveClockFace]);
   useEffect(() => () => publishLiveClock(undefined), []);
+  // The header is ready: press the panel button a reader tapped while it was still loading.
+  useEffect(() => {
+    replayEarlyHeaderTap();
+  }, []);
 
   const { role, shellRole, placeId } = useWardNavCounts();
   const roleCategory = roleReferralCategory(role);
