@@ -1,4 +1,4 @@
-import { act, render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { useEffect, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -45,6 +45,69 @@ function panelOf(title: string) {
   expect(heading, `no open sheet titled "${title}"`).toBeTruthy();
   return heading?.closest('[role="dialog"]') as HTMLElement;
 }
+
+it("locks the desktop work column until the last stacked sheet closes and preserves its position", () => {
+  const scroller = document.createElement("div");
+  scroller.setAttribute("data-wf-scroller", "");
+  scroller.style.overflowY = "auto";
+  scroller.scrollTop = 420;
+  document.body.append(scroller);
+  const { rerender, unmount } = render(<TwoSheets shown="both" />);
+  expect(scroller.style.overflowY).toBe("hidden");
+  rerender(<TwoSheets shown="a" />);
+  expect(scroller.style.overflowY).toBe("hidden");
+  rerender(<TwoSheets shown="none" />);
+  expect(scroller.style.overflowY).toBe("auto");
+  expect(scroller.scrollTop).toBe(420);
+  unmount();
+  scroller.remove();
+});
+
+it("leaves the document-scrolling phone column visible so it does not gain a sticky scroll ancestor", () => {
+  const column = document.createElement("div");
+  column.setAttribute("data-wf-scroller", "");
+  column.style.overflowX = "clip";
+  column.style.overflowY = "visible";
+  document.body.append(column);
+  const { unmount } = render(<TwoSheets shown="a" />);
+  expect(column.style.overflowY).toBe("visible");
+  expect(document.documentElement.style.overflowY).toBe("hidden");
+  unmount();
+  expect(column.style.overflowY).toBe("visible");
+  column.remove();
+});
+
+it("transfers the work-column lock across responsive layouts while sheets remain stacked", async () => {
+  const column = document.createElement("div");
+  column.setAttribute("data-wf-scroller", "");
+  column.scrollTop = 420;
+  document.body.append(column);
+  let desktop = true;
+  const computed = window.getComputedStyle.bind(window);
+  vi.spyOn(window, "getComputedStyle").mockImplementation((element, pseudo) =>
+    element === column
+      ? ({ overflowY: column.style.overflowY || (desktop ? "auto" : "visible") } as CSSStyleDeclaration)
+      : computed(element, pseudo),
+  );
+  const { rerender, unmount } = render(<TwoSheets shown="both" />);
+  expect(column.style.overflowY).toBe("hidden");
+  desktop = false;
+  fireEvent(window, new Event("resize"));
+  await waitFor(() => expect(column.style.overflowY).toBe(""));
+  // A column released into document flow loses its own scrolling range.
+  column.scrollTop = 0;
+  expect(document.documentElement.style.overflowY).toBe("hidden");
+  rerender(<TwoSheets shown="a" />);
+  desktop = true;
+  fireEvent(window, new Event("resize"));
+  await waitFor(() => expect(column.style.overflowY).toBe("hidden"));
+  expect(column.scrollTop).toBe(420);
+  rerender(<TwoSheets shown="none" />);
+  expect(column.style.overflowY).toBe("");
+  expect(column.scrollTop).toBe(420);
+  unmount();
+  column.remove();
+});
 
 describe("shouldReclaimFocus", () => {
   it("reclaims from nothing at all", () => {

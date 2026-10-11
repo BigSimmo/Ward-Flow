@@ -1472,7 +1472,7 @@ button.taskLabel[aria-pressed="true"] {
 
 .phoneViews {
   position: sticky;
-  top: 3.5rem;
+  top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
   z-index: 6;
   box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
 }
@@ -1492,14 +1492,10 @@ button.taskLabel[aria-pressed="true"] {
 }
 
 /* ─── v10 phone fidelity (11 Oct 2026) ───
- * The view switch keeps its 8px canvas collar right under the bar once the page has scrolled (the
- * bar condenses from 56px to 52px), so no row shows through a gap. In the form sheet, Copy and the next step live in the sheet's own pinned foot, so
+ * The view switch keeps its 8px canvas collar right under the bar throughout the scroll, so no row
+ * shows through a gap. In the form sheet, Copy and the next step live in the sheet's own pinned foot, so
  * the panel's foot keeps only the quiet Open move link, flat on the sheet. Phone only. */
 @media (max-width: 48rem) {
-  :global(body:has([data-scrolled="true"])) .phoneViews {
-    top: calc(3.25rem + var(--wf-s-2));
-  }
-
   .phoneFocus .focusFoot {
     justify-content: center;
     padding: var(--wf-s-2) 0 0;
