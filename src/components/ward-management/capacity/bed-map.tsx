@@ -25,7 +25,7 @@
 // ward has beds, or fewer, the moment a future feed lets `allocatable` exceed `empty`.
 import { StatusGlyph, WardCapacityRow, WardCapacityRows } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -951,7 +951,16 @@ export function BedMap({
   highlightUnitIds,
   initialLayout = "row",
   initialBedDetail = true,
+  table,
+  onLayoutChange,
 }: {
+  /**
+   * Device audit option A (Capacity, 11 Oct 2026): the page's full ward table, drawn as the map's
+   * Table layout so the page has one bed map rather than a map plus a repeated table. Without it
+   * the Table layout is the map's own ward rows.
+   */
+  table?: ReactNode;
+  onLayoutChange?: (layout: BedMapLayout) => void;
   initialLayout?: BedMapLayout;
   initialBedDetail?: boolean;
   units: Unit[];
@@ -968,7 +977,11 @@ export function BedMap({
    */
   highlightUnitIds?: ReadonlySet<string>;
 }) {
-  const [layout, setLayout] = useState<BedMapLayout>(initialLayout);
+  const [layout, setLayoutState] = useState<BedMapLayout>(initialLayout);
+  const setLayout = (next: BedMapLayout) => {
+    setLayoutState(next);
+    onLayoutChange?.(next);
+  };
   const [bedDetail, setBedDetail] = useState(initialBedDetail);
   const [activeService, setActiveService] = useState<string>();
   const mapRef = useRef<HTMLDivElement>(null);
@@ -1042,18 +1055,22 @@ export function BedMap({
       </div>
       {bedDetail ? <BedMapLegend /> : null}
 
-      <div className={styles.services}>
-        {renderedGroups.map((group) => (
-          <ServiceGroup
-            key={group.service}
-            group={group}
-            layout={layout}
-            selectedUnitId={selectedUnitId}
-            onSelectWard={onSelectWard}
-            highlightUnitIds={highlightUnitIds}
-          />
-        ))}
-      </div>
+      {layout === "table" && table ? (
+        table
+      ) : (
+        <div className={styles.services}>
+          {renderedGroups.map((group) => (
+            <ServiceGroup
+              key={group.service}
+              group={group}
+              layout={layout}
+              selectedUnitId={selectedUnitId}
+              onSelectWard={onSelectWard}
+              highlightUnitIds={highlightUnitIds}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

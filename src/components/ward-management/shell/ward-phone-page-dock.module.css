@@ -1,9 +1,7 @@
 /*
- * The phone dock on every page (device audit mockups, 11 Oct 2026). Phone only: above 48rem it is
- * never drawn, so tablet and desktop are unchanged. Three looks, one dock:
- *   rise  - the v10 Menu foot moved onto the page, with the + rising out of its curved edge.
- *   float - a solid capsule inset from the edges that steps aside while you scroll down.
- *   flat  - an edge-to-edge bar with a labelled New tile in the middle.
+ * The phone dock on every page (device audit option A, Josh, 11 Oct 2026): the v10 Menu foot moved
+ * onto the page, with the + rising out of its curved edge. Phone only: above 48rem it is never
+ * drawn, so tablet and desktop are unchanged.
  */
 
 .pageDock {
@@ -25,108 +23,9 @@
   :global(body:has([data-wf-page-dock="rise"])) :global([data-wf-scroller]) {
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
-
-  :global(body:has([data-wf-page-dock="float"])) :global([data-wf-scroller]) {
-    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
-  }
-
-  :global(body:has([data-wf-page-dock="flat"])) :global([data-wf-scroller]) {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  }
 }
 
 /* rise: the Menu's own foot shape, fixed to the page. */
 .rise {
   composes: foot from "./ward-phone-menu.module.css";
-}
-
-/* float: a capsule with a visible edge, solid (never glass). */
-.float {
-  padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px));
-  transition: transform 180ms var(--wf-ease-out, ease-out);
-}
-
-.float[data-hidden="true"] {
-  transform: translateY(calc(100% + 8px));
-}
-
-.float .capsule {
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-surface-2);
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--wf-ink-1) 16%, transparent);
-  padding: 4px 6px;
-}
-
-.capsuleNew {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  margin: 0 auto;
-  border: 1px solid var(--wf-pri-edge);
-  border-radius: 50%;
-  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
-  color: var(--wf-on-accent);
-  cursor: pointer;
-}
-
-.capsuleNew svg {
-  width: 24px;
-  height: 24px;
-}
-
-/* flat: one solid bar along the bottom edge with a hairline above. */
-.flat {
-  border-top: 1px solid var(--wf-line-2);
-  background: var(--wf-surface-2);
-  padding: 4px 4px calc(6px + env(safe-area-inset-bottom, 0px));
-}
-
-.flatNew {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  width: 100%;
-  min-height: 54px;
-  border: 0;
-  background: none;
-  cursor: pointer;
-}
-
-.flatNewTile {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 30px;
-  border: 1px solid var(--wf-pri-edge);
-  border-radius: var(--wf-r-md);
-  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
-  color: var(--wf-on-accent);
-}
-
-.flatNewTile svg {
-  width: 20px;
-  height: 20px;
-}
-
-.flatNewLabel {
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  line-height: 14px;
-}
-
-.capsuleNew:focus-visible,
-.flatNew:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .float {
-    transition: none;
-  }
 }

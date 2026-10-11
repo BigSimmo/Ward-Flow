@@ -16,10 +16,11 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
 
 /**
- * Community team on a phone (v10 all-pages mockup, "Community team", Phone): its own tree with the
- * band hero, tool chips that open sheets, and Waiting / In bed / Back / CTOs one tap apart. Every
- * coordinator action stays reachable: intake, record contact, switch team, and accept or decline a
- * waiting referral from its sheet (decline locked until a reason is chosen).
+ * Community team on a phone (v10 all-pages mockup, "Community team", Phone; device audit option A,
+ * 11 Oct 2026): its own tree with the band hero, tool chips that open sheets, and Waiting / In bed /
+ * Back / CTOs one tap apart on one switch with counts. Notices and provenance sit behind one closed
+ * "About this data". Every coordinator action stays reachable: intake, record contact, switch team,
+ * and accept or decline a waiting referral from its sheet (decline locked until a reason is chosen).
  */
 
 function asPhone() {
@@ -58,24 +59,26 @@ describe("Community team on a phone", () => {
     expect(screen.getByTestId("ward-community-phone-hero")).toHaveTextContent("on the caseload");
     expect(screen.queryByRole("tablist", { name: "Community team lists" })).not.toBeInTheDocument();
     const lists = screen.getByRole("radiogroup", { name: "Team lists" });
+    // One switch, each list with its count (the hero figures that repeated it are gone).
     expect(
       within(lists)
         .getAllByRole("radio")
-        .map((radio) => radio.textContent),
+        .map((radio) => radio.textContent?.replace(/\d+$/u, "").trim()),
     ).toEqual(["Waiting", "In bed", "Back", "CTOs"]);
+    expect(screen.queryByTestId("wf-phone-hero-figure-back")).not.toBeInTheDocument();
   });
 
-  it("switches lists from the segmented control and the hero figures", () => {
+  it("switches lists from the segmented control and the CTO register chip", () => {
     renderTeam();
-    fireEvent.click(screen.getByRole("radio", { name: "In bed" }));
+    fireEvent.click(screen.getByRole("radio", { name: /^In bed/u }));
     expect(screen.getByTestId("ward-community-phone-list-inBed")).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId("wf-phone-hero-figure-back"));
+    fireEvent.click(screen.getByRole("radio", { name: /^Back/u }));
     expect(screen.getByTestId("ward-community-phone-list-back")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-community-phone-chip-cto"));
     expect(screen.getByTestId("ward-community-phone-list-ctos")).toBeInTheDocument();
   });
 
-  it("opens How to reach, On duty and Coverage as sheets holding the team's own panels", () => {
+  it("opens How to reach and On duty as sheets, and keeps coverage in About this data", () => {
     renderTeam();
     fireEvent.click(screen.getByTestId("ward-community-phone-chip-reach"));
     expect(screen.getByTestId("ward-community-contact")).toBeInTheDocument();
@@ -83,8 +86,9 @@ describe("Community team on a phone", () => {
     fireEvent.click(screen.getByTestId("ward-community-phone-chip-duty"));
     expect(screen.getByTestId("ward-community-roster")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    fireEvent.click(screen.getByTestId("ward-community-phone-chip-coverage"));
-    expect(screen.getByTestId("ward-community-limits")).toBeInTheDocument();
+    const about = screen.getByTestId("ward-community-about-this-data");
+    expect(about).not.toHaveAttribute("open");
+    expect(within(about).getByTestId("ward-community-limits")).toBeInTheDocument();
   });
 
   it("keeps the team actions: record contact and switch team", () => {
@@ -108,6 +112,8 @@ describe("Community team on a phone", () => {
       fireEvent.change(select, { target: { value: firstOption(select) } });
     }
     fireEvent.click(screen.getByTestId("ward-community-intake-submit"));
+    // The page opened on the first list with someone in it; the new referral waits on Waiting.
+    fireEvent.click(screen.getByRole("radio", { name: /^Waiting/u }));
 
     const list = screen.getByTestId("ward-community-phone-list-waiting");
     const row = within(list).getAllByRole("button")[0]!;

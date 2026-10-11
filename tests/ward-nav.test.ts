@@ -75,7 +75,6 @@ import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
-import { PhoneShellPreview } from "@/components/ward-management/preview/phone-shell-preview";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
@@ -1260,19 +1259,6 @@ describe("ClinicalRail's aria-label is honest for a sandboxed prototype (D11)", 
 type RouteRender = { route: string; render: () => ReactNode };
 
 const RENDERABLE_ROUTES: RouteRender[] = [
-  // Preview-only device audit mockups (11 Oct 2026), unlisted in the nav.
-  ...(["home", "ward", "officer"] as const).map((page) => ({
-    route: `${ROUTE_PREFIX}/preview/phoneshell/${page}`,
-    render: () => createElement(PhoneShellPreview, { page, option: "A" }),
-  })),
-  {
-    route: `${ROUTE_PREFIX}/preview/communityteam`,
-    render: () => createElement(CommunityScreen, { teamId: "midland", preview: "A" }),
-  },
-  {
-    route: `${ROUTE_PREFIX}/preview/capacity`,
-    render: () => createElement<{ preview?: "A" | "B" | "C" }>(CapacityScreen, { preview: "A" }),
-  },
   // 2026-09-12: the Settings screen. Listed here rather than among the redirect-only stubs because
   // it genuinely renders — it is unlisted in the RAIL, which is a different register entirely.
   { route: `${ROUTE_PREFIX}/settings`, render: () => createElement(SettingsScreen) },
@@ -1441,8 +1427,7 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
      */
     // 39, not 36: the three read-only reports (statistics/weekly, reports/downtime, reports/chronology), 9 Oct 2026.
     // 43, not 39: the four statistics index pages (services, wards, eds, teams), 9 Oct 2026.
-    // 48, not 43: the five preview-only device audit mockups, 11 Oct 2026.
-    expect(RENDERABLE_ROUTES.length).toBe(48);
+    expect(RENDERABLE_ROUTES.length).toBe(43);
   });
 });
 

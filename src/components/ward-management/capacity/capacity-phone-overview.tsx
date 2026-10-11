@@ -27,10 +27,7 @@ export function CapacityPhoneOverview({
   freeingTracked,
   totalFreeing,
   freeingWards,
-  plainForecast = false,
 }: {
-  /** Device audit mockups (preview only): "13 fewer ready tomorrow" instead of a negative count. */
-  plainForecast?: boolean;
   rows: NetworkWardRow[];
   isFresh: (unit: Unit) => boolean;
   now: Instant;
@@ -94,13 +91,12 @@ export function CapacityPhoneOverview({
         <span className={styles.phoneWardText}>
           <span className={styles.phoneWardName}>Bed forecast</span>
           <span className={styles.phoneWardSub}>
-            {tomorrow && plainForecast
+            {/* Device audit option A: "About 13 fewer beds ready tomorrow", never a negative count. */}
+            {tomorrow
               ? tomorrow.likely < 0
                 ? `About ${Math.abs(tomorrow.likely)} fewer beds ready tomorrow`
                 : `About ${tomorrow.likely} more beds ready tomorrow`
-              : tomorrow
-                ? `Likely ${tomorrow.likely} ready tomorrow, range ${tomorrow.low} to ${tomorrow.high}`
-                : "Forecast not available"}
+              : "Forecast not available"}
           </span>
         </span>
         <ChevronRight size={16} aria-hidden="true" />

@@ -174,9 +174,9 @@
   }
 }
 
-/* Device audit mockups (preview only): the short list stacks each booking so it fits a rail. When
+/* Device audit option A (11 Oct 2026): the short list stacks each booking so it fits a rail. When
    and who on one line, the facts truncated on the next, the actions under them. */
-.body[data-list] .item {
+.body .item {
   grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas:
     "when who"
@@ -185,12 +185,12 @@
   row-gap: 4px;
 }
 
-.body[data-list] .facts {
+.body .facts {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.body[data-list] .actions {
+.body .actions {
   justify-content: flex-start;
 }

@@ -17,7 +17,6 @@ import {
   PLANNED_ADMISSION_MAX_STAY_DAYS,
   PLANNED_ADMISSION_REASONS,
   PLANNED_ADMISSION_REASON_LABELS,
-  PLANNED_ADMISSION_WINDOW_DAYS,
   normalisePlannedAdmissionInitials,
   plannedAdmissionIsOverdue,
   type PlannedAdmission,
@@ -49,7 +48,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientCohort, patientDisplayName, type PatientId } from "@/components/ward-management/ward-patients";
 import { healthServiceAcronym, unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { WardPanel } from "@/components/ward-management/ward-panel";
-import { plannedAdmissionAgenda, plannedAdmissionDays } from "./planned-admissions";
+import { plannedAdmissionAgenda } from "./planned-admissions";
 import {
   applyDraftPatch,
   clockInputValue,
@@ -69,10 +68,10 @@ function recordedSexOf(sex: string | undefined): RecordedSex {
 }
 
 /**
- * `list` (device audit mockups, preview only): the short list of bookings without the 14-day grid,
- * and Book as a secondary button so the page keeps one primary. Off by default, so live is unchanged.
+ * Device audit option A (Josh, 11 Oct 2026): the bookings as a short list, without the 14-day
+ * grid, and Book as a secondary button so the page keeps one primary.
  */
-export function PlannedAdmissionsPanel({ now, list = false }: { now: Instant; list?: boolean }) {
+export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   const {
     units,
     patients,
@@ -92,11 +91,7 @@ export function PlannedAdmissionsPanel({ now, list = false }: { now: Instant; li
   const pending = useRef<{ rejections: number } | null>(null);
   const bookButton = useRef<HTMLButtonElement>(null);
 
-  const days = plannedAdmissionDays(plannedAdmissions, units, now);
   const agenda = plannedAdmissionAgenda(plannedAdmissions);
-  const servicesInWindow = HEALTH_SERVICES.filter((service) =>
-    days.some((day) => day.byService.some((entry) => entry.service === service)),
-  );
   const unitName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
 
   // Patients free to book: no live stay, no open movement and no booking already waiting. The
@@ -139,10 +134,6 @@ export function PlannedAdmissionsPanel({ now, list = false }: { now: Instant; li
     if (dayOffset === 0) return "Today";
     if (dayOffset === 1) return "Tomorrow";
     return calendarDay(dayOffset, { weekday: "short", day: "numeric", month: "short" });
-  }
-
-  function shortDayLabel(dayOffset: number): string {
-    return calendarDay(dayOffset, { weekday: "short", day: "numeric" });
   }
 
   function whoText(planned: PlannedAdmission): string {
@@ -345,76 +336,16 @@ export function PlannedAdmissionsPanel({ now, list = false }: { now: Instant; li
   return (
     <WardPanel
       title="Planned admissions"
-      count={list ? `${booked} booked` : `${booked} booked, next ${PLANNED_ADMISSION_WINDOW_DAYS} days`}
+      count={`${booked} booked`}
       testId="ward-capacity-planned-admissions"
       headerAction={
-        <Button
-          ref={bookButton}
-          variant={list ? "sec" : "pri"}
-          size="sm"
-          onClick={openBook}
-          data-testid="ward-planned-book"
-        >
+        <Button ref={bookButton} variant="sec" size="sm" onClick={openBook} data-testid="ward-planned-book">
           <CalendarPlus size={16} aria-hidden="true" />
           Book
         </Button>
       }
     >
-      <div className={styles.body} data-list={list || undefined}>
-        <div
-          hidden={list}
-          className={styles.stripScroll}
-          role="region"
-          aria-label="Planned admissions per day"
-          tabIndex={0}
-        >
-          <table className={styles.strip} data-testid="ward-planned-strip">
-            <thead>
-              <tr>
-                <th scope="col" className={styles.rowHead}>
-                  Service
-                </th>
-                {days.map((day) => (
-                  <th key={day.day} scope="col" className={styles.dayHead}>
-                    {day.dayOffset === 0 ? "Today" : shortDayLabel(day.dayOffset)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {servicesInWindow.map((service) => (
-                <tr key={service}>
-                  <th scope="row" className={styles.rowHead} title={service}>
-                    {healthServiceAcronym(service)}
-                  </th>
-                  {days.map((day) => {
-                    const count = day.byService.find((entry) => entry.service === service)?.count ?? 0;
-                    return (
-                      <td key={day.day} className={count > 0 ? styles.count : styles.none}>
-                        {count > 0 ? count : "·"}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-              <tr className={styles.totalRow}>
-                <th scope="row" className={styles.rowHead}>
-                  Total
-                </th>
-                {days.map((day) => (
-                  <td
-                    key={day.day}
-                    className={day.total > 0 ? styles.count : styles.none}
-                    data-testid={`ward-planned-day-${day.dayOffset}`}
-                  >
-                    {day.total > 0 ? day.total : "·"}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
+      <div className={styles.body}>
         {agenda.length === 0 ? (
           <p className={styles.empty}>No planned admissions booked.</p>
         ) : (

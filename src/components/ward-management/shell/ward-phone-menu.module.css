@@ -590,7 +590,7 @@
   outline-offset: 2px;
 }
 
-/* Device audit mockups (preview only): an act-now row in Needs you carries a thin red edge, never a
+/* Device audit option A (11 Oct 2026): an act-now row in Needs you carries a thin red edge, never a
    fill, drawn above the hover fill. */
 .row[data-act-now] {
   position: relative;

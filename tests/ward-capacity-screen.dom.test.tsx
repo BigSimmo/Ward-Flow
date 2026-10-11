@@ -20,6 +20,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * MERGE 02 — the ward-confirmed capacity view and the morning bed-state board become one screen
@@ -48,11 +49,13 @@ const networkRows = networkWardRows(units, NOW, bedReleases);
 const netTotals = networkTotals(networkRows);
 
 function renderScreen() {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <CapacityScreen />
     </WardFlowProvider>,
   );
+  showWardTable();
+  return view;
 }
 
 describe("the Capacity screen", () => {
@@ -538,6 +541,7 @@ describe("the Capacity screen never labels a bed count and a ward count with the
         <CapacityScreen />
       </WardFlowProvider>,
     );
+    showWardTable();
 
     const table = screen.getByTestId("ward-capacity-network-table");
     const rows = Array.from(table.querySelectorAll("tbody tr"));
