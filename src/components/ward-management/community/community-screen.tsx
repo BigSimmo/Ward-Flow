@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/lib/ward-scroll";
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
@@ -717,7 +718,7 @@ export function CommunityScreen({
     if (typeof document === "undefined") return;
     const el = document.getElementById(id) || document.querySelector(`[data-testid="${id}"]`);
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
     }
   }, []);
 

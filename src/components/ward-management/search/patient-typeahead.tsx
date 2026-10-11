@@ -1,5 +1,6 @@
 "use client";
 
+import { revealWardOption } from "@/lib/ward-scroll";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
@@ -224,7 +225,7 @@ export function PatientTypeahead({
    */
   useEffect(() => {
     if (!showPopup || activeIndex < 0) return;
-    document.getElementById(`${id}-opt-${activeIndex}`)?.scrollIntoView?.({ block: "nearest" });
+    revealWardOption(document.getElementById(`${id}-opt-${activeIndex}`));
   }, [activeIndex, showPopup, id]);
 
   function pick(patient: Patient) {

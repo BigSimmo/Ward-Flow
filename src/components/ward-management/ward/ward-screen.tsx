@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/lib/ward-scroll";
 import { WardReferralInbox } from "../referrals/ward-referral-inbox";
 
 import Link from "next/link";
@@ -1728,10 +1729,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function showHome(targetId: string) {
     setActiveTab("attn");
     window.requestAnimationFrame(() => {
-      const reduceMotion = "matchMedia" in window && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      document
-        .getElementById(targetId)
-        ?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+      document.getElementById(targetId)?.scrollIntoView({ block: "nearest", behavior: wardScrollBehavior() });
     });
   }
 

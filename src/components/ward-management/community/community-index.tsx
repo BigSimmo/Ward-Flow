@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/lib/ward-scroll";
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowRight, BookOpen, ChevronRight, Download, History, Info, MapPin, Plus, Search, X } from "lucide-react";
@@ -302,8 +303,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       if (index >= 0) setFamilyIndex(index);
       const card = document.getElementById(FAMILY_CARD_ID);
       if (!card) return;
-      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-      card.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      card.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
     },
     [familyGroups],
   );
@@ -312,9 +312,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const jumpToLetter = useCallback((letter: string) => {
     const heading = document.getElementById(letterHeadingId(letter));
     if (!heading) return;
-    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    heading.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-    heading.focus();
+    heading.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
+    heading.focus({ preventScroll: true });
   }, []);
 
   // One source-validated recent list feeds the strip, so a renamed or removed name never shows.
@@ -422,9 +421,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     window.setTimeout(() => {
       const link = document.getElementById(teamRowId(team.id))?.querySelector("a");
       if (!(link instanceof HTMLElement)) return;
-      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-      link.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
-      link.focus();
+      link.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "center" });
+      link.focus({ preventScroll: true });
     }, 0);
   }
 

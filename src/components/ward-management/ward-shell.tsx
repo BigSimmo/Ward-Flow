@@ -1,7 +1,7 @@
 // src/components/ward-management/ward-shell.tsx
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 
 import { usePathname } from "next/navigation";
 
@@ -31,14 +31,45 @@ import styles from "./ward-shell.module.css";
 export function WardGround({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const groundRef = useRef<HTMLDivElement>(null);
+  const positions = useRef(new Map<string, number>());
+  const historyPath = useRef<string | null>(null);
+  const currentPath = useRef(pathname);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && !window.location.hash) {
-      const scroller = groundRef.current?.parentElement;
-      if (scroller && "scrollTop" in scroller) {
-        scroller.scrollTop = 0;
-      }
+    const onHistory = () => {
+      // Drawer history on the same page must not change the next route's scroll behaviour.
+      if (window.location.pathname !== currentPath.current) historyPath.current = window.location.pathname;
+    };
+    window.addEventListener("popstate", onHistory);
+    return () => window.removeEventListener("popstate", onHistory);
+  }, []);
+
+  useLayoutEffect(() => {
+    const scroller = groundRef.current?.parentElement;
+    currentPath.current = pathname;
+    const restore = historyPath.current === pathname;
+    historyPath.current = null;
+    if (!scroller) return;
+    // Next manages the document on phone/tablet. This owns the separate desktop column:
+    // new routes start at the top; Back/Forward returns to the place the user left.
+    const top = restore ? (positions.current.get(pathname) ?? 0) : 0;
+    if (!window.location.hash) scroller.scrollTop = top;
+    let frame = 0;
+    if (restore && !window.location.hash) {
+      // The incoming hero measures its band after mounting. Restore once that layout
+      // has settled too, otherwise scroll anchoring shifts the saved position by its lip.
+      frame = window.requestAnimationFrame(() => {
+        frame = window.requestAnimationFrame(() => {
+          frame = 0;
+          scroller.scrollTop = top;
+        });
+      });
     }
+    const saved = positions.current;
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      saved.set(pathname, scroller.scrollTop);
+    };
   }, [pathname]);
 
   return (

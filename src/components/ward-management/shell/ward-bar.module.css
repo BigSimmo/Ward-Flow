@@ -964,7 +964,7 @@
  * One bar on every page (locked lean bar, Josh 10 Oct 2026): Menu, title with scope under it,
  * Search and Tasks. New referral, Activity and Tools live in the phone menu (`ward-phone-menu.tsx`),
  * New referral behind its raised +. At the top of the page the bar has no fill or edge and
- * sits on the page (56px). Once the page scrolls (`data-scrolled`) it condenses to 52px, turns solid
+ * sits on the page (56px). Once the page scrolls (`data-scrolled`) its controls condense, it turns solid
  * with a hairline, and the scope line becomes a live count. It never hides. Controls keep a 48px
  * hit area; their faces are 40px at rest and 36px condensed, painted by `::before`. */
 .phoneOnly {
@@ -975,8 +975,8 @@
   .bar,
   :global(html.dark) .bar {
     gap: 0;
-    height: 3.5rem;
-    min-height: 3.5rem;
+    height: var(--wf-header-height, 3.5rem);
+    min-height: var(--wf-header-height, 3.5rem);
     padding: 0 8px 0 6px;
     border-bottom-color: transparent;
     background: transparent;
@@ -984,8 +984,6 @@
     backdrop-filter: none;
     box-shadow: none;
     transition:
-      height var(--wf-m-base) var(--wf-ease),
-      min-height var(--wf-m-base) var(--wf-ease),
       background-color var(--wf-m-base) var(--wf-ease),
       border-color var(--wf-m-base) var(--wf-ease),
       box-shadow var(--wf-m-base) var(--wf-ease);
@@ -998,8 +996,10 @@
 
   .bar[data-scrolled="true"],
   :global(html.dark) .bar[data-scrolled="true"] {
-    height: 3.25rem;
-    min-height: 3.25rem;
+    /* Keep the scroll geometry stable. Animating the in-flow height moved every row and
+       could repeatedly cross the scroll threshold as browser anchoring compensated. */
+    height: var(--wf-header-height, 3.5rem);
+    min-height: var(--wf-header-height, 3.5rem);
     border-bottom-color: var(--wf-line-2);
     background: var(--wf-surface-2);
     box-shadow: 0 6px 16px -12px color-mix(in srgb, var(--wf-ink-1) 28%, transparent);
@@ -2508,7 +2508,7 @@
  * open field takes over the whole bar so what is typed is visible, with Cancel beside it. The bar
  * is sticky at the top, so top 0 is the bar whether the containing block is the viewport or the
  * scrolled bar's backdrop filter. The height is the bar's own, measured by the search (56px at rest,
- * 52px once scrolled). Last in the file, and prefixed with `.bar`, so it outranks the phone and
+ * 56px once scrolled). Last in the file, and prefixed with `.bar`, so it outranks the phone and
  * scrolled face rules above.
  */
 @container ward-bar (max-width: 42rem) {

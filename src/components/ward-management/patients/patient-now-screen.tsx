@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/lib/ward-scroll";
 import Link from "next/link";
 import { AlertCircle, BedDouble, Check, Clock, Copy, FileText, FileUp, Scale } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -201,8 +202,8 @@ export function PatientNowScreen({
   function openOperations() {
     setActiveTab("now");
     requestAnimationFrame(() => {
-      operationsRef.current?.focus();
-      operationsRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+      operationsRef.current?.focus({ preventScroll: true });
+      operationsRef.current?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
     });
   }
   // A task's Refer action lands on the placement work, as it did when Now had a separate view.
@@ -494,7 +495,9 @@ export function PatientNowScreen({
     setTransportEtaDraft(displayEta ?? "");
     setShowTransportForm(true);
     requestAnimationFrame(() =>
-      document.getElementById("pnTransportHeading")?.scrollIntoView({ block: "center", behavior: "smooth" }),
+      document
+        .getElementById("pnTransportHeading")
+        ?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() }),
     );
   }
 
@@ -627,7 +630,7 @@ export function PatientNowScreen({
     onDischargeDate: () => {
       setWardForm("discharge");
       requestAnimationFrame(() =>
-        document.getElementById("pn-ward-change")?.scrollIntoView({ block: "center", behavior: "smooth" }),
+        document.getElementById("pn-ward-change")?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() }),
       );
     },
     onReturnFromEd: returnFromEd,

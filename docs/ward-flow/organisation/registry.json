@@ -66,7 +66,8 @@
     "src/lib/local-server-utils.mjs",
     "src/lib/theme.ts",
     "src/components/developer-area/ward-flow-access-gate.tsx",
-    "src/lib/ward-output.ts"
+    "src/lib/ward-output.ts",
+    "src/lib/ward-scroll.ts"
   ],
   "sourceClasses": [
     {
@@ -671,6 +672,15 @@
       "system": "safety-governance",
       "reference": "tests/ward-flow-seam.test.ts",
       "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-scroll-interactions",
+      "path": "src/lib/ward-scroll.ts",
+      "owner": "ward-flow",
+      "module": "shell",
+      "system": "behaviour",
+      "reference": "tests/ward-scroll.dom.test.tsx",
+      "reviewedBy": "Codex local scroll audit, 2026-10-11"
     },
     {
       "id": "psychsift-ward-output-exclusion",

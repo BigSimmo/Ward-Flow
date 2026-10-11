@@ -77,6 +77,7 @@ let bodyScrollLockPreviousOverflow = "";
 // offset (an element made `overflow: hidden` retains its scrollTop), so nothing
 // jumps when the sheet closes.
 let rootScrollLockPreviousOverflowY = "";
+const pageScrollLocks = new Map<HTMLElement, string>();
 
 export function isTopmostSheet(id: string) {
   return openSheets[openSheets.length - 1]?.id === id;
@@ -123,6 +124,15 @@ export function pushSheet(id: string, root: HTMLElement | null = null) {
     document.body.style.overflow = "hidden";
     rootScrollLockPreviousOverflowY = document.documentElement.style.overflowY;
     document.documentElement.style.overflowY = "hidden";
+    // Desktop Ward Flow scrolls inside the work column. Locking html/body alone
+    // left that column movable behind a sheet. Keep its offset and exact inline style.
+    for (const scroller of document.querySelectorAll<HTMLElement>("[data-wf-scroller]")) {
+      // On phone this is a visible/clip column in the document flow. Making it hidden
+      // would create a new scroll ancestor and change the sticky header's position.
+      if (!/^(auto|scroll)$/.test(window.getComputedStyle(scroller).overflowY)) continue;
+      pageScrollLocks.set(scroller, scroller.style.overflowY);
+      scroller.style.overflowY = "hidden";
+    }
   }
   openSheets.push({ id, root });
   syncBackgroundInert();
@@ -154,6 +164,8 @@ export function popSheet(id: string) {
   if (openSheets.length === 0) {
     document.body.style.overflow = bodyScrollLockPreviousOverflow;
     document.documentElement.style.overflowY = rootScrollLockPreviousOverflowY;
+    for (const [scroller, overflowY] of pageScrollLocks) scroller.style.overflowY = overflowY;
+    pageScrollLocks.clear();
   }
   syncBackgroundInert();
   notifyStackListeners();

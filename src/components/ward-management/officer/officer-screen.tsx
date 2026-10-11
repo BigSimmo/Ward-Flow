@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/lib/ward-scroll";
 import { isOfficerJob } from "./officer-jobs";
 import {
   useCallback,
@@ -532,7 +533,7 @@ export function OfficerScreen() {
   useEffect(() => {
     if (selectedId === undefined || typeof window.matchMedia !== "function") return;
     if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
-    sideRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    sideRef.current?.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
   }, [selectedId]);
   // On a phone the panel is a modal bottom sheet, so it takes focus, traps Tab, isolates the page
   // behind it and hands focus back on close. Wider screens keep the side panel non-modal.

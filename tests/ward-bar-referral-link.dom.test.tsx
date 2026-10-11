@@ -48,6 +48,28 @@ afterEach(() => {
 });
 
 describe("a link to the referral route opens the slide-out in place", () => {
+  it("keeps the sheet locked until its history step closes, before allowing another drawer", async () => {
+    renderBarWith();
+    fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
+    const tools = await screen.findByRole("dialog", { name: "Tools" });
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => {});
+    try {
+      fireEvent.click(within(tools).getByRole("button", { name: /^Close$/ }));
+      expect(back).toHaveBeenCalledOnce();
+      expect(tools).toBeInTheDocument();
+      expect(document.documentElement.style.overflowY).toBe("hidden");
+
+      window.history.replaceState(null, "");
+      fireEvent.popState(window);
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Tools" })).toBeNull());
+      fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
+      await screen.findByRole("dialog", { name: "Tools" });
+      expect(window.history.state.wardDrawer).toBe("tools");
+    } finally {
+      back.mockRestore();
+    }
+  });
+
   it("opens the referral sheet and does not navigate", async () => {
     renderBarWith(
       <a href="/mockups/ward-flow/referrals/new?patientId=PT-001&source=community&refer=community">Refer</a>,

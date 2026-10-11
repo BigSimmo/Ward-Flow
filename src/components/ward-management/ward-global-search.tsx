@@ -1,5 +1,6 @@
 "use client";
 
+import { revealWardOption } from "@/lib/ward-scroll";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -613,11 +614,11 @@ export function WardGlobalSearch({
   /*
    * D1-style fix, same reason `PatientTypeahead` carries it: the list clips with its own scrollbar,
    * and ArrowDown/End can move `activeIndex` to a row that is scrolled out of view.
-   * `block: "nearest"` moves the list only as far as it has to.
+   * Reveal the option inside the list only; `scrollIntoView` also moved the page behind it.
    */
   useEffect(() => {
     if (!showPopup || activeIndex < 0) return;
-    document.getElementById(`${id}-opt-${activeIndex}`)?.scrollIntoView?.({ block: "nearest" });
+    revealWardOption(document.getElementById(`${id}-opt-${activeIndex}`));
   }, [activeIndex, showPopup, id]);
 
   /*
@@ -628,13 +629,26 @@ export function WardGlobalSearch({
    */
   useEffect(() => {
     if (!showPopup) return;
-    const measure = () => setTop(headerBottom(rootRef.current));
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      setTop(headerBottom(rootRef.current));
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(measure);
+    };
     measure();
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", schedule);
+    // Capture includes the desktop work column, whose scroll never reaches the window.
+    window.addEventListener("scroll", schedule, { passive: true, capture: true });
+    window.visualViewport?.addEventListener("resize", schedule);
+    window.visualViewport?.addEventListener("scroll", schedule);
     return () => {
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("scroll", schedule, true);
+      window.visualViewport?.removeEventListener("resize", schedule);
+      window.visualViewport?.removeEventListener("scroll", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
     };
   }, [showPopup]);
 

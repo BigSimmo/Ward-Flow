@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/lib/ward-scroll";
 import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Ambulance, BedDouble, Camera, FileText, Printer, Users } from "lucide-react";
 
@@ -221,7 +222,7 @@ export function DowntimePackScreen() {
       : {};
 
   const jumpTo = (target: Section) => {
-    document.getElementById(SECTION_IDS[target])?.scrollIntoView({ block: "start", behavior: "smooth" });
+    document.getElementById(SECTION_IDS[target])?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
   };
 
   const snapshotButton = (variant: "onHero" | "sec") => (

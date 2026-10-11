@@ -1,5 +1,6 @@
 "use client";
 
+import { revealWardOption } from "@/lib/ward-scroll";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -258,7 +259,7 @@ export function WardChromeSearch({
 
   useEffect(() => {
     if (!showPopup || activeIndex < 0) return;
-    document.getElementById(`${id}-opt-${activeIndex}`)?.scrollIntoView?.({ block: "nearest" });
+    revealWardOption(document.getElementById(`${id}-opt-${activeIndex}`));
   }, [activeIndex, showPopup, id]);
 
   useEffect(() => {

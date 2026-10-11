@@ -46,6 +46,37 @@ function panelOf(title: string) {
   return heading?.closest('[role="dialog"]') as HTMLElement;
 }
 
+it("locks the desktop work column until the last stacked sheet closes and preserves its position", () => {
+  const scroller = document.createElement("div");
+  scroller.setAttribute("data-wf-scroller", "");
+  scroller.style.overflowY = "auto";
+  scroller.scrollTop = 420;
+  document.body.append(scroller);
+  const { rerender, unmount } = render(<TwoSheets shown="both" />);
+  expect(scroller.style.overflowY).toBe("hidden");
+  rerender(<TwoSheets shown="a" />);
+  expect(scroller.style.overflowY).toBe("hidden");
+  rerender(<TwoSheets shown="none" />);
+  expect(scroller.style.overflowY).toBe("auto");
+  expect(scroller.scrollTop).toBe(420);
+  unmount();
+  scroller.remove();
+});
+
+it("leaves the document-scrolling phone column visible so it does not gain a sticky scroll ancestor", () => {
+  const column = document.createElement("div");
+  column.setAttribute("data-wf-scroller", "");
+  column.style.overflowX = "clip";
+  column.style.overflowY = "visible";
+  document.body.append(column);
+  const { unmount } = render(<TwoSheets shown="a" />);
+  expect(column.style.overflowY).toBe("visible");
+  expect(document.documentElement.style.overflowY).toBe("hidden");
+  unmount();
+  expect(column.style.overflowY).toBe("visible");
+  column.remove();
+});
+
 describe("shouldReclaimFocus", () => {
   it("reclaims from nothing at all", () => {
     expect(shouldReclaimFocus(null, null)).toBe(true);

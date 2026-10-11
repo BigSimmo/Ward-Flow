@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/lib/ward-scroll";
 import Link from "next/link";
 import { Field, Select, TextInput } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
@@ -1897,7 +1898,7 @@ export function WardBoard({
                       const el =
                         document.getElementById("ward-board-daily-sheet") ||
                         document.getElementById("ward-daily-sheet");
-                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      el?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
                     }, 60);
                   }
                   return next;

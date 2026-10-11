@@ -63,14 +63,24 @@ export function EdPopover({
     element
       .querySelector<HTMLElement>(listbox ? '[aria-selected="true"], button' : menu ? "button" : "input, button")
       ?.focus({ preventScroll: true });
-    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(position);
+    let frame = 0;
+    const schedule = () => {
+      if (!frame) {
+        frame = window.requestAnimationFrame(() => {
+          frame = 0;
+          position();
+        });
+      }
+    };
+    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(schedule);
     observer?.observe(element);
-    window.addEventListener("resize", position);
-    window.addEventListener("scroll", position, true);
+    window.addEventListener("resize", schedule);
+    window.addEventListener("scroll", schedule, { passive: true, capture: true });
     return () => {
       observer?.disconnect();
-      window.removeEventListener("resize", position);
-      window.removeEventListener("scroll", position, true);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("scroll", schedule, true);
+      if (frame) window.cancelAnimationFrame(frame);
       if (typeof element.hidePopover === "function") element.hidePopover();
       else element.style.display = "none";
     };
