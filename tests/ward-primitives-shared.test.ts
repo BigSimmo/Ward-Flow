@@ -434,6 +434,7 @@ describe("the breakpoint scale", () => {
     // Device audit (11 Oct 2026): tablet-only rules sit above the phone range, as exclusive
     // complements of each page's existing max-width boundary (48rem, 70rem, 73.75rem, 85rem).
     "src/components/ward-management/board/board.module.css: 48.0625",
+    "src/components/ward-management/delays/delays-board.module.css: 48.0625",
     "src/components/ward-management/hub/hub.module.css: 48.0625",
     "src/components/ward-management/hub/hub.module.css: 73.8125",
     "src/components/ward-management/movements/movement-flow.module.css: 48.0625",
