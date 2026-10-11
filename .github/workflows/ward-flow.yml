@@ -435,6 +435,13 @@ jobs:
             ls "$WARD_SHARD_BLOBS"/blob-shard-"$shard"-of-"$WARD_SHARD_COUNT"-batch-*.json
           done
           node node_modules/vitest/vitest.mjs run --merge-reports="$WARD_SHARD_BLOBS" --coverage
+      # Prints every unit file's measured cost on this run, the input for refreshing
+      # scripts/ward-flow/unit-durations.json when the shards drift apart. Report only: it never fails.
+      - name: Report measured unit test costs
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          WARD_SHARD_BLOBS: ${{ runner.temp }}/ward-shard-blobs
+        run: node scripts/ward-flow/unit-durations.mjs --from-blobs "$WARD_SHARD_BLOBS"
 
   required:
     name: Ward Flow required
