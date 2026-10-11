@@ -360,10 +360,12 @@ export function isPendingNavigation(href: string, current: string): boolean {
 
 /**
  * Phone bar (Josh, 8 Oct 2026, board 00b): bar A with C's behaviour. It never hides. At the top of
- * the page it sits on the page with no fill; once the page scrolls it condenses and turns solid.
+ * the page it sits on the page with no fill; once the page scrolls its controls condense and it
+ * turns solid. Its layout height stays fixed so scrolling never moves the content below it.
  * Phone only: `enabled` is false above 48rem, so the desktop bar never gets `data-scrolled`.
  */
 const SCROLLED_AFTER_PX = 8;
+const RESTING_BELOW_PX = 2;
 
 function useBarScrolled(enabled: boolean): boolean {
   const [scrolled, setScrolled] = useState(false);
@@ -373,7 +375,9 @@ function useBarScrolled(enabled: boolean): boolean {
     let frame = 0;
     const update = () => {
       frame = 0;
-      setScrolled(window.scrollY > SCROLLED_AFTER_PX);
+      const offset = window.scrollY;
+      // Separate entry and exit thresholds avoid flicker during small scroll reversals or bounce.
+      setScrolled((previous) => offset > (previous ? RESTING_BELOW_PX : SCROLLED_AFTER_PX));
     };
     const onScroll = () => {
       if (!frame) frame = window.requestAnimationFrame(update);
