@@ -347,7 +347,6 @@ export function SettingsScreen() {
   const unsavedCount = diffs.length;
   const hasUnsavedRules = unsavedCount > 0;
   const isSurge = isSurgePreset(draft);
-  const savedSurge = isSurgePreset(configuration);
 
   // The ED row's effect: who waits past the target now, at the draft value and at the saved one.
   const savedEdOver = thresholds.find((threshold) => threshold.id === "ed-access-target")?.reached ?? 0;
@@ -1239,22 +1238,8 @@ export function SettingsScreen() {
             eyebrow={SETTINGS_DEMO_PROFILE.location}
             chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
             sub={`${SETTINGS_DEMO_PROFILE.role} · nothing here changes care`}
-            figures={[
-              { id: "rules", value: savedSurge ? "Surge" : "Standard", label: "Rules" },
-              {
-                id: "unsaved",
-                value: hasUnsavedRules ? unsavedCount : "None",
-                label: "Unsaved",
-                tone: hasUnsavedRules ? "info" : undefined,
-                onPress: hasUnsavedRules ? () => setPhoneSheet("rules") : undefined,
-                actionLabel: hasUnsavedRules ? `Open Rules, ${unsavedCount} unsaved` : undefined,
-              },
-              {
-                id: "last",
-                value: lastAccepted?.at != null ? formatInstantWithDay(lastAccepted.at, now) : "None",
-                label: "Last rule save",
-              },
-            ]}
+            // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
+            // are what this hero is for. The save strip still appears when a rule is unsaved.
             actions={
               <Button
                 variant="onHero"
@@ -1470,13 +1455,9 @@ export function SettingsScreen() {
             />
           }
           barAside={
+            // Device audit 11 Oct 2026: the other chips repeated the tabs, the save strip and the
+            // Buzz switch; Last save is the one fact only the hero gives.
             <HeroChips label="Settings at a glance">
-              <HeroChip value={savedSurge ? "Surge" : "Standard"} label="Rules" />
-              <HeroChip
-                value={hasUnsavedRules ? unsavedCount : "None"}
-                label={hasUnsavedRules ? (unsavedCount === 1 ? "Unsaved rule" : "Unsaved rules") : "Unsaved"}
-              />
-              <HeroChip value={audioBuzz ? "On" : "Off"} label="Buzz sound" />
               <HeroChip
                 value={lastAccepted?.at != null ? formatInstantWithDay(lastAccepted.at, now) : "None"}
                 label="Last save"
