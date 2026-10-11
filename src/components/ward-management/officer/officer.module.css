@@ -87,6 +87,10 @@
   flex-wrap: nowrap;
   gap: var(--wf-s-2);
   min-width: 0;
+  /* The stat toggles reach 4px past their row; the sideways scroller would clip that, so the row
+     keeps 4px of room above and below (device audit, 11 Oct 2026: tiles clipped at the top). */
+  margin: -4px;
+  padding: 4px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -2035,8 +2039,14 @@
 
   .phStageRow {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--wf-s-2);
+  }
+
+  .phNextStep {
+    width: 100%;
+    min-height: var(--spacing-tap, 3rem);
+    justify-content: center;
   }
 
   .phStage {
@@ -2130,4 +2140,34 @@
   :global(html:has([role="dialog"][aria-modal="true"])) .toast {
     bottom: 136px;
   }
+}
+
+.arrivalsCard[hidden] {
+  display: none;
+}
+
+/* iPad portrait (device audit, 11 Oct 2026): the Route cell keeps its one place line; the provider
+   line under it truncated the row. */
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .jobMeta {
+    display: none;
+  }
+
+  /* Forms read as dots only here, so the "0 of 3" figure is never cut; it stays for screen
+     readers and in the cell's title. */
+  .formsCell > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
+/* The ETA column hides while no job carries an ETA (device audit, 11 Oct 2026). The cell stays in
+   the row so the phone card's column positions do not shift. */
+.jobsTable thead th.etaOff,
+.jobsTable .jobRow > td.etaOff {
+  display: none;
 }
