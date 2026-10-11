@@ -574,7 +574,7 @@
 
 .alertRow {
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr) 3.25rem;
+  grid-template-columns: minmax(4.5rem, 4.5rem) minmax(0, 1fr) 3.25rem;
   align-items: center;
   gap: 0.625rem;
   min-height: 1.375rem;
