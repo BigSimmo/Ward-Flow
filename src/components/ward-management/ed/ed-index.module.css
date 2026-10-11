@@ -702,6 +702,7 @@
 
   background: var(--wf-act-tint);
   position: relative;
+  padding-inline-start: 14px;
 }
 
 .previewText {
