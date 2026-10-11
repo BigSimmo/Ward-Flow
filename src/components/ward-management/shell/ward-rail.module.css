@@ -2400,16 +2400,28 @@
 /* Header taps (Josh, 11 Oct 2026): the server cannot know the width, so it drew the full sidebar
  * here and the app folded it to the icon rail on load, sliding every header button 208px left
  * under a finger mid-tap. Until the rail knows it is in landscape (`data-tablet`, set on load), it
- * holds the icon rail's width. Its contents wait hidden: the server drew the full sidebar's, which
- * clipped to 64px would flash cut-off labels before the icon rail replaces them. */
+ * holds the icon rail's width and hides what only the full sidebar shows (the same list as the closed
+ * rail), so its icon links stay usable and no cut-off labels flash before the icon rail arrives. */
 @media (min-width: 1001px) and (max-width: 1200px) {
   .rail:not([data-tablet]) {
     width: var(--rail-closed-w);
     overflow: hidden;
   }
 
-  .rail:not([data-tablet]) > * {
-    visibility: hidden;
+  .rail:not([data-tablet]) .brandTitle,
+  .rail:not([data-tablet]) .brandStateText,
+  .rail:not([data-tablet]) .shiftCockpit,
+  .rail:not([data-tablet]) .capacityPulseStrip,
+  .rail:not([data-tablet]) .groupHead,
+  .rail:not([data-tablet]) .railLabel,
+  .rail:not([data-tablet]) .railState,
+  .rail:not([data-tablet]) .userMeta,
+  .rail:not([data-tablet]) .userChevron,
+  .rail:not([data-tablet]) .railPolicyFoot,
+  .rail:not([data-tablet]) .utilityLink > span,
+  .rail:not([data-tablet]) .railToggle,
+  .rail:not([data-tablet]) .tag {
+    display: none;
   }
 }
 
