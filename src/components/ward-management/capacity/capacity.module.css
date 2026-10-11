@@ -1172,12 +1172,8 @@
  * with its filters and columns, and the bed meeting sheet launcher stay on the larger screen.
  * Desktop is unchanged. */
 @media (max-width: 48rem) {
-  .capacityHero [data-testid="bed-meeting-sheet-open"] {
-    display: none;
-  }
-
-  .capacityGrid > :first-child,
-  .wardsSection {
+  .columns:not([data-phone-tab="wards"]) .capacityGrid > :first-child,
+  .columns:not([data-phone-tab="wards"]) .wardsSection {
     display: none;
   }
 
@@ -1210,13 +1206,6 @@
   }
 }
 
-/* Phone: the ward table these hero figures highlight is hidden, so they read as plain figures. */
-@media (max-width: 48rem) {
-  .heroStatGroup button {
-    pointer-events: none;
-    cursor: default;
-  }
-}
 
 /* Phone polish (8 Oct 2026): each mismatch tile drops the table's cell rules and padding, so the
  * need, the gap, its bar and the waiting and fit counts line up on one left edge inside the tile.
@@ -1232,5 +1221,79 @@
   .screen .gapTable tr {
     gap: var(--wf-s-1) var(--wf-s-1);
     padding-inline: var(--wf-s-4);
+  }
+}
+
+/* Phone v10 (11 Oct 2026): Overview, Wards and Planned as one segmented control under the hero.
+ * Overview leads with Where the mismatch is as a list (the need, waiting and fit, then the gap
+ * word and figure), then the network summary; Wards holds the bed map and the ward table; Planned
+ * holds planned admissions. The hero keeps the bed meeting sheet. Desktop is unchanged. */
+.phoneTabs > div {
+  display: flex;
+  width: 100%;
+}
+
+.phoneTabs > div > button {
+  flex: 1 1 0;
+  justify-content: center;
+  min-height: var(--wf-touch);
+}
+
+@media (max-width: 48rem) {
+  .columns[data-phone-tab="wards"] > :not(.capacityGrid):not(.wardsSection),
+  .columns[data-phone-tab="wards"] .capacityGrid > .secondary,
+  .columns[data-phone-tab="planned"],
+  .plannedWrap[data-phone-hidden="true"] {
+    display: none;
+  }
+
+  .screen .gapTable {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen .gapTable tr,
+  .screen .gapTable tbody tr:nth-child(even) {
+    grid-template-areas:
+      "need need value"
+      "wait fit value";
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 3px var(--wf-s-1);
+    min-height: 60px;
+    padding: var(--wf-s-2) var(--wf-s-4);
+    border-top: 1px solid var(--wf-line);
+    border-left: 0;
+  }
+
+  .screen .gapTable tbody tr:first-child {
+    border-top: 0;
+  }
+
+  .screen .gapTable tbody tr:nth-child(2) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .screen .gapTable .gapMicroGauge {
+    display: none;
+  }
+
+  .screen .gapTable .gapNumber {
+    font-size: var(--wf-fs-15);
+    line-height: 1.2;
+  }
+
+  .screen .gapTable .gapNeedText {
+    font-size: var(--wf-fs-14);
+  }
+
+  .screen .gapTable .gapValueContainer {
+    grid-area: value;
+    justify-content: flex-end;
+    gap: var(--wf-s-1);
+  }
+
+  .screen .gapTable [data-testid="ward-capacity-waiting"],
+  .screen .gapTable [data-testid="ward-capacity-beds-that-fit"] {
+    font-size: var(--wf-fs-12);
   }
 }

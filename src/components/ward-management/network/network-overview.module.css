@@ -532,3 +532,280 @@
   flex: 0 0 auto;
   min-height: 2.75rem;
 }
+
+/* Phone (v10 Network): the bed flow as one list. Each service is a grey band with its ready count;
+ * each ward a 60px row, name, meta and bed cells left, ready and pulled right. The classes below
+ * render only on phone (`useIsPhone`); the media block restyles shared ones on phone only. */
+@media (max-width: 48rem) {
+  .bedflow .serviceGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .bedflow .serviceBox {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .bedflow .serviceBox + .serviceBox {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .bedflow .foot {
+    display: none;
+  }
+}
+
+.phoneServiceHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-row-group);
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.phoneServiceName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.phoneServiceDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-ink-3);
+}
+
+.phoneServiceDot[data-service="north"] {
+  background: var(--wf-svc-north);
+}
+
+.phoneServiceDot[data-service="east"] {
+  background: var(--wf-svc-east);
+}
+
+.phoneServiceDot[data-service="south"] {
+  background: var(--wf-svc-south);
+}
+
+.phoneServiceDot[data-service="wachs"] {
+  background: var(--wf-svc-wachs);
+}
+
+.phoneServiceDot[data-service="cahs"] {
+  background: var(--wf-svc-cahs);
+}
+
+.phoneServiceDot[data-service="private"] {
+  background: var(--wf-svc-private);
+}
+
+.phoneServiceReady {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.phoneServiceReady b {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.phoneUnits {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneUnits > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneUnit {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneUnit:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.phoneUnitMain {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneUnitMain .unitName {
+  font-size: var(--wf-fs-15);
+}
+
+.phoneUnitMain .unitMeta {
+  font-size: var(--wf-fs-13);
+}
+
+.phoneUnitStrip {
+  max-width: 100%;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.phoneUnitSide {
+  display: grid;
+  flex: none;
+  justify-items: end;
+  gap: 2px;
+}
+
+.phoneUnitReady {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.phoneUnitReady b {
+  margin-right: 4px;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-15);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.phoneUnitPulled {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.phoneUnits > li[data-dim="true"] .unitName,
+.phoneUnits > li[data-dim="true"] .unitMeta,
+.phoneUnits > li[data-dim="true"] .phoneUnitSide,
+.phoneUnits > li[data-dim="true"] .phoneUnitSide b {
+  color: var(--wf-dim);
+}
+
+/* Phone "Ready against waiting" list card. */
+.phoneVersus {
+  min-width: 0;
+}
+
+.phoneVersusHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-1) var(--wf-s-2);
+}
+
+.phoneVersusTitle {
+  margin: 0;
+  font-size: var(--wf-fs-15);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.phoneVersusHint {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.phoneVersusList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  list-style: none;
+}
+
+.phoneVersusList > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneVersusRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneVersusRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.phoneVersusMain {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneVersusName {
+  overflow: hidden;
+  font-size: var(--wf-fs-15);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneVersusMeta {
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneVersusMeta b,
+.phoneVersusGap b {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.phoneVersusGap {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}

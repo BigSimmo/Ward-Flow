@@ -70,7 +70,7 @@ import {
   referenceDistance,
 } from "@/components/ward-management/reference/ward-reference-distances";
 import { PressureStrip } from "@/components/ward-management/coordinator/pressure-strip";
-import { Count, Hero, HeroStat, buttonClass } from "@/components/wf";
+import { Count, Hero, HeroStat, buttonClass, useIsPhone } from "@/components/wf";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import {
@@ -83,10 +83,11 @@ import {
 import {
   ReadyByRoadTime,
   NetworkBedflow,
+  ReadyAgainstWaitingPhone,
   NetworkUnitDetail,
   type NetworkHighlight,
 } from "@/components/ward-management/network/network-overview";
-import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
+import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 
 import styles from "./ward-management-network.module.css";
 import thirdEdition from "./ward-management-network-third-edition.module.css";
@@ -548,6 +549,10 @@ export function WardNetworkWorkspace() {
   const { movements, units, bedReleases, leaveBeds, admissions } = useWardFlow();
   const { now, paused, togglePause } = usePageLive();
   const [view, setView] = useState<NetworkView>("overview");
+  // Phone (v10 Network): the view tabs sit under the hero and a "Ready against waiting" row scopes
+  // the bed flow, so the scope is held here on phone only.
+  const isPhone = useIsPhone();
+  const [phoneScope, setPhoneScope] = useState<HealthService | "all">("all");
   // v10 Network: a pressed hero figure highlights the bed flow; pressing it again clears it.
   const [heroHighlight, setHeroHighlight] = useState<NetworkHighlight | undefined>(undefined);
   function toggleHighlight(next: NetworkHighlight) {
@@ -591,6 +596,45 @@ export function WardNetworkWorkspace() {
     event.currentTarget.querySelector<HTMLButtonElement>(`[data-network-tab="${target}"]`)?.focus();
   }
 
+  const viewTabs = (
+    <div className={thirdEdition.viewTabs} role="tablist" aria-label="Network view" onKeyDown={onViewTabsKeyDown}>
+      <button
+        type="button"
+        id="ward-network-overview-tab"
+        className={thirdEdition.viewTab}
+        role="tab"
+        aria-selected={view === "overview"}
+        aria-controls="ward-network-overview-panel"
+        tabIndex={view === "overview" ? 0 : -1}
+        data-network-tab="overview"
+        onClick={() => setView("overview")}
+      >
+        {isPhone ? "Overview" : "Network overview"}{" "}
+        {isPhone ? null : (
+          <span aria-hidden="true">
+            <Count n={units.length} label="units" />
+          </span>
+        )}
+      </button>
+      <button
+        type="button"
+        id="ward-network-placement-tab"
+        className={thirdEdition.viewTab}
+        role="tab"
+        aria-selected={view === "placement"}
+        aria-controls="ward-network-placement-panel"
+        tabIndex={view === "placement" ? 0 : -1}
+        data-network-tab="placement"
+        onClick={() => setView("placement")}
+      >
+        {isPhone ? "Placement" : "Placement workspace"}{" "}
+        <span aria-hidden="true">
+          <Count n={openMovements} label="open movements" />
+        </span>
+      </button>
+    </div>
+  );
+
   return (
     <div className={thirdEdition.networkRoute} data-ward-design="v6">
       <Hero
@@ -599,7 +643,13 @@ export function WardNetworkWorkspace() {
         title={
           shortfall === undefined ? "Ready beds cover the wait" : `${shortfall.service} short ${-readyGap(shortfall)}`
         }
-        titleMeta={`${readyNow} ready ${readyNow === 1 ? "bed" : "beds"} against ${waitingInEd} waiting in ED`}
+        titleMeta={
+          isPhone
+            ? longestInEd > 0
+              ? `Longest in ED ${splitDuration(longestInEd)} · ${readyNow} ready against ${waitingInEd} waiting`
+              : `${readyNow} ready ${readyNow === 1 ? "bed" : "beds"} against ${waitingInEd} waiting in ED`
+            : `${readyNow} ready ${readyNow === 1 ? "bed" : "beds"} against ${waitingInEd} waiting in ED`
+        }
         stats={
           <>
             {/* v10 Network: each figure highlights the bed flow cells and rows it counts. */}
@@ -632,46 +682,11 @@ export function WardNetworkWorkspace() {
             <HeroStat value={units.length} label="Units" />
           </>
         }
-        bar={
-          <div className={thirdEdition.viewTabs} role="tablist" aria-label="Network view" onKeyDown={onViewTabsKeyDown}>
-            <button
-              type="button"
-              id="ward-network-overview-tab"
-              className={thirdEdition.viewTab}
-              role="tab"
-              aria-selected={view === "overview"}
-              aria-controls="ward-network-overview-panel"
-              tabIndex={view === "overview" ? 0 : -1}
-              data-network-tab="overview"
-              onClick={() => setView("overview")}
-            >
-              Network overview{" "}
-              <span aria-hidden="true">
-                <Count n={units.length} label="units" />
-              </span>
-            </button>
-            <button
-              type="button"
-              id="ward-network-placement-tab"
-              className={thirdEdition.viewTab}
-              role="tab"
-              aria-selected={view === "placement"}
-              aria-controls="ward-network-placement-panel"
-              tabIndex={view === "placement" ? 0 : -1}
-              data-network-tab="placement"
-              onClick={() => setView("placement")}
-            >
-              Placement workspace{" "}
-              <span aria-hidden="true">
-                <Count n={openMovements} label="open movements" />
-              </span>
-            </button>
-          </div>
-        }
+        bar={isPhone ? undefined : viewTabs}
         barAside={
           <>
             <PageLiveChip paused={paused} onTogglePause={togglePause} />
-            {longestInEd > 0 ? (
+            {longestInEd > 0 && !isPhone ? (
               <span className={thirdEdition.longestChip}>
                 <Clock3 size={13} aria-hidden="true" />
                 <b>{splitDuration(longestInEd)}</b> longest in ED
@@ -689,6 +704,8 @@ export function WardNetworkWorkspace() {
         }
       />
 
+      {isPhone ? <div className={thirdEdition.phoneViewTabs}>{viewTabs}</div> : null}
+
       <div
         id="ward-network-overview-panel"
         className={thirdEdition.overview}
@@ -697,6 +714,7 @@ export function WardNetworkWorkspace() {
         hidden={view !== "overview"}
         data-testid="ward-network-overview"
       >
+        {isPhone ? <ReadyAgainstWaitingPhone groups={groups} scope={phoneScope} onScope={setPhoneScope} /> : null}
         <PressureStrip
           now={now}
           movements={movements}
@@ -711,6 +729,7 @@ export function WardNetworkWorkspace() {
             onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
             highlight={heroHighlight}
             onClearHighlight={() => setHeroHighlight(undefined)}
+            {...(isPhone ? { scope: phoneScope, onScopeChange: setPhoneScope } : {})}
           />
           <div className={thirdEdition.overviewSide} data-wf-rail="1281">
             <ReadyByRoadTime
@@ -768,6 +787,9 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [factorsOpen, setFactorsOpen] = useState(false);
   const [shortlistOpen, setShortlistOpen] = useState(true);
+  // Phone (v10): queue rows are named by the patient's UMRN, never a WF number. Desktop unchanged.
+  const isPhone = useIsPhone();
+  const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   /**
    * Which stage the queue below is narrowed to, or the whole queue.
    *
@@ -1101,7 +1123,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                   className={styles.queueRow}
                 >
                   <span className={styles.queueTop}>
-                    <strong>{candidate.id}</strong>
+                    <strong>{isPhone ? resolveSubjectPatient(candidate, umrnLookup).umrn : candidate.id}</strong>
                     <span className={styles.elapsed}>{elapsedLabel(candidate, now)}</span>
                   </span>
                   <span className={styles.queueMeta}>
@@ -1147,7 +1169,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                   className={styles.queueRow}
                 >
                   <span className={styles.queueTop}>
-                    <strong>{referral.id}</strong>
+                    <strong>{isPhone ? resolveSubjectPatient(referral, umrnLookup).umrn : referral.id}</strong>
                     {/* The referral clock only: a queue row is about how long this has waited for a
                         decision, and the department clock is on the detail panel where there is room
                         for the comparison. It carries its own term, so a stopped clock reads as

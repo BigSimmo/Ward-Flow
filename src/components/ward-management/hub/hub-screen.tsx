@@ -16,6 +16,8 @@ import {
   BarChart2,
   Building2,
   ChevronDown,
+  ChevronRight,
+  ListFilter,
   Network,
   RotateCcw,
   Search,
@@ -33,6 +35,7 @@ import {
   HeroStat,
   IconTile,
   Kbd,
+  PhoneSheet,
   Segmented,
   SrOnly,
   StatusGlyph,
@@ -154,6 +157,8 @@ export function HubScreen() {
   const readyOnly = highlight === "ready";
   const setReadyOnly = (on: boolean) => setHighlight(on ? "ready" : "none");
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  // Phone (v10): a tap on a place opens its preview as a bottom sheet with Open in its footer.
+  const [phonePreviewOpen, setPhonePreviewOpen] = useState(false);
   const [folded, setFolded] = useState<ReadonlySet<string>>(() => new Set());
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -331,14 +336,10 @@ export function HubScreen() {
           className={styles.resultMain}
           aria-current={active ? "true" : undefined}
           onClick={() => {
-            // Phone: the preview pane is not shown, so a tap opens the place itself, exactly as the
-            // preview's own Open link does. Every wider screen keeps select-to-preview.
-            if (isPhone) {
-              recordHubVisit(entry.id);
-              router.push(entry.href);
-              return;
-            }
+            // Phone: the preview pane is not shown beside the list, so a tap opens the same preview
+            // as a bottom sheet, whose Open button goes to the place. Wider screens keep the pane.
             select(entry.id);
+            if (isPhone) setPhonePreviewOpen(true);
           }}
         >
           <span className={styles.resultText}>
@@ -400,6 +401,218 @@ export function HubScreen() {
     );
   }
 
+  function renderPreview(selected: HubEntry) {
+    return (
+      <Card as="section" className={styles.previewCard} aria-label={`Preview, ${selected.name}`}>
+        <div className={styles.previewHead}>
+          <IconTile icon={Building2} />
+          {/* The heading's container holds every flag below it, so the preview states them in words. */}
+          <div className={styles.previewTitleBlock}>
+            <span className={styles.previewEyebrow}>
+              {KIND_WORD_LONG[selected.kind]}
+              {selected.service === undefined ? "" : ` · ${selected.service}`}
+            </span>
+            <h2 className={styles.previewTitle}>{selected.name}</h2>
+            {selected.site === undefined ? null : <p className={styles.previewSite}>{selected.site}</p>}
+            <div className={styles.detailBadges}>
+              {selected.cohort === undefined ? null : (
+                <span className={styles.infoPill}>{selected.cohort}</span>
+              )}
+              {selected.security === undefined ? null : (
+                <span className={styles.infoPill}>{selected.security}</span>
+              )}
+              {/* ⚠️ Mental Health Act authorisation is a SEPARATE fact from locked/open and decides
+                  who may legally be admitted, so it is stated in words. */}
+              {selected.authorised === false ? (
+                <span className={styles.flagPill}>
+                  <StatusGlyph tone="warning" size={8} />
+                  Not authorised — voluntary admissions only
+                </span>
+              ) : null}
+              {selected.forensic === true ? <span className={styles.infoPill}>Forensic ward</span> : null}
+              {/* "Undesignated" accepts either sex, so it is not a constraint and earns no badge. */}
+              {selected.sexDesignation === undefined || selected.sexDesignation === "Undesignated" ? null : (
+                <span className={styles.infoPill}>{selected.sexDesignation}</span>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            className={styles.closeDetailBtn}
+            onClick={() => {
+              setSelectedId(undefined);
+              inputRef.current?.focus();
+            }}
+            aria-label="Close preview and return to overview (Escape)"
+          >
+            <X size={15} aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className={styles.detailBody} role="region" aria-label={`${selected.name} details`} tabIndex={0}>
+          {selected.kind === "ward" ? (
+            <>
+              {/*
+                ⚠️ **THE RULED BOXES, NEVER A SUM OF READY AND CLOSED.** Adding Ready to Closed
+                produces the physically-empty total, which reads as availability and is not:
+                the reducer refuses `PULL_PATIENT` into Closed.
+              */}
+              <div className={styles.capacityGrid}>
+                <h3 className={styles.srOnly}>Beds</h3>
+                <div className={styles.capacityCell}>
+                  <span className={styles.capacityNum}>{selected.ready ?? 0}</span>
+                  <span className={styles.capacityLbl}>Ready to admit</span>
+                </div>
+                <div className={styles.capacityCell}>
+                  <span className={styles.capacityNum}>{selected.pulled ?? 0}</span>
+                  <span className={styles.capacityLbl}>{BED_STATE_LABELS.pulled}</span>
+                </div>
+                <div className={styles.capacityCell}>
+                  <span className={styles.capacityNum}>{selected.closed ?? 0}</span>
+                  <span className={styles.capacityLbl}>{BED_STATE_LABELS.closed}, not offered</span>
+                </div>
+                <div className={styles.capacityCell}>
+                  <span className={styles.capacityNum}>{selected.occupied ?? 0}</span>
+                  <span className={styles.capacityLbl}>{BED_STATE_LABELS.occupied}</span>
+                </div>
+                <div className={styles.capacityCell}>
+                  <span className={styles.capacityNumMuted}>{selected.beds ?? 0}</span>
+                  <span className={styles.capacityLbl}>Beds</span>
+                </div>
+              </div>
+              <dl className={styles.factList}>
+                {selected.confirmedAt === undefined ? null : (
+                  <div className={styles.factRow}>
+                    <dt>Confirmed</dt>
+                    <dd>
+                      <span className={styles.metaTimestamp}>
+                        {formatInstantWithDay(selected.confirmedAt, now)}
+                      </span>{" "}
+                      <span className={styles.factMuted}>
+                        {durMinutes(now - selected.confirmedAt)} ago
+                        {selected.stale === true ? ", stale, check with the ward before relying on it" : ""}
+                      </span>
+                    </dd>
+                    {selectedRequest === undefined ? (
+                      <button
+                        type="button"
+                        className={buttonClass({ variant: "sec", size: "sm" })}
+                        onClick={() =>
+                          dispatch({
+                            type: "REQUEST_CAPACITY_REFRESH",
+                            role: "coordinator",
+                            now,
+                            unitId: selected.id,
+                          })
+                        }
+                      >
+                        Ask to confirm
+                      </button>
+                    ) : (
+                      <span className={styles.factMuted}>
+                        Asked {formatInstantWithDay(selectedRequest.at, now)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {selected.pendingPreparation === undefined || selected.pendingPreparation === 0 ? null : (
+                  <div className={styles.factRow}>
+                    <dt>Being made ready</dt>
+                    <dd>
+                      {selected.pendingPreparation} {selected.pendingPreparation === 1 ? "bed is" : "beds are"}{" "}
+                      still being cleaned, not yet admittable
+                    </dd>
+                  </div>
+                )}
+                {selected.onLeave === undefined || selected.onLeave === 0 ? null : (
+                  <div className={styles.factRow}>
+                    <dt>{BED_STATE_LABELS.onLeave}</dt>
+                    <dd>
+                      {selected.onLeave} {selected.onLeave === 1 ? "bed is" : "beds are"} held for a patient on
+                      leave, already counted in Occupied
+                    </dd>
+                  </div>
+                )}
+                {selected.lockedBeds === undefined || selected.lockedBeds === 0 ? null : (
+                  <div className={styles.factRow}>
+                    <dt>Locked beds</dt>
+                    <dd>
+                      {selected.lockedBeds} of {selected.beds ?? 0}. A voluntary patient may still be nursed on
+                      one
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </>
+          ) : selected.kind === "ed" ? (
+            <div className={styles.detailSection}>
+              <h3>On-site mental health wards</h3>
+              {/* ⚠️ An empty list is a fact and is stated as one, never as "0 on-site beds". */}
+              {selected.onSiteUnits === undefined || selected.onSiteUnits.length === 0 ? (
+                <p className={styles.absent}>
+                  No mental health beds on-site — this department places patients elsewhere in the network.
+                </p>
+              ) : (
+                <ul className={styles.notesList}>
+                  {selected.onSiteUnits.map((unit) => (
+                    <li key={unit}>{unit}</li>
+                  ))}
+                </ul>
+              )}
+              <p className={styles.absent}>Referral queue available on the department page.</p>
+            </div>
+          ) : (
+            <div className={styles.detailSection}>
+              <h3>Notes</h3>
+              <ul className={styles.notesList}>
+                <li>Team name is a synthetic placeholder.</li>
+                <li>A community team holds no beds; it takes people for follow-up in the community.</li>
+                <li>Referral queue not available for this entry.</li>
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.detailCta}>
+          {selected.kind === "community" ? (
+            <p className={styles.statsAbsent}>
+              Statistics are unavailable for this regional entry. Community directory; no page for this regional
+              entry.
+            </p>
+          ) : null}
+          <div className={styles.ctaActions}>
+            {/* Ward and ED only: the statistics builders resolve against a real id this entry carries. */}
+            {selected.kind === "ward" ? (
+              <Link
+                className={buttonClass({ variant: "sec", size: "sm" })}
+                href={wardStatisticsHref(selected.id)}
+              >
+                <BarChart2 size={14} aria-hidden="true" />
+                View statistics
+              </Link>
+            ) : selected.kind === "ed" ? (
+              <Link
+                className={buttonClass({ variant: "sec", size: "sm" })}
+                href={edStatisticsHref(selected.id)}
+              >
+                <BarChart2 size={14} aria-hidden="true" />
+                View statistics
+              </Link>
+            ) : null}
+            <Link
+              className={buttonClass({ variant: "pri", size: "sm" })}
+              href={selected.href}
+              onClick={() => recordHubVisit(selected.id)}
+            >
+              {selected.kind === "community" ? "Open community teams" : `Open ${selected.name}`}
+              <ArrowRight size={15} aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   const kindItems = (["all", "ward", "ed", "community"] as const).map((id) => ({
     id,
     label: id === "all" ? "All" : id === "ward" ? "Wards" : id === "ed" ? "EDs" : "Community",
@@ -412,15 +625,52 @@ export function HubScreen() {
         <Hero
           level={1}
           className={styles.hubHero}
-          eyebrow={`Places · Statewide · ${totals.ward} wards, ${totals.ed} EDs, ${totals.community} teams`}
+          eyebrow={
+            isPhone ? "Places · Statewide" : `Places · Statewide · ${totals.ward} wards, ${totals.ed} EDs, ${totals.community} teams`
+          }
           title={
-            <>
-              <SrOnly>Places, </SrOnly>
-              {totals.all} places
-            </>
+            isPhone ? (
+              <>
+                <SrOnly>Places, </SrOnly>
+                {totals.ward} wards, {totals.ed} EDs, {totals.community} teams
+              </>
+            ) : (
+              <>
+                <SrOnly>Places, </SrOnly>
+                {totals.all} places
+              </>
+            )
+          }
+          stats={
+            isPhone ? (
+              <>
+                <HeroStat
+                  value={network.ready}
+                  label="Beds ready"
+                  tone="success"
+                  pressed={highlight === "ready"}
+                  onToggle={() => toggleHighlight("ready")}
+                />
+                <HeroStat
+                  value={network.pulled}
+                  label={BED_STATE_LABELS.pulled}
+                  tone="warning"
+                  pressed={highlight === "pulled"}
+                  onToggle={() => toggleHighlight("pulled")}
+                />
+                <HeroStat
+                  value={staleCount}
+                  label="Stale counts"
+                  tone={staleCount > 0 ? "warning" : undefined}
+                  pressed={highlight === "stale"}
+                  onToggle={() => toggleHighlight("stale")}
+                />
+              </>
+            ) : undefined
           }
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
           bar={
+            isPhone ? undefined : (
             <div className={styles.heroChips} role="group" aria-label="Network counts">
               <HeroStat
                 inline
@@ -458,8 +708,10 @@ export function HubScreen() {
                 onToggle={() => toggleHighlight("stale")}
               />
             </div>
+            )
           }
           foot={
+            isPhone ? undefined : (
             <CheckingFoot
               items={[
                 {
@@ -476,87 +728,181 @@ export function HubScreen() {
               ]}
               notChecked={["ED and team capacity, no feed"]}
             />
+            )
           }
         />
 
         <div className={styles.hubShell}>
           <Card as="section" className={styles.hubLeft} aria-label="Search results">
-            <CardHead
-              icon={Network}
-              title="The network"
-              aside={<span className={styles.headMeta}>Perth and country WA</span>}
-            />
-            <div className={styles.controls}>
-              <div className={styles.controlsRow}>
+            {isPhone ? null : (
+              <CardHead
+                icon={Network}
+                title="The network"
+                aside={<span className={styles.headMeta}>Perth and country WA</span>}
+              />
+            )}
+            {isPhone ? (
+              <div className={styles.phoneControls}>
                 <Segmented
                   label="Show"
-                  items={kindItems}
+                  items={kindItems.map((item) => (item.id === "community" ? { ...item, label: "Teams" } : item))}
                   value={kind}
                   onChange={(id) => {
                     setKind(id);
                     setSelectedId(undefined);
                   }}
                 />
-                <TextInput
-                  ref={inputRef}
-                  id="hub-search-query"
-                  name="query"
-                  type="search"
-                  icon={Search}
-                  boxClassName={styles.searchBox}
-                  aria-label="Search wards, EDs and community teams"
-                  aria-describedby="hub-search-hint"
-                  placeholder="Search wards, EDs, teams, services"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={onSearchKeyDown}
-                  trailing={query === "" ? <Kbd>/</Kbd> : undefined}
-                  onClear={() => {
-                    setQuery("");
-                    inputRef.current?.focus();
-                  }}
-                />
-              </div>
-              <div className={styles.controlsRow}>
-                <span className={styles.controlLabel}>Order</span>
-                <Segmented
-                  label="Order"
-                  items={[
-                    { id: "service" as const, label: "Service" },
-                    { id: "ready" as const, label: "Most ready" },
-                  ]}
-                  value={order}
-                  onChange={setOrder}
-                />
-                <span className={styles.controlsEnd}>
-                  {isFiltered ? (
-                    <button
-                      type="button"
-                      className={buttonClass({ variant: "ghost", size: "sm" })}
-                      onClick={resetAllFilters}
-                      aria-label="Reset all filters and search"
-                    >
-                      <RotateCcw size={13} aria-hidden="true" />
-                      Reset
-                    </button>
-                  ) : null}
-                  <FilterChip
-                    pressed={readyOnly}
-                    count={readyBedsCount}
-                    onPressedChange={(pressed) => {
-                      setReadyOnly(pressed);
-                      setSelectedId(undefined);
+                <div className={styles.phoneSearchRow}>
+                  <TextInput
+                    ref={inputRef}
+                    id="hub-search-query"
+                    name="query"
+                    type="search"
+                    icon={Search}
+                    boxClassName={styles.phoneSearchBox}
+                    aria-label="Search wards, EDs and community teams"
+                    placeholder="Search places"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    onKeyDown={onSearchKeyDown}
+                    onClear={() => {
+                      setQuery("");
+                      inputRef.current?.focus();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className={styles.phoneSortButton}
+                    aria-pressed={order === "ready"}
+                    onClick={() => setOrder(order === "ready" ? "service" : "ready")}
+                  >
+                    <ListFilter size={16} aria-hidden="true" />
+                    {order === "ready" ? "Most ready" : "By service"}
+                  </button>
+                </div>
+                {highlighting ? (
+                  <p className={styles.phoneListHead} data-testid="hub-highlight-note">
+                    <b>
+                      {highlight === "ready"
+                        ? "Ready beds only"
+                        : highlight === "pulled"
+                          ? "Pulled beds"
+                          : highlight === "stale"
+                            ? "Stale counts"
+                            : "Matching places"}
+                    </b>
+                    <span>
+                      {litCount} {litCount === 1 ? "place" : "places"} ·{" "}
+                      <button
+                        type="button"
+                        className={styles.clearHighlight}
+                        onClick={() => {
+                          setHighlight("none");
+                          setQuery("");
+                        }}
+                      >
+                        Clear
+                      </button>
+                    </span>
+                  </p>
+                ) : attention[0] ? (
+                  <button
+                    type="button"
+                    className={styles.phoneCheckFirst}
+                    onClick={() => {
+                      select(attention[0].entry.id);
+                      setPhonePreviewOpen(true);
                     }}
                   >
-                    Ready beds only
-                  </FilterChip>
-                </span>
+                    <StatusGlyph tone="warning" size={10} />
+                    <span className={styles.phoneCheckText}>
+                      <b>Check first: {attention[0].entry.name}</b>
+                      <span>
+                        {attention[0].entry.ready === 0 ? "No ready beds" : `${attention[0].entry.ready ?? 0} ready`}
+                        {attention[0].entry.confirmedAt === undefined
+                          ? ""
+                          : `, count ${durMinutes(now - attention[0].entry.confirmedAt)} old`}
+                        {attention.length > 1 ? `. ${attention.length - 1} more need a check.` : "."}
+                      </span>
+                    </span>
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </button>
+                ) : null}
               </div>
-              {/* Announced through `aria-describedby`. Escape clears BOTH the search and the preview. */}
-              <SrOnly id="hub-search-hint">
-                Arrow keys preview a result, Enter opens it, Escape clears the search and the preview.
-              </SrOnly>
-            </div>
+            ) : null}
+            {isPhone ? null : (
+              <div className={styles.controls}>
+                <div className={styles.controlsRow}>
+                  <Segmented
+                    label="Show"
+                    items={kindItems}
+                    value={kind}
+                    onChange={(id) => {
+                      setKind(id);
+                      setSelectedId(undefined);
+                    }}
+                  />
+                  <TextInput
+                    ref={inputRef}
+                    id="hub-search-query"
+                    name="query"
+                    type="search"
+                    icon={Search}
+                    boxClassName={styles.searchBox}
+                    aria-label="Search wards, EDs and community teams"
+                    aria-describedby="hub-search-hint"
+                    placeholder="Search wards, EDs, teams, services"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    onKeyDown={onSearchKeyDown}
+                    trailing={query === "" ? <Kbd>/</Kbd> : undefined}
+                    onClear={() => {
+                      setQuery("");
+                      inputRef.current?.focus();
+                    }}
+                  />
+                </div>
+                <div className={styles.controlsRow}>
+                  <span className={styles.controlLabel}>Order</span>
+                  <Segmented
+                    label="Order"
+                    items={[
+                      { id: "service" as const, label: "Service" },
+                      { id: "ready" as const, label: "Most ready" },
+                    ]}
+                    value={order}
+                    onChange={setOrder}
+                  />
+                  <span className={styles.controlsEnd}>
+                    {isFiltered ? (
+                      <button
+                        type="button"
+                        className={buttonClass({ variant: "ghost", size: "sm" })}
+                        onClick={resetAllFilters}
+                        aria-label="Reset all filters and search"
+                      >
+                        <RotateCcw size={13} aria-hidden="true" />
+                        Reset
+                      </button>
+                    ) : null}
+                    <FilterChip
+                      pressed={readyOnly}
+                      count={readyBedsCount}
+                      onPressedChange={(pressed) => {
+                        setReadyOnly(pressed);
+                        setSelectedId(undefined);
+                      }}
+                    >
+                      Ready beds only
+                    </FilterChip>
+                  </span>
+                </div>
+                {/* Announced through `aria-describedby`. Escape clears BOTH the search and the preview. */}
+                <SrOnly id="hub-search-hint">
+                  Arrow keys preview a result, Enter opens it, Escape clears the search and the preview.
+                </SrOnly>
+              </div>
+            )}
 
             <div className={styles.listHead} aria-hidden="true">
               <span>Place</span>
@@ -646,246 +992,40 @@ export function HubScreen() {
                 );
               })}
             </div>
-            <div className={styles.listFoot}>
-              <BedStripLegend />
-              {!highlighting ? (
-                <span className={styles.shownCount}>
-                  <b>
-                    {results.length} of {totals.all}
-                  </b>{" "}
-                  shown
-                </span>
-              ) : (
-                <span className={styles.shownCount} data-testid="hub-highlight-note">
-                  <b>
-                    {litCount} of {results.length}
-                  </b>{" "}
-                  highlighted. All rows stay.
-                  <button
-                    type="button"
-                    className={styles.clearHighlight}
-                    onClick={() => {
-                      setHighlight("none");
-                      setQuery("");
-                    }}
-                  >
-                    Clear highlight
-                  </button>
-                </span>
-              )}
-            </div>
+            {isPhone ? null : (
+              <div className={styles.listFoot}>
+                <BedStripLegend />
+                {!highlighting ? (
+                  <span className={styles.shownCount}>
+                    <b>
+                      {results.length} of {totals.all}
+                    </b>{" "}
+                    shown
+                  </span>
+                ) : (
+                  <span className={styles.shownCount} data-testid="hub-highlight-note">
+                    <b>
+                      {litCount} of {results.length}
+                    </b>{" "}
+                    highlighted. All rows stay.
+                    <button
+                      type="button"
+                      className={styles.clearHighlight}
+                      onClick={() => {
+                        setHighlight("none");
+                        setQuery("");
+                      }}
+                    >
+                      Clear highlight
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
           </Card>
 
           <aside className={styles.hubRight} aria-label="At a glance" data-wf-rail>
-            {selected === undefined ? null : (
-              <Card as="section" className={styles.previewCard} aria-label={`Preview, ${selected.name}`}>
-                <div className={styles.previewHead}>
-                  <IconTile icon={Building2} />
-                  {/* The heading's container holds every flag below it, so the preview states them in words. */}
-                  <div className={styles.previewTitleBlock}>
-                    <span className={styles.previewEyebrow}>
-                      {KIND_WORD_LONG[selected.kind]}
-                      {selected.service === undefined ? "" : ` · ${selected.service}`}
-                    </span>
-                    <h2 className={styles.previewTitle}>{selected.name}</h2>
-                    {selected.site === undefined ? null : <p className={styles.previewSite}>{selected.site}</p>}
-                    <div className={styles.detailBadges}>
-                      {selected.cohort === undefined ? null : (
-                        <span className={styles.infoPill}>{selected.cohort}</span>
-                      )}
-                      {selected.security === undefined ? null : (
-                        <span className={styles.infoPill}>{selected.security}</span>
-                      )}
-                      {/* ⚠️ Mental Health Act authorisation is a SEPARATE fact from locked/open and decides
-                          who may legally be admitted, so it is stated in words. */}
-                      {selected.authorised === false ? (
-                        <span className={styles.flagPill}>
-                          <StatusGlyph tone="warning" size={8} />
-                          Not authorised — voluntary admissions only
-                        </span>
-                      ) : null}
-                      {selected.forensic === true ? <span className={styles.infoPill}>Forensic ward</span> : null}
-                      {/* "Undesignated" accepts either sex, so it is not a constraint and earns no badge. */}
-                      {selected.sexDesignation === undefined || selected.sexDesignation === "Undesignated" ? null : (
-                        <span className={styles.infoPill}>{selected.sexDesignation}</span>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.closeDetailBtn}
-                    onClick={() => {
-                      setSelectedId(undefined);
-                      inputRef.current?.focus();
-                    }}
-                    aria-label="Close preview and return to overview (Escape)"
-                  >
-                    <X size={15} aria-hidden="true" />
-                  </button>
-                </div>
-
-                <div className={styles.detailBody} role="region" aria-label={`${selected.name} details`} tabIndex={0}>
-                  {selected.kind === "ward" ? (
-                    <>
-                      {/*
-                        ⚠️ **THE RULED BOXES, NEVER A SUM OF READY AND CLOSED.** Adding Ready to Closed
-                        produces the physically-empty total, which reads as availability and is not:
-                        the reducer refuses `PULL_PATIENT` into Closed.
-                      */}
-                      <div className={styles.capacityGrid}>
-                        <h3 className={styles.srOnly}>Beds</h3>
-                        <div className={styles.capacityCell}>
-                          <span className={styles.capacityNum}>{selected.ready ?? 0}</span>
-                          <span className={styles.capacityLbl}>Ready to admit</span>
-                        </div>
-                        <div className={styles.capacityCell}>
-                          <span className={styles.capacityNum}>{selected.pulled ?? 0}</span>
-                          <span className={styles.capacityLbl}>{BED_STATE_LABELS.pulled}</span>
-                        </div>
-                        <div className={styles.capacityCell}>
-                          <span className={styles.capacityNum}>{selected.closed ?? 0}</span>
-                          <span className={styles.capacityLbl}>{BED_STATE_LABELS.closed}, not offered</span>
-                        </div>
-                        <div className={styles.capacityCell}>
-                          <span className={styles.capacityNum}>{selected.occupied ?? 0}</span>
-                          <span className={styles.capacityLbl}>{BED_STATE_LABELS.occupied}</span>
-                        </div>
-                        <div className={styles.capacityCell}>
-                          <span className={styles.capacityNumMuted}>{selected.beds ?? 0}</span>
-                          <span className={styles.capacityLbl}>Beds</span>
-                        </div>
-                      </div>
-                      <dl className={styles.factList}>
-                        {selected.confirmedAt === undefined ? null : (
-                          <div className={styles.factRow}>
-                            <dt>Confirmed</dt>
-                            <dd>
-                              <span className={styles.metaTimestamp}>
-                                {formatInstantWithDay(selected.confirmedAt, now)}
-                              </span>{" "}
-                              <span className={styles.factMuted}>
-                                {durMinutes(now - selected.confirmedAt)} ago
-                                {selected.stale === true ? ", stale, check with the ward before relying on it" : ""}
-                              </span>
-                            </dd>
-                            {selectedRequest === undefined ? (
-                              <button
-                                type="button"
-                                className={buttonClass({ variant: "sec", size: "sm" })}
-                                onClick={() =>
-                                  dispatch({
-                                    type: "REQUEST_CAPACITY_REFRESH",
-                                    role: "coordinator",
-                                    now,
-                                    unitId: selected.id,
-                                  })
-                                }
-                              >
-                                Ask to confirm
-                              </button>
-                            ) : (
-                              <span className={styles.factMuted}>
-                                Asked {formatInstantWithDay(selectedRequest.at, now)}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        {selected.pendingPreparation === undefined || selected.pendingPreparation === 0 ? null : (
-                          <div className={styles.factRow}>
-                            <dt>Being made ready</dt>
-                            <dd>
-                              {selected.pendingPreparation} {selected.pendingPreparation === 1 ? "bed is" : "beds are"}{" "}
-                              still being cleaned, not yet admittable
-                            </dd>
-                          </div>
-                        )}
-                        {selected.onLeave === undefined || selected.onLeave === 0 ? null : (
-                          <div className={styles.factRow}>
-                            <dt>{BED_STATE_LABELS.onLeave}</dt>
-                            <dd>
-                              {selected.onLeave} {selected.onLeave === 1 ? "bed is" : "beds are"} held for a patient on
-                              leave, already counted in Occupied
-                            </dd>
-                          </div>
-                        )}
-                        {selected.lockedBeds === undefined || selected.lockedBeds === 0 ? null : (
-                          <div className={styles.factRow}>
-                            <dt>Locked beds</dt>
-                            <dd>
-                              {selected.lockedBeds} of {selected.beds ?? 0}. A voluntary patient may still be nursed on
-                              one
-                            </dd>
-                          </div>
-                        )}
-                      </dl>
-                    </>
-                  ) : selected.kind === "ed" ? (
-                    <div className={styles.detailSection}>
-                      <h3>On-site mental health wards</h3>
-                      {/* ⚠️ An empty list is a fact and is stated as one, never as "0 on-site beds". */}
-                      {selected.onSiteUnits === undefined || selected.onSiteUnits.length === 0 ? (
-                        <p className={styles.absent}>
-                          No mental health beds on-site — this department places patients elsewhere in the network.
-                        </p>
-                      ) : (
-                        <ul className={styles.notesList}>
-                          {selected.onSiteUnits.map((unit) => (
-                            <li key={unit}>{unit}</li>
-                          ))}
-                        </ul>
-                      )}
-                      <p className={styles.absent}>Referral queue available on the department page.</p>
-                    </div>
-                  ) : (
-                    <div className={styles.detailSection}>
-                      <h3>Notes</h3>
-                      <ul className={styles.notesList}>
-                        <li>Team name is a synthetic placeholder.</li>
-                        <li>A community team holds no beds; it takes people for follow-up in the community.</li>
-                        <li>Referral queue not available for this entry.</li>
-                      </ul>
-                    </div>
-                  )}
-                </div>
-
-                <div className={styles.detailCta}>
-                  {selected.kind === "community" ? (
-                    <p className={styles.statsAbsent}>
-                      Statistics are unavailable for this regional entry. Community directory; no page for this regional
-                      entry.
-                    </p>
-                  ) : null}
-                  <div className={styles.ctaActions}>
-                    {/* Ward and ED only: the statistics builders resolve against a real id this entry carries. */}
-                    {selected.kind === "ward" ? (
-                      <Link
-                        className={buttonClass({ variant: "sec", size: "sm" })}
-                        href={wardStatisticsHref(selected.id)}
-                      >
-                        <BarChart2 size={14} aria-hidden="true" />
-                        View statistics
-                      </Link>
-                    ) : selected.kind === "ed" ? (
-                      <Link
-                        className={buttonClass({ variant: "sec", size: "sm" })}
-                        href={edStatisticsHref(selected.id)}
-                      >
-                        <BarChart2 size={14} aria-hidden="true" />
-                        View statistics
-                      </Link>
-                    ) : null}
-                    <Link
-                      className={buttonClass({ variant: "pri", size: "sm" })}
-                      href={selected.href}
-                      onClick={() => recordHubVisit(selected.id)}
-                    >
-                      {selected.kind === "community" ? "Open community teams" : `Open ${selected.name}`}
-                      <ArrowRight size={15} aria-hidden="true" />
-                    </Link>
-                  </div>
-                </div>
-              </Card>
-            )}
+            {selected === undefined || isPhone ? null : renderPreview(selected)}
 
             <Card as="section" className={styles.glanceCard} aria-labelledby="hub-glance-title">
               <CardHead
@@ -1076,6 +1216,22 @@ export function HubScreen() {
           testId="ward-hub-governance"
           note="Real hospital network; invented bed figures and community team names · Not a medical device"
         />
+        {isPhone ? (
+          <PhoneSheet
+            open={phonePreviewOpen && selected !== undefined}
+            onClose={() => setPhonePreviewOpen(false)}
+            title={selected?.name ?? "Place"}
+            description={
+              selected === undefined
+                ? undefined
+                : [KIND_WORD_LONG[selected.kind], selected.site].filter(Boolean).join(" · ")
+            }
+            className={styles.phonePreviewSheet}
+            data-testid="hub-phone-preview"
+          >
+            {selected === undefined ? null : renderPreview(selected)}
+          </PhoneSheet>
+        ) : null}
       </main>
     </div>
   );

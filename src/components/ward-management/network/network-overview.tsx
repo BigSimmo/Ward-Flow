@@ -77,6 +77,8 @@ export function NetworkBedflow({
   onSelectUnit,
   highlight,
   onClearHighlight,
+  scope: scopeProp,
+  onScopeChange,
 }: {
   groups: readonly ServiceGroup[];
   selectedUnitId: string | undefined;
@@ -87,9 +89,20 @@ export function NetworkBedflow({
    */
   highlight?: NetworkHighlight;
   onClearHighlight?: () => void;
+  /**
+   * Optional controlled service scope. Phone (v10 Network) lets a "Ready against waiting" row
+   * outside this card scope the beds; without these props the card keeps its own scope.
+   */
+  scope?: HealthService | "all";
+  onScopeChange?: (scope: HealthService | "all") => void;
 }) {
   const isPhone = useIsPhone();
-  const [scope, setScope] = useState<HealthService | "all">("all");
+  const [ownScope, setOwnScope] = useState<HealthService | "all">("all");
+  const scope = scopeProp ?? ownScope;
+  const setScope = (next: HealthService | "all") => {
+    setOwnScope(next);
+    onScopeChange?.(next);
+  };
   const [readyOnly, setReadyOnly] = useState(false);
   const scopeItems = [
     { id: "all" as const, label: "All" },
@@ -164,28 +177,91 @@ export function NetworkBedflow({
           const share = occupiedPercent(group.occupied, group.beds);
           return (
             <section key={group.service} className={styles.serviceBox} aria-label={group.service}>
-              <header className={styles.serviceHead}>
-                <h3 className={styles.serviceName}>
-                  {group.service}{" "}
-                  <span className={styles.serviceCount}>
-                    {group.rows.length} {group.rows.length === 1 ? "ward" : "wards"}
+              {isPhone ? (
+                <header className={styles.phoneServiceHead}>
+                  <h3 className={styles.phoneServiceName}>
+                    <span
+                      className={styles.phoneServiceDot}
+                      data-service={SERVICE_DOT[group.service] ?? "other"}
+                      aria-hidden="true"
+                    />
+                    {group.service}
+                  </h3>
+                  <span className={styles.phoneServiceReady}>
+                    <b>{group.ready}</b> ready
                   </span>
-                </h3>
-                <span
-                  className={styles.serviceMeta}
-                  data-hl={highlight === "waiting" && group.waiting > 0 ? "true" : undefined}
-                >
-                  <b>{group.waiting}</b> in ED
-                  {share === undefined ? null : (
-                    <>
-                      {" "}
-                      · <b>{share}</b> occupied
-                    </>
-                  )}
-                </span>
-              </header>
+                </header>
+              ) : (
+                <header className={styles.serviceHead}>
+                  <h3 className={styles.serviceName}>
+                    {group.service}{" "}
+                    <span className={styles.serviceCount}>
+                      {group.rows.length} {group.rows.length === 1 ? "ward" : "wards"}
+                    </span>
+                  </h3>
+                  <span
+                    className={styles.serviceMeta}
+                    data-hl={highlight === "waiting" && group.waiting > 0 ? "true" : undefined}
+                  >
+                    <b>{group.waiting}</b> in ED
+                    {share === undefined ? null : (
+                      <>
+                        {" "}
+                        · <b>{share}</b> occupied
+                      </>
+                    )}
+                  </span>
+                </header>
+              )}
               {group.rows.length === 0 ? (
                 <p className={styles.empty}>No ward in {group.service} has a ready bed.</p>
+              ) : isPhone ? (
+                // Phone (v10 Network): each ward as a row, name and bed bar left, ready and pulled right.
+                <ul className={styles.phoneUnits}>
+                  {group.rows.map((row) => {
+                    const selected = row.unit.id === selectedUnitId;
+                    const match = highlight ? matchesHighlight(highlight, row, group) : false;
+                    const readyMatch = row.states.ready > 0;
+                    const dim = highlight ? !match : readyOnly && !readyMatch;
+                    return (
+                      <li key={row.unit.id} data-dim={dim ? "true" : undefined}>
+                        <button
+                          type="button"
+                          className={cx(styles.phoneUnit, selected && styles.rowSelected)}
+                          aria-pressed={selected}
+                          data-testid={`ward-network-bedflow-${row.unit.id}`}
+                          onClick={() => onSelectUnit(row.unit.id)}
+                        >
+                          <span className={styles.phoneUnitMain}>
+                            <span className={styles.unitName}>{row.unit.name}</span>
+                            <span className={styles.unitMeta}>{unitMeta(row.unit)}</span>
+                            <BedStrip
+                              thin
+                              className={styles.phoneUnitStrip}
+                              counts={{
+                                ready: row.states.ready,
+                                pulled: row.states.pulled,
+                                closed: row.states.closed,
+                                occupied: row.states.occupied,
+                                pendingPreparation: row.pendingPreparation,
+                              }}
+                              wardName={row.unit.name}
+                            />
+                          </span>
+                          <span className={styles.phoneUnitSide}>
+                            <span className={styles.phoneUnitReady}>
+                              <b>{row.states.ready}</b> ready
+                            </span>
+                            <span className={styles.phoneUnitPulled}>
+                              {row.states.pulled} pulled
+                              {row.expected > 0 ? ` · +${row.expected}` : ""}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               ) : (
                 <table className={styles.unitGrid}>
                   <thead>
@@ -262,7 +338,7 @@ export function NetworkBedflow({
             </section>
           );
         })}
-        <ReadyAgainstWaiting groups={groups} />
+        {isPhone ? null : <ReadyAgainstWaiting groups={groups} />}
       </div>
       <footer className={styles.foot}>
         <BedStripLegend />
@@ -304,6 +380,82 @@ function ReadyAgainstWaiting({ groups }: { groups: readonly ServiceGroup[] }) {
                 <StatusGlyph tone={gap < 0 ? "warning" : "success"} size={9} />
                 {gap < 0 ? `Short ${-gap}` : gap === 0 ? "Exactly enough" : `Spare ${gap}`}
               </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+const SERVICE_DOT: Partial<Record<HealthService, string>> = {
+  "North Metro": "north",
+  "East Metro": "east",
+  "South Metro": "south",
+  WACHS: "wachs",
+  CAHS: "cahs",
+  Private: "private",
+};
+
+/**
+ * Phone (v10 Network): "Ready against waiting" as the first list, one row per service. Pressing a
+ * row scopes the bed flow below to that service; pressing it again shows every service.
+ */
+export function ReadyAgainstWaitingPhone({
+  groups,
+  scope,
+  onScope,
+}: {
+  groups: readonly ServiceGroup[];
+  scope: HealthService | "all";
+  onScope: (scope: HealthService | "all") => void;
+}) {
+  return (
+    <section className={styles.phoneVersus} aria-labelledby="ward-network-versus-phone-heading">
+      <header className={styles.phoneVersusHead}>
+        <h2 id="ward-network-versus-phone-heading" className={styles.phoneVersusTitle}>
+          Ready against waiting
+        </h2>
+        <span className={styles.phoneVersusHint}>tap to scope beds</span>
+      </header>
+      <ul className={styles.phoneVersusList}>
+        {groups.map((group) => {
+          const gap = readyGap(group);
+          const selected = scope === group.service;
+          return (
+            <li key={group.service}>
+              <button
+                type="button"
+                className={cx(styles.phoneVersusRow, selected && styles.rowSelected)}
+                aria-pressed={selected}
+                onClick={() => onScope(selected ? "all" : group.service)}
+              >
+                <span
+                  className={styles.phoneServiceDot}
+                  data-service={SERVICE_DOT[group.service] ?? "other"}
+                  aria-hidden="true"
+                />
+                <span className={styles.phoneVersusMain}>
+                  <span className={styles.phoneVersusName}>{group.service}</span>
+                  <span className={styles.phoneVersusMeta}>
+                    <b>{group.ready}</b> ready · <b>{group.waiting}</b> waiting in ED
+                  </span>
+                </span>
+                <span className={styles.phoneVersusGap}>
+                  <StatusGlyph tone={gap < 0 ? "warning" : "success"} size={9} />
+                  {gap < 0 ? (
+                    <>
+                      Short <b>{-gap}</b>
+                    </>
+                  ) : gap === 0 ? (
+                    "Exactly enough"
+                  ) : (
+                    <>
+                      Spare <b>{gap}</b>
+                    </>
+                  )}
+                </span>
+              </button>
             </li>
           );
         })}

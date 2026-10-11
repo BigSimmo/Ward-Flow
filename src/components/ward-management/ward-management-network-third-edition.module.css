@@ -181,3 +181,65 @@
     text-overflow: ellipsis;
   }
 }
+
+/* Phone (v10 Network): the two views sit under the hero on the canvas as a full-width segmented
+ * control, the Placement count visible. `.phoneViewTabs` renders only on phone (`useIsPhone`). */
+.phoneViewTabs .viewTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+}
+
+.phoneViewTabs .viewTab {
+  justify-content: center;
+  min-height: var(--wf-touch);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-14);
+}
+
+.phoneViewTabs .viewTab:hover {
+  color: var(--wf-ink-1);
+}
+
+.phoneViewTabs .viewTab[aria-selected="true"] {
+  border: 1px solid var(--wf-line-3);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  box-shadow: var(--wf-e1);
+}
+
+.phoneViewTabs .viewTab > span {
+  display: inline-flex;
+}
+
+.phoneViewTabs .viewTab > span > span,
+.phoneViewTabs .viewTab[aria-selected="true"] > span > span {
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  border: 1px solid var(--wf-line);
+}
+
+.phoneViewTabs .viewTab:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+}
+
+/* Phone order: Ready against waiting, departments, road time, then the bed flow. */
+@media (max-width: 48rem) {
+  .overviewGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overviewGrid > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .overviewSide {
+    order: -1;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

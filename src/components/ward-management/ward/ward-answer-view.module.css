@@ -1885,36 +1885,6 @@
  * left and Accept in principle on the right. The back link keeps its words as its accessible name
  * and a full 48px target. The page foot keeps the 12px gutter. Desktop is unchanged. */
 @media screen and (max-width: 48rem) {
-  .answerTop > section {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    column-gap: var(--wf-s-3);
-    padding-bottom: var(--wf-s-3);
-  }
-
-  .answerTop > section > div {
-    display: contents;
-  }
-
-  .answerTop > section > div:first-child > :first-child {
-    order: 1;
-    flex: 1 1 100%;
-  }
-
-  .answerTop > section > div:last-child > :first-child {
-    order: 2;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .answerTop > section > div:first-child > :last-child:not(:first-child) {
-    order: 3;
-    flex: 0 1 auto;
-    min-width: 0;
-    margin-left: auto;
-  }
-
   .answerTop .backLink {
     min-width: var(--spacing-tap, 3rem);
     min-height: var(--spacing-tap, 3rem);
@@ -1999,5 +1969,347 @@
 
   .heroNav button {
     min-height: var(--wf-touch, 44px);
+  }
+}
+
+/* Phone v10 (11 Oct 2026): the hero says which request this is with three figures (Ready, In
+ * use, Gates pass) and Previous and Next as two pills. Below it one patient card with four facts
+ * (the rest a tap away) and the ISBAR summary folded, then Fits this ward folding the gates, then
+ * Confirm your beds, Census and Recent answers as rows that open in place. Decline and Accept in
+ * principle stay pinned at the bottom of the screen. The phone-only classes render only on a
+ * phone; everything else sits under the phone query. */
+.phoneLinkRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--wf-touch);
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+  font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
+  color: var(--wf-accent-ink);
+  list-style: none;
+  cursor: pointer;
+}
+
+.phoneLinkRow::-webkit-details-marker {
+  display: none;
+}
+
+.phoneIsbar[open] > .phoneLinkRow {
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.phoneGates,
+.phoneFold {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
+}
+
+.phoneGates > summary,
+.phoneFold > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
+  list-style: none;
+  cursor: pointer;
+}
+
+.phoneGates > summary::-webkit-details-marker,
+.phoneFold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.phoneFoldText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.phoneFoldTitle {
+  font: 600 var(--wf-fs-14) / 1.25 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.phoneFoldLine {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneFoldCount {
+  flex: none;
+  font: 700 var(--wf-fs-15) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.phoneFoldChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-fast, 120ms) ease;
+}
+
+details[open] > summary > .phoneFoldChevron {
+  transform: rotate(90deg);
+}
+
+.phoneGatesCount {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-12) / 1.3 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+.phoneFoldBody > section,
+.phoneGates > section {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.phoneFoldBody > section > :first-child {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .answerTop .heroNav {
+    display: flex;
+    flex: 1 1 100%;
+    gap: var(--wf-s-2);
+  }
+
+  .answerTop .heroNav > button {
+    flex: 1 1 0;
+    justify-content: center;
+    min-height: var(--wf-touch);
+    border-radius: var(--wf-r-pill);
+  }
+
+  .answerTop .heroNavPos {
+    display: none;
+  }
+
+  .workspace {
+    padding-bottom: calc(var(--wf-touch) + var(--wf-s-6, 24px));
+  }
+
+  .answerGrid,
+  .lowerRow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+  }
+
+  .answerGrid {
+    align-items: stretch;
+  }
+
+  .lowerRow {
+    align-items: stretch;
+    gap: 0;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    overflow: hidden;
+  }
+
+  .lowerRow > .phoneFold {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .lowerRow > .phoneFold + .phoneFold {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  /* The request: no panel heading, the patient card is the first thing. */
+  .answerSplit {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .splitGrid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+  }
+
+  .referralCard > .panelHeader {
+    display: none;
+  }
+
+  .referralCard {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    overflow: hidden;
+  }
+
+  .referralCard .sbarCard {
+    padding: 0;
+  }
+
+  .referralCard .patientDossierBanner {
+    padding: var(--wf-s-3) var(--wf-s-4) 0;
+  }
+
+  .answerFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: var(--wf-s-3) var(--wf-s-3);
+    padding: 0;
+    border-radius: var(--wf-r-md);
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .answerFacts > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .answerFacts > div:nth-child(odd) {
+    border-right: 1px solid var(--wf-line);
+  }
+
+  .answerFacts[data-folded="true"] > div:nth-child(n + 5) {
+    display: none;
+  }
+
+  .answerFacts[data-folded="true"] > div:nth-child(3),
+  .answerFacts[data-folded="true"] > div:nth-child(4) {
+    border-bottom: 0;
+  }
+
+  .answerFacts dt {
+    font-size: var(--wf-fs-12);
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .answerFacts dd {
+    font-size: var(--wf-fs-14);
+    font-weight: 600;
+  }
+
+  .referralCard .answerIdentityAbsence {
+    margin: 0;
+    padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  }
+
+  .phoneIsbar {
+    padding: 0;
+  }
+
+  .phoneIsbar .sbarSection {
+    padding-inline: var(--wf-s-4);
+  }
+
+  .gatesCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .phoneGates .answerGates {
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .phoneGates .answerGatesHeading {
+    display: none;
+  }
+
+  /* Decline and Accept in principle stay at the bottom of the screen. */
+  .decisionArea {
+    position: fixed;
+    z-index: 20;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wf-s-2);
+    margin: 0;
+    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-glass-bar, var(--wf-surface));
+    backdrop-filter: blur(16px);
+  }
+
+  .decisionArea > .askButton {
+    display: none;
+  }
+
+  .answerGrid,
+  .answerSplit,
+  .splitGrid,
+  .referralCard,
+  .gatesCard {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .gatesCard > .badge {
+    max-width: 100%;
+    white-space: normal;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .phoneClear {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-1);
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .phoneClearTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    margin: 0;
+    font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
+    color: var(--wf-ink-1);
+  }
+
+  .phoneClearText {
+    margin: 0;
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-2);
+  }
+
+  .decisionArea > button {
+    justify-content: center;
+    min-height: var(--wf-touch);
+    border-radius: var(--wf-r-pill);
   }
 }

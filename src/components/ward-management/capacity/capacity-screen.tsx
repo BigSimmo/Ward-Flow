@@ -14,10 +14,12 @@ import {
   Hero,
   HeroStat,
   OccupancyRing,
+  Segmented,
   SrOnly,
   StatusGlyph,
   buttonClass,
   durMinutes,
+  useIsPhone,
   type WfTone,
 } from "@/components/wf";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
@@ -105,6 +107,9 @@ export function CapacityScreen() {
   const service = useServiceScope();
   const [selection, setSelection] = useState<{ unitId: string; generation: number } | null>(null);
   const [networkTab, setNetworkTab] = useState("freeing");
+  // Phone (v10): Overview, Wards and Planned are one segmented control; each shows its own part.
+  const isPhone = useIsPhone();
+  const [phoneTab, setPhoneTab] = useState<"overview" | "wards" | "planned">("overview");
   const [wardSort, setWardSort] = useState("name");
   const [tableFullscreen, setTableFullscreen] = useState(false);
   const [showAllColumns, setShowAllColumns] = useState(false);
@@ -330,14 +335,41 @@ export function CapacityScreen() {
           className={styles.capacityHero}
           level={1}
           // v10: the Wards count appears once, here, never as a chip.
-          eyebrow={`Capacity · ${service ?? "Statewide"} · ${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} · as at ${formatInstant(now)}`}
+          eyebrow={
+            isPhone
+              ? `Capacity · ${service ?? "Statewide"}`
+              : `Capacity · ${service ?? "Statewide"} · ${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} · as at ${formatInstant(now)}`
+          }
           title={
             <>
               <SrOnly>Capacity, </SrOnly>
-              {netTotals.ready} beds ready of {netTotals.beds}
+              {netTotals.ready} {isPhone ? "ready" : "beds ready"} of {netTotals.beds}
             </>
           }
-          titleMeta={netTotals.pendingPreparation ? `${netTotals.pendingPreparation} being made ready` : undefined}
+          titleMeta={
+            isPhone
+              ? `${gapTotals.gap < 0 ? `${Math.abs(gapTotals.gap)} short of` : gapTotals.gap === 0 ? "Exactly enough for" : `${gapTotals.gap} spare for`} ${gapTotals.waiting} waiting in ED${netTotals.pendingPreparation ? ` · ${netTotals.pendingPreparation} being made ready` : ""}`
+              : netTotals.pendingPreparation
+                ? `${netTotals.pendingPreparation} being made ready`
+                : undefined
+          }
+          stats={
+            isPhone ? (
+              <>
+                <HeroStat
+                  value={totalLockedReady}
+                  label="Locked ready"
+                  tone="success"
+                  pressed={networkFilterId === "locked-ready"}
+                  onToggle={() => {
+                    highlightWards(networkFilterId === "locked-ready" ? "all" : "locked-ready");
+                    setPhoneTab("wards");
+                  }}
+                />
+                <HeroStat value={totalPulled} label="Pulled" tone={totalPulled > 0 ? "warning" : undefined} />
+              </>
+            ) : undefined
+          }
           lead={
             // v10 Capacity: the one ring on the page, ahead of the title.
             <OccupancyRing
@@ -347,6 +379,7 @@ export function CapacityScreen() {
             />
           }
           bar={
+            isPhone ? undefined : (
             <div className={styles.heroStatGroup} role="group" aria-label="Statewide Bed Telemetry">
               <HeroStat
                 inline
@@ -376,6 +409,7 @@ export function CapacityScreen() {
                 />
               ) : null}
             </div>
+            )
           }
           aside={
             <>
@@ -429,7 +463,21 @@ export function CapacityScreen() {
           it already reads as supplementary context rather than a headline figure, and the owner's
           overrule of "Beds freeing today" leaves that reasoning undisturbed.
         */}
-        <div className={styles.columns}>
+        {isPhone ? (
+          <div className={styles.phoneTabs}>
+            <Segmented
+              label="Capacity view"
+              items={[
+                { id: "overview" as const, label: "Overview" },
+                { id: "wards" as const, label: "Wards", count: scopedNetworkRows.length },
+                { id: "planned" as const, label: "Planned" },
+              ]}
+              value={phoneTab}
+              onChange={setPhoneTab}
+            />
+          </div>
+        ) : null}
+        <div className={styles.columns} data-phone-tab={isPhone ? phoneTab : undefined}>
           {/*
             🔴 **THE SCOPE BAR — MOUNTED ONLY WHILE A SERVICE IS CHOSEN**, per its own header
             comment and build plan §3 "Scope bar". `shown`/`total` count `scopedNetworkRows` against
@@ -851,7 +899,9 @@ export function CapacityScreen() {
             </WardPanel>
           </div>
         </div>
-        <PlannedAdmissionsPanel key={worldGeneration} now={now} />
+        <div className={styles.plannedWrap} data-phone-hidden={isPhone && phoneTab !== "planned" ? "true" : undefined}>
+          <PlannedAdmissionsPanel key={worldGeneration} now={now} />
+        </div>
         <WardPrototypeFooter testId="ward-capacity-governance" note="Statewide bed capacity · Not a medical device" />
       </main>
     </div>
