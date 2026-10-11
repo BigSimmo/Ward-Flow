@@ -114,6 +114,7 @@ import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPri
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
+import { WardDataModeSlot } from "../ward-shared-access";
 import styles from "./ward-bar.module.css";
 
 /**
@@ -1128,11 +1129,12 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const activityHasUnread = unreadNoticeCount > 0;
 
   const barScrolled = useBarScrolled(isPhone);
-  // Desktop and tablet only: a page that opens on the shared Hero bands the header (v10 7.1).
+  // A page that opens on the shared Hero bands the header (v10 7.1). On phone the lean bar sits in
+  // hero ink at rest and hands over to its own solid scrolled face (v10 Home mockup, 11 Oct 2026).
   const barRef = useRef<HTMLElement>(null);
-  const bandActive = useWfBandActive() && !isPhone;
-  const bandScrolled = useBandScrolled(barRef, bandActive);
-  const bandState = bandActive ? (bandScrolled ? "light" : "ink") : undefined;
+  const bandHero = useWfBandActive();
+  const bandScrolled = useBandScrolled(barRef, bandHero && !isPhone);
+  const bandState = !bandHero ? undefined : isPhone ? (barScrolled ? undefined : "ink") : bandScrolled ? "light" : "ink";
   // Phone only: the condensed bar's live line, the open movements in the current scope.
   const scopeOpenCount = activeService
     ? (serviceOptionOpenCounts.get(activeService as HealthService) ?? 0)
@@ -1259,6 +1261,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
         {/* A page's own header tools land here (`ward-bar-page-tools.tsx`). Empty on most pages. */}
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
+
+        {/* v10: the Prototype pill beside the service pill, in place of the Data mode bar. */}
+        <WardDataModeSlot className={styles.dataMode} />
 
         <span
           className={styles.mark}

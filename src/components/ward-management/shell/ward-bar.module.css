@@ -95,6 +95,18 @@
   min-width: 0;
 }
 
+/* The Prototype pill's place (ward-shared-access.tsx). The phone's lean bar has no room for it. */
+.dataMode {
+  display: inline-flex;
+  flex: none;
+}
+
+@media (max-width: 48rem) {
+  .dataMode {
+    display: none;
+  }
+}
+
 .titleGroup {
   display: flex;
   align-items: center;
@@ -2585,7 +2597,8 @@
  * `light`: once the page scrolls past 4px. Solid surface-2, a 1px line and the bar shadow, no
  * blur. The same as the phone bar when it scrolls.
  *
- * Phone (48rem and under) never gets `data-band`; its lean bar is unchanged.
+ * Phone (48rem and under) gets `data-band="ink"` only at rest; once it scrolls it drops the band
+ * and takes its own solid face (`data-scrolled`). Its ink rules follow this block.
  */
 @media (min-width: 48.0625rem) {
   .bar[data-band] {
@@ -2697,6 +2710,43 @@
   /* The primary keeps its blue face; its focus gap takes the band colour. */
   .bar[data-band="ink"] .primary {
     --wf-focus-ring: var(--wf-hero-ink);
+  }
+}
+
+/* Phone band (v10 Home mockup, Josh 11 Oct 2026): at rest the lean bar sits on the hero's top
+ * colour, so Menu, title, service line, Search and Tasks read as part of the band. */
+@media (max-width: 48rem) {
+  .bar.bar[data-band="ink"] {
+    --wf-focus-ring: var(--wf-hero-ink);
+    background: var(--wf-hero-1);
+    border-bottom-color: var(--wf-hero-1);
+    color: var(--wf-hero-ink);
+  }
+
+  .bar[data-band="ink"] .place,
+  .bar[data-band="ink"] .phoneOnly,
+  .bar[data-band="ink"] .drawerTrigger,
+  .bar[data-band="ink"] .triggerIcon,
+  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type > svg {
+    color: var(--wf-hero-ink);
+  }
+
+  .bar[data-band="ink"] .scopeBadgeBtn,
+  .bar[data-band="ink"] .scopeCaret {
+    color: var(--wf-hero-ink-2);
+  }
+
+  .bar[data-band="ink"] .phoneOnly:hover::before,
+  .bar[data-band="ink"] .drawerTrigger:hover::before {
+    background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+
+  .bar[data-band="ink"] .drawerTrigger[data-bar-mode="tasks"] .badge {
+    background: var(--wf-hero-1);
+    box-shadow:
+      inset 0 0 0 1px var(--wf-on-hero-line),
+      0 0 0 1.5px var(--wf-hero-1);
+    color: var(--wf-hero-ink);
   }
 }
 
