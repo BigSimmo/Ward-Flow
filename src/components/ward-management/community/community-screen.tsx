@@ -1861,8 +1861,13 @@ export function CommunityScreen({
     setSelectedPatientId(patientId);
     setActiveDrawer("pxDrawer");
   };
-  const phoneWaitingValue = isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length;
-  const phoneUrgent = isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount;
+  // With no recorded referrals the demonstration lists its sample referrals, so the phone count and
+  // rows come from the same source.
+  const phoneUsesDemoReferrals = isDemoMode && !hasAnyReferralsForTeam;
+  const phoneWaitingValue = phoneUsesDemoReferrals ? demoTeamReferrals.length : waitingReferrals.length;
+  const phoneUrgent = phoneUsesDemoReferrals
+    ? demoTeamReferrals.filter((referral) => referral.urgency === 1).length
+    : urgentWaitingCount;
   const phoneCtoRows = caseloadRows.filter((row) => {
     const code = caseloadStatutoryFormCode(row);
     return code === "5A" || code === "5B";
@@ -2000,25 +2005,39 @@ export function CommunityScreen({
             groups: [
               {
                 id: "waiting",
-                rows: waitingReferrals.map((referral) => {
-                  const person = phonePerson(referral.patientId);
-                  return {
-                    id: referral.id,
-                    testId: `ward-community-phone-waiting-${referral.id}`,
-                    name: phoneName(person, "No person on file"),
-                    meta: `${person?.umrn ?? "No UMRN"} · From ${referralOriginLabel(referral)}`,
-                    value: referralWaitLine(referral, now),
-                    time: `Tier ${referral.urgency}`,
-                    actNow: referral.urgency === 1,
-                    onSelect: () => {
-                      setPhoneDeclining(false);
-                      setDeclineDraft(undefined);
-                      setPendingAcceptance(null);
-                      setAcceptanceError(null);
-                      setPhoneReferralId(referral.id);
-                    },
-                  };
-                }),
+                rows: phoneUsesDemoReferrals
+                  ? demoTeamReferrals.map((referral) => {
+                      const person = phonePerson(referral.patientId);
+                      return {
+                        id: referral.id,
+                        testId: `ward-community-phone-waiting-${referral.id}`,
+                        name: phoneName(person, referral.patientDetails),
+                        meta: `${person?.umrn ?? "No UMRN"} · From ${referral.origin}`,
+                        value: referral.waitLabel,
+                        time: `Tier ${referral.urgency}`,
+                        actNow: referral.urgency === 1,
+                        onSelect: () => openDossier(referral.patientId),
+                      };
+                    })
+                  : waitingReferrals.map((referral) => {
+                      const person = phonePerson(referral.patientId);
+                      return {
+                        id: referral.id,
+                        testId: `ward-community-phone-waiting-${referral.id}`,
+                        name: phoneName(person, "No person on file"),
+                        meta: `${person?.umrn ?? "No UMRN"} · From ${referralOriginLabel(referral)}`,
+                        value: referralWaitLine(referral, now),
+                        time: `Tier ${referral.urgency}`,
+                        actNow: referral.urgency === 1,
+                        onSelect: () => {
+                          setPhoneDeclining(false);
+                          setDeclineDraft(undefined);
+                          setPendingAcceptance(null);
+                          setAcceptanceError(null);
+                          setPhoneReferralId(referral.id);
+                        },
+                      };
+                    }),
                 empty: "No referral naming this team is waiting for an answer.",
                 after: (
                   <p className={phoneCss.quiet}>

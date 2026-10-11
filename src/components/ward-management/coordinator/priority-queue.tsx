@@ -149,7 +149,8 @@ export function PriorityQueue({
   const filterEd = filterEdId ? edsById.get(filterEdId) : undefined;
 
   const soonCount = movements.filter((movement) => isSoon(movement, now)).length;
-  const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now)) : movements;
+  // Soon is not offered on the phone, so a filter set on a wider screen does not carry over.
+  const rows = soonOnly && !phone ? movements.filter((movement) => isSoon(movement, now)) : movements;
   const total = totalMovements ?? movements.length;
   const isOverdue = (movement: Movement) =>
     Math.max(0, now - movement.openedAt) >= queueWaitThresholds(movement.urgency).overdue;

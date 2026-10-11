@@ -403,20 +403,20 @@
     gap: var(--wf-s-2);
     margin-left: 0;
   }
-  /* The actions share the row as 44px pills; a round icon button keeps its own width. */
+  /* The actions share the row as 48px pills; a round icon button keeps its own width. */
   .aside > :not([data-wf-live]) {
     flex: 1 1 0;
     min-width: 0;
   }
   .aside > :is(button, a):not([data-wf-live]) {
     justify-content: center;
-    min-height: 44px;
+    min-height: var(--spacing-tap, 3rem);
     border-radius: var(--wf-r-pill);
   }
   .aside > button:not(:has(> :not(svg))) {
-    flex: 0 0 44px;
-    width: 44px;
-    min-width: 44px;
+    flex: 0 0 var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
     padding: 0;
   }
   /* An aside that only held the Live chip leaves no empty row behind. */
