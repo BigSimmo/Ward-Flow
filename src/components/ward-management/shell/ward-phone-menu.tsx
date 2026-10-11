@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useDeferredValue, useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
 import {
   Activity,
   BedSingle,
@@ -508,7 +508,8 @@ const MENU_RESULTS_PER_GROUP = 6;
  */
 function useMenuSearch(query: string, entries: RailEntry[]) {
   const { movements, patients, units, referrals, plannedAdmissions, now } = useWardFlow();
-  const needle = useDeferredValue(query).trim();
+  // Not deferred: a stale list under new text could open the wrong record.
+  const needle = query.trim();
   return useMemo(() => {
     if (!needle) return null;
     const refusal = refusalFor(needle);
