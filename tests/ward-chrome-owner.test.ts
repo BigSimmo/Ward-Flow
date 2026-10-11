@@ -182,7 +182,7 @@ interface FileChrome {
  * Q004 changes the mounted owner to WardBar; the ClinicalRail discussion above is historical.
  * Its dormant stylesheet is excluded only while the no-ClinicalRail-consumer assertion holds.
  */
-function findChromeSelectors(css: string): FileChrome {
+function findChromeSelectors(css: string, phoneOnlyFile = false): FileChrome {
   const clean = stripComments(css);
   const { topLevelText, narrowBlocks } = splitMediaBlocks(clean);
   const topRules = parseRuleBlocks(topLevelText);
@@ -192,6 +192,19 @@ function findChromeSelectors(css: string): FileChrome {
     for (const [selector, decls] of parseRuleBlocks(block)) {
       if (!narrowDeclsBySelector.has(selector)) narrowDeclsBySelector.set(selector, []);
       narrowDeclsBySelector.get(selector)!.push(...decls);
+    }
+  }
+  // A class that renders only on phone needs no media query, so a top-level rule is phone chrome
+  // too when its class is named `.phone*` or its stylesheet is phone-only (`*-phone*.module.css`).
+  // Without this the v10 pinned switches styled at top level (11 Oct 2026) were never seen. These
+  // widen the TOP-anchored search only; top-level bottom-edge bars and toasts are a separate,
+  // not yet enumerated follow-up, so the bottom-edge list below keeps its media-query scope.
+  const topLevelPhoneOnly = new Set<string>();
+  for (const selector of topRules.keys()) {
+    if (narrowDeclsBySelector.has(selector)) continue;
+    if (phoneOnlyFile || /^\.phone[A-Z]/u.test(selector)) {
+      narrowDeclsBySelector.set(selector, []);
+      topLevelPhoneOnly.add(selector);
     }
   }
 
@@ -206,12 +219,14 @@ function findChromeSelectors(css: string): FileChrome {
     const hasTop = merged.top !== undefined && merged.top.toLowerCase() !== "auto";
     const hasBottom = merged.bottom !== undefined && merged.bottom.toLowerCase() !== "auto";
     if (hasTop) topAnchored.push(selector);
-    else if (hasBottom) bottomAnchored.push(selector);
+    else if (hasBottom && !topLevelPhoneOnly.has(selector)) bottomAnchored.push(selector);
   }
   return { topAnchored, bottomAnchored };
 }
 
 const cssFiles = stylesheets(WARD_ROOT);
+/** Stylesheets whose every rule is phone-only (imported only by phone renderings). */
+const PHONE_ONLY_STYLESHEET = /-phone[^/\\]*\.module\.css$/u;
 const tsFiles = scripts(WARD_ROOT);
 
 // The retired ClinicalRail stylesheet is still on disk, but no route mounts its phoneBar.
@@ -219,7 +234,7 @@ const tsFiles = scripts(WARD_ROOT);
 const legacySidebar = path.join(WARD_ROOT, "ward-sidebar.module.css");
 const perFileChrome = cssFiles
   .filter((file) => file !== legacySidebar)
-  .map((file) => ({ file, ...findChromeSelectors(readModule(file)) }));
+  .map((file) => ({ file, ...findChromeSelectors(readModule(file), PHONE_ONLY_STYLESHEET.test(file)) }));
 const allTopAnchored = Array.from(new Set(perFileChrome.flatMap((f) => f.topAnchored))).sort();
 const allBottomAnchored = Array.from(new Set(perFileChrome.flatMap((f) => f.bottomAnchored))).sort();
 
@@ -247,9 +262,34 @@ const KNOWN_BACKLOG_TOP_ANCHORED = [".modeHeader"];
  * beneath WardBar's 56px `.bar` (top: 3.5rem); they hold no navigation, title or menu, so `.bar`
  * stays the one chrome owner. Home's queue switch (.queueTools), the Alerts views (.tabsBar) and
  * the ED and Community view switches (.phonePanes). Each must still be found, so a removal fails
- * the line below instead of leaving a stale permission.
+ * the line below instead of leaving a stale permission. 11 Oct 2026 (review): the guard now also
+ * sees phone-only classes styled at top level (`.phone*`, or any rule in a `*-phone*.module.css`
+ * file), which added the Ward, Hub, Network, Capacity, Governance, Out of area, On call, Census,
+ * Legal forms, Reports, Handover, Chronology and Statistics switches.
  */
-const V10_PINNED_VIEW_SWITCHES = [".phonePanes", ".queueTools", ".tabsBar"];
+const V10_PINNED_VIEW_SWITCHES = [
+  ".phoneKindBar",
+  ".phonePanes",
+  ".phoneSeg",
+  ".phoneSegPinned",
+  ".phoneTabBar",
+  ".phoneTabs",
+  ".phoneViewRow",
+  ".phoneViewTabs",
+  ".phoneViews",
+  ".queueTools",
+  ".seg",
+  ".segPinned",
+  ".stickySeg",
+  ".tabsBar",
+];
+
+/**
+ * WardBar's `.bar` is 56px (3.5rem) at rest and condenses to 52px (3.25rem) once the page scrolls
+ * (`.bar[data-scrolled="true"]`, ward-bar.module.css), so a pinned switch sits directly below it
+ * at either height.
+ */
+const BAR_HEIGHTS = ["3.5rem", "3.25rem", "52px"];
 
 describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
   it("mounts the shared WardBar and does not import the retired ClinicalRail, even under an alias", () => {
@@ -335,8 +375,12 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
     );
     for (const { file, topAnchored } of perFileChrome) {
       for (const selector of topAnchored.filter((entry) => V10_PINNED_VIEW_SWITCHES.includes(entry))) {
-        const phone = splitMediaBlocks(stripComments(readModule(file))).narrowBlocks.join("\n");
-        expect(mergeDecls(parseRuleBlocks(phone).get(selector) ?? []).top, `${selector} in ${file}`).toBe("3.5rem");
+        const { topLevelText, narrowBlocks } = splitMediaBlocks(stripComments(readModule(file)));
+        const top = mergeDecls([
+          ...(parseRuleBlocks(topLevelText).get(selector) ?? []),
+          ...(parseRuleBlocks(narrowBlocks.join("\n")).get(selector) ?? []),
+        ]).top;
+        expect(BAR_HEIGHTS, `${selector} in ${file} pins at ${top}`).toContain(top);
       }
     }
   });

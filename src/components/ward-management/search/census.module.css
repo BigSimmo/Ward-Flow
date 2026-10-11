@@ -1101,6 +1101,12 @@ table.censusTable {
   white-space: nowrap;
 }
 
+/* A group with no match in the running search dims (it is still there to press). */
+.phoneGroupZero b,
+.phoneGroupZero span {
+  color: var(--wf-ink-3);
+}
+
 .phoneGroup[aria-checked="true"] {
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
@@ -1450,7 +1456,7 @@ table.censusTable {
 .phoneChip.phoneChip {
   flex: none;
   gap: 6px;
-  min-height: 44px;
+  min-height: var(--spacing-tap, 3rem);
   white-space: nowrap;
 }
 

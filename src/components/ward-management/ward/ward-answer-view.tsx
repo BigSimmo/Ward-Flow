@@ -709,7 +709,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           /* Phone (v10): "This patient" with the person tile; the facts below carry cohort and sex. */
                           <div className={styles.phonePatientHead}>
                             <span className={styles.phonePatientTile} aria-hidden="true">
-                              <UserRound size={18} />
+                              <UserRound size={18} aria-hidden="true" />
                             </span>
                             <span className={styles.phoneFoldText}>
                               <span className={styles.phoneFoldTitle}>This patient</span>

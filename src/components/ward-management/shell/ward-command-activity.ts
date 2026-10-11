@@ -10,10 +10,7 @@ import type {
 } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { edPressure, type EdPressure } from "@/components/ward-management/ward-pressure";
-import {
-  resolveSubjectPatient,
-  withUmrnInPlaceOfMovementIds,
-} from "@/components/ward-management/ward-patient-resolver";
+import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
@@ -138,14 +135,11 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
     });
   }
 
-  // D-39: a referral line names the person by UMRN too, never by its RF number.
-  const referralLookup = { patients, referrals, movements };
   for (const referral of referrals) {
-    const who = resolveSubjectPatient(referral, referralLookup).umrn;
     events.push({
       at: referral.raisedAt,
       id: `referral-raised:${referral.id}`,
-      text: `${who} referral raised. ${referral.ageBand}, ${referral.homeRegion}.`,
+      text: `${referral.id} referral raised. ${referral.ageBand}, ${referral.homeRegion}.`,
       tone: "info",
       category: "referral",
     });
@@ -153,7 +147,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       events.push({
         at: referral.triagedAt,
         id: `referral-triaged:${referral.id}:${referral.triagedAt}`,
-        text: `${who} triaged.`,
+        text: `${referral.id} triaged.`,
         tone: "info",
         category: "referral",
       });

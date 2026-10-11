@@ -1005,6 +1005,8 @@ export type PhoneCensusProps = {
   history: ReactNode;
   historyCount: number;
   empty: ReactNode;
+  /** Scrolls the list to a group's band. */
+  onJump: (group: CensusGroup) => void;
 };
 
 /** Rows a group shows before "Show all". */
@@ -1037,8 +1039,33 @@ export function PhoneCensus(props: PhoneCensusProps) {
     ...entry,
     rows: rows.filter((row) => row.group === entry.id),
   })).filter((entry) => entry.rows.length > 0 && (entry.id !== "off" || offInList));
+  // The five groups as one radio set: choosing one moves the list to that group's band.
+  const [jumped, setJumped] = useState<CensusGroup | null>(null);
   return (
     <section className={styles.phone} data-testid="ward-patient-search-results-console" aria-label="Patients">
+      <div className={styles.phoneGroups} role="radiogroup" aria-label="Where patients are now">
+        {CENSUS_GROUPS.map((entry) => {
+          const n = searching ? props.matched[entry.id] : props.totals[entry.id];
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              role="radio"
+              aria-checked={props.tab === "now" && jumped === entry.id}
+              className={cx(styles.phoneGroup, searching && n === 0 && styles.phoneGroupZero)}
+              onClick={() => {
+                props.onTab("now");
+                if (entry.id === "off") setOffShown(true);
+                setJumped(entry.id);
+                props.onJump(entry.id);
+              }}
+            >
+              <b>{n}</b>
+              <span>{entry.short}</span>
+            </button>
+          );
+        })}
+      </div>
       <div className={styles.phoneChips} role="group" aria-label="Highlight">
         {CENSUS_HIGHLIGHTS.map((chip) => (
           <FilterChip
@@ -1116,7 +1143,8 @@ export function PhoneCensus(props: PhoneCensusProps) {
                               <span className={styles.mono}>
                                 <Marked text={row.umrn} needle={props.needle} />
                               </span>{" "}
-                              · {row.where}
+                              {/* Date of birth tells near-spelling names apart while a search runs. */}
+                              {searching ? <span>· {dobText(row.dob)} </span> : null}· {row.where}
                             </span>
                             <span className={styles.phoneMeta}>
                               {row.next}

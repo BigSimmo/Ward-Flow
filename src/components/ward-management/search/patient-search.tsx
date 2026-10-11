@@ -1272,6 +1272,7 @@ export function PatientSearchPage() {
             history={history}
             historyCount={historyCount}
             empty={refusalNotice ?? empty}
+            onJump={jumpToGroup}
           />
         ) : null}
         {isPhone ? (

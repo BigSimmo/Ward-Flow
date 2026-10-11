@@ -257,179 +257,183 @@ export function StatisticsServicesIndexScreen() {
         </PhoneBody>
       ) : (
         <>
-      <FlushRow layout="thirds" id="services" className={index.anchorTarget} data-testid="ward-statistics-services">
-        {services.map((entry) => (
-          <StatCard
-            key={entry.service}
-            className={index.svcCard}
-            id={`service-${entry.service.toLowerCase().replace(/\s+/gu, "-")}`}
-            data-testid={`ward-statistics-services-card-${entry.service}`}
-            title={
-              <Link href={serviceStatisticsHref(entry.service)} className={index.svcTitle}>
-                <ServiceDot service={entry.service} />
-                {entry.service}
-              </Link>
-            }
-            aside={
-              <span className={styles.muted}>
-                {entry.wards} {wardsWord(entry.wards)}
-              </span>
-            }
-          >
-            <CardBody className={index.svcBody}>
-              {entry.beds === 0 ? (
-                <p className={index.cardNote}>No inpatient beds are recorded for this service.</p>
-              ) : (
-                <>
-                  <div className={index.svcTop}>
-                    <Donut value={entry.share} label={`${entry.service} occupancy`} />
-                    <span className={index.svcText}>
-                      <span className={index.svcBeds}>
-                        {entry.occupied} of {entry.beds} beds
-                      </span>
-                      <span className={index.svcLine}>
-                        {entry.over > 0 ? (
-                          <>
-                            <StatusGlyph tone="warning" size={9} />
-                            {`${entry.over} ${wardsWord(entry.over)} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-                          </>
-                        ) : (
-                          <>
-                            <StatusGlyph tone="success" size={9} />
-                            {`No ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-                          </>
-                        )}
-                      </span>
-                    </span>
-                  </div>
-                  <StackBar
-                    thin
-                    label={`${entry.service} beds`}
-                    segments={[
-                      { id: "ready", label: BED_STATE_LABELS.ready, value: entry.ready, fill: "data-1" },
-                      { id: "pulled", label: BED_STATE_LABELS.pulled, value: entry.pulled, hatch: true },
-                      { id: "closed", label: BED_STATE_LABELS.closed, value: entry.closed, fill: "data-2" },
-                      { id: "occupied", label: BED_STATE_LABELS.occupied, value: entry.occupied, fill: "data-3" },
-                    ]}
-                  />
-                </>
-              )}
-              <dl className={index.figures}>
-                <div>
-                  <dt>{BED_STATE_LABELS.ready}</dt>
-                  <dd>{entry.ready}</dd>
-                </div>
-                <div>
-                  <dt>{BED_STATE_LABELS.beingMadeReady}</dt>
-                  <dd>{entry.pending}</dd>
-                </div>
-                <div>
-                  <dt>{BED_STATE_LABELS.pulled}</dt>
-                  <dd>{entry.pulled}</dd>
-                </div>
-                <div>
-                  <dt>
-                    {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                    Waiting in ED
-                  </dt>
-                  <dd>
-                    {entry.departments === 0 ? "No ED" : entry.waiting}
-                    {entry.over24 > 0 ? <SrOnly>{`, ${entry.over24} past ${LONG_WAIT_HOURS} hours`}</SrOnly> : null}
-                  </dd>
-                </div>
-              </dl>
-              <p className={index.sites}>{entry.sites.length > 0 ? entry.sites.join(", ") : "No inpatient sites"}</p>
-            </CardBody>
-          </StatCard>
-        ))}
-      </FlushRow>
+          <FlushRow layout="thirds" id="services" className={index.anchorTarget} data-testid="ward-statistics-services">
+            {services.map((entry) => (
+              <StatCard
+                key={entry.service}
+                className={index.svcCard}
+                id={`service-${entry.service.toLowerCase().replace(/\s+/gu, "-")}`}
+                data-testid={`ward-statistics-services-card-${entry.service}`}
+                title={
+                  <Link href={serviceStatisticsHref(entry.service)} className={index.svcTitle}>
+                    <ServiceDot service={entry.service} />
+                    {entry.service}
+                  </Link>
+                }
+                aside={
+                  <span className={styles.muted}>
+                    {entry.wards} {wardsWord(entry.wards)}
+                  </span>
+                }
+              >
+                <CardBody className={index.svcBody}>
+                  {entry.beds === 0 ? (
+                    <p className={index.cardNote}>No inpatient beds are recorded for this service.</p>
+                  ) : (
+                    <>
+                      <div className={index.svcTop}>
+                        <Donut value={entry.share} label={`${entry.service} occupancy`} />
+                        <span className={index.svcText}>
+                          <span className={index.svcBeds}>
+                            {entry.occupied} of {entry.beds} beds
+                          </span>
+                          <span className={index.svcLine}>
+                            {entry.over > 0 ? (
+                              <>
+                                <StatusGlyph tone="warning" size={9} />
+                                {`${entry.over} ${wardsWord(entry.over)} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+                              </>
+                            ) : (
+                              <>
+                                <StatusGlyph tone="success" size={9} />
+                                {`No ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+                              </>
+                            )}
+                          </span>
+                        </span>
+                      </div>
+                      <StackBar
+                        thin
+                        label={`${entry.service} beds`}
+                        segments={[
+                          { id: "ready", label: BED_STATE_LABELS.ready, value: entry.ready, fill: "data-1" },
+                          { id: "pulled", label: BED_STATE_LABELS.pulled, value: entry.pulled, hatch: true },
+                          { id: "closed", label: BED_STATE_LABELS.closed, value: entry.closed, fill: "data-2" },
+                          { id: "occupied", label: BED_STATE_LABELS.occupied, value: entry.occupied, fill: "data-3" },
+                        ]}
+                      />
+                    </>
+                  )}
+                  <dl className={index.figures}>
+                    <div>
+                      <dt>{BED_STATE_LABELS.ready}</dt>
+                      <dd>{entry.ready}</dd>
+                    </div>
+                    <div>
+                      <dt>{BED_STATE_LABELS.beingMadeReady}</dt>
+                      <dd>{entry.pending}</dd>
+                    </div>
+                    <div>
+                      <dt>{BED_STATE_LABELS.pulled}</dt>
+                      <dd>{entry.pulled}</dd>
+                    </div>
+                    <div>
+                      <dt>
+                        {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                        Waiting in ED
+                      </dt>
+                      <dd>
+                        {entry.departments === 0 ? "No ED" : entry.waiting}
+                        {entry.over24 > 0 ? <SrOnly>{`, ${entry.over24} past ${LONG_WAIT_HOURS} hours`}</SrOnly> : null}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className={index.sites}>
+                    {entry.sites.length > 0 ? entry.sites.join(", ") : "No inpatient sites"}
+                  </p>
+                </CardBody>
+              </StatCard>
+            ))}
+          </FlushRow>
 
-      <FlushRow layout="lead2">
-        <StatCard
-          icon={Send}
-          id="referrals"
-          className={index.anchorTarget}
-          title="Where referrals were accepted"
-          aside={<span className={cx(styles.muted, index.phoneHide)}>Every referral on record</span>}
-          data-testid="ward-statistics-services-referrals"
-        >
-          <div className={styles.tableWrap}>
-            <table className={cx(tableClasses.table, styles.table, index.matrix)}>
-              <caption className={styles.srOnly}>
-                Referrals for a bed, by the referring service (rows) and the service whose ward accepted (columns)
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">From, to</th>
-                  {HEALTH_SERVICES.map((service) => (
-                    <th key={service} scope="col" className={styles.num} title={service}>
-                      <span className={index.matrixHead}>
-                        <ServiceDot service={service} />
-                        <span aria-hidden="true">{service.replace(/ Metro$/u, "")}</span>
-                        <span className={styles.srOnly}>{service}</span>
-                      </span>
-                    </th>
-                  ))}
-                  <th scope="col" className={styles.num}>
-                    Not yet
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {HEALTH_SERVICES.map((from) => (
-                  <tr key={from}>
-                    <th scope="row">
-                      <span className={index.matrixHead}>
-                        <ServiceDot service={from} />
-                        {from}
-                      </span>
-                    </th>
-                    {HEALTH_SERVICES.map((to) => {
-                      const count = accepted.get(`${from}|${to}`) ?? 0;
-                      return (
-                        <td key={to} className={count === 0 ? styles.zero : undefined}>
-                          {count === 0 ? (
-                            0
-                          ) : (
-                            <span className={cx(index.bubble, from === to && index.own)}>{count}</span>
-                          )}
+          <FlushRow layout="lead2">
+            <StatCard
+              icon={Send}
+              id="referrals"
+              className={index.anchorTarget}
+              title="Where referrals were accepted"
+              aside={<span className={cx(styles.muted, index.phoneHide)}>Every referral on record</span>}
+              data-testid="ward-statistics-services-referrals"
+            >
+              <div className={styles.tableWrap}>
+                <table className={cx(tableClasses.table, styles.table, index.matrix)}>
+                  <caption className={styles.srOnly}>
+                    Referrals for a bed, by the referring service (rows) and the service whose ward accepted (columns)
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">From, to</th>
+                      {HEALTH_SERVICES.map((service) => (
+                        <th key={service} scope="col" className={styles.num} title={service}>
+                          <span className={index.matrixHead}>
+                            <ServiceDot service={service} />
+                            <span aria-hidden="true">{service.replace(/ Metro$/u, "")}</span>
+                            <span className={styles.srOnly}>{service}</span>
+                          </span>
+                        </th>
+                      ))}
+                      <th scope="col" className={styles.num}>
+                        Not yet
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {HEALTH_SERVICES.map((from) => (
+                      <tr key={from}>
+                        <th scope="row">
+                          <span className={index.matrixHead}>
+                            <ServiceDot service={from} />
+                            {from}
+                          </span>
+                        </th>
+                        {HEALTH_SERVICES.map((to) => {
+                          const count = accepted.get(`${from}|${to}`) ?? 0;
+                          return (
+                            <td key={to} className={count === 0 ? styles.zero : undefined}>
+                              {count === 0 ? (
+                                0
+                              ) : (
+                                <span className={cx(index.bubble, from === to && index.own)}>{count}</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className={(notYet.get(from) ?? 0) === 0 ? styles.zero : undefined}>
+                          {notYet.get(from) ?? 0}
                         </td>
-                      );
-                    })}
-                    <td className={(notYet.get(from) ?? 0) === 0 ? styles.zero : undefined}>{notYet.get(from) ?? 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <CardFoot meta="Shaded: accepted within its own service. Not yet: no ward has accepted so far." />
-        </StatCard>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <CardFoot meta="Shaded: accepted within its own service. Not yet: no ward has accepted so far." />
+            </StatCard>
 
-        <StatCard
-          icon={Clock}
-          id="ed-waits"
-          className={index.anchorTarget}
-          title="Waiting in ED, by service"
-          aside={<span className={styles.muted}>{totalWaiting} waiting</span>}
-          data-testid="ward-statistics-services-ed-waits"
-        >
-          <CardBody>
-            <BarList
-              label="People waiting in an emergency department, by health service"
-              track
-              labelWidth="8rem"
-              rows={services.map((entry) => ({
-                id: entry.service,
-                label: entry.service,
-                value: entry.waiting,
-                display: entry.departments === 0 ? "No ED" : undefined,
-                flag: entry.over24 > 0 ? "warning" : undefined,
-              }))}
-            />
-          </CardBody>
-          <CardFoot meta="An amber dot marks a service with someone waiting past the long-wait line." />
-        </StatCard>
-      </FlushRow>
+            <StatCard
+              icon={Clock}
+              id="ed-waits"
+              className={index.anchorTarget}
+              title="Waiting in ED, by service"
+              aside={<span className={styles.muted}>{totalWaiting} waiting</span>}
+              data-testid="ward-statistics-services-ed-waits"
+            >
+              <CardBody>
+                <BarList
+                  label="People waiting in an emergency department, by health service"
+                  track
+                  labelWidth="8rem"
+                  rows={services.map((entry) => ({
+                    id: entry.service,
+                    label: entry.service,
+                    value: entry.waiting,
+                    display: entry.departments === 0 ? "No ED" : undefined,
+                    flag: entry.over24 > 0 ? "warning" : undefined,
+                  }))}
+                />
+              </CardBody>
+              <CardFoot meta="An amber dot marks a service with someone waiting past the long-wait line." />
+            </StatCard>
+          </FlushRow>
         </>
       )}
     </StatisticsPage>

@@ -35,7 +35,11 @@ import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/wa
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
-import { resolveSubjectPatient, type PatientLookup } from "@/components/ward-management/ward-patient-resolver";
+import {
+  resolveSubjectPatient,
+  withUmrnInPlaceOfMovementIds,
+  type PatientLookup,
+} from "@/components/ward-management/ward-patient-resolver";
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -314,20 +318,6 @@ export function clearGlobalSearchRecents() {
   sessionRecents = [];
 }
 
-/**
- * D-39: a person is named by UMRN (or "UMRN not recorded"), never by a WF journey number. Task
- * details are written as "WF-004 · 10m overdue"; each journey number becomes that journey's UMRN.
- */
-export function withUmrnForJourneyIds(
-  text: string,
-  lookup: Parameters<typeof resolveSubjectPatient>[1] & { movements?: readonly Movement[] },
-): string {
-  return text.replace(/\bWF-\d+\b/gu, (journeyId) => {
-    const movement = lookup.movements?.find((candidate) => candidate.id === journeyId);
-    return movement ? resolveSubjectPatient(movement, lookup).umrn : "UMRN not recorded";
-  });
-}
-
 /** The header's bottom edge, so the scrim and palette start under the bar rather than covering it. */
 function headerBottom(root: HTMLElement | null): number {
   if (!root) return 0;
@@ -528,7 +518,7 @@ export function WardGlobalSearch({
           kindLabel: "Task",
           id: t.task.id,
           title: t.task.title,
-          meta: t.task.detail,
+          meta: withUmrnInPlaceOfMovementIds(t.task.detail, lookup),
           href: t.href,
           movementId: t.task.movementId,
           tone: t.task.tone,
@@ -569,7 +559,8 @@ export function WardGlobalSearch({
           kindLabel: "Task",
           id: task.id,
           title: task.title,
-          meta: withUmrnForJourneyIds(task.detail, lookup),
+          // D-39: a person is named by UMRN, never by a WF journey number, in every shape of id.
+          meta: withUmrnInPlaceOfMovementIds(task.detail, lookup),
           href: task.href ?? movementHref(task.movementId),
           movementId: task.movementId,
           tone: task.tone,

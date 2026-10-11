@@ -890,7 +890,8 @@ export function OfficerScreen() {
     );
   }
 
-  /** v10 phone: the job sheet's one pinned button, the leg's next step (greyed with its reason). */
+  /** v10 phone: the job sheet's four stage buttons, pinned to its foot; the next one is primary and
+   * an unavailable one is greyed with its reason (build guide: "the four stage buttons pinned"). */
   function renderPhoneNextStep(movement: Movement) {
     const transport = movement.transport;
     if (!transport || movement.closure) return null;
@@ -924,21 +925,34 @@ export function OfficerScreen() {
         blocked: () => arrivedBlockedReason(movement, unitFor(movement), patientName),
       },
     ];
-    const next = steps[index];
-    if (!next) return null;
-    const blocked = next.blocked();
     return (
-      <Button
-        variant="pri"
-        className={styles.phNextStep}
-        data-testid={`${next.testId}-${movement.id}`}
-        aria-disabled={blocked ? "true" : undefined}
-        aria-describedby={blocked ? `${next.testId}-unavailable-${movement.id}` : undefined}
-        title={blocked ?? undefined}
-        onClick={blocked ? ignoreUnavailableActivation : next.run}
-      >
-        {next.label}
-      </Button>
+      <div className={styles.phStageRow}>
+        {steps.map((step, stepIndex) => {
+          // Same rules as the desktop row: action `stepIndex` is done once the leg has moved past it.
+          // No tick icon here: four buttons share 390px and the Steps list above carries the ticks.
+          const done = index >= stepIndex + 1;
+          const isNext = stepIndex === index;
+          const blocked = step.blocked();
+          return (
+            <Button
+              key={step.testId}
+              variant={isNext && !blocked ? "pri" : "sec"}
+              className={
+                done
+                  ? `${styles.actionButton} ${styles.phStage} ${styles.actionDone}`
+                  : `${styles.actionButton} ${styles.phStage}`
+              }
+              data-testid={`${step.testId}-${movement.id}`}
+              aria-disabled={blocked ? "true" : undefined}
+              aria-describedby={blocked ? `${step.testId}-unavailable-${movement.id}` : undefined}
+              title={blocked ?? undefined}
+              onClick={blocked ? ignoreUnavailableActivation : step.run}
+            >
+              {step.label}
+            </Button>
+          );
+        })}
+      </div>
     );
   }
 
@@ -963,7 +977,8 @@ export function OfficerScreen() {
             : leg === "Collected"
               ? arrivedBlocked
               : undefined;
-    const eta = expectedArrival(movement)?.at;
+    const arrival = expectedArrival(movement);
+    const eta = arrival?.at;
     const canDivert =
       !movement.closure &&
       transport.collectedAt !== undefined &&
@@ -1033,8 +1048,8 @@ export function OfficerScreen() {
       );
     };
 
-    // v10 phone: the four facts as a 2x2 grid and the leg as a Steps list; the next step is the
-    // sheet's one pinned button (see the panel foot).
+    // v10 phone: the four facts as a 2x2 grid and the leg as a Steps list; the four stage buttons
+    // are pinned to the sheet's foot (see the panel foot).
     const roadRoute = referenceDistance(
       edById(movement.originEdId)?.referenceEdId,
       destinationUnit ? siteByCode(destinationUnit.siteCode)?.referenceSiteId : undefined,
@@ -1044,7 +1059,8 @@ export function OfficerScreen() {
       <>
         <dl className={styles.phGrid}>
           <div>
-            <dt>Ward ETA</dt>
+            {/* A booking estimate is the transport provider's, not a time the ward recorded. */}
+            <dt>{arrival?.booked ? "Transport ETA" : "Ward ETA"}</dt>
             <dd className={styles.mono}>{eta !== undefined ? formatInstantWithDay(eta, now) : "Not recorded"}</dd>
           </div>
           <div>

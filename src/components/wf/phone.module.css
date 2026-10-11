@@ -782,7 +782,11 @@
     border-radius: 0;
     box-shadow: none;
     background:
-      radial-gradient(720px 200px at 88% -40%, color-mix(in srgb, var(--wf-hero-info) 16%, transparent), transparent 70%),
+      radial-gradient(
+        720px 200px at 88% -40%,
+        color-mix(in srgb, var(--wf-hero-info) 16%, transparent),
+        transparent 70%
+      ),
       linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
   }
 

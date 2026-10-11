@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import type { MovementHorizonLane } from "./movements-derivations";
+import type { MovementHorizonEvent, MovementHorizonLane } from "./movements-derivations";
 import styles from "./arrivals-ahead-list.module.css";
 
 /** The windows the timeline already offers, read as "the next N hours" (v10 phone). */
@@ -16,20 +16,28 @@ function surname(name: string): string {
   return name.trim().split(/\s+/).pop() ?? name;
 }
 
+/** Timed arrivals first, by their recorded planned time; untimed ones after, in lane order. */
+function byPlannedTime(a: MovementHorizonEvent, b: MovementHorizonEvent): number {
+  if (a.plannedAt === undefined) return b.plannedAt === undefined ? 0 : 1;
+  if (b.plannedAt === undefined) return -1;
+  return a.plannedAt - b.plannedAt;
+}
+
 /**
  * v10 phone: Arrivals ahead as a list — each receiving ward, who is due in and when, soonest first
- * — read from the same lanes the timeline draws. Nothing here is computed beyond filtering those
- * lanes to the chosen window.
+ * — read from the same lanes the timeline draws. Only a recorded planned move time is shown as a
+ * time: an accepted move with no plan, or one already on the road, sits at the timeline's start
+ * because nothing places it, so it reads "time not recorded" and is never ranked as soonest.
  */
 export function ArrivalsAheadList({ lanes, now }: { lanes: MovementHorizonLane[]; now: Instant }) {
   const [hours, setHours] = useState<Window>(24);
   const rows = lanes
     .map((lane) => ({
       lane,
-      events: lane.events.filter((event) => event.startH <= hours).sort((a, b) => a.startH - b.startH),
+      events: lane.events.filter((event) => event.startH <= hours).sort(byPlannedTime),
     }))
     .filter((row) => row.events.length > 0)
-    .sort((a, b) => a.events[0].startH - b.events[0].startH);
+    .sort((a, b) => byPlannedTime(a.events[0], b.events[0]));
 
   return (
     <div className={styles.arrivals} data-testid="movements-arrivals-list">
@@ -53,10 +61,11 @@ export function ArrivalsAheadList({ lanes, now }: { lanes: MovementHorizonLane[]
                   {events
                     .map(
                       (event) =>
-                        `${surname(event.patientName ?? event.title)} ${formatInstantWithDay(
-                          (now + Math.round(event.startH * 60)) as Instant,
-                          now,
-                        )}`,
+                        `${surname(event.patientName ?? event.title)} ${
+                          event.plannedAt !== undefined
+                            ? formatInstantWithDay(event.plannedAt, now)
+                            : "time not recorded"
+                        }`,
                     )
                     .join(" · ")}
                 </span>

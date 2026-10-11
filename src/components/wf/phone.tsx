@@ -613,12 +613,7 @@ export function PhoneHero({
   const isPhone = useIsPhone();
   useWfBandBleed(sectionRef, isPhone);
   return (
-    <section
-      ref={sectionRef}
-      className={cx(styles.hero, className)}
-      aria-labelledby={titleId}
-      data-testid={testId}
-    >
+    <section ref={sectionRef} className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
       <div className={styles.heroTitleBlock}>
         {present(chip) ? (
           <div className={styles.heroEyebrowRow}>

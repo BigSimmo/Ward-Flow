@@ -911,12 +911,19 @@ function PhoneBedSheet({
               </Button>
             ) : null}
             {isReady ? (
-              <Link className={buttonClass({ variant: "sec", className: styles.pill })} href="/mockups/ward-flow/referrals">
+              <Link
+                className={buttonClass({ variant: "sec", className: styles.pill })}
+                href="/mockups/ward-flow/referrals"
+              >
                 Review current referrals
               </Link>
             ) : null}
             {personHref ? (
-              <Link className={buttonClass({ variant: "ghost", className: styles.pill })} href={personHref} onClick={onClose}>
+              <Link
+                className={buttonClass({ variant: "ghost", className: styles.pill })}
+                href={personHref}
+                onClick={onClose}
+              >
                 Patient page
                 <Icon icon={ChevronRight} size={14} />
               </Link>

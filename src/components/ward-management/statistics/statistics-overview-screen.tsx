@@ -181,13 +181,7 @@ export function StatisticsOverviewScreen() {
       paused={live.paused}
       onTogglePause={live.togglePause}
       phone={{
-        lead: (
-          <OccupancyRing
-            percent={occupiedShare}
-            alertAt={BED_ALERT_THRESHOLD_PERCENT}
-            scope="Statewide"
-          />
-        ),
+        lead: <OccupancyRing percent={occupiedShare} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope="Statewide" />,
         title: `${occupancy.occupied} of ${totalBeds} in use`,
         sub: `${preparingCount} being made ready`,
         stats: (
@@ -267,338 +261,342 @@ export function StatisticsOverviewScreen() {
         />
       ) : (
         <>
-      {service === null ? null : (
-        <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
-          {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
-          <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
-            {`Open ${service} statistics`}
-          </Link>
-        </p>
-      )}
-
-      <StatCard
-        id="services"
-        className={detail.anchor}
-        icon={Network}
-        title="Occupancy by health service"
-        aside={
-          <span className={styles.muted}>
-            {`${BED_ALERT_THRESHOLD_PERCENT}% line`} · Select one to highlight its wards
-          </span>
-        }
-      >
-        <div className={styles.serviceGrid} data-testid="ward-statistics-overview-gauges">
-          {services.map((entry) => {
-            const pressed = serviceFilter === entry.service;
-            return (
-              <button
-                key={entry.id}
-                type="button"
-                className={styles.serviceTile}
-                aria-pressed={pressed}
-                onClick={() => setServiceFilter(pressed ? null : entry.service)}
-              >
-                <span className={styles.serviceTop}>
-                  <Donut value={entry.share} label={`${entry.name} occupancy`} />
-                  <span className={styles.serviceText}>
-                    <span className={styles.serviceName}>{entry.name}</span>
-                    <span className={styles.serviceBeds}>
-                      {entry.occupied}/{entry.beds} beds
-                    </span>
-                    <span className={styles.serviceOver}>
-                      {entry.over === 0
-                        ? `No ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
-                        : `${entry.over} ${wardsWord(entry.over)} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-                    </span>
-                  </span>
-                </span>
-                <span className={styles.serviceFigures}>
-                  <span>
-                    <b>{entry.ready}</b>
-                    {BED_STATE_LABELS.ready}
-                  </span>
-                  <span>
-                    <b>{entry.pulled}</b>
-                    {BED_STATE_LABELS.pulled}
-                  </span>
-                  <span>
-                    <b>{entry.closed}</b>
-                    {BED_STATE_LABELS.closed}
-                  </span>
-                  <span>
-                    <b>{entry.headroom}</b>
-                    Headroom
-                  </span>
-                </span>
-                <span className={styles.serviceSites}>{entry.hospitals}</span>
-              </button>
-            );
-          })}
-        </div>
-      </StatCard>
-
-      <FlushRow layout="lead2">
-        {/* The ward table is the long column: it scrolls inside at the height the cards beside it set. */}
-        <Follow id="beds-by-ward" className={detail.followLast}>
-          <HospitalCapacityMatrix
-            units={units}
-            bedReleases={bedReleases}
-            admissions={admissions}
-            leaveBeds={leaveBeds}
-            service={serviceFilter}
-          />
-        </Follow>
-
-        <FlushStack>
-          <StatCard
-            id="empty-to-ready"
-            icon={Filter}
-            title="Empty to ready"
-            aside={<span className={styles.muted}>Feed vs ward</span>}
-            data-testid="ward-statistics-overview-capacity-disclosure"
-          >
-            <CardBody className={styles.bodyStack} data-testid="ward-statistics-overview-capacity">
-              <BarList
-                label="Empty to ready, across the network"
-                track
-                labelWidth="9.5rem"
-                max={Math.max(1, capacity.empty, capacity.allocatable, openNow)}
-                rows={[
-                  {
-                    id: "empty",
-                    label: "Physically empty",
-                    value: capacity.empty,
-                    display: <span data-testid="ward-statistics-overview-capacity-empty">{capacity.empty}</span>,
-                  },
-                  {
-                    id: "allocatable",
-                    label: "Allocatable",
-                    value: capacity.allocatable,
-                    display: (
-                      <span data-testid="ward-statistics-overview-capacity-allocatable">{capacity.allocatable}</span>
-                    ),
-                  },
-                  { id: "open", label: "Open for placement", value: openNow },
-                ]}
-              />
-              <Legend
-                className={styles.legendEnd}
-                items={[
-                  {
-                    id: "ready",
-                    fill: "ready",
-                    label: (
-                      <>
-                        <span data-testid="ward-statistics-overview-capacity-ready">{capacity.ready}</span> ready
-                      </>
-                    ),
-                  },
-                  { id: "closed", fill: "closed", label: `${closedTotal} closed` },
-                  { id: "pending", fill: "data-1", label: `${preparingCount} pending` },
-                ]}
-              />
-            </CardBody>
-          </StatCard>
+          {service === null ? null : (
+            <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
+              {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
+              <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
+                {`Open ${service} statistics`}
+              </Link>
+            </p>
+          )}
 
           <StatCard
-            id="admission-stages"
-            icon={Activity}
-            title="Admission stages"
-            action={
-              <Segmented
-                size="sm"
-                label="Admission stages view"
-                value={stagesView}
-                onChange={setStagesView}
-                items={[
-                  { id: "chart", label: "Chart" },
-                  { id: "data", label: "Data" },
-                ]}
-              />
-            }
-            data-testid="statistics-overview-stages-chart"
-          >
-            {stagesView === "chart" ? (
-              <CardBody>
-                <BarList
-                  label="Admissions by stage"
-                  axis
-                  max={axisMax(stageTallies.map((stage) => stage.count))}
-                  labelWidth="10.5rem"
-                  rows={stageTallies.map((stage) => ({
-                    id: stage.position,
-                    label: stage.label,
-                    value: stage.count,
-                  }))}
-                />
-              </CardBody>
-            ) : (
-              <div className={styles.tableWrap}>
-                <table
-                  className={`${tableClasses.table} ${styles.table}`}
-                  data-testid="ward-statistics-overview-stage-table"
-                >
-                  <caption className={styles.srOnly}>Admissions by stage, synthetic</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Stage</th>
-                      <th scope="col" className={styles.num}>
-                        Admissions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stageTallies.map((tally) => (
-                      <tr key={tally.position}>
-                        <th scope="row">{tally.label}</th>
-                        <td className={styles.num} data-testid={`ward-statistics-overview-stage-${tally.position}`}>
-                          {tally.count}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <th scope="row">All stages</th>
-                      <td className={styles.num}>{admissions.length}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-          </StatCard>
-
-          {/*
-           * ⚠️ **A SENTENCE WAS DELETED FROM THIS PARAGRAPH ON 2026-09-01 AND MAY NOT COME BACK.** It told the
-           * reader this page could not be reached from the statistics hub, and that the linking index was work
-           * still to be done. It is described here rather than quoted back word for word, so the retired
-           * wording exists nowhere in the tree and no scan can mistake this record for a relapse.
-           *
-           * It was TRUE the day it was written and FALSE within the same session, when the hub index landed:
-           * `STATISTICS_SECTIONS` in `statistics-sections.ts` makes `STATISTICS_OVERVIEW_HREF` its first entry,
-           * and the v6 hero track on every statistics page links it. So a reader who arrived here by that link
-           * was being told the navigation they had just used does not exist.
-           *
-           * **There is no corrected wording, which is why this is a deletion and not a rewrite.** The absence the
-           * sentence described no longer obtains, so the conclusion falls with the reason.
-           * `tests/ward-statistics-sections.dom.test.tsx` asserts the old wording cannot return.
-           */}
-          <StatCard
-            id="declines"
-            icon={X}
-            title="Declines by reason"
-            data-testid="ward-statistics-overview-declines"
-            aside={
-              declinesReadout.ok ? (
-                <span className={styles.muted}>
-                  {declinesReadout.value.totalCount} {declinesReadout.value.totalCount === 1 ? "decline" : "declines"}
-                </span>
-              ) : (
-                <span className={styles.muted}>Unavailable</span>
-              )
-            }
-          >
-            <CardBody>
-              {!declinesReadout.ok ? (
-                <p className={styles.notice} data-testid="ward-statistics-overview-declines-unavailable">
-                  {declinesReadout.statement}
-                </p>
-              ) : (
-                <div data-testid="ward-statistics-overview-declines-table">
-                  <p className={styles.srOnly} data-testid="ward-statistics-overview-declines-population">
-                    <span data-testid="ward-statistics-overview-declines-total">
-                      {declinesReadout.value.totalCount}
-                    </span>{" "}
-                    {declinesReadout.value.totalCount === 1 ? "decline" : "declines"} on record, from{" "}
-                    <span data-testid="ward-statistics-overview-declines-movements-with">
-                      {declinesReadout.value.movementsWithDeclinesCount}
-                    </span>{" "}
-                    of the{" "}
-                    <span data-testid="ward-statistics-overview-declines-movements">
-                      {declinesReadout.value.movementCount}
-                    </span>{" "}
-                    {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined, across{" "}
-                    <span data-testid="ward-statistics-overview-declines-vocabulary-size">
-                      {declinesReadout.value.vocabularySize}
-                    </span>{" "}
-                    reason categories.
-                  </p>
-                  <BarList
-                    label="Declines by reason across the network"
-                    axis
-                    max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}
-                    labelWidth="10.5rem"
-                    mean={
-                      declinesReadout.value.vocabularySize > 0
-                        ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize
-                        : 0
-                    }
-                    rows={declinesReadout.value.tallies.map((tally) => ({
-                      id: tally.reason,
-                      label: sentenceCase(tally.reason),
-                      value: tally.count,
-                      display: (
-                        <span data-testid={`ward-statistics-overview-decline-${tally.reason}`}>
-                          {tally.count === 0 ? "none" : tally.count}
-                        </span>
-                      ),
-                    }))}
-                  />
-                </div>
-              )}
-            </CardBody>
-          </StatCard>
-
-          <StatCard
-            id="awaiting-decision"
-            icon={Clock}
-            title="Awaiting a decision"
-            data-testid="ward-statistics-overview-worklist"
+            id="services"
+            className={detail.anchor}
+            icon={Network}
+            title="Occupancy by health service"
             aside={
               <span className={styles.muted}>
-                of{" "}
-                <span data-testid="ward-statistics-overview-refused-so-far-open-count">
-                  {refused.openMovementCount}
-                </span>{" "}
-                open {refused.openMovementCount === 1 ? "movement" : "movements"}
+                {`${BED_ALERT_THRESHOLD_PERCENT}% line`} · Select one to highlight its wards
               </span>
             }
           >
-            <CardBody>
-              <dl className={styles.tiles}>
-                <div className={styles.tile} data-testid="ward-statistics-overview-refused-so-far-count">
-                  <dt className={styles.tileLabel}>All refused</dt>
-                  <dd className={styles.tileValue} data-testid="ward-statistics-overview-refused-so-far-value">
-                    {refused.count}
-                  </dd>
-                </div>
-                <div className={styles.tile} data-testid="ward-statistics-overview-preparing-count">
-                  <dt className={styles.tileLabel}>
-                    <StatusGlyph tone="neutral" size={9} />
-                    Pending
-                  </dt>
-                  <dd className={styles.tileValue} data-testid="ward-statistics-overview-preparing-value">
-                    {preparingCount}
-                  </dd>
-                </div>
-                <div className={styles.tile}>
-                  <dt className={styles.tileLabel}>
-                    <StatusGlyph tone="warning" size={9} />
-                    Escalated
-                  </dt>
-                  <dd className={styles.tileValue} data-testid="ward-statistics-overview-refused-so-far-escalated">
-                    {refused.escalatedCount}
-                  </dd>
-                </div>
-                <div className={styles.tile}>
-                  <dt className={styles.tileLabel}>Placeable</dt>
-                  <dd className={styles.tileValue}>{openNow}</dd>
-                </div>
-              </dl>
-            </CardBody>
+            <div className={styles.serviceGrid} data-testid="ward-statistics-overview-gauges">
+              {services.map((entry) => {
+                const pressed = serviceFilter === entry.service;
+                return (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    className={styles.serviceTile}
+                    aria-pressed={pressed}
+                    onClick={() => setServiceFilter(pressed ? null : entry.service)}
+                  >
+                    <span className={styles.serviceTop}>
+                      <Donut value={entry.share} label={`${entry.name} occupancy`} />
+                      <span className={styles.serviceText}>
+                        <span className={styles.serviceName}>{entry.name}</span>
+                        <span className={styles.serviceBeds}>
+                          {entry.occupied}/{entry.beds} beds
+                        </span>
+                        <span className={styles.serviceOver}>
+                          {entry.over === 0
+                            ? `No ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
+                            : `${entry.over} ${wardsWord(entry.over)} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+                        </span>
+                      </span>
+                    </span>
+                    <span className={styles.serviceFigures}>
+                      <span>
+                        <b>{entry.ready}</b>
+                        {BED_STATE_LABELS.ready}
+                      </span>
+                      <span>
+                        <b>{entry.pulled}</b>
+                        {BED_STATE_LABELS.pulled}
+                      </span>
+                      <span>
+                        <b>{entry.closed}</b>
+                        {BED_STATE_LABELS.closed}
+                      </span>
+                      <span>
+                        <b>{entry.headroom}</b>
+                        Headroom
+                      </span>
+                    </span>
+                    <span className={styles.serviceSites}>{entry.hospitals}</span>
+                  </button>
+                );
+              })}
+            </div>
           </StatCard>
-        </FlushStack>
-      </FlushRow>
+
+          <FlushRow layout="lead2">
+            {/* The ward table is the long column: it scrolls inside at the height the cards beside it set. */}
+            <Follow id="beds-by-ward" className={detail.followLast}>
+              <HospitalCapacityMatrix
+                units={units}
+                bedReleases={bedReleases}
+                admissions={admissions}
+                leaveBeds={leaveBeds}
+                service={serviceFilter}
+              />
+            </Follow>
+
+            <FlushStack>
+              <StatCard
+                id="empty-to-ready"
+                icon={Filter}
+                title="Empty to ready"
+                aside={<span className={styles.muted}>Feed vs ward</span>}
+                data-testid="ward-statistics-overview-capacity-disclosure"
+              >
+                <CardBody className={styles.bodyStack} data-testid="ward-statistics-overview-capacity">
+                  <BarList
+                    label="Empty to ready, across the network"
+                    track
+                    labelWidth="9.5rem"
+                    max={Math.max(1, capacity.empty, capacity.allocatable, openNow)}
+                    rows={[
+                      {
+                        id: "empty",
+                        label: "Physically empty",
+                        value: capacity.empty,
+                        display: <span data-testid="ward-statistics-overview-capacity-empty">{capacity.empty}</span>,
+                      },
+                      {
+                        id: "allocatable",
+                        label: "Allocatable",
+                        value: capacity.allocatable,
+                        display: (
+                          <span data-testid="ward-statistics-overview-capacity-allocatable">
+                            {capacity.allocatable}
+                          </span>
+                        ),
+                      },
+                      { id: "open", label: "Open for placement", value: openNow },
+                    ]}
+                  />
+                  <Legend
+                    className={styles.legendEnd}
+                    items={[
+                      {
+                        id: "ready",
+                        fill: "ready",
+                        label: (
+                          <>
+                            <span data-testid="ward-statistics-overview-capacity-ready">{capacity.ready}</span> ready
+                          </>
+                        ),
+                      },
+                      { id: "closed", fill: "closed", label: `${closedTotal} closed` },
+                      { id: "pending", fill: "data-1", label: `${preparingCount} pending` },
+                    ]}
+                  />
+                </CardBody>
+              </StatCard>
+
+              <StatCard
+                id="admission-stages"
+                icon={Activity}
+                title="Admission stages"
+                action={
+                  <Segmented
+                    size="sm"
+                    label="Admission stages view"
+                    value={stagesView}
+                    onChange={setStagesView}
+                    items={[
+                      { id: "chart", label: "Chart" },
+                      { id: "data", label: "Data" },
+                    ]}
+                  />
+                }
+                data-testid="statistics-overview-stages-chart"
+              >
+                {stagesView === "chart" ? (
+                  <CardBody>
+                    <BarList
+                      label="Admissions by stage"
+                      axis
+                      max={axisMax(stageTallies.map((stage) => stage.count))}
+                      labelWidth="10.5rem"
+                      rows={stageTallies.map((stage) => ({
+                        id: stage.position,
+                        label: stage.label,
+                        value: stage.count,
+                      }))}
+                    />
+                  </CardBody>
+                ) : (
+                  <div className={styles.tableWrap}>
+                    <table
+                      className={`${tableClasses.table} ${styles.table}`}
+                      data-testid="ward-statistics-overview-stage-table"
+                    >
+                      <caption className={styles.srOnly}>Admissions by stage, synthetic</caption>
+                      <thead>
+                        <tr>
+                          <th scope="col">Stage</th>
+                          <th scope="col" className={styles.num}>
+                            Admissions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stageTallies.map((tally) => (
+                          <tr key={tally.position}>
+                            <th scope="row">{tally.label}</th>
+                            <td className={styles.num} data-testid={`ward-statistics-overview-stage-${tally.position}`}>
+                              {tally.count}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <th scope="row">All stages</th>
+                          <td className={styles.num}>{admissions.length}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+              </StatCard>
+
+              {/*
+               * ⚠️ **A SENTENCE WAS DELETED FROM THIS PARAGRAPH ON 2026-09-01 AND MAY NOT COME BACK.** It told the
+               * reader this page could not be reached from the statistics hub, and that the linking index was work
+               * still to be done. It is described here rather than quoted back word for word, so the retired
+               * wording exists nowhere in the tree and no scan can mistake this record for a relapse.
+               *
+               * It was TRUE the day it was written and FALSE within the same session, when the hub index landed:
+               * `STATISTICS_SECTIONS` in `statistics-sections.ts` makes `STATISTICS_OVERVIEW_HREF` its first entry,
+               * and the v6 hero track on every statistics page links it. So a reader who arrived here by that link
+               * was being told the navigation they had just used does not exist.
+               *
+               * **There is no corrected wording, which is why this is a deletion and not a rewrite.** The absence the
+               * sentence described no longer obtains, so the conclusion falls with the reason.
+               * `tests/ward-statistics-sections.dom.test.tsx` asserts the old wording cannot return.
+               */}
+              <StatCard
+                id="declines"
+                icon={X}
+                title="Declines by reason"
+                data-testid="ward-statistics-overview-declines"
+                aside={
+                  declinesReadout.ok ? (
+                    <span className={styles.muted}>
+                      {declinesReadout.value.totalCount}{" "}
+                      {declinesReadout.value.totalCount === 1 ? "decline" : "declines"}
+                    </span>
+                  ) : (
+                    <span className={styles.muted}>Unavailable</span>
+                  )
+                }
+              >
+                <CardBody>
+                  {!declinesReadout.ok ? (
+                    <p className={styles.notice} data-testid="ward-statistics-overview-declines-unavailable">
+                      {declinesReadout.statement}
+                    </p>
+                  ) : (
+                    <div data-testid="ward-statistics-overview-declines-table">
+                      <p className={styles.srOnly} data-testid="ward-statistics-overview-declines-population">
+                        <span data-testid="ward-statistics-overview-declines-total">
+                          {declinesReadout.value.totalCount}
+                        </span>{" "}
+                        {declinesReadout.value.totalCount === 1 ? "decline" : "declines"} on record, from{" "}
+                        <span data-testid="ward-statistics-overview-declines-movements-with">
+                          {declinesReadout.value.movementsWithDeclinesCount}
+                        </span>{" "}
+                        of the{" "}
+                        <span data-testid="ward-statistics-overview-declines-movements">
+                          {declinesReadout.value.movementCount}
+                        </span>{" "}
+                        {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined,
+                        across{" "}
+                        <span data-testid="ward-statistics-overview-declines-vocabulary-size">
+                          {declinesReadout.value.vocabularySize}
+                        </span>{" "}
+                        reason categories.
+                      </p>
+                      <BarList
+                        label="Declines by reason across the network"
+                        axis
+                        max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}
+                        labelWidth="10.5rem"
+                        mean={
+                          declinesReadout.value.vocabularySize > 0
+                            ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize
+                            : 0
+                        }
+                        rows={declinesReadout.value.tallies.map((tally) => ({
+                          id: tally.reason,
+                          label: sentenceCase(tally.reason),
+                          value: tally.count,
+                          display: (
+                            <span data-testid={`ward-statistics-overview-decline-${tally.reason}`}>
+                              {tally.count === 0 ? "none" : tally.count}
+                            </span>
+                          ),
+                        }))}
+                      />
+                    </div>
+                  )}
+                </CardBody>
+              </StatCard>
+
+              <StatCard
+                id="awaiting-decision"
+                icon={Clock}
+                title="Awaiting a decision"
+                data-testid="ward-statistics-overview-worklist"
+                aside={
+                  <span className={styles.muted}>
+                    of{" "}
+                    <span data-testid="ward-statistics-overview-refused-so-far-open-count">
+                      {refused.openMovementCount}
+                    </span>{" "}
+                    open {refused.openMovementCount === 1 ? "movement" : "movements"}
+                  </span>
+                }
+              >
+                <CardBody>
+                  <dl className={styles.tiles}>
+                    <div className={styles.tile} data-testid="ward-statistics-overview-refused-so-far-count">
+                      <dt className={styles.tileLabel}>All refused</dt>
+                      <dd className={styles.tileValue} data-testid="ward-statistics-overview-refused-so-far-value">
+                        {refused.count}
+                      </dd>
+                    </div>
+                    <div className={styles.tile} data-testid="ward-statistics-overview-preparing-count">
+                      <dt className={styles.tileLabel}>
+                        <StatusGlyph tone="neutral" size={9} />
+                        Pending
+                      </dt>
+                      <dd className={styles.tileValue} data-testid="ward-statistics-overview-preparing-value">
+                        {preparingCount}
+                      </dd>
+                    </div>
+                    <div className={styles.tile}>
+                      <dt className={styles.tileLabel}>
+                        <StatusGlyph tone="warning" size={9} />
+                        Escalated
+                      </dt>
+                      <dd className={styles.tileValue} data-testid="ward-statistics-overview-refused-so-far-escalated">
+                        {refused.escalatedCount}
+                      </dd>
+                    </div>
+                    <div className={styles.tile}>
+                      <dt className={styles.tileLabel}>Placeable</dt>
+                      <dd className={styles.tileValue}>{openNow}</dd>
+                    </div>
+                  </dl>
+                </CardBody>
+              </StatCard>
+            </FlushStack>
+          </FlushRow>
         </>
       )}
     </StatisticsPage>

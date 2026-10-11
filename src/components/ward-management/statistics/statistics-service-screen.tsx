@@ -330,174 +330,177 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
         />
       ) : (
         <>
-      <FlushRow layout="lead2" id="capacity">
-        <StatisticsCapacityChart
-          units={serviceUnits}
-          bedReleases={bedReleases}
-          admissions={admissions}
-          leaveBeds={leaveBeds}
-          initialGroup="ward"
-          scopeLabel={`in ${service}`}
-          title="Ward capacity"
-        />
-        <Follow className={detail.followBody}>
-          <Placement
-            service={service}
-            raised={ownReferrals.length}
-            within={placedWithinService}
-            elsewhere={placedElsewhereCount}
-            notYet={notYetAcceptedAtWard}
-            unresolved={placedAtUnresolvedWard}
-            byService={placedElsewhereByService}
-          />
-        </Follow>
-      </FlushRow>
-
-      <FlushRow layout="lead2">
-        <ReadyBeds
-          service={service}
-          readyRows={readyRows}
-          totalReady={totalReady}
-          zeroReadyWards={zeroReadyWards}
-          pendingPreparation={pendingPreparation}
-          openNow={totalOpenNow}
-        />
-        <Follow className={detail.followBody}>
-          <StatCard
-            id="far-from-home"
-            icon={MapPin}
-            title="Far from home"
-            aside="Synthetic travel bands"
-            data-testid="ward-statistics-service-out-of-area"
-          >
-            <CardBody className={`${styles.bodyStack} ${detail.scrolls}`}>
-              <dl className={styles.figures}>
-                <div className={styles.figure}>
-                  <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-value">
-                    {outOfAreaEntries.length}
-                  </dd>
-                  <dt className={styles.figureLabel}>Far from home</dt>
-                </div>
-                <div className={styles.figure}>
-                  <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-not-banded-value">
-                    {outOfAreaNotBanded}
-                  </dd>
-                  <dt className={styles.figureLabel}>Not banded</dt>
-                </div>
-              </dl>
-              <BarList
-                label="Patients far from home by travel band"
-                axis
-                max={countAxisMax(OUT_OF_AREA_BANDS.map((band) => bandCounts.get(band) ?? 0))}
-                labelWidth="13rem"
-                rows={OUT_OF_AREA_BANDS.map((band) => ({
-                  id: band,
-                  label: TRAVEL_BAND_LABELS[band],
-                  value: bandCounts.get(band) ?? 0,
-                  display: String(bandCounts.get(band) ?? 0),
-                }))}
+          <FlushRow layout="lead2" id="capacity">
+            <StatisticsCapacityChart
+              units={serviceUnits}
+              bedReleases={bedReleases}
+              admissions={admissions}
+              leaveBeds={leaveBeds}
+              initialGroup="ward"
+              scopeLabel={`in ${service}`}
+              title="Ward capacity"
+            />
+            <Follow className={detail.followBody}>
+              <Placement
+                service={service}
+                raised={ownReferrals.length}
+                within={placedWithinService}
+                elsewhere={placedElsewhereCount}
+                notYet={notYetAcceptedAtWard}
+                unresolved={placedAtUnresolvedWard}
+                byService={placedElsewhereByService}
               />
-              <ul className={styles.srOnly} data-testid="ward-statistics-service-out-of-area-bands">
-                {OUT_OF_AREA_BANDS.map((band) => (
-                  <li key={band} data-testid={`ward-statistics-service-out-of-area-band-${band}`}>
-                    {TRAVEL_BAND_LABELS[band]},{" "}
-                    <span data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}>
-                      {bandCounts.get(band) ?? 0}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+            </Follow>
+          </FlushRow>
+
+          <FlushRow layout="lead2">
+            <ReadyBeds
+              service={service}
+              readyRows={readyRows}
+              totalReady={totalReady}
+              zeroReadyWards={zeroReadyWards}
+              pendingPreparation={pendingPreparation}
+              openNow={totalOpenNow}
+            />
+            <Follow className={detail.followBody}>
+              <StatCard
+                id="far-from-home"
+                icon={MapPin}
+                title="Far from home"
+                aside="Synthetic travel bands"
+                data-testid="ward-statistics-service-out-of-area"
+              >
+                <CardBody className={`${styles.bodyStack} ${detail.scrolls}`}>
+                  <dl className={styles.figures}>
+                    <div className={styles.figure}>
+                      <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-value">
+                        {outOfAreaEntries.length}
+                      </dd>
+                      <dt className={styles.figureLabel}>Far from home</dt>
+                    </div>
+                    <div className={styles.figure}>
+                      <dd
+                        className={styles.figureValue}
+                        data-testid="ward-statistics-service-out-of-area-not-banded-value"
+                      >
+                        {outOfAreaNotBanded}
+                      </dd>
+                      <dt className={styles.figureLabel}>Not banded</dt>
+                    </div>
+                  </dl>
+                  <BarList
+                    label="Patients far from home by travel band"
+                    axis
+                    max={countAxisMax(OUT_OF_AREA_BANDS.map((band) => bandCounts.get(band) ?? 0))}
+                    labelWidth="13rem"
+                    rows={OUT_OF_AREA_BANDS.map((band) => ({
+                      id: band,
+                      label: TRAVEL_BAND_LABELS[band],
+                      value: bandCounts.get(band) ?? 0,
+                      display: String(bandCounts.get(band) ?? 0),
+                    }))}
+                  />
+                  <ul className={styles.srOnly} data-testid="ward-statistics-service-out-of-area-bands">
+                    {OUT_OF_AREA_BANDS.map((band) => (
+                      <li key={band} data-testid={`ward-statistics-service-out-of-area-band-${band}`}>
+                        {TRAVEL_BAND_LABELS[band]},{" "}
+                        <span data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}>
+                          {bandCounts.get(band) ?? 0}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardBody>
+              </StatCard>
+            </Follow>
+          </FlushRow>
+
+          <StatCard
+            id="ed-waits"
+            className={detail.anchor}
+            icon={Clock}
+            title="ED waits"
+            aside={`${edWaiting} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
+            data-testid="ward-statistics-service-ed-waits"
+          >
+            <CardBody className={detail.swarmBody}>
+              {edSwarmRows.length === 0 ? (
+                <p className={styles.muted}>No emergency department is recorded at a {service} hospital.</p>
+              ) : (
+                <StatisticsEdSwarm
+                  rows={edSwarmRows}
+                  labelWidth={180}
+                  label={`Each person waiting in a ${service} emergency department, by how long they have waited`}
+                  testId="ward-statistics-service-ed-swarm"
+                />
+              )}
             </CardBody>
           </StatCard>
-        </Follow>
-      </FlushRow>
 
-      <StatCard
-        id="ed-waits"
-        className={detail.anchor}
-        icon={Clock}
-        title="ED waits"
-        aside={`${edWaiting} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
-        data-testid="ward-statistics-service-ed-waits"
-      >
-        <CardBody className={detail.swarmBody}>
-          {edSwarmRows.length === 0 ? (
-            <p className={styles.muted}>No emergency department is recorded at a {service} hospital.</p>
-          ) : (
-            <StatisticsEdSwarm
-              rows={edSwarmRows}
-              labelWidth={180}
-              label={`Each person waiting in a ${service} emergency department, by how long they have waited`}
-              testId="ward-statistics-service-ed-swarm"
-            />
-          )}
-        </CardBody>
-      </StatCard>
+          <StatCard
+            id="out-of-area"
+            className={detail.anchor}
+            icon={Plane}
+            title="Out of area"
+            aside="In this service's beds"
+            data-testid="ward-statistics-service-repatriation"
+          >
+            <div
+              className={styles.tableWrap}
+              tabIndex={0}
+              role="region"
+              aria-label="Service ward comparison, scrollable table"
+            >
+              <table className={`${tableClasses.table} ${styles.table}`}>
+                <caption className={styles.srOnly}>Admissions in this service far from home</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Admission</th>
+                    <th scope="col">Home</th>
+                    <th scope="col">Travel</th>
+                    <th scope="col" className={styles.num}>
+                      Since arrival
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {outOfAreaEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className={styles.muted}>
+                        Nobody in this service&apos;s beds is far from home
+                      </td>
+                    </tr>
+                  ) : null}
+                  {outOfAreaEntries.map((entry) => (
+                    <tr key={entry.admission.id}>
+                      <th scope="row">
+                        <span className={detail.primary}>{entry.admission.id}</span>
+                        <Link className={detail.secondary} href={wardStatisticsHref(entry.unit.id)}>
+                          {entry.unit.name}
+                        </Link>
+                      </th>
+                      <td className={entry.admission.homeRegion === null ? styles.muted : undefined}>
+                        {entry.admission.homeRegion ?? "Not recorded"}
+                      </td>
+                      <td>{TRAVEL_BAND_LABELS[entry.band]}</td>
+                      <td className={styles.num}>{durMinutes(Math.max(0, entry.sinceArrival))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <CardFoot meta="Repatriation is arranged on the out-of-area board">
+              <Link href={OUT_OF_AREA_HREF} className={styles.footLink}>
+                Open out of area
+              </Link>
+            </CardFoot>
+          </StatCard>
 
-      <StatCard
-        id="out-of-area"
-        className={detail.anchor}
-        icon={Plane}
-        title="Out of area"
-        aside="In this service's beds"
-        data-testid="ward-statistics-service-repatriation"
-      >
-        <div
-          className={styles.tableWrap}
-          tabIndex={0}
-          role="region"
-          aria-label="Service ward comparison, scrollable table"
-        >
-          <table className={`${tableClasses.table} ${styles.table}`}>
-            <caption className={styles.srOnly}>Admissions in this service far from home</caption>
-            <thead>
-              <tr>
-                <th scope="col">Admission</th>
-                <th scope="col">Home</th>
-                <th scope="col">Travel</th>
-                <th scope="col" className={styles.num}>
-                  Since arrival
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {outOfAreaEntries.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className={styles.muted}>
-                    Nobody in this service&apos;s beds is far from home
-                  </td>
-                </tr>
-              ) : null}
-              {outOfAreaEntries.map((entry) => (
-                <tr key={entry.admission.id}>
-                  <th scope="row">
-                    <span className={detail.primary}>{entry.admission.id}</span>
-                    <Link className={detail.secondary} href={wardStatisticsHref(entry.unit.id)}>
-                      {entry.unit.name}
-                    </Link>
-                  </th>
-                  <td className={entry.admission.homeRegion === null ? styles.muted : undefined}>
-                    {entry.admission.homeRegion ?? "Not recorded"}
-                  </td>
-                  <td>{TRAVEL_BAND_LABELS[entry.band]}</td>
-                  <td className={styles.num}>{durMinutes(Math.max(0, entry.sinceArrival))}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <CardFoot meta="Repatriation is arranged on the out-of-area board">
-          <Link href={OUT_OF_AREA_HREF} className={styles.footLink}>
-            Open out of area
-          </Link>
-        </CardFoot>
-      </StatCard>
-
-      <p className={detail.pageFoot}>
-        <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">
-          Choose a different health service
-        </Link>
-      </p>
+          <p className={detail.pageFoot}>
+            <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">
+              Choose a different health service
+            </Link>
+          </p>
         </>
       )}
     </StatisticsPage>
@@ -530,7 +533,8 @@ function ServicePhone({
   outOfArea: ReturnType<typeof outOfAreaLedger>["entries"];
 }) {
   const patientOf = usePatientOf();
-  const sum = (pick: (entry: (typeof states)[number]) => number) => states.reduce((total, entry) => total + pick(entry), 0);
+  const sum = (pick: (entry: (typeof states)[number]) => number) =>
+    states.reduce((total, entry) => total + pick(entry), 0);
   const wards = states
     .map((entry) => ({
       ...entry,

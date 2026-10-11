@@ -115,7 +115,11 @@ export function CapacityPhoneWards({
           return (
             <div key={group.service} id={`capacity-phone-region-${group.service}`} className={styles.phoneRegion}>
               <h3 className={styles.phoneRegionHead}>
-                <span className={styles.phoneRegionDot} style={getHealthServiceDotStyle(group.service)} aria-hidden="true" />
+                <span
+                  className={styles.phoneRegionDot}
+                  style={getHealthServiceDotStyle(group.service)}
+                  aria-hidden="true"
+                />
                 <span className={styles.phoneRegionName}>{group.service}</span>
                 <span className={styles.phoneRegionFigures}>
                   <b>{totals.ready}</b> ready · {occupancy}%
@@ -144,7 +148,11 @@ export function CapacityPhoneWards({
                             )}
                             {wardKind(row.unit)} · {row.unit.beds} beds
                           </span>
-                          <BedStrip counts={stripCounts(row)} wardName={row.unit.name} className={styles.phoneWardStrip} />
+                          <BedStrip
+                            counts={stripCounts(row)}
+                            wardName={row.unit.name}
+                            className={styles.phoneWardStrip}
+                          />
                         </span>
                         <span className={styles.phoneWardReady}>
                           <b>{row.ready}</b>
@@ -240,4 +248,3 @@ export function CapacityPhoneWards({
     </section>
   );
 }
-

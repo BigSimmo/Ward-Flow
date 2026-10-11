@@ -194,17 +194,17 @@ export function StatisticsCompareScreen({
         <ComparePhone wardRows={wardRows} edRows={edRows} />
       ) : (
         <>
-      {/* The ward chart is the long column: it scrolls inside at the height the ED cards set. */}
-      <FlushRow layout="lead2" className={compare.grid}>
-        <Follow className={detail.followBody}>
-          <WardComparison rows={wardRows} />
-        </Follow>
-        <FlushStack>
-          <EdComparison rows={edRows} />
-          <PinnedWards rows={wardRows} />
-        </FlushStack>
-      </FlushRow>
-      <UnitChooser units={units} emergencyDepartments={emergencyDepartments} />
+          {/* The ward chart is the long column: it scrolls inside at the height the ED cards set. */}
+          <FlushRow layout="lead2" className={compare.grid}>
+            <Follow className={detail.followBody}>
+              <WardComparison rows={wardRows} />
+            </Follow>
+            <FlushStack>
+              <EdComparison rows={edRows} />
+              <PinnedWards rows={wardRows} />
+            </FlushStack>
+          </FlushRow>
+          <UnitChooser units={units} emergencyDepartments={emergencyDepartments} />
         </>
       )}
     </StatisticsPage>

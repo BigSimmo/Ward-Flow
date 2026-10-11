@@ -654,3 +654,20 @@
     min-width: 0;
   }
 }
+
+/* Print: the phone bed sheet is height-bounded with a scrolling body on screen; on paper it grows
+   to its content so no detail is clipped. */
+@media print {
+  .phoneSheet {
+    position: static;
+    max-height: none;
+    height: auto;
+    overflow: visible;
+    transform: none;
+  }
+
+  .phoneBody {
+    min-height: auto;
+    overflow: visible;
+  }
+}

@@ -397,13 +397,13 @@ export function EdIndex() {
             // v10 phone: one quiet line under the title in place of the checking foot.
             isPhone
               ? waiting > 0 && longestRow
-                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · live`
-                : `No one waiting · target ${waitLine(accessTarget)} · live`
+                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "live"}`
+                : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "live"}`
               : undefined
           }
           aside={
             isPhone ? (
-              <LiveChip state={paused ? "paused" : "live"} age={null} onHero />
+              <LiveChip state={paused ? "paused" : "live"} age={null} onHero onTogglePause={togglePause} />
             ) : (
               <PageLiveChip paused={paused} onTogglePause={togglePause} />
             )

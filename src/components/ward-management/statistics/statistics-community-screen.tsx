@@ -263,201 +263,201 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         />
       ) : (
         <>
-      <FlushRow layout="lead2">
-        <Follow className={detail.followBody}>
-          <TeamComparison current={team} rows={allTeams} />
-        </Follow>
-        <FlushStack>
+          <FlushRow layout="lead2">
+            <Follow className={detail.followBody}>
+              <TeamComparison current={team} rows={allTeams} />
+            </Follow>
+            <FlushStack>
+              <StatCard
+                id="handover"
+                icon={FileText}
+                title="Community handover"
+                aside="Current snapshot"
+                data-testid="statistics-community-handover-chart"
+              >
+                <div className={styles.tableWrap}>
+                  <table
+                    className={`${tableClasses.table} ${styles.table}`}
+                    data-testid="ward-statistics-community-figures-table"
+                  >
+                    <caption className={styles.srOnly}>Community handover figures for {team.name}, synthetic</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Figure</th>
+                        <th scope="col">
+                          <span className={styles.srOnly}>Bar</span>
+                        </th>
+                        <th scope="col" className={styles.num}>
+                          People
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {figureRows.map((row) => (
+                        <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
+                          <th scope="row">{row.label}</th>
+                          <td className={detail.meterCell}>
+                            {row.figure.kind === "measured" ? (
+                              <Meter
+                                value={row.figure.value}
+                                max={measuredMax}
+                                fill="data-1"
+                                label={row.label}
+                                valueText={null}
+                              />
+                            ) : null}
+                          </td>
+                          <td
+                            className={row.figure.kind === "measured" ? styles.num : `${styles.num} ${styles.muted}`}
+                            data-testid={`ward-statistics-community-value-${row.key}`}
+                            data-unmeasured={isUnmeasured(row.figure) || undefined}
+                          >
+                            {figureText(row.figure)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <SrOnly>
+                  <p
+                    data-testid="ward-statistics-community-in-hospital-count"
+                    data-unmeasured={isUnmeasured(figures.admitted) || undefined}
+                  >
+                    {figureText(figures.admitted)} referred to this team and occupying or holding a bed now.
+                  </p>
+                  <p
+                    data-testid="ward-statistics-community-in-hospital-with-date"
+                    data-unmeasured={isUnmeasured(figures.expected) || undefined}
+                  >
+                    {figureText(figures.expected)} of those have a discharge date written down.
+                  </p>
+                  <p
+                    data-testid="ward-statistics-community-hospital-discharges-count"
+                    data-unmeasured={isUnmeasured(figures.discharged) || undefined}
+                  >
+                    {figureText(figures.discharged)} discharged into the area this team serves.
+                  </p>
+                  <p
+                    data-testid="ward-statistics-community-other-departures-count"
+                    data-unmeasured={isUnmeasured(figures.other) || undefined}
+                  >
+                    {figureText(figures.other)} left a ward another way.
+                  </p>
+                </SrOnly>
+                <CardFoot meta="Discharge dates are a subset of people holding a bed">
+                  <Link
+                    href={communityTeamHref(team)}
+                    className={buttonClass({ variant: "sec", size: "sm" })}
+                    data-testid="ward-statistics-community-operational-link"
+                  >
+                    Open caseload
+                  </Link>
+                </CardFoot>
+              </StatCard>
+
+              <StatCard id="follow-up" icon={PhoneCall} title="Follow-up" aside="Discharged here">
+                <CardBody className={styles.bodyStack}>
+                  {lists.dischargedIntoTheArea.length === 0 ? (
+                    <p className={styles.muted}>
+                      {figures.discharged.kind === "measured"
+                        ? "Nobody has been discharged into this area"
+                        : figureText(figures.discharged)}
+                    </p>
+                  ) : (
+                    <ul className={detail.crossList}>
+                      {lists.dischargedIntoTheArea.map((admission) => (
+                        <li key={admission.id} className={detail.crossRow}>
+                          <span>
+                            <span className={detail.primary}>{admission.id}</span>
+                            <span className={detail.secondary}>
+                              {unitName(admission.unitId)}
+                              {admission.leftAt === null ? "" : `, left ${dateOf(admission.leftAt, dayZero)}`}
+                            </span>
+                          </span>
+                          <span className={styles.flagged}>
+                            {admission.followUp?.state === "arranged" ? (
+                              <>
+                                <StatusGlyph tone="success" size={9} />
+                                Arranged
+                              </>
+                            ) : (
+                              <>
+                                <StatusGlyph tone="warning" size={9} />
+                                {admission.followUp ? "Not arranged" : "Not recorded"}
+                              </>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardBody>
+                <CardFoot meta={`${unseen.length} of ${admissions.length} admissions have no community team`}>
+                  <span data-testid="ward-statistics-community-unseen" className={styles.srOnly}>
+                    {unseen.length} of {admissions.length} admissions without a community team
+                  </span>
+                  <Link
+                    href={communityTeamHref(team)}
+                    className={styles.footLink}
+                    data-testid="ward-statistics-community-coverage-link"
+                  >
+                    Open {team.name}
+                  </Link>
+                </CardFoot>
+              </StatCard>
+            </FlushStack>
+          </FlushRow>
+
           <StatCard
-            id="handover"
-            icon={FileText}
-            title="Community handover"
-            aside="Current snapshot"
-            data-testid="statistics-community-handover-chart"
+            id="due-out"
+            className={detail.anchor}
+            icon={CalendarClock}
+            title="Due out to this team"
+            aside="With a discharge date"
           >
             <div className={styles.tableWrap}>
-              <table
-                className={`${tableClasses.table} ${styles.table}`}
-                data-testid="ward-statistics-community-figures-table"
-              >
-                <caption className={styles.srOnly}>Community handover figures for {team.name}, synthetic</caption>
+              <table className={`${tableClasses.table} ${styles.table}`}>
+                <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Figure</th>
-                    <th scope="col">
-                      <span className={styles.srOnly}>Bar</span>
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      People
-                    </th>
+                    <th scope="col">Admission</th>
+                    <th scope="col">Ward</th>
+                    <th scope="col">Discharge</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {figureRows.map((row) => (
-                    <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
-                      <th scope="row">{row.label}</th>
-                      <td className={detail.meterCell}>
-                        {row.figure.kind === "measured" ? (
-                          <Meter
-                            value={row.figure.value}
-                            max={measuredMax}
-                            fill="data-1"
-                            label={row.label}
-                            valueText={null}
-                          />
-                        ) : null}
+                  {dueOut.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className={styles.muted}>
+                        {figures.expected.kind === "measured"
+                          ? "Nobody in a bed has a discharge date written down"
+                          : figureText(figures.expected)}
                       </td>
-                      <td
-                        className={row.figure.kind === "measured" ? styles.num : `${styles.num} ${styles.muted}`}
-                        data-testid={`ward-statistics-community-value-${row.key}`}
-                        data-unmeasured={isUnmeasured(row.figure) || undefined}
-                      >
-                        {figureText(row.figure)}
+                    </tr>
+                  ) : null}
+                  {dueOut.map((admission) => (
+                    <tr key={admission.id}>
+                      <th scope="row">
+                        <span className={detail.primary}>{admission.id}</span>
+                      </th>
+                      <td>{unitName(admission.unitId)}</td>
+                      <td>
+                        {admission.expectedDischargeAt === null ? (
+                          <span className={styles.muted}>No date</span>
+                        ) : (
+                          <>
+                            {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
+                            <span className={styles.muted}>{fromToday(admission.expectedDischargeAt, now)}</span>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <SrOnly>
-              <p
-                data-testid="ward-statistics-community-in-hospital-count"
-                data-unmeasured={isUnmeasured(figures.admitted) || undefined}
-              >
-                {figureText(figures.admitted)} referred to this team and occupying or holding a bed now.
-              </p>
-              <p
-                data-testid="ward-statistics-community-in-hospital-with-date"
-                data-unmeasured={isUnmeasured(figures.expected) || undefined}
-              >
-                {figureText(figures.expected)} of those have a discharge date written down.
-              </p>
-              <p
-                data-testid="ward-statistics-community-hospital-discharges-count"
-                data-unmeasured={isUnmeasured(figures.discharged) || undefined}
-              >
-                {figureText(figures.discharged)} discharged into the area this team serves.
-              </p>
-              <p
-                data-testid="ward-statistics-community-other-departures-count"
-                data-unmeasured={isUnmeasured(figures.other) || undefined}
-              >
-                {figureText(figures.other)} left a ward another way.
-              </p>
-            </SrOnly>
-            <CardFoot meta="Discharge dates are a subset of people holding a bed">
-              <Link
-                href={communityTeamHref(team)}
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                data-testid="ward-statistics-community-operational-link"
-              >
-                Open caseload
-              </Link>
-            </CardFoot>
           </StatCard>
-
-          <StatCard id="follow-up" icon={PhoneCall} title="Follow-up" aside="Discharged here">
-            <CardBody className={styles.bodyStack}>
-              {lists.dischargedIntoTheArea.length === 0 ? (
-                <p className={styles.muted}>
-                  {figures.discharged.kind === "measured"
-                    ? "Nobody has been discharged into this area"
-                    : figureText(figures.discharged)}
-                </p>
-              ) : (
-                <ul className={detail.crossList}>
-                  {lists.dischargedIntoTheArea.map((admission) => (
-                    <li key={admission.id} className={detail.crossRow}>
-                      <span>
-                        <span className={detail.primary}>{admission.id}</span>
-                        <span className={detail.secondary}>
-                          {unitName(admission.unitId)}
-                          {admission.leftAt === null ? "" : `, left ${dateOf(admission.leftAt, dayZero)}`}
-                        </span>
-                      </span>
-                      <span className={styles.flagged}>
-                        {admission.followUp?.state === "arranged" ? (
-                          <>
-                            <StatusGlyph tone="success" size={9} />
-                            Arranged
-                          </>
-                        ) : (
-                          <>
-                            <StatusGlyph tone="warning" size={9} />
-                            {admission.followUp ? "Not arranged" : "Not recorded"}
-                          </>
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardBody>
-            <CardFoot meta={`${unseen.length} of ${admissions.length} admissions have no community team`}>
-              <span data-testid="ward-statistics-community-unseen" className={styles.srOnly}>
-                {unseen.length} of {admissions.length} admissions without a community team
-              </span>
-              <Link
-                href={communityTeamHref(team)}
-                className={styles.footLink}
-                data-testid="ward-statistics-community-coverage-link"
-              >
-                Open {team.name}
-              </Link>
-            </CardFoot>
-          </StatCard>
-        </FlushStack>
-      </FlushRow>
-
-      <StatCard
-        id="due-out"
-        className={detail.anchor}
-        icon={CalendarClock}
-        title="Due out to this team"
-        aside="With a discharge date"
-      >
-        <div className={styles.tableWrap}>
-          <table className={`${tableClasses.table} ${styles.table}`}>
-            <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
-            <thead>
-              <tr>
-                <th scope="col">Admission</th>
-                <th scope="col">Ward</th>
-                <th scope="col">Discharge</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dueOut.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className={styles.muted}>
-                    {figures.expected.kind === "measured"
-                      ? "Nobody in a bed has a discharge date written down"
-                      : figureText(figures.expected)}
-                  </td>
-                </tr>
-              ) : null}
-              {dueOut.map((admission) => (
-                <tr key={admission.id}>
-                  <th scope="row">
-                    <span className={detail.primary}>{admission.id}</span>
-                  </th>
-                  <td>{unitName(admission.unitId)}</td>
-                  <td>
-                    {admission.expectedDischargeAt === null ? (
-                      <span className={styles.muted}>No date</span>
-                    ) : (
-                      <>
-                        {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
-                        <span className={styles.muted}>{fromToday(admission.expectedDischargeAt, now)}</span>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </StatCard>
         </>
       )}
     </StatisticsPage>
@@ -493,10 +493,7 @@ function TeamPhone({
   );
   return (
     <PhoneBody testId="ward-statistics-community-phone">
-      <PhoneGroup
-        title="Community handover"
-        aside={`${people.length} ${people.length === 1 ? "person" : "people"}`}
-      >
+      <PhoneGroup title="Community handover" aside={`${people.length} ${people.length === 1 ? "person" : "people"}`}>
         {sorted.length === 0 ? (
           <p className={phone.note}>
             {inBedMeasured ? "Nobody referred to this team holds a bed now." : `In a bed: ${inBedText}`}

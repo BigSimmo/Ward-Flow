@@ -131,19 +131,19 @@ export function WeeklyReportScreen() {
           }}
           titleAction={
             isPhone ? undefined : (
-            <span data-print-hide>
-              <Button
-                variant="light"
-                size="sm"
-                icon={Printer}
-                onClick={() => {
-                  window.print();
-                }}
-                data-testid="ward-weekly-print"
-              >
-                Print
-              </Button>
-            </span>
+              <span data-print-hide>
+                <Button
+                  variant="light"
+                  size="sm"
+                  icon={Printer}
+                  onClick={() => {
+                    window.print();
+                  }}
+                  data-testid="ward-weekly-print"
+                >
+                  Print
+                </Button>
+              </span>
             )
           }
           stats={
@@ -174,7 +174,11 @@ export function WeeklyReportScreen() {
             <p className={phone.note} data-testid="ward-weekly-range">
               {weekLabel(week, dayZero)} · generated {formatSheetMoment(now, dayZero)}
             </p>
-            <PhoneCard icon={Clock} title={`ED waits ${phoneTargetText}`} aside={`In the week it passed ${longHoursLabel}`}>
+            <PhoneCard
+              icon={Clock}
+              title={`ED waits ${phoneTargetText}`}
+              aside={`In the week it passed ${longHoursLabel}`}
+            >
               <PhoneFacts
                 flush
                 facts={[
@@ -270,143 +274,149 @@ export function WeeklyReportScreen() {
           </PhoneBody>
         ) : (
           <>
-        <div className={styles.controls}>
-          <Field label="Week" id={pickerId} className={styles.picker}>
-            <Select
-              value={String(offset)}
-              onChange={(event) => {
-                setOffset(Number(event.target.value));
-              }}
-              data-testid="ward-weekly-week"
-              data-print-hide
-            >
-              {WEEK_OFFSETS.map((candidate) => (
-                <option key={candidate} value={candidate}>
-                  {weekLabel(reportWeek(candidate, now, dayZero), dayZero)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <p className={styles.stamp} data-testid="ward-weekly-range">
-            {weekLabel(week, dayZero)} · generated {formatSheetMoment(now, dayZero)}
-          </p>
-        </div>
-
-        <div className={styles.grid3}>
-          <StatCard
-            title={`ED waits ${targetText}`}
-            icon={Clock}
-            meta="Counted in the week the wait passes the target (a default set in Settings)"
-          >
-            <dl className={styles.figures}>
-              <div className={styles.figure}>
-                <dt>People</dt>
-                <dd data-testid="ward-weekly-ed-count">{report.edWaits.count}</dd>
-              </div>
-              <div className={styles.figure}>
-                <dt>Longest wait</dt>
-                <dd>{report.edWaits.count > 0 ? splitDuration(report.edWaits.longestMinutes) : "—"}</dd>
-              </div>
-            </dl>
-          </StatCard>
-          <StatCard title="Out of area" icon={Hospital} meta={OUT_OF_AREA_META}>
-            <dl className={styles.figures}>
-              <div className={styles.figure}>
-                <dt>Bed days</dt>
-                <dd data-testid="ward-weekly-ooa-days">{report.outOfArea.bedDays}</dd>
-              </div>
-              <div className={styles.figure}>
-                <dt>People</dt>
-                <dd>{report.outOfArea.people}</dd>
-              </div>
-            </dl>
-          </StatCard>
-          <StatCard
-            title="Delayed discharge"
-            icon={BedDouble}
-            meta="Current expected date, counted only from when it was set (earlier dates are not kept)"
-          >
-            <dl className={styles.figures}>
-              <div className={styles.figure}>
-                <dt>Bed days</dt>
-                <dd data-testid="ward-weekly-delayed-days">{report.delayedDischarge.bedDays}</dd>
-              </div>
-              <div className={styles.figure}>
-                <dt>People</dt>
-                <dd>{report.delayedDischarge.people}</dd>
-              </div>
-            </dl>
-          </StatCard>
-        </div>
-
-        <div className={styles.grid3}>
-          <StatCard
-            title="Declines"
-            icon={XCircle}
-            meta={`${report.declines.placement} placement · ${report.declines.referral} referral`}
-          >
-            <ReasonList reasons={report.declines.byReason} testId="ward-weekly-declines" />
-          </StatCard>
-          <StatCard
-            title="Overrides"
-            icon={ShieldAlert}
-            meta={`${report.overrides.placement} placement · ${report.overrides.referral} referral`}
-          >
-            <ReasonList reasons={report.overrides.byReason} testId="ward-weekly-overrides" />
-          </StatCard>
-          <StatCard title="Occupancy" icon={BedDouble} meta={`${report.occupancy.beds} beds`}>
-            <dl className={styles.figures}>
-              <div className={styles.figure}>
-                <dt>Average in week</dt>
-                <dd data-testid="ward-weekly-occupancy">{occupancyText}</dd>
-                <small>{report.occupancy.occupiedBedDays} occupied bed days</small>
-              </div>
-              <div className={styles.figure}>
-                <dt>Occupied now</dt>
-                <dd>
-                  {report.occupancy.now.occupied} of {report.occupancy.now.beds}
-                </dd>
-                <small>{report.occupancy.now.pulled} held for arrival</small>
-              </div>
-            </dl>
-          </StatCard>
-        </div>
-
-        <StatCard title={`Who waited ${targetText}`} icon={Clock} meta={`${report.edWaits.rows.length} in the week`}>
-          {report.edWaits.rows.length === 0 ? (
-            <p className={styles.empty}>Nobody waited {targetText}</p>
-          ) : (
-            <div className={styles.tableWrap}>
-              <table className={`${tableClasses.table} ${styles.table}`} data-testid="ward-weekly-ed-table">
-                <caption className={styles.srOnly}>ED waits {targetText} in the week, synthetic</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Patient</th>
-                    <th scope="col">Emergency department</th>
-                    <th scope="col">Opened</th>
-                    <th scope="col" className={styles.num}>
-                      Waited
-                    </th>
-                    <th scope="col">Now</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.edWaits.rows.map((row) => (
-                    <tr key={row.movement.id}>
-                      <th scope="row">{patientOf(row.movement).displayName}</th>
-                      <td>{edById(row.movement.originEdId)?.name ?? row.movement.originEdId}</td>
-                      <td className={styles.time}>{formatSheetMoment(row.movement.openedAt as Instant, dayZero)}</td>
-                      <td className={styles.num}>{splitDuration(row.waitedMinutes)}</td>
-                      <td>{row.stillWaiting ? "Still waiting" : "Left the ED"}</td>
-                    </tr>
+            <div className={styles.controls}>
+              <Field label="Week" id={pickerId} className={styles.picker}>
+                <Select
+                  value={String(offset)}
+                  onChange={(event) => {
+                    setOffset(Number(event.target.value));
+                  }}
+                  data-testid="ward-weekly-week"
+                  data-print-hide
+                >
+                  {WEEK_OFFSETS.map((candidate) => (
+                    <option key={candidate} value={candidate}>
+                      {weekLabel(reportWeek(candidate, now, dayZero), dayZero)}
+                    </option>
                   ))}
-                </tbody>
-              </table>
+                </Select>
+              </Field>
+              <p className={styles.stamp} data-testid="ward-weekly-range">
+                {weekLabel(week, dayZero)} · generated {formatSheetMoment(now, dayZero)}
+              </p>
             </div>
-          )}
-        </StatCard>
 
-        <p className={styles.disclosure}>Counts only stays, movements and decisions held in this prototype.</p>
+            <div className={styles.grid3}>
+              <StatCard
+                title={`ED waits ${targetText}`}
+                icon={Clock}
+                meta="Counted in the week the wait passes the target (a default set in Settings)"
+              >
+                <dl className={styles.figures}>
+                  <div className={styles.figure}>
+                    <dt>People</dt>
+                    <dd data-testid="ward-weekly-ed-count">{report.edWaits.count}</dd>
+                  </div>
+                  <div className={styles.figure}>
+                    <dt>Longest wait</dt>
+                    <dd>{report.edWaits.count > 0 ? splitDuration(report.edWaits.longestMinutes) : "—"}</dd>
+                  </div>
+                </dl>
+              </StatCard>
+              <StatCard title="Out of area" icon={Hospital} meta={OUT_OF_AREA_META}>
+                <dl className={styles.figures}>
+                  <div className={styles.figure}>
+                    <dt>Bed days</dt>
+                    <dd data-testid="ward-weekly-ooa-days">{report.outOfArea.bedDays}</dd>
+                  </div>
+                  <div className={styles.figure}>
+                    <dt>People</dt>
+                    <dd>{report.outOfArea.people}</dd>
+                  </div>
+                </dl>
+              </StatCard>
+              <StatCard
+                title="Delayed discharge"
+                icon={BedDouble}
+                meta="Current expected date, counted only from when it was set (earlier dates are not kept)"
+              >
+                <dl className={styles.figures}>
+                  <div className={styles.figure}>
+                    <dt>Bed days</dt>
+                    <dd data-testid="ward-weekly-delayed-days">{report.delayedDischarge.bedDays}</dd>
+                  </div>
+                  <div className={styles.figure}>
+                    <dt>People</dt>
+                    <dd>{report.delayedDischarge.people}</dd>
+                  </div>
+                </dl>
+              </StatCard>
+            </div>
+
+            <div className={styles.grid3}>
+              <StatCard
+                title="Declines"
+                icon={XCircle}
+                meta={`${report.declines.placement} placement · ${report.declines.referral} referral`}
+              >
+                <ReasonList reasons={report.declines.byReason} testId="ward-weekly-declines" />
+              </StatCard>
+              <StatCard
+                title="Overrides"
+                icon={ShieldAlert}
+                meta={`${report.overrides.placement} placement · ${report.overrides.referral} referral`}
+              >
+                <ReasonList reasons={report.overrides.byReason} testId="ward-weekly-overrides" />
+              </StatCard>
+              <StatCard title="Occupancy" icon={BedDouble} meta={`${report.occupancy.beds} beds`}>
+                <dl className={styles.figures}>
+                  <div className={styles.figure}>
+                    <dt>Average in week</dt>
+                    <dd data-testid="ward-weekly-occupancy">{occupancyText}</dd>
+                    <small>{report.occupancy.occupiedBedDays} occupied bed days</small>
+                  </div>
+                  <div className={styles.figure}>
+                    <dt>Occupied now</dt>
+                    <dd>
+                      {report.occupancy.now.occupied} of {report.occupancy.now.beds}
+                    </dd>
+                    <small>{report.occupancy.now.pulled} held for arrival</small>
+                  </div>
+                </dl>
+              </StatCard>
+            </div>
+
+            <StatCard
+              title={`Who waited ${targetText}`}
+              icon={Clock}
+              meta={`${report.edWaits.rows.length} in the week`}
+            >
+              {report.edWaits.rows.length === 0 ? (
+                <p className={styles.empty}>Nobody waited {targetText}</p>
+              ) : (
+                <div className={styles.tableWrap}>
+                  <table className={`${tableClasses.table} ${styles.table}`} data-testid="ward-weekly-ed-table">
+                    <caption className={styles.srOnly}>ED waits {targetText} in the week, synthetic</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Patient</th>
+                        <th scope="col">Emergency department</th>
+                        <th scope="col">Opened</th>
+                        <th scope="col" className={styles.num}>
+                          Waited
+                        </th>
+                        <th scope="col">Now</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.edWaits.rows.map((row) => (
+                        <tr key={row.movement.id}>
+                          <th scope="row">{patientOf(row.movement).displayName}</th>
+                          <td>{edById(row.movement.originEdId)?.name ?? row.movement.originEdId}</td>
+                          <td className={styles.time}>
+                            {formatSheetMoment(row.movement.openedAt as Instant, dayZero)}
+                          </td>
+                          <td className={styles.num}>{splitDuration(row.waitedMinutes)}</td>
+                          <td>{row.stillWaiting ? "Still waiting" : "Left the ED"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </StatCard>
+
+            <p className={styles.disclosure}>Counts only stays, movements and decisions held in this prototype.</p>
           </>
         )}
         <WardPrototypeFooter testId="ward-weekly-footer" note="Synthetic data" />

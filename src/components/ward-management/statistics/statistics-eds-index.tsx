@@ -255,136 +255,136 @@ export function StatisticsEdsIndexScreen() {
         </PhoneBody>
       ) : (
         <>
-      <StatCard
-        icon={Users}
-        id="everyone-waiting"
-        className={index.anchorTarget}
-        title="Everyone waiting, by ED"
-        aside={
-          <span
-            className={cx(styles.muted, index.phoneHide)}
-          >{`${waiting} waiting across ${departments.length} EDs`}</span>
-        }
-        data-testid="ward-statistics-eds-swarm-card"
-      >
-        <div className={index.swarmBody}>
-          <StatisticsEdSwarm rows={swarmRows} labelWidth={176} testId="ward-statistics-eds-swarm" />
-        </div>
-        <CardFoot
-          meta={`Each mark is one person. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits. Open a row for that ED's page.`}
-        />
-      </StatCard>
-
-      <FlushRow layout="lead3">
-        <StatCard
-          icon={Hospital}
-          id="every-ed"
-          className={index.anchorTarget}
-          title="Every emergency department"
-          aside={<span className={cx(styles.muted, index.phoneHide)}>Sort by any column</span>}
-          data-testid="ward-statistics-eds-table-card"
-        >
-          <div
-            className={index.tableScroll}
-            tabIndex={0}
-            role="region"
-            aria-label="Every emergency department, scrollable"
-          >
-            <table className={cx(tableClasses.table, styles.table)} data-testid="ward-statistics-eds-table">
-              <caption className={styles.srOnly}>
-                Every emergency department: people waiting for a mental health bed, those with no ward yet, long waits,
-                the longest and the median wait
-              </caption>
-              <thead>
-                <tr>
-                  <SortTh id="name" label="ED" sort={sort} asc={asc} onSort={onSort} />
-                  <SortTh id="waiting" label="Waiting" sort={sort} asc={asc} onSort={onSort} numeric />
-                  <SortTh id="unplaced" label="No ward yet" sort={sort} asc={asc} onSort={onSort} numeric />
-                  <SortTh id="over24" label={`Past ${LONG_HOURS}h`} sort={sort} asc={asc} onSort={onSort} numeric />
-                  <SortTh
-                    id="over48"
-                    label={`Past ${VERY_LONG_HOURS}h`}
-                    sort={sort}
-                    asc={asc}
-                    onSort={onSort}
-                    numeric
-                  />
-                  <SortTh id="longest" label="Longest" sort={sort} asc={asc} onSort={onSort} numeric />
-                  <SortTh id="median" label="Median" sort={sort} asc={asc} onSort={onSort} numeric />
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((row) => (
-                  <tr key={row.id}>
-                    <th scope="row">
-                      <span className={index.rowName}>
-                        <Link href={edStatisticsHref(row.id)} className={index.rowLink}>
-                          {row.name}
-                        </Link>
-                        <span className={index.rowSub}>
-                          <ServiceDot service={row.service} />
-                          {row.code}
-                          {row.service ? ` · ${row.service}` : ""}
-                        </span>
-                      </span>
-                    </th>
-                    <td className={cx(styles.num, row.waiting === 0 && styles.zero)}>{row.waiting}</td>
-                    <td className={cx(styles.num, row.unplaced === 0 && styles.zero)}>{row.unplaced}</td>
-                    <td className={cx(styles.num, row.over24 === 0 && styles.zero)}>
-                      <span className={styles.flagged}>
-                        {row.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                        {row.over24}
-                      </span>
-                    </td>
-                    <td className={cx(styles.num, row.over48 === 0 && styles.zero)}>
-                      <span className={styles.flagged}>
-                        {row.over48 > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
-                        {row.over48}
-                      </span>
-                    </td>
-                    <td className={cx(styles.num, row.longest === null && styles.zero)}>{waitText(row.longest)}</td>
-                    <td className={cx(styles.num, row.median === null && styles.zero)}>{waitText(row.median)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <th scope="row">All {departments.length} EDs</th>
-                  <td className={styles.num}>{waiting}</td>
-                  <td className={styles.num}>{unplaced}</td>
-                  <td className={styles.num}>{over24}</td>
-                  <td className={styles.num}>{over48}</td>
-                  <td className={styles.num}>{waitText(longestRow?.longest ?? null)}</td>
-                  <td className={styles.num}>{waitText(networkMedian)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-          <CardFoot
-            meta={`Past ${VERY_LONG_HOURS}h is part of past ${LONG_HOURS}h, so the two are never added together.`}
-          />
-        </StatCard>
-
-        <Follow>
           <StatCard
-            icon={Clock}
-            id="wait-bands"
+            icon={Users}
+            id="everyone-waiting"
             className={index.anchorTarget}
-            title="Wait bands"
-            aside={<span className={cx(styles.muted, index.phoneHide)}>Everyone waiting</span>}
-            data-testid="ward-statistics-eds-bands"
+            title="Everyone waiting, by ED"
+            aside={
+              <span
+                className={cx(styles.muted, index.phoneHide)}
+              >{`${waiting} waiting across ${departments.length} EDs`}</span>
+            }
+            data-testid="ward-statistics-eds-swarm-card"
           >
-            <CardBody>
-              <ColumnChart
-                label="People waiting in an emergency department, by how long"
-                columns={bands}
-                height={220}
-              />
-            </CardBody>
-            <CardFoot meta="The bands do not overlap: they add up to everyone waiting." />
+            <div className={index.swarmBody}>
+              <StatisticsEdSwarm rows={swarmRows} labelWidth={176} testId="ward-statistics-eds-swarm" />
+            </div>
+            <CardFoot
+              meta={`Each mark is one person. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits. Open a row for that ED's page.`}
+            />
           </StatCard>
-        </Follow>
-      </FlushRow>
+
+          <FlushRow layout="lead3">
+            <StatCard
+              icon={Hospital}
+              id="every-ed"
+              className={index.anchorTarget}
+              title="Every emergency department"
+              aside={<span className={cx(styles.muted, index.phoneHide)}>Sort by any column</span>}
+              data-testid="ward-statistics-eds-table-card"
+            >
+              <div
+                className={index.tableScroll}
+                tabIndex={0}
+                role="region"
+                aria-label="Every emergency department, scrollable"
+              >
+                <table className={cx(tableClasses.table, styles.table)} data-testid="ward-statistics-eds-table">
+                  <caption className={styles.srOnly}>
+                    Every emergency department: people waiting for a mental health bed, those with no ward yet, long
+                    waits, the longest and the median wait
+                  </caption>
+                  <thead>
+                    <tr>
+                      <SortTh id="name" label="ED" sort={sort} asc={asc} onSort={onSort} />
+                      <SortTh id="waiting" label="Waiting" sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="unplaced" label="No ward yet" sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="over24" label={`Past ${LONG_HOURS}h`} sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh
+                        id="over48"
+                        label={`Past ${VERY_LONG_HOURS}h`}
+                        sort={sort}
+                        asc={asc}
+                        onSort={onSort}
+                        numeric
+                      />
+                      <SortTh id="longest" label="Longest" sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="median" label="Median" sort={sort} asc={asc} onSort={onSort} numeric />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sorted.map((row) => (
+                      <tr key={row.id}>
+                        <th scope="row">
+                          <span className={index.rowName}>
+                            <Link href={edStatisticsHref(row.id)} className={index.rowLink}>
+                              {row.name}
+                            </Link>
+                            <span className={index.rowSub}>
+                              <ServiceDot service={row.service} />
+                              {row.code}
+                              {row.service ? ` · ${row.service}` : ""}
+                            </span>
+                          </span>
+                        </th>
+                        <td className={cx(styles.num, row.waiting === 0 && styles.zero)}>{row.waiting}</td>
+                        <td className={cx(styles.num, row.unplaced === 0 && styles.zero)}>{row.unplaced}</td>
+                        <td className={cx(styles.num, row.over24 === 0 && styles.zero)}>
+                          <span className={styles.flagged}>
+                            {row.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                            {row.over24}
+                          </span>
+                        </td>
+                        <td className={cx(styles.num, row.over48 === 0 && styles.zero)}>
+                          <span className={styles.flagged}>
+                            {row.over48 > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
+                            {row.over48}
+                          </span>
+                        </td>
+                        <td className={cx(styles.num, row.longest === null && styles.zero)}>{waitText(row.longest)}</td>
+                        <td className={cx(styles.num, row.median === null && styles.zero)}>{waitText(row.median)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th scope="row">All {departments.length} EDs</th>
+                      <td className={styles.num}>{waiting}</td>
+                      <td className={styles.num}>{unplaced}</td>
+                      <td className={styles.num}>{over24}</td>
+                      <td className={styles.num}>{over48}</td>
+                      <td className={styles.num}>{waitText(longestRow?.longest ?? null)}</td>
+                      <td className={styles.num}>{waitText(networkMedian)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <CardFoot
+                meta={`Past ${VERY_LONG_HOURS}h is part of past ${LONG_HOURS}h, so the two are never added together.`}
+              />
+            </StatCard>
+
+            <Follow>
+              <StatCard
+                icon={Clock}
+                id="wait-bands"
+                className={index.anchorTarget}
+                title="Wait bands"
+                aside={<span className={cx(styles.muted, index.phoneHide)}>Everyone waiting</span>}
+                data-testid="ward-statistics-eds-bands"
+              >
+                <CardBody>
+                  <ColumnChart
+                    label="People waiting in an emergency department, by how long"
+                    columns={bands}
+                    height={220}
+                  />
+                </CardBody>
+                <CardFoot meta="The bands do not overlap: they add up to everyone waiting." />
+              </StatCard>
+            </Follow>
+          </FlushRow>
         </>
       )}
     </StatisticsPage>

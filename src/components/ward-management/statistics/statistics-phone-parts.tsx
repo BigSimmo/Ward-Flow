@@ -54,15 +54,7 @@ export function PhoneList({ label, children, className }: { label: string; child
 }
 
 /** The last item of a capped list: "Show all 22" or "Show fewer". */
-export function PhoneShowAll({
-  total,
-  open,
-  onToggle,
-}: {
-  total: number;
-  open: boolean;
-  onToggle: () => void;
-}) {
+export function PhoneShowAll({ total, open, onToggle }: { total: number; open: boolean; onToggle: () => void }) {
   return (
     <li className={styles.showAllItem}>
       <button type="button" className={styles.showAll} aria-expanded={open} onClick={onToggle}>

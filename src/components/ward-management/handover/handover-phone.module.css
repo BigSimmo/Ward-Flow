@@ -39,7 +39,7 @@
 }
 
 .heroActions > * {
-  min-height: 44px;
+  min-height: var(--ph-tap);
   border-radius: var(--wf-r-pill);
 }
 
@@ -48,8 +48,8 @@
 }
 
 .heroActions > :last-child {
-  flex: 0 0 44px;
-  width: 44px;
+  flex: 0 0 var(--ph-tap);
+  width: var(--ph-tap);
 }
 
 /* ---------------------------------------------------------------- main */
@@ -209,7 +209,7 @@
 .chip {
   flex: none;
   gap: 6px;
-  min-height: 44px;
+  min-height: var(--ph-tap);
   border-radius: var(--wf-r-pill);
 }
 
@@ -248,7 +248,7 @@
 
 .bannerAction {
   flex: 0 0 auto;
-  min-height: 44px;
+  min-height: var(--ph-tap);
 }
 
 /* ---------------------------------------------------------------- one inset list, group bands */
@@ -281,7 +281,7 @@
   gap: 8px;
   width: 100%;
   min-width: 0;
-  min-height: 44px;
+  min-height: var(--ph-tap);
   margin: 0;
   padding: 0 12px;
   box-sizing: border-box;

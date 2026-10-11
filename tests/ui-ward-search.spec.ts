@@ -287,7 +287,8 @@ test.describe("@mockup Ward patient search", () => {
 
   /**
    * 5. THE 48PX TAP FLOOR AT 375PX. Every control a coordinator taps in the phone composer and the
-   * census header: the search input, DOB, Clear, the five group pills, Highlight and History. The
+   * census header: the search input, DOB, Clear, the five group pills, the highlight chips and the
+   * History tab. The
    * old filter selects are gone from the screen (they sit in a visually hidden block), so the
    * census's own controls are what this now measures. Written against the 9 Oct census, it failed
    * first on a real defect: the phone input was 18px tall and Clear 36px.
@@ -307,9 +308,14 @@ test.describe("@mockup Ward patient search", () => {
       [input, "the search input"],
       [form.getByRole("button", { name: "DOB" }), "the DOB switch"],
       [form.getByRole("button", { name: "Clear" }), "the Clear button"],
-      [console_.getByRole("button", { name: /Highlight/ }), "the Highlight button"],
-      [console_.getByRole("button", { name: /History/ }), "the History button"],
+      // v10 phone (11 Oct 2026): the Highlight sheet button became a row of highlight chips and
+      // History became a tab beside Now, so each chip and the History tab are measured instead.
+      [console_.getByRole("tab", { name: /History/ }), "the History tab"],
     ];
+    const chips = console_.getByRole("group", { name: "Highlight" }).getByRole("button");
+    const chipCount = await chips.count();
+    expect(chipCount, "the phone census shows its highlight chips").toBeGreaterThan(0);
+    for (let i = 0; i < chipCount; i += 1) controls.push([chips.nth(i), `highlight chip ${i + 1}`]);
     const groups = console_.getByRole("radiogroup", { name: "Where patients are now" }).getByRole("radio");
     await expect(groups, "the phone census shows five group pills").toHaveCount(5);
     for (let i = 0; i < 5; i += 1) controls.push([groups.nth(i), `group pill ${i + 1}`]);

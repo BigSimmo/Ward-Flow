@@ -891,11 +891,7 @@ export function WardHomeTab({
                     const declineOpen = declineOpenFor === movement.id;
 
                     return (
-                      <li
-                        key={movement.id}
-                        className={styles.awaitingRow}
-                        data-testid={`ward-incoming-${movement.id}`}
-                      >
+                      <li key={movement.id} className={styles.awaitingRow} data-testid={`ward-incoming-${movement.id}`}>
                         <div className={styles.awaitingIdentity}>
                           <span className={styles.awaitingTier} aria-hidden="true">
                             {movement.urgency}
@@ -909,9 +905,7 @@ export function WardHomeTab({
 
                         {notice ? (
                           <span
-                            className={
-                              notice.level === "voluntary_on_locked" ? styles.noticeProminent : styles.notice
-                            }
+                            className={notice.level === "voluntary_on_locked" ? styles.noticeProminent : styles.notice}
                             data-testid={`ward-restriction-notice-${movement.id}`}
                             data-level={notice.level}
                           >
@@ -1358,63 +1352,63 @@ export function WardHomeTab({
           aria-labelledby="ward-home-every-bed"
         >
           {phoneSheets ? null : (
-          <CardHead
-            id="ward-home-every-bed"
-            icon={BedDouble}
-            title="Every bed"
-            action={
-              <span className={styles.headTools}>
-                <Segmented
-                  label="Show beds"
-                  items={[
-                    { id: "all", label: "All", count: bedRows.length },
-                    { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
-                    { id: "leaving", label: "Leaving", count: bedRows.filter((row) => row.leaving).length },
-                    { id: "free", label: "Free", count: bedRows.filter((row) => row.free).length },
-                    // The hero's Occupied and Ready by pills set filters this group does not list,
-                    // so the active one joins it while on and a radio is always checked.
-                    ...(bedFilter === "occupied"
-                      ? [{ id: "occupied" as const, label: "Occupied", count: bedTally.occupied }]
-                      : bedFilter === "shift-end"
-                        ? [
-                            {
-                              id: "shift-end" as const,
-                              label: "Ready by shift end",
-                              count: bedRows.filter((row) => row.readyByShiftEnd).length,
-                            },
-                          ]
-                        : []),
-                  ]}
-                  value={bedFilter}
-                  onChange={setBedFilter}
-                />
-                <span className={styles.viewSwitch} role="group" aria-label="Bed view">
-                  <button
-                    type="button"
-                    aria-pressed={boardView === "board"}
-                    aria-label="Board"
-                    title="Board"
-                    onClick={() => {
-                      setBoardView("board");
-                    }}
-                  >
-                    <LayoutGrid size={16} aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={boardView === "list"}
-                    aria-label="List"
-                    title="List"
-                    onClick={() => {
-                      setBoardView("list");
-                    }}
-                  >
-                    <List size={16} aria-hidden="true" />
-                  </button>
+            <CardHead
+              id="ward-home-every-bed"
+              icon={BedDouble}
+              title="Every bed"
+              action={
+                <span className={styles.headTools}>
+                  <Segmented
+                    label="Show beds"
+                    items={[
+                      { id: "all", label: "All", count: bedRows.length },
+                      { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
+                      { id: "leaving", label: "Leaving", count: bedRows.filter((row) => row.leaving).length },
+                      { id: "free", label: "Free", count: bedRows.filter((row) => row.free).length },
+                      // The hero's Occupied and Ready by pills set filters this group does not list,
+                      // so the active one joins it while on and a radio is always checked.
+                      ...(bedFilter === "occupied"
+                        ? [{ id: "occupied" as const, label: "Occupied", count: bedTally.occupied }]
+                        : bedFilter === "shift-end"
+                          ? [
+                              {
+                                id: "shift-end" as const,
+                                label: "Ready by shift end",
+                                count: bedRows.filter((row) => row.readyByShiftEnd).length,
+                              },
+                            ]
+                          : []),
+                    ]}
+                    value={bedFilter}
+                    onChange={setBedFilter}
+                  />
+                  <span className={styles.viewSwitch} role="group" aria-label="Bed view">
+                    <button
+                      type="button"
+                      aria-pressed={boardView === "board"}
+                      aria-label="Board"
+                      title="Board"
+                      onClick={() => {
+                        setBoardView("board");
+                      }}
+                    >
+                      <LayoutGrid size={16} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={boardView === "list"}
+                      aria-label="List"
+                      title="List"
+                      onClick={() => {
+                        setBoardView("list");
+                      }}
+                    >
+                      <List size={16} aria-hidden="true" />
+                    </button>
+                  </span>
                 </span>
-              </span>
-            }
-          />
+              }
+            />
           )}
           {highlighting && bedRows.length > 0 ? (
             <p className={styles.highlightNote} data-testid="ward-bed-highlight-note">

@@ -58,12 +58,11 @@ describe("Community team on a phone", () => {
     expect(screen.getByTestId("ward-community-phone-hero")).toHaveTextContent("on the caseload");
     expect(screen.queryByRole("tablist", { name: "Community team lists" })).not.toBeInTheDocument();
     const lists = screen.getByRole("radiogroup", { name: "Team lists" });
-    expect(within(lists).getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
-      "Waiting",
-      "In bed",
-      "Back",
-      "CTOs",
-    ]);
+    expect(
+      within(lists)
+        .getAllByRole("radio")
+        .map((radio) => radio.textContent),
+    ).toEqual(["Waiting", "In bed", "Back", "CTOs"]);
   });
 
   it("switches lists from the segmented control and the hero figures", () => {
