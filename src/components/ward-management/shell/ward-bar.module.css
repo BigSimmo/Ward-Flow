@@ -2658,24 +2658,33 @@
 }
 
 /* Tablet portrait folds search to its magnifier (device audit, 11 Oct 2026), so the open field
- * takes over the bar there too; an 820px bar is wider than the 42rem container rule above. */
+ * takes over the bar there too, as in the 42rem container rule above (an 820px bar is wider than
+ * that rule). Touch sizes here: Cancel keeps the 48px target. The band rules below still apply over
+ * a Hero, so the open field restores the light face explicitly (doubled `.bar` outranks the band's
+ * later focus-within rule), as the phone block does. */
 @media (min-width: 48.0625rem) and (max-width: 1000px) {
-  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type,
+  .bar.bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+    --wf-focus-ring: var(--wf-accent);
     position: fixed;
     inset: 0 0 auto;
     z-index: 5;
     width: auto;
     min-width: 0;
     max-width: none;
-    /* The bar's own height, never its bottom edge (a banner above the bar once made this 180px). */
     height: var(--wgs-bar-h, 3.5rem);
     gap: 10px;
     padding: 0 8px 0 24px;
     justify-content: flex-start;
     background: var(--wf-surface-2);
+    color: var(--wf-ink-1);
   }
 
-  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type::before {
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type::before,
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open])
+    > div:first-of-type::before {
     inset: 8px 80px 8px 12px;
     border: 1px solid var(--wf-focus-ring);
     border-radius: var(--wf-r-pill);
@@ -2683,13 +2692,19 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-focus-ring) 18%, transparent);
   }
 
-  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg {
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg,
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"])::placeholder {
     width: 16px;
     height: 16px;
     color: var(--wf-ink-3);
   }
 
-  .bar .searchWrap :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]) {
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]),
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]) {
     position: static;
     flex: 1 1 auto;
     width: auto;
@@ -2697,6 +2712,7 @@
     height: auto;
     margin-right: 16px;
     opacity: 1;
+    color: var(--wf-ink-1);
     cursor: text;
     font-size: var(--wf-fs-16);
   }
@@ -2706,7 +2722,7 @@
     flex: 0 0 64px;
     align-items: center;
     justify-content: center;
-    height: 40px;
+    min-height: var(--ward-tap, 48px);
     padding: 0;
     border: 0;
     border-radius: var(--wf-r-pill);
