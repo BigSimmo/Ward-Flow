@@ -152,6 +152,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^ward-shared-access\.tsx$/,
     name: /^PHONE_RELEASE_WAIT_MS$/,
   },
+  {
+    id: "early-header-tap",
+    why: "Early header tap replay (11 Oct 2026): how old a pre-hydration tap may be and how long React gets to replay it first; never shown, not a limit.",
+    file: /^shell\/ward-early-tap\.ts$/,
+    name: /^(?:EARLY_TAP_MAX_AGE_MS|SETTLE_MS)$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;
