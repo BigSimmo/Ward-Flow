@@ -908,6 +908,22 @@ export function HandoverPage() {
           flowPanel={flowPanel}
           signOffPanel={signOffPanel}
           outsideAct={scope.kind !== "network" ? outsideAct : []}
+          selected={selected}
+          onCopyIsbar={copyIsbar}
+          patientHrefOf={(row) => (row.patientId ? patientHref(row.patientId) : undefined)}
+          since={formatInstantWithDay(newSince, now)}
+          sinceItems={sinceItems}
+          onCopySince={copySince}
+          chips={HANDOVER_CHIPS.map((chip) => ({
+            id: chip.id,
+            label: chip.id === "spec" ? "1:1 obs" : chip.label,
+            count: rows.filter((row) => chip.test(row, now)).length,
+            pressed: chips.has(chip.id),
+            onToggle: () => toggleChip(chip.id),
+          }))}
+          meetingOn={meetingStartedAt !== null}
+          onToggleMeeting={toggleMeeting}
+          history={<HandoverHistory signOffs={handoverSignOffs} meetings={meetings} takenAt={takenAt} now={now} />}
         />
       </main>
     );

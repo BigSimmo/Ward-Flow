@@ -430,3 +430,24 @@
     border-color: CanvasText;
   }
 }
+
+/* Phone (v10 mockup): the facts are one bordered card with hairline dividers, not separate tiles. */
+@media (max-width: 48rem) {
+  .factGrid {
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-line);
+  }
+
+  .fact {
+    border: 0;
+    border-radius: 0;
+    background: var(--wf-surface);
+  }
+
+  .fact:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}

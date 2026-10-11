@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { OverlayPortal } from "@/components/ui/overlay-root";
 import { ToastView, type ToastUndo } from "@/components/wf/toast";
+import overlayStyles from "@/components/wf/overlay.module.css";
 
 export type ToastTone = "success" | "info" | "warning" | "danger";
 
@@ -193,6 +194,8 @@ function ToastCard({
       data-testid="toast"
       data-tone={toast.tone}
       data-announce-key={toast.announceKey ?? 0}
+      // Closes itself (Undo window or timer): the phone pill drops its X, as the v10 mockup draws it.
+      data-auto-dismiss={toast.undo || duration > 0 ? "true" : undefined}
       // The region is pointer-events: none so it never blocks the page; each card opts back in.
       style={{ pointerEvents: "auto" }}
       tone={toast.tone}
@@ -245,7 +248,7 @@ export function ToastRegion() {
       role="status"
       aria-live="polite"
       aria-relevant="additions text"
-      className="pointer-events-none fixed inset-x-0 bottom-0 flex flex-col items-center gap-2 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-0 sm:items-end"
+      className={`pointer-events-none fixed inset-x-0 bottom-0 flex flex-col items-center gap-2 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-0 sm:items-end ${overlayStyles.toastRegion ?? ""}`}
     >
       {toasts.map((toast) => (
         <ToastCard key={toast.id} toast={toast} onDismiss={dismiss} onUndone={undoAndDismiss} />

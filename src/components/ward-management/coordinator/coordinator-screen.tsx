@@ -5,7 +5,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 
+import { Copy, Pause, Play } from "lucide-react";
 import {
+  Button,
   CheckingFoot,
   Hero,
   HeroStat,
@@ -19,7 +21,7 @@ import {
 import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
 import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
-import { clockState, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
@@ -56,10 +58,17 @@ import { HomeBedflow } from "./home-bedflow";
 import { HomeEdPressure, dueWindowLabel } from "./home-ed-pressure";
 import { PriorityQueue, queueWaitThresholds, type QueueHighlight } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
-import { SinceLastLookPanel, sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
+import {
+  SinceLastLookPanel,
+  SinceLastLookSheetBody,
+  sinceLastLookCount,
+  sinceHandoverText,
+  sinceSheetDescription,
+  useSinceLastLook,
+} from "./since-last-look-panel";
 import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
-import { HomeBedsReadyCard, HomeWardSheet } from "./home-phone-sheets";
+import { HomeWardSheet } from "./home-phone-sheets";
 
 const HANDOVER_HREF = "/mockups/ward-flow/handover";
 /** Activity lines shown under "Since you looked". */
@@ -331,6 +340,25 @@ export function CoordinatorScreen() {
     );
   }
 
+  /*
+   * Refer from the phone patient sheet (v10 Home phone "Refer to <ward>"): the same
+   * `REFER_TO_UNITS` the panel would dispatch, run through the Undo step so the toast says Offered
+   * with Undo, as the bedflow Offer does. The sheet closes so the toast is not under its footer.
+   */
+  function referFromSheet(movement: Movement, unitIds: string[], unitNames: string[]) {
+    const who = patientOf(movement);
+    const names = unitNames.join(", ");
+    runStep(
+      { type: "REFER_TO_UNITS", role: "coordinator", now: liveNow, movementId: movement.id, unitIds },
+      {
+        success: `Offered ${names} to ${who.umrn}`,
+        undo: (at) => ({ type: "UNDO_REFER_TO_UNITS", role: "coordinator", now: at, movementId: movement.id }),
+        undone: `Offer withdrawn. ${names} ${unitNames.length === 1 ? "is" : "are"} no longer asked.`,
+      },
+    );
+    closeShortlist();
+  }
+
   // The work list is network-wide and open movements only, never scoped to the ED filter.
   const actionInbox = useMemo(
     () =>
@@ -551,6 +579,11 @@ export function CoordinatorScreen() {
                 dispatch={dispatch}
                 parallelReferralCap={configuration.parallelReferralCap}
                 pullHoldMinutes={configuration.pullHoldMinutes}
+                onRefer={
+                  isPhone && panelMovement
+                    ? (unitIds, unitNames) => referFromSheet(panelMovement, unitIds, unitNames)
+                    : undefined
+                }
               />
             )}
           </aside>
@@ -573,7 +606,11 @@ export function CoordinatorScreen() {
             eyebrow={isPhone ? `Statewide · ${shiftWord}` : `Statewide · mental health beds · ${shiftWord}`}
             title={heroTitle}
             titleMeta={
-              isPhone && statewideOccupancy !== null ? `${statewideOccupancy.toFixed(0)}% of open beds full` : undefined
+              isPhone
+                ? `Prototype data, invented records${
+                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(0)}% of open beds full` : ""
+                  }`
+                : undefined
             }
             stats={
               isPhone ? (
@@ -588,13 +625,14 @@ export function CoordinatorScreen() {
                   <HeroStat
                     value={tierOneInQueue}
                     label="Tier 1"
+                    tone="neutral"
                     pressed={highlight === "tier1"}
                     onToggle={() => toggleHighlight("tier1")}
                   />
                   <HeroStat
                     value={actionInbox.length}
                     label="Exceptions"
-                    tone={actionInbox.length > 0 ? "warning" : undefined}
+                    tone={actionInbox.length > 0 ? "danger" : undefined}
                     command
                     expanded={phoneSheet?.kind === "exceptions"}
                     onToggle={() => {
@@ -613,16 +651,29 @@ export function CoordinatorScreen() {
             }
             bar={
               isPhone ? (
+                // v10 phone hero: the full-width "N since you looked at HH:MM" pill and a round
+                // pause. The Live chip itself sits on the eyebrow line (`aside` below).
                 <div className={styles.phoneHeroActs}>
-                  <HeroStat
-                    inline
-                    value={newEvents}
-                    label={sinceLabel}
-                    command
-                    expanded={phoneSheet?.kind === "since"}
-                    onToggle={() => setPhoneSheet({ kind: "since" })}
+                  <Button
+                    variant="onHero"
+                    className={styles.phoneSince}
+                    aria-haspopup="dialog"
+                    aria-expanded={phoneSheet?.kind === "since"}
+                    onClick={() => setPhoneSheet({ kind: "since" })}
+                  >
+                    <b className={styles.phoneSinceMono}>{newEvents}</b> since you looked at{" "}
+                    <span className={styles.phoneSinceMono}>{sinceClock}</span>
+                  </Button>
+                  <Button
+                    variant="onHero"
+                    iconOnly
+                    icon={paused ? Play : Pause}
+                    // One name with aria-pressed: swapping the name too reads as "Resume, pressed".
+                    aria-label="Pause live updates"
+                    aria-pressed={paused}
+                    className={styles.phonePause}
+                    onClick={togglePause}
                   />
-                  <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
                 </div>
               ) : (
                 <div className={styles.heroToggles}>
@@ -683,7 +734,9 @@ export function CoordinatorScreen() {
               )
             }
             aside={
-              isPhone ? undefined : (
+              isPhone ? (
+                <LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} />
+              ) : (
                 <>
                   <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
                   <Link href={HANDOVER_HREF} className={buttonClass({ variant: "light" })}>
@@ -787,16 +840,10 @@ export function CoordinatorScreen() {
                   highlight={highlight}
                   onClearHighlight={() => setHighlight(undefined)}
                   rowCap={isPhone ? PHONE_QUEUE_ROWS : undefined}
+                  phone={isPhone}
                 />
-                {isPhone ? (
-                  <HomeBedsReadyCard
-                    units={units}
-                    admissions={admissions}
-                    bedReleases={bedReleases}
-                    leaveBeds={leaveBeds}
-                    onOpenWard={(unitId) => setPhoneSheet({ kind: "ward", unitId })}
-                  />
-                ) : null}
+                {/* Phone (v10 Home): the queue ends the page; the beds-ready list is on Capacity
+                    and Places, not repeated here. */}
               </div>
             )}
 
@@ -830,16 +877,33 @@ export function CoordinatorScreen() {
               open
               onClose={() => setPhoneSheet(undefined)}
               title="Since you looked"
+              description={sinceSheetDescription(lastLook.changes, now)}
               mobilePlacement="bottom"
               testId="ward-home-since-sheet"
+              footer={
+                // v10: Copy as handover text is the sheet's primary; Mark as seen stays beside it.
+                <div className={styles.sinceSheetFootRow}>
+                  {lastLook.changes ? (
+                    <Button variant="sec" className={styles.sinceSheetFoot} onClick={lastLook.markSeen}>
+                      Mark as seen
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="pri"
+                    icon={Copy}
+                    className={styles.sinceSheetFoot}
+                    onClick={() => {
+                      void navigator.clipboard
+                        ?.writeText(sinceHandoverText(lastLook.changes, now))
+                        .catch(() => undefined);
+                    }}
+                  >
+                    Copy as handover text
+                  </Button>
+                </div>
+              }
             >
-              <SinceLastLookPanel
-                changes={lastLook.changes}
-                now={now}
-                activity={recentActivity}
-                onMarkSeen={lastLook.markSeen}
-                placement="band"
-              />
+              <SinceLastLookSheetBody changes={lastLook.changes} />
             </Sheet>
           ) : null}
           {isPhone && phoneSheet?.kind === "exceptions" ? (

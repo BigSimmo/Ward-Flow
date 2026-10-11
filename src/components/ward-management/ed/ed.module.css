@@ -4349,8 +4349,8 @@ tr.qRow:focus-visible {
   position: fixed;
   inset: 0;
   background: var(--scrim);
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   z-index: 39;
   pointer-events: auto;
 }
@@ -4632,8 +4632,8 @@ tr.qRow:focus-visible {
   align-items: center;
   justify-content: center;
   background: var(--scrim);
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   padding: 1rem;
 }
 
@@ -7379,4 +7379,426 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   border-color: var(--wf-act-edge);
   background: none;
   color: var(--wf-ink-1);
+}
+
+/* ─── v10 phone board (11 Oct 2026) ───
+ * The board sits on the sheet like the mockup: no panel chrome round the filters, the filters are
+ * a sideways row of pills (pressed = a 2px accent ring on white, never a tint), search and order
+ * stay below them, and the rows sit in one card. The board heading stays for screen readers. Phone
+ * only. */
+@media (max-width: 48rem) {
+  .listSection.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .listSection > .ph {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .listSection .boardChips {
+    flex-wrap: nowrap;
+    gap: var(--wf-s-2);
+    margin-inline: calc(var(--wf-s-3) * -1);
+    padding: 2px var(--wf-s-3);
+    border: 0;
+    background: none;
+  }
+
+  .listSection .boardChips > .boardChip {
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-4);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    box-shadow: none;
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  }
+
+  .listSection .boardChips > .boardChip[aria-pressed="true"] {
+    padding: 0 calc(var(--wf-s-4) - 1px);
+    border: 2px solid var(--wf-accent);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+  }
+
+  .listSection .boardChips > .boardChip .c,
+  .listSection .boardChips > .boardChip[aria-pressed="true"] .c {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--wf-ink-2);
+    font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  }
+
+  .listSection .boardTools {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .listSection .tableWrap.boardWrap {
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .listSection .boardWrap .boardTable tr.qRow:last-child {
+    border-bottom: 0;
+  }
+
+  /* The bay leaves the right column (it is in the row's own facts); the time and its glyph lead. */
+  .listSection .boardWrap .boardTable tr.qRow {
+    grid-template-areas:
+      "tier name time"
+      "tier name bay"
+      "tier next next";
+  }
+}
+
+@media (max-width: 48rem) {
+  /* v10 phone: the tier reads as a "T2" pill, red edge only for tier 1 (act now). */
+  .listSection .boardWrap .tierCell .identityUrgency {
+    width: auto;
+    min-width: 28px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: var(--wf-r-pill);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  }
+
+  .listSection .boardWrap .tierCell .identityUrgency::before {
+    content: "T";
+  }
+
+  .listSection .boardWrap .boardTable tr.qRow {
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  }
+}
+
+/* ─── v10 phone board rows and person sheet (11 Oct 2026) ───
+ * Phone renders the board as a priority list (tier pill, name, one meta line, the wait and the next
+ * step at the right) in one card. A row opens the person sheet: the facts, every action the row
+ * offered as a full-width list, the inline forms, then the board's own fields. These elements only
+ * render on phone; the media query keeps that true for the styles as well. */
+@media (max-width: 48rem) {
+  .phoneBoardList {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    list-style: none;
+  }
+
+  .phoneBoardList > .phoneBoardRow:last-child {
+    border-bottom: 0;
+  }
+
+  .phoneBoardRow,
+  .phoneBoardRow > :first-child {
+    min-height: 3.75rem;
+  }
+
+  .phoneBoardRowDim {
+    opacity: 0.55;
+  }
+
+  .phoneBoardRow [class*="rowValue"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+    color: var(--wf-ink-1);
+  }
+
+  .phoneBoardRow [class*="rowTime"] {
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-2);
+  }
+
+  .phoneTier {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 20px;
+    padding: 0 6px;
+    box-sizing: border-box;
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-pill);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    color: var(--wf-ink-1);
+    white-space: nowrap;
+  }
+
+  .phoneTier[data-urgency="1"] {
+    border-color: var(--wf-danger);
+  }
+
+  /* The sheet body scrolls; its blocks keep their own height instead of shrinking into it. */
+  .phoneSheet [data-phone-sheet-body] > * {
+    flex: none;
+  }
+
+  .phoneSheetUmrn,
+  .phoneSheetMono {
+    font-family: var(--wf-mono);
+  }
+
+  .phoneSheetFacts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 0 0 var(--wf-s-4);
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .phoneSheetFacts > div {
+    min-width: 0;
+    padding: var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .phoneSheetFacts > div:nth-child(odd) {
+    border-right: 1px solid var(--wf-line);
+  }
+
+  .phoneSheetFacts > div:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .phoneSheetFacts dt {
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-2);
+  }
+
+  .phoneSheetFacts dd {
+    margin: 4px 0 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+    color: var(--wf-ink-1);
+  }
+
+  .phoneSheetFacts dd.phoneSheetMono {
+    font-family: var(--wf-mono);
+  }
+
+  .phoneSheetForm {
+    margin: 0 0 var(--wf-s-4);
+    padding: var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .phoneSheetForm :is(input, select, textarea) {
+    max-width: 100%;
+  }
+
+  .phoneSheetSection {
+    margin: 0 0 var(--wf-s-4);
+  }
+
+  .phoneSheetHeading {
+    margin: 0 0 var(--wf-s-2);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wf-ink-2);
+  }
+
+  .phoneSheetSection .nextGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--wf-s-2);
+  }
+
+  .phoneSheetActions {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .phoneSheetSection .phoneSheetActions > button,
+  .phoneSheetSection .phoneSheetActions > button[aria-disabled="true"],
+  .phoneSheetSection .tableActionGroup > button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: var(--spacing-tap, 3rem);
+    margin: 0;
+    padding: 0 var(--wf-s-3);
+    box-sizing: border-box;
+    border: 0;
+    border-bottom: 1px solid var(--wf-line);
+    border-radius: 0;
+    background: var(--wf-surface);
+    box-shadow: none;
+    color: var(--wf-ink-1);
+    font: 500 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .phoneSheetSection .phoneSheetActions > button:last-child {
+    border-bottom: 0;
+  }
+
+  .phoneSheetSection .phoneSheetActions > button[aria-disabled="true"] {
+    color: var(--wf-ink-3);
+  }
+
+  .phoneSheetSection .phoneSheetActions > button[aria-expanded="true"] {
+    font-weight: 600;
+  }
+
+  .phoneSheetSection .tableActionGroup > button {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+  }
+
+  .phoneSheetReason {
+    margin: 0;
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-2);
+  }
+
+  .phoneSheetField {
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    gap: var(--wf-s-2);
+    align-items: start;
+    padding: var(--wf-s-2) 0;
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .phoneSheetField > span {
+    padding-top: 2px;
+    font: 500 var(--wf-fs-13) / var(--wf-lh-13, 1.4) var(--wf-font);
+    color: var(--wf-ink-2);
+  }
+
+  .phoneSheetField > div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+    font: 500 var(--wf-fs-13) / var(--wf-lh-13, 1.4) var(--wf-font);
+    color: var(--wf-ink-1);
+    overflow-wrap: anywhere;
+  }
+
+  .phoneSheetField .sub {
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+  }
+
+  .phoneSheetCards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+  }
+}
+
+/* ─── v10 phone fidelity (11 Oct 2026) ───
+ * Board, Needs you and Lists run the full width and stay pinned under the bar while the board
+ * scrolls (as Home's queue switch). The switch follows the stable shared bar height
+ * once it reaches the header, keeping the join covered throughout the scroll.
+ * The desktop "Seen in the last 24 hours" and ward capacity panels stay off the phone (this rule
+ * outranks the board's `.listSection.panel` display above). The board search, order and the
+ * "Filters highlight" line are desktop tools; the phone board is the chips and the rows. Phone only. */
+@media (max-width: 48rem) {
+  .phonePanes {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+    max-width: none;
+    margin: 0 calc(var(--wf-s-3) * -1);
+    padding: var(--wf-s-2) var(--wf-s-3);
+    background: var(--wf-canvas);
+  }
+
+  .phonePanes > div,
+  .phonePanes :global([role="radiogroup"]) {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .phonePanes > div {
+    padding-inline: 0;
+  }
+
+  .phonePanes :global([role="radiogroup"]) > * {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .main .lowerPair > :is(.seenSection, .capacitySection) {
+    display: none;
+  }
+
+  .main .listSection .boardTools {
+    display: none;
+  }
+}
+
+/* v10 phone person sheet: the coordinator's facts as label and value pairs, no card. Only the phone
+ * sheet renders .phoneSheetPairs. */
+.phoneSheetPairs {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) minmax(0, 1fr);
+  column-gap: var(--wf-s-4);
+  row-gap: 6px;
+  margin: 0 0 var(--wf-s-4);
+}
+
+.phoneSheetPairs > div {
+  display: contents;
+}
+
+.phoneSheetPairs dt {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.phoneSheetPairs dd {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneSheetPairs dd.phoneSheetMono {
+  font-family: var(--wf-mono);
 }

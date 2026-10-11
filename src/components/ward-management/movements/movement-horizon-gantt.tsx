@@ -104,6 +104,15 @@ interface TooltipState {
   y: number;
 }
 
+/** Accepted corridors merged per ED and ward pair, busiest first (the rail and the phone sheet). */
+export function rankCorridorPairs(corridors: MovementHorizonGanttProps["corridors"]) {
+  const acceptedPairs = new Set(corridors.map((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}`));
+  return Array.from(acceptedPairs, (key) => {
+    const stages = corridors.filter((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}` === key);
+    return { ...stages[0], count: stages.reduce((total, stage) => total + stage.count, 0), stages };
+  }).sort((a, b) => b.count - a.count);
+}
+
 export function MovementHorizonGantt({
   lanes,
   corridors,
@@ -175,10 +184,7 @@ export function MovementHorizonGantt({
 
   // Corridor calculations for the rail
   const acceptedPairs = new Set(corridors.map((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}`));
-  const rankedPairs = Array.from(acceptedPairs, (key) => {
-    const stages = corridors.filter((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}` === key);
-    return { ...stages[0], count: stages.reduce((total, stage) => total + stage.count, 0), stages };
-  }).sort((a, b) => b.count - a.count);
+  const rankedPairs = rankCorridorPairs(corridors);
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>, ev: MovementHorizonEvent) => {
     const rect = e.currentTarget.closest(`.${styles.diagWrap}`)?.getBoundingClientRect();

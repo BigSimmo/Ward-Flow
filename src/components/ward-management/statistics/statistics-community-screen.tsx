@@ -13,13 +13,18 @@ import {
   Icon,
   Menu,
   Meter,
+  PhoneListRow,
   Segmented,
   SrOnly,
   StatusGlyph,
   TextInput,
   buttonClass,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
+import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   admissionsWithNoCommunityTeam,
   communityHubLists,
@@ -45,6 +50,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
+import { PhoneBody, PhoneFacts, PhoneGroup, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 
@@ -76,6 +82,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const { admissions, referrals, units } = live.state;
   const now = live.now;
   const { dayZero } = useWardFlow();
+  const isPhone = useIsPhone();
 
   const section = statisticsSectionById("community");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'community' section");
@@ -131,6 +138,16 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
     (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),
   );
 
+  const dueOutWeek = lists.expectedBack.filter(
+    (admission) =>
+      admission.expectedDischargeAt !== null &&
+      admission.expectedDischargeAt >= now &&
+      admission.expectedDischargeAt < now + 7 * MINUTES_PER_DAY,
+  ).length;
+  const measuredValue = (figure: StatisticsFigure) => (figure.kind === "measured" ? figure.value : null);
+  const inBedCount = measuredValue(figures.admitted);
+  const withDateCount = measuredValue(figures.expected);
+
   const figureRows: { key: keyof CommunityFigures; label: string; figure: StatisticsFigure }[] = [
     { key: "admitted", label: "In a bed, or holding one", figure: figures.admitted },
     { key: "expected", label: "With a discharge date", figure: figures.expected },
@@ -182,6 +199,19 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           ["No follow-up yet", figures.discharged.kind === "measured" ? notArranged.length : "none"],
         ],
       }}
+      phone={{
+        sub: `${dueOutWeek} due out in the next 7 days`,
+        stats: (
+          <>
+            <HeroStat value={inBedCount ?? "none"} label="In a bed" />
+            <HeroStat value={withDateCount ?? "none"} label="With a date" />
+            <HeroStat
+              value={inBedCount === null || withDateCount === null ? "none" : inBedCount - withDateCount}
+              label="No date"
+            />
+          </>
+        ),
+      }}
       stats={
         <>
           {figureRows.map((row) => (
@@ -212,202 +242,320 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         </>
       }
     >
-      <FlushRow layout="lead2">
-        <Follow className={detail.followBody}>
-          <TeamComparison current={team} rows={allTeams} />
-        </Follow>
-        <FlushStack>
+      {isPhone ? (
+        <TeamPhone
+          people={lists.currentlyAdmitted}
+          unitName={unitName}
+          now={now}
+          dayZero={dayZero}
+          inBedText={figureText(figures.admitted)}
+          inBedMeasured={figures.admitted.kind === "measured"}
+          followUp={
+            figures.discharged.kind === "measured"
+              ? {
+                  discharged: lists.dischargedIntoTheArea.length,
+                  arranged: lists.dischargedIntoTheArea.length - notArranged.length,
+                  notArranged: notArranged.length,
+                }
+              : null
+          }
+          dueOutWeek={dueOutWeek}
+        />
+      ) : (
+        <>
+          <FlushRow layout="lead2">
+            <Follow className={detail.followBody}>
+              <TeamComparison current={team} rows={allTeams} />
+            </Follow>
+            <FlushStack>
+              <StatCard
+                id="handover"
+                icon={FileText}
+                title="Community handover"
+                aside="Current snapshot"
+                data-testid="statistics-community-handover-chart"
+              >
+                <div className={styles.tableWrap}>
+                  <table
+                    className={`${tableClasses.table} ${styles.table}`}
+                    data-testid="ward-statistics-community-figures-table"
+                  >
+                    <caption className={styles.srOnly}>Community handover figures for {team.name}, synthetic</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Figure</th>
+                        <th scope="col">
+                          <span className={styles.srOnly}>Bar</span>
+                        </th>
+                        <th scope="col" className={styles.num}>
+                          People
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {figureRows.map((row) => (
+                        <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
+                          <th scope="row">{row.label}</th>
+                          <td className={detail.meterCell}>
+                            {row.figure.kind === "measured" ? (
+                              <Meter
+                                value={row.figure.value}
+                                max={measuredMax}
+                                fill="data-1"
+                                label={row.label}
+                                valueText={null}
+                              />
+                            ) : null}
+                          </td>
+                          <td
+                            className={row.figure.kind === "measured" ? styles.num : `${styles.num} ${styles.muted}`}
+                            data-testid={`ward-statistics-community-value-${row.key}`}
+                            data-unmeasured={isUnmeasured(row.figure) || undefined}
+                          >
+                            {figureText(row.figure)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <SrOnly>
+                  <p
+                    data-testid="ward-statistics-community-in-hospital-count"
+                    data-unmeasured={isUnmeasured(figures.admitted) || undefined}
+                  >
+                    {figureText(figures.admitted)} referred to this team and occupying or holding a bed now.
+                  </p>
+                  <p
+                    data-testid="ward-statistics-community-in-hospital-with-date"
+                    data-unmeasured={isUnmeasured(figures.expected) || undefined}
+                  >
+                    {figureText(figures.expected)} of those have a discharge date written down.
+                  </p>
+                  <p
+                    data-testid="ward-statistics-community-hospital-discharges-count"
+                    data-unmeasured={isUnmeasured(figures.discharged) || undefined}
+                  >
+                    {figureText(figures.discharged)} discharged into the area this team serves.
+                  </p>
+                  <p
+                    data-testid="ward-statistics-community-other-departures-count"
+                    data-unmeasured={isUnmeasured(figures.other) || undefined}
+                  >
+                    {figureText(figures.other)} left a ward another way.
+                  </p>
+                </SrOnly>
+                <CardFoot meta="Discharge dates are a subset of people holding a bed">
+                  <Link
+                    href={communityTeamHref(team)}
+                    className={buttonClass({ variant: "sec", size: "sm" })}
+                    data-testid="ward-statistics-community-operational-link"
+                  >
+                    Open caseload
+                  </Link>
+                </CardFoot>
+              </StatCard>
+
+              <StatCard id="follow-up" icon={PhoneCall} title="Follow-up" aside="Discharged here">
+                <CardBody className={styles.bodyStack}>
+                  {lists.dischargedIntoTheArea.length === 0 ? (
+                    <p className={styles.muted}>
+                      {figures.discharged.kind === "measured"
+                        ? "Nobody has been discharged into this area"
+                        : figureText(figures.discharged)}
+                    </p>
+                  ) : (
+                    <ul className={detail.crossList}>
+                      {lists.dischargedIntoTheArea.map((admission) => (
+                        <li key={admission.id} className={detail.crossRow}>
+                          <span>
+                            <span className={detail.primary}>{admission.id}</span>
+                            <span className={detail.secondary}>
+                              {unitName(admission.unitId)}
+                              {admission.leftAt === null ? "" : `, left ${dateOf(admission.leftAt, dayZero)}`}
+                            </span>
+                          </span>
+                          <span className={styles.flagged}>
+                            {admission.followUp?.state === "arranged" ? (
+                              <>
+                                <StatusGlyph tone="success" size={9} />
+                                Arranged
+                              </>
+                            ) : (
+                              <>
+                                <StatusGlyph tone="warning" size={9} />
+                                {admission.followUp ? "Not arranged" : "Not recorded"}
+                              </>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardBody>
+                <CardFoot meta={`${unseen.length} of ${admissions.length} admissions have no community team`}>
+                  <span data-testid="ward-statistics-community-unseen" className={styles.srOnly}>
+                    {unseen.length} of {admissions.length} admissions without a community team
+                  </span>
+                  <Link
+                    href={communityTeamHref(team)}
+                    className={styles.footLink}
+                    data-testid="ward-statistics-community-coverage-link"
+                  >
+                    Open {team.name}
+                  </Link>
+                </CardFoot>
+              </StatCard>
+            </FlushStack>
+          </FlushRow>
+
           <StatCard
-            id="handover"
-            icon={FileText}
-            title="Community handover"
-            aside="Current snapshot"
-            data-testid="statistics-community-handover-chart"
+            id="due-out"
+            className={detail.anchor}
+            icon={CalendarClock}
+            title="Due out to this team"
+            aside="With a discharge date"
           >
             <div className={styles.tableWrap}>
-              <table
-                className={`${tableClasses.table} ${styles.table}`}
-                data-testid="ward-statistics-community-figures-table"
-              >
-                <caption className={styles.srOnly}>Community handover figures for {team.name}, synthetic</caption>
+              <table className={`${tableClasses.table} ${styles.table}`}>
+                <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Figure</th>
-                    <th scope="col">
-                      <span className={styles.srOnly}>Bar</span>
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      People
-                    </th>
+                    <th scope="col">Admission</th>
+                    <th scope="col">Ward</th>
+                    <th scope="col">Discharge</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {figureRows.map((row) => (
-                    <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
-                      <th scope="row">{row.label}</th>
-                      <td className={detail.meterCell}>
-                        {row.figure.kind === "measured" ? (
-                          <Meter
-                            value={row.figure.value}
-                            max={measuredMax}
-                            fill="data-1"
-                            label={row.label}
-                            valueText={null}
-                          />
-                        ) : null}
+                  {dueOut.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className={styles.muted}>
+                        {figures.expected.kind === "measured"
+                          ? "Nobody in a bed has a discharge date written down"
+                          : figureText(figures.expected)}
                       </td>
-                      <td
-                        className={row.figure.kind === "measured" ? styles.num : `${styles.num} ${styles.muted}`}
-                        data-testid={`ward-statistics-community-value-${row.key}`}
-                        data-unmeasured={isUnmeasured(row.figure) || undefined}
-                      >
-                        {figureText(row.figure)}
+                    </tr>
+                  ) : null}
+                  {dueOut.map((admission) => (
+                    <tr key={admission.id}>
+                      <th scope="row">
+                        <span className={detail.primary}>{admission.id}</span>
+                      </th>
+                      <td>{unitName(admission.unitId)}</td>
+                      <td>
+                        {admission.expectedDischargeAt === null ? (
+                          <span className={styles.muted}>No date</span>
+                        ) : (
+                          <>
+                            {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
+                            <span className={styles.muted}>{fromToday(admission.expectedDischargeAt, now)}</span>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <SrOnly>
-              <p
-                data-testid="ward-statistics-community-in-hospital-count"
-                data-unmeasured={isUnmeasured(figures.admitted) || undefined}
-              >
-                {figureText(figures.admitted)} referred to this team and occupying or holding a bed now.
-              </p>
-              <p
-                data-testid="ward-statistics-community-in-hospital-with-date"
-                data-unmeasured={isUnmeasured(figures.expected) || undefined}
-              >
-                {figureText(figures.expected)} of those have a discharge date written down.
-              </p>
-              <p
-                data-testid="ward-statistics-community-hospital-discharges-count"
-                data-unmeasured={isUnmeasured(figures.discharged) || undefined}
-              >
-                {figureText(figures.discharged)} discharged into the area this team serves.
-              </p>
-              <p
-                data-testid="ward-statistics-community-other-departures-count"
-                data-unmeasured={isUnmeasured(figures.other) || undefined}
-              >
-                {figureText(figures.other)} left a ward another way.
-              </p>
-            </SrOnly>
-            <CardFoot meta="Discharge dates are a subset of people holding a bed">
-              <Link
-                href={communityTeamHref(team)}
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                data-testid="ward-statistics-community-operational-link"
-              >
-                Open caseload
-              </Link>
-            </CardFoot>
           </StatCard>
+        </>
+      )}
+    </StatisticsPage>
+  );
+}
 
-          <StatCard id="follow-up" icon={PhoneCall} title="Follow-up" aside="Discharged here">
-            <CardBody className={styles.bodyStack}>
-              {lists.dischargedIntoTheArea.length === 0 ? (
-                <p className={styles.muted}>
-                  {figures.discharged.kind === "measured"
-                    ? "Nobody has been discharged into this area"
-                    : figureText(figures.discharged)}
-                </p>
-              ) : (
-                <ul className={detail.crossList}>
-                  {lists.dischargedIntoTheArea.map((admission) => (
-                    <li key={admission.id} className={detail.crossRow}>
-                      <span>
-                        <span className={detail.primary}>{admission.id}</span>
-                        <span className={detail.secondary}>
-                          {unitName(admission.unitId)}
-                          {admission.leftAt === null ? "" : `, left ${dateOf(admission.leftAt, dayZero)}`}
-                        </span>
-                      </span>
-                      <span className={styles.flagged}>
-                        {admission.followUp?.state === "arranged" ? (
-                          <>
-                            <StatusGlyph tone="success" size={9} />
-                            Arranged
-                          </>
-                        ) : (
-                          <>
-                            <StatusGlyph tone="warning" size={9} />
-                            {admission.followUp ? "Not arranged" : "Not recorded"}
-                          </>
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardBody>
-            <CardFoot meta={`${unseen.length} of ${admissions.length} admissions have no community team`}>
-              <span data-testid="ward-statistics-community-unseen" className={styles.srOnly}>
-                {unseen.length} of {admissions.length} admissions without a community team
-              </span>
-              <Link
-                href={communityTeamHref(team)}
-                className={styles.footLink}
-                data-testid="ward-statistics-community-coverage-link"
-              >
-                Open {team.name}
-              </Link>
-            </CardFoot>
-          </StatCard>
-        </FlushStack>
-      </FlushRow>
-
-      <StatCard
-        id="due-out"
-        className={detail.anchor}
-        icon={CalendarClock}
-        title="Due out to this team"
-        aside="With a discharge date"
-      >
-        <div className={styles.tableWrap}>
-          <table className={`${tableClasses.table} ${styles.table}`}>
-            <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
-            <thead>
-              <tr>
-                <th scope="col">Admission</th>
-                <th scope="col">Ward</th>
-                <th scope="col">Discharge</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dueOut.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className={styles.muted}>
-                    {figures.expected.kind === "measured"
-                      ? "Nobody in a bed has a discharge date written down"
-                      : figureText(figures.expected)}
-                  </td>
-                </tr>
-              ) : null}
-              {dueOut.map((admission) => (
-                <tr key={admission.id}>
-                  <th scope="row">
-                    <span className={detail.primary}>{admission.id}</span>
-                  </th>
-                  <td>{unitName(admission.unitId)}</td>
-                  <td>
-                    {admission.expectedDischargeAt === null ? (
-                      <span className={styles.muted}>No date</span>
+/**
+ * One community team on a phone (v10 phone): the people referred to this team who hold a bed now,
+ * soonest discharge first, then the follow-up figures for those discharged into its area.
+ */
+function TeamPhone({
+  people,
+  unitName,
+  now,
+  dayZero,
+  inBedText,
+  inBedMeasured,
+  followUp,
+  dueOutWeek,
+}: {
+  people: readonly Admission[];
+  unitName: (unitId: string) => string;
+  now: number;
+  dayZero: Date;
+  inBedText: string;
+  inBedMeasured: boolean;
+  followUp: { discharged: number; arranged: number; notArranged: number } | null;
+  dueOutWeek: number;
+}) {
+  const patientOf = usePatientOf();
+  const sorted = [...people].sort(
+    (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),
+  );
+  return (
+    <PhoneBody testId="ward-statistics-community-phone">
+      <PhoneGroup title="Community handover" aside={`${people.length} ${people.length === 1 ? "person" : "people"}`}>
+        {sorted.length === 0 ? (
+          <p className={phone.note}>
+            {inBedMeasured ? "Nobody referred to this team holds a bed now." : `In a bed: ${inBedText}`}
+          </p>
+        ) : (
+          <PhoneList label="Referred to this team, in a bed now">
+            {sorted.map((admission) => {
+              const person = patientOf(admission);
+              const days =
+                admission.arrivedAt === null || admission.arrivedAt > now
+                  ? null
+                  : Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
+              return (
+                <PhoneListRow
+                  key={admission.id}
+                  as="li"
+                  name={person.formalName}
+                  meta={
+                    <>
+                      <span className={phone.mono}>{person.umrn}</span>
+                      {` · ${unitName(admission.unitId)}`}
+                    </>
+                  }
+                  value={
+                    days === null ? (
+                      "none"
                     ) : (
                       <>
-                        {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
-                        <span className={styles.muted}>{fromToday(admission.expectedDischargeAt, now)}</span>
+                        {days} <small>d</small>
                       </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </StatCard>
-    </StatisticsPage>
+                    )
+                  }
+                  time={
+                    admission.expectedDischargeAt === null ? "no date" : dateOf(admission.expectedDischargeAt, dayZero)
+                  }
+                />
+              );
+            })}
+          </PhoneList>
+        )}
+      </PhoneGroup>
+      <PhoneGroup title="Follow-up" aside="discharged here">
+        <PhoneFacts
+          label="Follow-up for people discharged into this area"
+          facts={[
+            { id: "discharged", label: "Discharged here", value: followUp?.discharged ?? "none" },
+            { id: "arranged", label: "Follow-up arranged", value: followUp?.arranged ?? "none" },
+            {
+              id: "not",
+              label: (
+                <>
+                  {followUp && followUp.notArranged > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                  No follow-up yet
+                </>
+              ),
+              value: followUp?.notArranged ?? "none",
+            },
+            { id: "due", label: "Due out, 7d", value: dueOutWeek },
+          ]}
+        />
+      </PhoneGroup>
+    </PhoneBody>
   );
 }
 

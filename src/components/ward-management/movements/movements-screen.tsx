@@ -46,29 +46,45 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { ArrowRightLeft, ChartColumn, ChevronRight, Lock, Printer, Search, ShieldCheck, Truck, X } from "lucide-react";
+import {
+  ArrowRightLeft,
+  ChartColumn,
+  ChevronRight,
+  ListFilter,
+  Lock,
+  Printer,
+  Search,
+  ShieldCheck,
+  Truck,
+  X,
+} from "lucide-react";
 import {
   Card,
   CardHead,
   Hero,
   Legend,
   LiveChip,
+  PhoneSheet,
   StackBar,
   StatusGlyph,
   TextInput,
+  TierTile,
   Timer,
   buttonClass,
   cx,
   durMinutes,
+  useIsPhone,
   type WfFill,
   type WfTone,
 } from "@/components/wf";
 import { MovementDrawer } from "./movement-drawer";
-import { MovementHorizonGantt } from "./movement-horizon-gantt";
+import { MovementHorizonGantt, rankCorridorPairs } from "./movement-horizon-gantt";
 import { isCoordinatorStep, movementNextStep, nextStepTarget } from "./movement-next-step";
 import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { ArrivalsAheadList } from "./arrivals-ahead-list";
+import arrivalsStyles from "./arrivals-ahead-list.module.css";
 
 const MS_PER_MINUTE = 60_000;
 
@@ -299,6 +315,13 @@ export function MovementsScreen() {
   const [order, setOrder] = useState<"stands" | "cause" | "transport" | "wait">("stands");
   const [shapeTab, setShapeTab] = useState<"stage" | "transport" | "waiting" | "resolved">("stage");
   const [sideView, setSideView] = useState<"transport" | "shape">("transport");
+  // Phone (v10): the timeline, corridors and transport panels open as sheets from nav cards.
+  const isPhone = useIsPhone();
+  const [phoneSheet, setPhoneSheet] = useState<"arrivals" | "corridors" | "transport" | null>(null);
+  // v10 phone: Arrivals ahead reads as a list; the timeline opens under it on request.
+  const [phoneArrivalsTimeline, setPhoneArrivalsTimeline] = useState(false);
+  // v10 phone: each worklist group opens on its own "Show N more" row.
+  const [phoneOpenGroups, setPhoneOpenGroups] = useState<ReadonlySet<string>>(new Set());
   // v6 worklist: a search over name, UMRN or ED, and a short list per group until Show all.
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(false);
@@ -508,13 +531,15 @@ export function MovementsScreen() {
     return (movement: Movement) => movementBelongsToService(movement, chosenService, units);
   }, [service, units]);
 
-  const worklistMovements = useMemo(
-    () => (isInServiceScope ? movements.filter(isInServiceScope) : movements),
-    [movements, isInServiceScope],
-  );
+  // Phone: the first tab is "Open", so its rows and count are the open movements only; closed ones
+  // are on "Resolved today". Desktop's "Every movement" is unchanged.
+  const worklistMovements = useMemo(() => {
+    const scoped = isInServiceScope ? movements.filter(isInServiceScope) : movements;
+    return isPhone ? scoped.filter(isOpen) : scoped;
+  }, [movements, isInServiceScope, isPhone]);
   const worklistStages = useMemo(
-    () => (isInServiceScope ? journeyStages(worklistMovements, now) : stages),
-    [isInServiceScope, worklistMovements, stages, now],
+    () => (isInServiceScope || isPhone ? journeyStages(worklistMovements, now) : stages),
+    [isInServiceScope, isPhone, worklistMovements, stages, now],
   );
   const worklistClosedToday = useMemo(
     () => (isInServiceScope ? closedToday.filter(isInServiceScope) : closedToday),
@@ -601,6 +626,20 @@ export function MovementsScreen() {
     capping
       ? rows.filter((movement, index) => index < cap || pinnedRowIds.has(movement.id) || isMarked(movement))
       : rows;
+  /* v10 phone: a group shows its first three rows and a "Show N more in <group>" row under them. */
+  const groupRows = (id: string, rows: Movement[]) =>
+    isPhone ? (phoneOpenGroups.has(id) ? rows : capRows(rows, PHONE_GROUP_CAP)) : capRows(rows, GROUP_CAP);
+  const phoneGroupMore = (id: string, title: string, total: number, shown: number) =>
+    isPhone && total > shown ? (
+      <button
+        type="button"
+        className={arrivalsStyles.groupMore}
+        data-testid={`movements-group-more-${id}`}
+        onClick={() => setPhoneOpenGroups((open) => new Set(open).add(id))}
+      >
+        Show {total - shown} more in {title.toLowerCase()}
+      </button>
+    ) : null;
   const hiddenIn = (groups: Movement[][], cap: number) =>
     groups.reduce((sum, rows) => sum + rows.length - capRows(rows, cap).length, 0);
   const hiddenRowCount =
@@ -696,6 +735,75 @@ export function MovementsScreen() {
   ).sort((a, b) => Number(Boolean(b.flaggedUrgent)) - Number(Boolean(a.flaggedUrgent)) || a.urgency - b.urgency);
   const surname = (movement: Movement) =>
     resolveSubjectPatient(movement, { patients, referrals }).formalName.split(",")[0];
+  // Phone nav cards: who is inbound to a ward, and the ranked ED to ward corridors.
+  const phoneInbound = openMovements.filter((movement) => movement.acceptedUnitId);
+  const phoneInboundWards = new Set(phoneInbound.map((movement) => movement.acceptedUnitId)).size;
+  const phoneCorridors = rankCorridorPairs(corridors);
+  // The live transport legs: the side card's feed on the larger screen, a sheet on phone.
+  const transportFeed = (onPicked?: () => void) => (
+    <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs" tabIndex={0}>
+      {legs.map((leg) => {
+        const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
+        const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
+        const originEd = edById(leg.movement.originEdId);
+        const shortOrigin = originEd ? `${originEd.siteCode} ED` : originLabel;
+        const stateLabel = LEG_STATE_LABEL[leg.state] ?? leg.state;
+        return (
+          <button
+            key={leg.movement.id}
+            type="button"
+            className={flow.trRow}
+            data-selected={detailId === leg.movement.id ? "true" : undefined}
+            onClick={() => {
+              onPicked?.();
+              openDetail(leg.movement.id);
+              revealMovement(leg.movement.id);
+            }}
+            aria-label={`Inspect ${patientInfo.formalName}, ${stateLabel} via ${leg.provider}`}
+          >
+            <span className={flow.trName}>
+              <span className={flow.trNameText}>{patientInfo.formalName}</span>
+              {leg.movement.transport?.escortRequired ? (
+                <ShieldCheck size={14} className={flow.lock} aria-label="Escort required" />
+              ) : null}
+            </span>
+            <span className={flow.trState}>
+              <StatusGlyph tone={LEG_STATE_TONE[leg.state]} size={9} />
+              {stateLabel}
+            </span>
+            <span className={flow.trWhen}>
+              <span className="sr-only">Booked </span>
+              {durMinutes(leg.minutesSinceBooked)}
+              <span className="sr-only"> ago</span>
+            </span>
+            <span className={flow.trRoute} title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}>
+              {shortOrigin} to {destinationLabel} · {leg.provider}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+  // The stage highlight buttons: in the hero foot on the larger screen, under the band on phone.
+  const stageTrack = (trackClass: string, buttonClassName: string, countClass: string) => (
+    <div className={trackClass} role="group" aria-label="Highlight a stage">
+      {openStages
+        .filter((stage) => stage.id !== "arrived")
+        .map((stage) => (
+          <button
+            key={stage.id}
+            type="button"
+            className={buttonClassName}
+            aria-pressed={highlight === `stage:${stage.id}`}
+            onClick={() => toggleHighlight(`stage:${stage.id}`)}
+            title={stage.label}
+          >
+            {STAGE_SHORT[stage.id]}
+            <span className={countClass}>{stage.movements.length}</span>
+          </button>
+        ))}
+    </div>
+  );
   function openFromHero(id: string) {
     const target = movements.find((candidate) => candidate.id === id);
     if (target !== undefined && isInServiceScope !== null && !isInServiceScope(target)) {
@@ -747,7 +855,7 @@ export function MovementsScreen() {
         <section className={styles.daySection} aria-label="The day" data-ward-primitive="panel">
           <Hero
             className={styles.dayHero}
-            eyebrow="Movements"
+            eyebrow={isPhone ? `Movements · ${service ?? "Statewide"}` : "Movements"}
             title={
               // The title doubles as the "Open" day figure. Its DOM reads label first ("Open
               // movements 70"), so the figure's own label anchors it like every stat beside it;
@@ -758,13 +866,15 @@ export function MovementsScreen() {
               </span>
             }
             titleMeta={
-              <span className={flow.heroTitleMeta}>
-                {movingCount} moving · {closedToday.length} resolved today · {activeCorridorCount} active corridors
-              </span>
+              isPhone ? undefined : (
+                <span className={flow.heroTitleMeta}>
+                  {movingCount} moving · {closedToday.length} resolved today · {activeCorridorCount} active corridors
+                </span>
+              )
             }
             aside={
               <div className={flow.heroAside}>
-                {longestWaiting ? (
+                {longestWaiting && !isPhone ? (
                   <button
                     type="button"
                     className={buttonClass({ variant: "onHero", size: "sm", className: flow.jump })}
@@ -776,7 +886,7 @@ export function MovementsScreen() {
                     <span className={flow.jumpValue}>{splitDuration(Math.max(now - longestWaiting.openedAt, 0))}</span>
                   </button>
                 ) : null}
-                {nextExpiry ? (
+                {nextExpiry && !isPhone ? (
                   <button
                     type="button"
                     className={buttonClass({ variant: "onHero", size: "sm", className: flow.jump })}
@@ -807,23 +917,28 @@ export function MovementsScreen() {
             }
             barAside={
               <div className={flow.heroTools}>
-                <button
-                  type="button"
-                  className={buttonClass({ variant: "onHero", size: "sm", className: flow.previewTool })}
-                  aria-disabled="true"
-                  title="Preview. Not wired in this prototype."
-                  onClick={() => announceToWardShell("Run sheet is a preview. Not wired in this prototype.")}
-                >
-                  <Printer size={14} aria-hidden="true" />
-                  Run sheet
-                </button>
-                <Link
-                  href="/mockups/ward-flow/transport/officer"
-                  className={buttonClass({ variant: "onHero", size: "sm" })}
-                >
-                  <Truck size={14} aria-hidden="true" />
-                  Transport
-                </Link>
+                {isPhone ? null : (
+                  <>
+                    <button
+                      type="button"
+                      className={buttonClass({ variant: "onHero", size: "sm", className: flow.previewTool })}
+                      aria-disabled="true"
+                      title="Preview. Not wired in this prototype."
+                      onClick={() => announceToWardShell("Run sheet is a preview. Not wired in this prototype.")}
+                    >
+                      <Printer size={14} aria-hidden="true" />
+                      Run sheet
+                    </button>
+                    {/* Phone: Transport opens from the "Transport now" card below the hero. */}
+                    <Link
+                      href="/mockups/ward-flow/transport/officer"
+                      className={buttonClass({ variant: "onHero", size: "sm" })}
+                    >
+                      <Truck size={14} aria-hidden="true" />
+                      Transport
+                    </Link>
+                  </>
+                )}
                 {myQueue[0] ? (
                   <button
                     type="button"
@@ -838,28 +953,17 @@ export function MovementsScreen() {
               </div>
             }
             foot={
-              <div className={flow.heroAside}>
-                <span className={flow.heroBarLabel}>Stage</span>
-                <div className={flow.stageTrack} role="group" aria-label="Highlight a stage">
-                  {openStages
-                    .filter((stage) => stage.id !== "arrived")
-                    .map((stage) => (
-                      <button
-                        key={stage.id}
-                        type="button"
-                        className={flow.stageButton}
-                        aria-pressed={highlight === `stage:${stage.id}`}
-                        onClick={() => toggleHighlight(`stage:${stage.id}`)}
-                        title={stage.label}
-                      >
-                        {STAGE_SHORT[stage.id]}
-                        <span className={flow.stageCount}>{stage.movements.length}</span>
-                      </button>
-                    ))}
+              isPhone ? undefined : (
+                <div className={flow.heroAside}>
+                  <span className={flow.heroBarLabel}>Stage</span>
+                  {stageTrack(flow.stageTrack, flow.stageButton, flow.stageCount)}
                 </div>
-              </div>
+              )
             }
           />
+
+          {/* Phone (v10): the stage chips sit on the canvas under the band, number first. */}
+          {isPhone ? stageTrack(flow.phStages, flow.phStage, flow.phStageCount) : null}
 
           <div className={styles.needsYou} role="group" aria-label="Needs you" data-testid="movements-needs-you">
             <div className={styles.needsYouHead}>
@@ -878,7 +982,9 @@ export function MovementsScreen() {
               <ul className={flow.needsList}>
                 {attentionMovements.map((movement, index) => {
                   const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
-                  const who = resolveSubjectPatient(movement, { patients, referrals }).displayName;
+                  const subject = resolveSubjectPatient(movement, { patients, referrals });
+                  // Phone (v10) lists people surname first, as every other phone row does.
+                  const who = isPhone ? subject.formalName : subject.displayName;
                   const reason = meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
                   return (
                     <li key={movement.id} className={flow.needsCell}>
@@ -929,21 +1035,144 @@ export function MovementsScreen() {
           </div>
         </section>
 
-        <section className={styles.trafficPanel} aria-label="Today’s traffic" data-ward-primitive="panel">
-          <span className="sr-only">{`${activeCorridorCount} active corridors`}</span>
-          <MovementHorizonGantt
-            lanes={horizonLanes}
-            corridors={corridors}
-            refusedCorridors={refusedCorridors}
-            units={units}
-            now={now}
-            selectedMovementId={detailId}
-            onSelectMovement={(id) => {
-              openDetail(id);
-              revealMovement(id);
-            }}
-          />
-        </section>
+        {isPhone ? (
+          <nav className={flow.phNav} aria-label="Movement panels">
+            <button type="button" className={flow.phNavCard} onClick={() => setPhoneSheet("arrivals")}>
+              <ListFilter size={16} className={flow.phNavIcon} aria-hidden="true" />
+              <span className={flow.phNavText}>
+                <strong>Arrivals ahead</strong>
+                <span>
+                  <b>{phoneInbound.length}</b> inbound · {phoneInboundWards}{" "}
+                  {phoneInboundWards === 1 ? "ward" : "wards"}
+                </span>
+              </span>
+              <ChevronRight size={16} className={flow.phNavChevron} aria-hidden="true" />
+            </button>
+            <button type="button" className={flow.phNavCard} onClick={() => setPhoneSheet("corridors")}>
+              <ArrowRightLeft size={16} className={flow.phNavIcon} aria-hidden="true" />
+              <span className={flow.phNavText}>
+                <strong>Corridors</strong>
+                <span>
+                  <b>{activeCorridorCount}</b> active · {refusedCorridors.length} declined today
+                </span>
+              </span>
+              <ChevronRight size={16} className={flow.phNavChevron} aria-hidden="true" />
+            </button>
+            <button type="button" className={flow.phNavCard} onClick={() => setPhoneSheet("transport")}>
+              <Truck size={16} className={flow.phNavIcon} aria-hidden="true" />
+              <span className={flow.phNavText}>
+                <strong>Transport now</strong>
+                <span>
+                  <b>{legs.length}</b> {legs.length === 1 ? "leg" : "legs"} ·{" "}
+                  <b>{openMovements.length - legs.length}</b> without
+                </span>
+              </span>
+              <ChevronRight size={16} className={flow.phNavChevron} aria-hidden="true" />
+            </button>
+            <PhoneSheet
+              open={phoneSheet === "arrivals"}
+              onClose={() => setPhoneSheet(null)}
+              title="Arrivals ahead"
+              description="Inbound by receiving ward, soonest first"
+              height="tall"
+            >
+              <ArrivalsAheadList lanes={horizonLanes} now={now} />
+              <button
+                type="button"
+                className={arrivalsStyles.arrivalsMore}
+                aria-expanded={phoneArrivalsTimeline}
+                onClick={() => setPhoneArrivalsTimeline((open) => !open)}
+              >
+                {phoneArrivalsTimeline ? "Hide the timeline" : "Show the timeline"}
+              </button>
+              {phoneArrivalsTimeline ? (
+                <MovementHorizonGantt
+                  lanes={horizonLanes}
+                  corridors={corridors}
+                  refusedCorridors={refusedCorridors}
+                  units={units}
+                  now={now}
+                  selectedMovementId={detailId}
+                  onSelectMovement={(id) => {
+                    setPhoneSheet(null);
+                    openDetail(id);
+                    revealMovement(id);
+                  }}
+                />
+              ) : null}
+            </PhoneSheet>
+            <PhoneSheet
+              open={phoneSheet === "corridors"}
+              onClose={() => setPhoneSheet(null)}
+              title="Corridors"
+              description="ED to ward, people now"
+              height="tall"
+            >
+              {phoneCorridors.length === 0 ? (
+                <p className={styles.absent}>No open movement currently has an accepting ward.</p>
+              ) : (
+                <ol className={flow.phList}>
+                  {phoneCorridors.map((corridor) => {
+                    const ed = edById(corridor.originEdId);
+                    const unit = units.find((candidate) => candidate.id === corridor.acceptedUnitId);
+                    return (
+                      <li key={`${corridor.originEdId} ${corridor.acceptedUnitId}`} className={flow.phListRow}>
+                        <span className={flow.phListMain}>
+                          <strong>
+                            {ed ? `${ed.siteCode} ED` : corridor.originEdId} to{" "}
+                            {wardLabel(corridor.acceptedUnitId, unit?.name)}
+                          </strong>
+                          <span>
+                            {corridor.stages.map((row) => `${stageCopy[row.stage].label} ${row.count}`).join(" · ")}
+                          </span>
+                        </span>
+                        <b className={flow.phListCount}>{corridor.count}</b>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </PhoneSheet>
+            <PhoneSheet
+              open={phoneSheet === "transport"}
+              onClose={() => setPhoneSheet(null)}
+              title="Transport now"
+              description={`${legs.length} ${legs.length === 1 ? "leg" : "legs"} · ${openMovements.length - legs.length} movements without one`}
+              height="tall"
+            >
+              {legs.length === 0 ? (
+                <p className={styles.absent}>No transport leg is booked or moving right now.</p>
+              ) : (
+                <div className={flow.phList}>{transportFeed(() => setPhoneSheet(null))}</div>
+              )}
+              <Link
+                href="/mockups/ward-flow/transport/officer"
+                className={buttonClass({ variant: "pri", className: flow.phSheetAction })}
+              >
+                <Truck size={16} aria-hidden="true" />
+                Open transport dispatch
+              </Link>
+            </PhoneSheet>
+          </nav>
+        ) : null}
+
+        {isPhone ? null : (
+          <section className={styles.trafficPanel} aria-label="Today’s traffic" data-ward-primitive="panel">
+            <span className="sr-only">{`${activeCorridorCount} active corridors`}</span>
+            <MovementHorizonGantt
+              lanes={horizonLanes}
+              corridors={corridors}
+              refusedCorridors={refusedCorridors}
+              units={units}
+              now={now}
+              selectedMovementId={detailId}
+              onSelectMovement={(id) => {
+                openDetail(id);
+                revealMovement(id);
+              }}
+            />
+          </section>
+        )}
 
         <div className={cx(styles.columns, flow.layout)}>
           <div className={styles.primary}>
@@ -958,7 +1187,7 @@ export function MovementsScreen() {
                   <div className={styles.boardTabs} role="tablist" aria-label="Movements">
                     {(
                       [
-                        { id: "every", label: "Every movement", count: worklistMovements.length },
+                        { id: "every", label: isPhone ? "Open" : "Every movement", count: worklistMovements.length },
                         { id: "resolved", label: "Resolved today", count: worklistClosedToday.length },
                       ] as const
                     ).map((tab) => (
@@ -1082,15 +1311,20 @@ export function MovementsScreen() {
                               </div>
                             );
                           }
-                          const rows = capRows(stage.movements, GROUP_CAP);
+                          const rows = groupRows(stage.id, stage.movements);
                           return (
                             <div key={stage.id} className={styles.stageBlock}>
-                              <WardGroupHeading
-                                title={stage.label}
-                                people={stage.movements.length}
-                                note={moreNote(stage.movements.length - rows.length)}
-                              />
+                              {isPhone ? (
+                                <PhoneGroupHeading title={stage.label} people={stage.movements.length} />
+                              ) : (
+                                <WardGroupHeading
+                                  title={stage.label}
+                                  people={stage.movements.length}
+                                  note={moreNote(stage.movements.length - rows.length)}
+                                />
+                              )}
                               <WardRecordList>{rows.map(renderRow)}</WardRecordList>
+                              {phoneGroupMore(stage.id, stage.label, stage.movements.length, rows.length)}
                             </div>
                           );
                         })
@@ -1111,15 +1345,20 @@ export function MovementsScreen() {
                               </div>
                             );
                           }
-                          const rows = capRows(group.rows, GROUP_CAP);
+                          const rows = groupRows(group.id, group.rows);
                           return (
                             <div key={group.id} className={styles.stageBlock}>
-                              <WardGroupHeading
-                                title={group.title}
-                                people={group.rows.length}
-                                note={moreNote(group.rows.length - rows.length)}
-                              />
+                              {isPhone ? (
+                                <PhoneGroupHeading title={group.title} people={group.rows.length} />
+                              ) : (
+                                <WardGroupHeading
+                                  title={group.title}
+                                  people={group.rows.length}
+                                  note={moreNote(group.rows.length - rows.length)}
+                                />
+                              )}
                               <WardRecordList>{rows.map(renderRow)}</WardRecordList>
+                              {phoneGroupMore(group.id, group.title, group.rows.length, rows.length)}
                             </div>
                           );
                         })
@@ -1266,55 +1505,7 @@ export function MovementsScreen() {
                       />
                     </div>
 
-                    <div
-                      className={styles.transportRunsFeed}
-                      role="feed"
-                      aria-label="Active transport legs"
-                      tabIndex={0}
-                    >
-                      {legs.map((leg) => {
-                        const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
-                        const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
-                        const originEd = edById(leg.movement.originEdId);
-                        const shortOrigin = originEd ? `${originEd.siteCode} ED` : originLabel;
-                        const stateLabel = LEG_STATE_LABEL[leg.state] ?? leg.state;
-                        return (
-                          <button
-                            key={leg.movement.id}
-                            type="button"
-                            className={flow.trRow}
-                            data-selected={detailId === leg.movement.id ? "true" : undefined}
-                            onClick={() => {
-                              openDetail(leg.movement.id);
-                              revealMovement(leg.movement.id);
-                            }}
-                            aria-label={`Inspect ${patientInfo.formalName}, ${stateLabel} via ${leg.provider}`}
-                          >
-                            <span className={flow.trName}>
-                              <span className={flow.trNameText}>{patientInfo.formalName}</span>
-                              {leg.movement.transport?.escortRequired ? (
-                                <ShieldCheck size={14} className={flow.lock} aria-label="Escort required" />
-                              ) : null}
-                            </span>
-                            <span className={flow.trState}>
-                              <StatusGlyph tone={LEG_STATE_TONE[leg.state]} size={9} />
-                              {stateLabel}
-                            </span>
-                            <span className={flow.trWhen}>
-                              <span className="sr-only">Booked </span>
-                              {durMinutes(leg.minutesSinceBooked)}
-                              <span className="sr-only"> ago</span>
-                            </span>
-                            <span
-                              className={flow.trRoute}
-                              title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}
-                            >
-                              {shortOrigin} to {destinationLabel} · {leg.provider}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    {transportFeed()}
                   </div>
                 )
               ) : (
@@ -1664,8 +1855,23 @@ function HighlightStat({
   );
 }
 
+/** v10 phone group heading: the caps title left, a bare count right ("21", not "21 people"). */
+function PhoneGroupHeading({ title, people }: { title: string; people: number }) {
+  return (
+    <div className={flow.phGroupHead} data-ward-primitive="group-heading">
+      <h3 className={flow.phGroupTitle}>{title}</h3>
+      <span className={flow.phGroupCount}>
+        {people}
+        <span className="sr-only"> {people === 1 ? "person" : "people"}</span>
+      </span>
+    </div>
+  );
+}
+
 /** Urgency tier as a T1 to T3 pill: neutral, never red, with the word "Tier" for screen readers. */
 function TierPill({ tier }: { tier: number }) {
+  const isPhone = useIsPhone();
+  if (isPhone) return <TierTile tier={tier} data-tier={tier} />;
   return (
     <span className={flow.tier} data-tier={tier}>
       <span className="sr-only">Tier </span>
@@ -2002,6 +2208,7 @@ function StageRow({
  */
 /** Rows shown per group in the worklist before Show all, and in a single ungrouped list. */
 const GROUP_CAP = 4;
+const PHONE_GROUP_CAP = 3;
 const LIST_CAP = 12;
 
 function moreNote(hidden: number): string | undefined {

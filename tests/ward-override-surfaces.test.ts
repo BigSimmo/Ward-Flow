@@ -672,7 +672,10 @@ describe("ward override-surface guard", () => {
       // file's entry in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON above for why it needs no reason.
       "src/components/ward-management/community/community-screen.tsx::ACCEPT_REFERRAL": 1,
       // v10 Home pass 3: State bedflow's Offer with Undo, plain fits only (allowlisted above).
-      "src/components/ward-management/coordinator/coordinator-screen.tsx::REFER_TO_UNITS": 1,
+      // 1 -> 2, 11 Oct 2026: the phone patient sheet's "Refer to <ward>" runs the same plain
+      // REFER_TO_UNITS through the Undo step (the panel's canRefer gate already passed), as the v10
+      // mockup toasts "Offered ... " with Undo there.
+      "src/components/ward-management/coordinator/coordinator-screen.tsx::REFER_TO_UNITS": 2,
       "src/components/ward-management/referrals/ward-referral-inbox.tsx::ACCEPT_REFERRAL": 1,
       // 2 -> 3, T12 (item 9, 2026-09-17): the non-binary placement form dispatches the same
       // REFER_TO_UNITS with genderPlacementReason and genderPlacementChecked. Verified by reading

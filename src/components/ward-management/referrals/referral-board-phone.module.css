@@ -32,6 +32,34 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* v10 phone band: the hero runs square from edge to edge under the lean bar, then the page rises
+   over its foot with the 22px round lip (the same rules as the shared Hero's band). */
+.phHero[data-band="on"] {
+  position: relative;
+  margin-top: calc(-1 * var(--wf-band-top, 0px));
+  margin-left: calc(-1 * var(--wf-band-left, 0px));
+  margin-right: calc(-1 * var(--wf-band-right, 0px));
+  padding: var(--wf-s-3) max(var(--wf-band-right, 0px), 16px) calc(var(--wf-s-4) + var(--wf-band-lip))
+    max(var(--wf-band-left, 0px), 16px);
+  margin-bottom: calc(-1 * var(--wf-s-3));
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.phHero[data-band="on"]::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: var(--wf-band-lip);
+  border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
+  background: var(--wf-canvas);
+  box-shadow: 0 -1px 0 var(--wf-hero-edge);
+  content: "";
+  pointer-events: none;
+}
+
 .eyebrow {
   display: flex;
   align-items: center;

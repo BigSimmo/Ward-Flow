@@ -11,9 +11,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { UserPlus } from "lucide-react";
+import { ArrowRight, ChevronRight, Command, Copy, History, UserPlus, Zap } from "lucide-react";
 
-import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx } from "@/components/wf";
+import { Button, Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx } from "@/components/wf";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -98,7 +98,9 @@ import {
   CensusTable,
   FlowChip,
   PhoneCensus,
+  PhoneCommands,
   PhoneDobField,
+  type PhoneCommand,
   SearchAdornment,
   ShiftSummary,
 } from "./patient-census-view";
@@ -262,7 +264,7 @@ export function PatientSearchPage() {
   });
   const [showAllWard, setShowAllWard] = useState(false);
   const [flashKey, setFlashKey] = useState<string | null>(null);
-  const [phoneGroup, setPhoneGroup] = useState<CensusGroup>("wait");
+  const [commandsOpen, setCommandsOpen] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const showToast = (msg: string) => setCopyNote(msg);
@@ -788,7 +790,6 @@ export function PatientSearchPage() {
 
   const jumpToGroup = (group: CensusGroup) => {
     setTab("now");
-    setPhoneGroup(group);
     setOpenGroups((current) => ({ ...current, [group]: true }));
     window.setTimeout(() => {
       document
@@ -820,10 +821,14 @@ export function PatientSearchPage() {
   };
 
   // While a search runs on the phone, a group with no match gives way to the first one with any.
-  const phoneGroupShown =
-    searching && groupMatches[phoneGroup] === 0
-      ? (CENSUS_GROUPS.find((group) => groupMatches[group.id] > 0)?.id ?? phoneGroup)
-      : phoneGroup;
+  const firstWaiting = visibleRows.find((row) => row.group === "wait") ?? null;
+  const flowLine = (() => {
+    const closed = census.closedToday;
+    const arrived = closed.filter((row) => row.outcome === "Arrived").length;
+    const left = closed.filter((row) => row.outcome === "Discharged" || row.outcome === "Transferred").length;
+    const stopped = closed.filter((row) => row.outcome === "Did not proceed").length;
+    return `Today ${arrived} arrived · ${left} left · ${stopped} did not proceed`;
+  })();
   const historyCount = census.closedToday.length + accessRecord.length;
   const addPatientClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
     if (isNewTabClick(event)) {
@@ -953,6 +958,7 @@ export function PatientSearchPage() {
             className={cx(cs.censusHero, isPhone && cs.heroPhone)}
             eyebrow="Statewide census"
             title={`${liveCount} patients now`}
+            titleMeta={isPhone ? flowLine : undefined}
             aside={
               <>
                 {isPhone ? null : <FlowChip closed={census.closedToday} onOpen={() => setTab("history")} />}
@@ -982,6 +988,47 @@ export function PatientSearchPage() {
                   />
                 )}
               </div>
+            }
+            footKind={isPhone ? "actions" : "line"}
+            foot={
+              isPhone ? (
+                <div className={cs.phoneHeroFoot}>
+                  <div className={cs.phoneFigs} role="group" aria-label="Where patients are now">
+                    {(["wait", "found", "ward"] as const).map((group) => (
+                      <button
+                        key={group}
+                        type="button"
+                        className={cs.phoneFig}
+                        onClick={() => jumpToGroup(group)}
+                        aria-label={`${searching ? groupMatches[group] : groupTotals[group]} ${CENSUS_GROUPS.find((entry) => entry.id === group)?.label}, go to the list`}
+                      >
+                        <b>{searching ? groupMatches[group] : groupTotals[group]}</b>
+                        <span>{CENSUS_GROUPS.find((entry) => entry.id === group)?.short}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className={cs.phoneHeroActions}>
+                    <Button
+                      variant="onHero"
+                      icon={Command}
+                      aria-haspopup="dialog"
+                      onClick={() => setCommandsOpen(true)}
+                      data-testid="ward-patient-search-commands-open"
+                    >
+                      Commands
+                    </Button>
+                    <Link
+                      href={WARD_ADD_PERSON_HREF}
+                      className={buttonClass({ variant: "onHero" })}
+                      data-testid="ward-patient-search-add"
+                      onClick={addPatientClick}
+                    >
+                      <Icon icon={UserPlus} size={16} />
+                      <span>Add patient</span>
+                    </Link>
+                  </div>
+                </div>
+              ) : undefined
             }
           />
 
@@ -1213,8 +1260,6 @@ export function PatientSearchPage() {
             matched={groupMatches}
             searching={searching}
             needle={needle}
-            group={phoneGroupShown}
-            onGroup={setPhoneGroup}
             highlight={highlight}
             onHighlight={setHighlight}
             highlightCounts={highlightCounts}
@@ -1228,8 +1273,71 @@ export function PatientSearchPage() {
             history={history}
             historyCount={historyCount}
             empty={refusalNotice ?? empty}
+            onJump={jumpToGroup}
           />
-        ) : (
+        ) : null}
+        {isPhone ? (
+          <PhoneCommands
+            open={commandsOpen}
+            onClose={() => setCommandsOpen(false)}
+            actions={[
+              {
+                id: "add",
+                label: "Add patient",
+                hint: "New record with a UMRN",
+                icon: UserPlus,
+                href: WARD_ADD_PERSON_HREF,
+              },
+              ...(firstWaiting
+                ? [
+                    {
+                      id: "find",
+                      label: `Find a bed for ${firstWaiting.name}`,
+                      hint: `${firstWaiting.umrn} · ${firstWaiting.where}`,
+                      icon: ArrowRight,
+                      onAction: () => selectRow(firstWaiting),
+                    },
+                  ]
+                : []),
+              {
+                id: "copy",
+                label: "Copy list",
+                hint: `${visibleRows.length} rows as text`,
+                icon: Copy,
+                onAction: copyList,
+              },
+              {
+                id: "history",
+                label: "Show today's history",
+                hint: "Arrived, left and did not proceed",
+                icon: History,
+                onAction: () => setTab("history"),
+              },
+              {
+                id: "t1",
+                label: "Highlight Tier 1",
+                hint: `${highlightCounts.t1} patients`,
+                icon: Zap,
+                onAction: () => {
+                  setTab("now");
+                  setHighlight("t1");
+                },
+              },
+              {
+                id: "long",
+                label: "Highlight waiting over 24 hours",
+                hint: `${highlightCounts.long} waiting`,
+                icon: Zap,
+                onAction: () => {
+                  setTab("now");
+                  setHighlight("long");
+                },
+              },
+            ]}
+            places={PHONE_PLACES}
+          />
+        ) : null}
+        {isPhone ? null : (
           <div className={cs.layout}>
             <CensusTable
               rows={refusal ? [] : visibleRows}
@@ -1732,3 +1840,37 @@ function AccessRecordPanel({ entries, now }: { entries: readonly AccessEntry[]; 
     </WardPanel>
   );
 }
+
+/** The main places in the phone Commands sheet (v10). Each is an existing route. */
+const PHONE_PLACES: readonly PhoneCommand[] = [
+  { id: "home", label: "Home", hint: "Today's board", icon: ChevronRight, href: "/mockups/ward-flow" },
+  {
+    id: "referrals",
+    label: "Referrals",
+    hint: "Who needs a bed",
+    icon: ChevronRight,
+    href: "/mockups/ward-flow/referrals",
+  },
+  {
+    id: "movements",
+    label: "Movements",
+    hint: "Booked and on the road",
+    icon: ChevronRight,
+    href: "/mockups/ward-flow/movements",
+  },
+  {
+    id: "forms",
+    label: "Forms",
+    hint: "Mental Health Act forms",
+    icon: ChevronRight,
+    href: "/mockups/ward-flow/legal-forms",
+  },
+  { id: "wards", label: "Wards", hint: "Every ward and bed", icon: ChevronRight, href: "/mockups/ward-flow/wards" },
+  {
+    id: "settings",
+    label: "Settings",
+    hint: "Rules, alerts and display",
+    icon: ChevronRight,
+    href: "/mockups/ward-flow/settings",
+  },
+];

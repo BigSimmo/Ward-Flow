@@ -1149,3 +1149,355 @@
     display: none;
   }
 }
+
+/* Phone v10 (11 Oct 2026): All, Wards, EDs and Teams as one segmented control on the canvas,
+ * the search pill with the order beside it, one Check first row (or the active highlight with
+ * Clear), then the places in one card: each region a quiet header band, each place a two line
+ * row with its ready figure. A tap opens the place's preview as a bottom sheet. The phone-only
+ * classes render only on a phone; the rest sit under the phone query. */
+.phoneControls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding-bottom: var(--wf-s-3);
+}
+
+/* The kind switch pins under the stable header, full bleed on the canvas. */
+.phoneKindBar {
+  position: sticky;
+  top: var(--wf-header-height, 3.5rem);
+  z-index: 6;
+  margin: 0 calc(-1 * var(--wf-s-3)) var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-canvas);
+}
+
+.phoneKindBar > div {
+  display: flex;
+  width: 100%;
+}
+
+.phoneKindBar > div > button {
+  flex: 1 1 0;
+  justify-content: center;
+  min-height: var(--wf-touch);
+}
+
+.phoneSearchRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.phoneSearchBox {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--wf-touch);
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneSortButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-touch);
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.phoneListHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0 var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneListHead b {
+  font-size: var(--wf-fs-14);
+  color: var(--wf-ink-1);
+}
+
+.phoneListHead > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wf-s-3);
+  white-space: nowrap;
+}
+
+.phoneShownCount {
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-align: center;
+}
+
+.phoneCheckFirst {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  text-align: left;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.phoneCheckText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneCheckText > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneCheckText b {
+  font-size: var(--wf-fs-13);
+}
+
+.phoneCheckText span {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* In the preview sheet the card loses its chrome and its own Open row: the sheet's footer has it. */
+.phonePreviewSheet .previewCard {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.phonePreviewSheet .previewHead {
+  padding: 0 0 var(--wf-s-2);
+  border: 0;
+}
+
+.phonePreviewSheet .previewHead > :first-child,
+.phonePreviewSheet :is(.previewEyebrow, .previewTitle, .previewSite, .closeDetailBtn) {
+  display: none;
+}
+
+.phonePreviewSheet .detailBody {
+  padding: 0;
+}
+
+.phonePreviewSheet .capacityGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  row-gap: var(--wf-s-3);
+  padding: var(--wf-s-3) 0;
+}
+
+@media (max-width: 48rem) {
+  .hubLeft {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .listHead {
+    display: none;
+  }
+
+  .listScroll {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    overflow: hidden;
+  }
+
+  .groupHeadRow,
+  .subGroupHead {
+    background: var(--wf-surface-2);
+  }
+
+  .groupHead,
+  .subGroupName {
+    font-size: var(--wf-fs-12);
+    font-weight: 600;
+    letter-spacing: var(--wf-tr-caps);
+    text-transform: uppercase;
+    color: var(--wf-ink-2);
+  }
+
+  .resultMain {
+    min-height: 60px;
+  }
+
+  .resultName {
+    font-size: var(--wf-fs-14);
+    font-weight: 600;
+  }
+
+  .resultBeds {
+    display: none;
+  }
+
+  /* The age shows only when it is stale, the one time it changes what you do. */
+  .resultConfirmed:not(:has(.flagPill)) {
+    display: none;
+  }
+
+  .resultReady {
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+
+  .resultReadyNum {
+    font-size: var(--wf-fs-15);
+  }
+}
+
+/* Phone (v10): only a pinned place shows a star, filled, beside its name. */
+@media (max-width: 48rem) {
+  .phonePinMark {
+    display: inline-block;
+    flex: none;
+    margin-left: 6px;
+    color: var(--wf-accent);
+    fill: currentColor;
+    vertical-align: -2px;
+  }
+}
+
+@media (max-width: 48rem) {
+  /* No pin button beside the row on phone, so the figures keep the card's inner edge. */
+  .resultMain {
+    padding-right: var(--wf-s-4);
+  }
+}
+
+@media (max-width: 48rem) {
+  /* The field has its own clear button, so the browser's search cancel mark is not drawn twice. */
+  .phoneSearchBox input::-webkit-search-cancel-button {
+    appearance: none;
+    display: none;
+  }
+}
+
+/* Phone (v10) preview sheet: Open sits in the sheet footer, so the card's own Open row hides. */
+.phonePreviewSheet .detailCta {
+  display: none;
+}
+
+.phonePreviewBody {
+  display: grid;
+  gap: var(--wf-s-4);
+}
+
+.phoneTiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.phoneTiles > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.phoneTiles > div:nth-of-type(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+
+.phoneTiles > div:nth-last-of-type(-n + 2) {
+  border-bottom: 0;
+}
+
+.phoneTiles span {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.phoneTiles b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-1);
+  font: 700 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+  white-space: nowrap;
+}
+
+.phoneStrip {
+  max-width: 100%;
+}
+
+.phoneFacts {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+
+.phoneFacts > div {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  align-items: baseline;
+}
+
+.phoneFacts dt {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.phoneFacts dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: var(--wf-lh-13);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phonePreviewLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+}
+
+.phonePreviewLinks > :is(a, button) {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  text-decoration: none;
+  cursor: pointer;
+}

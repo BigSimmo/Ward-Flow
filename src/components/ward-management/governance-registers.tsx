@@ -13,7 +13,7 @@ import {
 
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { allOverrides } from "@/components/ward-management/ward-derivations";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { ACCESS_RECORD_NOTE } from "@/components/ward-management/search/access-record";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -54,11 +54,14 @@ import {
   Count,
   Drawer,
   EmptyState,
+  FactGrid,
   Field,
   Frac,
+  GroupHead,
   Hero,
   HeroStat,
   HeroTrack,
+  LiveChip,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -70,6 +73,7 @@ import {
   Textarea,
   buttonClass,
   cx,
+  durMinutes,
   tableClasses,
   type WfTone,
   useIsPhone,
@@ -1195,41 +1199,40 @@ function GovernanceSession({
     setPhoneDecision(reviewState(event) === "follow-up-required" ? "follow-up-required" : "reviewed");
     setPhoneSheet(true);
   };
-  const phoneEventRow = (event: AuditEvent) => (
-    <PhoneListRow
-      key={`${event.generation}-${event.id}`}
-      as="li"
-      data-dim={!chipMatches(event) ? "true" : undefined}
-      className={thirdEdition.phoneRow}
-      leading={
-        <StatusGlyph
-          tone={
-            reviewState(event) === "reviewed"
-              ? "success"
-              : reviewState(event) === "follow-up-required"
-                ? "warning"
-                : OUTCOME_TONE[event.outcome]
-          }
-          size={9}
-        />
-      }
-      name={actionLabels[event.action]}
-      meta={`${subjectLabel(event, patientOf)} · ${categoryLabels[event.category]}`}
-      time={event.at === null ? "–" : formatInstantWithDay(event.at, now)}
-      onSelect={() => openPhoneEvent(event)}
-      action={
-        event.category === "review"
-          ? undefined
-          : {
-              label: "Review",
-              onAction: () => openPhoneEvent(event),
-            }
-      }
-    />
-  );
+  // v10 phone row: the action, the person, then the outcome and who; the clock time and how long
+  // ago at the end. The whole row opens the review sheet, so it carries no separate button.
+  const phoneEventRow = (event: AuditEvent) => {
+    const state = reviewState(event);
+    const tone: WfTone =
+      state === "reviewed" ? "success" : state === "follow-up-required" ? "warning" : OUTCOME_TONE[event.outcome];
+    return (
+      <PhoneListRow
+        key={`${event.generation}-${event.id}`}
+        as="li"
+        data-dim={!chipMatches(event) ? "true" : undefined}
+        className={thirdEdition.phoneRow}
+        name={actionLabels[event.action]}
+        meta={
+          <>
+            <span className={thirdEdition.phoneMetaLine}>{subjectLabel(event, patientOf)}</span>
+            <span className={thirdEdition.phoneMetaLine}>
+              <StatusGlyph tone={tone} size={9} />
+              {outcomeLabels[event.outcome]} ·{" "}
+              {event.actor.role ? WARD_FLOW_ROLE_LABELS[event.actor.role] : categoryLabels[event.category]}
+            </span>
+          </>
+        }
+        value={event.at === null ? "–" : formatInstantWithDay(event.at, now)}
+        time={event.at === null ? undefined : `${durMinutes(Math.max(0, now - event.at))} ago`}
+        onSelect={() => openPhoneEvent(event)}
+      />
+    );
+  };
   const phoneTree = (
     <div className={thirdEdition.phoneScreen} data-testid="ward-governance-phone">
       <PhoneHero
+        eyebrow="Governance · This session"
+        chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
         title={toReview.length === 0 ? "Nothing to review" : `${toReview.length} to review`}
         sub={`${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`}
         figures={[
@@ -1241,6 +1244,7 @@ function GovernanceSession({
           <Button
             variant="onHero"
             icon={ShieldCheck}
+            className={thirdEdition.phoneHeroAction}
             disabledReason={toReview.length === 0 ? "Nothing waits for review" : undefined}
             reasonDisplay="tooltip"
             onClick={() => {
@@ -1266,7 +1270,28 @@ function GovernanceSession({
       {phoneTab === "review" ? (
         <Card aria-label="Waiting for review">
           {toReview.length > 0 ? (
-            <ul className={thirdEdition.phoneList}>{toReview.map(phoneEventRow)}</ul>
+            <>
+              {toReview.some((event) => reviewState(event) === "unreviewed") ? (
+                <>
+                  <GroupHead
+                    title="Waiting"
+                    count={toReview.filter((event) => reviewState(event) === "unreviewed").length}
+                    aside="newest first"
+                  />
+                  <ul className={thirdEdition.phoneList}>
+                    {toReview.filter((event) => reviewState(event) === "unreviewed").map(phoneEventRow)}
+                  </ul>
+                </>
+              ) : null}
+              {followUp > 0 ? (
+                <>
+                  <GroupHead title="Follow-up required" count={followUp} />
+                  <ul className={thirdEdition.phoneList}>
+                    {toReview.filter((event) => reviewState(event) === "follow-up-required").map(phoneEventRow)}
+                  </ul>
+                </>
+              ) : null}
+            </>
           ) : (
             <div className={thirdEdition.emptyBlock}>
               <ClipboardList aria-hidden="true" size={16} />
@@ -1334,16 +1359,22 @@ function GovernanceSession({
       ) : null}
       <div className={thirdEdition.phoneMore}>
         <button type="button" className={thirdEdition.phoneMoreCard} onClick={() => setPhoneMore("registers")}>
+          <FileText size={18} aria-hidden="true" className={thirdEdition.phoneMoreIcon} />
           <span className={thirdEdition.stack}>
             <strong>Registers</strong>
-            <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>Overrides and access</span>
+            <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
+              Overrides and access here · seclusion, restraint and incidents Preview
+            </span>
           </span>
           <ChevronRight size={16} aria-hidden="true" />
         </button>
         <button type="button" className={thirdEdition.phoneMoreCard} onClick={() => setPhoneMore("reports")}>
+          <History size={18} aria-hidden="true" className={thirdEdition.phoneMoreIcon} />
           <span className={thirdEdition.stack}>
             <strong>Reports</strong>
-            <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>Weekly, PIR, downtime</span>
+            <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
+              Weekly report, PIR chronology, downtime pack
+            </span>
           </span>
           <ChevronRight size={16} aria-hidden="true" />
         </button>
@@ -1375,25 +1406,46 @@ function GovernanceSession({
       >
         {selected ? (
           <div className={thirdEdition.stackGap}>
-            <FactList
+            {/* v10 phone: the event's facts two by two, the outcome glyph carrying its tone. */}
+            <FactGrid
               facts={[
-                ["Recorded", when(selected.at, now)],
-                ["Role recorded", selected.actor.role ? WARD_FLOW_ROLE_LABELS[selected.actor.role] : "Not recorded"],
-                ["Outcome", outcomeLabels[selected.outcome]],
-                ...(selected.reasonCode !== "none" ? [["Reason", reasonLabels[selected.reasonCode]] as const] : []),
+                {
+                  id: "outcome",
+                  label: "Outcome",
+                  value: (
+                    <span className={thirdEdition.statusText}>
+                      <StatusGlyph tone={OUTCOME_TONE[selected.outcome]} size={9} />
+                      {outcomeLabels[selected.outcome]}
+                    </span>
+                  ),
+                },
+                {
+                  id: "role",
+                  label: "Role recorded",
+                  value: selected.actor.role ? WARD_FLOW_ROLE_LABELS[selected.actor.role] : "Not recorded",
+                },
+                { id: "when", label: "Recorded", value: when(selected.at, now) },
+                {
+                  id: "reason",
+                  label: "Reason",
+                  value: selected.reasonCode !== "none" ? reasonLabels[selected.reasonCode] : "None recorded",
+                },
               ]}
             />
             {selected.category !== "review" ? (
-              <Segmented<AuditReview["decision"]>
-                className={thirdEdition.phoneTabs}
-                label="Review decision"
-                value={phoneDecision}
-                onChange={setPhoneDecision}
-                items={[
-                  { id: "reviewed", label: "Reviewed" },
-                  { id: "follow-up-required", label: "Follow-up" },
-                ]}
-              />
+              <div className={thirdEdition.stackGap}>
+                <h3 className={thirdEdition.phoneDecisionHead}>Your review</h3>
+                <Segmented<AuditReview["decision"]>
+                  className={thirdEdition.phoneDecision}
+                  label="Review decision"
+                  value={phoneDecision}
+                  onChange={setPhoneDecision}
+                  items={[
+                    { id: "reviewed", label: "Reviewed" },
+                    { id: "follow-up-required", label: "Follow-up" },
+                  ]}
+                />
+              </div>
             ) : (
               <p className={thirdEdition.quiet}>Review attempts cannot be reviewed.</p>
             )}

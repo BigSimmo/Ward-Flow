@@ -489,3 +489,41 @@
     white-space: normal;
   }
 }
+
+/* Phone (v10 bed board): no outer card. "Waiting for this ward" heads the waiting chips, then the
+   hint and the pods sit straight on the page. */
+@media (max-width: 48rem) {
+  .boardPhone {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .boardPhone > :first-child {
+    min-height: 0;
+    padding: var(--wf-s-1) var(--wf-s-1) 0;
+    border-bottom: 0;
+  }
+
+  .boardPhone .body {
+    padding: var(--wf-s-2) 0 var(--wf-s-3);
+  }
+
+  .boardPhone .foot {
+    padding-inline: var(--wf-s-1);
+    border-top: 0;
+    background: transparent;
+  }
+}
+
+@media (max-width: 48rem) {
+  .boardPhone .waitlist {
+    padding-inline: var(--wf-s-1);
+  }
+
+  .boardPhone .say {
+    background: var(--wf-surface);
+  }
+}

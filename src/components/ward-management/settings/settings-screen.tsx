@@ -1237,7 +1237,9 @@ export function SettingsScreen() {
                 {SETTINGS_DEMO_PROFILE.name}
               </span>
             }
-            sub={`${SETTINGS_DEMO_PROFILE.role} · Demo profile`}
+            eyebrow={SETTINGS_DEMO_PROFILE.location}
+            chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
+            sub={`${SETTINGS_DEMO_PROFILE.role} · nothing here changes care`}
             figures={[
               { id: "rules", value: savedSurge ? "Surge" : "Standard", label: "Rules" },
               {
@@ -1300,6 +1302,7 @@ export function SettingsScreen() {
                     showToast(`Glare mode ${next ? "on" : "off"}.`);
                   }}
                   label={<SrOnly>Glare mode</SrOnly>}
+                  className={styles.phoneSwitch}
                 />
               </SettingRow>
               <SettingRow setting="density" title="Row density" stacked preview>
@@ -1322,6 +1325,7 @@ export function SettingsScreen() {
                     showToast(next ? "Buzz sound on." : "Buzz sound off.");
                   }}
                   label={<SrOnly>Buzz sound</SrOnly>}
+                  className={styles.phoneSwitch}
                 />
               </SettingRow>
             </div>

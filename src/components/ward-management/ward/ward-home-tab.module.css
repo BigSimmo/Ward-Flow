@@ -1189,3 +1189,333 @@ label.todoMain:has(.todoTick:focus-visible) {
     display: none;
   }
 }
+
+/* Phone v10 (11 Oct 2026): the first screen is Awaiting your answer, then Every bed as one card
+ * of state groups with settled beds one tap away, then Ward figures behind a disclosure. This
+ * shift and Ward flow open as bottom sheets from the chips above the tabs. Every class below
+ * renders only on a phone, and the rest sit under the phone query. */
+.phoneSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.phoneSectionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-1) var(--wf-s-1) 0;
+  font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.phoneClear {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phoneClearTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.phoneClearText {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.phoneAwaitList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
+}
+
+.phoneAwaitList > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneAwaitRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.phoneAwaitText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneAwaitName,
+.phoneAwaitMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneAwaitName {
+  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+}
+
+.phoneAwaitMeta {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneAwaitWait {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneAwaitWait b {
+  font: 600 var(--wf-fs-14) / 1.2 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.phoneBedsHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.phoneFigures {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phoneFigures > summary {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: var(--wf-s-2) calc(var(--wf-s-4) + 20px) var(--wf-s-2) var(--wf-s-3);
+  list-style: none;
+  cursor: pointer;
+}
+
+.phoneFigures > summary::-webkit-details-marker {
+  display: none;
+}
+
+.phoneFigures > summary::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: var(--wf-s-4);
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--wf-ink-3);
+  border-bottom: 1.5px solid var(--wf-ink-3);
+  transform: translateY(-70%) rotate(45deg);
+}
+
+.phoneFigures[open] > summary::after {
+  transform: translateY(-30%) rotate(-135deg);
+}
+
+.phoneFiguresTitle {
+  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.phoneFiguresLine {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneFiguresBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneFiguresFoot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-3) var(--wf-s-3) 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.phoneFiguresFoot :is(span, a) {
+  white-space: normal;
+  color: inherit;
+}
+
+.phoneShiftSwitch {
+  padding: 0 0 var(--wf-s-2);
+}
+
+.phoneShiftSwitch > div {
+  display: flex;
+  width: 100%;
+}
+
+.phoneShiftSwitch > div > button {
+  flex: 1 1 0;
+  min-height: var(--wf-touch);
+}
+
+/* In a sheet the card loses its own chrome: the sheet is the surface. */
+.phoneSheetBody :is(.flowCard, .shiftCard) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.phoneSheetBody .flowBody {
+  max-height: none;
+}
+
+@media (max-width: 48rem) {
+  .homeWrap {
+    gap: var(--wf-s-4);
+  }
+
+  /* Every bed: one card, each state group a quiet header band with its rows under it. */
+  .areaBeds {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .phoneGroups {
+    gap: 0;
+    padding: 0;
+  }
+
+  .phoneGroups > section + section {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .phoneGroupHead {
+    min-height: var(--wf-row-group);
+    margin: 0;
+    padding: 0 var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+    background: var(--wf-surface-2);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+    letter-spacing: var(--wf-tr-caps);
+    text-transform: uppercase;
+    color: var(--wf-ink-2);
+  }
+
+  .phoneGroupHead > :last-child {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    color: var(--wf-ink-1);
+  }
+
+  .phoneRows {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .phoneRow {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: var(--wf-s-3);
+    min-height: 60px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .phoneRowNo {
+    font-size: var(--wf-fs-15);
+    font-weight: 700;
+  }
+
+  .phoneRowName {
+    font-size: var(--wf-fs-14);
+  }
+
+  .phoneRowDays {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    font-size: var(--wf-fs-14);
+    font-weight: 700;
+    color: var(--wf-ink-1);
+  }
+
+  .phoneRowDaysSub {
+    font: 400 var(--wf-fs-12) / 1 var(--wf-font);
+    color: var(--wf-ink-3);
+  }
+
+  .phoneMore {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--wf-line);
+    border-radius: 0;
+    font-weight: 600;
+    color: var(--wf-accent-ink);
+  }
+
+  .phoneFigures .bedKey {
+    padding: 0 var(--wf-s-3);
+    border: 0;
+  }
+}
+
+/* In a phone sheet the sheet body already insets the content, so the card's own side padding
+ * steps away and the flow tabs span the sheet. */
+.phoneSheetBody .flowSwitch,
+.phoneSheetBody .flowBody,
+.phoneSheetBody .flowFoot,
+.phoneSheetBody .shiftFoot,
+.phoneSheetBody .todoCol {
+  padding-inline: 0;
+}
+
+.phoneSheetBody .flowSwitch {
+  padding-top: 0;
+}
+
+.phoneSheetBody .flowSwitch > div > button {
+  flex: 1 1 0;
+  min-height: var(--wf-touch);
+}

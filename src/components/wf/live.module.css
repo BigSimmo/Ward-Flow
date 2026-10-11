@@ -187,3 +187,14 @@
     border-color: CanvasText;
   }
 }
+
+/* Phone (v10): the clock after "Live" is mono at the chip's own weight and ink ("Live 10:42"). */
+@media (max-width: 48rem) {
+  .u.clk {
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    color: var(--wf-ink-1);
+  }
+  .onHero .u.clk {
+    color: var(--wf-hero-ink);
+  }
+}

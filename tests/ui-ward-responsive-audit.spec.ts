@@ -38,6 +38,9 @@ test.describe("@mockup Ward responsive containment", () => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto(`/mockups/ward-flow${route}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+      // The server renders the wide layout and the phone layout replaces it on hydration (v10), so
+      // measure after the page has settled rather than a table that is about to be swapped out.
+      await page.waitForLoadState("networkidle");
 
       const geometry: { viewport: number; document: number }[] = [];
       for (const width of [320, 390, 768]) {
@@ -295,4 +298,44 @@ test.describe("@mockup Ward scroll geometry", () => {
     await page.waitForLoadState("networkidle");
     await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(420);
   });
+});
+
+// These pages formerly positioned their phone controls against different resting and scrolled
+// header heights. Cover direct canvas bands and the controls with an 8px painted canvas collar.
+test.describe("@mockup phone navigation follows the stable header", () => {
+  test.use({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
+  const strips = [
+    ["Patients", "/search", "census_phoneSeg__", 0],
+    ["Capacity", "/capacity", "capacity_phoneTabs__", 0],
+    ["Home", "", "home_queueTools__", 0],
+    ["Community", "/community", "community_phonePanes__", 0],
+    ["ED", "/ed/rph-ed", "ed_phonePanes__", 0],
+    ["Ward statistics", "/statistics/ward/rph-adult-secure", "statistics-phone-body_stickySeg__", 0],
+    ["Out-of-area", "/out-of-area", "out-of-area-board_phoneTabs__", 8],
+  ] as const;
+  for (const [label, route, classPrefix, collar] of strips) {
+    test(`${label} keeps its navigation aligned while crossing the scroll threshold`, async ({ page }, testInfo) => {
+      test.setTimeout(120_000);
+      await page.goto(`/mockups/ward-flow${route}`, { waitUntil: "networkidle" });
+      const bar = page.getByTestId("ward-bar");
+      await expect(bar).toHaveAttribute("data-band", /ink|light/);
+      const strip = page.locator(`[class*="${classPrefix}"]`);
+      await expect(strip).toBeVisible();
+      for (const offset of [0, 12, 80, 500]) {
+        await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), offset);
+        await expect(bar).toHaveCSS("height", "56px");
+        await expect(strip).toHaveCSS("top", `${56 + collar}px`);
+      }
+      if (collar) await expect(strip).not.toHaveCSS("box-shadow", "none");
+      if (route === "/search") {
+        await expect(page.getByRole("tablist", { name: "Patients now or history" })).toBeVisible();
+        const bounds = await strip.boundingBox();
+        const header = await bar.boundingBox();
+        expect(bounds!.y).toBe(header!.y + header!.height);
+        const screenshot = testInfo.outputPath("patients-sticky-tabs.png");
+        await page.screenshot({ path: screenshot });
+        await testInfo.attach("patients-sticky-tabs", { path: screenshot, contentType: "image/png" });
+      }
+    });
+  }
 });

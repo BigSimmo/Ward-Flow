@@ -3699,3 +3699,123 @@
     gap: var(--wf-s-1);
   }
 }
+
+/* Phone (v10 mockup, 11 Oct 2026): the worklist loses its outer card. The Open / Resolved tabs and
+ * the Arrange options become full-width pill segments, search is a pill, and each stage group is its
+ * own card with an uppercase head. Desktop and tablet are unchanged: everything sits under 48rem. */
+@media (max-width: 48rem) {
+  .wlCard.wlCard {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .wlCard > :first-child {
+    padding: 0;
+    border: 0;
+  }
+
+  .wlCard > :first-child > :not(:last-child) {
+    display: none;
+  }
+
+  .wlCard > :first-child > :last-child {
+    flex: 1 1 100%;
+    margin: 0;
+  }
+
+  .boardTabs.boardTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    padding: var(--wf-s-1);
+    border-radius: var(--wf-r-pill);
+  }
+
+  .boardTabs > .boardTab,
+  .orderBar > .orderBtn {
+    justify-content: center;
+    height: auto;
+    min-height: 2.5rem;
+    border-radius: var(--wf-r-pill);
+    font-size: var(--wf-fs-13);
+  }
+
+  .orderBar.orderBar {
+    width: 100%;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .movementListBody.movementListBody {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .stageBlock.stageBlock {
+    margin: 0 0 var(--wf-s-3);
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .movementListBody .stageBlock > [data-ward-primitive="group-heading"] {
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+    background: var(--wf-surface-2);
+    text-transform: uppercase;
+  }
+
+  .wlFoot.wlFoot {
+    justify-content: center;
+    border-top: 0;
+  }
+}
+
+@media (max-width: 48rem) {
+  /* Needs you head on one line: the uppercase label left, "3 of 18 Tier 1" right. */
+  .needsYouHead.needsYouHead {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-2) var(--wf-s-4);
+    background: var(--wf-surface-2);
+  }
+
+  .needsYouTitle.needsYouTitle {
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .needsYouMeta {
+    white-space: nowrap;
+  }
+}
+
+/* v10 phone: the "Arrange" label sits left of the order track, outside it. */
+@media (max-width: 48rem) {
+  .orderBar.orderBar {
+    position: relative;
+    width: auto;
+    margin-left: 4.75rem;
+  }
+
+  .orderBar.orderBar > .orderBtn {
+    padding: 0 4px;
+    font-size: var(--wf-fs-12);
+  }
+
+  .orderBar > .orderLegend {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: -4.75rem;
+    transform: translateY(-50%);
+  }
+}

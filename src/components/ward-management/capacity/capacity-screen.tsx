@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Printer } from "lucide-react";
 import { LEAVING_DESTINATIONS } from "../ward-admissions";
 
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
@@ -14,10 +15,12 @@ import {
   Hero,
   HeroStat,
   OccupancyRing,
+  Segmented,
   SrOnly,
   StatusGlyph,
   buttonClass,
   durMinutes,
+  useIsPhone,
   type WfTone,
 } from "@/components/wf";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
@@ -39,6 +42,8 @@ import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-ser
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { wardIntakeConstraintLabels } from "@/components/ward-management/ward-change-reasons";
 import { BedMap } from "./bed-map";
+import { CapacityPhoneWards } from "./capacity-phone-wards";
+import { CapacityPhoneOverview } from "./capacity-phone-overview";
 import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
 import { bedsForecast } from "./beds-forecast";
@@ -105,6 +110,9 @@ export function CapacityScreen() {
   const service = useServiceScope();
   const [selection, setSelection] = useState<{ unitId: string; generation: number } | null>(null);
   const [networkTab, setNetworkTab] = useState("freeing");
+  // Phone (v10): Overview, Wards and Planned are one segmented control; each shows its own part.
+  const isPhone = useIsPhone();
+  const [phoneTab, setPhoneTab] = useState<"overview" | "wards" | "planned">("overview");
   const [wardSort, setWardSort] = useState("name");
   const [tableFullscreen, setTableFullscreen] = useState(false);
   const [showAllColumns, setShowAllColumns] = useState(false);
@@ -330,14 +338,41 @@ export function CapacityScreen() {
           className={styles.capacityHero}
           level={1}
           // v10: the Wards count appears once, here, never as a chip.
-          eyebrow={`Capacity · ${service ?? "Statewide"} · ${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} · as at ${formatInstant(now)}`}
+          eyebrow={
+            isPhone
+              ? `Capacity · ${service ?? "Statewide"}`
+              : `Capacity · ${service ?? "Statewide"} · ${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} · as at ${formatInstant(now)}`
+          }
           title={
             <>
               <SrOnly>Capacity, </SrOnly>
-              {netTotals.ready} beds ready of {netTotals.beds}
+              {netTotals.ready} {isPhone ? "ready" : "beds ready"} of {netTotals.beds}
             </>
           }
-          titleMeta={netTotals.pendingPreparation ? `${netTotals.pendingPreparation} being made ready` : undefined}
+          titleMeta={
+            isPhone
+              ? `${gapTotals.gap < 0 ? `${Math.abs(gapTotals.gap)} short of` : gapTotals.gap === 0 ? "Exactly enough for" : `${gapTotals.gap} spare for`} ${gapTotals.waiting} waiting in ED${netTotals.pendingPreparation ? ` · ${netTotals.pendingPreparation} being made ready` : ""}`
+              : netTotals.pendingPreparation
+                ? `${netTotals.pendingPreparation} being made ready`
+                : undefined
+          }
+          stats={
+            isPhone ? (
+              <>
+                <HeroStat
+                  value={totalLockedReady}
+                  label="Locked ready"
+                  tone="success"
+                  pressed={networkFilterId === "locked-ready"}
+                  onToggle={() => {
+                    highlightWards(networkFilterId === "locked-ready" ? "all" : "locked-ready");
+                    setPhoneTab("wards");
+                  }}
+                />
+                <HeroStat value={totalPulled} label="Pulled" tone={totalPulled > 0 ? "warning" : undefined} />
+              </>
+            ) : undefined
+          }
           lead={
             // v10 Capacity: the one ring on the page, ahead of the title.
             <OccupancyRing
@@ -347,35 +382,37 @@ export function CapacityScreen() {
             />
           }
           bar={
-            <div className={styles.heroStatGroup} role="group" aria-label="Statewide Bed Telemetry">
-              <HeroStat
-                inline
-                value={totalLockedReady}
-                label="Locked ready"
-                pressed={networkFilterId === "locked-ready"}
-                onToggle={() => highlightWards(networkFilterId === "locked-ready" ? "all" : "locked-ready")}
-              />
-              <HeroStat
-                inline
-                value={totalOpenReady}
-                label="Open ready"
-                pressed={networkFilterId === "open-ready"}
-                onToggle={() => highlightWards(networkFilterId === "open-ready" ? "all" : "open-ready")}
-              />
-              <HeroStat inline value={totalPulled} label="Pulled" tone={totalPulled > 0 ? "warning" : undefined} />
-              <HeroStat inline value={freeingTracked ? totalFreeing : "Not tracked"} label="Due out today" />
-              {oldestCount ? (
+            isPhone ? undefined : (
+              <div className={styles.heroStatGroup} role="group" aria-label="Statewide Bed Telemetry">
                 <HeroStat
                   inline
-                  command
-                  value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}
-                  label={`Oldest count, ${oldestCount.unit.name}`}
-                  tone={isConfirmationFresh(oldestCount.unit, now) ? undefined : "warning"}
-                  onToggle={() => selectWard(oldestCount.unit.id)}
-                  className={styles.heroJump}
+                  value={totalLockedReady}
+                  label="Locked ready"
+                  pressed={networkFilterId === "locked-ready"}
+                  onToggle={() => highlightWards(networkFilterId === "locked-ready" ? "all" : "locked-ready")}
                 />
-              ) : null}
-            </div>
+                <HeroStat
+                  inline
+                  value={totalOpenReady}
+                  label="Open ready"
+                  pressed={networkFilterId === "open-ready"}
+                  onToggle={() => highlightWards(networkFilterId === "open-ready" ? "all" : "open-ready")}
+                />
+                <HeroStat inline value={totalPulled} label="Pulled" tone={totalPulled > 0 ? "warning" : undefined} />
+                <HeroStat inline value={freeingTracked ? totalFreeing : "Not tracked"} label="Due out today" />
+                {oldestCount ? (
+                  <HeroStat
+                    inline
+                    command
+                    value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}
+                    label={`Oldest count, ${oldestCount.unit.name}`}
+                    tone={isConfirmationFresh(oldestCount.unit, now) ? undefined : "warning"}
+                    onToggle={() => selectWard(oldestCount.unit.id)}
+                    className={styles.heroJump}
+                  />
+                ) : null}
+              </div>
+            )
           }
           aside={
             <>
@@ -385,6 +422,7 @@ export function CapacityScreen() {
               <BedMeetingSheetLauncher
                 now={now}
                 buttonClassName={buttonClass({ variant: "light" })}
+                icon={isPhone ? <Printer size={16} aria-hidden="true" /> : undefined}
                 buildSheet={() =>
                   bedMeetingSheet({
                     units,
@@ -429,7 +467,39 @@ export function CapacityScreen() {
           it already reads as supplementary context rather than a headline figure, and the owner's
           overrule of "Beds freeing today" leaves that reasoning undisturbed.
         */}
-        <div className={styles.columns}>
+        {isPhone ? (
+          <div className={styles.phoneTabs}>
+            <Segmented
+              label="Capacity view"
+              items={[
+                { id: "overview" as const, label: "Overview" },
+                { id: "wards" as const, label: "Wards", count: scopedNetworkRows.length },
+                {
+                  id: "planned" as const,
+                  label: "Planned",
+                  count: (plannedAdmissions ?? []).filter((booking) => booking.state === "booked").length,
+                },
+              ]}
+              value={phoneTab}
+              onChange={setPhoneTab}
+            />
+          </div>
+        ) : null}
+        {isPhone && phoneTab === "wards" ? (
+          <CapacityPhoneWards
+            groups={
+              service === null
+                ? networkServiceGroups
+                : networkServiceGroups.filter((group) => group.service === service)
+            }
+            filters={networkFilters}
+            activeFilterId={networkFilterId}
+            onFilter={setNetworkFilterId}
+            now={now}
+            isFresh={(unit) => isConfirmationFresh(unit, now)}
+          />
+        ) : null}
+        <div className={styles.columns} data-phone-tab={isPhone ? phoneTab : undefined}>
           {/*
             🔴 **THE SCOPE BAR — MOUNTED ONLY WHILE A SERVICE IS CHOSEN**, per its own header
             comment and build plan §3 "Scope bar". `shown`/`total` count `scopedNetworkRows` against
@@ -483,7 +553,7 @@ export function CapacityScreen() {
               </thead>
               <tbody>
                 {gapRows.map((row) => (
-                  <GapRow key={row.id} row={row} />
+                  <GapRow key={row.id} row={row} phone={isPhone} />
                 ))}
               </tbody>
               <tfoot>
@@ -499,7 +569,9 @@ export function CapacityScreen() {
                   <td data-testid="ward-capacity-gap-value">
                     <div className={styles.gapValueContainer}>
                       <GapWord gap={gapTotals.gap} />{" "}
-                      <span className={styles.gapNumber}>{formatGap(gapTotals.gap)}</span>
+                      <span className={styles.gapNumber}>
+                        {isPhone ? phoneGap(gapTotals.gap) : formatGap(gapTotals.gap)}
+                      </span>
                     </div>
                     <div
                       className={styles.gapMicroGauge}
@@ -531,6 +603,17 @@ export function CapacityScreen() {
             <p className={styles.serviceScopeNote} data-testid="ward-capacity-mismatch-service-note">
               Across the whole network, not only {service}.
             </p>
+          ) : null}
+          {isPhone && phoneTab === "overview" ? (
+            <CapacityPhoneOverview
+              rows={networkRows}
+              isFresh={(unit) => isConfirmationFresh(unit, now)}
+              now={now}
+              forecast={forecast}
+              freeingTracked={freeingTracked}
+              totalFreeing={totalFreeing}
+              freeingWards={freeingWards}
+            />
           ) : null}
 
           <div className={styles.capacityGrid}>
@@ -851,7 +934,9 @@ export function CapacityScreen() {
             </WardPanel>
           </div>
         </div>
-        <PlannedAdmissionsPanel key={worldGeneration} now={now} />
+        <div className={styles.plannedWrap} data-phone-hidden={isPhone && phoneTab !== "planned" ? "true" : undefined}>
+          <PlannedAdmissionsPanel key={worldGeneration} now={now} />
+        </div>
         <WardPrototypeFooter testId="ward-capacity-governance" note="Statewide bed capacity · Not a medical device" />
       </main>
     </div>
@@ -990,6 +1075,11 @@ function bedKindsServed(unit: Unit): string {
   return kinds.length > 0 ? kinds.join(" & ") : "Adult (no beds)";
 }
 
+/** Phone (v10): the word says short or spare, so the figure is the size of the gap; none when exact. */
+function phoneGap(gap: number): string {
+  return gap === 0 ? "" : String(Math.abs(gap));
+}
+
 function formatGap(gap: number): string {
   return gap > 0 ? `+${gap}` : `${gap}`;
 }
@@ -1015,7 +1105,7 @@ function gapWord(gap: number): { tone: WfTone; text: string } {
   return { tone: "success", text: "Spare" };
 }
 
-function GapRow({ row }: { row: BedKindGap }) {
+function GapRow({ row, phone = false }: { row: BedKindGap; phone?: boolean }) {
   const isDeficit = row.gap < 0;
   const isBalanced = row.gap === 0;
   const fillPct = row.waiting > 0 ? Math.min(100, Math.round((row.bedsThatFit / row.waiting) * 100)) : 100;
@@ -1032,7 +1122,8 @@ function GapRow({ row }: { row: BedKindGap }) {
       <td data-testid="ward-capacity-beds-that-fit">{row.bedsThatFit}</td>
       <td data-testid="ward-capacity-gap-value">
         <div className={styles.gapValueContainer}>
-          <GapWord gap={row.gap} /> <span className={styles.gapNumber}>{formatGap(row.gap)}</span>
+          <GapWord gap={row.gap} />{" "}
+          <span className={styles.gapNumber}>{phone ? phoneGap(row.gap) : formatGap(row.gap)}</span>
         </div>
         <div
           className={styles.gapMicroGauge}

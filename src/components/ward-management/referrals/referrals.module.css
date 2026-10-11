@@ -2934,8 +2934,8 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-lg, 8px);
   background: var(--surface);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   padding: 0.75rem 1rem;
   margin-bottom: 0;
   box-shadow: var(--lift-sm);
@@ -3632,8 +3632,8 @@
     position: fixed;
     inset: 0;
     background: var(--scrim);
-    backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
     z-index: 990;
     animation: referralDetailFadeIn 0.2s ease-out forwards;
   }
@@ -3689,8 +3689,9 @@
 }
 
 @media (max-width: 48rem) {
+  /* v10 phone: a 16px side gutter, as every phone page. */
   .screen[data-referral-view] .main {
-    padding: 0.75rem;
+    padding: 0.75rem 1rem 2rem;
   }
 }
 

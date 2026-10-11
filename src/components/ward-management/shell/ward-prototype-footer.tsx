@@ -32,6 +32,9 @@ export function WardPrototypeFooter({
           <span className={styles.pulseDot} aria-hidden="true" />
           Synthetic prototype
         </span>
+        {/* Phone (v10): the footer is one quiet line, the badge then this tail; the note below is
+            kept for screen readers. Hidden above phone. */}
+        <span className={styles.phoneTail}>· invented records · not a medical device</span>
         <span className={styles.footerNote} data-ward-type-floor="banner">
           {note}
         </span>

@@ -319,11 +319,11 @@ export function WardBedBoard({
   );
 
   return (
-    <Card className={styles.board} aria-labelledby="ward-bed-board-title">
+    <Card className={cx(styles.board, isPhone && styles.boardPhone)} aria-labelledby="ward-bed-board-title">
       <CardHead
         id="ward-bed-board-title"
-        icon={LayoutGrid}
-        title="Bed board"
+        icon={isPhone ? undefined : LayoutGrid}
+        title={isPhone ? "Waiting for this ward" : "Bed board"}
         meta={isPhone ? undefined : isMixed ? "Locked and open beds" : unit.name}
         aside={
           <span className={styles.headCount}>
@@ -339,10 +339,12 @@ export function WardBedBoard({
       />
       <div className={styles.body}>
         <div className={styles.waitlist} role="group" aria-label="Waiting for this ward">
-          <span className={styles.waitLabel}>
-            <Hand size={14} aria-hidden="true" />
-            Waiting
-          </span>
+          {isPhone ? null : (
+            <span className={styles.waitLabel}>
+              <Hand size={14} aria-hidden="true" />
+              Waiting
+            </span>
+          )}
           {waitChips}
         </div>
         {isPhone ? sayRow : null}

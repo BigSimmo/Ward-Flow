@@ -453,42 +453,72 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow="Community · Team directory"
+          eyebrow={isPhone ? "Community · Statewide" : "Community · Team directory"}
           title={
-            <>
-              <SrOnly>Community: </SrOnly>
-              <b className={styles.heroFigure}>{allTeams.length}</b> names,{" "}
-              <b className={styles.heroFigure}>{alikeTeamCount}</b> read alike
-            </>
+            isPhone ? (
+              <>
+                <SrOnly>Community: </SrOnly>
+                {allTeams.length} team names
+              </>
+            ) : (
+              <>
+                <SrOnly>Community: </SrOnly>
+                <b className={styles.heroFigure}>{allTeams.length}</b> names,{" "}
+                <b className={styles.heroFigure}>{alikeTeamCount}</b> read alike
+              </>
+            )
           }
+          titleMeta={isPhone ? "Recorded names, not verified services" : undefined}
           stats={
-            <div className={styles.heroChips} role="group" aria-label="Highlight team names">
-              <HeroStat
-                inline
-                value={alikeTeamCount}
-                label="Read alike"
-                tone={alikeTeamCount > 0 ? "warning" : undefined}
-                pressed={alikeOnly}
-                onToggle={() => setAlikeOnly((value) => !value)}
-              />
-              <HeroStat
-                inline
-                value={sharedSuburbs.suburbs}
-                label="Suburbs with two names"
-                pressed={sharedSuburbOnly}
-                onToggle={() => setSharedSuburbOnly((value) => !value)}
-              />
-            </div>
+            isPhone ? (
+              // v10 phone: three figures on hairlines, value over label.
+              <>
+                <HeroStat
+                  value={alikeTeamCount}
+                  label="Read alike"
+                  tone={alikeTeamCount > 0 ? "warning" : undefined}
+                  pressed={alikeOnly}
+                  onToggle={() => setAlikeOnly((value) => !value)}
+                />
+                <HeroStat
+                  value={sharedSuburbs.suburbs}
+                  label="Two teams"
+                  pressed={sharedSuburbOnly}
+                  onToggle={() => setSharedSuburbOnly((value) => !value)}
+                />
+                <HeroStat value={suburbsMapped} label="Suburbs" />
+              </>
+            ) : (
+              <div className={styles.heroChips} role="group" aria-label="Highlight team names">
+                <HeroStat
+                  inline
+                  value={alikeTeamCount}
+                  label="Read alike"
+                  tone={alikeTeamCount > 0 ? "warning" : undefined}
+                  pressed={alikeOnly}
+                  onToggle={() => setAlikeOnly((value) => !value)}
+                />
+                <HeroStat
+                  inline
+                  value={sharedSuburbs.suburbs}
+                  label="Suburbs with two names"
+                  pressed={sharedSuburbOnly}
+                  onToggle={() => setSharedSuburbOnly((value) => !value)}
+                />
+              </div>
+            )
           }
           foot={
-            <CheckingFoot
-              items={[
-                { id: "names", label: "Team names", value: allTeams.length },
-                { id: "services", label: "Health services", value: serviceCounts.size },
-                { id: "suburbs", label: "Suburbs mapped", value: suburbsMapped },
-              ]}
-              notChecked={["verified services, these are recorded names"]}
-            />
+            isPhone ? undefined : (
+              <CheckingFoot
+                items={[
+                  { id: "names", label: "Team names", value: allTeams.length },
+                  { id: "services", label: "Health services", value: serviceCounts.size },
+                  { id: "suburbs", label: "Suburbs mapped", value: suburbsMapped },
+                ]}
+                notChecked={["verified services, these are recorded names"]}
+              />
+            )
           }
           aside={
             <div className={styles.heroActions}>
@@ -501,16 +531,18 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 aria-haspopup="dialog"
                 aria-expanded={drawerOpen}
               >
-                Catchment guide
+                {isPhone ? "Guide" : "Catchment guide"}
               </Button>
-              <Link
-                href="/mockups/ward-flow/referrals"
-                className={buttonClass({ variant: "onHero" })}
-                data-testid="community-action-referral-board"
-              >
-                <Icon icon={ArrowRight} size={16} />
-                Referrals
-              </Link>
+              {isPhone ? null : (
+                <Link
+                  href="/mockups/ward-flow/referrals"
+                  className={buttonClass({ variant: "onHero" })}
+                  data-testid="community-action-referral-board"
+                >
+                  <Icon icon={ArrowRight} size={16} />
+                  Referrals
+                </Link>
+              )}
               <Link
                 href="/mockups/ward-flow/referrals/new"
                 className={buttonClass({ variant: "light" })}
@@ -592,7 +624,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 type="search"
                 icon={Search}
                 boxClassName={styles.searchBox}
-                placeholder="Search"
+                placeholder={isPhone ? "Team, suburb or postcode" : "Search"}
                 autoComplete="off"
                 aria-label="Search team names"
                 value={query}
@@ -603,7 +635,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                     setQuery("");
                   }
                 }}
-                trailing={<Kbd>/</Kbd>}
+                trailing={isPhone ? undefined : <Kbd>/</Kbd>}
               />
               <Segmented
                 label="Filter team names"
@@ -701,7 +733,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                         <GroupHead
                           variant="letter"
                           title={letter}
-                          count={isPhone ? (grouped.get(letter) ?? []).length : undefined}
+                          aside={isPhone ? (grouped.get(letter) ?? []).length : undefined}
                           className={styles.letterRow}
                         />
                       </div>
@@ -852,6 +884,27 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           title="Catchment guide"
           returnFocusRef={drawerTriggerRef}
           testId="community-catchment-guide"
+          footer={
+            // v10 phone: the guide's one pinned action opens the Suburb pane on its lookup.
+            isPhone ? (
+              <Button
+                variant="pri"
+                icon={MapPin}
+                className={styles.guideFootAction}
+                onClick={() => {
+                  setDrawerOpen(false);
+                  setPhonePane("suburb");
+                  requestAnimationFrame(() =>
+                    document
+                      .querySelector<HTMLInputElement>('[data-pane="suburb"] input[aria-label="Suburb"]')
+                      ?.focus(),
+                  );
+                }}
+              >
+                Look up a suburb
+              </Button>
+            ) : undefined
+          }
         >
           <div className={styles.guide}>
             <section className={styles.guideSection} aria-labelledby="community-guide-source">
@@ -903,24 +956,27 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 </li>
               </ul>
             </section>
-            <section className={styles.guideSection} aria-labelledby="community-guide-actions">
-              <h3 id="community-guide-actions" className={styles.guideHead}>
-                Actions
-              </h3>
-              <div className={styles.guideActions}>
-                <Link href="/mockups/ward-flow/referrals/new" className={buttonClass({ variant: "sec" })}>
-                  <Icon icon={Plus} size={16} />
-                  Raise referral
-                </Link>
-                <Link href="/mockups/ward-flow/referrals" className={buttonClass({ variant: "sec" })}>
-                  <Icon icon={ArrowRight} size={16} />
-                  Open referrals
-                </Link>
-                <Button variant="sec" icon={Download} onClick={exportTeamList}>
-                  Export team list
-                </Button>
-              </div>
-            </section>
+            {/* v10 phone: the guide is reading only; its actions live on the page and in the foot. */}
+            {isPhone ? null : (
+              <section className={styles.guideSection} aria-labelledby="community-guide-actions">
+                <h3 id="community-guide-actions" className={styles.guideHead}>
+                  Actions
+                </h3>
+                <div className={styles.guideActions}>
+                  <Link href="/mockups/ward-flow/referrals/new" className={buttonClass({ variant: "sec" })}>
+                    <Icon icon={Plus} size={16} />
+                    Raise referral
+                  </Link>
+                  <Link href="/mockups/ward-flow/referrals" className={buttonClass({ variant: "sec" })}>
+                    <Icon icon={ArrowRight} size={16} />
+                    Open referrals
+                  </Link>
+                  <Button variant="sec" icon={Download} onClick={exportTeamList}>
+                    Export team list
+                  </Button>
+                </div>
+              </section>
+            )}
           </div>
         </Drawer>
       </main>
@@ -1087,10 +1143,22 @@ function TeamRow({
       >
         <HighlightedName name={team.name} query={query} />
       </Link>
-      <span className={styles.service} data-row-detail="service">
+      <span className={styles.service} data-row-detail="service" data-service={facts?.service}>
         {facts?.service}
       </span>
-      <span className={styles.suburbs} data-row-detail="suburbs">
+      {/* v10 phone: the meta line ends "· reads like N others". It is drawn from `data-alike` by the
+          phone stylesheet only (hidden from screen readers, which hear the marker's own words), so
+          the row's text stays the name and the catchment facts. */}
+      <span
+        className={styles.suburbs}
+        data-row-detail="suburbs"
+        data-one={facts?.suburbs === 1 ? "true" : undefined}
+        data-alike={
+          collision
+            ? `reads like ${collision.names.length - 1} ${collision.names.length - 1 === 1 ? "other" : "others"}`
+            : undefined
+        }
+      >
         {facts?.suburbs ?? 0}
       </span>
       <span className={styles.check}>

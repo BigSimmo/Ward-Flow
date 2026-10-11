@@ -182,7 +182,7 @@ interface FileChrome {
  * Q004 changes the mounted owner to WardBar; the ClinicalRail discussion above is historical.
  * Its dormant stylesheet is excluded only while the no-ClinicalRail-consumer assertion holds.
  */
-function findChromeSelectors(css: string): FileChrome {
+function findChromeSelectors(css: string, phoneOnlyFile = false): FileChrome {
   const clean = stripComments(css);
   const { topLevelText, narrowBlocks } = splitMediaBlocks(clean);
   const topRules = parseRuleBlocks(topLevelText);
@@ -192,6 +192,19 @@ function findChromeSelectors(css: string): FileChrome {
     for (const [selector, decls] of parseRuleBlocks(block)) {
       if (!narrowDeclsBySelector.has(selector)) narrowDeclsBySelector.set(selector, []);
       narrowDeclsBySelector.get(selector)!.push(...decls);
+    }
+  }
+  // A class that renders only on phone needs no media query, so a top-level rule is phone chrome
+  // too when its class is named `.phone*` or its stylesheet is phone-only (`*-phone*.module.css`).
+  // Without this the v10 pinned switches styled at top level (11 Oct 2026) were never seen. These
+  // widen the TOP-anchored search only; top-level bottom-edge bars and toasts are a separate,
+  // not yet enumerated follow-up, so the bottom-edge list below keeps its media-query scope.
+  const topLevelPhoneOnly = new Set<string>();
+  for (const selector of topRules.keys()) {
+    if (narrowDeclsBySelector.has(selector)) continue;
+    if (phoneOnlyFile || /^\.phone[A-Z]/u.test(selector)) {
+      narrowDeclsBySelector.set(selector, []);
+      topLevelPhoneOnly.add(selector);
     }
   }
 
@@ -206,12 +219,14 @@ function findChromeSelectors(css: string): FileChrome {
     const hasTop = merged.top !== undefined && merged.top.toLowerCase() !== "auto";
     const hasBottom = merged.bottom !== undefined && merged.bottom.toLowerCase() !== "auto";
     if (hasTop) topAnchored.push(selector);
-    else if (hasBottom) bottomAnchored.push(selector);
+    else if (hasBottom && !topLevelPhoneOnly.has(selector)) bottomAnchored.push(selector);
   }
   return { topAnchored, bottomAnchored };
 }
 
 const cssFiles = stylesheets(WARD_ROOT);
+/** Stylesheets whose every rule is phone-only (imported only by phone renderings). */
+const PHONE_ONLY_STYLESHEET = /-phone[^/\\]*\.module\.css$/u;
 const tsFiles = scripts(WARD_ROOT);
 
 // The retired ClinicalRail stylesheet is still on disk, but no route mounts its phoneBar.
@@ -219,7 +234,7 @@ const tsFiles = scripts(WARD_ROOT);
 const legacySidebar = path.join(WARD_ROOT, "ward-sidebar.module.css");
 const perFileChrome = cssFiles
   .filter((file) => file !== legacySidebar)
-  .map((file) => ({ file, ...findChromeSelectors(readModule(file)) }));
+  .map((file) => ({ file, ...findChromeSelectors(readModule(file), PHONE_ONLY_STYLESHEET.test(file)) }));
 const allTopAnchored = Array.from(new Set(perFileChrome.flatMap((f) => f.topAnchored))).sort();
 const allBottomAnchored = Array.from(new Set(perFileChrome.flatMap((f) => f.bottomAnchored))).sort();
 
@@ -239,6 +254,41 @@ const allBottomAnchored = Array.from(new Set(perFileChrome.flatMap((f) => f.bott
  * failure just moves to the honest place.
  */
 const KNOWN_BACKLOG_TOP_ANCHORED = [".modeHeader"];
+
+/*
+ * Dated 11 Oct 2026, an owner decision rather than backlog. The approved v10 phone mockup pins
+ * each page's view switch under the bar while the list scrolls (`.ph-seg`, "segmented control,
+ * pinned while the list scrolls"). These are in-content segmented rows that stick directly
+ * beneath WardBar's stable 56px `.bar` using its shared height token; they hold no navigation, title or menu, so `.bar`
+ * stays the one chrome owner. Home's queue switch (.queueTools), the Alerts views (.tabsBar) and
+ * the ED and Community view switches (.phonePanes). Each must still be found, so a removal fails
+ * the line below instead of leaving a stale permission. 11 Oct 2026 (review): the guard now also
+ * sees phone-only classes styled at top level (`.phone*`, or any rule in a `*-phone*.module.css`
+ * file), which added the Ward, Hub, Network, Capacity, Governance, Out of area, On call, Census,
+ * Legal forms, Reports, Handover, Chronology and Statistics switches.
+ */
+const V10_PINNED_VIEW_SWITCHES = [
+  ".phoneKindBar",
+  ".phonePanes",
+  ".phoneSeg",
+  ".phoneSegPinned",
+  ".phoneTabBar",
+  ".phoneTabs",
+  ".phoneViewRow",
+  ".phoneViewTabs",
+  ".phoneViews",
+  ".queueTools",
+  ".seg",
+  ".segPinned",
+  ".stickySeg",
+  ".tabsBar",
+];
+
+/**
+ * WardBar keeps a stable phone height. Canvas bands start at that height; controls with an 8px
+ * painted canvas collar leave that room in their offset, so its paint still meets the header.
+ */
+const BAR_HEIGHTS = ["var(--wf-header-height, 3.5rem)", "calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2))"];
 
 describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
   it("mounts the shared WardBar and does not import the retired ClinicalRail, even under an alias", () => {
@@ -308,12 +358,30 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
   });
 
   it("has exactly one mounted top-anchored phone element outside the documented backlog — .bar", () => {
-    const withoutBacklog = allTopAnchored.filter((selector) => !KNOWN_BACKLOG_TOP_ANCHORED.includes(selector));
+    const withoutBacklog = allTopAnchored.filter(
+      (selector) => !KNOWN_BACKLOG_TOP_ANCHORED.includes(selector) && !V10_PINNED_VIEW_SWITCHES.includes(selector),
+    );
     expect(
       withoutBacklog,
       "Ward Flow must have exactly one mounted top-anchored phone element (WardBar's " +
         `.bar) outside the documented backlog — found: ${withoutBacklog.join(", ") || "(none)"}`,
     ).toEqual([".bar"]);
+  });
+
+  it("names the v10 view switches pinned under the bar, and each sits exactly below it", () => {
+    expect(allTopAnchored.filter((selector) => V10_PINNED_VIEW_SWITCHES.includes(selector))).toEqual(
+      V10_PINNED_VIEW_SWITCHES,
+    );
+    for (const { file, topAnchored } of perFileChrome) {
+      for (const selector of topAnchored.filter((entry) => V10_PINNED_VIEW_SWITCHES.includes(entry))) {
+        const { topLevelText, narrowBlocks } = splitMediaBlocks(stripComments(readModule(file)));
+        const top = mergeDecls([
+          ...(parseRuleBlocks(topLevelText).get(selector) ?? []),
+          ...(parseRuleBlocks(narrowBlocks.join("\n")).get(selector) ?? []),
+        ]).top;
+        expect(BAR_HEIGHTS, `${selector} in ${file} pins at ${top}`).toContain(top);
+      }
+    }
   });
 
   it("names the one dated known-backlog duplicate, .modeHeader, so fixing it fails this line instead of hiding the fix", () => {
@@ -326,14 +394,34 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
     // remaking it a fixed action row must fail both this enumeration and the explicit rule pin.
     // Modal sheets (.colDetail, .detail, .detailPanel, .shortlistColumn, and the header search's
     // full-screen phone sheet .popup, 9 Oct 2026, and the Ward page's bed slide-out .drawer, a modal
-    // bottom sheet on phone, 9 Oct 2026) and .toast notifications are not action rows.
+    // bottom sheet on phone, 9 Oct 2026, and the header service picker's .servicePanel, a modal
+    // bottom sheet with its own scrim on phone, 11 Oct 2026) and .toast notifications are not
+    // action rows. Sheet footers sticky to their own sheet's scroller, not the viewport, 11 Oct
+    // 2026: the referral decision sheet's .foot, the Delays person panel's .acts and the
+    // Discharges detail sheet's .detailFooter. Ward answer's .decisionArea is a second edge
+    // action row by owner decision (v10 mockup .wa-acts, "the decision bar stays in view while
+    // the request scrolls past", 11 Oct 2026). Page-local toasts (.actionToast, .phoneToast,
+    // .toastNotice) sit 92px up as the v10 phone toast pill, 11 Oct 2026: notices, not action rows.
     const actionRows = allBottomAnchored.filter(
       (selector) =>
-        ![".colDetail", ".detail", ".detailPanel", ".toast", ".shortlistColumn", ".popup", ".drawer"].includes(
-          selector,
-        ),
+        ![
+          ".colDetail",
+          ".detail",
+          ".detailPanel",
+          ".toast",
+          ".actionToast",
+          ".phoneToast",
+          ".toastNotice",
+          ".shortlistColumn",
+          ".popup",
+          ".drawer",
+          ".servicePanel",
+          ".foot",
+          ".acts",
+          ".detailFooter",
+        ].includes(selector),
     );
-    expect(actionRows).toEqual([".actionRow"]);
+    expect(actionRows).toEqual([".actionRow", ".decisionArea"]);
     const command = stripComments(readModule(path.join(WARD_ROOT, "coordinator/coordinator.module.css")));
     const phone = splitMediaBlocks(command).narrowBlocks.join("\n");
     expect(phone).toMatch(/\.shortlistActionRow\s*\{\s*position:\s*static;/u);

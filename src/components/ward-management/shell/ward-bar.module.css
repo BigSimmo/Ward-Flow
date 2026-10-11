@@ -95,6 +95,44 @@
   min-width: 0;
 }
 
+/* The Prototype pill's place (ward-shared-access.tsx). The phone's lean bar has no room for it. */
+.dataMode {
+  display: inline-flex;
+  flex: none;
+}
+
+@media (max-width: 48rem) {
+  .dataMode {
+    display: none;
+  }
+}
+
+/* Tablet portrait: the bar is tight, so the pill keeps only its ring and the page title keeps its
+ * room. The button's aria-label still names the data mode; its panel is unchanged. */
+@media (min-width: 48.0625rem) and (max-width: 1000px) {
+  /* The ring sits centred; the word is pushed past the clipped edge (no 0px text). */
+  .dataMode > div > button:first-child {
+    justify-content: flex-start;
+    gap: 40px;
+    width: 36px;
+    min-width: 36px;
+    padding: 0 0 0 14px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .dataMode > div > button:first-child > span {
+    flex-shrink: 0;
+  }
+  /* The title keeps its full width; the search field gives up the room instead. */
+  .title {
+    flex-shrink: 0;
+  }
+  /* A long ward name still ends in an ellipsis rather than pushing the bar off the screen. */
+  .titleGroup .place {
+    max-width: 13rem;
+  }
+}
+
 .titleGroup {
   display: flex;
   align-items: center;
@@ -2519,6 +2557,7 @@
     width: auto;
     min-width: 0;
     max-width: none;
+    /* The bar's own height, never its bottom edge (a banner above the bar once made this 180px). */
     height: var(--wgs-bar-h, 3.5rem);
     gap: 10px;
     padding: 0 8px 0 24px;
@@ -2573,6 +2612,14 @@
   }
 }
 
+/* Phone: the phone bar has no backdrop filter, so the open field is fixed to the viewport. It sits
+ * where the bar is (its measured top), so nothing above the bar can stretch or misplace it. */
+@media (max-width: 48rem) {
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+    top: var(--wgs-bar-top, 0px);
+  }
+}
+
 /*
  * ── The band header (v10 section 7.1, Josh 10 Oct 2026, option 1 "Beside the sidebar") ─────────
  *
@@ -2585,7 +2632,8 @@
  * `light`: once the page scrolls past 4px. Solid surface-2, a 1px line and the bar shadow, no
  * blur. The same as the phone bar when it scrolls.
  *
- * Phone (48rem and under) never gets `data-band`; its lean bar is unchanged.
+ * Phone (48rem and under) gets `data-band="ink"` only at rest; once it scrolls it drops the band
+ * and takes its own solid face (`data-scrolled`). Its ink rules follow this block.
  */
 @media (min-width: 48.0625rem) {
   .bar[data-band] {
@@ -2700,6 +2748,52 @@
   }
 }
 
+/* Phone band (v10 Home mockup, Josh 11 Oct 2026): at rest the lean bar sits on the hero's top
+ * colour, so Menu, title, service line, Search and Tasks read as part of the band. */
+@media (max-width: 48rem) {
+  .bar.bar[data-band="ink"] {
+    --wf-focus-ring: var(--wf-hero-ink);
+    background: var(--wf-hero-1);
+    border-bottom-color: var(--wf-hero-1);
+    color: var(--wf-hero-ink);
+  }
+
+  .bar[data-band="ink"] .place,
+  .bar[data-band="ink"] .phoneOnly,
+  .bar[data-band="ink"] .drawerTrigger,
+  .bar[data-band="ink"] .triggerIcon,
+  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type > svg {
+    color: var(--wf-hero-ink);
+  }
+
+  .bar[data-band="ink"] .scopeBadgeBtn,
+  .bar[data-band="ink"] .scopeCaret {
+    color: var(--wf-hero-ink-2);
+  }
+
+  .bar[data-band="ink"] .phoneOnly:hover::before,
+  .bar[data-band="ink"] .drawerTrigger:hover::before {
+    background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+
+  .bar[data-band="ink"] .drawerTrigger[data-bar-mode="tasks"] .badge {
+    background: var(--wf-hero-1);
+    box-shadow:
+      inset 0 0 0 1px var(--wf-on-hero-line),
+      0 0 0 1.5px var(--wf-hero-1);
+    color: var(--wf-hero-ink);
+  }
+  /* The open search field is the light face even over the band: dark icon, accent focus edge. */
+  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+    --wf-focus-ring: var(--wf-accent);
+    color: var(--wf-ink-1);
+  }
+
+  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg {
+    color: var(--wf-ink-3);
+  }
+}
+
 @media (min-width: 48.0625rem) and (prefers-reduced-motion: reduce) {
   .bar[data-band] {
     transition-duration: var(--wf-t-enter);
@@ -2758,5 +2852,358 @@
   .phoneOnly:focus-visible {
     outline: 2px solid var(--wf-focus-ring);
     outline-offset: 2px;
+  }
+}
+
+/*
+ * Phone drawers, Activity and Tools (v10 phone sheets, 11 Oct 2026): no icon tile beside the
+ * title, the switch is a full-width pill track, the figures a quiet line, filter chips are pills.
+ * Phone only; desktop and tablet are unchanged.
+ */
+@media (max-width: 48rem) {
+  .drawerTile {
+    display: none;
+  }
+
+  .activitySegments .segTrack {
+    flex: 1 1 auto;
+    padding: 2px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .activitySegments .segBtn {
+    flex: 1 1 0;
+    min-height: 44px;
+    border-radius: var(--wf-r-pill);
+    font-size: var(--wf-fs-13);
+  }
+
+  .activityToolbar .drawerSummary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px var(--wf-s-3);
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .activityToolbar .drawerSummary > div {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 0;
+    border: 0;
+  }
+
+  .activityToolbar .drawerSummary strong {
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+  }
+
+  .activityToolbar .drawerSummary span {
+    font-size: var(--wf-fs-12);
+  }
+
+  .activityToolbar .drawerSearch {
+    min-height: 44px;
+  }
+
+  .filterChipsTrack {
+    padding: 2px;
+    border: 0;
+    background: transparent;
+  }
+
+  .filterChipsTrack .filterChip {
+    min-height: 44px;
+    padding: 0 12px;
+    border-color: var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+  }
+
+  .filterChipsTrack .filterChip[aria-pressed="true"] {
+    border-color: var(--wf-accent);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  /* v10 Activity sheet: short rows, glyph then the line, the clock time at the right. The tone
+     word leaves (the glyph carries it); the "Recent changes" heading leaves too. */
+  .changesHead {
+    display: none;
+  }
+
+  .feedRow,
+  .noticeRow {
+    grid-template-columns: 10px minmax(0, 1fr) auto;
+    column-gap: 12px;
+    min-height: 56px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .feedRow .feedGlyph,
+  .noticeRow .feedGlyph {
+    order: 1;
+  }
+
+  .feedRow .feedText,
+  .noticeRow .noticeContent {
+    order: 2;
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+  }
+
+  .feedRow .feedTime,
+  .noticeRow .feedTime {
+    order: 3;
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+    font-weight: 500;
+  }
+
+  .feedRow .eventLabel {
+    display: none;
+  }
+}
+
+/*
+ * Phone header, second pass (v10 locked lean bar, measured against the phone mockup 11 Oct 2026).
+ * Phone only. Menu icon centred 26px in, the title block 4px after it, 22px icons, a 17px title
+ * that keeps its size and its service line when the page scrolls (the mockup never swaps it for a
+ * count), an 8px service dot and a 16px caret. Controls keep their 48px hit area.
+ */
+@media (max-width: 48rem) {
+  .bar,
+  :global(html.dark) .bar {
+    padding: 0 6px 0 2px;
+  }
+
+  .phoneOnly svg,
+  .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type > svg,
+  .triggerIcon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .title {
+    gap: 1px;
+    margin: 0 2px 0 4px;
+  }
+
+  .place,
+  .bar[data-scrolled="true"] .place {
+    font-size: var(--wf-fs-16);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  .scopeBadgeBtn {
+    min-height: 18px;
+    line-height: var(--wf-lh-12);
+  }
+
+  /* The 18px line keeps a 48px tall hit area: 15px above and below. */
+  .scopeBadgeBtn::before {
+    inset: -15px -8px;
+  }
+
+  .bar[data-scrolled="true"] .scopeBadgeBtn > * {
+    opacity: 1;
+  }
+
+  .scopeLive,
+  .bar[data-scrolled="true"] .scopeLive {
+    display: none;
+  }
+
+  .scopeDot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scopeCaret {
+    width: 16px;
+    height: 16px;
+    color: var(--wf-ink-3);
+  }
+
+  /* Tasks count: a small solid chip off the icon's top right (ink on the light bar, light on the
+   * band), ringed in the bar colour so it never merges with the icon. */
+  .drawerTrigger[data-bar-mode="tasks"] .badge {
+    top: 6px;
+    right: auto;
+    left: 30px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border: 0;
+    background: var(--wf-ink-1);
+    box-shadow: 0 0 0 1.5px var(--wf-surface-2);
+    color: var(--wf-canvas);
+    font: 600 var(--wf-fs-12) / 16px var(--wf-mono);
+    letter-spacing: -0.03em;
+  }
+
+  .bar[data-band="ink"] .drawerTrigger[data-bar-mode="tasks"] .badge {
+    background: var(--wf-hero-ink);
+    box-shadow: 0 0 0 1.5px var(--wf-hero-1);
+    color: var(--wf-hero-1);
+  }
+
+  /* Phone (v10): no count chip when nothing is open; the clipboard alone says Tasks. */
+  .drawerTrigger[data-bar-mode="tasks"] .badge[data-zero] {
+    display: none;
+  }
+}
+
+/* Tasks icon: the list on desktop and tablet, the clipboard on the phone's lean bar. */
+.tasksPhone {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .tasksWide {
+    display: none;
+  }
+
+  .drawerTrigger .tasksPhone {
+    display: block;
+    transform: translateX(-2px);
+  }
+
+  .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type > svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Service picker on the phone (v10 service sheet): a bottom sheet over a scrim with a grip, the
+ * title and its quiet line, then one card of 48px rows (dot, name, open count, check). The rows are
+ * the same buttons as the desktop popover. Desktop and tablet are unchanged. */
+.serviceSheetNote,
+.serviceAllCount,
+.serviceScrim {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .servicePanel {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 60;
+    width: auto;
+    max-height: calc(100dvh - 64px);
+    overflow-y: auto;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    border: 1px solid var(--wf-line-2);
+    border-bottom: 0;
+    border-radius: 22px 22px 0 0;
+    background: var(--wf-surface-2);
+    box-shadow: 0 -8px 24px -12px color-mix(in srgb, var(--wf-ink-1) 30%, transparent);
+    color: var(--wf-ink-1);
+  }
+
+  /* A real backdrop: a tap outside the sheet closes it and never reaches the page beneath. */
+  .serviceScrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 59;
+    background: var(--wf-scrim-strong);
+  }
+
+  /* The grip. */
+  .servicePanel::before {
+    content: "";
+    justify-self: center;
+    width: 36px;
+    height: 4px;
+    margin: -8px 0 6px;
+    border-radius: 2px;
+    background: var(--wf-line-2);
+  }
+
+  .servicePanel .popoverHead {
+    padding: 4px 0 0;
+    font: 600 var(--wf-fs-15) / 20px var(--wf-font);
+  }
+
+  .serviceSheetNote {
+    display: block;
+    margin: 3px 0 0;
+    padding-bottom: 12px;
+    margin-inline: -16px;
+    padding-inline: 16px;
+    border-bottom: 1px solid var(--wf-line);
+    font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+    color: var(--wf-ink-2);
+  }
+
+  .servicePanel .popoverRule {
+    display: none;
+  }
+
+  .servicePanel .serviceOption {
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 12px;
+    border: 1px solid var(--wf-line);
+    border-top-width: 0;
+    border-radius: 0;
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 500 var(--wf-fs-14) / 20px var(--wf-font);
+  }
+
+  .servicePanel .serviceSheetNote + .sr-only + .serviceOption,
+  .servicePanel :global(.sr-only) + .serviceOption {
+    margin-top: 14px;
+    border-top-width: 1px;
+    border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
+  }
+
+  .servicePanel .serviceOption:last-child {
+    border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
+  }
+
+  .servicePanel .serviceOption[aria-pressed="true"] {
+    background: var(--wf-surface);
+    font-weight: 600;
+  }
+
+  .servicePanel .serviceDot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .servicePanel .serviceOptionCount {
+    font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+    color: var(--wf-ink-3);
+  }
+
+  .serviceAllCount {
+    display: inline;
+  }
+
+  .servicePanel .serviceCheck {
+    width: 16px;
+    height: 16px;
+    color: var(--wf-accent);
+  }
+}
+
+/* v10 phone New referral: the sheet starts under the 56px bar, so the bar (title, Statewide,
+   search, tasks) stays above the referral hero as in the mockup. */
+@media (max-width: 48rem) {
+  .drawerBackdrop:has(> .drawerSheetReferral) {
+    top: var(--wf-header-height, 3.5rem) !important;
+  }
+
+  /* The sheet is h-full of that shortened backdrop, so it ends at the bottom edge. */
+  .drawerSheetReferral {
+    border-radius: 0 !important;
   }
 }

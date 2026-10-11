@@ -491,3 +491,12 @@
     background: Highlight;
   }
 }
+
+/* Phone (v10): a search field shows no browser clear "x"; the field's own Clear button is the one. */
+@media (max-width: 48rem) {
+  .control[type="search"]::-webkit-search-cancel-button,
+  .control[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}

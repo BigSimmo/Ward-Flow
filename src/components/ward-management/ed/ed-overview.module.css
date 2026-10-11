@@ -194,3 +194,119 @@
     min-height: var(--wf-touch);
   }
 }
+
+/* v10 phone (11 Oct 2026): the department strip becomes a sideways row of pills (service dot, code,
+ * how many wait; the current one ringed), and the hero title is the answer alone, since the bar
+ * above already names the department. Phone only. */
+.titleName {
+  display: inline;
+}
+
+@media (max-width: 48rem) {
+  .titleName {
+    display: none;
+  }
+
+  .strip {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .list {
+    display: flex;
+    gap: var(--wf-s-2);
+    margin-inline: calc(var(--wf-s-3) * -1);
+    padding: 2px var(--wf-s-3);
+  }
+
+  .list > li + li {
+    border-left: 0;
+  }
+
+  .list > li {
+    flex: none;
+  }
+
+  .tile {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-4);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+  }
+
+  .tile::before {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--wf-r-pill);
+    background: var(--svc, var(--wf-ink-3));
+    content: "";
+  }
+
+  .tile[data-service="North Metro"] {
+    --svc: var(--wf-svc-north);
+  }
+
+  .tile[data-service="South Metro"] {
+    --svc: var(--wf-svc-south);
+  }
+
+  .tile[data-service="East Metro"] {
+    --svc: var(--wf-svc-east);
+  }
+
+  .tile[data-service="WACHS"] {
+    --svc: var(--wf-svc-wachs);
+  }
+
+  .tile[data-service="CAHS"] {
+    --svc: var(--wf-svc-cahs);
+  }
+
+  .tile[data-service="Private"] {
+    --svc: var(--wf-svc-private);
+  }
+
+  .tile.current {
+    padding: 0 calc(var(--wf-s-4) - 1px);
+    border: 2px solid var(--wf-accent);
+    background: var(--wf-surface);
+  }
+
+  .tile .service,
+  .tile .longest,
+  .tile .waiting small {
+    display: none;
+  }
+
+  .tile .code {
+    font-size: var(--wf-fs-13);
+  }
+
+  .tile .waiting b {
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    font-weight: 500;
+  }
+}
+
+/* v10 phone hero (PhoneHero only renders on phone): the one light action runs the full width, and
+ * a pressed figure's note sits on its own line above it. */
+@media (max-width: 48rem) {
+  .phoneHero [data-testid="ward-ed-raise-referral-toggle"] {
+    flex: 1 1 100%;
+    justify-content: center;
+    min-height: var(--wf-touch);
+  }
+
+  .phoneHero .note {
+    flex: 1 1 100%;
+  }
+}

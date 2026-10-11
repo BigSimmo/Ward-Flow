@@ -8,7 +8,8 @@ import { useLayoutEffect, useSyncExternalStore, type RefObject } from "react";
  * When a page opens on a hero that is not quiet (its top within 40px of the top of the page), the
  * hero runs square across the work column and up behind the header. The header (`WardBar`) reads
  * `useWfBandActive()` and sits in hero ink at rest, then turns solid and light once the page
- * scrolls. Phone (48rem and under) never bands: it keeps its own lean bar.
+ * scrolls. Phone bands too (v10 Home mockup, Josh 11 Oct 2026): its lean bar sits in hero ink at
+ * rest over a square, full-width hero, then turns solid once the page scrolls.
  *
  * The hero registers itself here, so a page gets the band by using the shared `Hero` and nothing
  * else. The bleed is measured, not a MutationObserver: the hero reads where it would sit, then
@@ -20,8 +21,8 @@ import { useLayoutEffect, useSyncExternalStore, type RefObject } from "react";
  * hero pulled up behind the header would be cut off there.
  */
 
-/** Above the phone width, the band applies. Matches the phone shell's `(max-width: 48rem)`. */
-export const WF_BAND_QUERY = "(min-width: 48.0625rem)";
+/** The band applies at every width, phone included (v10 Home mockup, Josh 11 Oct 2026). */
+export const WF_BAND_QUERY = "all";
 
 /** A hero this close to the top of the page opens the page. */
 export const WF_BAND_TOP_SLACK_PX = 40;
@@ -60,7 +61,7 @@ export function registerWfBandHero(): () => void {
   };
 }
 
-/** True while the current page opens on a band hero (desktop and tablet only). */
+/** True while the current page opens on a band hero. */
 export function useWfBandActive(): boolean {
   return useSyncExternalStore(subscribe, snapshot, () => false);
 }

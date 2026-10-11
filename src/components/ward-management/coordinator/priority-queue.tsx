@@ -109,6 +109,8 @@ type PriorityQueueProps = {
    * nothing is lost and the cards below the queue stay reachable (v10 Home phone, direction A).
    */
   rowCap?: number;
+  /** Phone (v10 Home, direction A): the switch reads "ED" and "Referrals". */
+  phone?: boolean;
 };
 
 /**
@@ -135,6 +137,7 @@ export function PriorityQueue({
   highlight,
   onClearHighlight,
   rowCap,
+  phone = false,
 }: PriorityQueueProps) {
   const [showAllRows, setShowAllRows] = useState(false);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
@@ -146,7 +149,8 @@ export function PriorityQueue({
   const filterEd = filterEdId ? edsById.get(filterEdId) : undefined;
 
   const soonCount = movements.filter((movement) => isSoon(movement, now)).length;
-  const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now)) : movements;
+  // Soon is not offered on the phone, so a filter set on a wider screen does not carry over.
+  const rows = soonOnly && !phone ? movements.filter((movement) => isSoon(movement, now)) : movements;
   const total = totalMovements ?? movements.length;
   const isOverdue = (movement: Movement) =>
     Math.max(0, now - movement.openedAt) >= queueWaitThresholds(movement.urgency).overdue;
@@ -163,18 +167,28 @@ export function PriorityQueue({
 
   return (
     <Card className={styles.queueCard} aria-label="Priority queue">
-      <CardHead title="Priority queue" aside={<span className={styles.headCount}>{headCount}</span>} />
+      <CardHead
+        className={styles.queueHead}
+        title="Priority queue"
+        aside={<span className={styles.headCount}>{headCount}</span>}
+      />
       <div className={styles.queueTools}>
         <Segmented
           label="Queues"
+          className={styles.queueSeg}
           items={[
-            { id: "patients", label: "Patients", count: movements.length === 0 ? "none" : movements.length },
+            {
+              id: "patients",
+              label: phone ? "ED" : "Patients",
+              count: movements.length === 0 ? "none" : movements.length,
+            },
             { id: "referrals", label: "Referrals", count: referralQueue.length === 0 ? "none" : referralQueue.length },
           ]}
           value={activeTab}
           onChange={setActiveTab}
         />
-        {activeTab === "patients" ? (
+        {/* The phone queue (v10 Home phone A) is the switch alone; Soon stays on the larger screens. */}
+        {activeTab === "patients" && !phone ? (
           <FilterChip
             pressed={soonOnly}
             onPressedChange={setSoonOnly}
@@ -462,7 +476,8 @@ export function PriorityQueue({
           <button type="button" className={styles.footButton} onClick={onClearHighlight}>
             Clear
           </button>
-        ) : (
+        ) : phone ? null : (
+          // Phone (v10 Home): the foot is the order line alone; Delays is in the Menu.
           <Link href={delaysHref} className={styles.footLink}>
             Open in Delays
           </Link>

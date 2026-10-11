@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   BedDouble,
+  Building2,
   CalendarClock,
   ChevronDown,
   Clock,
@@ -24,6 +25,7 @@ import {
   HeroStat,
   Icon,
   Menu,
+  PhoneListRow,
   Segmented,
   SrOnly,
   StackBar,
@@ -31,8 +33,11 @@ import {
   TextInput,
   buttonClass,
   durMinutes,
+  cx,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { figureText, isUnmeasured } from "@/components/ward-management/statistics/statistics-absence";
 import { dischargeDateCoverage } from "@/components/ward-management/statistics/statistics-ward-discharge-dates";
 import { readyNotYetGone, type ReadyNotYetGone } from "@/components/ward-management/statistics/statistics-ward-ready";
@@ -43,7 +48,8 @@ import {
   STATISTICS_UNIT_CHOOSER_HREF,
   STATISTICS_WARDS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
-import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -55,7 +61,14 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { countAxisMax } from "./statistics-axis";
-import { StatisticsBedMap, StatisticsBedMapLegend, bedMapCells } from "./statistics-bed-map";
+import {
+  BED_MAP_LABELS,
+  StatisticsBedMap,
+  StatisticsBedMapLegend,
+  bedMapCells,
+  type BedMap,
+} from "./statistics-bed-map";
+import { PhoneBody, PhoneList, PhonePinnedAction, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import { dateOf, fromToday, weekdayOf } from "./statistics-dates";
 import { csvCell } from "./statistics-csv";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
@@ -97,6 +110,7 @@ export function StatisticsWardScreen({
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
   const now = live.now;
   const { dayZero } = useWardFlow();
+  const isPhone = useIsPhone();
   const units = unitsOverride ?? liveUnits;
   const admissions = admissionsOverride ?? liveAdmissions;
   const unit = units.find((candidate) => candidate.id === unitId);
@@ -243,6 +257,21 @@ export function StatisticsWardScreen({
           ["Due out, 7 days", dueThisWeek],
         ],
       }}
+      phone={{
+        eyebrow: site?.name ?? "Hospital not recorded",
+        sub: `${cohortLabel} · ${unit.beds} beds${averageStay === null ? "" : ` · average stay ${averageStay}d`}`,
+        stats: (
+          <>
+            <HeroStat
+              value={wardOccupancy.occupied}
+              label={`${occupancyPct}% occupied`}
+              tone={occupancyPct >= BED_ALERT_THRESHOLD_PERCENT ? "warning" : undefined}
+            />
+            <HeroStat value={capacity.available} label="Ready" />
+            <HeroStat value={wardOccupancy.pulled} label="Pulled" />
+          </>
+        ),
+      }}
       stats={
         <>
           {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
@@ -263,296 +292,436 @@ export function StatisticsWardScreen({
         </>
       }
     >
-      {/* Direction A: the bed map and its two charts beside the bed figures. Each column's last card
+      {isPhone ? (
+        <WardPhone unit={unit} map={bedMap} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
+      ) : (
+        <>
+          {/* Direction A: the bed map and its two charts beside the bed figures. Each column's last card
           (or the chart row) takes the spare height, so both columns end on the same line. */}
-      <FlushRow layout="lead2" data-testid="ward-statistics-ward-measures">
-        <FlushStack>
-          <StatCard
-            icon={LayoutGrid}
-            title="Bed map"
-            aside={`${unit.beds} beds`}
-            id="ward-bed-map"
-            data-testid="ward-statistics-ward-bed-map-card"
-          >
-            <CardBody className={styles.bodyStack}>
-              <StatisticsBedMapLegend counts={bedMap.counts} />
-              <StatisticsBedMap map={bedMap} wardName={unit.name} />
-            </CardBody>
-          </StatCard>
-          <FlushRow layout="halves" className={ward.chartRow}>
-            <StayCard current={current} now={now} averageStay={averageStay} longStays={statistics.longStays} />
-            <StatCard icon={CalendarClock} title="Expected discharges" id="ward-discharges">
+          <FlushRow layout="lead2" data-testid="ward-statistics-ward-measures">
+            <FlushStack>
+              <StatCard
+                icon={LayoutGrid}
+                title="Bed map"
+                aside={`${unit.beds} beds`}
+                id="ward-bed-map"
+                data-testid="ward-statistics-ward-bed-map-card"
+              >
+                <CardBody className={styles.bodyStack}>
+                  <StatisticsBedMapLegend counts={bedMap.counts} />
+                  <StatisticsBedMap map={bedMap} wardName={unit.name} />
+                </CardBody>
+              </StatCard>
+              <FlushRow layout="halves" className={ward.chartRow}>
+                <StayCard current={current} now={now} averageStay={averageStay} longStays={statistics.longStays} />
+                <StatCard icon={CalendarClock} title="Expected discharges" id="ward-discharges">
+                  <CardBody className={styles.bodyStack}>
+                    <p className={ward.headFigure}>Next 7 days</p>
+                    <ColumnChart
+                      label="Expected discharges by day, next 7 days"
+                      columns={dueByDay.map((day) => ({
+                        id: String(day.offset),
+                        label: day.offset === 0 ? "Today" : weekdayOf(now + day.offset * MINUTES_PER_DAY, dayZero),
+                        value: day.count,
+                      }))}
+                    />
+                  </CardBody>
+                </StatCard>
+              </FlushRow>
+            </FlushStack>
+
+            <FlushStack>
+              <StatCard
+                icon={BedDouble}
+                title="Beds now"
+                aside={`${unit.beds} beds`}
+                id="ward-beds"
+                data-testid="ward-statistics-ward-beds-now"
+              >
+                <CardBody className={styles.bodyStack}>
+                  <div>
+                    <StackBar
+                      label={`${unit.name} beds by state`}
+                      segments={[
+                        { id: "ready", label: BED_STATE_LABELS.ready, value: states.ready, fill: "ready" },
+                        { id: "pulled", label: BED_STATE_LABELS.pulled, value: states.pulled, hatch: true },
+                        { id: "closed", label: BED_STATE_LABELS.closed, value: states.closed, fill: "closed" },
+                        { id: "occupied", label: BED_STATE_LABELS.occupied, value: states.occupied, fill: "data-1" },
+                      ]}
+                    />
+                    <p className={ward.stateLine} aria-hidden="true">
+                      <span>{states.ready} ready</span>
+                      <span>{states.pulled} pulled</span>
+                      <span>{states.closed} closed</span>
+                      <span className={ward.stateLineEnd}>
+                        {states.occupied} occupied{states.onLeave > 0 ? `, ${states.onLeave} on leave` : ""}
+                      </span>
+                    </p>
+                  </div>
+                  <dl className={styles.tiles} aria-label="Current bed figures">
+                    <div className={styles.tile}>
+                      <dt className={styles.tileLabel}>Empty</dt>
+                      <dd className={styles.tileValue} data-testid="ward-stat-capacity-empty">
+                        {unit.empty.value}
+                      </dd>
+                    </div>
+                    <div className={styles.tile}>
+                      <dt className={styles.tileLabel}>Allocatable</dt>
+                      <dd className={styles.tileValue} data-testid="ward-stat-capacity-allocatable">
+                        {unit.allocatable.value}
+                        {unit.allocatable.value === 0 && <small>no free bed</small>}
+                      </dd>
+                    </div>
+                    <div className={styles.tile}>
+                      <dt className={styles.tileLabel}>Open now</dt>
+                      <dd className={styles.tileValue}>{openBeds}</dd>
+                    </div>
+                    <div className={styles.tile}>
+                      <dt className={styles.tileLabel}>Pending</dt>
+                      <dd className={styles.tileValue} data-testid="ward-stat-capacity-pending-preparation">
+                        {pendingPreparation}
+                      </dd>
+                    </div>
+                  </dl>
+                  {oldestPulled === null ? null : (
+                    <p className={ward.factLine}>
+                      <span className={styles.flagged}>
+                        <StatusGlyph tone="warning" size={9} />
+                        Oldest pulled bed
+                      </span>
+                      <span>
+                        <b>{durMinutes(oldestPulled)}</b> not arrived
+                      </span>
+                    </p>
+                  )}
+                </CardBody>
+              </StatCard>
+
+              <StatCard
+                icon={FileText}
+                title="Discharge planning"
+                aside="Not departed"
+                id="ward-planning"
+                data-testid="ward-statistics-ward-discharge-planning"
+              >
+                <CardBody className={styles.bodyStack}>
+                  <dl className={styles.figures} data-testid="ward-stat-discharge-date-coverage">
+                    <div className={styles.figure}>
+                      <dd className={styles.figureValue} data-testid="ward-stat-discharge-date-recorded">
+                        {dischargeDates.recorded}
+                      </dd>
+                      <dt className={styles.figureLabel}>With a date</dt>
+                    </div>
+                    <div className={styles.figure}>
+                      <dd className={styles.figureValue} data-testid="ward-stat-discharge-date-not-recorded">
+                        {dischargeDates.notRecorded}
+                      </dd>
+                      <dt className={styles.figureLabel}>
+                        {dischargeDates.notRecorded > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                        No date
+                      </dt>
+                    </div>
+                    <div className={styles.figure}>
+                      <dd
+                        className={styles.figureValue}
+                        data-testid="ward-stat-discharge-date-share"
+                        data-unmeasured={isUnmeasured(dischargeDates.shareRecorded) ? "" : undefined}
+                      >
+                        {dischargeDates.shareRecorded.kind === "measured" ? (
+                          <>
+                            {figureText(dischargeDates.shareRecorded)}%
+                            <small className={ward.figureSub}>Of {dischargeDates.population} here</small>
+                          </>
+                        ) : (
+                          <>
+                            <span aria-hidden="true">none</span>
+                            <SrOnly>{`No share can be stated, ${figureText(dischargeDates.shareRecorded)}.`}</SrOnly>
+                          </>
+                        )}
+                      </dd>
+                      <dt className={styles.figureLabel}>Share with a date</dt>
+                    </div>
+                  </dl>
+                  <div data-testid="ward-stat-discharge-outcomes">
+                    <SrOnly>
+                      {statistics.dischargeDateOutcomes.consideredCount === 0 ? (
+                        <>No resolved discharge dates.</>
+                      ) : (
+                        <>
+                          Of {statistics.dischargeDateOutcomes.consideredCount} whose date can be judged, written down
+                          and the person has since left, {statistics.dischargeDateOutcomes.met} met and{" "}
+                          {statistics.dischargeDateOutcomes.missed} missed.
+                        </>
+                      )}{" "}
+                      {statistics.dischargeDateOutcomes.moved === 0 ? (
+                        <>No admission on this ward has had its discharge date revised.</>
+                      ) : (
+                        <>
+                          Separately, {statistics.dischargeDateOutcomes.moved}{" "}
+                          {statistics.dischargeDateOutcomes.moved === 1
+                            ? "admission on this ward has"
+                            : "admissions on this ward have"}{" "}
+                          had a discharge date revised at least once.
+                        </>
+                      )}
+                    </SrOnly>
+                    <div className={styles.tiles} aria-hidden="true">
+                      <div className={styles.tile}>
+                        <span className={styles.tileLabel}>Dates met</span>
+                        <span className={styles.tileValue}>
+                          {statistics.dischargeDateOutcomes.consideredCount === 0
+                            ? "none yet"
+                            : `${statistics.dischargeDateOutcomes.met} of ${statistics.dischargeDateOutcomes.consideredCount}`}
+                        </span>
+                      </div>
+                      <div className={styles.tile}>
+                        <span className={styles.tileLabel}>Revised</span>
+                        <span className={styles.tileValue}>{statistics.dischargeDateOutcomes.moved}</span>
+                      </div>
+                      <div className={styles.tile}>
+                        <span className={styles.tileLabel}>Ready, not gone</span>
+                        <span className={styles.tileValue}>{headlineTotal}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardBody>
+              </StatCard>
+            </FlushStack>
+          </FlushRow>
+
+          <FlushRow layout="halves">
+            <StatCard
+              icon={Users}
+              title="Referrals into ward"
+              aside="Ever, this ward"
+              id="ward-referrals"
+              data-testid="ward-statistics-ward-referrals-panel"
+            >
               <CardBody className={styles.bodyStack}>
-                <p className={ward.headFigure}>Next 7 days</p>
-                <ColumnChart
-                  label="Expected discharges by day, next 7 days"
-                  columns={dueByDay.map((day) => ({
-                    id: String(day.offset),
-                    label: day.offset === 0 ? "Today" : weekdayOf(now + day.offset * MINUTES_PER_DAY, dayZero),
-                    value: day.count,
-                  }))}
-                />
+                <section data-testid="ward-stat-referrals" aria-label="Referrals into this ward">
+                  <dl className={styles.figures}>
+                    <div className={styles.figure}>
+                      <dd className={styles.figureValue} data-testid="ward-stat-referrals-asked">
+                        {referrals.askedAndWaiting}
+                      </dd>
+                      <dt className={styles.figureLabel}>Asking now</dt>
+                    </div>
+                    <div className={styles.figure}>
+                      <dd className={styles.figureValue} data-testid="ward-stat-referrals-accepted">
+                        {referrals.everAccepted}
+                      </dd>
+                      <dt className={styles.figureLabel}>Ever accepted</dt>
+                    </div>
+                    <div className={styles.figure}>
+                      <dd className={styles.figureValue} data-testid="ward-stat-referrals-declined">
+                        {referrals.everDeclined}
+                      </dd>
+                      <dt className={styles.figureLabel}>
+                        <StatusGlyph tone="closed" size={9} />
+                        Ever declined
+                      </dt>
+                    </div>
+                  </dl>
+                  <SrOnly>
+                    Asking now counts referrals waiting on this ward right now. Ever accepted and ever declined count
+                    every referral since records began, and one movement can appear in both, so the three do not add up.
+                  </SrOnly>
+                </section>
+                {statistics.averageEmptyBedMinutes !== null || statistics.emptyBedIncoherentCount > 0 ? (
+                  <div data-testid="ward-statistics-ward-admissions-discharges">
+                    <h3 className={ward.subHead}>Pull to arrival</h3>
+                    <div className={styles.tiles}>
+                      <div className={styles.tile} data-testid="ward-stat-empty-bed-minutes">
+                        <span className={styles.tileLabel}>Average</span>
+                        {statistics.averageEmptyBedMinutes === null ? (
+                          <span className={styles.tileValue}>
+                            <span aria-hidden="true">none</span>
+                            <SrOnly>
+                              No bed on this ward has a usable pair of instants, a bed given away and a person arriving,
+                              with the arrival not earlier than the pull, so there is no empty stretch to average.
+                            </SrOnly>
+                          </span>
+                        ) : (
+                          <span className={styles.tileValue}>{splitDuration(statistics.averageEmptyBedMinutes)}</span>
+                        )}
+                      </div>
+                      <div className={styles.tile}>
+                        <span className={styles.tileLabel}>Shortest</span>
+                        <span className={styles.tileValue} data-testid="ward-stat-empty-bed-shortest">
+                          {statistics.emptyBedMinutesShortest === null
+                            ? "none"
+                            : splitDuration(statistics.emptyBedMinutesShortest)}
+                        </span>
+                      </div>
+                      <div className={styles.tile}>
+                        <span className={styles.tileLabel}>Longest</span>
+                        <span className={styles.tileValue} data-testid="ward-stat-empty-bed-longest">
+                          {statistics.emptyBedMinutesLongest === null
+                            ? "none"
+                            : splitDuration(statistics.emptyBedMinutesLongest)}
+                        </span>
+                      </div>
+                      <div className={styles.tile} data-testid="ward-stat-empty-bed-incoherent">
+                        <span className={styles.tileLabel}>Excluded</span>
+                        <span className={styles.tileValue}>{statistics.emptyBedIncoherentCount}</span>
+                        <SrOnly>
+                          {statistics.emptyBedIncoherentCount === 1
+                            ? "admission on this ward records"
+                            : "admissions on this ward record"}{" "}
+                          an arrival earlier than the bed was given away.
+                          {statistics.emptyBedIncoherentCount > 0
+                            ? ` That cannot be true, so ${statistics.emptyBedIncoherentCount === 1 ? "it is" : "they are"} excluded from the average and counted here instead.`
+                            : ""}
+                        </SrOnly>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </CardBody>
             </StatCard>
+            <Follow className={ward.followShort}>
+              <Barriers ready={ready} error={blockedByReasonError} headlineTotal={headlineTotal} />
+            </Follow>
           </FlushRow>
-        </FlushStack>
 
-        <FlushStack>
-          <StatCard
-            icon={BedDouble}
-            title="Beds now"
-            aside={`${unit.beds} beds`}
-            id="ward-beds"
-            data-testid="ward-statistics-ward-beds-now"
-          >
-            <CardBody className={styles.bodyStack}>
-              <div>
-                <StackBar
-                  label={`${unit.name} beds by state`}
-                  segments={[
-                    { id: "ready", label: BED_STATE_LABELS.ready, value: states.ready, fill: "ready" },
-                    { id: "pulled", label: BED_STATE_LABELS.pulled, value: states.pulled, hatch: true },
-                    { id: "closed", label: BED_STATE_LABELS.closed, value: states.closed, fill: "closed" },
-                    { id: "occupied", label: BED_STATE_LABELS.occupied, value: states.occupied, fill: "data-1" },
-                  ]}
-                />
-                <p className={ward.stateLine} aria-hidden="true">
-                  <span>{states.ready} ready</span>
-                  <span>{states.pulled} pulled</span>
-                  <span>{states.closed} closed</span>
-                  <span className={ward.stateLineEnd}>
-                    {states.occupied} occupied{states.onLeave > 0 ? `, ${states.onLeave} on leave` : ""}
-                  </span>
-                </p>
-              </div>
-              <dl className={styles.tiles} aria-label="Current bed figures">
-                <div className={styles.tile}>
-                  <dt className={styles.tileLabel}>Empty</dt>
-                  <dd className={styles.tileValue} data-testid="ward-stat-capacity-empty">
-                    {unit.empty.value}
-                  </dd>
-                </div>
-                <div className={styles.tile}>
-                  <dt className={styles.tileLabel}>Allocatable</dt>
-                  <dd className={styles.tileValue} data-testid="ward-stat-capacity-allocatable">
-                    {unit.allocatable.value}
-                    {unit.allocatable.value === 0 && <small>no free bed</small>}
-                  </dd>
-                </div>
-                <div className={styles.tile}>
-                  <dt className={styles.tileLabel}>Open now</dt>
-                  <dd className={styles.tileValue}>{openBeds}</dd>
-                </div>
-                <div className={styles.tile}>
-                  <dt className={styles.tileLabel}>Pending</dt>
-                  <dd className={styles.tileValue} data-testid="ward-stat-capacity-pending-preparation">
-                    {pendingPreparation}
-                  </dd>
-                </div>
-              </dl>
-              {oldestPulled === null ? null : (
-                <p className={ward.factLine}>
-                  <span className={styles.flagged}>
-                    <StatusGlyph tone="warning" size={9} />
-                    Oldest pulled bed
-                  </span>
-                  <span>
-                    <b>{durMinutes(oldestPulled)}</b> not arrived
-                  </span>
-                </p>
-              )}
-            </CardBody>
-          </StatCard>
-
-          <StatCard
-            icon={FileText}
-            title="Discharge planning"
-            aside="Not departed"
-            id="ward-planning"
-            data-testid="ward-statistics-ward-discharge-planning"
-          >
-            <CardBody className={styles.bodyStack}>
-              <dl className={styles.figures} data-testid="ward-stat-discharge-date-coverage">
-                <div className={styles.figure}>
-                  <dd className={styles.figureValue} data-testid="ward-stat-discharge-date-recorded">
-                    {dischargeDates.recorded}
-                  </dd>
-                  <dt className={styles.figureLabel}>With a date</dt>
-                </div>
-                <div className={styles.figure}>
-                  <dd className={styles.figureValue} data-testid="ward-stat-discharge-date-not-recorded">
-                    {dischargeDates.notRecorded}
-                  </dd>
-                  <dt className={styles.figureLabel}>
-                    {dischargeDates.notRecorded > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                    No date
-                  </dt>
-                </div>
-                <div className={styles.figure}>
-                  <dd
-                    className={styles.figureValue}
-                    data-testid="ward-stat-discharge-date-share"
-                    data-unmeasured={isUnmeasured(dischargeDates.shareRecorded) ? "" : undefined}
-                  >
-                    {dischargeDates.shareRecorded.kind === "measured" ? (
-                      <>
-                        {figureText(dischargeDates.shareRecorded)}%
-                        <small className={ward.figureSub}>Of {dischargeDates.population} here</small>
-                      </>
-                    ) : (
-                      <>
-                        <span aria-hidden="true">none</span>
-                        <SrOnly>{`No share can be stated, ${figureText(dischargeDates.shareRecorded)}.`}</SrOnly>
-                      </>
-                    )}
-                  </dd>
-                  <dt className={styles.figureLabel}>Share with a date</dt>
-                </div>
-              </dl>
-              <div data-testid="ward-stat-discharge-outcomes">
-                <SrOnly>
-                  {statistics.dischargeDateOutcomes.consideredCount === 0 ? (
-                    <>No resolved discharge dates.</>
-                  ) : (
-                    <>
-                      Of {statistics.dischargeDateOutcomes.consideredCount} whose date can be judged, written down and
-                      the person has since left, {statistics.dischargeDateOutcomes.met} met and{" "}
-                      {statistics.dischargeDateOutcomes.missed} missed.
-                    </>
-                  )}{" "}
-                  {statistics.dischargeDateOutcomes.moved === 0 ? (
-                    <>No admission on this ward has had its discharge date revised.</>
-                  ) : (
-                    <>
-                      Separately, {statistics.dischargeDateOutcomes.moved}{" "}
-                      {statistics.dischargeDateOutcomes.moved === 1
-                        ? "admission on this ward has"
-                        : "admissions on this ward have"}{" "}
-                      had a discharge date revised at least once.
-                    </>
-                  )}
-                </SrOnly>
-                <div className={styles.tiles} aria-hidden="true">
-                  <div className={styles.tile}>
-                    <span className={styles.tileLabel}>Dates met</span>
-                    <span className={styles.tileValue}>
-                      {statistics.dischargeDateOutcomes.consideredCount === 0
-                        ? "none yet"
-                        : `${statistics.dischargeDateOutcomes.met} of ${statistics.dischargeDateOutcomes.consideredCount}`}
-                    </span>
-                  </div>
-                  <div className={styles.tile}>
-                    <span className={styles.tileLabel}>Revised</span>
-                    <span className={styles.tileValue}>{statistics.dischargeDateOutcomes.moved}</span>
-                  </div>
-                  <div className={styles.tile}>
-                    <span className={styles.tileLabel}>Ready, not gone</span>
-                    <span className={styles.tileValue}>{headlineTotal}</span>
-                  </div>
-                </div>
-              </div>
-            </CardBody>
-          </StatCard>
-        </FlushStack>
-      </FlushRow>
-
-      <FlushRow layout="halves">
-        <StatCard
-          icon={Users}
-          title="Referrals into ward"
-          aside="Ever, this ward"
-          id="ward-referrals"
-          data-testid="ward-statistics-ward-referrals-panel"
-        >
-          <CardBody className={styles.bodyStack}>
-            <section data-testid="ward-stat-referrals" aria-label="Referrals into this ward">
-              <dl className={styles.figures}>
-                <div className={styles.figure}>
-                  <dd className={styles.figureValue} data-testid="ward-stat-referrals-asked">
-                    {referrals.askedAndWaiting}
-                  </dd>
-                  <dt className={styles.figureLabel}>Asking now</dt>
-                </div>
-                <div className={styles.figure}>
-                  <dd className={styles.figureValue} data-testid="ward-stat-referrals-accepted">
-                    {referrals.everAccepted}
-                  </dd>
-                  <dt className={styles.figureLabel}>Ever accepted</dt>
-                </div>
-                <div className={styles.figure}>
-                  <dd className={styles.figureValue} data-testid="ward-stat-referrals-declined">
-                    {referrals.everDeclined}
-                  </dd>
-                  <dt className={styles.figureLabel}>
-                    <StatusGlyph tone="closed" size={9} />
-                    Ever declined
-                  </dt>
-                </div>
-              </dl>
-              <SrOnly>
-                Asking now counts referrals waiting on this ward right now. Ever accepted and ever declined count every
-                referral since records began, and one movement can appear in both, so the three do not add up.
-              </SrOnly>
-            </section>
-            {statistics.averageEmptyBedMinutes !== null || statistics.emptyBedIncoherentCount > 0 ? (
-              <div data-testid="ward-statistics-ward-admissions-discharges">
-                <h3 className={ward.subHead}>Pull to arrival</h3>
-                <div className={styles.tiles}>
-                  <div className={styles.tile} data-testid="ward-stat-empty-bed-minutes">
-                    <span className={styles.tileLabel}>Average</span>
-                    {statistics.averageEmptyBedMinutes === null ? (
-                      <span className={styles.tileValue}>
-                        <span aria-hidden="true">none</span>
-                        <SrOnly>
-                          No bed on this ward has a usable pair of instants, a bed given away and a person arriving,
-                          with the arrival not earlier than the pull, so there is no empty stretch to average.
-                        </SrOnly>
-                      </span>
-                    ) : (
-                      <span className={styles.tileValue}>{splitDuration(statistics.averageEmptyBedMinutes)}</span>
-                    )}
-                  </div>
-                  <div className={styles.tile}>
-                    <span className={styles.tileLabel}>Shortest</span>
-                    <span className={styles.tileValue} data-testid="ward-stat-empty-bed-shortest">
-                      {statistics.emptyBedMinutesShortest === null
-                        ? "none"
-                        : splitDuration(statistics.emptyBedMinutesShortest)}
-                    </span>
-                  </div>
-                  <div className={styles.tile}>
-                    <span className={styles.tileLabel}>Longest</span>
-                    <span className={styles.tileValue} data-testid="ward-stat-empty-bed-longest">
-                      {statistics.emptyBedMinutesLongest === null
-                        ? "none"
-                        : splitDuration(statistics.emptyBedMinutesLongest)}
-                    </span>
-                  </div>
-                  <div className={styles.tile} data-testid="ward-stat-empty-bed-incoherent">
-                    <span className={styles.tileLabel}>Excluded</span>
-                    <span className={styles.tileValue}>{statistics.emptyBedIncoherentCount}</span>
-                    <SrOnly>
-                      {statistics.emptyBedIncoherentCount === 1
-                        ? "admission on this ward records"
-                        : "admissions on this ward record"}{" "}
-                      an arrival earlier than the bed was given away.
-                      {statistics.emptyBedIncoherentCount > 0
-                        ? ` That cannot be true, so ${statistics.emptyBedIncoherentCount === 1 ? "it is" : "they are"} excluded from the average and counted here instead.`
-                        : ""}
-                    </SrOnly>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </CardBody>
-        </StatCard>
-        <Follow className={ward.followShort}>
-          <Barriers ready={ready} error={blockedByReasonError} headlineTotal={headlineTotal} />
-        </Follow>
-      </FlushRow>
-
-      <Roster unit={unit} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
+          <Roster unit={unit} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
+        </>
+      )}
     </StatisticsPage>
+  );
+}
+
+/** The bed strip's legend order and words on the phone (v10 phone). */
+const PHONE_BED_LEGEND: { kinds: BedMap["cells"][number]["kind"][]; label: string }[] = [
+  { kinds: ["occupied", "leave"], label: BED_MAP_LABELS.occupied },
+  { kinds: ["pulled"], label: "Pulled" },
+  { kinds: ["closed"], label: BED_MAP_LABELS.closed },
+  { kinds: ["prep"], label: "Making ready" },
+  { kinds: ["ready"], label: BED_MAP_LABELS.ready },
+];
+
+/**
+ * One ward on a phone (v10 phone): the beds as a strip of boxes grouped by state (the model has no
+ * bed numbers), then the roster, the discharges due in seven days and the blocked discharges as
+ * one list behind a segmented control, and "Open the ward" pinned at the foot.
+ */
+function WardPhone({
+  unit,
+  map,
+  current,
+  now,
+  dayZero,
+  leaveBeds,
+}: {
+  unit: Unit;
+  map: BedMap;
+  current: Admission[];
+  now: number;
+  dayZero: Date;
+  leaveBeds: readonly { admissionId: string }[];
+}) {
+  const patientOf = usePatientOf();
+  const [tab, setTab] = useState<"roster" | "discharges" | "blockers">("roster");
+  const byStay = (a: Admission, b: Admission) => (stayDaysOf(b, now) ?? -1) - (stayDaysOf(a, now) ?? -1);
+  const roster = [...current].sort(byStay);
+  const discharges = current
+    .filter(
+      (admission) =>
+        admission.state !== "pulled" &&
+        admission.expectedDischargeAt !== null &&
+        admission.expectedDischargeAt >= now &&
+        dayOf(admission.expectedDischargeAt) < dayOf(now) + 7,
+    )
+    .sort((a, b) => (a.expectedDischargeAt ?? 0) - (b.expectedDischargeAt ?? 0));
+  const blockers = current.filter((admission) => admission.blockReason !== null).sort(byStay);
+  const shown = tab === "roster" ? roster : tab === "discharges" ? discharges : blockers;
+
+  return (
+    <PhoneBody testId="ward-statistics-ward-phone">
+      <div className={phone.bedCard} data-testid="ward-statistics-ward-phone-beds">
+        <ul className={phone.bedStrip} aria-label={`${unit.name}, ${unit.beds} beds by state`}>
+          {map.cells.map((cell, index) => (
+            <li
+              key={index}
+              className={phone.bed}
+              data-kind={cell.kind}
+              title={BED_MAP_LABELS[cell.kind]}
+              aria-label={BED_MAP_LABELS[cell.kind]}
+            />
+          ))}
+        </ul>
+        <ul className={phone.bedLegend} aria-label="Beds by state">
+          {PHONE_BED_LEGEND.map((entry) => (
+            <li key={entry.label}>
+              {entry.label}
+              <b>{entry.kinds.reduce((sum, kind) => sum + map.counts[kind], 0)}</b>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <Segmented<"roster" | "discharges" | "blockers">
+        className={cx(phone.seg, phone.stickySeg)}
+        size="md"
+        label="Ward list"
+        value={tab}
+        onChange={setTab}
+        items={[
+          { id: "roster", label: "Roster", count: roster.length },
+          { id: "discharges", label: "Discharges", count: discharges.length },
+          { id: "blockers", label: "Blockers", count: blockers.length },
+        ]}
+      />
+      {shown.length === 0 ? (
+        <p className={phone.note}>
+          {tab === "roster"
+            ? "No current admissions recorded"
+            : tab === "discharges"
+              ? "Nobody has a discharge date in the next 7 days"
+              : "No current admission carries a blocker"}
+        </p>
+      ) : (
+        <PhoneList
+          label={
+            tab === "roster" ? "Admission roster" : tab === "discharges" ? "Due out, 7 days" : "Blocked discharges"
+          }
+        >
+          {shown.map((admission) => {
+            const person = patientOf(admission);
+            const days = stayDaysOf(admission, now);
+            const onLeave = leaveBeds.some((bed) => bed.admissionId === admission.id);
+            const status = onLeave ? "On leave" : ADMISSION_STATE_LABELS[admission.state];
+            return (
+              <PhoneListRow
+                key={admission.id}
+                as="li"
+                name={person.formalName}
+                meta={
+                  <>
+                    <span className={phone.mono}>{person.umrn}</span>
+                    {` · ${tab === "blockers" && admission.blockReason ? admission.blockReason : status}`}
+                  </>
+                }
+                value={
+                  days === null ? (
+                    "none"
+                  ) : (
+                    <>
+                      {days} <small>d</small>
+                    </>
+                  )
+                }
+                time={
+                  admission.expectedDischargeAt === null ? "no date" : dateOf(admission.expectedDischargeAt, dayZero)
+                }
+              />
+            );
+          })}
+        </PhoneList>
+      )}
+      <PhonePinnedAction icon={Building2} href={unitHref(unit.id)} testId="ward-statistics-ward-phone-open">
+        Open the ward
+      </PhonePinnedAction>
+    </PhoneBody>
   );
 }
 
