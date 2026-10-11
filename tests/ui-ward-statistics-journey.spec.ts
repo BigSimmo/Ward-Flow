@@ -55,6 +55,8 @@ const DESTINATIONS = [
     linkText: "Across all services",
     marker: "ward-statistics-overview-screen",
     navValue: "overview",
+    /** The section chip's label on the phone Summary (v10 phone, 11 Oct 2026). */
+    navLabel: "Overview",
     /** A figure this screen derives, so an empty shell cannot pass as a rendered page. */
     figure: "ward-statistics-overview-declines-population",
   },
@@ -64,6 +66,7 @@ const DESTINATIONS = [
     linkText: "Services",
     marker: "ward-statistics-services-index",
     navValue: "service",
+    navLabel: "Services",
     figure: undefined,
   },
 ] as const;
@@ -119,10 +122,14 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
       await page.waitForLoadState("networkidle");
       await waitForStreamToSettle(page);
 
-      // A choice made before React hydrates the select changes nothing, and once it hydrates the
-      // controlled select snaps back to Summary, so choose again until the page actually leaves.
+      // v10 phone (11 Oct 2026): the phone Summary lists the sections as chips under the hero, in
+      // place of the old select. Press again until the page actually leaves, in case the first press
+      // lands before React hydrates.
       await expect(async () => {
-        await page.getByLabel("Statistics section", { exact: true }).selectOption(destination.navValue);
+        await page
+          .getByTestId("ward-statistics-nav")
+          .getByRole("link", { name: new RegExp(`^${destination.navLabel}`) })
+          .click();
         await expect(page).not.toHaveURL(/\/statistics$/, { timeout: 3_000 });
       }, `choosing "${destination.linkText}" never left the hub`).toPass({ timeout: 20_000 });
       await page.waitForLoadState("networkidle");
