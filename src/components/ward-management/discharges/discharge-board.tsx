@@ -649,6 +649,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const selectRelease = (id: string, opener: HTMLElement) => {
     triggerRef.current = opener;
     setSelected(null);
+    setPhoneReleaseMore(false);
     setReleaseId(id);
     focusDetail();
   };
