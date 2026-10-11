@@ -113,6 +113,7 @@ export function PatientTransitOperations({
   const activeJob = job && job.cancelledAt === undefined;
   const noTransport = movement.transportNeed?.needed === false && !activeJob;
   const remaining = movement.pullExpiresAt === undefined ? undefined : movement.pullExpiresAt - now;
+  const searchStage = ["placement_requested", "destination_review", "accepted_awaiting_bed"].includes(movement.stage);
   const selectedTargets = selected.filter(
     (id) => candidates.some((c) => c.unit.id === id && c.verdict.eligible) && !movement.referredUnitIds.includes(id),
   );
@@ -442,26 +443,8 @@ export function PatientTransitOperations({
                 : `Bed hold · ${dur(remaining)} remaining · expires ${clock(movement.pullExpiresAt!)}`}
             </p>
           )}
-          {activeJob && (
-            <dl className={styles.facts}>
-              <div>
-                <dt>Provider</dt>
-                <dd>{job.provider}</dd>
-              </div>
-              <div>
-                <dt>CAD number</dt>
-                <dd>{job.cadNumber ?? "Not recorded"}</dd>
-              </div>
-              <div>
-                <dt>Quoted ETA</dt>
-                <dd>{job.estimatedAt === undefined ? "Not recorded" : clock(job.estimatedAt)}</dd>
-              </div>
-              <div>
-                <dt>Clinical escort</dt>
-                <dd>{job.escortRequired ? "Required" : "Not required"}</dd>
-              </div>
-            </dl>
-          )}
+          {/* The booked provider, CAD number, quoted ETA and escort show once, in the Transport block
+              below this workspace (device audit, 11 Oct 2026). */}
           {open && movement.stage === "pulled" && !job && !booking && (
             <button
               ref={bookTriggerRef}
@@ -783,7 +766,6 @@ export function PatientTransitOperations({
           <h2 id="transit-title">Transit operations</h2>
           <p>Coordinate the next step with the patient’s clinical context in view.</p>
         </div>
-        <span className={styles.stage}>{stageCopy[movement.stage].label}</span>
       </header>
       <div aria-live="polite" aria-atomic="true" className={styles.feedback}>
         {errors.length > 0 ? (
@@ -840,9 +822,11 @@ export function PatientTransitOperations({
         </p>
       )}
       {overridePanel}
-      <div className={styles.columns} data-assigned={Boolean(destination)}>
-        {destination ? dispatchPanel : candidatePanel}
-        {destination ? candidatePanel : dispatchPanel}
+      {/* Device audit (11 Oct 2026): once a bed is pulled (stage 4 on), the ward search is settled, so the
+          shortlist and eligibility reference give way to the placement and dispatch work alone. */}
+      <div className={styles.columns} data-assigned={Boolean(destination)} data-single={!searchStage}>
+        {destination || !searchStage ? dispatchPanel : candidatePanel}
+        {searchStage ? (destination ? candidatePanel : dispatchPanel) : null}
       </div>
       <details className={`${styles.card} ${styles.additional}`}>
         <summary>

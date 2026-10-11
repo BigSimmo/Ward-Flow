@@ -735,6 +735,7 @@ export function PatientNowScreen({
       setShowClearanceModal(true);
     },
     onBookTransport: openTransportForm,
+    bookingInCard: isPhone && isLiveBedflow,
     onArrivalTime: () => {
       setShowArrivalTimeModal(true);
     },
@@ -1099,15 +1100,6 @@ export function PatientNowScreen({
                   note={false}
                   className={`${styles.v6Journey} ${styles.phStayStrip}`}
                 />
-              ) : isLiveBedflow && liveMovement && !phoneMovement ? (
-                <JourneyStrip
-                  surface="hero"
-                  label="Journey since this movement opened"
-                  stages={patientJourneyStages(liveMovement, now)}
-                  formatDuration={dur}
-                  note={false}
-                  className={styles.v6Journey}
-                />
               ) : undefined
             }
             steps={
@@ -1396,7 +1388,9 @@ export function PatientNowScreen({
                       <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} />
                     </div>
                   ) : null}
-                  {(mode === "held" || mode === "transit") && liveMovement ? (
+                  {/* Device audit (11 Oct 2026): on a phone the Moving to card carries the transport facts and
+                      its own booking action, so this block shows only while the booking form is open. */}
+                  {(mode === "held" || mode === "transit") && liveMovement && (!phoneMovement || showTransportForm) ? (
                     <section
                       className={`${styles.sec} ${styles.transportSec}`}
                       aria-labelledby="pnTransportHeading"
@@ -1445,7 +1439,7 @@ export function PatientNowScreen({
                                 }}
                                 data-testid="ward-patient-book-transport-btn"
                               >
-                                {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
+                                {isTransportBooked ? "Update booking" : "Mark as Booked"}
                               </button>
                             )}
                           </div>
@@ -1786,6 +1780,21 @@ export function PatientNowScreen({
                       since={clock(stayLeaveBed.absentWithoutLeave.since)}
                       onRecordReturn={recordReturn}
                     />
+                  ) : null}
+                  {/* Device audit (11 Oct 2026): the journey ribbon sits below the body, not in the hero, so
+                      the hero holds the status and the steps only. The phone keeps its own card above. */}
+                  {isLiveBedflow && liveMovement && !phoneMovement ? (
+                    <section className={styles.sec} aria-labelledby="pn-journey-head">
+                      <h3 id="pn-journey-head" className={styles.secH}>
+                        Journey so far
+                      </h3>
+                      <JourneyStrip
+                        label="Journey since this movement opened"
+                        stages={patientJourneyStages(liveMovement, now)}
+                        formatDuration={dur}
+                        note={false}
+                      />
+                    </section>
                   ) : null}
                   {(mode === "idle" || mode === "cto") && !isPhone ? (
                     <PatientRecordOverview
