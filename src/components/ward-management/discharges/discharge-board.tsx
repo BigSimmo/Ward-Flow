@@ -308,6 +308,16 @@ function recordedMoment(value: Instant | null, dayZero: Date): string {
   return value !== null && Number.isFinite(value) ? formatSheetMoment(value, dayZero) : "Not recorded";
 }
 
+/** The calendar day alone ("Fri, 9 Oct"), for a release already past its date. */
+function recordedDate(value: Instant, dayZero: Date): string {
+  return calendarDateOf(value, dayZero).toLocaleDateString("en-AU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "Australia/Perth",
+  });
+}
+
 const BLOCKER_CATEGORIES = [
   { id: "accommodation", label: "Accommodation" },
   { id: "transport", label: "Transport" },
@@ -1286,18 +1296,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   </button>
                 ))}
               </div>
-              {isPhone ? (
-                /* v10 phone: the hero's one action, full width under the figures. */
-                <Button
-                  variant="onHero"
-                  icon={Copy}
-                  className={pageStyles.phHeroAction}
-                  onClick={copySummary}
-                  data-testid="ward-discharge-copy"
-                >
-                  Copy summary
-                </Button>
-              ) : null}
+              {/* Device audit, 11 Oct 2026: no desk tools in the phone hero, so Copy summary
+                  is off phone (it stays in the tablet and desktop hero). */}
             </>
           }
           barAside={isPhone ? undefined : populationSwitch}
@@ -1479,7 +1479,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 {counts.confirmed} confirmed, {counts.expected} expected, {counts.departed} departed.
               </span>
               <span aria-live="polite" className={pageStyles.shownCountBadge}>
-                {population === "records" && guarded.status === "denied" ? "Unavailable" : `${shown} shown`}
+                {/* Device audit, 11 Oct 2026: the hero says 53 open and the list holds 57, so the
+                    list names both parts rather than a bare "57 shown". */}
+                {population === "records" && guarded.status === "denied"
+                  ? "Unavailable"
+                  : population === "releases" && status === "all" && shown === total && counts.departed > 0
+                    ? `${shown - counts.departed} open · ${counts.departed} discharged`
+                    : `${shown} shown`}
               </span>
             </header>
             <div
@@ -1633,7 +1639,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                           (isPhone && !phoneGroupsOpen[key]
                             ? litFirst(releaseGroups[key], releaseLit).slice(0, PHONE_GROUP_CAP)
                             : litFirst(releaseGroups[key], releaseLit)
-                          ).map((release) => {
+                          ).map((release, index) => {
                             const unit = units.find((candidate) => candidate.id === release.unitId);
                             const linked = records.find((candidate) => candidate.admissionId === release.admissionId);
                             const overdue = release.state !== "discharged" && release.expectedAt < now;
@@ -1644,7 +1650,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 data-selected={releaseId === release.id}
                                 data-highlighted={releaseLit(release) || undefined}
                                 data-dim={dimmed(releaseLit(release))}
-                                data-act={key === "blocked" || undefined}
+                                // One thin red edge, on the first act-now row only (device audit,
+                                // 11 Oct 2026: five stacked red outlines read as an error state).
+                                data-act={(key === "blocked" && index === 0) || undefined}
                                 onClick={(e) => selectRelease(release.id, e.currentTarget)}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
@@ -1672,27 +1680,44 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                     {linked ? (
                                       <>
                                         <span aria-hidden="true">{isPhone ? "\u00a0· " : " · "}</span>
-                                        <span className={pageStyles.patientHint}>{recordName(linked)}</span>
+                                        {/* Phone rows carry the UMRN only (device audit, 11 Oct
+                                            2026); the sheet adds the name. */}
+                                        <span className={isPhone ? pageStyles.mono : pageStyles.patientHint}>
+                                          {isPhone && linked.identity.kind === "linked"
+                                            ? linked.identity.patient.umrn
+                                            : recordName(linked)}
+                                        </span>
                                       </>
                                     ) : null}
                                   </span>
                                 </td>
                                 <td data-label="Timing" className={pageStyles.timingCell}>
-                                  <strong className={pageStyles.band}>
-                                    {overdue ? "Now" : BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
-                                  </strong>{" "}
-                                  <span className={pageStyles.due}>
-                                    {recordedMoment(
-                                      release.state === "discharged" ? release.confirmedAt : release.expectedAt,
-                                      dayZero,
-                                    )}
-                                  </span>
+                                  {/* Device audit, 11 Oct 2026: a release past its date says how far
+                                      past, with the date alone; "Now" and the clock time read as
+                                      due this minute on rows one to four days late. */}
                                   {overdue ? (
-                                    <span className={pageStyles.overdue}>
-                                      <StatusGlyph tone="danger" size={9} />
-                                      {durMinutes(now - release.expectedAt)} overdue
-                                    </span>
-                                  ) : null}
+                                    <>
+                                      <strong className={pageStyles.band}>
+                                        <StatusGlyph tone="danger" size={9} />
+                                        {durMinutes(now - release.expectedAt)} past
+                                      </strong>{" "}
+                                      <span className={pageStyles.due}>
+                                        {recordedDate(release.expectedAt, dayZero)}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <strong className={pageStyles.band}>
+                                        {BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
+                                      </strong>{" "}
+                                      <span className={pageStyles.due}>
+                                        {recordedMoment(
+                                          release.state === "discharged" ? release.confirmedAt : release.expectedAt,
+                                          dayZero,
+                                        )}
+                                      </span>
+                                    </>
+                                  )}
                                 </td>
                                 <td data-label="Stage / blocker">
                                   <div className={pageStyles.stageCluster}>
@@ -2122,7 +2147,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                               {detailRelease.state === "discharged"
                                 ? "Departed"
                                 : detailRelease.expectedAt < now
-                                  ? "Now"
+                                  ? "Past the ward's date"
                                   : BAND_LABELS[releaseBand(detailRelease, now) as ReleaseBand]}
                             </dd>
                           </div>
