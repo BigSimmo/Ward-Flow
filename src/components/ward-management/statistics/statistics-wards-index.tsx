@@ -10,13 +10,16 @@ import {
   CardFoot,
   FilterChip,
   HeroStat,
+  GroupHead,
   Icon,
+  PhoneListRow,
   Segmented,
   SrOnly,
   StatusGlyph,
   cx,
   tableClasses,
   rowDim,
+  useIsPhone,
 } from "@/components/wf";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -34,6 +37,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow } from "./statistics-layout";
 import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
 import { ServiceDot } from "./statistics-services-index";
+import { PhoneBody, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
 
@@ -104,6 +108,7 @@ export function StatisticsWardsIndexScreen() {
   const [asc, setAsc] = useState(false);
   const [group, setGroup] = useState<"service" | "none">("service");
   const [chips, setChips] = useState<ReadonlySet<WardChip>>(new Set());
+  const isPhone = useIsPhone();
 
   const rows = useMemo(
     () =>
@@ -233,6 +238,28 @@ export function StatisticsWardsIndexScreen() {
           Compare wards
         </HeroTool>
       }
+      phone={{
+        title: `${overLine} ${plural(overLine, "ward", "wards")} over ${BED_ALERT_THRESHOLD_PERCENT}%`,
+        sub: `${readyBeds} ready ${plural(readyBeds, "bed", "beds")} · ${blockedTotal} blocked ${plural(blockedTotal, "discharge", "discharges")}`,
+        stats: (
+          <>
+            <HeroStat
+              value={overLine}
+              label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+              tone={overLine > 0 ? "warning" : undefined}
+              onToggle={() => toggleChip("over", !chips.has("over"))}
+              pressed={chips.has("over")}
+            />
+            <HeroStat
+              value={noneReady}
+              label="None ready"
+              onToggle={() => toggleChip("none-ready", !chips.has("none-ready"))}
+              pressed={chips.has("none-ready")}
+            />
+            <HeroStat value={pulledBeds} label="Pulled" />
+          </>
+        ),
+      }}
       stats={
         <>
           <HeroStat
@@ -250,6 +277,88 @@ export function StatisticsWardsIndexScreen() {
         </>
       }
     >
+      {isPhone ? (
+        <PhoneBody testId="ward-statistics-wards-phone">
+          <div className={phone.chips} role="group" aria-label="Highlight wards">
+            {chipItems
+              .filter((chip) => chip.id === "pulled" || chip.id === "blocked")
+              .map((chip) => (
+                <FilterChip
+                  key={chip.id}
+                  pressed={chips.has(chip.id)}
+                  onPressedChange={(pressed) => toggleChip(chip.id, pressed)}
+                >
+                  {chip.label}
+                </FilterChip>
+              ))}
+          </div>
+          {chips.size > 0 ? (
+            <p className={phone.highlightLine} data-testid="ward-statistics-wards-match-count">
+              {`${matched} of ${rows.length} highlighted, all rows stay`}
+              <button type="button" className={phone.clear} onClick={() => setChips(new Set())}>
+                Clear
+              </button>
+            </p>
+          ) : null}
+          <Segmented<"service" | "none">
+            className={phone.seg}
+            size="md"
+            label="Group wards"
+            value={group}
+            onChange={(next) => {
+              setGroup(next);
+              if (next === "none") {
+                setSort("rate");
+                setAsc(false);
+              }
+            }}
+            items={[
+              { id: "service", label: "By service" },
+              { id: "none", label: "Fullest first" },
+            ]}
+          />
+          <PhoneList label="Every ward">
+            {groups.map((entry) => (
+              <Fragment key={entry.service ?? "all"}>
+                {group === "service" ? (
+                  <li className={phone.listHead}>
+                    <GroupHead
+                      title={
+                        <span className={phone.dotName}>
+                          <ServiceDot service={entry.service} />
+                          {entry.service ?? "Service not recorded"}
+                        </span>
+                      }
+                      aside={<b className={phone.mono}>{entry.rows.length}</b>}
+                    />
+                  </li>
+                ) : null}
+                {entry.rows.map((row) => {
+                  const hit = matches(row);
+                  return (
+                    <PhoneListRow
+                      key={row.id}
+                      as="li"
+                      className={cx(chips.size > 0 && !hit && phone.dim)}
+                      name={row.name}
+                      meta={`${row.hospital.replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service)$/u, "")} · ${row.ready} ready · ${row.blocked} blocked`}
+                      value={
+                        <span className={phone.flagged}>
+                          {row.rate >= BED_ALERT_THRESHOLD_PERCENT ? <StatusGlyph tone="warning" size={9} /> : null}
+                          {row.rate}%
+                        </span>
+                      }
+                      time={`${row.occupied} of ${row.beds}`}
+                      href={wardStatisticsHref(row.id)}
+                    />
+                  );
+                })}
+              </Fragment>
+            ))}
+          </PhoneList>
+        </PhoneBody>
+      ) : (
+        <>
       <StatCard
         icon={BedDouble}
         id="every-ward"
@@ -421,6 +530,8 @@ export function StatisticsWardsIndexScreen() {
           </CardBody>
         </StatCard>
       </FlushRow>
+        </>
+      )}
     </StatisticsPage>
   );
 }

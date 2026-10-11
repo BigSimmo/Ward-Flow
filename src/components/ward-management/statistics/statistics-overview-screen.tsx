@@ -4,7 +4,22 @@ import { useState } from "react";
 import Link from "next/link";
 import { Clock, Network, Activity, Filter, X } from "lucide-react";
 
-import { BarList, CardBody, Donut, HeroStat, Legend, Segmented, StatusGlyph, tableClasses } from "@/components/wf";
+import {
+  BarList,
+  CardBody,
+  Donut,
+  FilterChip,
+  HeroStat,
+  Legend,
+  OccupancyRing,
+  PhoneListRow,
+  ScrollRow,
+  Segmented,
+  StatusGlyph,
+  cx,
+  tableClasses,
+  useIsPhone,
+} from "@/components/wf";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
   admissionStagePosition,
@@ -14,13 +29,13 @@ import {
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
 import { statisticsSectionById } from "@/components/ward-management/statistics/statistics-sections";
-import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { serviceStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, HealthService, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 
 import { HospitalCapacityMatrix } from "./hospital-capacity-matrix";
@@ -28,6 +43,15 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { axisMax } from "./statistics-axis";
 import { occupiedBeds } from "./statistics-occupancy";
+import {
+  PhoneBody,
+  PhoneFacts,
+  PhoneList,
+  PhoneSheetRow,
+  PhoneShowAll,
+  phoneBodyStyles as phone,
+} from "./statistics-phone-parts";
+import { ServiceDot } from "./statistics-services-index";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 
@@ -98,6 +122,7 @@ export function StatisticsOverviewScreen() {
   const service = useServiceScope();
   const [serviceFilter, setServiceFilter] = useState<string | null>(null);
   const [stagesView, setStagesView] = useState<"chart" | "data">("chart");
+  const isPhone = useIsPhone();
 
   const stageTallies = admissionStageTallies(admissions);
   const declinesReadout = readDeclinesByReason(movements);
@@ -117,6 +142,10 @@ export function StatisticsOverviewScreen() {
   });
   const wardsOverLine = unitRows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length;
   const closedTotal = unitRows.reduce((sum, row) => sum + row.states.closed, 0);
+  // A blocked discharge: a current admission carrying a block reason (the Wards page's own count).
+  const blockedTotal = admissions.filter(
+    (admission) => admissionStagePosition(admission) !== "ended" && admission.blockReason !== null,
+  ).length;
 
   const services = OVERVIEW_SERVICES.map((entry) => {
     const rows = unitRows.filter((row) => row.service === entry.service);
@@ -151,6 +180,28 @@ export function StatisticsOverviewScreen() {
       now={now}
       paused={live.paused}
       onTogglePause={live.togglePause}
+      phone={{
+        lead: (
+          <OccupancyRing
+            percent={occupiedShare}
+            alertAt={BED_ALERT_THRESHOLD_PERCENT}
+            scope="Statewide"
+          />
+        ),
+        title: `${occupancy.occupied} of ${totalBeds} in use`,
+        sub: `${preparingCount} being made ready`,
+        stats: (
+          <>
+            <HeroStat value={capacity.ready} label="Ready now" />
+            <HeroStat
+              value={wardsOverLine}
+              label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+              tone={wardsOverLine > 0 ? "warning" : undefined}
+            />
+            <HeroStat value={blockedTotal} label="Blocked" />
+          </>
+        ),
+      }}
       stats={
         <>
           <HeroStat value={totalBeds} label="Inpatient beds" />
@@ -169,6 +220,53 @@ export function StatisticsOverviewScreen() {
         </>
       }
     >
+      {isPhone ? (
+        <OverviewPhone
+          wards={unitRows.map((row) => ({
+            id: row.unit.id,
+            name: row.unit.name,
+            code: row.unit.siteCode,
+            service: row.service as HealthService,
+            occupied: row.states.occupied,
+            beds: row.unit.beds,
+            ready: row.states.ready,
+            rate: row.rate,
+          }))}
+          services={services.map((entry) => ({
+            id: entry.id,
+            service: entry.service,
+            name: entry.name.replace(/ Metro$/u, "").replace(/^Country \((.+)\)$/u, "$1"),
+            rate: Math.round(entry.share * 100),
+            beds: entry.beds,
+          }))}
+          serviceFilter={serviceFilter}
+          onServiceFilter={setServiceFilter}
+          capacity={{
+            empty: capacity.empty,
+            allocatable: capacity.allocatable,
+            open: openNow,
+            ready: capacity.ready,
+            closed: closedTotal,
+            preparing: preparingCount,
+          }}
+          stages={stageTallies}
+          decisions={{
+            open: refused.openMovementCount,
+            refused: refused.count,
+            escalated: refused.escalatedCount,
+          }}
+          declines={
+            declinesReadout.ok
+              ? declinesReadout.value.tallies.map((tally) => ({
+                  id: tally.reason,
+                  label: sentenceCase(tally.reason),
+                  count: tally.count,
+                }))
+              : null
+          }
+        />
+      ) : (
+        <>
       {service === null ? null : (
         <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
           {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
@@ -501,7 +599,149 @@ export function StatisticsOverviewScreen() {
           </StatCard>
         </FlushStack>
       </FlushRow>
+        </>
+      )}
     </StatisticsPage>
+  );
+}
+
+/** The phone list shows this many wards before "Show all". */
+const PHONE_WARDS_SHOWN = 10;
+
+type OverviewPhoneWard = {
+  id: string;
+  name: string;
+  code: string;
+  service: HealthService;
+  occupied: number;
+  beds: number;
+  ready: number;
+  rate: number;
+};
+
+/**
+ * Overview on a phone (v10 phone): the services as chips that highlight their wards, every ward
+ * fullest first, then two rows that open the capacity and admission figures in sheets. The v10
+ * drawing puts a small trend on each ward row; the prototype keeps no occupancy history, so no
+ * trend is drawn.
+ */
+function OverviewPhone({
+  wards,
+  services,
+  serviceFilter,
+  onServiceFilter,
+  capacity,
+  stages,
+  decisions,
+  declines,
+}: {
+  wards: OverviewPhoneWard[];
+  services: { id: string; service: string; name: string; rate: number; beds: number }[];
+  serviceFilter: string | null;
+  onServiceFilter: (service: string | null) => void;
+  capacity: { empty: number; allocatable: number; open: number; ready: number; closed: number; preparing: number };
+  stages: { position: AdmissionStagePosition; label: string; count: number }[];
+  decisions: { open: number; refused: number; escalated: number };
+  declines: { id: string; label: string; count: number }[] | null;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const sorted = [...wards].sort((a, b) => b.rate - a.rate || a.name.localeCompare(b.name));
+  const inBed = stages.find((stage) => stage.position === "in-the-bed")?.count ?? 0;
+  return (
+    <PhoneBody testId="ward-statistics-overview-phone">
+      <ScrollRow aria-label="Highlight a service's wards">
+        {services.map((entry) => (
+          <FilterChip
+            key={entry.id}
+            pressed={serviceFilter === entry.service}
+            onPressedChange={(pressed) => onServiceFilter(pressed ? entry.service : null)}
+            count={entry.beds > 0 ? `${entry.rate}%` : undefined}
+          >
+            <span className={phone.dotName}>
+              <ServiceDot service={entry.service as HealthService} />
+              {entry.name}
+            </span>
+          </FilterChip>
+        ))}
+      </ScrollRow>
+      <PhoneList label="Wards by occupancy, fullest first">
+        {sorted.slice(0, showAll ? undefined : PHONE_WARDS_SHOWN).map((ward) => (
+          <PhoneListRow
+            key={ward.id}
+            as="li"
+            className={cx(serviceFilter !== null && ward.service !== serviceFilter && phone.dim)}
+            name={ward.name}
+            meta={
+              <span className={phone.dotName}>
+                <ServiceDot service={ward.service} />
+                {`${ward.code} · ${ward.occupied} of ${ward.beds} · ${ward.ready} ready`}
+              </span>
+            }
+            value={
+              <span className={phone.flagged}>
+                {ward.rate >= BED_ALERT_THRESHOLD_PERCENT ? <StatusGlyph tone="warning" size={9} /> : null}
+                {ward.rate}%
+              </span>
+            }
+            time="occupied"
+            href={wardStatisticsHref(ward.id)}
+          />
+        ))}
+        {sorted.length > PHONE_WARDS_SHOWN ? (
+          <PhoneShowAll total={sorted.length} open={showAll} onToggle={() => setShowAll((value) => !value)} />
+        ) : null}
+      </PhoneList>
+      <PhoneSheetRow
+        icon={Filter}
+        title="Empty to ready"
+        sub={`${capacity.empty} empty · ${capacity.open} open for placement`}
+        testId="ward-statistics-overview-phone-capacity"
+      >
+        <PhoneFacts
+          label="Empty to ready, across the network"
+          facts={[
+            { id: "empty", label: "Physically empty", value: capacity.empty },
+            { id: "allocatable", label: "Allocatable", value: capacity.allocatable },
+            { id: "open", label: "Open for placement", value: capacity.open },
+            { id: "ready", label: BED_STATE_LABELS.ready, value: capacity.ready },
+            { id: "closed", label: BED_STATE_LABELS.closed, value: capacity.closed },
+            { id: "preparing", label: "Being made ready", value: capacity.preparing },
+          ]}
+        />
+      </PhoneSheetRow>
+      <PhoneSheetRow
+        icon={Activity}
+        title="Admission stages and decisions"
+        sub={`${inBed} in a bed · ${decisions.open} open ${decisions.open === 1 ? "movement" : "movements"}`}
+        testId="ward-statistics-overview-phone-stages"
+      >
+        <PhoneFacts
+          label="Admissions by stage"
+          facts={stages.map((stage) => ({ id: stage.position, label: stage.label, value: stage.count }))}
+        />
+        <PhoneFacts
+          label="Awaiting a decision"
+          facts={[
+            { id: "open", label: "Open movements", value: decisions.open },
+            { id: "refused", label: "All refused", value: decisions.refused },
+            { id: "escalated", label: "Escalated", value: decisions.escalated },
+            { id: "placeable", label: "Placeable", value: capacity.open },
+          ]}
+        />
+        {declines === null ? null : (
+          <PhoneList label="Declines by reason">
+            {declines.map((decline) => (
+              <PhoneListRow
+                key={decline.id}
+                as="li"
+                name={decline.label}
+                value={decline.count === 0 ? "none" : decline.count}
+              />
+            ))}
+          </PhoneList>
+        )}
+      </PhoneSheetRow>
+    </PhoneBody>
   );
 }
 

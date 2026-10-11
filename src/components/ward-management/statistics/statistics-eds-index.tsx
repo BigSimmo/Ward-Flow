@@ -4,7 +4,20 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeftRight, Clock, Hospital, Users } from "lucide-react";
 
-import { CardBody, CardFoot, ColumnChart, HeroStat, StatusGlyph, cx, durMinutes, tableClasses } from "@/components/wf";
+import {
+  CardBody,
+  CardFoot,
+  ColumnChart,
+  HeroStat,
+  PhoneListRow,
+  RowSpark,
+  StatusGlyph,
+  cx,
+  durMinutes,
+  tableClasses,
+  useIsPhone,
+} from "@/components/wf";
+import { edWaitingSeries } from "@/components/ward-management/ed/ed-home-derivations";
 import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
@@ -17,6 +30,7 @@ import { FlushRow, Follow } from "./statistics-layout";
 import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
 import { ServiceDot } from "./statistics-services-index";
 import { SortTh } from "./statistics-wards-index";
+import { PhoneBody, PhoneGroup, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
 
@@ -61,6 +75,7 @@ export function StatisticsEdsIndexScreen() {
 
   const [sort, setSort] = useState<EdSortKey>("waiting");
   const [asc, setAsc] = useState(false);
+  const isPhone = useIsPhone();
 
   const departments = useMemo(
     () =>
@@ -79,6 +94,7 @@ export function StatisticsEdsIndexScreen() {
           over48: figures.over48h,
           longest: figures.longestWait ? figures.longestWait.waitMinutes : null,
           median: median(waits),
+          urgent: figures.urgent,
           waits,
         };
       }),
@@ -115,6 +131,7 @@ export function StatisticsEdsIndexScreen() {
   const over24 = total((row) => row.over24);
   const over48 = total((row) => row.over48);
   const unplaced = total((row) => row.unplaced);
+  const urgent = total((row) => row.urgent);
   const longestRow = departments.reduce<Row | null>(
     (best, row) => (row.longest !== null && (best === null || (best.longest ?? 0) < row.longest) ? row : best),
     null,
@@ -151,6 +168,17 @@ export function StatisticsEdsIndexScreen() {
           Compare EDs
         </HeroTool>
       }
+      phone={{
+        title: `${waiting} waiting in EDs`,
+        sub: `Longest ${waitText(longestRow?.longest ?? null)} · median ${waitText(networkMedian)}`,
+        stats: (
+          <>
+            <HeroStat value={over24} label={`Past ${LONG_HOURS}h`} tone={over24 > 0 ? "warning" : undefined} />
+            <HeroStat value={unplaced} label="No ward yet" />
+            <HeroStat value={urgent} label="Urgent" />
+          </>
+        ),
+      }}
       stats={
         <>
           <HeroStat value={waiting} label="Waiting" />
@@ -173,6 +201,60 @@ export function StatisticsEdsIndexScreen() {
         </>
       }
     >
+      {isPhone ? (
+        <PhoneBody testId="ward-statistics-eds-phone">
+          <PhoneList label="Emergency departments, busiest first">
+            {swarmRows.map((swarm) => {
+              const row = departments.find((each) => each.id === swarm.id)!;
+              const trend = edWaitingSeries(movements, row.id, now);
+              // The last point is now: it reads the same open count as the row, by construction.
+              trend[trend.length - 1] = row.waiting;
+              return (
+                <PhoneListRow
+                  key={row.id}
+                  as="li"
+                  name={row.name}
+                  meta={
+                    <span className={phone.dotName}>
+                      <ServiceDot service={row.service} />
+                      {row.waiting === 0 ? "No one waiting" : `${row.unplaced} no ward yet`}
+                    </span>
+                  }
+                  value={
+                    <span className={phone.trendValue}>
+                      <RowSpark values={trend} name={row.name} testId="ward-statistics-eds-phone-spark" />
+                      {row.waiting}
+                    </span>
+                  }
+                  time={`longest ${waitText(row.longest)}`}
+                  href={edStatisticsHref(row.id)}
+                />
+              );
+            })}
+          </PhoneList>
+          <PhoneGroup title="Wait bands" aside="everyone waiting">
+            <div className={phone.chartCard}>
+              <ColumnChart
+                label="People waiting in an emergency department, by how long"
+                columns={bands}
+                height={160}
+              />
+            </div>
+          </PhoneGroup>
+          <PhoneSheetRow
+            icon={Users}
+            title="Everyone, one mark each"
+            sub={`Axis to ${VERY_LONG_HOURS * 1.5}h, longer waits on its last line`}
+            testId="ward-statistics-eds-phone-swarm"
+          >
+            <StatisticsEdSwarm rows={swarmRows} labelWidth={96} testId="ward-statistics-eds-swarm" />
+            <p className={phone.note}>
+              {`Each mark is one person. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`}
+            </p>
+          </PhoneSheetRow>
+        </PhoneBody>
+      ) : (
+        <>
       <StatCard
         icon={Users}
         id="everyone-waiting"
@@ -303,6 +385,8 @@ export function StatisticsEdsIndexScreen() {
           </StatCard>
         </Follow>
       </FlushRow>
+        </>
+      )}
     </StatisticsPage>
   );
 }

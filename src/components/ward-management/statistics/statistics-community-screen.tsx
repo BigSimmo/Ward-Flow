@@ -13,13 +13,18 @@ import {
   Icon,
   Menu,
   Meter,
+  PhoneListRow,
   Segmented,
   SrOnly,
   StatusGlyph,
   TextInput,
   buttonClass,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
+import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   admissionsWithNoCommunityTeam,
   communityHubLists,
@@ -45,6 +50,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
+import { PhoneBody, PhoneFacts, PhoneGroup, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 
@@ -76,6 +82,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const { admissions, referrals, units } = live.state;
   const now = live.now;
   const { dayZero } = useWardFlow();
+  const isPhone = useIsPhone();
 
   const section = statisticsSectionById("community");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'community' section");
@@ -131,6 +138,16 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
     (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),
   );
 
+  const dueOutWeek = lists.expectedBack.filter(
+    (admission) =>
+      admission.expectedDischargeAt !== null &&
+      admission.expectedDischargeAt >= now &&
+      admission.expectedDischargeAt < now + 7 * MINUTES_PER_DAY,
+  ).length;
+  const measuredValue = (figure: StatisticsFigure) => (figure.kind === "measured" ? figure.value : null);
+  const inBedCount = measuredValue(figures.admitted);
+  const withDateCount = measuredValue(figures.expected);
+
   const figureRows: { key: keyof CommunityFigures; label: string; figure: StatisticsFigure }[] = [
     { key: "admitted", label: "In a bed, or holding one", figure: figures.admitted },
     { key: "expected", label: "With a discharge date", figure: figures.expected },
@@ -182,6 +199,19 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           ["No follow-up yet", figures.discharged.kind === "measured" ? notArranged.length : "none"],
         ],
       }}
+      phone={{
+        sub: `${dueOutWeek} due out in the next 7 days`,
+        stats: (
+          <>
+            <HeroStat value={inBedCount ?? "none"} label="In a bed" />
+            <HeroStat value={withDateCount ?? "none"} label="With a date" />
+            <HeroStat
+              value={inBedCount === null || withDateCount === null ? "none" : inBedCount - withDateCount}
+              label="No date"
+            />
+          </>
+        ),
+      }}
       stats={
         <>
           {figureRows.map((row) => (
@@ -212,6 +242,27 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         </>
       }
     >
+      {isPhone ? (
+        <TeamPhone
+          people={lists.currentlyAdmitted}
+          unitName={unitName}
+          now={now}
+          dayZero={dayZero}
+          inBedText={figureText(figures.admitted)}
+          inBedMeasured={figures.admitted.kind === "measured"}
+          followUp={
+            figures.discharged.kind === "measured"
+              ? {
+                  discharged: lists.dischargedIntoTheArea.length,
+                  arranged: lists.dischargedIntoTheArea.length - notArranged.length,
+                  notArranged: notArranged.length,
+                }
+              : null
+          }
+          dueOutWeek={dueOutWeek}
+        />
+      ) : (
+        <>
       <FlushRow layout="lead2">
         <Follow className={detail.followBody}>
           <TeamComparison current={team} rows={allTeams} />
@@ -407,7 +458,107 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           </table>
         </div>
       </StatCard>
+        </>
+      )}
     </StatisticsPage>
+  );
+}
+
+/**
+ * One community team on a phone (v10 phone): the people referred to this team who hold a bed now,
+ * soonest discharge first, then the follow-up figures for those discharged into its area.
+ */
+function TeamPhone({
+  people,
+  unitName,
+  now,
+  dayZero,
+  inBedText,
+  inBedMeasured,
+  followUp,
+  dueOutWeek,
+}: {
+  people: readonly Admission[];
+  unitName: (unitId: string) => string;
+  now: number;
+  dayZero: Date;
+  inBedText: string;
+  inBedMeasured: boolean;
+  followUp: { discharged: number; arranged: number; notArranged: number } | null;
+  dueOutWeek: number;
+}) {
+  const patientOf = usePatientOf();
+  const sorted = [...people].sort(
+    (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),
+  );
+  return (
+    <PhoneBody testId="ward-statistics-community-phone">
+      <PhoneGroup
+        title="Community handover"
+        aside={`${people.length} ${people.length === 1 ? "person" : "people"}`}
+      >
+        {sorted.length === 0 ? (
+          <p className={phone.note}>
+            {inBedMeasured ? "Nobody referred to this team holds a bed now." : `In a bed: ${inBedText}`}
+          </p>
+        ) : (
+          <PhoneList label="Referred to this team, in a bed now">
+            {sorted.map((admission) => {
+              const person = patientOf(admission);
+              const days =
+                admission.arrivedAt === null || admission.arrivedAt > now
+                  ? null
+                  : Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
+              return (
+                <PhoneListRow
+                  key={admission.id}
+                  as="li"
+                  name={person.formalName}
+                  meta={
+                    <>
+                      <span className={phone.mono}>{person.umrn}</span>
+                      {` · ${unitName(admission.unitId)}`}
+                    </>
+                  }
+                  value={
+                    days === null ? (
+                      "none"
+                    ) : (
+                      <>
+                        {days} <small>d</small>
+                      </>
+                    )
+                  }
+                  time={
+                    admission.expectedDischargeAt === null ? "no date" : dateOf(admission.expectedDischargeAt, dayZero)
+                  }
+                />
+              );
+            })}
+          </PhoneList>
+        )}
+      </PhoneGroup>
+      <PhoneGroup title="Follow-up" aside="discharged here">
+        <PhoneFacts
+          label="Follow-up for people discharged into this area"
+          facts={[
+            { id: "discharged", label: "Discharged here", value: followUp?.discharged ?? "none" },
+            { id: "arranged", label: "Follow-up arranged", value: followUp?.arranged ?? "none" },
+            {
+              id: "not",
+              label: (
+                <>
+                  {followUp && followUp.notArranged > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                  No follow-up yet
+                </>
+              ),
+              value: followUp?.notArranged ?? "none",
+            },
+            { id: "due", label: "Due out, 7d", value: dueOutWeek },
+          ]}
+        />
+      </PhoneGroup>
+    </PhoneBody>
   );
 }
 

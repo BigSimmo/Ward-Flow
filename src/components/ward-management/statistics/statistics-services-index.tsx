@@ -9,11 +9,13 @@ import {
   CardFoot,
   Donut,
   HeroStat,
+  PhoneListRow,
   StackBar,
   SrOnly,
   StatusGlyph,
   cx,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
 import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -27,6 +29,7 @@ import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow } from "./statistics-layout";
 import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
+import { PhoneBody, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
 
@@ -67,6 +70,7 @@ export function StatisticsServicesIndexScreen() {
   const { units, admissions, bedReleases, leaveBeds, movements, referrals } = live.state;
   const now = live.now;
   const departments = allEmergencyDepartments();
+  const isPhone = useIsPhone();
 
   const services = HEALTH_SERVICES.map((service) => {
     const siteCodes = new Set(wardSites.filter((site) => site.service === service).map((site) => site.code));
@@ -124,6 +128,8 @@ export function StatisticsServicesIndexScreen() {
 
   const totalWaiting = services.reduce((total, entry) => total + entry.waiting, 0);
   const withBeds = services.filter((entry) => entry.beds > 0);
+  const servicesOver = services.filter((entry) => entry.over > 0).length;
+  const totalBeds = services.reduce((total, entry) => total + entry.beds, 0);
 
   return (
     <StatisticsPage
@@ -144,6 +150,17 @@ export function StatisticsServicesIndexScreen() {
           Compare
         </HeroTool>
       }
+      phone={{
+        title: `${servicesOver} with a ward over ${BED_ALERT_THRESHOLD_PERCENT}%`,
+        sub: "Each ring shows the share of beds in use",
+        stats: (
+          <>
+            <HeroStat value={services.length} label="Services" />
+            <HeroStat value={totalBeds} label="Beds" />
+            <HeroStat value={totalWaiting} label="Waiting in ED" />
+          </>
+        ),
+      }}
       stats={
         <>
           {withBeds.map((entry) => (
@@ -157,6 +174,89 @@ export function StatisticsServicesIndexScreen() {
         </>
       }
     >
+      {isPhone ? (
+        <PhoneBody testId="ward-statistics-services-phone">
+          <PhoneList label="Health services">
+            {services.map((entry) => (
+              <PhoneListRow
+                key={entry.service}
+                as="li"
+                leading={
+                  entry.beds > 0 ? (
+                    <Donut
+                      className={phone.ring}
+                      size={36}
+                      thickness={4}
+                      value={entry.share}
+                      text={String(Math.round(entry.share * 100))}
+                      label={`${entry.service} occupancy`}
+                    />
+                  ) : (
+                    <span className={phone.ring0} aria-hidden="true" />
+                  )
+                }
+                name={
+                  <span className={phone.dotName}>
+                    <ServiceDot service={entry.service} />
+                    {entry.service}
+                  </span>
+                }
+                meta={
+                  entry.beds === 0
+                    ? "No inpatient beds"
+                    : `${entry.occupied} of ${entry.beds} beds · ${entry.over === 0 ? "none" : entry.over} over ${BED_ALERT_THRESHOLD_PERCENT}%`
+                }
+                value={
+                  <span className={phone.flagged}>
+                    {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                    {entry.departments === 0 ? "none" : entry.waiting}
+                  </span>
+                }
+                time="in ED"
+                href={serviceStatisticsHref(entry.service)}
+              />
+            ))}
+          </PhoneList>
+          <PhoneSheetRow
+            icon={Send}
+            title="Where referrals were accepted"
+            sub="By the service whose ward accepted"
+            testId="ward-statistics-services-phone-referrals"
+          >
+            {HEALTH_SERVICES.map((from) => {
+              const to = HEALTH_SERVICES.map((target) => ({
+                target,
+                count: accepted.get(`${from}|${target}`) ?? 0,
+              })).filter((cell) => cell.count > 0);
+              return (
+                <PhoneList key={from} label={`Referrals from ${from}`}>
+                  <PhoneListRow
+                    as="li"
+                    name={
+                      <span className={phone.dotName}>
+                        <ServiceDot service={from} />
+                        {`From ${from}`}
+                      </span>
+                    }
+                    value={notYet.get(from) ?? 0}
+                    time="not yet"
+                  />
+                  {to.map((cell) => (
+                    <PhoneListRow
+                      key={cell.target}
+                      as="li"
+                      name={cell.target === from ? `${cell.target}, its own` : cell.target}
+                      value={cell.count}
+                      time="accepted"
+                    />
+                  ))}
+                </PhoneList>
+              );
+            })}
+          </PhoneSheetRow>
+        </PhoneBody>
+      ) : (
+        <>
       <FlushRow layout="thirds" id="services" className={index.anchorTarget} data-testid="ward-statistics-services">
         {services.map((entry) => (
           <StatCard
@@ -330,6 +430,8 @@ export function StatisticsServicesIndexScreen() {
           <CardFoot meta="An amber dot marks a service with someone waiting past the long-wait line." />
         </StatCard>
       </FlushRow>
+        </>
+      )}
     </StatisticsPage>
   );
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   BedDouble,
+  Building2,
   CalendarClock,
   ChevronDown,
   Clock,
@@ -24,6 +25,7 @@ import {
   HeroStat,
   Icon,
   Menu,
+  PhoneListRow,
   Segmented,
   SrOnly,
   StackBar,
@@ -31,8 +33,11 @@ import {
   TextInput,
   buttonClass,
   durMinutes,
+  cx,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { figureText, isUnmeasured } from "@/components/ward-management/statistics/statistics-absence";
 import { dischargeDateCoverage } from "@/components/ward-management/statistics/statistics-ward-discharge-dates";
 import { readyNotYetGone, type ReadyNotYetGone } from "@/components/ward-management/statistics/statistics-ward-ready";
@@ -43,7 +48,8 @@ import {
   STATISTICS_UNIT_CHOOSER_HREF,
   STATISTICS_WARDS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
-import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -55,7 +61,14 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { countAxisMax } from "./statistics-axis";
-import { StatisticsBedMap, StatisticsBedMapLegend, bedMapCells } from "./statistics-bed-map";
+import {
+  BED_MAP_LABELS,
+  StatisticsBedMap,
+  StatisticsBedMapLegend,
+  bedMapCells,
+  type BedMap,
+} from "./statistics-bed-map";
+import { PhoneBody, PhoneList, PhonePinnedAction, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import { dateOf, fromToday, weekdayOf } from "./statistics-dates";
 import { csvCell } from "./statistics-csv";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
@@ -97,6 +110,7 @@ export function StatisticsWardScreen({
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
   const now = live.now;
   const { dayZero } = useWardFlow();
+  const isPhone = useIsPhone();
   const units = unitsOverride ?? liveUnits;
   const admissions = admissionsOverride ?? liveAdmissions;
   const unit = units.find((candidate) => candidate.id === unitId);
@@ -243,6 +257,21 @@ export function StatisticsWardScreen({
           ["Due out, 7 days", dueThisWeek],
         ],
       }}
+      phone={{
+        eyebrow: site?.name ?? "Hospital not recorded",
+        sub: `${cohortLabel} · ${unit.beds} beds${averageStay === null ? "" : ` · average stay ${averageStay}d`}`,
+        stats: (
+          <>
+            <HeroStat
+              value={wardOccupancy.occupied}
+              label={`${occupancyPct}% occupied`}
+              tone={occupancyPct >= BED_ALERT_THRESHOLD_PERCENT ? "warning" : undefined}
+            />
+            <HeroStat value={capacity.available} label="Ready" />
+            <HeroStat value={wardOccupancy.pulled} label="Pulled" />
+          </>
+        ),
+      }}
       stats={
         <>
           {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
@@ -263,6 +292,10 @@ export function StatisticsWardScreen({
         </>
       }
     >
+      {isPhone ? (
+        <WardPhone unit={unit} map={bedMap} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
+      ) : (
+        <>
       {/* Direction A: the bed map and its two charts beside the bed figures. Each column's last card
           (or the chart row) takes the spare height, so both columns end on the same line. */}
       <FlushRow layout="lead2" data-testid="ward-statistics-ward-measures">
@@ -552,7 +585,133 @@ export function StatisticsWardScreen({
       </FlushRow>
 
       <Roster unit={unit} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
+        </>
+      )}
     </StatisticsPage>
+  );
+}
+
+/** The bed strip's legend order and words on the phone (v10 phone). */
+const PHONE_BED_LEGEND: { kinds: BedMap["cells"][number]["kind"][]; label: string }[] = [
+  { kinds: ["occupied", "leave"], label: BED_MAP_LABELS.occupied },
+  { kinds: ["pulled"], label: "Pulled" },
+  { kinds: ["closed"], label: BED_MAP_LABELS.closed },
+  { kinds: ["prep"], label: "Making ready" },
+  { kinds: ["ready"], label: BED_MAP_LABELS.ready },
+];
+
+/**
+ * One ward on a phone (v10 phone): the beds as a strip of boxes grouped by state (the model has no
+ * bed numbers), then the roster, the discharges due in seven days and the blocked discharges as
+ * one list behind a segmented control, and "Open the ward" pinned at the foot.
+ */
+function WardPhone({
+  unit,
+  map,
+  current,
+  now,
+  dayZero,
+  leaveBeds,
+}: {
+  unit: Unit;
+  map: BedMap;
+  current: Admission[];
+  now: number;
+  dayZero: Date;
+  leaveBeds: readonly { admissionId: string }[];
+}) {
+  const patientOf = usePatientOf();
+  const [tab, setTab] = useState<"roster" | "discharges" | "blockers">("roster");
+  const byStay = (a: Admission, b: Admission) => (stayDaysOf(b, now) ?? -1) - (stayDaysOf(a, now) ?? -1);
+  const roster = [...current].sort(byStay);
+  const discharges = current
+    .filter(
+      (admission) =>
+        admission.state !== "pulled" &&
+        admission.expectedDischargeAt !== null &&
+        admission.expectedDischargeAt >= now &&
+        dayOf(admission.expectedDischargeAt) < dayOf(now) + 7,
+    )
+    .sort((a, b) => (a.expectedDischargeAt ?? 0) - (b.expectedDischargeAt ?? 0));
+  const blockers = current.filter((admission) => admission.blockReason !== null).sort(byStay);
+  const shown = tab === "roster" ? roster : tab === "discharges" ? discharges : blockers;
+
+  return (
+    <PhoneBody testId="ward-statistics-ward-phone">
+      <div className={phone.bedCard} data-testid="ward-statistics-ward-phone-beds">
+        <ul className={phone.bedStrip} aria-label={`${unit.name}, ${unit.beds} beds by state`}>
+          {map.cells.map((cell, index) => (
+            <li
+              key={index}
+              className={phone.bed}
+              data-kind={cell.kind}
+              title={BED_MAP_LABELS[cell.kind]}
+              aria-label={BED_MAP_LABELS[cell.kind]}
+            />
+          ))}
+        </ul>
+        <ul className={phone.bedLegend} aria-label="Beds by state">
+          {PHONE_BED_LEGEND.map((entry) => (
+            <li key={entry.label}>
+              {entry.label}
+              <b>{entry.kinds.reduce((sum, kind) => sum + map.counts[kind], 0)}</b>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <Segmented<"roster" | "discharges" | "blockers">
+        className={cx(phone.seg, phone.stickySeg)}
+        size="md"
+        label="Ward list"
+        value={tab}
+        onChange={setTab}
+        items={[
+          { id: "roster", label: "Roster", count: roster.length },
+          { id: "discharges", label: "Discharges", count: discharges.length },
+          { id: "blockers", label: "Blockers", count: blockers.length },
+        ]}
+      />
+      {shown.length === 0 ? (
+        <p className={phone.note}>
+          {tab === "roster"
+            ? "No current admissions recorded"
+            : tab === "discharges"
+              ? "Nobody has a discharge date in the next 7 days"
+              : "No current admission carries a blocker"}
+        </p>
+      ) : (
+        <PhoneList label={tab === "roster" ? "Admission roster" : tab === "discharges" ? "Due out, 7 days" : "Blocked discharges"}>
+          {shown.map((admission) => {
+            const person = patientOf(admission);
+            const days = stayDaysOf(admission, now);
+            const onLeave = leaveBeds.some((bed) => bed.admissionId === admission.id);
+            const status = onLeave ? "On leave" : ADMISSION_STATE_LABELS[admission.state];
+            return (
+              <PhoneListRow
+                key={admission.id}
+                as="li"
+                name={person.formalName}
+                meta={
+                  <>
+                    <span className={phone.mono}>{person.umrn}</span>
+                    {` · ${tab === "blockers" && admission.blockReason ? admission.blockReason : status}`}
+                  </>
+                }
+                value={days === null ? "none" : <>{days} <small>d</small></>}
+                time={
+                  admission.expectedDischargeAt === null
+                    ? "no date"
+                    : dateOf(admission.expectedDischargeAt, dayZero)
+                }
+              />
+            );
+          })}
+        </PhoneList>
+      )}
+      <PhonePinnedAction icon={Building2} href={unitHref(unit.id)} testId="ward-statistics-ward-phone-open">
+        Open the ward
+      </PhonePinnedAction>
+    </PhoneBody>
   );
 }
 

@@ -9,6 +9,7 @@ import {
   Button,
   CardBody,
   CardFoot,
+  FilterChip,
   HeroStat,
   Icon,
   Segmented,
@@ -18,6 +19,7 @@ import {
   TextInput,
   durMinutes,
   tableClasses,
+  useIsPhone,
   type BarListRow,
 } from "@/components/wf";
 import {
@@ -41,6 +43,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { wardReferralTally } from "./statistics-ward-referrals";
+import { PhoneBody, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import compare from "./statistics-compare.module.css";
 import detail from "./statistics-detail.module.css";
 import styles from "./statistics-v6.module.css";
@@ -84,6 +87,7 @@ export function StatisticsCompareScreen({
   const live = useStatisticsLive();
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
   const now = live.now;
+  const isPhone = useIsPhone();
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
   const emergencyDepartments = edsOverride ?? allEmergencyDepartments();
@@ -150,6 +154,20 @@ export function StatisticsCompareScreen({
           Open a unit
         </HeroTool>
       }
+      phone={{
+        title: `${units.length} ${units.length === 1 ? "ward" : "wards"}, ${emergencyDepartments.length} EDs`,
+        sub: `${totalLongStays} ${totalLongStays === 1 ? "stay" : "stays"} over 3 months`,
+        stats: (
+          <>
+            <HeroStat value={readyBeds} label="Ready" />
+            <HeroStat
+              value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)}d`}
+              label="Mean stay"
+            />
+            <HeroStat value={totalBlockers} label="Blockers" />
+          </>
+        ),
+      }}
       stats={
         <>
           <HeroStat value={units.length} label="Wards" />
@@ -172,6 +190,10 @@ export function StatisticsCompareScreen({
         </>
       }
     >
+      {isPhone ? (
+        <ComparePhone wardRows={wardRows} edRows={edRows} />
+      ) : (
+        <>
       {/* The ward chart is the long column: it scrolls inside at the height the ED cards set. */}
       <FlushRow layout="lead2" className={compare.grid}>
         <Follow className={detail.followBody}>
@@ -183,7 +205,128 @@ export function StatisticsCompareScreen({
         </FlushStack>
       </FlushRow>
       <UnitChooser units={units} emergencyDepartments={emergencyDepartments} />
+        </>
+      )}
     </StatisticsPage>
+  );
+}
+
+/**
+ * Compare on a phone (v10 phone): wards or EDs, one measure at a time as chips, the bars against
+ * the network mean, highest first. The pinned wards open in a sheet.
+ */
+function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCompareRow[] }) {
+  const [kind, setKind] = useState<"wards" | "eds">("wards");
+  const [wardMetric, setWardMetric] = useState<WardMetric>("stay");
+  const [edMetric, setEdMetric] = useState<EdMetric>("open");
+
+  const wardValues = wardRows.flatMap((row) => {
+    const value = wardMetricValue(row.statistics, wardMetric);
+    return value === null ? [] : [value];
+  });
+  const wardMean = wardValues.length > 0 ? mean(wardValues) : null;
+  const flagAbove = wardMean === null ? null : wardMean + standardDeviation(wardValues);
+  const wardSorted = sortRows(
+    wardRows.map((row) => ({ row, name: row.unit.name, value: wardMetricValue(row.statistics, wardMetric) })),
+    "high",
+  ).filter((entry) => entry.value !== null);
+  const edValues = edRows.map((entry) => edMetricValue(entry, edMetric));
+  const edSorted = sortRows(
+    edRows.map((entry) => ({ entry, name: entry.department.name, value: edMetricValue(entry, edMetric) })),
+    "high",
+  );
+  const pinnedNames = [...wardRows]
+    .filter((row) => row.statistics.averageLengthOfStayDays !== null)
+    .sort((a, b) => (b.statistics.averageLengthOfStayDays ?? 0) - (a.statistics.averageLengthOfStayDays ?? 0))
+    .slice(0, PIN_LIMIT)
+    .map((row) => row.unit.siteCode);
+
+  return (
+    <PhoneBody testId="ward-statistics-compare-phone">
+      <Segmented<"wards" | "eds">
+        className={phone.seg}
+        size="md"
+        label="Compare"
+        value={kind}
+        onChange={setKind}
+        items={[
+          { id: "wards", label: "Wards" },
+          { id: "eds", label: "EDs" },
+        ]}
+      />
+      <div className={phone.chips} role="group" aria-label={kind === "wards" ? "Ward measure" : "Department measure"}>
+        {kind === "wards"
+          ? (Object.keys(WARD_METRICS) as WardMetric[]).map((id) => (
+              <FilterChip key={id} pressed={wardMetric === id} onPressedChange={() => setWardMetric(id)}>
+                {WARD_METRICS[id].label}
+              </FilterChip>
+            ))
+          : (Object.keys(ED_METRICS) as EdMetric[]).map((id) => (
+              <FilterChip key={id} pressed={edMetric === id} onPressedChange={() => setEdMetric(id)}>
+                {ED_METRICS[id].label}
+              </FilterChip>
+            ))}
+      </div>
+      <div className={phone.chartCard} data-testid="ward-statistics-compare-phone-chart">
+        {kind === "wards" ? (
+          wardSorted.length === 0 ? (
+            <p className={phone.note}>No wards recorded.</p>
+          ) : (
+            <>
+              <BarList
+                rows={wardSorted.map(({ row, value }) => ({
+                  id: row.unit.id,
+                  label: row.unit.name,
+                  labelText: row.unit.name,
+                  value: value!,
+                  display: wardMetric === "stay" ? value!.toFixed(1) : undefined,
+                  flag: flagAbove !== null && value! > flagAbove ? "warning" : undefined,
+                }))}
+                mean={wardMean ?? undefined}
+                meanLabel="Mean"
+                track
+                max={axisMax(wardValues)}
+                label={WARD_METRICS[wardMetric].chart}
+                labelWidth="8.5rem"
+              />
+              <p className={phone.note}>
+                <span className={phone.flagged}>
+                  <StatusGlyph tone="warning" size={9} />
+                  Over 1 SD above the mean. Case mix differs.
+                </span>
+              </p>
+            </>
+          )
+        ) : edSorted.length === 0 ? (
+          <p className={phone.note}>No emergency departments recorded.</p>
+        ) : (
+          <BarList
+            rows={edSorted.map(({ entry, value }) => ({
+              id: entry.department.id,
+              label: shortDepartmentName(entry.department.name),
+              labelText: entry.department.name,
+              value: value ?? 0,
+              display:
+                edMetric === "longest" && entry.longestMinutes > 0 ? durMinutes(entry.longestMinutes) : undefined,
+            }))}
+            mean={mean(edValues)}
+            meanLabel="Mean"
+            track
+            max={axisMax(edValues)}
+            label={ED_METRICS[edMetric].chart}
+            labelWidth="8.5rem"
+          />
+        )}
+      </div>
+      <PhoneSheetRow
+        icon={Pin}
+        title="Pinned wards"
+        sub={`${pinnedNames.join(", ") || "None"} against the network`}
+        testId="ward-statistics-compare-phone-pinned"
+      >
+        <PinnedWards rows={wardRows} />
+      </PhoneSheetRow>
+    </PhoneBody>
   );
 }
 

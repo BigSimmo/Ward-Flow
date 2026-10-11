@@ -13,6 +13,7 @@ import {
   Icon,
   Menu,
   Meter,
+  PhoneListRow,
   Segmented,
   SrOnly,
   StatusGlyph,
@@ -20,6 +21,7 @@ import {
   cx,
   durMinutes,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
 import { ED_WAIT_BANDS, edWaitBands, edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
@@ -42,6 +44,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
+import { PhoneBody, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 import ed from "./statistics-ed-third-edition.module.css";
@@ -80,7 +83,8 @@ export function StatisticsEdScreen({
   movements?: Movement[];
 }) {
   const live = useStatisticsLive();
-  const { movements: liveMovements, patients, referrals } = live.state;
+  const { movements: liveMovements, patients, referrals, units } = live.state;
+  const isPhone = useIsPhone();
   const now = live.now;
   const movements = movementsOverride ?? liveMovements;
   const department = edById(edId);
@@ -230,6 +234,28 @@ export function StatisticsEdScreen({
           ["No ward yet", unplaced],
         ],
       }}
+      phone={{
+        eyebrow: site ? `${department.siteCode} · ${site.service}` : department.siteCode,
+        title: `${shortName(department.name)} ED`,
+        sub: `Median ${median === null ? "none" : splitDuration(Math.round(median))} · ${urgent} urgent`,
+        stats: (
+          <>
+            <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{onTheList}</span>} label="Waiting" />
+            <HeroStat
+              value={longestWait ? splitDuration(longestWait.waitMinutes) : "none"}
+              label="Longest"
+              tone={
+                longestWait && longestWait.waitMinutes >= VERY_LONG_WAIT_MINUTES
+                  ? "danger"
+                  : longestWait && longestWait.waitMinutes >= LONG_WAIT_MINUTES
+                    ? "warning"
+                    : undefined
+              }
+            />
+            <HeroStat value={unplaced} label="No ward yet" />
+          </>
+        ),
+      }}
       stats={
         <>
           <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{onTheList}</span>} label="Waiting" />
@@ -254,6 +280,16 @@ export function StatisticsEdScreen({
         </>
       }
     >
+      {isPhone ? (
+        <EdPhone
+          waiting={waitingMovements}
+          nameOf={nameOf}
+          umrnOf={umrnOf}
+          wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Ward accepted"}
+          next={nextToCross[0] ?? null}
+        />
+      ) : (
+        <>
       {/* Direction A: the cards on the right set the row's height; the wait list follows it and
           scrolls inside, so both columns end on the same line however many people are waiting. */}
       <FlushRow layout="lead2">
@@ -482,10 +518,129 @@ export function StatisticsEdScreen({
           </section>
         </CardBody>
       </Card>
+        </>
+      )}
       <SrOnly>
         Over {longHours}h and over {veryLongHours}h are operational defaults, not legal limits.
       </SrOnly>
     </StatisticsPage>
+  );
+}
+
+type EdPhoneFilter = "all" | "unplaced" | "long";
+
+/**
+ * One ED on a phone (v10 phone): the next person to cross the long-wait line, then everyone
+ * waiting, longest first, behind All, No ward and Past 24h. A wait past the very long line is act
+ * now: a thin red edge, never a fill.
+ */
+function EdPhone({
+  waiting,
+  nameOf,
+  umrnOf,
+  wardName,
+  next,
+}: {
+  waiting: readonly { movement: Movement; waitMinutes: number }[];
+  nameOf: (movement: Movement) => string;
+  umrnOf: (movement: Movement) => string;
+  wardName: (unitId: string) => string;
+  next: { movement: Movement; waitMinutes: number } | null;
+}) {
+  const [filter, setFilter] = useState<EdPhoneFilter>("all");
+  const longHours = LONG_WAIT_MINUTES / 60;
+  const counts: Record<EdPhoneFilter, number> = {
+    all: waiting.length,
+    unplaced: waiting.filter(({ movement }) => movement.acceptedUnitId === undefined).length,
+    long: waiting.filter(({ waitMinutes }) => waitMinutes >= LONG_WAIT_MINUTES).length,
+  };
+  const shown = waiting
+    .filter(({ movement, waitMinutes }) =>
+      filter === "unplaced"
+        ? movement.acceptedUnitId === undefined
+        : filter === "long"
+          ? waitMinutes >= LONG_WAIT_MINUTES
+          : true,
+    )
+    .slice()
+    .sort((a, b) => b.waitMinutes - a.waitMinutes);
+
+  return (
+    <PhoneBody testId="ward-statistics-ed-phone">
+      {next ? (
+        <div className={phone.next} data-testid="ward-statistics-ed-phone-next">
+          <span className={phone.ring0} aria-hidden="true" />
+          <span className={phone.nextText}>
+            <b>{`Next to cross ${longHours}h: ${nameOf(next.movement)}`}</b>
+            <span>
+              <b>{splitDuration(LONG_WAIT_MINUTES - next.waitMinutes)}</b> left · {umrnOf(next.movement)}
+            </span>
+          </span>
+        </div>
+      ) : null}
+      {waiting.length === 0 ? (
+        <p className={phone.note}>Nobody from this department has an open placement</p>
+      ) : (
+        <>
+          <Segmented<EdPhoneFilter>
+            className={phone.seg}
+            size="md"
+            label="Waits shown"
+            value={filter}
+            onChange={setFilter}
+            items={[
+              { id: "all", label: "All", count: counts.all },
+              { id: "unplaced", label: "No ward", count: counts.unplaced },
+              { id: "long", label: `Past ${longHours}h`, count: counts.long },
+            ]}
+          />
+          {shown.length === 0 ? (
+            <p className={phone.note}>Nobody matches this filter</p>
+          ) : (
+            <PhoneList label="Open placement waits, longest first">
+              {shown.map(({ movement, waitMinutes }) => {
+                const tone =
+                  waitMinutes >= VERY_LONG_WAIT_MINUTES
+                    ? "danger"
+                    : waitMinutes >= LONG_WAIT_MINUTES
+                      ? "warning"
+                      : undefined;
+                return (
+                  <PhoneListRow
+                    key={movement.id}
+                    as="li"
+                    actNow={tone === "danger"}
+                    leading={
+                      movement.atsCategory === undefined ? undefined : (
+                        <span className={phone.tier}>{`T${movement.atsCategory}`}</span>
+                      )
+                    }
+                    name={nameOf(movement)}
+                    meta={
+                      <span className={phone.dotName}>
+                        <span className={phone.mono}>{umrnOf(movement)}</span>
+                        {" · "}
+                        <StatusGlyph tone={movement.acceptedUnitId === undefined ? "neutral" : "success"} size={9} />
+                        {movement.acceptedUnitId === undefined ? "No ward yet" : wardName(movement.acceptedUnitId)}
+                      </span>
+                    }
+                    value={
+                      <span className={phone.flagged}>
+                        {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+                        {splitDuration(waitMinutes)}
+                      </span>
+                    }
+                    time="waited"
+                    href={movementHref(movement.id)}
+                    data-testid={`ward-stat-ed-phone-row-${movement.id}`}
+                  />
+                );
+              })}
+            </PhoneList>
+          )}
+        </>
+      )}
+    </PhoneBody>
   );
 }
 

@@ -1,9 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { CalendarClock, LayoutGrid, Users } from "lucide-react";
+import { CalendarClock, LayoutGrid, Search, Users } from "lucide-react";
 
-import { BarList, CardBody, CardFoot, HeroStat, cx } from "@/components/wf";
+import {
+  BarList,
+  CardBody,
+  CardFoot,
+  HeroStat,
+  PhoneListRow,
+  Segmented,
+  TextInput,
+  cx,
+  useIsPhone,
+} from "@/components/wf";
 import { communityStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { COMMUNITY_SERVICE_OPTIONS } from "@/components/ward-management/community/community-index";
 import {
@@ -13,6 +24,7 @@ import {
   communityMembershipResolution,
 } from "@/components/ward-management/community/community-derivations";
 import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
+import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
 
@@ -21,6 +33,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow } from "./statistics-layout";
 import { statisticsSectionById } from "./statistics-sections";
 import { ServiceDot } from "./statistics-services-index";
+import { PhoneBody, PhoneList, PhoneShowAll, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
 
@@ -52,6 +65,10 @@ export function StatisticsTeamsIndexScreen() {
   const live = useStatisticsLive();
   const { admissions, referrals } = live.state;
   const now = live.now;
+  const isPhone = useIsPhone();
+  const [phoneView, setPhoneView] = useState<"active" | "all">("active");
+  const [phoneQuery, setPhoneQuery] = useState("");
+  const [phoneShowAll, setPhoneShowAll] = useState(false);
 
   const teams = COMMUNITY_TEAM_PAGES.map((team) => {
     const lists = communityHubLists(admissions, team, referrals);
@@ -62,11 +79,18 @@ export function StatisticsTeamsIndexScreen() {
       code,
       inBed: figures.admitted.kind === "measured" ? figures.admitted.value : null,
       withDate: figures.expected.kind === "measured" ? figures.expected.value : null,
+      dueOutWeek: lists.expectedBack.filter(
+        (admission) =>
+          admission.expectedDischargeAt !== null &&
+          admission.expectedDischargeAt >= now &&
+          admission.expectedDischargeAt < now + 7 * MINUTES_PER_DAY,
+      ).length,
     };
   });
 
   const inBedTotal = teams.reduce((total, entry) => total + (entry.inBed ?? 0), 0);
   const withDateTotal = teams.reduce((total, entry) => total + (entry.withDate ?? 0), 0);
+  const dueOutWeekTotal = teams.reduce((total, entry) => total + entry.dueOutWeek, 0);
   const active = teams.filter((entry) => (entry.inBed ?? 0) > 0).sort((a, b) => (b.inBed ?? 0) - (a.inBed ?? 0));
   const unknown = teams.filter((entry) => entry.inBed === null).length;
   const noTeamInBed = admissionsWithNoCommunityTeam(admissions, referrals).filter(bedIsOccupied).length;
@@ -78,6 +102,14 @@ export function StatisticsTeamsIndexScreen() {
   })).filter((group) => group.teams.length > 0);
   const otherTeams = teams.filter((entry) => !GROUPS.some((option) => option.value === entry.code));
 
+  // Phone: the teams with someone in a bed (busiest first) or every team A to Z, narrowed by name.
+  const needle = phoneQuery.trim().toLowerCase();
+  const phoneTeams = (
+    phoneView === "active" ? active : [...teams].sort((a, b) => a.team.name.localeCompare(b.team.name))
+  ).filter((entry) => !needle || entry.team.name.toLowerCase().includes(needle));
+  const PHONE_TEAMS_SHOWN = 12;
+  const phoneShown = phoneShowAll || needle ? phoneTeams : phoneTeams.slice(0, PHONE_TEAMS_SHOWN);
+
   return (
     <StatisticsPage
       section={section}
@@ -88,6 +120,17 @@ export function StatisticsTeamsIndexScreen() {
       now={now}
       paused={live.paused}
       onTogglePause={live.togglePause}
+      phone={{
+        title: `${inBedTotal} team ${plural(inBedTotal, "patient", "patients")} in a bed`,
+        sub: `${noTeamInBed} more in a bed with no team named`,
+        stats: (
+          <>
+            <HeroStat value={withDateTotal} label="With a date" />
+            <HeroStat value={active.length} label="Teams with one in" />
+            <HeroStat value={dueOutWeekTotal} label="Due out, 7d" />
+          </>
+        ),
+      }}
       stats={
         <>
           <HeroStat value={inBedTotal} label="Team patients in a bed" />
@@ -97,6 +140,64 @@ export function StatisticsTeamsIndexScreen() {
         </>
       }
     >
+      {isPhone ? (
+        <PhoneBody testId="ward-statistics-teams-phone">
+          <TextInput
+            type="search"
+            icon={Search}
+            boxClassName={phone.search}
+            aria-label="Find a team"
+            placeholder="Find a team"
+            value={phoneQuery}
+            onChange={(event) => setPhoneQuery(event.target.value)}
+          />
+          <Segmented<"active" | "all">
+            className={phone.seg}
+            size="md"
+            label="Teams shown"
+            value={phoneView}
+            onChange={setPhoneView}
+            items={[
+              { id: "active", label: "With patients", count: active.length },
+              { id: "all", label: "All teams", count: teams.length },
+            ]}
+          />
+          {phoneTeams.length === 0 ? (
+            <p className={phone.note}>{needle ? "No team matches this name." : "No team has anyone in a bed."}</p>
+          ) : (
+            <PhoneList label={phoneView === "active" ? "Teams with patients in a bed" : "All teams"}>
+              {phoneShown.map((entry) => {
+                const group = GROUPS.find((option) => option.value === entry.code);
+                return (
+                  <PhoneListRow
+                    key={entry.team.id}
+                    as="li"
+                    name={entry.team.name}
+                    meta={
+                      <span className={phone.dotName}>
+                        <ServiceDot service={CODE_SERVICE[entry.code]} />
+                        {`${group?.label ?? "Service not mapped"} · ${entry.withDate ?? "none"} with a date`}
+                      </span>
+                    }
+                    value={entry.inBed ?? "–"}
+                    time="in a bed"
+                    href={communityStatisticsHref(entry.team.id)}
+                    data-testid={`ward-statistics-teams-link-${entry.team.id}`}
+                  />
+                );
+              })}
+              {!needle && phoneTeams.length > PHONE_TEAMS_SHOWN ? (
+                <PhoneShowAll
+                  total={phoneTeams.length}
+                  open={phoneShowAll}
+                  onToggle={() => setPhoneShowAll((value) => !value)}
+                />
+              ) : null}
+            </PhoneList>
+          )}
+        </PhoneBody>
+      ) : (
+        <>
       <FlushRow layout="lead2">
         <StatCard
           icon={Users}
@@ -215,6 +316,8 @@ export function StatisticsTeamsIndexScreen() {
           />
         ) : null}
       </StatCard>
+        </>
+      )}
     </StatisticsPage>
   );
 }

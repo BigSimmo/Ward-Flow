@@ -93,6 +93,16 @@ export function useStatisticsLive() {
   };
 }
 
+/** What a statistics page shows in its hero on a phone, in place of the desktop title and figures. */
+export type StatisticsPhoneHero = {
+  /** A short eyebrow in place of the page's detail line ("ARM · East Metro"). */
+  eyebrow?: ReactNode;
+  title?: ReactNode;
+  sub?: ReactNode;
+  lead?: ReactNode;
+  stats?: ReactNode;
+};
+
 /**
  * The one hero band on every statistics page: eyebrow, title and counts on the first row, the
  * section track with the Live chip and the Samples switch on the second.
@@ -110,6 +120,7 @@ export function StatisticsHero({
   tools,
   chips,
   exportFigures,
+  phone,
 }: {
   section: StatisticsNavSection;
   /** The unit, service or team the page shows, so its own tab links back to it. */
@@ -131,6 +142,8 @@ export function StatisticsHero({
    * so Export lives here). Open to every role; it downloads the hero's figures as a CSV.
    */
   exportFigures?: StatisticsExport;
+  /** Phone only (v10 phone): a sentence title, its subtitle, a leading ring and up to three figures. */
+  phone?: StatisticsPhoneHero;
 }) {
   const wardCount = useWardFlow().units.length;
   const now = useWardFlowClock();
@@ -162,8 +175,10 @@ export function StatisticsHero({
           level={1}
           className={styles.phoneStatsHero}
           eyebrow={eyebrow}
-          title={title}
-          stats={chips ?? stats}
+          title={phone?.title ?? title}
+          titleMeta={phone?.sub}
+          lead={phone?.lead}
+          stats={phone?.stats ?? chips ?? stats}
           aside={<LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} />}
           bar={<PhoneHeroActions titleAction={titleAction} paused={paused} onTogglePause={onTogglePause} />}
         />
@@ -258,6 +273,7 @@ export function StatisticsPage({
   eyebrowDetail,
   tools,
   exportFigures,
+  phone,
   children,
 }: {
   section: StatisticsSection;
@@ -277,6 +293,8 @@ export function StatisticsPage({
   tools?: ReactNode;
   /** "Export the figures" in the hero (see `StatisticsHero`). */
   exportFigures?: StatisticsExport;
+  /** The phone hero's own title, subtitle and figures (see `StatisticsHero`). */
+  phone?: StatisticsPhoneHero;
   children: ReactNode;
 }) {
   const isPhone = useIsPhone();
@@ -288,7 +306,14 @@ export function StatisticsPage({
           slug={slug}
           eyebrow={
             isPhone ? (
-              eyebrowDetail ? (
+              phone?.eyebrow ? (
+                <>
+                  <SrOnly>
+                    <span data-testid="ward-statistics-section-eyebrow">{eyebrowLabel ?? section.label}</span> ·{" "}
+                  </SrOnly>
+                  {phone.eyebrow}
+                </>
+              ) : eyebrowDetail ? (
                 <>
                   <SrOnly>
                     <span data-testid="ward-statistics-section-eyebrow">{eyebrowLabel ?? section.label}</span> ·{" "}
@@ -319,6 +344,7 @@ export function StatisticsPage({
           onTogglePause={onTogglePause}
           tools={tools}
           exportFigures={exportFigures}
+          phone={phone}
         />
         {children}
         <WardPrototypeFooter testId="ward-statistics-section-footer" note="Synthetic data" />
