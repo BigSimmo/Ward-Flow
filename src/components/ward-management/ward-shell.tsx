@@ -65,12 +65,32 @@ export function WardGround({ children }: { children: ReactNode }) {
         });
       });
     }
-    const saved = positions.current;
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
-      saved.set(pathname, scroller.scrollTop);
     };
   }, [pathname]);
+
+  useEffect(() => {
+    const scroller = groundRef.current?.parentElement;
+    if (!scroller) return undefined;
+    let frame = 0;
+    const onScroll = () => {
+      // Capture before a route commit can replace the DOM and clamp this scroller.
+      const path = currentPath.current;
+      positions.current.set(path, scroller.scrollTop);
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        // Do not overwrite an old route's captured value with the new route's clamped offset.
+        if (currentPath.current === path) positions.current.set(path, scroller.scrollTop);
+      });
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   return (
     <div ref={groundRef} className={styles.shell} data-ward-ground>
