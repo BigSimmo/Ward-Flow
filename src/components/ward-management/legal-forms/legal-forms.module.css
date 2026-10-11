@@ -1461,3 +1461,32 @@ button.taskLabel[aria-pressed="true"] {
     font-size: var(--wf-fs-12);
   }
 }
+
+/* v10 phone second pass: the two hero actions share the row equally, and the view switch stays
+ * under the bar while the list scrolls. Phone only (both render on the phone alone). */
+.phoneHeroAction {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+}
+
+.phoneViews {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 6;
+  box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
+}
+
+/* v10 phone form sheet: one header (the sheet's), and the panel sits flat in the sheet. Only the
+ * phone sheet renders .phoneFocus. */
+.phoneFocus .focusHead {
+  display: none;
+}
+
+.phoneFocus .panel {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}

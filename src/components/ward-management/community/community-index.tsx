@@ -455,15 +455,42 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow="Community · Team directory"
+          eyebrow={isPhone ? "Community · Statewide" : "Community · Team directory"}
           title={
-            <>
-              <SrOnly>Community: </SrOnly>
-              <b className={styles.heroFigure}>{allTeams.length}</b> names,{" "}
-              <b className={styles.heroFigure}>{alikeTeamCount}</b> read alike
-            </>
+            isPhone ? (
+              <>
+                <SrOnly>Community: </SrOnly>
+                {allTeams.length} team names
+              </>
+            ) : (
+              <>
+                <SrOnly>Community: </SrOnly>
+                <b className={styles.heroFigure}>{allTeams.length}</b> names,{" "}
+                <b className={styles.heroFigure}>{alikeTeamCount}</b> read alike
+              </>
+            )
           }
+          titleMeta={isPhone ? "Recorded names, not verified services" : undefined}
           stats={
+            isPhone ? (
+              // v10 phone: three figures on hairlines, value over label.
+              <>
+                <HeroStat
+                  value={alikeTeamCount}
+                  label="Read alike"
+                  tone={alikeTeamCount > 0 ? "warning" : undefined}
+                  pressed={alikeOnly}
+                  onToggle={() => setAlikeOnly((value) => !value)}
+                />
+                <HeroStat
+                  value={sharedSuburbs.suburbs}
+                  label="Two teams"
+                  pressed={sharedSuburbOnly}
+                  onToggle={() => setSharedSuburbOnly((value) => !value)}
+                />
+                <HeroStat value={suburbsMapped} label="Suburbs" />
+              </>
+            ) : (
             <div className={styles.heroChips} role="group" aria-label="Highlight team names">
               <HeroStat
                 inline
@@ -481,8 +508,10 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 onToggle={() => setSharedSuburbOnly((value) => !value)}
               />
             </div>
+            )
           }
           foot={
+            isPhone ? undefined : (
             <CheckingFoot
               items={[
                 { id: "names", label: "Team names", value: allTeams.length },
@@ -491,6 +520,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               ]}
               notChecked={["verified services, these are recorded names"]}
             />
+            )
           }
           aside={
             <div className={styles.heroActions}>
@@ -503,8 +533,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 aria-haspopup="dialog"
                 aria-expanded={drawerOpen}
               >
-                Catchment guide
+                {isPhone ? "Guide" : "Catchment guide"}
               </Button>
+              {isPhone ? null : (
               <Link
                 href="/mockups/ward-flow/referrals"
                 className={buttonClass({ variant: "onHero" })}
@@ -513,6 +544,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 <Icon icon={ArrowRight} size={16} />
                 Referrals
               </Link>
+              )}
               <Link
                 href="/mockups/ward-flow/referrals/new"
                 className={buttonClass({ variant: "light" })}
@@ -594,7 +626,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 type="search"
                 icon={Search}
                 boxClassName={styles.searchBox}
-                placeholder="Search"
+                placeholder={isPhone ? "Team, suburb or postcode" : "Search"}
                 autoComplete="off"
                 aria-label="Search team names"
                 value={query}
@@ -605,7 +637,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                     setQuery("");
                   }
                 }}
-                trailing={<Kbd>/</Kbd>}
+                trailing={isPhone ? undefined : <Kbd>/</Kbd>}
               />
               <Segmented
                 label="Filter team names"

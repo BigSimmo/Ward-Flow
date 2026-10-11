@@ -7,6 +7,7 @@ import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Phone, Route, Search
 import {
   Button,
   Icon,
+  LiveChip,
   PhoneHero,
   Sheet,
   SrOnly,
@@ -16,7 +17,7 @@ import {
   cx,
   type WfTone,
 } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
@@ -268,6 +269,7 @@ export function OutOfAreaPhone({
       <PhoneHero
         level={1}
         eyebrow="Out of area · Statewide"
+        chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
         title={`${totalAway} away from home`}
         sub={since}
         figures={[

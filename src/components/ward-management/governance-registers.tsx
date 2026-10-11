@@ -13,7 +13,7 @@ import {
 
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { allOverrides } from "@/components/ward-management/ward-derivations";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { ACCESS_RECORD_NOTE } from "@/components/ward-management/search/access-record";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -60,6 +60,7 @@ import {
   Hero,
   HeroStat,
   HeroTrack,
+  LiveChip,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -1230,6 +1231,7 @@ function GovernanceSession({
     <div className={thirdEdition.phoneScreen} data-testid="ward-governance-phone">
       <PhoneHero
         eyebrow="Governance · This session"
+        chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
         title={toReview.length === 0 ? "Nothing to review" : `${toReview.length} to review`}
         sub={`${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`}
         figures={[
@@ -1241,6 +1243,7 @@ function GovernanceSession({
           <Button
             variant="onHero"
             icon={ShieldCheck}
+            className={thirdEdition.phoneHeroAction}
             disabledReason={toReview.length === 0 ? "Nothing waits for review" : undefined}
             reasonDisplay="tooltip"
             onClick={() => {

@@ -285,3 +285,16 @@
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* v10 phone hero: the Live chip sits on the eyebrow line; the range pill takes the row, centred,
+ * with the round pause button after it. */
+.rangeButton {
+  justify-content: center;
+}
+
+.pauseButton {
+  flex: none;
+  width: var(--spacing-tap, 3rem);
+  min-height: var(--spacing-tap, 3rem);
+  border-radius: var(--wf-r-pill);
+}

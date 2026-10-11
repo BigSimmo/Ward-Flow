@@ -271,6 +271,12 @@ export function DowntimePackScreen() {
           <PhoneHero
             level={1}
             eyebrow="Downtime pack"
+            chip={
+              <span className={styles.frozen} data-testid="ward-downtime-frozen">
+                <span className={styles.frozenDot} aria-hidden="true" />
+                Frozen <b>{frozenAt}</b>
+              </span>
+            }
             title={`Frozen at ${frozenAt}`}
             sub={`${reportDay(pack.generatedAt, dayZero)} · does not update while open`}
             figures={[

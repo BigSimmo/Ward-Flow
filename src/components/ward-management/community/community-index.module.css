@@ -1074,3 +1074,206 @@
     color: var(--wf-ink-3);
   }
 }
+
+/* v10 phone second pass (11 Oct 2026): the hero's Guide and Raise referral share a row with
+ * Raise referral taking the rest; the view switch spans the width; the search is a 44px pill; the
+ * health services and Reads alike are separate pill chips, the picked one edged in the accent. */
+@media (max-width: 48rem) {
+  .heroActions {
+    width: 100%;
+    gap: var(--wf-s-2);
+  }
+
+  .heroActions > [data-testid="community-action-raise-referral"] {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .phonePanes :global([role="radiogroup"]) {
+    width: 100%;
+  }
+
+  .toolbar > .searchBox {
+    height: 44px;
+    min-height: 44px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .toolbar {
+    column-gap: var(--wf-s-2);
+  }
+
+  .toolbar > :global([role="radiogroup"]) {
+    gap: var(--wf-s-2);
+    padding: 2px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"]),
+  .toolbar > button[aria-pressed] {
+    flex: 0 0 auto;
+    min-height: 44px;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+    box-shadow: none;
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"][aria-checked="true"]),
+  .toolbar > button[aria-pressed="true"] {
+    border-color: var(--wf-accent);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"]) > span:last-child {
+    min-width: 0;
+    padding: 0;
+    background: none;
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .toolbar > button[aria-pressed] {
+    align-self: center;
+  }
+}
+
+/* v10 phone: the view switch stays under the bar while the list scrolls, as on Home. */
+@media (max-width: 48rem) {
+  .phonePanes {
+    position: sticky;
+    top: 3.5rem;
+    z-index: 6;
+    margin: 0 calc(-1 * var(--wf-s-3));
+    padding: var(--wf-s-2) var(--wf-s-3);
+    background: var(--wf-canvas);
+  }
+}
+
+/* v10 phone Suburb pane: no card chrome around the lookup; a pill search; the suburbs as one
+ * sideways row of pill chips; the contested note above the teams, which sit in one card. */
+@media (max-width: 48rem) {
+  .phonePanes > div,
+  .phonePanes :global([role="radiogroup"]) {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  [data-pane="suburb"] > .sideCard {
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  [data-pane="suburb"] > .sideCard > :first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  [data-pane="suburb"] .lookupBody {
+    padding: 0;
+  }
+
+  [data-pane="suburb"] .lookupBody > :first-child {
+    min-height: 44px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .picks {
+    flex-wrap: nowrap;
+    margin: 0 calc(-1 * var(--wf-s-3));
+    padding: 2px var(--wf-s-3);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .picks::-webkit-scrollbar {
+    display: none;
+  }
+
+  .picks > button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+    box-shadow: none;
+  }
+
+  .picks > button[aria-pressed="true"] {
+    border-color: var(--wf-accent);
+    background: var(--wf-surface);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  .lookupResult {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    border: 0;
+    border-radius: 0;
+  }
+
+  .lookupResult > .lookupNote {
+    order: -1;
+    padding: 0;
+    font-weight: 400;
+  }
+
+  .lookupList {
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .lookupRow {
+    min-height: 60px;
+    border-bottom-color: var(--wf-line);
+  }
+
+  .lookupList .lookupRow:last-child {
+    border-bottom: 0;
+  }
+
+  .lookupAside {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+/* The 44px chips reach a 48px hit area. */
+@media (max-width: 48rem) {
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"]),
+  .toolbar > button[aria-pressed],
+  .picks > button {
+    position: relative;
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"])::after,
+  .toolbar > button[aria-pressed]::after,
+  .picks > button::after {
+    content: "";
+    position: absolute;
+    inset: -2px 0;
+  }
+}

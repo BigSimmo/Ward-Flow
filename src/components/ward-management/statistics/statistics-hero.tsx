@@ -1,9 +1,9 @@
 "use client";
 
 import { useId, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
-import { Download, type LucideIcon } from "lucide-react";
+import { CalendarRange, Download, Pause, Play, type LucideIcon } from "lucide-react";
 
-import { Button, Card, CardHead, Hero, LiveChip, cx } from "@/components/wf";
+import { Button, Card, CardHead, Hero, LiveChip, PhoneSheet, SrOnly, cx, useIsPhone } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -12,7 +12,70 @@ import type { StatisticsSection } from "./statistics-sections";
 import { StatisticsNav, StatisticsSamplesSwitch, type StatisticsNavSection } from "./statistics-nav";
 import { StatisticsRange } from "./statistics-hero-tools";
 import { downloadCsv, statisticsExportLines, type StatisticsExport } from "./statistics-csv";
+import { RangeChoices } from "./statistics-summary-phone";
 import styles from "./statistics-hero.module.css";
+import phoneStyles from "./statistics-phone.module.css";
+
+/** The v10 phone eyebrow's section word ("Statistics · Compare"). */
+const PHONE_SECTION_WORD: Partial<Record<StatisticsNavSection, string>> = {
+  overview: "Overview",
+  compare: "Compare",
+};
+
+/**
+ * The phone hero's action row (v10 phone): the time range as one pill that opens its sheet, or the
+ * page's own control (Change ward), then the round pause button.
+ */
+function PhoneHeroActions({
+  titleAction,
+  paused,
+  onTogglePause,
+}: {
+  titleAction?: ReactNode;
+  paused: boolean;
+  onTogglePause: () => void;
+}) {
+  const [rangeOpen, setRangeOpen] = useState(false);
+  return (
+    <span className={phoneStyles.heroActions}>
+      {titleAction ? (
+        <span className={styles.phoneTitleAction}>{titleAction}</span>
+      ) : (
+        <button
+          type="button"
+          className={phoneStyles.rangeButton}
+          aria-haspopup="dialog"
+          onClick={() => setRangeOpen(true)}
+          data-testid="ward-statistics-range"
+        >
+          <CalendarRange size={16} aria-hidden="true" />
+          <SrOnly>Time range: </SrOnly>
+          <b>Now</b>
+          <span className={phoneStyles.rangeMore}>· Shift, 7 and 30 days Preview</span>
+        </button>
+      )}
+      <Button
+        variant="onHero"
+        iconOnly
+        icon={paused ? Play : Pause}
+        aria-label="Pause live updates"
+        aria-pressed={paused}
+        className={phoneStyles.pauseButton}
+        onClick={onTogglePause}
+      />
+      <PhoneSheet
+        open={rangeOpen}
+        onClose={() => setRangeOpen(false)}
+        title="Time range"
+        description="Figures are live now. History needs the metrics store."
+      >
+        <div className={phoneStyles.sheetBody}>
+          <RangeChoices onNow={() => setRangeOpen(false)} />
+        </div>
+      </PhoneSheet>
+    </span>
+  );
+}
 
 /**
  * Live figures that can be held still. While paused, the screen keeps reading the state and clock
@@ -71,6 +134,7 @@ export function StatisticsHero({
 }) {
   const wardCount = useWardFlow().units.length;
   const now = useWardFlowClock();
+  const isPhone = useIsPhone();
   // With chips (Summary) Export sits in the title row's action slot; with hero figures it leads
   // the band's tool row, so it never adds a row of its own under the figures.
   const exportButton = exportFigures ? (
@@ -89,6 +153,32 @@ export function StatisticsHero({
       Export the figures
     </Button>
   ) : null;
+  if (isPhone) {
+    // v10 phone: eyebrow with the Live chip and its time, the title, up to three figures on
+    // hairlines, the range pill (or the page's own control) with pause, then the sections as chips.
+    return (
+      <>
+        <Hero
+          level={1}
+          className={styles.phoneStatsHero}
+          eyebrow={eyebrow}
+          title={title}
+          stats={chips ?? stats}
+          aside={<LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} />}
+          bar={<PhoneHeroActions titleAction={titleAction} paused={paused} onTogglePause={onTogglePause} />}
+        />
+        <div className={styles.phoneNav} data-testid={navTestId}>
+          <StatisticsNav
+            currentSection={section}
+            activeSlug={slug}
+            withSamples={false}
+            wardCount={wardCount}
+            variant="chips"
+          />
+        </div>
+      </>
+    );
+  }
   return (
     <Hero
       level={1}
@@ -189,6 +279,7 @@ export function StatisticsPage({
   exportFigures?: StatisticsExport;
   children: ReactNode;
 }) {
+  const isPhone = useIsPhone();
   return (
     <div className={styles.page} data-testid={testId} data-ward-design="v6">
       <main id="main-content" className={styles.main}>
@@ -196,10 +287,30 @@ export function StatisticsPage({
           section={navSection}
           slug={slug}
           eyebrow={
-            <>
-              <span data-testid="ward-statistics-section-eyebrow">{eyebrowLabel ?? section.label}</span>
-              {eyebrowDetail ? <> · {eyebrowDetail}</> : ` · as at ${formatInstant(now)}`}
-            </>
+            isPhone ? (
+              eyebrowDetail ? (
+                <>
+                  <SrOnly>
+                    <span data-testid="ward-statistics-section-eyebrow">{eyebrowLabel ?? section.label}</span> ·{" "}
+                  </SrOnly>
+                  {eyebrowDetail}
+                </>
+              ) : (eyebrowLabel ?? section.label).startsWith("Statistics ·") ? (
+                <span data-testid="ward-statistics-section-eyebrow">{eyebrowLabel ?? section.label}</span>
+              ) : (
+                <>
+                  Statistics ·{" "}
+                  <span data-testid="ward-statistics-section-eyebrow">
+                    {PHONE_SECTION_WORD[navSection] ?? eyebrowLabel ?? section.label}
+                  </span>
+                </>
+              )
+            ) : (
+              <>
+                <span data-testid="ward-statistics-section-eyebrow">{eyebrowLabel ?? section.label}</span>
+                {eyebrowDetail ? <> · {eyebrowDetail}</> : ` · as at ${formatInstant(now)}`}
+              </>
+            )
           }
           title={title}
           titleAction={titleAction}

@@ -123,3 +123,67 @@
     display: none;
   }
 }
+
+/* v10 phone statistics hero (phone only: StatisticsHero renders these classes on a phone). */
+.phoneStatsHero {
+  flex: 0 0 auto;
+}
+
+.phoneStatsHero > div:nth-child(2) > div:first-child {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.phoneTitleAction {
+  display: flex;
+  flex: 1 1 auto;
+  justify-content: center;
+  min-width: 0;
+}
+
+.phoneNav {
+  min-width: 0;
+}
+
+/* Phone: previous, the page's Change control (stretched), then next, as round 48px buttons. */
+.phoneTitleAction > * {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.phoneTitleAction > * > :not([data-testid="ward-statistics-unit-stepper"]) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.phoneTitleAction > * > :not([data-testid="ward-statistics-unit-stepper"]) :is(button, a) {
+  width: 100%;
+  justify-content: center;
+  min-height: var(--spacing-tap, 3rem);
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneTitleAction [data-testid="ward-statistics-unit-stepper"] {
+  display: contents;
+}
+
+.phoneTitleAction [data-testid="ward-statistics-unit-stepper"] > a {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-tap, 3rem);
+  height: var(--spacing-tap, 3rem);
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneTitleAction [data-testid="ward-statistics-unit-stepper"] > a:first-child {
+  order: -1;
+}
+
+.phoneTitleAction [data-testid="ward-statistics-unit-stepper"] > a:last-child {
+  order: 1;
+}

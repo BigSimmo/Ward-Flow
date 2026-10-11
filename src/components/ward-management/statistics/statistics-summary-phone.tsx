@@ -2,9 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, CalendarRange, Check, ChevronRight, Clock, Layers } from "lucide-react";
+import { Activity, CalendarRange, Check, ChevronRight, Clock, Layers, Pause, Play } from "lucide-react";
 
 import {
+  Button,
   FactGrid,
   GroupHead,
   IconTile,
@@ -18,6 +19,8 @@ import {
   durMinutes,
 } from "@/components/wf";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { formatInstant } from "@/components/ward-management/ward-clock";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 
 import { StatisticsNav } from "./statistics-nav";
@@ -56,7 +59,7 @@ function InUse({ percent, where }: { percent: number; where: string }) {
   return (
     <span className={styles.inUse}>
       {overLine(percent) ? <StatusGlyph tone="warning" size={9} /> : null}
-      {percent}% occupied · {where}
+      {percent}% in use · {where}
     </span>
   );
 }
@@ -94,6 +97,7 @@ export function StatisticsSummaryPhone({
   paused: boolean;
   onTogglePause: () => void;
 }) {
+  const { now } = useWardFlow();
   const [group, setGroup] = useState<"hospital" | "ward">("hospital");
   const [sheet, setSheet] = useState<Sheet>(null);
   const [showAll, setShowAll] = useState(false);
@@ -152,6 +156,7 @@ export function StatisticsSummaryPhone({
             { id: "ended", value: endedToday, label: "Ended today" },
           ]}
           eyebrow="Statistics · Whole network"
+          chip={<LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} />}
           actions={
             <span className={styles.heroActions}>
               <button
@@ -166,7 +171,15 @@ export function StatisticsSummaryPhone({
                 <b>Now</b>
                 <span className={styles.rangeMore}>· Shift, 7 and 30 days Preview</span>
               </button>
-              <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={onTogglePause} />
+              <Button
+                variant="onHero"
+                iconOnly
+                icon={paused ? Play : Pause}
+                aria-label="Pause live updates"
+                aria-pressed={paused}
+                className={styles.pauseButton}
+                onClick={onTogglePause}
+              />
             </span>
           }
         />
@@ -342,7 +355,7 @@ export function StatisticsSummaryPhone({
  * The time range choices in their sheet. Only Now is backed: the prototype keeps no history, so
  * Shift, 7 days and 30 days are Preview and say so when pressed.
  */
-function RangeChoices({ onNow }: { onNow: () => void }) {
+export function RangeChoices({ onNow }: { onNow: () => void }) {
   const [said, setSaid] = useState(false);
   return (
     <>
