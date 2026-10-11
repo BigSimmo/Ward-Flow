@@ -49,11 +49,13 @@ import {
 } from "./ward-flow/full-gate-recheck.mjs";
 
 import { referencedTestChanges } from "./ward-flow/test-module-dependencies.mjs";
+import { readUnitDurations } from "./ward-flow/unit-durations.mjs";
+
+export { readUnitDurations };
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MANIFEST = path.join(projectRoot, "tests", "ward-expected-reds.json");
 const MIN_FILE_SECONDS = 0.1;
-const UNIT_DURATIONS = path.join(projectRoot, "scripts", "ward-flow", "unit-durations.json");
 
 /**
  * Floors, deliberately well below the real population rather than at it.
@@ -424,16 +426,6 @@ export function gateBatchArgs({ files, batchReport, coverageBlobDir, shard, batc
 export function gateBatchBlobPath(args) {
   const flag = args.find((arg) => arg.startsWith("--outputFile.blob="));
   return flag ? flag.slice("--outputFile.blob=".length) : null;
-}
-
-/** Measured seconds per unit test file, or {} when the record is missing or unreadable. */
-export function readUnitDurations(file = UNIT_DURATIONS) {
-  try {
-    const seconds = JSON.parse(readFileSync(file, "utf8")).seconds;
-    return seconds && typeof seconds === "object" ? seconds : {};
-  } catch {
-    return {};
-  }
 }
 
 function fail(lines) {

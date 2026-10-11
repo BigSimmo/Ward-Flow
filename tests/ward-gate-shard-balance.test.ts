@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 // Imported, not re-implemented: the CI unit shards call these exact functions.
 import { readUnitDurations, selectGateShard } from "../scripts/check-ward-expected-reds.mjs";
+import { longestFirst } from "../scripts/ward-flow/unit-durations.mjs";
 
 const population = Array.from({ length: 40 }, (_, index) => `tests/file-${String(index).padStart(2, "0")}.test.ts`);
 
@@ -60,5 +61,25 @@ describe("unit gate shards", () => {
     expect(readUnitDurations(path.join(folder, "broken.json"))).toEqual({});
     writeFileSync(path.join(folder, "ok.json"), JSON.stringify({ seconds: { "tests/a.test.ts": 4 } }));
     expect(readUnitDurations(path.join(folder, "ok.json"))).toEqual({ "tests/a.test.ts": 4 });
+  });
+
+  it("orders a run's files longest first, unmeasured as the median, without dropping or adding any", () => {
+    const root = "/repo";
+    const spec = (file: string) => ({ moduleId: `${root}/${file}` });
+    const durations = { "tests/a.test.ts": 1, "tests/b.test.ts": 150, "tests/c.test.ts": 4, "tests/d.test.ts": 0 };
+    const specs = ["tests/a.test.ts", "tests/b.test.ts", "tests/c.test.ts", "tests/d.test.ts", "tests/new.test.ts"].map(
+      spec,
+    );
+    const ordered = longestFirst(specs, root, durations).map((item: { moduleId: string }) =>
+      item.moduleId.slice(root.length + 1),
+    );
+    expect(ordered).toEqual([
+      "tests/b.test.ts",
+      "tests/c.test.ts",
+      "tests/new.test.ts",
+      "tests/a.test.ts",
+      "tests/d.test.ts",
+    ]);
+    expect(longestFirst([...specs].reverse(), root, durations)).toEqual(longestFirst(specs, root, durations));
   });
 });
