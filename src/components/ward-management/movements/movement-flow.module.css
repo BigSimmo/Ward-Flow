@@ -282,6 +282,29 @@
   color: var(--wf-ink-3);
 }
 
+/* ---------- tier pill (desktop; the phone uses the shared TierTile) ---------- */
+
+.tier {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 22px;
+  padding: 0 7px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.tier[data-tier="1"] {
+  border-color: var(--wf-line-3);
+  color: var(--wf-ink-1);
+}
+
 /* ---------- worklist ---------- */
 
 .toolbar {
@@ -1123,4 +1146,31 @@
     padding-inline: var(--wf-s-4);
     border-radius: 0;
   }
+}
+
+/* v10 phone group heading (renders on phone only): caps title left, bare count right. */
+.phGroupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.phGroupTitle {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: var(--wf-tr-caps, 0.06em);
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.phGroupCount {
+  flex: none;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
 }

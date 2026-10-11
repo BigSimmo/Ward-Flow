@@ -246,3 +246,12 @@
     flex: 1 0 auto;
   }
 }
+
+/* v10 phone referral sheet: the journey strip under the facts. */
+@media (max-width: 48rem) {
+  .journey {
+    display: grid;
+    gap: var(--wf-s-2);
+    min-width: 0;
+  }
+}

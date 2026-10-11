@@ -3790,3 +3790,25 @@
     white-space: nowrap;
   }
 }
+
+/* v10 phone: the "Arrange" label sits left of the order track, outside it. */
+@media (max-width: 48rem) {
+  .orderBar.orderBar {
+    position: relative;
+    width: auto;
+    margin-left: 4.75rem;
+  }
+
+  .orderBar.orderBar > .orderBtn {
+    padding: 0 4px;
+    font-size: var(--wf-fs-12);
+  }
+
+  .orderBar > .orderLegend {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: -4.75rem;
+    transform: translateY(-50%);
+  }
+}

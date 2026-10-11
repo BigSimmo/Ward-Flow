@@ -565,6 +565,136 @@ export function ReferralMatchView({
       </div>
     </div>
   ) : null;
+  if (!ward && phone !== undefined && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
+    /* v10 phone, ED review: one scrolling sheet with Decline and Accept presentation pinned in the
+       foot, as the ward sheet does. Decline opens the reasons as radio rows; Accept asks once. */
+    return (
+      <section
+        className={`${styles.matchPanel} ${ph.sheet}`}
+        data-testid="ward-referral-match-not-a-bed-question"
+        data-phone="true"
+      >
+        <p className={ph.ch}>ED review</p>
+        <div className={styles.v10AskCard}>
+          <b className={styles.v10AskWhere}>{referralDestinationLabels(referral).join(" · ")}</b>
+          <span className={styles.v10AskWhat}>Psychiatric review, not answered by a bed</span>
+          <p className="sr-only">
+            {patientInfo ? (
+              <>
+                {formatUmrn(patientInfo.umrn)} <span>{referral.id}</span>
+              </>
+            ) : (
+              referral.id
+            )}{" "}
+            was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by
+            matching a bed. There is no bed shortlist for this referral.
+          </p>
+        </div>
+        {gpSourceNotice}
+        {phoneDeclining ? (
+          <>
+            <p className={ph.ch}>Why decline?</p>
+            <div className={ph.cands} role="radiogroup" aria-label="Why decline?">
+              {ED_DECLINE_REASONS.map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  role="radio"
+                  aria-checked={declineReason === reason}
+                  className={ph.cand}
+                  data-testid={`ward-referral-match-phone-decline-${reason}`}
+                  onClick={() => setDeclineReason(reason)}
+                >
+                  <span className={declineReason === reason ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
+                  <span className={ph.nm}>{DECLINE_REASON_LABELS[reason] ?? reason}</span>
+                </button>
+              ))}
+            </div>
+            <p className={ph.matchHint} id="ward-referral-match-decline-blocked-emergency_department">
+              {declineReason === undefined ? "Choose a reason to decline." : "Decline records this reason."}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className={ph.matchHint}>
+              {edAcceptConfirmOpen
+                ? "Confirm records the decision only. Nobody is moved."
+                : "Decline needs a reason. Accept records the decision only."}
+            </p>
+            {wholeWithdrawControl}
+          </>
+        )}
+        {lastRejection ? (
+          <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
+            {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
+            recorded: {lastRejection.reason}
+          </p>
+        ) : null}
+        {phoneDeclining ? null : phone}
+        <div className={ph.foot}>
+          {phoneDeclining ? (
+            <>
+              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
+                Back
+              </button>
+              <button
+                type="button"
+                className={ph.pri}
+                data-tone="danger"
+                data-testid="ward-referral-match-decline-emergency_department"
+                aria-disabled={declineReason === undefined ? "true" : undefined}
+                aria-describedby="ward-referral-match-decline-blocked-emergency_department"
+                title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
+                onClick={
+                  declineReason === undefined
+                    ? ignoreUnavailableActivation
+                    : () => {
+                        handleDecline("emergency_department");
+                        setPhoneDeclining(false);
+                      }
+                }
+              >
+                <span className={ph.ell}>Confirm decline</span>
+              </button>
+            </>
+          ) : edAcceptConfirmOpen ? (
+            <>
+              <button
+                type="button"
+                className={ph.sec}
+                data-testid="ward-referral-match-cancel-accept-emergency_department"
+                onClick={() => setEdAcceptConfirmOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={ph.pri}
+                data-testid="ward-referral-match-confirm-accept-emergency_department"
+                onClick={handleEdAccept}
+              >
+                <span className={ph.ell}>Confirm acceptance</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(true)}>
+                Decline
+              </button>
+              <button
+                type="button"
+                className={ph.pri}
+                data-testid="ward-referral-match-accept-emergency_department"
+                onClick={() => setEdAcceptConfirmOpen(true)}
+              >
+                <span className={ph.ell}>Accept presentation</span>
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+    );
+  }
   if (!ward) {
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">

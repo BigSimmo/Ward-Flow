@@ -358,6 +358,8 @@ function PersonPanel({
   const lines = wardLines(row, units);
   const candidates = useMemo(() => candidateWards(movement, units, now), [movement, units, now]);
   const [unavailableOpen, setUnavailableOpen] = useState(false);
+  // v10 phone: a journey bar from arrival to now leads the person sheet.
+  const isPhonePanel = useIsPhone();
   const pullHolder = units.find((unit) => unit.id === movement.acceptedUnitId);
   const legalForm = movement.legalForm;
 
@@ -394,6 +396,36 @@ function PersonPanel({
         </button>
       </div>
       <div className={styles.sideB}>
+        {isPhonePanel ? (
+          <div className={styles.phJourney} data-testid={`delays-phone-journey-${movement.id}`}>
+            <div className={styles.phJourneyBar} aria-hidden="true">
+              {row.activity !== undefined && row.waited > 0 ? (
+                <span
+                  className={styles.phJourneyDone}
+                  style={{ flexGrow: Math.max(0, row.waited - row.quiet), flexBasis: 0 }}
+                />
+              ) : null}
+              <span className={styles.phJourneyQuiet} style={{ flexGrow: Math.max(1, row.quiet), flexBasis: 0 }} />
+              <span className={styles.phJourneyNow} />
+            </div>
+            <div className={styles.phJourneyRow}>
+              <span>
+                <b className={styles.num}>{formatInstantWithDay(movement.openedAt, now)}</b>
+                <span className={styles.mute}>Arrived</span>
+              </span>
+              <span className={styles.phJourneyEnd}>
+                <b>
+                  <Glyph tone={row.silent ? "warning" : undefined} /> Now
+                </b>
+                <span className={styles.mute}>
+                  {row.activity === undefined
+                    ? "Nothing since arrival"
+                    : `Last: ${row.activity.what}, ${ago(row.quiet)}`}
+                </span>
+              </span>
+            </div>
+          </div>
+        ) : null}
         <div className={`${styles.inset} ${styles.causeInset}`}>
           <TierTile tier={movement.urgency} label={urgencyTierLabel(movement.urgency)} />
           <div className={styles.grow}>
@@ -1306,6 +1338,7 @@ export function DelaysBoard({
                 Longest <span className={styles.num}>{splitDuration(list[0].waited)}</span>
               </span>
               <BandBar bands={bandCounts(list)} className={styles.minibar} />
+              {isPhone ? <GroupTrend rows={list} /> : null}
             </button>
           </td>
         </tr>,
@@ -1426,6 +1459,13 @@ export function DelaysBoard({
         level={1}
         eyebrow={isPhone ? `Delays · ${service ?? "Statewide"}` : "Delays"}
         title={`${rows.length} ${rows.length === 1 ? "person" : "people"} waiting`}
+        titleMeta={
+          isPhone ? (
+            <>
+              Prototype data, invented records · <b>{breached}</b> past recorded time
+            </>
+          ) : undefined
+        }
         testId="delays-hero"
         className={styles.delaysHero}
         stats={
@@ -1887,5 +1927,23 @@ export function DelaysBoard({
         </>
       )}
     </>
+  );
+}
+
+/**
+ * v10 phone group trend mark: a small bar glyph and "+N", the people in this group whose wait
+ * opened recently (the board's own quiet threshold). A count of recorded arrivals, never a forecast.
+ */
+function GroupTrend({ rows }: { rows: readonly BoardRow[] }) {
+  const joined = rows.filter((row) => row.waited < SILENT_MINUTES).length;
+  return (
+    <span className={styles.phTrend} title={`${joined} joined recently`}>
+      <svg viewBox="0 0 8 12" width="8" height="12" aria-hidden="true">
+        <rect x="0" y="6" width="3" height="6" fill="currentColor" opacity="0.45" />
+        <rect x="5" y="1" width="3" height="11" fill="currentColor" />
+      </svg>
+      <span aria-hidden="true">+{joined}</span>
+      <span className="sr-only">{joined} joined recently</span>
+    </span>
   );
 }

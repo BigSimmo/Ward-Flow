@@ -1817,3 +1817,15 @@ button.check[aria-pressed="true"] {
   justify-content: center;
   border-radius: var(--wf-r-pill);
 }
+
+/* v10 phone alert sheet: the not-wired Escalate (D4) reads as a quiet row, not a dashed button. */
+@media (max-width: 48rem) {
+  .phEscalate.phEscalate,
+  .phEscalate.phEscalate:hover {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    padding-inline: var(--wf-s-1);
+    color: var(--wf-ink-3);
+  }
+}

@@ -707,3 +707,10 @@
   height: var(--spacing-tap, 3rem);
   transform: translateY(-50%);
 }
+
+/* v10 phone: one disclaimer line per page, the shared footer; this page-level copy hides on phone (A7). */
+@media (max-width: 48rem) {
+  .phPageNote {
+    display: none;
+  }
+}

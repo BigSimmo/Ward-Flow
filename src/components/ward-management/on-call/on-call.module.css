@@ -1747,8 +1747,27 @@
   padding-bottom: 8px;
 }
 
-.sheetBody .status {
+/* The sheet body already pads 16px; the parts inside carry their own 16px gutter, so pull
+   back to line them up with the sheet title (v10). */
+.sheetBody {
+  margin: -8px -16px 0;
+}
+
+/* v10 phone sheet: the status box is a neutral surface; only the glyph carries the tone. */
+.sheetBody .status,
+.sheetBody .statusSoon {
   margin-top: 12px;
+  border-color: var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.sheetBody .statusOff {
+  background: var(--wf-surface-2);
+}
+
+.sheetCall {
+  width: 100%;
+  justify-content: center;
 }
 
 .actionTiles {
@@ -1767,8 +1786,8 @@
   gap: 4px;
   height: 64px;
   border: 1px solid var(--wf-line);
-  border-radius: 18px;
-  background: var(--wf-surface-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
   color: var(--wf-accent-ink);
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
   cursor: pointer;
@@ -1845,6 +1864,12 @@
   }
   .lineLabel span {
     white-space: nowrap;
+  }
+  /* v10 chips: a clear gap between the icon and the label. */
+  .chip > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 }
 

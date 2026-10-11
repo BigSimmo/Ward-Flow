@@ -7,6 +7,7 @@ import {
   MINUTES_PER_DAY,
   calendarDateOf,
   formatInstantWithDay,
+  splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
@@ -26,6 +27,14 @@ function dayOptionLabel(day: number, now: Instant, dayZero: Date): string {
   const date = calendarDateOf(Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + day * MINUTES_PER_DAY, dayZero);
   return `In ${day} days, ${date.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}`;
 }
+
+/** v10 phone: the leave sheet offers four return times as chips (a past one is not offered). */
+const LEAVE_PRESETS = [
+  { id: "13", label: "13:00", time: "13:00", day: 0 },
+  { id: "16", label: "16:00", time: "16:00", day: 0 },
+  { id: "18", label: "18:00", time: "18:00", day: 0 },
+  { id: "t10", label: "Tomorrow 10:00", time: "10:00", day: 1 },
+] as const;
 
 const KIND_LABELS: Record<LeaveKind, string> = { off_ward: "Off-ward leave", medical_trip: "Medical trip" };
 
@@ -73,19 +82,35 @@ export function PatientWardChangeCard({
   const [time, setTime] = useState("");
   const [day, setDay] = useState(0);
   const [kind, setKind] = useState<LeaveKind>("off_ward");
-  const parsed = typedTimeToInstant(time, day, now);
+  /* v10 Patient, phone: "Record a change" is a heading over a row of chips, and the form rises
+   * as a bottom sheet with Cancel beside its one primary. Desktop and tablet keep the card. */
+  const isPhone = useIsPhone();
+  // Phone leave: a preset return time is chosen up front (16:00, or the next one still ahead);
+  // "Other time" opens the typed day and time.
+  const [presetId, setPresetId] = useState<string | null>(null);
+  const [customTime, setCustomTime] = useState(false);
+  const futurePresets = LEAVE_PRESETS.filter((preset) => {
+    const at = typedTimeToInstant(preset.time, preset.day, now);
+    return at !== undefined && at > now;
+  });
+  const phonePresets = isPhone && form === "leave" && !customTime;
+  const preset = phonePresets
+    ? (futurePresets.find((option) => option.id === presetId) ??
+      futurePresets.find((option) => option.id === "16") ??
+      futurePresets[0])
+    : undefined;
+  const parsed = preset ? typedTimeToInstant(preset.time, preset.day, now) : typedTimeToInstant(time, day, now);
   const future = parsed !== undefined && parsed > now;
   const leaveLimit = roleLimit("RECORD_LEAVE_BED");
   const edLimit = roleLimit("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT");
   const dischargeLimit = roleLimit("UPDATE_EXPECTED_DISCHARGE");
-  /* v10 Patient, phone: "Record a change" is a heading over a row of chips, and the form rises
-   * as a bottom sheet with Cancel beside its one primary. Desktop and tablet keep the card. */
-  const isPhone = useIsPhone();
 
   function toggle(next: Exclude<WardChangeForm, "none">) {
     onFormChange(form === next ? "none" : next);
     setTime("");
     setDay(0);
+    setPresetId(null);
+    setCustomTime(false);
   }
 
   const chipRow = (
@@ -140,6 +165,7 @@ export function PatientWardChangeCard({
         setTime("");
       }}
     >
+      {form === "leave" && isPhone ? <span className={styles.phFieldLabel}>Kind of leave</span> : null}
       {form === "leave" ? (
         <div className={styles.kindRow} role="group" aria-label="Kind of leave">
           {(Object.keys(KIND_LABELS) as LeaveKind[]).map((option) => (
@@ -155,27 +181,60 @@ export function PatientWardChangeCard({
           ))}
         </div>
       ) : null}
-      <label className={styles.changeField}>
-        <span>Day</span>
-        <select value={day} onChange={(event) => setDay(Number(event.target.value))}>
-          {(form === "leave" ? LEAVE_DAYS : DISCHARGE_DAYS).map((option) => (
-            <option key={option} value={option}>
-              {dayOptionLabel(option, now, dayZero)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className={styles.changeField}>
-        <span>{form === "leave" ? "Expected back time" : "Expected discharge time"}</span>
-        <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
-      </label>
-      <p className={styles.changeHint} aria-live="polite">
-        {parsed === undefined
-          ? "Type the time"
-          : future
-            ? formatInstantWithDay(parsed, now)
-            : "That time has already passed"}
-      </p>
+      {phonePresets ? (
+        <>
+          <div className={styles.phPresetGroup} role="group" aria-labelledby="pn-leave-back">
+            <span id="pn-leave-back" className={styles.phFieldLabel}>
+              Expected back
+            </span>
+            <div className={styles.phPresets}>
+              {futurePresets.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={styles.kindChoice}
+                  aria-pressed={preset?.id === option.id}
+                  onClick={() => setPresetId(option.id)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className={styles.phSummary} aria-live="polite">
+            {parsed !== undefined
+              ? `Back ${formatInstantWithDay(parsed, now)}, in ${splitDuration(parsed - now)}. The bed is held while away.`
+              : null}
+          </p>
+          <button type="button" className={styles.phOther} onClick={() => setCustomTime(true)}>
+            Other time
+          </button>
+        </>
+      ) : (
+        <>
+          <label className={styles.changeField}>
+            <span>Day</span>
+            <select value={day} onChange={(event) => setDay(Number(event.target.value))}>
+              {(form === "leave" ? LEAVE_DAYS : DISCHARGE_DAYS).map((option) => (
+                <option key={option} value={option}>
+                  {dayOptionLabel(option, now, dayZero)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.changeField}>
+            <span>{form === "leave" ? "Expected back time" : "Expected discharge time"}</span>
+            <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+          </label>
+          <p className={styles.changeHint} aria-live="polite">
+            {parsed === undefined
+              ? "Type the time"
+              : future
+                ? formatInstantWithDay(parsed, now)
+                : "That time has already passed"}
+          </p>
+        </>
+      )}
       {isPhone ? null : (
         <Button className={styles.tap} type="submit" size="sm" variant="pri" disabled={!future}>
           {form === "leave" ? "Record leave" : "Save date"}

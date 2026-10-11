@@ -579,7 +579,7 @@ export function OnCallScreen() {
         onPressedChange={(on) => setGroupBy(on ? "role" : "place")}
         className={styles.chip}
       >
-        <Icon icon={groupBy === "role" ? Users : MapPin} size={14} />
+        <Icon icon={isPhone || groupBy === "role" ? Users : MapPin} size={isPhone ? 16 : 14} />
         By role
       </FilterChip>
     ) : null;

@@ -4,6 +4,7 @@ import { DischargeCareJourney } from "./discharge-care-journey";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
+  ChevronDown,
   ChevronRight,
   ClipboardList,
   Copy,
@@ -101,6 +102,20 @@ const GROUP_LABELS = {
 } as const;
 
 type GroupKey = keyof typeof GROUP_LABELS;
+
+/** v10 phone group headers: one glyph and a short label per group. */
+const PHONE_GROUP_TONES: Record<GroupKey, WfTone> = {
+  blocked: "danger",
+  confirmed: "success",
+  expected: "neutral",
+  "discharged-today": "closed",
+};
+const PHONE_GROUP_LABELS: Record<GroupKey, string> = {
+  blocked: "Blocked",
+  confirmed: "Confirmed",
+  expected: "Expected",
+  "discharged-today": "Discharged · 24h",
+};
 
 /** v10 phone: rows a group shows before its "Show N more" row. */
 const PHONE_GROUP_CAP = 6;
@@ -345,12 +360,15 @@ function perthDay(instant: Instant, dayZero: Date, options: Intl.DateTimeFormatO
 
 function RecordedDischargeMilestones({
   milestones,
+  title = "Recorded discharge milestones",
 }: {
   milestones: { label: string; detail: string; state: "complete" | "pending" | "blocked" }[];
+  /** v10 phone sheet reads "Milestones". */
+  title?: string;
 }) {
   return (
     <div className={pageStyles.milestones}>
-      <span className={pageStyles.sectionLabel}>Recorded discharge milestones</span>
+      <span className={pageStyles.sectionLabel}>{title}</span>
       <ol className={pageStyles.timeline}>
         {milestones.map((milestone) => (
           <li className={pageStyles.timelineItem} key={milestone.label} data-state={milestone.state}>
@@ -406,6 +424,10 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   // v10 phone: the release sheet scrolls as one; transport and dossier open under it on request.
   const [phoneReleaseMore, setPhoneReleaseMore] = useState(false);
   const [phoneGroupsOpen, setPhoneGroupsOpen] = useState<Partial<Record<GroupKey, boolean>>>({});
+  // v10 phone: each group header folds its rows; "Discharged · 24h" starts folded.
+  const [phoneGroupsFolded, setPhoneGroupsFolded] = useState<Partial<Record<GroupKey, boolean>>>({
+    "discharged-today": true,
+  });
   const [drawerTab, setDrawerTab] = useState<"milestones" | "barriers" | "transport" | "dossier">("milestones");
   const [view, setView] = useState<TableView>("list");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
@@ -1567,19 +1589,40 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       >
                         <tr className={pageStyles.groupRow}>
                           <th colSpan={3} scope="rowgroup">
-                            <div className={pageStyles.groupHead}>
-                              <span className={pageStyles.groupGlyph}>
-                                <StatusGlyph tone="danger" size={9} />
-                              </span>
-                              <h3>
-                                {key === "discharged-today" ? "Discharged in last 24 hours" : GROUP_LABELS[key]}{" "}
-                                <span className={pageStyles.groupCount}>{releaseGroups[key].length}</span>
-                              </h3>
-                              <span className={pageStyles.groupSub}>{GROUP_DESCRIPTIONS[key]}</span>
-                            </div>
+                            {isPhone ? (
+                              <button
+                                type="button"
+                                className={pageStyles.phGroupToggle}
+                                aria-expanded={!phoneGroupsFolded[key]}
+                                data-testid={`ward-discharge-group-toggle-${key}`}
+                                onClick={() => setPhoneGroupsFolded((folded) => ({ ...folded, [key]: !folded[key] }))}
+                              >
+                                <StatusGlyph tone={PHONE_GROUP_TONES[key]} size={10} />
+                                <h3>
+                                  {PHONE_GROUP_LABELS[key]}{" "}
+                                  <span className={pageStyles.phGroupCount}>{releaseGroups[key].length}</span>
+                                </h3>
+                                {phoneGroupsFolded[key] ? (
+                                  <ChevronRight size={16} aria-hidden="true" className={pageStyles.phGroupChevron} />
+                                ) : (
+                                  <ChevronDown size={16} aria-hidden="true" className={pageStyles.phGroupChevron} />
+                                )}
+                              </button>
+                            ) : (
+                              <div className={pageStyles.groupHead}>
+                                <span className={pageStyles.groupGlyph}>
+                                  <StatusGlyph tone="danger" size={9} />
+                                </span>
+                                <h3>
+                                  {key === "discharged-today" ? "Discharged in last 24 hours" : GROUP_LABELS[key]}{" "}
+                                  <span className={pageStyles.groupCount}>{releaseGroups[key].length}</span>
+                                </h3>
+                                <span className={pageStyles.groupSub}>{GROUP_DESCRIPTIONS[key]}</span>
+                              </div>
+                            )}
                           </th>
                         </tr>
-                        {releaseGroups[key].length === 0 ? (
+                        {isPhone && phoneGroupsFolded[key] ? null : releaseGroups[key].length === 0 ? (
                           <tr>
                             <td colSpan={3} className={pageStyles.emptyGroup}>
                               None
@@ -1627,7 +1670,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                     {healthServiceLabel(unit)}
                                     {linked ? (
                                       <>
-                                        <span aria-hidden="true"> · </span>
+                                        <span aria-hidden="true">{isPhone ? "\u00a0· " : " · "}</span>
                                         <span className={pageStyles.patientHint}>{recordName(linked)}</span>
                                       </>
                                     ) : null}
@@ -1666,7 +1709,10 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             );
                           })
                         )}
-                        {isPhone && !phoneGroupsOpen[key] && releaseGroups[key].length > PHONE_GROUP_CAP ? (
+                        {isPhone &&
+                        !phoneGroupsFolded[key] &&
+                        !phoneGroupsOpen[key] &&
+                        releaseGroups[key].length > PHONE_GROUP_CAP ? (
                           <tr className={pageStyles.phMoreRow}>
                             <td colSpan={3}>
                               <button
@@ -1814,6 +1860,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
 
                     <div className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
                       <RecordedDischargeMilestones
+                        title={isPhone ? "Milestones" : undefined}
                         milestones={[
                           {
                             label: "Expected discharge date",
@@ -2032,49 +2079,127 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   </>
                 ) : detailRelease ? (
                   <>
-                    <div className={pageStyles.identity}>
-                      <div className={pageStyles.identityText}>
-                        <h3 className={pageStyles.patientFullName}>
-                          {linkedReleaseRecord
-                            ? recordName(linkedReleaseRecord)
-                            : unitLabel(selectedUnit, detailRelease.unitId)}
-                        </h3>
-                        <p className={pageStyles.identityMeta}>
-                          {linkedReleaseRecord?.identity.kind === "linked" && (
-                            <span className={pageStyles.mono}>UMRN {linkedReleaseRecord.identity.patient.umrn}</span>
-                          )}
-                          <span>{unitLabel(selectedUnit, detailRelease.unitId)}</span>
-                          <span>{healthServiceLabel(selectedUnit)}</span>
-                        </p>
-                      </div>
-                      {detailTone ? (
-                        <Badge tone={detailTone} size="sm">
-                          {detailBadgeLabel}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <dl className={pageStyles.detailStats}>
-                      {detailRelease.state !== "discharged" && detailRelease.expectedAt < now ? (
-                        <div>
-                          <dt>Overdue</dt>
-                          <dd>{durMinutes(now - detailRelease.expectedAt)}</dd>
+                    {isPhone ? (
+                      <>
+                        {/* v10 phone release sheet: the ward leads; person and UMRN on one subline. */}
+                        <div className={pageStyles.phIdentity}>
+                          <h3 className={pageStyles.patientFullName}>
+                            {unitLabel(selectedUnit, detailRelease.unitId)}
+                          </h3>
+                          <p className={pageStyles.phIdentityMeta}>
+                            {[
+                              healthServiceLabel(selectedUnit),
+                              linkedReleaseRecord ? recordName(linkedReleaseRecord) : null,
+                              linkedReleaseRecord?.identity.kind === "linked"
+                                ? linkedReleaseRecord.identity.patient.umrn
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join("\u00a0· ")}
+                          </p>
+                          {detailTone ? (
+                            <Badge tone={detailTone} size="sm">
+                              {detailBadgeLabel}
+                            </Badge>
+                          ) : null}
                         </div>
-                      ) : detailRelease.state !== "discharged" ? (
-                        <div>
-                          <dt>Due in</dt>
-                          <dd>{durMinutes(detailRelease.expectedAt - now)}</dd>
+                        <dl className={pageStyles.phFacts}>
+                          <div>
+                            <dt>{detailRelease.state === "discharged" ? "Released" : "Expected out"}</dt>
+                            <dd className={pageStyles.mono}>
+                              {recordedMoment(
+                                detailRelease.state === "discharged"
+                                  ? detailRelease.confirmedAt
+                                  : detailRelease.expectedAt,
+                                dayZero,
+                              )}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>When</dt>
+                            <dd>
+                              {detailRelease.state === "discharged"
+                                ? "Departed"
+                                : detailRelease.expectedAt < now
+                                  ? "Now"
+                                  : BAND_LABELS[releaseBand(detailRelease, now) as ReleaseBand]}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Against date</dt>
+                            <dd>
+                              {detailRelease.state !== "discharged" && detailRelease.expectedAt < now ? (
+                                <>
+                                  <StatusGlyph tone="danger" size={9} /> {durMinutes(now - detailRelease.expectedAt)}{" "}
+                                  past
+                                </>
+                              ) : detailRelease.state !== "discharged" ? (
+                                `In ${durMinutes(detailRelease.expectedAt - now)}`
+                              ) : (
+                                "Met"
+                              )}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Destination</dt>
+                            <dd>
+                              {LEAVING_DESTINATIONS.find((item) => item.id === linkedReleaseRecord?.leavingDestination)
+                                ?.label ?? "Not recorded"}
+                            </dd>
+                          </div>
+                        </dl>
+                      </>
+                    ) : (
+                      <>
+                        <div className={pageStyles.identity}>
+                          <div className={pageStyles.identityText}>
+                            <h3 className={pageStyles.patientFullName}>
+                              {linkedReleaseRecord
+                                ? recordName(linkedReleaseRecord)
+                                : unitLabel(selectedUnit, detailRelease.unitId)}
+                            </h3>
+                            <p className={pageStyles.identityMeta}>
+                              {linkedReleaseRecord?.identity.kind === "linked" && (
+                                <span className={pageStyles.mono}>
+                                  UMRN {linkedReleaseRecord.identity.patient.umrn}
+                                </span>
+                              )}
+                              <span>{unitLabel(selectedUnit, detailRelease.unitId)}</span>
+                              <span>{healthServiceLabel(selectedUnit)}</span>
+                            </p>
+                          </div>
+                          {detailTone ? (
+                            <Badge tone={detailTone} size="sm">
+                              {detailBadgeLabel}
+                            </Badge>
+                          ) : null}
                         </div>
-                      ) : null}
-                      <div>
-                        <dt>{detailRelease.state === "discharged" ? "Released" : "Expected"}</dt>
-                        <dd>
-                          {recordedMoment(
-                            detailRelease.state === "discharged" ? detailRelease.confirmedAt : detailRelease.expectedAt,
-                            dayZero,
-                          )}
-                        </dd>
-                      </div>
-                    </dl>
+                        <dl className={pageStyles.detailStats}>
+                          {detailRelease.state !== "discharged" && detailRelease.expectedAt < now ? (
+                            <div>
+                              <dt>Overdue</dt>
+                              <dd>{durMinutes(now - detailRelease.expectedAt)}</dd>
+                            </div>
+                          ) : detailRelease.state !== "discharged" ? (
+                            <div>
+                              <dt>Due in</dt>
+                              <dd>{durMinutes(detailRelease.expectedAt - now)}</dd>
+                            </div>
+                          ) : null}
+                          <div>
+                            <dt>{detailRelease.state === "discharged" ? "Released" : "Expected"}</dt>
+                            <dd>
+                              {recordedMoment(
+                                detailRelease.state === "discharged"
+                                  ? detailRelease.confirmedAt
+                                  : detailRelease.expectedAt,
+                                dayZero,
+                              )}
+                            </dd>
+                          </div>
+                        </dl>
+                      </>
+                    )}
 
                     {linkedReleaseRecord ? (
                       <Button
@@ -2094,6 +2219,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
 
                     <div className={releasePaneClass("milestones")}>
                       <RecordedDischargeMilestones
+                        title={isPhone ? "Milestones" : undefined}
                         milestones={[
                           {
                             label: "Expected discharge date",

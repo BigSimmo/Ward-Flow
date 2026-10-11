@@ -636,7 +636,7 @@ export function HandoverPhone({
           </div>
         )}
 
-        <p className={styles.note}>Synthetic data. Not a medical device.</p>
+        <p className={`${styles.note} ${styles.phPageNote}`}>Synthetic data. Not a medical device.</p>
       </div>
 
       <div className={styles.sticky}>

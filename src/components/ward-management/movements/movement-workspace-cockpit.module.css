@@ -1009,3 +1009,10 @@
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
+
+/* v10 phone: one disclaimer line per page, the shared footer; this page-level copy hides on phone (A7). */
+@media (max-width: 48rem) {
+  .phPageFoot {
+    display: none;
+  }
+}

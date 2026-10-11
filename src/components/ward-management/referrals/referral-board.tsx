@@ -69,6 +69,7 @@ import {
   EmptyState,
   FilterChip,
   Hero,
+  JourneyStrip,
   Kbd,
   LiveChip,
   Sheet,
@@ -81,6 +82,7 @@ import {
   buttonClass,
   cx,
   durMinutes,
+  type JourneyStage,
 } from "@/components/wf";
 
 import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
@@ -1158,6 +1160,17 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 {isPhone ? (
                   <div className={cx(styles.registerDetailBody, a.panelBody, mph.body)}>
                     {renderDetailFacts(selectedReferral)}
+                    {(() => {
+                      const stages = referralJourneyStages(selectedReferral, now);
+                      return stages ? (
+                        <section className={mph.journey} aria-labelledby="ward-referral-phone-journey">
+                          <p className={mph.ch} id="ward-referral-phone-journey">
+                            Journey
+                          </p>
+                          <JourneyStrip label="Referral journey" stages={stages} formatDuration={durMinutes} />
+                        </section>
+                      ) : null;
+                    })()}
                     <ReferralMatchView
                       key={selectedReferral.id}
                       referral={selectedReferral}
@@ -1831,4 +1844,33 @@ function DecidedSection({
       )}
     </section>
   );
+}
+
+/**
+ * v10 phone referral sheet: the referral's own recorded steps as a journey strip (Referred,
+ * Triaged, Bed offered), sized by real time. Undefined while there is only one step to show.
+ */
+function referralJourneyStages(referral: Referral, now: Instant): JourneyStage[] | undefined {
+  const offeredAt = referral.destinations
+    .filter((arm) => arm.state === "accepted" && arm.decidedAt !== undefined)
+    .map((arm) => arm.decidedAt as number)
+    .sort((x, y) => x - y)[0];
+  const triagedAt = referral.triagedAt;
+  if (triagedAt === undefined && offeredAt === undefined) return undefined;
+  const stages: JourneyStage[] = [];
+  const referredEnd = triagedAt ?? offeredAt ?? now;
+  stages.push({ id: "referred", label: "Referred", minutes: Math.max(0, referredEnd - referral.raisedAt) });
+  if (triagedAt !== undefined) {
+    const end = offeredAt ?? now;
+    stages.push({
+      id: "triaged",
+      label: "Triaged",
+      minutes: Math.max(0, end - triagedAt),
+      now: offeredAt === undefined,
+    });
+  }
+  if (offeredAt !== undefined) {
+    stages.push({ id: "offered", label: "Bed offered", minutes: Math.max(0, now - offeredAt), now: true });
+  }
+  return stages;
 }

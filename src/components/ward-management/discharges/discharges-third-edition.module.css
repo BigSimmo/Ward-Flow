@@ -2117,4 +2117,135 @@
     min-width: 0;
     justify-content: center;
   }
+
+  /* v10 group header: glyph, label, count and a fold chevron, the whole row one 48px target. */
+  .workTable .groupRow th:has(> .phGroupToggle) {
+    padding: 0;
+  }
+
+  .phGroupToggle {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    width: 100%;
+    min-height: 48px;
+    padding: 0 var(--wf-s-3);
+    border: 0;
+    background: transparent;
+    color: var(--wf-ink-2);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .phGroupToggle h3 {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    letter-spacing: var(--wf-tr-caps, 0.06em);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .phGroupCount {
+    margin-left: 4px;
+    color: var(--wf-ink-1);
+    font-family: var(--wf-mono);
+  }
+
+  .phGroupChevron {
+    flex: none;
+    color: var(--wf-ink-3);
+  }
+
+  /* v10 release sheet: ward title, person and UMRN subline, the stage pill under it. */
+  .phIdentity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding-right: 2.25rem;
+  }
+
+  .phIdentityMeta {
+    margin: 0;
+    color: var(--wf-ink-2);
+    font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  }
+
+  /* 2x2 facts, hairline-divided, on a plain surface. */
+  .phFacts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    overflow: hidden;
+  }
+
+  .phFacts > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  .phFacts > div:nth-child(odd) {
+    border-right: 1px solid var(--wf-line);
+  }
+
+  .phFacts > div:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .phFacts dt {
+    color: var(--wf-ink-3);
+    font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  }
+
+  .phFacts dd {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--wf-ink-1);
+    font: 500 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Milestones as one bordered list, rows hairline-divided. */
+  .timeline {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .timelineItem {
+    align-items: center;
+    padding: 10px 12px;
+  }
+
+  .timelineItem + .timelineItem {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .timelineItem > svg {
+    margin-top: 0;
+  }
+
+  .timelineTitle {
+    font-size: var(--wf-fs-14);
+  }
+
+  .phGroupToggle:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
 }

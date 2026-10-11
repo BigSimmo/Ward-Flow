@@ -106,4 +106,29 @@
   .item {
     min-height: var(--wf-touch, 44px);
   }
+
+  /* v10 phone: the section reads as a caps label over a glyph list. */
+  .phTitle {
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    letter-spacing: var(--wf-tr-caps, 0.06em);
+    text-transform: uppercase;
+  }
+
+  .glyph {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+  }
+
+  .item {
+    gap: var(--wf-s-3);
+    font-size: var(--wf-fs-14);
+  }
+
+  .item:hover {
+    background: transparent;
+  }
 }

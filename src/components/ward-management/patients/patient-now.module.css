@@ -5461,3 +5461,39 @@
     min-width: 0;
   }
 }
+
+/* v10 phone record tabs: a full pill track, the chosen tab an outlined pill, round count badges. */
+@media (max-width: 48rem) {
+  .v6HeroTabsRow .v6Tabs {
+    padding: 3px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .v6HeroTabsRow .v6Tab {
+    border-radius: var(--wf-r-pill);
+  }
+
+  .v6HeroTabsRow .v6Tab[aria-selected="true"],
+  .v6HeroTabsRow .v6Tab[aria-selected="true"]:hover {
+    box-shadow:
+      inset 0 0 0 1px var(--wf-ink-3),
+      var(--wf-e1);
+  }
+
+  .v6HeroTabsRow .v6TabCount,
+  .v6HeroTabsRow .v6Tab[aria-selected="true"] .v6TabCount {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    line-height: 22px;
+  }
+}
+
+/* v10 phone: one disclaimer line per page, the shared footer; this page-level copy hides on phone (A7). */
+@media (max-width: 48rem) {
+  .pnFoot {
+    display: none;
+  }
+}

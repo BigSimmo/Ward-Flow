@@ -161,3 +161,46 @@
     width: 100%;
   }
 }
+
+/* v10 phone leave sheet (renders on phone only): four return-time chips and a one-line summary. */
+.phFieldLabel {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.phPresetGroup {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.phPresets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.phPresets > .kindChoice {
+  min-width: 0;
+  min-height: 48px;
+  overflow: hidden;
+  border-radius: var(--wf-r-lg);
+  text-overflow: ellipsis;
+}
+
+.phSummary {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.phOther {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}

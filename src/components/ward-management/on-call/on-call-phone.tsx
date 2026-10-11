@@ -336,7 +336,7 @@ export function PhoneDirectory({
   );
 }
 
-/** The contact card as a bottom sheet, led by four large action tiles. */
+/** The contact card as a bottom sheet: Copy, Email and Star tiles, the call pinned in the foot (v10). */
 export function PhoneSheet({
   entry,
   actions,
@@ -365,19 +365,24 @@ export function PhoneSheet({
       mobilePlacement="bottom"
       mobileSize="viewport"
       testId="ward-on-call-sheet"
+      footer={
+        number ? (
+          <Button
+            variant="pri"
+            size="lg"
+            icon={PhoneCall}
+            className={styles.sheetCall}
+            onClick={() => actions.onCall(entry)}
+          >
+            Call <span className={styles.mono}>{number}</span>
+          </Button>
+        ) : undefined
+      }
     >
       <div className={styles.sheetBody}>
         <div className={styles.actionTiles}>
           {number ? (
             <>
-              <button
-                type="button"
-                className={cx(styles.actionTile, styles.actionTilePri)}
-                onClick={() => actions.onCall(entry)}
-              >
-                <Icon icon={PhoneCall} size={20} />
-                Call
-              </button>
               <button
                 type="button"
                 className={styles.actionTile}

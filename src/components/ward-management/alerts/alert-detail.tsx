@@ -339,7 +339,13 @@ export function AlertDetail({
         ) : null}
 
         <div className={styles.phActions}>{actionButtons}</div>
-        <Button size="sm" variant="ghost" icon={ArrowUpRight} disabledReason="Not wired in this prototype.">
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={ArrowUpRight}
+          className={styles.phEscalate}
+          disabledReason="Not wired in this prototype."
+        >
           Escalate
         </Button>
 

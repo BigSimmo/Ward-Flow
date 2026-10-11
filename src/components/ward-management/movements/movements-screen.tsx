@@ -1185,7 +1185,7 @@ export function MovementsScreen() {
                   <div className={styles.boardTabs} role="tablist" aria-label="Movements">
                     {(
                       [
-                        { id: "every", label: "Every movement", count: worklistMovements.length },
+                        { id: "every", label: isPhone ? "Open" : "Every movement", count: worklistMovements.length },
                         { id: "resolved", label: "Resolved today", count: worklistClosedToday.length },
                       ] as const
                     ).map((tab) => (
@@ -1312,11 +1312,15 @@ export function MovementsScreen() {
                           const rows = groupRows(stage.id, stage.movements);
                           return (
                             <div key={stage.id} className={styles.stageBlock}>
-                              <WardGroupHeading
-                                title={stage.label}
-                                people={stage.movements.length}
-                                note={isPhone ? undefined : moreNote(stage.movements.length - rows.length)}
-                              />
+                              {isPhone ? (
+                                <PhoneGroupHeading title={stage.label} people={stage.movements.length} />
+                              ) : (
+                                <WardGroupHeading
+                                  title={stage.label}
+                                  people={stage.movements.length}
+                                  note={moreNote(stage.movements.length - rows.length)}
+                                />
+                              )}
                               <WardRecordList>{rows.map(renderRow)}</WardRecordList>
                               {phoneGroupMore(stage.id, stage.label, stage.movements.length, rows.length)}
                             </div>
@@ -1342,11 +1346,15 @@ export function MovementsScreen() {
                           const rows = groupRows(group.id, group.rows);
                           return (
                             <div key={group.id} className={styles.stageBlock}>
-                              <WardGroupHeading
-                                title={group.title}
-                                people={group.rows.length}
-                                note={isPhone ? undefined : moreNote(group.rows.length - rows.length)}
-                              />
+                              {isPhone ? (
+                                <PhoneGroupHeading title={group.title} people={group.rows.length} />
+                              ) : (
+                                <WardGroupHeading
+                                  title={group.title}
+                                  people={group.rows.length}
+                                  note={moreNote(group.rows.length - rows.length)}
+                                />
+                              )}
                               <WardRecordList>{rows.map(renderRow)}</WardRecordList>
                               {phoneGroupMore(group.id, group.title, group.rows.length, rows.length)}
                             </div>
@@ -1845,9 +1853,30 @@ function HighlightStat({
   );
 }
 
+/** v10 phone group heading: the caps title left, a bare count right ("21", not "21 people"). */
+function PhoneGroupHeading({ title, people }: { title: string; people: number }) {
+  return (
+    <div className={flow.phGroupHead} data-ward-primitive="group-heading">
+      <h3 className={flow.phGroupTitle}>{title}</h3>
+      <span className={flow.phGroupCount}>
+        {people}
+        <span className="sr-only"> {people === 1 ? "person" : "people"}</span>
+      </span>
+    </div>
+  );
+}
+
 /** Urgency tier as a T1 to T3 pill: neutral, never red, with the word "Tier" for screen readers. */
 function TierPill({ tier }: { tier: number }) {
-  return <TierTile tier={tier} data-tier={tier} />;
+  const isPhone = useIsPhone();
+  if (isPhone) return <TierTile tier={tier} data-tier={tier} />;
+  return (
+    <span className={flow.tier} data-tier={tier}>
+      <span className="sr-only">Tier </span>
+      <span aria-hidden="true">T</span>
+      {tier}
+    </span>
+  );
 }
 
 /**

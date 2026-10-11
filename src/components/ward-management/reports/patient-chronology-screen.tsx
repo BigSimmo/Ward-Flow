@@ -571,7 +571,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               </div>
             ) : null}
           </PhoneSheet>
-          <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" />
+          <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" className={phone.phPageFoot} />
         </main>
       </div>
     );
@@ -918,7 +918,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
         <p className={styles.disclosure}>
           Recorded or typed times only, nothing calculated. Audit trail and session log cover this browser session.
         </p>
-        <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" />
+        <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" className={phone.phPageFoot} />
       </main>
     </div>
   );
