@@ -582,6 +582,7 @@ export function HandoverPage() {
   const columns = columnsFor(columnIds);
   const wide = present || columnIds.length > 8;
   const compact = customColumns === null && density === "min";
+  const railShown = railBeside && !present && !wide && !portrait && tab === "pts" && !sheetOpen;
 
   /* selection */
   const selected = selectedId === null ? undefined : allRows.find((row) => row.id === selectedId);
@@ -1025,7 +1026,7 @@ export function HandoverPage() {
           />
           {/* With the rail beside the table its Sign off is the one; below 1201px the rail is a
               drawer and this opens it. */}
-          {railBeside && !present ? null : signOffButton}
+          {railShown ? null : signOffButton}
         </>
       }
       bar={
