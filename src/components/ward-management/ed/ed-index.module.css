@@ -212,6 +212,7 @@
 }
 
 .edCard {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -517,6 +518,65 @@
   border-color: var(--wf-line);
 }
 
+/* The whole card opens the preview; Enter and the trend sit above that button. */
+.cardOpen {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cardOpen:hover {
+  background: var(--wf-hover);
+}
+
+.cardOpen:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.edCard > :not(.cardOpen) {
+  position: relative;
+  pointer-events: none;
+}
+
+.edCard a,
+.edCard button:not(.cardOpen) {
+  pointer-events: auto;
+}
+
+.cardsWithRail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.cardsWithRail .cardGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 80rem) {
+  .cardsWithRail .cardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 62.5rem) {
+  .cardsWithRail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 48rem) {
+  .cardsWithRail .cardGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 80rem) {
   .cardGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -589,6 +649,22 @@
   .laneLabel {
     flex-direction: column;
     gap: 0;
+  }
+
+  /* The ED name ends in an ellipsis rather than a hard clip (device audit 11 Oct 2026). */
+  .laneLabel b {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .markCluster {
+    border-color: var(--wf-line-3);
+  }
+
+  .markCount {
+    font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+    color: var(--wf-ink-1);
   }
 
   .mark {

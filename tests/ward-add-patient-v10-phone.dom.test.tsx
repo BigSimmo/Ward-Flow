@@ -58,8 +58,11 @@ describe("Add a patient v10", () => {
       const landing = screen.getByTestId("ward-add-patient-phone-landing");
       const find = within(landing).getByRole("link", { name: /Find an existing patient/ });
       expect(find).toHaveAttribute("href", "/mockups/ward-flow/search");
-      expect(screen.getByTestId("ward-add-patient-phone-hero")).toHaveTextContent("0/4");
+      // Device audit 11 Oct 2026: the landing carries no figures; the short form shows Required.
+      expect(screen.getByTestId("ward-add-patient-phone-hero")).not.toHaveTextContent("0/4");
+      expect(screen.getByTestId("ward-add-patient-phone-hero")).not.toHaveTextContent("Records");
       fireEvent.click(screen.getByTestId("ward-add-patient-phone-show-form"));
+      expect(screen.getByTestId("ward-add-patient-phone-hero")).toHaveTextContent("0/4");
       expect(screen.queryByTestId("ward-add-patient-phone-landing")).not.toBeInTheDocument();
       expect(screen.getByTestId("ward-add-patient-form").closest("main")).toHaveAttribute("data-phone-form", "true");
       expect(screen.getByTestId("ward-add-patient-submit")).toBeInTheDocument();

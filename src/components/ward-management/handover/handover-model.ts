@@ -288,6 +288,22 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
   return null;
 }
 
+/**
+ * The Due cell in two parts: the time or length on its own line, which is never cut, and what it is
+ * ("Pull over by", "Pull ends", "1A due"), which may truncate (device audit 11 Oct 2026).
+ */
+export function dueParts(row: HandoverRow, now: Instant): { when: string; what: string } | null {
+  if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
+    const left = row.pullExpiresAt - now;
+    return left <= 0
+      ? { when: durMinutes(-left), what: "Pull over by" }
+      : { when: formatInstantWithDay(row.pullExpiresAt, now), what: "Pull ends" };
+  }
+  if (row.formDueAt !== undefined)
+    return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };
+  return null;
+}
+
 /** Long due text for the panel: the bed hold and the typed form time, both when both are held. */
 export function dueLong(row: HandoverRow, now: Instant): string | null {
   const parts: string[] = [];
@@ -423,10 +439,12 @@ export function pillTest(pill: HandoverPill, row: HandoverRow, now: Instant, cut
       return groupOf(row, now, cutoff) === "act";
     case "due":
       return groupOf(row, now, cutoff) === "due";
+    // Waiting and Moving name their meeting group, so a highlight, its count and the group heading
+    // agree (device audit 11 Oct 2026: hero 40 and 13 against groups 39 and 9).
     case "bed":
-      return isWaitingForBed(row);
+      return groupOf(row, now, cutoff) === "bed";
     case "mov":
-      return isMoving(row);
+      return groupOf(row, now, cutoff) === "mov";
     case "new":
       return row.openedAt >= newSince;
   }

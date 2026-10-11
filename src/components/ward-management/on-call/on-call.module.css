@@ -402,13 +402,23 @@
   width: 44px;
 }
 .colRole {
-  width: 31%;
+  width: 36%;
 }
 .colNumber {
-  width: 18%;
+  width: 22%;
 }
 .colUntil {
   width: 21%;
+}
+.colActions {
+  width: 88px;
+}
+
+.chipScope {
+  flex: none;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
 }
 
 .dirTable thead th {
@@ -729,12 +739,28 @@
 }
 
 .disclosure {
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
   color: var(--wf-ink-2);
+}
+
+/* The directory foot: the synthetic-data sentence takes its own full-width line and wraps. */
+.dirFoot {
+  flex-wrap: wrap;
+}
+
+.dirFoot > :last-child {
+  flex: 1 1 100%;
+  margin-left: 0;
+}
+
+.disclosureText {
+  min-width: 0;
+  white-space: normal;
 }
 
 /* ---------- contact card ---------- */
@@ -1200,11 +1226,14 @@
   white-space: nowrap;
 }
 
+/* Device audit 11 Oct 2026: the line and its badge keep their words; Report change wraps under. */
+.recordFoot {
+  flex-wrap: wrap;
+}
+
 .recordText {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .matches {
@@ -1438,6 +1467,36 @@
   gap: 10px;
 }
 
+.phoneSearchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phoneSearchRow .search {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.phoneMoreButton {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 50%;
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.phoneMoreButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
 .phoneTools .search {
   width: 100%;
   min-height: 48px;
@@ -1565,6 +1624,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.phoneGroupCount {
+  flex: none;
+  overflow: visible;
 }
 
 .phoneGroupHead[aria-expanded="true"] {
@@ -1945,4 +2009,43 @@
   :global(html:has([role="dialog"][aria-modal="true"])) .toast {
     bottom: 136px;
   }
+}
+
+/* Phone hero figures on one line (device audit 11 Oct 2026). Each press target stays 48px tall. */
+.phoneStatLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-13);
+  white-space: nowrap;
+}
+
+.phoneStatLine b {
+  color: var(--wf-hero-ink);
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.phoneStatLine > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.phoneStatLine > button[aria-pressed="true"] {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.phoneStatLine > button:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }

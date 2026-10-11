@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Mail, MapPin, Printer, Search, Star, Users, X } from "lucide-react";
+import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Search, Star, Users } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
 import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -13,10 +13,10 @@ import {
   Hero,
   HeroChip,
   HeroChips,
-  HeroStat,
   HeroTrack,
   Icon,
   Kbd,
+  Menu,
   PillTabs,
   Sheet,
   SrOnly,
@@ -390,31 +390,20 @@ export function OnCallScreen() {
         title={`${answering.length} ${answering.length === 1 ? "line" : "lines"} answering`}
         stats={
           isPhone ? (
-            <>
-              <HeroStat
-                value={closed.length}
-                label={
-                  <>
-                    <X size={12} aria-hidden="true" />
-                    Closed now
-                  </>
-                }
-              />
-              <HeroStat
-                value={endingSoon.length}
-                label="Ending soon"
-                tone="warning"
-                pressed={highlight === "soon"}
-                onToggle={() => toggleHighlight("soon")}
-              />
-              <HeroStat
-                value={checkDue.length}
-                label="Check due"
-                tone="warning"
-                pressed={highlight === "due"}
-                onToggle={() => toggleHighlight("due")}
-              />
-            </>
+            // Device audit 11 Oct 2026: the three figures sit on one short line so the number comes sooner.
+            <span className={styles.phoneStatLine} role="group" aria-label="Lines by state, press to highlight">
+              <span>
+                <b>{closed.length}</b> closed
+              </span>
+              <button type="button" aria-pressed={highlight === "soon"} onClick={() => toggleHighlight("soon")}>
+                <StatusGlyph tone="warning" size={8} />
+                <b>{endingSoon.length}</b> ending soon
+              </button>
+              <button type="button" aria-pressed={highlight === "due"} onClick={() => toggleHighlight("due")}>
+                <StatusGlyph tone="warning" size={8} />
+                <b>{checkDue.length}</b> check due
+              </button>
+            </span>
           ) : (
             heroStats
           )
@@ -518,10 +507,11 @@ export function OnCallScreen() {
   );
 
   const tabItems = [
-    { id: "hospitals" as const, label: isPhone ? "Hospitals" : "Hospitals", count: tabCounts.hospitals },
-    { id: "community" as const, label: isPhone ? "Teams" : "Community", count: tabCounts.community },
-    { id: "statewide" as const, label: isPhone ? "State" : "Statewide", count: tabCounts.statewide },
-    { id: "mine" as const, label: isPhone ? "Mine" : "My list", count: tabCounts.mine },
+    // One set of tab names on every device (device audit 11 Oct 2026; the guide uses the short ones).
+    { id: "hospitals" as const, label: "Hospitals", count: tabCounts.hospitals },
+    { id: "community" as const, label: "Teams", count: tabCounts.community },
+    { id: "statewide" as const, label: "State", count: tabCounts.statewide },
+    { id: "mine" as const, label: "Mine", count: tabCounts.mine },
   ];
 
   const search = (
@@ -616,17 +606,30 @@ export function OnCallScreen() {
         <main id="main-content" className={styles.main}>
           {hero}
           <div className={styles.phoneTools}>
-            <div className={styles.phoneChips}>
-              <button type="button" className={styles.phoneAction} onClick={copyWhoIsOn}>
-                <Icon icon={Copy} size={16} />
-                Copy who is on
-              </button>
-              <button type="button" className={styles.phoneAction} onClick={() => setDowntimeOpen(true)}>
-                <Icon icon={Printer} size={16} />
-                Downtime card
-              </button>
+            {/* Device audit 11 Oct 2026: search is the main tool here, so Copy and Downtime sit in a
+                menu beside it rather than as two large buttons above it. */}
+            <div className={styles.phoneSearchRow}>
+              {search}
+              <Menu
+                label="On-call tools"
+                align="end"
+                items={[
+                  { id: "copy", label: "Copy who is on", icon: Copy, onSelect: copyWhoIsOn },
+                  { id: "downtime", label: "Downtime card", icon: Printer, onSelect: () => setDowntimeOpen(true) },
+                ]}
+                trigger={(props) => (
+                  <button
+                    {...props}
+                    type="button"
+                    className={styles.phoneMoreButton}
+                    aria-label="More on-call tools"
+                    data-testid="ward-on-call-phone-more"
+                  >
+                    <Icon icon={MoreHorizontal} size={20} />
+                  </button>
+                )}
+              />
             </div>
-            {search}
             <div className={styles.phoneSeg}>
               <PillTabs
                 label="Directory"
@@ -689,6 +692,8 @@ export function OnCallScreen() {
             <div className={styles.dirHead2} role="group" aria-label="Group and highlight rows. Nothing is hidden">
               {groupByChip}
               {groupByChip ? <span className={styles.divider} aria-hidden="true" /> : null}
+              {/* The chip counts are this tab's rows, so they name it: the hero counts the whole page. */}
+              <span className={styles.chipScope}>In {tabItems.find((item) => item.id === tab)?.label}</span>
               {highlightChips}
               {highlight || query ? (
                 <Button
@@ -723,6 +728,7 @@ export function OnCallScreen() {
               dimming={dimming}
             />
             <CardFoot
+              className={styles.dirFoot}
               meta={
                 <span className={styles.footMeta} data-testid="ward-on-call-count">
                   {tabRows.length} {tabRows.length === 1 ? "contact" : "contacts"} in this tab, {entries.length} in all.{" "}
@@ -730,10 +736,13 @@ export function OnCallScreen() {
                 </span>
               }
             >
+              {/* Wraps rather than cutting mid-sentence (device audit 11 Oct 2026). */}
               <span className={styles.disclosure}>
                 <StatusGlyph tone="warning" size={9} />
-                Synthetic records. Every number is a mock from an unassigned range and every email uses a reserved
-                domain. {checkDue.length} records are over {CHECK_DUE_DAYS} days since their last check.
+                <span className={styles.disclosureText}>
+                  Synthetic records. Every number is a mock from an unassigned range and every email uses a reserved
+                  domain. {checkDue.length} records are over {CHECK_DUE_DAYS} days since their last check.
+                </span>
               </span>
             </CardFoot>
           </Card>
@@ -864,8 +873,8 @@ function DirectoryTable({
           <col className={styles.colStar} />
           <col className={styles.colRole} />
           <col className={styles.colNumber} />
-          <col className={styles.colUntil} />
           <col />
+          <col className={styles.colActions} />
         </colgroup>
         <thead>
           <tr>
@@ -875,7 +884,11 @@ function DirectoryTable({
             <th scope="col">Role and place</th>
             <th scope="col">Number</th>
             <th scope="col">Available</th>
-            <th scope="col">Referral email</th>
+            {/* Device audit 11 Oct 2026: the email column was empty on most rows and cut where present;
+                the contact card shows the full address, and the row keeps its copy buttons. */}
+            <th scope="col">
+              <SrOnly>Copy</SrOnly>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -1047,7 +1060,6 @@ function DirectoryRow({
       </td>
       <td>
         <span className={styles.emailCell}>
-          <span className={styles.emailText}>{entry.email ?? ""}</span>
           <span className={styles.rowActions}>
             {number ? (
               <button

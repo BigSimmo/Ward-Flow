@@ -661,7 +661,12 @@ export function PatientSearchPage() {
     const lifted = highlightTest(highlight);
     return sortCensusRows(
       (refusal ? [] : census.rows).filter((row) => {
-        if (row.kind === "movement" || row.kind === "referral") {
+        // A referral with a bed found has left the legacy record search (it only holds queued
+        // referrals) but stays in the census, so it is filtered like a ward or person row instead of
+        // dropped: dropping it made the list read "Bed found 31" under a hero "41" (device audit
+        // 11 Oct 2026).
+        const foundReferral = row.kind === "referral" && row.group === "found" && !caseIds.has(row.key);
+        if ((row.kind === "movement" || row.kind === "referral") && !foundReferral) {
           // A place shown in the census also finds the case, not only the legacy record search.
           if (!caseIds.has(row.key) && !(needle.length >= 2 && row.placeText.includes(needle))) return false;
         } else {
@@ -992,20 +997,8 @@ export function PatientSearchPage() {
             foot={
               isPhone ? (
                 <div className={cs.phoneHeroFoot}>
-                  <div className={cs.phoneFigs} role="group" aria-label="Where patients are now">
-                    {(["wait", "found", "ward"] as const).map((group) => (
-                      <button
-                        key={group}
-                        type="button"
-                        className={cs.phoneFig}
-                        onClick={() => jumpToGroup(group)}
-                        aria-label={`${searching ? groupMatches[group] : groupTotals[group]} ${CENSUS_GROUPS.find((entry) => entry.id === group)?.label}, go to the list`}
-                      >
-                        <b>{searching ? groupMatches[group] : groupTotals[group]}</b>
-                        <span>{CENSUS_GROUPS.find((entry) => entry.id === group)?.short}</span>
-                      </button>
-                    ))}
-                  </div>
+                  {/* The five group figures live once, in the band under the hero (device audit
+                      11 Oct 2026): a three-up here repeated 51 / 41 / 242 directly above it. */}
                   <div className={cs.phoneHeroActions}>
                     <Button
                       variant="onHero"
