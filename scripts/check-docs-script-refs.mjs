@@ -41,7 +41,14 @@ const HISTORICAL_DIRS = new Set(["archive", "audit", "lessons"]);
 
 // Root prose is selected explicitly; the original source README has a maintained
 // boundary surrounding a marked historical record, not live foreign setup advice.
-export const MAINTAINED_ROOT_DOCS = Object.freeze(["README.md", "README.local-source.md", "SECURITY.md"]);
+// PROJECT-INSTRUCTIONS-CONTINUATION.md carries always-loaded policy moved out of AGENTS.md
+// (including `sync:pr-branches` commands), so its references must stay checked.
+export const MAINTAINED_ROOT_DOCS = Object.freeze([
+  "README.md",
+  "README.local-source.md",
+  "SECURITY.md",
+  "PROJECT-INSTRUCTIONS-CONTINUATION.md",
+]);
 
 // Script tokens that appear in docs as illustrative placeholders, or real scripts
 // that were renamed but are legitimately referenced in historical records (e.g. the

@@ -22,6 +22,18 @@ describe("maintained root guidance", () => {
   });
 });
 
+describe("instruction continuation coverage", () => {
+  it("scans the root continuation so moved commands stay checked", async () => {
+    expect(MAINTAINED_ROOT_DOCS).toContain("PROJECT-INSTRUCTIONS-CONTINUATION.md");
+    const { readFileSync } = await import("node:fs");
+    const text = readFileSync("PROJECT-INSTRUCTIONS-CONTINUATION.md", "utf8");
+    const pkg = parsePackageScripts(readFileSync("package.json", "utf8"));
+    const refs = extractScriptRefs(stripHistoricalSections(text));
+    expect(refs).toContain("sync:pr-branches");
+    expect(findStaleRefs(refs, pkg)).toEqual([]);
+  });
+});
+
 describe("parsePackageScripts", () => {
   it("returns the set of script names", () => {
     const set = parsePackageScripts(JSON.stringify({ scripts: { build: "x", "verify:cheap": "y" } }));
