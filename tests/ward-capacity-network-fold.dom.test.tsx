@@ -12,6 +12,7 @@ import { wardServiceOrder } from "@/components/ward-management/ward-derivations"
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits, siteByCode } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * Task 2, Part Two — the network table folded by health service.
@@ -51,11 +52,13 @@ const EMPTY_SERVICE = "CAHS";
 const populatedGroups = groups.filter((group) => group.wards.length > 0);
 
 function renderScreen() {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <CapacityScreen />
     </WardFlowProvider>,
   );
+  showWardTable();
+  return view;
 }
 
 function slugOf(service: string): string {

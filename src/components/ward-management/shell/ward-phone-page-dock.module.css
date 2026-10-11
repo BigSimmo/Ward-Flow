@@ -1,0 +1,31 @@
+/*
+ * The phone dock on every page (device audit option A, Josh, 11 Oct 2026): the v10 Menu foot moved
+ * onto the page, with the + rising out of its curved edge. Phone only: above 48rem it is never
+ * drawn, so tablet and desktop are unchanged.
+ */
+
+.pageDock {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  /* Doubled so it outranks the composed foot's own position: relative. */
+  .pageDock.pageDock {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    display: block;
+  }
+
+  /* The page keeps its last rows clear of the dock. */
+  :global(body:has([data-wf-page-dock="rise"])) :global([data-wf-scroller]) {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* rise: the Menu's own foot shape, fixed to the page. */
+.rise {
+  composes: foot from "./ward-phone-menu.module.css";
+}

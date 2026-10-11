@@ -91,8 +91,11 @@ export function CapacityPhoneOverview({
         <span className={styles.phoneWardText}>
           <span className={styles.phoneWardName}>Bed forecast</span>
           <span className={styles.phoneWardSub}>
+            {/* Device audit option A: "About 13 fewer beds ready tomorrow", never a negative count. */}
             {tomorrow
-              ? `Likely ${tomorrow.likely} ready tomorrow, range ${tomorrow.low} to ${tomorrow.high}`
+              ? tomorrow.likely < 0
+                ? `About ${Math.abs(tomorrow.likely)} fewer beds ready tomorrow`
+                : `About ${tomorrow.likely} more beds ready tomorrow`
               : "Forecast not available"}
           </span>
         </span>

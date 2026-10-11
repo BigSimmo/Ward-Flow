@@ -17,7 +17,6 @@ import {
   CheckingFoot,
   Count,
   Hero,
-  HeroStat,
   Icon,
   Menu,
   Drawer,
@@ -112,7 +111,14 @@ import {
 } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
 import phoneCss from "./community-team-phone.module.css";
-import { CommunityPhoneFacts, CommunityTeamPhone, type CommunityPhoneListId } from "./community-team-phone";
+import {
+  CommunityAboutThisData,
+  CommunityPhoneFacts,
+  CommunityTeamPhone,
+  CommunityWorthAttention,
+  type CommunityPhoneList,
+  type CommunityPhoneListId,
+} from "./community-team-phone";
 import v6 from "./community-team-v6.module.css";
 import {
   DEMO_COMMUNITY_REFERRALS,
@@ -566,7 +572,9 @@ export function CommunityScreen({
     referral: Referral;
   } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<ActiveTabType>("tab-triage");
+  // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
+  // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.
+  const [chosenTab, setActiveTab] = useState<ActiveTabType | null>(null);
   const [activeDrawer, setActiveDrawer] = useState<DrawerType>(null);
   const [activeModalType, setActiveModalType] = useState<ModalType>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
@@ -1354,7 +1362,19 @@ export function CommunityScreen({
         </ol>
       </section>
     ) : null;
-  const sinceElement = (
+  // Device audit option A: a digest of all zeros folds to one quiet line.
+  const sinceQuiet = teamSinceItems(
+    sourceReferrals,
+    [team.name, ...ratifiedSameServiceNames(team.name)],
+    currentShiftStartInstant(now),
+    now,
+    waitingReferrals.length,
+  ).every((item) => item.value === 0);
+  const sinceElement = sinceQuiet ? (
+    <p className={phoneCss.quietLine} id="ward-community-since" data-testid="ward-community-since-quiet">
+      <StatusGlyph tone="neutral" size={9} /> No changes since the start of this shift.
+    </p>
+  ) : (
     <SinceYouLooked
       id="ward-community-since"
       className={v6.since}
@@ -1642,7 +1662,7 @@ export function CommunityScreen({
   const coveragePanel = (
     <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
       <details ref={limitsDisclosureRef} className={styles.governanceSection} data-testid="ward-community-limits" open>
-        <summary className={styles.governanceSummary}>Data provenance, coverage limits and team facts</summary>
+        <summary className={styles.governanceSummary}>Provenance, coverage limits and team facts</summary>
         <div className={styles.governanceBody}>
           {/* Coverage limits */}
           <div className={styles.cardPanel}>
@@ -1839,6 +1859,17 @@ export function CommunityScreen({
    * and Coverage open sheets holding the desktop side panels); Worth attention; then Waiting, In
    * bed, Back and CTOs as person rows. Every coordinator action on desktop stays reachable here.
    */
+  const tabCounts: [ActiveTabType, number][] = [
+    ["tab-triage", isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length],
+    ["tab-inpatients", isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length],
+    ["tab-egress", isDemoMode ? teamConfig.egress : lists.expectedBack.length],
+    ["tab-caseload", isDemoMode ? teamConfig.caseload : caseloadRows.length],
+  ];
+  const firstListWithSomeone = tabCounts.find(([, count]) => count > 0)?.[0] ?? "tab-triage";
+  // Held from the first render (React's "adjust state while rendering" pattern), so the list never
+  // switches under the reader when the last row leaves it.
+  if (chosenTab === null) setActiveTab(firstListWithSomeone);
+  const activeTab: ActiveTabType = chosenTab ?? firstListWithSomeone;
   const phoneListTab: Record<CommunityPhoneListId, ActiveTabType> = {
     waiting: "tab-triage",
     inBed: "tab-inpatients",
@@ -1933,293 +1964,230 @@ export function CommunityScreen({
   }
 
   // Built only on a phone, so desktop does no phone work.
-  const communityPhoneTree = isPhone ? (
-    <>
-      <CommunityTeamPhone
-        teamName={team.name}
-        caseload={isDemoMode ? teamConfig.caseload : caseloadRows.length}
-        sub={
-          <>
-            {suburbsNamingTeam
-              ? `${suburbsNamingTeam} ${suburbsNamingTeam === 1 ? "suburb" : "suburbs"}`
-              : "Suburbs not recorded"}
-            {isDemoMode ? "" : " · crisis open not recorded"}
-          </>
-        }
-        figures={[
-          {
-            id: "waiting",
-            value: phoneWaitingValue,
-            label: "Waiting",
-            tone: phoneUrgent > 0 ? "danger" : undefined,
-          },
-          {
-            id: "inBed",
-            value: isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length,
-            label: "In a bed",
-          },
-          {
-            id: "back",
-            value: isDemoMode ? teamConfig.egress : lists.expectedBack.length,
-            label: "Back",
-            tone: pastPlannedDateCount > 0 ? "warning" : undefined,
-          },
-        ]}
-        list={phoneList}
-        onList={(id) => setActiveTab(phoneListTab[id])}
-        onIntake={() => {
-          setIntakeDraft(BLANK_INTAKE_DRAFT);
-          setActiveModalType("intake");
-        }}
-        onSwitchTeam={() => setSwitchOpen(true)}
-        switchTriggerRef={switchTriggerRef}
-        since={sinceElement}
-        notices={noticesSection}
-        howToReach={howToReachPanel}
-        onDuty={onDutyPanel}
-        coverage={coveragePanel}
-        search={renderSearch}
-        samples={[
-          { id: "activity", label: "Activity sample", onPress: () => setActiveDrawer("activityDrawer") },
-          { id: "tasks", label: "Tasks sample", onPress: () => setActiveDrawer("tasksDrawer") },
-          { id: "tools", label: "Tools sample", onPress: () => setActiveDrawer("toolsDrawer") },
-        ]}
-        actions={[
-          { id: "contact", label: "Record contact", icon: Phone, onPress: () => setActiveModalType("contact") },
-          {
-            id: "cto",
-            label: "CTO register",
-            icon: FileText,
-            onPress: () => {
-              setActiveTab("tab-caseload");
-              scrollToSection("ward-community-phone-lists");
+  // Built only on a phone, so desktop does no phone work.
+  const phoneLists: CommunityPhoneList[] = isPhone
+    ? [
+        {
+          id: "waiting",
+          label: "Waiting",
+          groups: [
+            {
+              id: "waiting",
+              rows: phoneUsesDemoReferrals
+                ? demoTeamReferrals.map((referral) => {
+                    const person = phonePerson(referral.patientId);
+                    return {
+                      id: referral.id,
+                      testId: `ward-community-phone-waiting-${referral.id}`,
+                      name: phoneName(person, referral.patientDetails),
+                      meta: `${person?.umrn ?? "No UMRN"} · From ${referral.origin}`,
+                      value: referral.waitLabel,
+                      time: `Tier ${referral.urgency}`,
+                      actNow: referral.urgency === 1,
+                      onSelect: () => openDossier(referral.patientId),
+                    };
+                  })
+                : waitingReferrals.map((referral) => {
+                    const person = phonePerson(referral.patientId);
+                    return {
+                      id: referral.id,
+                      testId: `ward-community-phone-waiting-${referral.id}`,
+                      name: phoneName(person, "No person on file"),
+                      meta: `${person?.umrn ?? "No UMRN"} · From ${referralOriginLabel(referral)}`,
+                      value: referralWaitLine(referral, now),
+                      time: `Tier ${referral.urgency}`,
+                      actNow: referral.urgency === 1,
+                      onSelect: () => {
+                        setPhoneDeclining(false);
+                        setDeclineDraft(undefined);
+                        setPendingAcceptance(null);
+                        setAcceptanceError(null);
+                        setPhoneReferralId(referral.id);
+                      },
+                    };
+                  }),
+              empty: "No referral naming this team is waiting for an answer.",
+              after: (
+                <p className={phoneCss.quiet}>
+                  Community-team roles can accept or decline referrals addressed to their own team, for follow-up only.
+                </p>
+              ),
             },
-          },
-          { id: "mdt", label: "Catchment MDT", icon: Users, onPress: () => setActiveModalType("handover") },
-        ]}
-        attention={phoneAttentionItems}
-        lists={[
-          {
-            id: "waiting",
-            label: "Waiting",
-            groups: [
-              {
-                id: "waiting",
-                rows: phoneUsesDemoReferrals
-                  ? demoTeamReferrals.map((referral) => {
-                      const person = phonePerson(referral.patientId);
-                      return {
-                        id: referral.id,
-                        testId: `ward-community-phone-waiting-${referral.id}`,
-                        name: phoneName(person, referral.patientDetails),
-                        meta: `${person?.umrn ?? "No UMRN"} · From ${referral.origin}`,
-                        value: referral.waitLabel,
-                        time: `Tier ${referral.urgency}`,
-                        actNow: referral.urgency === 1,
-                        onSelect: () => openDossier(referral.patientId),
-                      };
-                    })
-                  : waitingReferrals.map((referral) => {
-                      const person = phonePerson(referral.patientId);
-                      return {
-                        id: referral.id,
-                        testId: `ward-community-phone-waiting-${referral.id}`,
-                        name: phoneName(person, "No person on file"),
-                        meta: `${person?.umrn ?? "No UMRN"} · From ${referralOriginLabel(referral)}`,
-                        value: referralWaitLine(referral, now),
-                        time: `Tier ${referral.urgency}`,
-                        actNow: referral.urgency === 1,
-                        onSelect: () => {
-                          setPhoneDeclining(false);
-                          setDeclineDraft(undefined);
-                          setPendingAcceptance(null);
-                          setAcceptanceError(null);
-                          setPhoneReferralId(referral.id);
-                        },
-                      };
-                    }),
-                empty: "No referral naming this team is waiting for an answer.",
-                after: (
-                  <p className={phoneCss.quiet}>
-                    Community-team roles can accept or decline referrals addressed to their own team, for follow-up
-                    only.
-                  </p>
-                ),
-              },
-            ],
-          },
-          {
-            id: "inBed",
-            label: "In bed",
-            groups: [
-              {
-                id: "in-bed",
-                rows: lists.currentlyAdmitted.map((admission) => {
-                  const movement =
-                    admission.state === "pulled" && admission.movementId !== null
-                      ? movements.find((candidate) => candidate.id === admission.movementId)
-                      : undefined;
-                  const transport = movement?.transport;
-                  const ownBooking =
-                    transport !== undefined &&
-                    transport.bookedBy?.role === "community" &&
-                    transport.bookedBy.placeId === teamId &&
-                    transport.collectedAt === undefined;
-                  const canBook =
-                    admission.state === "pulled" &&
-                    admission.movementId !== null &&
-                    movement !== undefined &&
-                    transport === undefined;
-                  const person = phonePerson(admission.patientId);
-                  const stayDays = daysInBed(admission, now);
-                  const patientId = admission.patientId;
-                  return {
-                    id: admission.id,
-                    testId: `ward-community-phone-in-bed-${admission.id}`,
-                    name: phoneName(person, "No person on file"),
-                    meta: `${unitName(admission.unitId, units)} · ${person?.legalStatus ?? "Legal status not recorded"}`,
-                    value: stayDays === null ? "Not arrived" : `${stayDays}d`,
-                    time: bedStateLabel(admission),
-                    onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
-                    action: canBook
-                      ? { label: "Log transport", onAction: () => openTransportBook(admission.movementId!) }
-                      : ownBooking
-                        ? { label: "Cancel booking", onAction: () => openTransportCancel(admission.movementId!) }
-                        : undefined,
-                    note:
-                      transport === undefined
-                        ? undefined
-                        : `${ownBooking ? "This team booked transport" : "Transport already booked"}${
-                            transport.estimatedAt !== undefined
-                              ? ` · ${transportEtaRemainingLabel(transport.estimatedAt, now)}`
-                              : ""
-                          }`,
-                  };
-                }),
-                empty: cannotResolve
-                  ? `A bed carries no link back to the referral that named this team, so this list cannot be built for ${team.name}.`
-                  : "Nobody referred to this team is currently in a bed.",
-              },
-              {
-                id: "accepted-before",
-                title: "Admitted while already with the team",
-                count: admittedWhileAlreadyWithTeam.length,
-                rows: admittedWhileAlreadyWithTeam.map(({ admission, acceptedAt, arrivedAt }) => {
-                  const person = phonePerson(admission.patientId);
-                  const patientId = admission.patientId;
-                  return {
-                    id: admission.id,
-                    name: phoneName(person, "No person on file"),
-                    meta: `${unitName(admission.unitId, units)} · ${stayLabel(admission, now)}`,
-                    value: elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt)),
-                    time: "before the bed",
-                    onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
-                  };
-                }),
-                empty: "Nobody in a bed was accepted by this team before that bed began.",
-              },
-            ],
-          },
-          {
-            id: "back",
-            label: "Back",
-            groups: [
-              {
-                id: "expected",
-                title: "Expected back",
-                count: lists.expectedBack.length,
-                rows: lists.expectedBack.map((admission) => {
-                  const person = phonePerson(admission.patientId);
-                  const patientId = admission.patientId;
-                  return {
-                    id: admission.id,
-                    name: phoneName(person, "No person on file"),
-                    meta: `${person?.umrn ?? "No UMRN"} · ${unitName(admission.unitId, units)}`,
-                    note: expectedBackLabel(admission, now),
-                    onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
-                  };
-                }),
-                empty: "Nobody in a bed has a discharge date the ward has written down.",
-                after: <p className={phoneCss.quiet}>Ward-reported plan; elapsed time only. No target is applied.</p>,
-              },
-              {
-                id: "discharged",
-                title: "Discharged into the catchment",
-                count: lists.dischargedIntoTheArea.length,
-                before: (
-                  <label className={phoneCss.filter}>
-                    Community follow-up filter
-                    <select value={followUpFilter} onChange={(e) => setFollowUpFilter(e.target.value)}>
-                      <option value="all">All community departures</option>
-                      <option value="missing_arrangement">Missing arrangements</option>
-                      <option value="missing_contact">No completed contact recorded</option>
-                    </select>
-                  </label>
-                ),
-                rows: filteredDepartures.map((admission) => {
-                  const person = phonePerson(admission.patientId);
-                  return {
-                    id: admission.id,
-                    testId: `ward-community-phone-discharged-${admission.id}`,
-                    name: phoneName(person, "No person on file"),
-                    meta: `Follow-up ${admission.followUp?.state?.replaceAll("_", " ") ?? "not recorded"} · ${unitName(admission.unitId, units)}`,
-                    note: departureLabel(admission, now),
-                    onSelect: () => setPhoneDepartureId(admission.id),
-                  };
-                }),
-                empty:
-                  lists.dischargedIntoTheArea.length > 0
-                    ? "No community departures match this follow-up filter."
-                    : "No admission referred to this team is recorded as discharged to the community.",
-              },
-            ],
-          },
-          {
-            id: "ctos",
-            label: "CTOs",
-            groups: [
-              {
-                id: "ctos",
-                rows: phoneCaseloadShown.map((row) => {
-                  const person = phonePerson(row.patientId);
-                  const formCode = caseloadStatutoryFormCode(row);
-                  const patientId = row.patientId;
-                  return {
-                    id: row.key,
-                    testId: `ward-community-phone-cto-${row.referralId}`,
-                    name: phoneName(person, "No person on file"),
-                    meta: `${formCode ? `Form ${formCode}` : "No form recorded"} · ${row.umrn ?? row.referralId}`,
-                    time: caseloadRecordedExpiryLabel(row, now),
-                    onSelect: patientId !== undefined ? () => openDossier(patientId) : undefined,
-                  };
-                }),
-                empty: phoneShowWholeCaseload
-                  ? "No accepted follow-up or matched admission is on this team's caseload yet."
-                  : "No recorded Form 5A or 5B on this team's caseload.",
-                after: (
-                  <>
-                    {phoneShowWholeCaseload || caseloadRows.length === phoneCtoRows.length ? null : (
-                      <p className={phoneCss.quiet}>
-                        {caseloadRows.length - phoneCtoRows.length} more on the caseload are not listed here.
-                      </p>
-                    )}
-                    {caseloadRows.length === phoneCtoRows.length ? null : (
-                      <Button
-                        variant="ghost"
-                        onClick={() => setPhoneShowWholeCaseload((all) => !all)}
-                        aria-pressed={phoneShowWholeCaseload}
-                      >
-                        {phoneShowWholeCaseload ? "Show CTOs only" : "Show the whole caseload"}
-                      </Button>
-                    )}
-                  </>
-                ),
-              },
-            ],
-          },
-        ]}
-      />
-
+          ],
+        },
+        {
+          id: "inBed",
+          label: "In bed",
+          groups: [
+            {
+              id: "in-bed",
+              rows: lists.currentlyAdmitted.map((admission) => {
+                const movement =
+                  admission.state === "pulled" && admission.movementId !== null
+                    ? movements.find((candidate) => candidate.id === admission.movementId)
+                    : undefined;
+                const transport = movement?.transport;
+                const ownBooking =
+                  transport !== undefined &&
+                  transport.bookedBy?.role === "community" &&
+                  transport.bookedBy.placeId === teamId &&
+                  transport.collectedAt === undefined;
+                const canBook =
+                  admission.state === "pulled" &&
+                  admission.movementId !== null &&
+                  movement !== undefined &&
+                  transport === undefined;
+                const person = phonePerson(admission.patientId);
+                const stayDays = daysInBed(admission, now);
+                const patientId = admission.patientId;
+                return {
+                  id: admission.id,
+                  testId: `ward-community-phone-in-bed-${admission.id}`,
+                  name: phoneName(person, "No person on file"),
+                  meta: `${unitName(admission.unitId, units)} · ${person?.legalStatus ?? "Legal status not recorded"}`,
+                  value: stayDays === null ? "Not arrived" : `${stayDays}d`,
+                  time: bedStateLabel(admission),
+                  onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
+                  action: canBook
+                    ? { label: "Log transport", onAction: () => openTransportBook(admission.movementId!) }
+                    : ownBooking
+                      ? { label: "Cancel booking", onAction: () => openTransportCancel(admission.movementId!) }
+                      : undefined,
+                  note:
+                    transport === undefined
+                      ? undefined
+                      : `${ownBooking ? "This team booked transport" : "Transport already booked"}${
+                          transport.estimatedAt !== undefined
+                            ? ` · ${transportEtaRemainingLabel(transport.estimatedAt, now)}`
+                            : ""
+                        }`,
+                };
+              }),
+              empty: cannotResolve
+                ? `A bed carries no link back to the referral that named this team, so this list cannot be built for ${team.name}.`
+                : "Nobody referred to this team is currently in a bed.",
+            },
+            {
+              id: "accepted-before",
+              title: "Admitted while already with the team",
+              count: admittedWhileAlreadyWithTeam.length,
+              rows: admittedWhileAlreadyWithTeam.map(({ admission, acceptedAt, arrivedAt }) => {
+                const person = phonePerson(admission.patientId);
+                const patientId = admission.patientId;
+                return {
+                  id: admission.id,
+                  name: phoneName(person, "No person on file"),
+                  meta: `${unitName(admission.unitId, units)} · ${stayLabel(admission, now)}`,
+                  value: elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt)),
+                  time: "before the bed",
+                  onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
+                };
+              }),
+              empty: "Nobody in a bed was accepted by this team before that bed began.",
+            },
+          ],
+        },
+        {
+          id: "back",
+          label: "Back",
+          groups: [
+            {
+              id: "expected",
+              title: "Expected back",
+              count: lists.expectedBack.length,
+              rows: lists.expectedBack.map((admission) => {
+                const person = phonePerson(admission.patientId);
+                const patientId = admission.patientId;
+                return {
+                  id: admission.id,
+                  name: phoneName(person, "No person on file"),
+                  meta: `${person?.umrn ?? "No UMRN"} · ${unitName(admission.unitId, units)}`,
+                  note: expectedBackLabel(admission, now),
+                  onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
+                };
+              }),
+              empty: "Nobody in a bed has a discharge date the ward has written down.",
+              after: <p className={phoneCss.quiet}>Ward-reported plan; elapsed time only. No target is applied.</p>,
+            },
+            {
+              id: "discharged",
+              title: "Discharged into the catchment",
+              count: lists.dischargedIntoTheArea.length,
+              before: (
+                <label className={phoneCss.filter}>
+                  Community follow-up filter
+                  <select value={followUpFilter} onChange={(e) => setFollowUpFilter(e.target.value)}>
+                    <option value="all">All community departures</option>
+                    <option value="missing_arrangement">Missing arrangements</option>
+                    <option value="missing_contact">No completed contact recorded</option>
+                  </select>
+                </label>
+              ),
+              rows: filteredDepartures.map((admission) => {
+                const person = phonePerson(admission.patientId);
+                return {
+                  id: admission.id,
+                  testId: `ward-community-phone-discharged-${admission.id}`,
+                  name: phoneName(person, "No person on file"),
+                  meta: `Follow-up ${admission.followUp?.state?.replaceAll("_", " ") ?? "not recorded"} · ${unitName(admission.unitId, units)}`,
+                  note: departureLabel(admission, now),
+                  onSelect: () => setPhoneDepartureId(admission.id),
+                };
+              }),
+              empty:
+                lists.dischargedIntoTheArea.length > 0
+                  ? "No community departures match this follow-up filter."
+                  : "No admission referred to this team is recorded as discharged to the community.",
+            },
+          ],
+        },
+        {
+          id: "ctos",
+          label: "CTOs",
+          groups: [
+            {
+              id: "ctos",
+              rows: phoneCaseloadShown.map((row) => {
+                const person = phonePerson(row.patientId);
+                const formCode = caseloadStatutoryFormCode(row);
+                const patientId = row.patientId;
+                return {
+                  id: row.key,
+                  testId: `ward-community-phone-cto-${row.referralId}`,
+                  name: phoneName(person, "No person on file"),
+                  meta: `${formCode ? `Form ${formCode}` : "No form recorded"} · ${row.umrn ?? row.referralId}`,
+                  time: caseloadRecordedExpiryLabel(row, now),
+                  onSelect: patientId !== undefined ? () => openDossier(patientId) : undefined,
+                };
+              }),
+              empty: phoneShowWholeCaseload
+                ? "No accepted follow-up or matched admission is on this team's caseload yet."
+                : "No recorded Form 5A or 5B on this team's caseload.",
+              after: (
+                <>
+                  {phoneShowWholeCaseload || caseloadRows.length === phoneCtoRows.length ? null : (
+                    <p className={phoneCss.quiet}>
+                      {caseloadRows.length - phoneCtoRows.length} more on the caseload are not listed here.
+                    </p>
+                  )}
+                  {caseloadRows.length === phoneCtoRows.length ? null : (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setPhoneShowWholeCaseload((all) => !all)}
+                      aria-pressed={phoneShowWholeCaseload}
+                    >
+                      {phoneShowWholeCaseload ? "Show CTOs only" : "Show the whole caseload"}
+                    </Button>
+                  )}
+                </>
+              ),
+            },
+          ],
+        },
+      ]
+    : [];
+  const phoneSheets = isPhone ? (
+    <>
       <PhoneSheet
         open={phoneReferral !== undefined}
         onClose={closePhoneReferral}
@@ -2363,6 +2331,78 @@ export function CommunityScreen({
     </>
   ) : null;
 
+  const communityPhoneTree = isPhone ? (
+    <>
+      <CommunityTeamPhone
+        teamName={team.name}
+        caseload={isDemoMode ? teamConfig.caseload : caseloadRows.length}
+        sub={
+          <>
+            {suburbsNamingTeam
+              ? `${suburbsNamingTeam} ${suburbsNamingTeam === 1 ? "suburb" : "suburbs"}`
+              : "Suburbs not recorded"}
+            {isDemoMode ? "" : " · crisis open not recorded"}
+          </>
+        }
+        figures={[
+          {
+            id: "waiting",
+            value: phoneWaitingValue,
+            label: "Waiting",
+            tone: phoneUrgent > 0 ? "danger" : undefined,
+          },
+          {
+            id: "inBed",
+            value: isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length,
+            label: "In a bed",
+          },
+          {
+            id: "back",
+            value: isDemoMode ? teamConfig.egress : lists.expectedBack.length,
+            label: "Back",
+            tone: pastPlannedDateCount > 0 ? "warning" : undefined,
+          },
+          { id: "ctos", value: phoneCtoRows.length, label: "On a CTO" },
+        ]}
+        list={phoneList}
+        onList={(id) => setActiveTab(phoneListTab[id])}
+        onIntake={() => {
+          setIntakeDraft(BLANK_INTAKE_DRAFT);
+          setActiveModalType("intake");
+        }}
+        onSwitchTeam={() => setSwitchOpen(true)}
+        switchTriggerRef={switchTriggerRef}
+        since={sinceElement}
+        notices={noticesSection}
+        howToReach={howToReachPanel}
+        onDuty={onDutyPanel}
+        coverage={coveragePanel}
+        search={renderSearch}
+        samples={[
+          { id: "activity", label: "Activity sample", onPress: () => setActiveDrawer("activityDrawer") },
+          { id: "tasks", label: "Tasks sample", onPress: () => setActiveDrawer("tasksDrawer") },
+          { id: "tools", label: "Tools sample", onPress: () => setActiveDrawer("toolsDrawer") },
+        ]}
+        actions={[
+          { id: "contact", label: "Record contact", icon: Phone, onPress: () => setActiveModalType("contact") },
+          {
+            id: "cto",
+            label: "CTO register",
+            icon: FileText,
+            onPress: () => {
+              setActiveTab("tab-caseload");
+              scrollToSection("ward-community-phone-lists");
+            },
+          },
+          { id: "mdt", label: "Catchment MDT", icon: Users, onPress: () => setActiveModalType("handover") },
+        ]}
+        attention={phoneAttentionItems}
+        lists={phoneLists}
+      />
+      {phoneSheets}
+    </>
+  ) : null;
+
   return (
     <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
       <main id="main-content" className={styles.main}>
@@ -2400,64 +2440,8 @@ export function CommunityScreen({
                     </button>
                   </>
                 }
-                stats={
-                  /*
-                   * v10 (10 Oct 2026): four list chips at most five. Each one switches the list below,
-                   * like its tab. The caseload is the answer beside the title; crisis episodes are not
-                   * recorded anywhere in the model, so they sit in the Checking foot as not checked.
-                   */
-                  <div className={v6.heroStats} role="group" aria-label="Show a list">
-                    <HeroStat
-                      inline
-                      value={isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
-                      trend={
-                        isDemoMode && !hasAnyReferralsForTeam
-                          ? `${teamConfig.urgentTriage} urgent`
-                          : urgentWaitingCount > 0
-                            ? `${urgentWaitingCount} urgent`
-                            : undefined
-                      }
-                      label="Waiting answer"
-                      pressed={activeTab === "tab-triage"}
-                      onToggle={() => {
-                        setActiveTab("tab-triage");
-                        scrollToSection("ward-community-waiting");
-                      }}
-                    />
-                    <HeroStat
-                      inline
-                      // One figure with the tab: everyone in a bed or holding one, and how many of
-                      // those hold a pulled bed they have not yet reached.
-                      value={isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
-                      label="In a bed"
-                      pressed={activeTab === "tab-inpatients"}
-                      onToggle={() => {
-                        setActiveTab("tab-inpatients");
-                        scrollToSection("ward-community-admitted");
-                      }}
-                    />
-                    <HeroStat
-                      inline
-                      value={isDemoMode ? teamConfig.egress : lists.expectedBack.length}
-                      label="Expected back"
-                      pressed={activeTab === "tab-egress"}
-                      onToggle={() => {
-                        setActiveTab("tab-egress");
-                        scrollToSection("ward-community-expected-back");
-                      }}
-                    />
-                    <HeroStat
-                      inline
-                      value={isDemoMode ? teamConfig.cto : form5ACount}
-                      label="On a CTO"
-                      pressed={activeTab === "tab-caseload"}
-                      onToggle={() => {
-                        setActiveTab("tab-caseload");
-                        scrollToSection("section-caseload");
-                      }}
-                    />
-                  </div>
-                }
+                // Device audit option A (11 Oct 2026): one switch. The tabs below the title are the
+                // lists; the four hero chips that repeated them are gone.
                 foot={
                   <CheckingFoot
                     items={[
@@ -2591,8 +2575,9 @@ export function CommunityScreen({
                     <Button variant="onHero" size="sm" icon={Users} onClick={() => setActiveModalType("handover")}>
                       Catchment MDT
                     </Button>
+                    {/* New referral in the header is the page's one primary (device audit option A). */}
                     <Button
-                      variant="light"
+                      variant="onHero"
                       size="sm"
                       icon={Plus}
                       id="btnMainIntake"
@@ -2607,8 +2592,6 @@ export function CommunityScreen({
                 }
               />
               <SrOnly>The bed coordinator&apos;s view of this team&apos;s referrals and bed flow.</SrOnly>
-
-              {noticesSection}
 
               {/* ── Figures across the top ── */}
               <div className={styles.legacyFigureStrip}>
@@ -4388,6 +4371,8 @@ export function CommunityScreen({
 
             {/* ── The team itself: how to reach it, and the sample deployment. Shown under every list (v6). ── */}
             <div className={`${styles.tabPanelActive} ${v6.side}`} id="tab-team" data-wf-rail="1201">
+              <CommunityWorthAttention items={phoneAttentionItems} />
+
               {/* ── How to reach this team ── */}
               {howToReachPanel}
 
@@ -4395,8 +4380,11 @@ export function CommunityScreen({
               {onDutyPanel}
             </div>
 
-            {/* ── Governance Accordion: Limits, Facts, Links & Provenance ── */}
-            {coveragePanel}
+            {/* ── About this data: notices, limits, facts, links and provenance, closed (option A) ── */}
+            <CommunityAboutThisData>
+              {noticesSection}
+              {coveragePanel}
+            </CommunityAboutThisData>
           </div>
         )}
 

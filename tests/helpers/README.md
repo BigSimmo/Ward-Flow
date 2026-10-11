@@ -90,6 +90,7 @@ trustworthy as its agreement with the other guard reading the same graph.
 | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------- |
 | qualifying caption · the sentence under a figure · does this screen say · assert wording · retired wording must never come back | `expectSays`, `expectCaption`, `expectNeverSaysAgain`, `screenText` | `ward-caption.ts`          |
 | place-name leak · hospital name · FD-23 privacy · does this text name a real ward                                               | `namesRealPlace`, `escapeForRegExp`                                 | `ward-place-names.ts`      |
+| capacity ward table · network table · open the Table layout · bed map Table view                                                | `showWardTable`                                                     | `capacity-ward-table.ts`   |
 | referral history character limit · free-text cap · one character too long · boundary fixture                                    | `FIXTURE_HISTORY`, `oneCharacterTooLong`, `exactlyAtTheLimit`       | `ward-referral-history.ts` |
 
 🔴 **`ward-caption.ts` exists because pinning a sentence pins the RENDERING, not the truth.**

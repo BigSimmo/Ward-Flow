@@ -54,6 +54,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 const seeded = seedWardFlowState();
 const FEED_UNIT = seeded.units[0]!;
@@ -89,6 +90,7 @@ describe("the Capacity screen's freshness stamp reflects allocatable.source, nev
 
   it("renders 'As at HH:MM' for a feed-sourced unit, never a false ward attribution (review Finding 6)", () => {
     render(<CapacityScreen />);
+    showWardTable();
     const row = networkRow(FEED_UNIT.id);
 
     // The defect this suite exists to catch: passing `confirmedByRole` unconditionally makes every
@@ -102,6 +104,7 @@ describe("the Capacity screen's freshness stamp reflects allocatable.source, nev
 
   it("still names the ward on a ward-sourced unit's stamp, so the fix above cannot be 'drop the attribution'", () => {
     render(<CapacityScreen />);
+    showWardTable();
     const row = networkRow(WARD_UNIT.id);
 
     /*
