@@ -1710,8 +1710,10 @@ export function offendingFormsIn(state: WardFlowState, label: string): string[] 
  * calls per pass; in one file it ran over five minutes and timed out under load. Split by code, the
  * same work runs in parallel workers. Each shard takes every DUE_AT_SWEEP_SHARD_COUNT-th code, so
  * every code lands in exactly one shard and a code added later is swept without being remembered.
+ * Eight since 11 October 2026: at four, one file took up to 5.6 minutes on a CI runner, close to its
+ * five-minute test timeout, and set the floor for the whole unit run. Eight files, one code each today.
  */
-export const DUE_AT_SWEEP_SHARD_COUNT = 4;
+export const DUE_AT_SWEEP_SHARD_COUNT = 8;
 
 export function dueAtSweepCodes(shard: number): readonly string[] {
   return SWEEP_CODES.filter((_, index) => index % DUE_AT_SWEEP_SHARD_COUNT === shard);
