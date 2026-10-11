@@ -244,8 +244,9 @@ describe("the Delays board's data views", () => {
 
   it("opening a person the filters hide shows everyone first, so their row is there", () => {
     renderDelays();
-    // Longest quiet lists the seven quietest; take the first of them a locked-bed filter hides.
-    const topQuiet = ROWS.filter((row) => row.silent)
+    // Longest quiet lists the seven quietest not already in "Waiting on you" (device audit, 11 Oct
+    // 2026); take the first of them a locked-bed filter hides.
+    const topQuiet = ROWS.filter((row) => row.silent && row.cause !== "awaiting_coordinator")
       .sort((a, b) => b.quiet - a.quiet)
       .slice(0, 7);
     const target = topQuiet.find((row) => !row.locked);
@@ -284,7 +285,8 @@ describe("the Delays board's data views", () => {
       const quietButton = within(rail)
         .getAllByRole("button")
         .find(
-          (button) => button.closest("section") === rail && /Waiting on you|Awaiting/u.test(button.textContent ?? ""),
+          // Longest quiet names people under the other blockers (device audit, 11 Oct 2026).
+          (button) => button.closest("section") === rail && button.querySelector("small") !== null,
         );
       expect(quietButton, "Longest quiet lists nobody").toBeDefined();
       fireEvent.click(quietButton!);

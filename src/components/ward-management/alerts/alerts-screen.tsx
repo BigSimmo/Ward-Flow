@@ -1222,12 +1222,13 @@ function AlertsWorkspace() {
                   </Button>
                   <Button
                     variant="onHero"
-                    iconOnly
                     icon={live.paused ? Play : Pause}
                     aria-pressed={live.paused}
-                    aria-label={live.paused ? "Resume live updates" : "Hold the list still"}
+                    title={live.paused ? "Resume live updates" : "Hold the list still"}
                     onClick={live.togglePause}
-                  />
+                  >
+                    {live.paused ? "Resume" : "Pause"}
+                  </Button>
                 </div>
               }
             />
@@ -1245,9 +1246,6 @@ function AlertsWorkspace() {
                 <ChevronRight size={16} aria-hidden="true" />
               </button>
             ) : null}
-            <PhoneSheet open={phoneChecks} onClose={() => setPhoneChecks(false)} title="Checking" height="tall">
-              <div className={styles.phoneChecks}>{checkingFoot}</div>
-            </PhoneSheet>
             <PhoneSheet open={phoneToday} onClose={() => setPhoneToday(false)} title="Today" height="tall">
               <div className={styles.phoneChecks}>{todayChart}</div>
             </PhoneSheet>
@@ -1351,15 +1349,21 @@ function AlertsWorkspace() {
             }
             barAside={
               <div className={styles.heroTools}>
-                <Button variant="onHero" size="sm" icon={ChevronRight} onClick={handleNext}>
-                  Next alert <span className={styles.mono}>{openCount}</span>
+                <Button
+                  variant="onHero"
+                  size="sm"
+                  icon={ChevronRight}
+                  aria-label={`Next alert, ${openCount} open`}
+                  onClick={handleNext}
+                >
+                  Next of <span className={styles.mono}>{openCount}</span>
                 </Button>
                 <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
                   Copy for handover
                 </Button>
               </div>
             }
-            foot={checkingFoot}
+            foot={<div className={styles.checkingFootWide}>{checkingFoot}</div>}
           />
         )}
 
@@ -1765,7 +1769,30 @@ function AlertsWorkspace() {
                   <ChevronRight size={16} aria-hidden="true" />
                 </button>
               </>
-            ) : null}
+            ) : (
+              /* Device audit (11 Oct 2026): on an iPad in portrait the Checking strip wraps to three lines,
+                 so it becomes the phone's one-tap card there (shown by CSS in that range only). */
+              <button
+                type="button"
+                className={`${styles.phoneCard} ${styles.checkingCardPortrait}`}
+                onClick={() => setPhoneChecks(true)}
+              >
+                <Activity size={18} aria-hidden="true" />
+                <span className={styles.phoneCardText}>
+                  <span className={styles.phoneCardTitle}>
+                    Checking <span className={styles.mono}>{checks.length}</span> conditions
+                  </span>
+                  <span className={styles.phoneCardMeta}>
+                    <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> firing · handover
+                    sheets not checked
+                  </span>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" />
+              </button>
+            )}
+            <PhoneSheet open={phoneChecks} onClose={() => setPhoneChecks(false)} title="Checking" height="tall">
+              <div className={styles.phoneChecks}>{checkingFoot}</div>
+            </PhoneSheet>
           </div>
 
           {slideOver ? null : (

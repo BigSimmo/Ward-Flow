@@ -431,6 +431,25 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/coordinator/home.module.css: 62.5625",
     // v10 Settings: touch targets grow to 44px on a coarse-pointer tablet, above the phone range.
     "src/components/ward-management/settings/settings.module.css: 48.0625",
+    // Device audit (11 Oct 2026): tablet-only rules sit above the phone range, as exclusive
+    // complements of each page's existing max-width boundary (48rem, 70rem, 73.75rem, 85rem).
+    "src/components/ward-management/alerts/alerts.module.css: 48.0625",
+    "src/components/ward-management/board/board.module.css: 48.0625",
+    "src/components/ward-management/delays/delays-board.module.css: 48.0625",
+    "src/components/ward-management/hub/hub.module.css: 48.0625",
+    "src/components/ward-management/hub/hub.module.css: 73.8125",
+    "src/components/ward-management/movements/movement-flow.module.css: 48.0625",
+    "src/components/ward-management/movements/movements.module.css: 85.0625",
+    "src/components/ward-management/officer/officer.module.css: 48.0625",
+    "src/components/ward-management/ward/ward-answer-view.module.css: 48.0625",
+    "src/components/ward-management/ward/ward-home-tab.module.css: 48.0625",
+    "src/components/ward-management/ward/ward-home-tab.module.css: 70.0625",
+    "src/components/ward-management/ward/ward.module.css: 48.0625",
+    "src/components/ward-management/coordinator/pressure-strip.module.css: 64",
+    "src/components/ward-management/community/community-index.module.css: 48.0625",
+    "src/components/ward-management/out-of-area/out-of-area-board.module.css: 48.0625",
+    "src/components/ward-management/reports/reports.module.css: 48.0625",
+    "src/components/ward-management/statistics/statistics-v6.module.css: 48.0625",
   ];
 
   it("introduces no breakpoint outside the known set", () => {

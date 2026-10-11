@@ -214,7 +214,8 @@ export function WaitRunway({
               aria-pressed={selectedId === referral.id}
               onClick={() => onSelect(referral.id)}
             >
-              {overdue ? <TriangleAlert size={12} aria-hidden="true" /> : referral.urgency}
+              {/* Audit 11 Oct 2026: "T2", as the tier chip reads, so a mark is not read as a count. */}
+              {overdue ? <TriangleAlert size={12} aria-hidden="true" /> : `T${referral.urgency}`}
             </button>
           );
         })}

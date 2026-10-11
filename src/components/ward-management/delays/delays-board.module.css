@@ -549,6 +549,22 @@ button.stat:hover .statV {
   width: 8.75rem;
 }
 
+/* Device audit (11 Oct 2026): on a tablet the table sits inside a narrower column, so the name and
+   wait columns give up width and Last update is no longer clipped at the right edge. */
+@media (min-width: 48.0625rem) and (max-width: 73.75rem) {
+  .tbl {
+    min-width: 0;
+  }
+
+  .colP {
+    width: 10rem;
+  }
+
+  .colW {
+    width: 8rem;
+  }
+}
+
 .tbl th {
   position: sticky;
   top: 0;

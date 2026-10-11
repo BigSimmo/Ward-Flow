@@ -650,18 +650,22 @@ export function CoordinatorScreen() {
             bar={
               isPhone ? (
                 // v10 phone hero: the full-width "N since you looked at HH:MM" pill and a round
-                // pause. The Live chip itself sits on the eyebrow line (`aside` below).
+                // pause. The Live chip itself sits on the eyebrow line (`aside` below). The pill
+                // shows only when something changed (device audit, 11 Oct 2026: "0 since you
+                // looked" cost 45px of hero for nothing).
                 <div className={styles.phoneHeroActs}>
-                  <Button
-                    variant="onHero"
-                    className={styles.phoneSince}
-                    aria-haspopup="dialog"
-                    aria-expanded={phoneSheet?.kind === "since"}
-                    onClick={() => setPhoneSheet({ kind: "since" })}
-                  >
-                    <b className={styles.phoneSinceMono}>{newEvents}</b> since you looked at{" "}
-                    <span className={styles.phoneSinceMono}>{sinceClock}</span>
-                  </Button>
+                  {newEvents > 0 ? (
+                    <Button
+                      variant="onHero"
+                      className={styles.phoneSince}
+                      aria-haspopup="dialog"
+                      aria-expanded={phoneSheet?.kind === "since"}
+                      onClick={() => setPhoneSheet({ kind: "since" })}
+                    >
+                      <b className={styles.phoneSinceMono}>{newEvents}</b> since you looked at{" "}
+                      <span className={styles.phoneSinceMono}>{sinceClock}</span>
+                    </Button>
+                  ) : null}
                 </div>
               ) : (
                 <div className={styles.heroToggles}>
@@ -683,7 +687,9 @@ export function CoordinatorScreen() {
                   <HeroStat
                     inline
                     value={breachWithinHour}
-                    label={`Due within ${dueWindow}`}
+                    // Names its noun (device audit, 11 Oct 2026): it counts recorded legal forms due
+                    // within the saved window, not the queue's "due in" wait targets.
+                    label={`Forms due within ${dueWindow}`}
                     tone={breachWithinHour > 0 ? "warning" : undefined}
                     className={styles.heroDueChip}
                   />
@@ -801,7 +807,9 @@ export function CoordinatorScreen() {
               value={portraitView}
               onChange={setPortraitView}
               items={[
-                { id: "queue", label: "Priority queue", count: queue.length + referralQueue.length },
+                // The count is patients plus referrals, so the label says both (device audit, 11 Oct
+                // 2026: "Priority queue 77" sat beside the card's "70 of 70").
+                { id: "queue", label: "Queue and referrals", count: queue.length + referralQueue.length },
                 { id: "bedflow", label: "State bedflow", count: units.length },
               ]}
             />

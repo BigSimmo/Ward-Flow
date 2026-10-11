@@ -590,14 +590,6 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           </ul>
         )}
       </Card>
-
-      <Card as="section" className={styles.railCard} aria-labelledby="ward-reading-key">
-        <h2 id="ward-reading-key" className={styles.railTitle}>
-          Reading a ward
-        </h2>
-        <BedStripLegend />
-        <p className={styles.railNote}>One cell a bed. Ready, pulled, closed, then occupied.</p>
-      </Card>
     </aside>
   );
 
@@ -618,7 +610,11 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               {readyNow} {readyNow === 1 ? "bed" : "beds"} ready{isPhone ? "" : " now"}
             </>
           }
-          titleMeta={isPhone ? `${units.length} wards · ${totalBeds} beds · ${pulled} pulled` : undefined}
+          titleMeta={
+            isPhone
+              ? `${units.length} wards · ${statewidePercent === null ? "occupancy not recorded" : `${statewidePercent.toFixed(1)}% occupied`} · ${pulled} pulled`
+              : undefined
+          }
           stats={
             isPhone ? (
               <>
@@ -644,7 +640,11 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               </>
             ) : undefined
           }
-          lead={<OccupancyRing percent={statewidePercent} alertAt={SERVICE_LINE * 100} scope="Statewide" />}
+          lead={
+            isPhone ? undefined : (
+              <OccupancyRing percent={statewidePercent} alertAt={SERVICE_LINE * 100} scope="Statewide" />
+            )
+          }
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
           bar={
             isPhone ? undefined : (
@@ -767,45 +767,58 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             </button>
           </div>
           <div className={styles.filterRow} id="ward-index-more-filters" data-open={filtersOpen ? "true" : undefined}>
-            <span className={styles.filterLabel} id="ward-status-label">
-              Status
+            <span className={styles.filterGroup}>
+              <span className={styles.filterLabel} id="ward-status-label">
+                Status
+              </span>
+              <Segmented
+                label="Status"
+                items={[
+                  { id: "all" as StatusFilter, label: "All" },
+                  { id: "has-ready" as StatusFilter, label: "Has ready" },
+                  { id: "full" as StatusFilter, label: "Full" },
+                  { id: "stale" as StatusFilter, label: "Stale" },
+                ]}
+                value={status}
+                onChange={setStatus}
+              />
             </span>
-            <Segmented
-              label="Status"
-              items={[
-                { id: "all" as StatusFilter, label: "All" },
-                { id: "has-ready" as StatusFilter, label: "Has ready" },
-                { id: "full" as StatusFilter, label: "Full" },
-                { id: "stale" as StatusFilter, label: "Stale" },
-              ]}
-              value={status}
-              onChange={setStatus}
-            />
-            <span className={styles.filterLabel}>Cohort</span>
-            <Segmented
-              label="Cohort"
-              items={[
-                { id: "all" as CohortFilter, label: "All" },
-                { id: "adult" as CohortFilter, label: "Adult" },
-                { id: "older-adult" as CohortFilter, label: "Older adult" },
-                { id: "youth" as CohortFilter, label: "Youth" },
-                { id: "perinatal" as CohortFilter, label: "Perinatal" },
-              ]}
-              value={cohort}
-              onChange={setCohort}
-            />
-            <span className={styles.filterLabel}>Order</span>
-            <Segmented
-              label="Order"
-              items={[
-                { id: "service" as OrderBy, label: "Service" },
-                { id: "most-ready" as OrderBy, label: "Most ready" },
-                { id: "fullest" as OrderBy, label: "Fullest" },
-              ]}
-              value={order}
-              onChange={setOrder}
-            />
+            <span className={styles.filterGroup}>
+              <span className={styles.filterLabel}>Cohort</span>
+              <Segmented
+                label="Cohort"
+                items={[
+                  { id: "all" as CohortFilter, label: "All" },
+                  { id: "adult" as CohortFilter, label: "Adult" },
+                  { id: "older-adult" as CohortFilter, label: "Older adult" },
+                  { id: "youth" as CohortFilter, label: "Youth" },
+                  { id: "perinatal" as CohortFilter, label: "Perinatal" },
+                ]}
+                value={cohort}
+                onChange={setCohort}
+              />
+            </span>
+            <span className={styles.filterGroup}>
+              <span className={styles.filterLabel}>Order</span>
+              <Segmented
+                label="Order"
+                items={[
+                  { id: "service" as OrderBy, label: "Service" },
+                  { id: "most-ready" as OrderBy, label: "Most ready" },
+                  { id: "fullest" as OrderBy, label: "Fullest" },
+                ]}
+                value={order}
+                onChange={setOrder}
+              />
+            </span>
           </div>
+          {/* Audit 11 Oct 2026: the bed strip key is one line under the filters, not a rail card. */}
+          {isPhone ? null : (
+            <div className={styles.legendLine} aria-label="Reading a ward" role="note">
+              <BedStripLegend />
+              <span>One cell a bed.</span>
+            </div>
+          )}
           <p className={styles.shownCount} data-testid="ward-index-count-note">
             {isPhone ? <b className={styles.phoneListTitle}>Every ward</b> : null}
             {isFiltered ? (
@@ -1003,13 +1016,14 @@ function WardCard({ row, now, dim = false }: { row: WardRow; now: Instant; dim?:
       <div className={styles.cardFoot}>
         <Confirmed row={row} now={now} />
         <WardProfile row={row} />
+        {/* Audit 11 Oct 2026: the whole card is the Enter target, so 22 repeated buttons go. */}
         <Link
-          className={buttonClass({ variant: "sec", size: "sm" })}
+          className={styles.cardLink}
           href={`/mockups/ward-flow/ward/${unit.id}`}
           data-testid={`ward-index-link-${unit.id}`}
           aria-label={`Enter ${unit.name}`}
         >
-          Enter
+          <ChevronRight size={16} aria-hidden="true" />
         </Link>
       </div>
     </article>

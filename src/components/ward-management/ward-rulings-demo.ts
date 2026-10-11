@@ -282,7 +282,7 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
     legalStatus: "Voluntary",
     stage: "placement_requested",
     owner: "ED mental health team",
-    blocker: "Still expected — not yet arrived",
+    blocker: "No bed past expected wait",
     expectFlag: { raisedAt: now - 20, kind: "voluntary_48h" },
   });
 
@@ -299,7 +299,7 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
     legalStatus: "Involuntary inpatient",
     stage: "placement_requested",
     owner: "ED mental health team",
-    blocker: "Still expected — not yet arrived",
+    blocker: "No bed past expected wait",
     expectFlag: { raisedAt: now - 20, kind: "involuntary_7d" },
   });
 

@@ -178,6 +178,11 @@
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
 }
 
+.queueNoun {
+  font-family: var(--wf-font);
+  font-weight: 500;
+}
+
 .previewTool,
 .previewTool[aria-disabled="true"] {
   border: 1px dashed color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
@@ -1158,6 +1163,7 @@
 }
 
 .phGroupTitle {
+  flex: 1 1 auto;
   min-width: 0;
   margin: 0;
   overflow: hidden;
@@ -1173,4 +1179,78 @@
   flex: none;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+/* Phone stage header as a toggle (device audit, 11 Oct 2026): the whole header row is the tap
+   target, 48px tall, chevron turns when open. */
+.phGroupToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: var(--ward-tap, 48px);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: start;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.phGroupTitleText {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phGroupChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform 120ms ease;
+}
+
+.phGroupChevron[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.phGroupToggle:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phGroupChevron {
+    transition: none;
+  }
+}
+
+/* Tablet (device audit, 11 Oct 2026): no Run sheet preview on a touch station, and on portrait the
+   Needs you items read as one column so three items never leave an empty grid cell. */
+@media (min-width: 48.0625rem) and (max-width: 73.75rem) {
+  .heroTools > .previewTool {
+    display: none;
+  }
+}
+
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .needsList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .needsCell + .needsCell {
+    border-top: 1px solid var(--wf-line);
+  }
+}
+
+/* Device audit, 11 Oct 2026: on the wider worklist the Barrier column already says why there is no
+   destination, so the Route cell drops "no destination yet" and both columns fit. Phone keeps it. */
+@media (min-width: 48.0625rem) {
+  .noDestination {
+    display: none;
+  }
 }
