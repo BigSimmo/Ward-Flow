@@ -150,7 +150,8 @@ describe("GovernanceView", () => {
     const register = screen.getByRole("region", { name: "Captured events" });
     const overrideEvent = capturedRow(register, /Refer to wards/i);
     expect(overrideEvent).toHaveTextContent("Accepted");
-    expect(overrideEvent).toHaveTextContent("Flow coordinator");
+    // Device audit 11 Oct 2026: the narrow By column reads "Coordinator" so it never truncates.
+    expect(overrideEvent).toHaveTextContent("Coordinator");
     expect(overrideEvent).toHaveTextContent("Unreviewed");
 
     fireEvent.click(overrideEvent);

@@ -23,8 +23,6 @@ import {
   Drawer,
   FactGrid,
   Hero,
-  HeroChip,
-  HeroChips,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -203,6 +201,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   };
 
   const count = (source: ChronologySource) => rows.filter((row) => row.source === source).length;
+  // Source tab counts read every event of that source, so an empty source shows 0 without a tap.
+  const sourceCount = (source: ChronologySource) => sourceRows.filter((row) => row.source === source).length;
   const name = chronology?.patient ? patientDisplayName(chronology.patient) : null;
   const umrn = chronology?.patient?.umrn || "UMRN not recorded";
   const recordCount = chronology
@@ -379,8 +379,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             figures={
               chronology
                 ? [
-                    { id: "events", value: rows.length, label: "Events" },
-                    { id: "records", value: recordCount, label: "Records" },
+                    { id: "events", value: rows.length, label: rows.length === 1 ? "Event" : "Events" },
+                    { id: "records", value: count("Record"), label: "From records" },
                     { id: "audit", value: count("Audit"), label: "Audit" },
                   ]
                 : undefined
@@ -398,10 +398,10 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   }}
                   fill
                   items={[
-                    { id: "all", label: "All" },
-                    { id: "records", label: "Records" },
-                    ...(auditShown ? [{ id: "audit" as const, label: "Audit" }] : []),
-                    { id: "session", label: "Session" },
+                    { id: "all", label: "All", count: sourceRows.length },
+                    { id: "records", label: "Records", count: sourceCount("Record") },
+                    ...(auditShown ? [{ id: "audit" as const, label: "Audit", count: sourceCount("Audit") }] : []),
+                    { id: "session", label: "Session", count: sourceCount("Session log") },
                   ]}
                 />
               </div>
@@ -487,9 +487,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 <PhoneListRow
                   key={patient.id}
                   as="li"
-                  leading={
-                    patient.id === patientId ? <Check size={16} aria-hidden="true" /> : <span aria-hidden="true" />
-                  }
+                  leading={patient.id === patientId ? <Check size={16} aria-hidden="true" /> : undefined}
                   name={patientDisplayName(patient)}
                   aria-label={`${patientDisplayName(patient)}${patient.id === patientId ? ", chosen" : ""}`}
                   value={<span className={phone.mono}>{patient.umrn || "UMRN not recorded"}</span>}
@@ -652,20 +650,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               </span>
             ) : undefined
           }
-          bar={
-            chronology ? (
-              <HeroChips label="Counts of the events shown">
-                <HeroChip value={rows.length} label={rows.length === 1 ? "event" : "events"} />
-                <HeroChip value={recordCount} label={recordCount === 1 ? "record" : "records"} />
-                <HeroChip value={count("Record")} label="from records" />
-                {auditShown ? <HeroChip value={count("Audit")} label="audit" /> : null}
-                <HeroChip value={count("Session log")} label="session log" />
-              </HeroChips>
-            ) : (
-              <span className={styles.heroLine}>{generated}</span>
-            )
-          }
-          barAside={chronology ? <span className={styles.heroLine}>{generated}</span> : undefined}
+          // The counts live once, in the Summary rail beside the table (device audit 11 Oct 2026).
+          bar={<span className={styles.heroLine}>{generated}</span>}
         />
 
         <div className={styles.filterBar} data-print-hide>
@@ -679,8 +665,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 type="search"
                 icon={Search}
                 boxClassName={styles.findBox}
-                aria-label="Find an action, person or reason"
-                placeholder="Find an action, person or reason"
+                aria-label="Find in events"
+                placeholder="Find in events"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -699,8 +685,9 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 ))}
               </Select>
               {coordinator ? (
+                <span className={styles.roleSwitch}>
+                  <span className={styles.fieldWord}>View as</span>
                 <Segmented<ViewRole>
-                  className={styles.roleSwitch}
                   label="View as"
                   value={viewRole}
                   onChange={(next) => {
@@ -713,6 +700,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                     { id: "nurse", label: "Ward nurse" },
                   ]}
                 />
+                </span>
               ) : null}
             </>
           ) : null}
@@ -853,7 +841,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                     <FactGrid
                       facts={[
                         { id: "events", label: "Events", value: String(rows.length) },
-                        { id: "records", label: "Records", value: String(recordCount) },
+                        { id: "records", label: "Linked records", value: String(recordCount) },
                       ]}
                     />
                     <dl className={styles.sideList}>

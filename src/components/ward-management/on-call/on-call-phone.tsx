@@ -305,7 +305,8 @@ export function PhoneDirectory({
                       {group.code ? <span className={styles.code}>{group.code}</span> : null}
                       <b>{group.title}</b>
                       <span className={styles.spacer} />
-                      <span className={cx(styles.cellSub, styles.mono)}>
+                      {/* The count never truncates; the hospital name does (device audit 11 Oct 2026). */}
+                      <span className={cx(styles.cellSub, styles.mono, styles.phoneGroupCount)}>
                         {on}/{group.rows.length}
                       </span>
                       <Icon icon={ChevronDown} size={16} className={cx(styles.chevron, !open && styles.chevronShut)} />

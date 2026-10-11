@@ -262,7 +262,76 @@
 }
 
 .packCard {
-  scroll-margin-top: var(--wf-s-4);
+  /* Clears the sticky jump row above it. */
+  scroll-margin-top: calc(var(--wf-s-4) + 7rem);
+}
+
+/* Device audit 11 Oct 2026: tablet and desktop jump row, pinned while the long pack scrolls. */
+.jumpRow {
+  position: sticky;
+  /* Under the 60px top bar, which is sticky in the same scroll box. */
+  top: 3.75rem;
+  z-index: 3;
+  display: flex;
+  gap: var(--wf-s-2);
+  overflow-x: auto;
+  padding: var(--wf-s-2) 0;
+  background: var(--wf-canvas);
+  scrollbar-width: none;
+}
+
+.jumpItem {
+  flex: none;
+  min-height: 36px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: 999px;
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.jumpItem b {
+  margin-left: var(--wf-s-1);
+  font-family: var(--wf-mono);
+}
+
+.jumpItem:hover {
+  background: var(--wf-hover);
+}
+
+.jumpItem:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .jumpItem {
+    min-height: 44px;
+  }
+}
+
+/* Dates, times, durations and ED names stay on one line (device audit 11 Oct 2026). */
+.page .packTable .time,
+.page .packTable .num,
+.page .packTable .edCell,
+.page .packTable tbody th[scope="row"] {
+  white-space: nowrap;
+}
+
+/* Tablet portrait: Accepted by is the first column to go at 820px. */
+@media (min-width: 48.0625rem) and (max-width: 62.5rem) {
+  .packAccepted {
+    display: none;
+  }
+}
+
+@media print {
+  .jumpRow {
+    display: none;
+  }
 }
 
 .headMeta {
@@ -396,7 +465,11 @@
 }
 
 .roleSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
   margin-left: auto;
+  white-space: nowrap;
 }
 
 /* Table about two thirds, the side panel beside it; flush at equal heights. */
@@ -407,10 +480,10 @@
   align-items: start;
 }
 
-/* The table card runs the full row height, so it ends level with the side panel beside it. */
+/* The table card grows with its rows; stretched to the rail it left 240px blank under two events. */
 .chronoCard {
   min-width: 0;
-  align-self: stretch;
+  align-self: start;
 }
 
 .countPill {
@@ -813,13 +886,15 @@
 
 /* v10 phone downtime pack (11 Oct 2026, pass 2): the hero's two actions share the row equally, and
    each service head is bare text on the canvas with its list card below. Phone tree only. */
-.phonePage .main > section:first-child > div:last-child > * {
+/* Scoped to the downtime hero: unscoped, it reached the chronology hero, whose last block is the
+   title when no patient is chosen, and collapsed its "Choose a patient" title to 0px. */
+.downtimePhoneHero > div:last-child > * {
   flex: 1 1 0;
   min-width: 0;
 }
 
-.phonePage .main > section:first-child > div:last-child > * > button,
-.phonePage .main > section:first-child > div:last-child > button {
+.downtimePhoneHero > div:last-child > * > button,
+.downtimePhoneHero > div:last-child > button {
   justify-content: center;
   width: 100%;
 }

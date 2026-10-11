@@ -362,6 +362,20 @@
   }
 }
 
+/* Tablet portrait (device audit 11 Oct 2026): the rail cards sit two-up under the register; an odd
+   last card takes the full width. */
+@media (min-width: 48.0625rem) and (max-width: 62.5rem) {
+  .side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .side > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
 /* ---- register ---- */
 
 .toolbar {
@@ -424,9 +438,10 @@
   padding: var(--wf-s-4);
 }
 
+/* Device audit 11 Oct 2026: the register grows with its rows; a fixed height cut the last row in
+   half, and eighteen rows do not need an inner scroll. */
 .tableScroll {
-  max-height: 46rem;
-  overflow: auto;
+  overflow-x: auto;
 }
 
 /* Padding comes from the wf table (12px inner, 16px edges, the same on headers and cells). */
@@ -506,6 +521,18 @@
   gap: 6px;
   color: var(--wf-ink-2);
   white-space: nowrap;
+}
+
+/* The travel band line ends in an ellipsis rather than clipping mid-word. */
+.travel {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.travel > span[aria-hidden="true"] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .travel svg {

@@ -38,7 +38,6 @@ import {
   handoverHasPassed,
   handoverShift,
   isActNow,
-  isWaitingForBed,
   isbarLines,
   nextStep,
   wardIsStale,
@@ -436,7 +435,7 @@ export function HandoverPhone({
   const passed = handoverHasPassed(shift, now);
   const actCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "act").length;
   const dueCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "due").length;
-  const waitCount = rows.filter(isWaitingForBed).length;
+  const waitCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "bed").length;
   const readyCount = wards.reduce((total, ward) => total + ward.ready, 0);
   const highlightedCount = rows.filter(isHighlighted).length;
   const clock = formatInstantWithDay(at, now);
@@ -496,14 +495,16 @@ export function HandoverPhone({
             >
               Change handover
             </Button>
+            {/* Labelled, not a bare round icon (device audit 11 Oct 2026). */}
             <Button
               variant="onHero"
-              iconOnly
               icon={Timer}
               aria-pressed={meetingOn}
               aria-label={meetingOn ? "Stop the meeting timer" : "Start the meeting timer"}
               onClick={onToggleMeeting}
-            />
+            >
+              {meetingOn ? "Stop meeting" : "Start meeting"}
+            </Button>
           </div>
         }
       />
