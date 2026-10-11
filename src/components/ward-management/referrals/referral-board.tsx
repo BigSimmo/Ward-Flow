@@ -791,7 +791,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
             {queued.length > 0 ? (
               <ReferralPhoneCard
                 title="Waiting time against due times"
-                meta={`Due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h · tap a mark to open`}
+                meta={`${queued.filter((r) => highlightTest("overdue", r, now)).length} past due · due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h`}
                 expanded={phoneSheet === "axis"}
                 onOpen={() => setPhoneSheet("axis")}
               />
@@ -918,7 +918,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     type="search"
                     icon={Search}
                     boxClassName={a.search}
-                    placeholder="Name, UMRN, hospital or suburb"
+                    placeholder="Search queue"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onClear={() => setSearchQuery("")}
@@ -960,9 +960,14 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       </Button>
                     </>
                   ) : (
-                    <span className={a.orderNote} data-testid="ward-referral-board-order-note">
+                    <span
+                      className={a.orderNote}
+                      data-testid="ward-referral-board-order-note"
+                      title="Longest wait first, tier breaks ties"
+                    >
                       <ListOrdered size={14} aria-hidden="true" />
-                      <b>Longest wait first</b> · tier breaks ties
+                      <b>Longest wait first</b>
+                      <span className={a.orderTie}> · tier breaks ties</span>
                     </span>
                   )}
                 </span>
@@ -1496,10 +1501,15 @@ function QueuedSection({
                     </td>
                     <td data-testid={`ward-referral-board-hospital-${referral.id}`}>
                       <span className={a.who}>
-                        <span className={a.truncate} title={sendingHospital}>
-                          {sendingHospital}
+                        {/* Audit 11 Oct 2026: the site code, as phone shows, so names and figures are not cut. */}
+                        <span
+                          className={cx(a.truncate, a.mono)}
+                          title={`${sendingHospital}, ${REFERRAL_SOURCE_WORDS[referral.source]}`}
+                        >
+                          <span aria-hidden="true">{referral.originSiteCode}</span>
+                          <span className="sr-only">{sendingHospital}</span>
                         </span>
-                        <span className={a.sub}>{REFERRAL_SOURCE_WORDS[referral.source]}</span>
+                        <span className={cx(a.sub, a.fromSource)}>{REFERRAL_SOURCE_WORDS[referral.source]}</span>
                       </span>
                     </td>
                     <td>

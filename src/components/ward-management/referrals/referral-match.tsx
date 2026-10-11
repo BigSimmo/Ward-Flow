@@ -517,53 +517,57 @@ export function ReferralMatchView({
    * FD-5: the referrer takes back the WHOLE referral. Every destination still waiting is marked
    * withdrawn; any answer already given stands. Offered only while the reducer would accept it.
    */
+  // Audit 11 Oct 2026: Decide holds the decision; withdrawing sits one tap away in a disclosure.
   const wholeWithdrawControl = referralWithdrawable(referral) ? (
-    <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">
-      <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">
-        Referrer cancelled this referral — recorded by
-      </label>
-      <div className={styles.selectWithActionRow}>
-        <select
-          id="ward-referral-match-withdraw-recorder"
-          data-testid="ward-referral-match-withdraw-recorder"
-          className={styles.select}
-          value={withdrawRecorder}
-          onChange={(event) => setWithdrawRecorder(event.target.value === "sender" ? "sender" : "coordinator")}
-        >
-          <option value="coordinator">{WARD_FLOW_ROLE_LABELS.coordinator}</option>
-          <option value="sender">{senderLabel}</option>
-        </select>
-        {!withdrawConfirmOpen ? (
-          <button
-            type="button"
-            className={styles.declineButton}
-            data-testid="ward-referral-match-withdraw"
-            onClick={() => setWithdrawConfirmOpen(true)}
+    <details className={styles.moreActions} data-testid="ward-referral-match-more-actions">
+      <summary className={styles.moreActionsSummary}>Referrer cancelled?</summary>
+      <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">
+        <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">
+          Referrer cancelled this referral — recorded by
+        </label>
+        <div className={styles.selectWithActionRow}>
+          <select
+            id="ward-referral-match-withdraw-recorder"
+            data-testid="ward-referral-match-withdraw-recorder"
+            className={styles.select}
+            value={withdrawRecorder}
+            onChange={(event) => setWithdrawRecorder(event.target.value === "sender" ? "sender" : "coordinator")}
           >
-            Withdraw referral
-          </button>
-        ) : (
-          <div className={styles.matchRowTop} data-testid="ward-referral-match-withdraw-confirm-group">
+            <option value="coordinator">{WARD_FLOW_ROLE_LABELS.coordinator}</option>
+            <option value="sender">{senderLabel}</option>
+          </select>
+          {!withdrawConfirmOpen ? (
             <button
               type="button"
               className={styles.declineButton}
-              data-testid="ward-referral-match-confirm-withdraw"
-              onClick={handleWholeWithdraw}
+              data-testid="ward-referral-match-withdraw"
+              onClick={() => setWithdrawConfirmOpen(true)}
             >
-              Confirm withdrawal
+              Withdraw referral
             </button>
-            <button
-              type="button"
-              className={styles.acceptButton}
-              data-testid="ward-referral-match-cancel-withdraw"
-              onClick={() => setWithdrawConfirmOpen(false)}
-            >
-              Keep referral
-            </button>
-          </div>
-        )}
+          ) : (
+            <div className={styles.matchRowTop} data-testid="ward-referral-match-withdraw-confirm-group">
+              <button
+                type="button"
+                className={styles.declineButton}
+                data-testid="ward-referral-match-confirm-withdraw"
+                onClick={handleWholeWithdraw}
+              >
+                Confirm withdrawal
+              </button>
+              <button
+                type="button"
+                className={styles.acceptButton}
+                data-testid="ward-referral-match-cancel-withdraw"
+                onClick={() => setWithdrawConfirmOpen(false)}
+              >
+                Keep referral
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </details>
   ) : null;
   if (!ward && phone !== undefined && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
     /* v10 phone, ED review: one scrolling sheet with Decline and Accept presentation pinned in the
