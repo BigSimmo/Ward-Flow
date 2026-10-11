@@ -2015,3 +2015,139 @@ button.registerRow:hover {
     font-size: var(--wf-fs-12);
   }
 }
+
+/* Phone Home, second pass (v10 Home phone A, measured 11 Oct 2026). Phone only. */
+@media (max-width: 48rem) {
+  /* A row: name over its facts 2px apart; on the right the wait (14px mono on a 20px line) over
+   * its quiet word, so both columns share one baseline grid. */
+  .queueMain {
+    gap: 2px;
+  }
+
+  .queueWait {
+    gap: 2px;
+  }
+
+  .queueTimer,
+  .queueTimer [role="timer"],
+  .queueTimer [role="timer"] > span {
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  }
+
+  .queueWord,
+  .queueWordStrong {
+    color: var(--wf-ink-3);
+    font-weight: 500;
+  }
+
+  /* The switch runs the full width (the Soon chip is not on the phone) with 12px before the rows. */
+  .queueTools {
+    margin-bottom: var(--wf-s-3);
+  }
+}
+
+/* Phone "Since you looked" sheet (v10 Home phone): one card of 56px group rows. */
+.sinceSheetList {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.sinceSheetRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.sinceSheetRow:last-child {
+  border-bottom: 0;
+}
+
+.sinceSheetText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sinceSheetTitle {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.sinceSheetDetail {
+  overflow: hidden;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sinceSheetFoot {
+  width: 100%;
+  min-height: 48px;
+}
+
+/* Phone patient sheet, second pass (v10 Home phone "Patient open"): the sheet runs nearly to the
+ * top on the canvas surface with a 22px top radius, its content on the 16px gutter, and Close is a
+ * round X at the top right beside the patient's name. Phone only. */
+@media (max-width: 48rem) {
+  .shortlistRegion.shortlistRegion {
+    padding: 0 16px;
+    border-radius: 22px 22px 0 0;
+    background: var(--wf-surface-2);
+  }
+
+  .shortlistHeader.shortlistHeader {
+    position: absolute;
+    top: 18px;
+    right: 6px;
+    z-index: 2;
+    padding: 0;
+    border: 0;
+  }
+
+  .shortlistHeader.shortlistHeader h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .shortlistHeader.shortlistHeader > button {
+    position: relative;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    font-size: 0;
+  }
+
+  .shortlistHeader.shortlistHeader > button::before {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    background: var(--wf-ink-1);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 3.5l9 9M12.5 3.5l-9 9' stroke='black' stroke-width='1.6' stroke-linecap='round' fill='none'/%3E%3C/svg%3E")
+      center / 16px 16px no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 3.5l9 9M12.5 3.5l-9 9' stroke='black' stroke-width='1.6' stroke-linecap='round' fill='none'/%3E%3C/svg%3E")
+      center / 16px 16px no-repeat;
+  }
+
+  .shortlistHeader.shortlistHeader > button:hover {
+    background: var(--wf-hover);
+  }
+}

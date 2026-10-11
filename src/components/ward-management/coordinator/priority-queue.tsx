@@ -182,7 +182,8 @@ export function PriorityQueue({
           value={activeTab}
           onChange={setActiveTab}
         />
-        {activeTab === "patients" ? (
+        {/* The phone queue (v10 Home phone A) is the switch alone; Soon stays on the larger screens. */}
+        {activeTab === "patients" && !phone ? (
           <FilterChip
             pressed={soonOnly}
             onPressedChange={setSoonOnly}

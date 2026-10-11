@@ -1165,3 +1165,78 @@
     white-space: nowrap;
   }
 }
+
+/* Phone patient sheet, second pass (v10 Home phone "Patient open"). Phone only: the sheet reaches
+ * 16px from the top, the body sits on the sheet's own 16px gutter (no second inset), the name row
+ * leaves room for the round Close, and the facts are a two-across card. */
+@media (max-width: 48rem) {
+  .shortlistRegion.shortlistRegion {
+    max-height: calc(100dvh - 16px);
+    border-top-color: var(--wf-line-2);
+    border-radius: 22px 22px 0 0;
+  }
+
+  .shortlistRegion .body.body {
+    max-height: calc(100dvh - 40px);
+    padding: 6px 0 0;
+  }
+
+  .subjectHeader {
+    gap: 10px;
+  }
+
+  .subjectWho {
+    padding-right: 44px;
+  }
+
+  /* Hairlines come from the 1px gaps over the line colour, so the order can lead with the times
+   * (Waiting, Target) as in the mockup without the cell borders going wrong. */
+  .factGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    border-color: var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-line);
+  }
+
+  .factGrid.factGrid > .fact.fact {
+    border: 0;
+    background: var(--wf-surface);
+  }
+
+  .factGrid > .fact:nth-child(5),
+  .factGrid > .fact:nth-child(6) {
+    order: -1;
+  }
+
+  .factGrid > .fact:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .subjectHeader > div:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding-bottom: 6px;
+  }
+
+  .subjectHeader .tierBadge {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 6px;
+    border: 1.5px solid var(--wf-ink-2);
+    border-radius: var(--wf-r-pill);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  }
+
+  /* The times read in mono, as everywhere else on the phone. */
+  .factGrid > .fact:nth-child(5) dd,
+  .factGrid > .fact:nth-child(6) dd {
+    font-family: var(--wf-mono);
+  }
+
+  .fact {
+    padding: 10px 12px;
+  }
+}

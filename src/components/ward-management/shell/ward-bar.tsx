@@ -9,6 +9,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ClipboardCheck,
   FileText,
   FlaskConical,
   Hospital,
@@ -30,7 +31,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
-import { StatusGlyph, WF_BAND_SCROLLED_PX, useWfBandActive, type WfTone } from "@/components/wf";
+import { StatusGlyph, WF_BAND_SCROLLED_PX, publishLiveClock, useWfBandActive, type WfTone } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   readStoredGlarePreference,
@@ -557,6 +558,12 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
   const now = useWardFlowClock();
+  // Phone Live chips read "Live HH:MM" from this one clock (v10 phone hero, `publishLiveClock`).
+  const liveClockFace = formatInstant(now);
+  useEffect(() => {
+    publishLiveClock(liveClockFace);
+  }, [liveClockFace]);
+  useEffect(() => () => publishLiveClock(undefined), []);
 
   const { role, placeId } = useWardNavCounts();
   const roleCategory = roleReferralCategory(role);
@@ -621,7 +628,22 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, []);
 
   const place = wardPlaceFor(pathname, units);
+  // Phone (v10 mockup): the patient, movement and add pages name the page itself in the lean bar.
+  const phoneRouteTitle = !isPhone
+    ? undefined
+    : pathname === WARD_ADD_PERSON_HREF
+      ? "Add patient"
+      : /^\/mockups\/ward-flow\/people\/[^/]+\/?$/u.test(pathname)
+        ? "Patient"
+        : /^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname)
+          ? "Movement"
+          : /^\/mockups\/ward-flow\/statistics\/(services|wards|eds|teams)\/?$/u.test(pathname)
+            ? ({ services: "Services", wards: "Wards", eds: "EDs", teams: "Teams" } as const)[
+                pathname.replace(/\/$/u, "").split("/").pop() as "services" | "wards" | "eds" | "teams"
+              ]
+            : undefined;
   const routeTitle =
+    phoneRouteTitle ??
     (/^\/mockups\/ward-flow\/statistics\/ward\//u.test(pathname) ? "Ward statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/statistics\/ed\//u.test(pathname) ? "Emergency department statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
@@ -1136,9 +1158,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const bandScrolled = useBandScrolled(barRef, bandHero && !isPhone);
   const bandState = !bandHero ? undefined : isPhone ? (barScrolled ? undefined : "ink") : bandScrolled ? "light" : "ink";
   // Phone only: the condensed bar's live line, the open movements in the current scope.
+  const allOpenCount = movements.filter(isOpen).length;
   const scopeOpenCount = activeService
     ? (serviceOptionOpenCounts.get(activeService as HealthService) ?? 0)
-    : movements.filter(isOpen).length;
+    : allOpenCount;
 
   return (
     <header
@@ -1220,6 +1243,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               data-testid="ward-bar-service-panel"
             >
               <p className={styles.popoverHead}>Service</p>
+              {/* Phone (v10 service sheet): the quiet line under the title. */}
+              <p className={styles.serviceSheetNote} aria-hidden="true">
+                What every page and count shows
+              </p>
               <p className="sr-only">{SERVICE_SCOPE_NOTE}</p>
               <button
                 type="button"
@@ -1229,6 +1256,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               >
                 <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
                 <span className={styles.serviceName}>All services</span>
+                <span className={`${styles.serviceOptionCount} ${styles.serviceAllCount}`} aria-hidden="true">
+                  {allOpenCount > 0 ? `${allOpenCount} open` : "none open"}
+                </span>
                 <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === null} />
               </button>
               <hr className={styles.popoverRule} />
@@ -1325,7 +1355,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           aria-controls="ward-bar-tasks-drawer"
           onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
         >
-          <ListChecks className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+          <ListChecks className={`${styles.triggerIcon} ${styles.tasksWide}`} aria-hidden="true" strokeWidth={1.75} />
+          {/* Phone (v10 lean bar): the clipboard. CSS shows one of the two, so desktop is unchanged. */}
+          <ClipboardCheck className={`${styles.triggerIcon} ${styles.tasksPhone}`} aria-hidden="true" strokeWidth={1.75} />
           <span className={styles.triggerLabel}>Tasks</span>
           <span className={styles.badge}>{tasksActiveCount}</span>
         </button>

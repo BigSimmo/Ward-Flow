@@ -588,3 +588,33 @@ button.groupHead:focus-visible {
     display: none;
   }
 }
+
+/* Phone (v10 mockup): a non-letter group head carries its count as a small round pill right after
+ * the title; a letter divider keeps the count at the right end. */
+@media (max-width: 48rem) {
+  .groupHead:not(.groupLetter) .groupTitle {
+    flex: 0 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .groupHead:not(.groupLetter) .groupCount {
+    order: 0;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    margin-left: 0;
+    padding: 0 6px;
+    box-sizing: border-box;
+    border: 1px solid var(--wf-line-3);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    white-space: nowrap;
+  }
+  .groupHead:not(.groupLetter) .groupMeta {
+    margin-left: auto;
+  }
+}

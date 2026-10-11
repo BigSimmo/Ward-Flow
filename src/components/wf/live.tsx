@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pause, Play } from "lucide-react";
 import { Button } from "./button";
 import { cx } from "./cx";
 import { clk, dur } from "./format";
 import { SrOnly } from "./primitives";
 import { StatusGlyph } from "./status-glyph";
+import { useIsPhone } from "./use-is-phone";
 import { useMinuteNow } from "./use-minute-now";
 import styles from "./live.module.css";
 
@@ -14,7 +15,11 @@ export type LiveState = "live" | "paused" | "syncing" | "stale" | "offline";
 
 export type LiveChipProps = {
   state: LiveState;
-  /** Live: age of the last sync, shown small after the word ("1s", "synced 1s ago"). */
+  /**
+   * Live: age of the last sync, shown small after the word ("1s", "synced 1s ago"). On a phone the
+   * chip shows the shared clock instead ("Live 10:42", v10 phone hero) when the shell publishes one;
+   * pass `null` to show the word alone.
+   */
   age?: ReactNode;
   /** Stale: the last good sync. Shown as "as at HH:MM". */
   asAt?: Date | number;
@@ -23,6 +28,35 @@ export type LiveChipProps = {
   onTogglePause?: () => void;
   className?: string;
 };
+
+/*
+ * The clock the phone Live chip shows ("Live HH:MM"). The app shell publishes its own clock here
+ * (`publishLiveClock`), so every page's chip reads the same time without wiring it through. Nothing
+ * is published outside the shell, and the chip then keeps its `age`.
+ */
+let liveClock: string | undefined;
+const liveClockListeners = new Set<() => void>();
+
+export function publishLiveClock(value: string | undefined) {
+  if (value === liveClock) return;
+  liveClock = value;
+  for (const listener of liveClockListeners) listener();
+}
+
+function subscribeLiveClock(listener: () => void) {
+  liveClockListeners.add(listener);
+  return () => {
+    liveClockListeners.delete(listener);
+  };
+}
+
+function useLiveClock(): string | undefined {
+  return useSyncExternalStore(
+    subscribeLiveClock,
+    () => liveClock,
+    () => undefined,
+  );
+}
 
 const WORD: Record<LiveState, string> = {
   live: "Live",
@@ -41,6 +75,11 @@ export function LiveChip({ state, age, asAt, onHero = false, onTogglePause, clas
   const word = WORD[state];
   const asAtText = state === "stale" && asAt != null ? `as at ${clk(asAt)}` : null;
   const paused = state === "paused";
+  const isPhone = useIsPhone();
+  const clock = useLiveClock();
+  // Phone (v10): the chip reads "Live HH:MM" from the shared clock; desktop keeps its own age.
+  const phoneClock = isPhone && age !== null && clock ? clock : undefined;
+  const shownAge = phoneClock ?? age;
   return (
     <span className={cx(styles.group, className)} data-wf-live="">
       <span className={cx(styles.lv, onHero && styles.onHero)} aria-hidden="true">
@@ -50,7 +89,9 @@ export function LiveChip({ state, age, asAt, onHero = false, onTogglePause, clas
         {state === "stale" ? <StatusGlyph tone="warning" size={9} /> : null}
         {state === "offline" ? <StatusGlyph tone="danger" size={9} /> : null}
         {word}
-        {state === "live" && age != null ? <span className={styles.u}>{age}</span> : null}
+        {state === "live" && shownAge != null ? (
+          <span className={cx(styles.u, phoneClock && styles.clk)}>{shownAge}</span>
+        ) : null}
         {asAtText ? <span className={styles.u}>{asAtText}</span> : null}
       </span>
       <SrOnly role="status">{asAtText ? `${word}, ${asAtText}` : word}</SrOnly>

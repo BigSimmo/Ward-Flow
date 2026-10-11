@@ -109,7 +109,7 @@ export { Dialog, type DialogProps, type DialogAction } from "./dialog";
 export { StateLine, type StateLineProps, type StateKind, type StateAction } from "./state";
 export { ToastProvider, useOptionalToast, useToast, type ToastApi, type ToastInput } from "@/components/ui/toast";
 export { Tooltip, type TooltipProps } from "@/components/ui/tooltip";
-export { LiveChip, Timer, type LiveState, type LiveChipProps, type TimerProps, type TimerDirection } from "./live";
+export { LiveChip, Timer, publishLiveClock, type LiveState, type LiveChipProps, type TimerProps, type TimerDirection } from "./live";
 export {
   Field,
   TextInput,

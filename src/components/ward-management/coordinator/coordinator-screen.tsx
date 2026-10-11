@@ -58,7 +58,13 @@ import { HomeBedflow } from "./home-bedflow";
 import { HomeEdPressure, dueWindowLabel } from "./home-ed-pressure";
 import { PriorityQueue, queueWaitThresholds, type QueueHighlight } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
-import { SinceLastLookPanel, sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
+import {
+  SinceLastLookPanel,
+  SinceLastLookSheetBody,
+  sinceLastLookCount,
+  sinceSheetDescription,
+  useSinceLastLook,
+} from "./since-last-look-panel";
 import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
 import { HomeBedsReadyCard, HomeWardSheet } from "./home-phone-sheets";
@@ -853,16 +859,18 @@ export function CoordinatorScreen() {
               open
               onClose={() => setPhoneSheet(undefined)}
               title="Since you looked"
+              description={sinceSheetDescription(lastLook.changes, now)}
               mobilePlacement="bottom"
               testId="ward-home-since-sheet"
+              footer={
+                lastLook.changes ? (
+                  <Button variant="pri" className={styles.sinceSheetFoot} onClick={lastLook.markSeen}>
+                    Mark as seen
+                  </Button>
+                ) : undefined
+              }
             >
-              <SinceLastLookPanel
-                changes={lastLook.changes}
-                now={now}
-                activity={recentActivity}
-                onMarkSeen={lastLook.markSeen}
-                placement="band"
-              />
+              <SinceLastLookSheetBody changes={lastLook.changes} activity={recentActivity} />
             </Sheet>
           ) : null}
           {isPhone && phoneSheet?.kind === "exceptions" ? (

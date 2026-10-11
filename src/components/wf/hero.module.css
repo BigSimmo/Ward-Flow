@@ -658,3 +658,35 @@
     display: none;
   }
 }
+
+/* Phone band (v10 phone mockup, every page): the hero's text starts 6px under the lean bar, sits on
+ * the 16px phone gutter, and leaves 18px above the page's 22px lip. Phone only. */
+@media (max-width: 48rem) {
+  .hero[data-band="on"] {
+    padding-top: 6px;
+    padding-right: 16px;
+    padding-bottom: calc(18px + var(--wf-band-lip));
+    padding-left: 16px;
+    /* The page's first content sits 2px under the lip, as in the mockup (its column gap is 12px). */
+    margin-bottom: -10px;
+  }
+  /* The Live chip stays centred on the eyebrow line, which now starts 6px down. */
+  .hero[data-band="on"] [data-wf-live] {
+    top: 9px;
+    right: 16px;
+  }
+}
+
+/* Phone (v10 mockup): an action foot (search, movement) has no hairline and its buttons wrap. */
+@media (max-width: 48rem) {
+  .foot[data-foot="actions"] {
+    padding-top: var(--wf-s-1);
+    border-top: 0;
+  }
+
+  .foot[data-foot="actions"] .footMain {
+    flex-wrap: wrap;
+    overflow: visible;
+    white-space: normal;
+  }
+}

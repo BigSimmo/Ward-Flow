@@ -4,14 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import {
-  BedDouble,
+  Activity,
+  BedSingle,
+  House,
+  Inbox,
   ChevronRight,
   Clock3,
   ListChecks,
   Plus,
-  RotateCcwClock,
   Search,
-  Send,
   Settings,
   Truck,
   UserRound,
@@ -83,9 +84,9 @@ const NEEDS_LIMIT = 4;
 
 /** What the + starts. New referral is real; the rest open the page where that work is done. */
 const CREATE_LINKS = [
-  { id: "officer", label: "Book transport", meta: "Opens Transport", icon: Truck },
-  { id: "delays", label: "Log a delay", meta: "Opens Delays", icon: Clock3 },
-  { id: "wards", label: "Update a bed", meta: "Opens Wards", icon: BedDouble },
+  { id: "officer", label: "Book transport", meta: "For an accepted patient", icon: Truck },
+  { id: "delays", label: "Log a delay", meta: "Reason and who it waits on", icon: Clock3 },
+  { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
 ] as const;
 
 export type WardPhoneMenuProps = {
@@ -269,7 +270,12 @@ function PhoneDock({
           data-testid="ward-rail-link"
           onClick={() => onGo(entry)}
         >
-          <DockFace icon={entry.icon} label={label} count={countIn(counts, entry.id)?.value} />
+          {/* Home is the house in the dock (v10 phone mockup); the rail keeps its own icon. */}
+          <DockFace
+            icon={entry.id === "command" ? House : entry.icon}
+            label={label}
+            count={countIn(counts, entry.id)?.value}
+          />
         </Link>
       ))}
       <span className={styles.riseSlot}>
@@ -302,7 +308,7 @@ function PhoneDock({
         data-testid="ward-phone-menu-activity"
         onClick={() => onDrawer("activity")}
       >
-        <DockFace icon={RotateCcwClock} label="Activity" count={activityUnread} />
+        <DockFace icon={Activity} label="Activity" count={activityUnread} />
       </button>
     </nav>
   );
@@ -423,7 +429,7 @@ function CreateSheet({
       contentClassName={styles.sheet}
       headerClassName={styles.createHead}
       closeButtonClassName={styles.close}
-      bodyClassName={styles.body}
+      bodyClassName={`${styles.body} ${styles.createBody}`}
     >
       <button
         type="button"
@@ -434,7 +440,7 @@ function CreateSheet({
           onNewReferral();
         }}
       >
-        <Send aria-hidden="true" strokeWidth={1.75} />
+        <Inbox aria-hidden="true" strokeWidth={1.75} />
         New referral
       </button>
       <ul className={`${styles.list} ${styles.rich}`}>

@@ -23,7 +23,9 @@ import {
   updateSheetRoot,
   type SheetFocusController,
 } from "@/components/ui/sheet-focus";
+import { useWfBandBleed } from "./band";
 import { Button } from "./button";
+import { useIsPhone } from "./use-is-phone";
 import { cx, present } from "./cx";
 import type { DialogAction } from "./dialog";
 import { Icon } from "./icon";
@@ -301,8 +303,9 @@ export function PhoneSheet({
             <div className={styles.sheetFooter} data-phone-sheet-footer="">
               {secondary ? (
                 <Button
-                  variant="ghost"
+                  variant="sec"
                   size="lg"
+                  className={styles.sheetSecondary}
                   loading={secondary.loading}
                   disabledReason={secondary.disabledReason}
                   reasonDisplay="tooltip"
@@ -604,8 +607,18 @@ export function PhoneHero({
   const titleId = useId();
   const Heading = `h${level}` as ElementType;
   const shown = (figures ?? []).slice(0, PHONE_HERO_FIGURE_LIMIT);
+  // v10 phone mockup: a page that opens on this hero gets the band, as the shared Hero does; the
+  // lean bar joins it at rest. Phone only, so a desktop render keeps its inset card.
+  const sectionRef = useRef<HTMLElement>(null);
+  const isPhone = useIsPhone();
+  useWfBandBleed(sectionRef, isPhone);
   return (
-    <section className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
+    <section
+      ref={sectionRef}
+      className={cx(styles.hero, className)}
+      aria-labelledby={titleId}
+      data-testid={testId}
+    >
       <div className={styles.heroTitleBlock}>
         {present(chip) ? (
           <div className={styles.heroEyebrowRow}>

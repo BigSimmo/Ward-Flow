@@ -326,12 +326,21 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
     // remaking it a fixed action row must fail both this enumeration and the explicit rule pin.
     // Modal sheets (.colDetail, .detail, .detailPanel, .shortlistColumn, and the header search's
     // full-screen phone sheet .popup, 9 Oct 2026, and the Ward page's bed slide-out .drawer, a modal
-    // bottom sheet on phone, 9 Oct 2026) and .toast notifications are not action rows.
+    // bottom sheet on phone, 9 Oct 2026, and the header service picker's .servicePanel, a modal
+    // bottom sheet with its own scrim on phone, 11 Oct 2026) and .toast notifications are not
+    // action rows.
     const actionRows = allBottomAnchored.filter(
       (selector) =>
-        ![".colDetail", ".detail", ".detailPanel", ".toast", ".shortlistColumn", ".popup", ".drawer"].includes(
-          selector,
-        ),
+        ![
+          ".colDetail",
+          ".detail",
+          ".detailPanel",
+          ".toast",
+          ".shortlistColumn",
+          ".popup",
+          ".drawer",
+          ".servicePanel",
+        ].includes(selector),
     );
     expect(actionRows).toEqual([".actionRow"]);
     const command = stripComments(readModule(path.join(WARD_ROOT, "coordinator/coordinator.module.css")));
