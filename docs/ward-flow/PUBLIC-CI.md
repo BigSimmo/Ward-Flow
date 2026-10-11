@@ -29,6 +29,12 @@ Details that keep the split sound:
   file and every entry exactly once. Refresh the cost record when the shards drift apart, from a recent
   run's `ward-coverage-blob-*` artifacts: each shard's Vitest blob report records every file's cost on
   the real runner, with coverage on.
+- **Longest first.** In CI (`CI` set) Vitest runs each unit shard's files, and the related-tests step's
+  files, longest first by the same record (`scripts/ward-flow/unit-durations.mjs`). A fresh runner has
+  no Vitest results cache, so its own order is the file listing, and a 2.5-minute file starting last
+  kept a shard running alone for up to two minutes. This changes order only: every file still runs in
+  its own isolated worker, and the shard split is unchanged. On 11 October 2026 it took a local
+  shard 3 of 5 from 291 to 198 seconds.
 - **Coverage.** Each unit shard also records V8 coverage for its own files into a Vitest blob report
   (`WARD_COVERAGE_BLOB_DIR`), with the thresholds switched off for that one slice. The coverage job
   downloads all five blobs, fails if any shard's blob is missing, and runs
@@ -40,7 +46,9 @@ Details that keep the split sound:
   against the expected-reds manifest the same way the unit shards do, so it fails only where a shard
   would also fail. It used to have its own runner; sharing the static runner keeps two PR runs inside
   the account's concurrent-runner limit.
-- **Browser groups.** Each group runs with one worker on a runner of its own. Three browsers sharing
+- **Browser groups.** Groups are dealt from `scripts/ward-flow/journey-durations.json` (each spec
+  file's wall time in CI). Refresh it from the list reporter's timestamps in the three group logs when
+  the groups drift apart. Each group runs with one worker on a runner of its own. Three browsers sharing
   one runner made timing-sensitive journeys fail (28 September 2026). Failing groups upload traces and
   screenshots for three days.
 - **Route types.** The static job runs `next typegen` before `tsc -p tsconfig.json`, so route and page

@@ -1,17 +1,19 @@
 {
-  "source": "batch 2 gate journeys, 25 Sept 2026 (steward's b2-e2e.log): summed test time per spec file, in seconds",
+  "source": "PR #242 CI run 38095329539 (10 October 2026), the three Ward browser journey groups: wall time per spec file from the list reporter's timestamps, in seconds",
   "seconds": {
-    "ui-ward-coordinator.spec.ts": 129.0,
-    "ui-ward-roles.spec.ts": 112.6,
-    "ui-ward-search.spec.ts": 64.7,
-    "ui-ward-chrome-header.spec.ts": 62.5,
-    "ui-ward-forced-colors.spec.ts": 40.4,
-    "ui-ward-management.spec.ts": 39.6,
-    "ui-ward-table-thresholds.spec.ts": 32.3,
-    "ui-ward-referrals.spec.ts": 22.1,
-    "ui-ward-statistics-journey.spec.ts": 12.6,
-    "ui-ward-capacity-morning-moved.spec.ts": 5.0,
-    "ui-ward-statistics-compare.spec.ts": 4.6,
-    "ui-ward-discharges.spec.ts": 3.6
+    "ui-ward-roles.spec.ts": 112.4,
+    "ui-ward-chrome-header.spec.ts": 76.1,
+    "ui-ward-discharges.spec.ts": 68.4,
+    "ui-ward-coordinator.spec.ts": 51.4,
+    "ui-ward-table-thresholds.spec.ts": 28.0,
+    "ui-ward-full-journey.spec.ts": 26.4,
+    "ui-ward-search.spec.ts": 22.0,
+    "ui-ward-referrals.spec.ts": 21.2,
+    "ui-ward-responsive-audit.spec.ts": 21.2,
+    "ui-ward-forced-colors.spec.ts": 19.8,
+    "ui-ward-management.spec.ts": 14.8,
+    "ui-ward-statistics-journey.spec.ts": 11.7,
+    "ui-ward-capacity-morning-moved.spec.ts": 5.5,
+    "ui-ward-statistics-compare.spec.ts": 2.3
   }
 }
