@@ -1756,10 +1756,12 @@ fieldset.formRow {
    capsule; the main button is a full pill and copy a round button. */
 .phoneBar {
   right: 0;
-  bottom: 0;
+  /* Rests on the phone dock (device audit, 11 Oct 2026); it covered the dock's Create button. */
+  bottom: var(--wf-dock-clear, 0px);
   left: 0;
   align-items: center;
-  padding: var(--wf-s-4) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  padding: var(--wf-s-4) var(--wf-s-4)
+    max(var(--wf-s-3), calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px) - var(--wf-dock-clear, 0px)));
   border: 0;
   border-radius: 0;
   background: linear-gradient(180deg, transparent, var(--wf-canvas) 45%);
@@ -1854,7 +1856,8 @@ fieldset.formRow {
     position: fixed;
     top: auto;
     right: 12px;
-    bottom: 92px;
+    /* Above the action bar, which rests on the dock. */
+    bottom: calc(92px + var(--wf-dock-clear, 0px));
     left: 12px;
     width: fit-content;
     max-width: calc(100% - 24px);

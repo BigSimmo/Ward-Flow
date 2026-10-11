@@ -10,6 +10,7 @@
  * - a button that opens a dialog is pressed only if no dialog is open;
  * - any other button is pressed only if React had not yet attached when it was tapped (no
  *   `__reactContainer$` key on the document), because React never saw that tap.
+ * Two or more early taps on the same button are never replayed.
  */
 export const WARD_HEADER_READY_ATTRIBUTE = "data-wf-bar-ready";
 
@@ -19,9 +20,9 @@ const EARLY_TAP_MAX_AGE_MS = 8_000;
 /** React replays some early taps itself just after the header is ready; let that land first. */
 const SETTLE_MS = 150;
 
-export const WARD_EARLY_TAP_SCRIPT = `(function(){var d=document.documentElement;document.addEventListener("click",function(e){if(d.hasAttribute("${WARD_HEADER_READY_ATTRIBUTE}"))return;var t=e.target;var b=t&&t.closest?t.closest('${HEADER_BUTTON}'):null;if(!b)return;var r=false;for(var k in document){if(k.indexOf("__reactContainer$")===0){r=true;break;}}window.__wfEarlyTap={id:b.getAttribute("data-testid"),at:Date.now(),expanded:b.getAttribute("aria-expanded"),react:r};},true);})();`;
+export const WARD_EARLY_TAP_SCRIPT = `(function(){var d=document.documentElement;document.addEventListener("click",function(e){if(d.hasAttribute("${WARD_HEADER_READY_ATTRIBUTE}"))return;var t=e.target;var b=t&&t.closest?t.closest('${HEADER_BUTTON}'):null;if(!b)return;var r=false;for(var k in document){if(k.indexOf("__reactContainer$")===0){r=true;break;}}var id=b.getAttribute("data-testid");var p=window.__wfEarlyTap;window.__wfEarlyTap={id:id,at:Date.now(),expanded:b.getAttribute("aria-expanded"),react:r,count:p&&p.id===id?p.count+1:1};},true);})();`;
 
-type EarlyTap = { id: string; at: number; expanded: string | null; react: boolean };
+type EarlyTap = { id: string; at: number; expanded: string | null; react: boolean; count: number };
 
 function dialogIsOpen(): boolean {
   return Array.from(document.querySelectorAll('[role="dialog"]')).some((dialog) => dialog.getClientRects().length > 0);
@@ -38,7 +39,12 @@ export function replayEarlyHeaderTap(): () => void {
   document.documentElement.setAttribute(WARD_HEADER_READY_ATTRIBUTE, "");
   const holder = window as Window & { __wfEarlyTap?: EarlyTap };
   const tap = holder.__wfEarlyTap;
-  if (!tap || Date.now() - tap.at > EARLY_TAP_MAX_AGE_MS) return () => {};
+  // Repeated taps on one button cannot be told apart from taps React already replayed, so a
+  // second press might undo the first. Only a single early tap is replayed.
+  if (!tap || tap.count > 1 || Date.now() - tap.at > EARLY_TAP_MAX_AGE_MS) {
+    holder.__wfEarlyTap = undefined;
+    return () => {};
+  }
   // Taken only when the timer fires, so a mount that is undone at once (React's development
   // double mount) leaves the tap for the mount that stays.
   const timer = window.setTimeout(() => {

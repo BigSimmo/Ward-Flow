@@ -152,6 +152,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^ward-shared-access\.tsx$/,
     name: /^PHONE_RELEASE_WAIT_MS$/,
   },
+  {
+    id: "early-header-tap",
+    why: "How old a header tap made before the page finished loading may be, and how long to wait before replaying it (11 Oct 2026); never shown, not a limit.",
+    file: /^shell\/ward-early-tap\.ts$/,
+    name: /^(?:EARLY_TAP_MAX_AGE_MS|SETTLE_MS)$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;

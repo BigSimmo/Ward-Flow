@@ -701,11 +701,18 @@ export function WardGlobalSearch({
   // must not scroll. When it could, Safari grew and shrank its toolbar under the open search, which
   // cut off the search's top and left the page showing below its footer.
   useEffect(() => {
-    if (!showPopup || !window.matchMedia(PHONE_SEARCH_QUERY).matches) return;
+    if (!showPopup) return;
     const root = document.documentElement;
     const previous = root.style.overflowY;
-    root.style.overflowY = "hidden";
+    const phone = window.matchMedia(PHONE_SEARCH_QUERY);
+    // Follows the width while open, so turning a tablet or resizing past 48rem keeps it right.
+    const apply = () => {
+      root.style.overflowY = phone.matches ? "hidden" : previous;
+    };
+    apply();
+    phone.addEventListener("change", apply);
     return () => {
+      phone.removeEventListener("change", apply);
       root.style.overflowY = previous;
     };
   }, [showPopup]);
