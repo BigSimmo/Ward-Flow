@@ -48,6 +48,11 @@
   color: var(--wf-ink-2);
 }
 
+.avatarInitials {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  letter-spacing: 0.02em;
+}
+
 .avatar svg {
   width: 20px;
   height: 20px;

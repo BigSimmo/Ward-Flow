@@ -198,13 +198,15 @@ function sinceGroups(changes: ChangesSinceLastLook): SinceGroup[] {
 /**
  * Phone sheet body (v10 Home phone, "Since you looked"): one card of group rows, each a glyph,
  * a bold count and a quiet detail line. The sheet's own title and description carry the time.
- * A first look, or a look with nothing new, lists the recent activity in the same rows.
+ * A look with nothing new says so in one line; a first look says new events count from the next
+ * look. The event-by-event list lives in Activity, never here (it named records by id and read as
+ * news under "Nothing new").
  */
 export function SinceLastLookSheetBody({
   changes,
-  activity = [],
 }: {
   changes: ChangesSinceLastLook | undefined;
+  /** Accepted for the band panel's signature; the phone sheet lists counts only. */
   activity?: readonly SinceActivityLine[];
 }) {
   const groups = changes ? sinceGroups(changes) : [];
@@ -216,13 +218,8 @@ export function SinceLastLookSheetBody({
             key: "quiet",
             tone: changes ? "success" : "neutral",
             title: changes ? "Nothing new since you last looked" : "New events count from your next look",
+            detail: changes ? undefined : "This is your first look this session",
           },
-          ...activity.map((line) => ({
-            key: line.id,
-            tone: (line.category === "decline" ? "closed" : line.tone) as WfTone,
-            title: line.text,
-            detail: line.time,
-          })),
         ];
   return (
     <ul className={styles.sinceSheetList} data-testid="ward-since-last-look" aria-label="Since you last looked">
@@ -237,6 +234,14 @@ export function SinceLastLookSheetBody({
       ))}
     </ul>
   );
+}
+
+/** The phone sheet's digest as plain handover text, one line per group. */
+export function sinceHandoverText(changes: ChangesSinceLastLook | undefined, now: Instant): string {
+  const head = `Since you looked: ${sinceSheetDescription(changes, now)}`;
+  const groups = changes ? sinceGroups(changes) : [];
+  if (groups.length === 0) return `${head}\n${changes ? "Nothing new." : "First look this session."}`;
+  return [head, ...groups.map((group) => (group.detail ? `${group.title}: ${group.detail}` : group.title))].join("\n");
 }
 
 export function SinceLastLookPanel({

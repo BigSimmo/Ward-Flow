@@ -2151,3 +2151,18 @@ button.registerRow:hover {
     background: var(--wf-hover);
   }
 }
+
+/* Home phone "Since you looked" sheet foot (v10): Copy as handover text, Mark as seen beside it. */
+.sinceSheetFootRow {
+  display: flex;
+  gap: var(--wf-s-2);
+  width: 100%;
+}
+
+.sinceSheetFootRow > .sinceSheetFoot {
+  width: auto;
+}
+
+.sinceSheetFootRow > .sinceSheetFoot:last-child {
+  flex: 1 1 auto;
+}

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 
-import { Pause, Play } from "lucide-react";
+import { Copy, Pause, Play } from "lucide-react";
 import {
   Button,
   CheckingFoot,
@@ -62,12 +62,13 @@ import {
   SinceLastLookPanel,
   SinceLastLookSheetBody,
   sinceLastLookCount,
+  sinceHandoverText,
   sinceSheetDescription,
   useSinceLastLook,
 } from "./since-last-look-panel";
 import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
-import { HomeBedsReadyCard, HomeWardSheet } from "./home-phone-sheets";
+import { HomeWardSheet } from "./home-phone-sheets";
 
 const HANDOVER_HREF = "/mockups/ward-flow/handover";
 /** Activity lines shown under "Since you looked". */
@@ -817,15 +818,8 @@ export function CoordinatorScreen() {
                   rowCap={isPhone ? PHONE_QUEUE_ROWS : undefined}
                   phone={isPhone}
                 />
-                {isPhone ? (
-                  <HomeBedsReadyCard
-                    units={units}
-                    admissions={admissions}
-                    bedReleases={bedReleases}
-                    leaveBeds={leaveBeds}
-                    onOpenWard={(unitId) => setPhoneSheet({ kind: "ward", unitId })}
-                  />
-                ) : null}
+                {/* Phone (v10 Home): the queue ends the page; the beds-ready list is on Capacity
+                    and Places, not repeated here. */}
               </div>
             )}
 
@@ -863,14 +857,29 @@ export function CoordinatorScreen() {
               mobilePlacement="bottom"
               testId="ward-home-since-sheet"
               footer={
-                lastLook.changes ? (
-                  <Button variant="pri" className={styles.sinceSheetFoot} onClick={lastLook.markSeen}>
-                    Mark as seen
+                // v10: Copy as handover text is the sheet's primary; Mark as seen stays beside it.
+                <div className={styles.sinceSheetFootRow}>
+                  {lastLook.changes ? (
+                    <Button variant="sec" className={styles.sinceSheetFoot} onClick={lastLook.markSeen}>
+                      Mark as seen
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="pri"
+                    icon={Copy}
+                    className={styles.sinceSheetFoot}
+                    onClick={() => {
+                      void navigator.clipboard
+                        ?.writeText(sinceHandoverText(lastLook.changes, now))
+                        .catch(() => undefined);
+                    }}
+                  >
+                    Copy as handover text
                   </Button>
-                ) : undefined
+                </div>
               }
             >
-              <SinceLastLookSheetBody changes={lastLook.changes} activity={recentActivity} />
+              <SinceLastLookSheetBody changes={lastLook.changes} />
             </Sheet>
           ) : null}
           {isPhone && phoneSheet?.kind === "exceptions" ? (

@@ -176,7 +176,11 @@ export function PriorityQueue({
           label="Queues"
           className={styles.queueSeg}
           items={[
-            { id: "patients", label: phone ? "ED" : "Patients", count: movements.length === 0 ? "none" : movements.length },
+            {
+              id: "patients",
+              label: phone ? "ED" : "Patients",
+              count: movements.length === 0 ? "none" : movements.length,
+            },
             { id: "referrals", label: "Referrals", count: referralQueue.length === 0 ? "none" : referralQueue.length },
           ]}
           value={activeTab}
@@ -471,7 +475,8 @@ export function PriorityQueue({
           <button type="button" className={styles.footButton} onClick={onClearHighlight}>
             Clear
           </button>
-        ) : (
+        ) : phone ? null : (
+          // Phone (v10 Home): the foot is the order line alone; Delays is in the Menu.
           <Link href={delaysHref} className={styles.footLink}>
             Open in Delays
           </Link>

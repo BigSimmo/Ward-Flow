@@ -163,6 +163,10 @@
   .lg {
     width: 100%;
   }
+  /* Phone: near solid, so the page under the dialog never reads through it. */
+  .panel {
+    background-color: color-mix(in srgb, var(--wf-overlay) 85%, var(--wf-glass-sheet, var(--wf-glass-thick)));
+  }
 }
 
 @media (forced-colors: active) {

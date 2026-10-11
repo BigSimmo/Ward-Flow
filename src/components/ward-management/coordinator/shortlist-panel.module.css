@@ -1055,8 +1055,8 @@
     position: fixed;
     inset: 0;
     background: var(--scrim);
-    backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
     z-index: 940;
     animation: shortlistFadeIn 0.2s ease-out forwards;
   }
@@ -1238,5 +1238,27 @@
 
   .fact {
     padding: 10px 12px;
+  }
+
+  /* The phone list is already Waiting, Target, then the two paired facts: no reordering. */
+  .factGrid[data-phone] > .fact:nth-child(5),
+  .factGrid[data-phone] > .fact:nth-child(6) {
+    order: 0;
+  }
+
+  .factGrid[data-phone] > .fact:nth-child(5) dd,
+  .factGrid[data-phone] > .fact:nth-child(6) dd {
+    font-family: inherit;
+  }
+
+  .factGrid[data-phone] > .fact:nth-child(-n + 2) dd {
+    font-family: var(--wf-mono);
+  }
+
+  /* The FitHighlight groups lead (v10): the Candidates toggle and its count line leave. The
+     groups below still state every count, and the list stays open. */
+  .candidateHeaderToggle,
+  .candidateCounts {
+    display: none;
   }
 }

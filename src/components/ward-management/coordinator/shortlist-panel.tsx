@@ -5,7 +5,7 @@ import Link from "next/link";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { Fragment, useCallback, useMemo, useState, type Dispatch, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { StatusGlyph, durMinutes } from "@/components/wf";
+import { StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -275,7 +275,7 @@ function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: readonl
  * either direction — asserting an absence is the same overreach as asserting the seven-day figure
  * that was deleted on 2026-08-23.
  */
-function legalFormLine(movement: Movement, now: Instant) {
+function legalFormLine(movement: Movement, now: Instant, phone = false) {
   if (!movement.legalForm) return "No legal form recorded";
   const formCode = `Form ${movement.legalForm.code}`;
   if (movement.legalForm.dueAt === undefined) {
@@ -286,7 +286,10 @@ function legalFormLine(movement: Movement, now: Instant) {
   // "passed its deadline" is pinned by tests/ward-legal-figure-guard.test.ts (finding 7).
   return remaining < 0
     ? `${formCode} passed its deadline ${Math.abs(remaining)} min ago`
-    : `${formCode} due in ${remaining} min`;
+    : phone
+      ? // Phone (v10): hours and minutes ("6h 40m"), never a bare count of minutes.
+        `${formCode} due in ${splitDuration(remaining)}`
+      : `${formCode} due in ${remaining} min`;
 }
 
 /**
@@ -356,6 +359,15 @@ export function ReferralPlacementPanel({ referral, now }: { referral: Referral; 
   );
 }
 
+/** Phone: brings the first fit row into view and focuses it, so the person picks the ward. */
+function focusFirstCandidate(from: HTMLElement) {
+  const first = from
+    .closest("[data-testid^='ward-shortlist-']")
+    ?.querySelector<HTMLElement>("[data-testid^='ward-shortlist-candidate-'][data-fit]");
+  first?.scrollIntoView({ block: "center", behavior: "smooth" });
+  first?.focus({ preventScroll: true });
+}
+
 function Fact({
   label,
   value,
@@ -406,6 +418,8 @@ export function ShortlistPanel({
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number. Called unconditionally,
   // ahead of the `if (!movement)` early return below, so the hook order stays fixed.
   const resolvePatientIdentity = usePatientOf();
+  // Phone (v10 Home "Patient open"): a 2x2 facts card and less text. Desktop is unchanged.
+  const isPhone = useIsPhone();
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   /**
    * ⚠️ EVERY WARD, NOT A FILTERED THREE. This was `eligibleCandidatesAmong(…, PARALLEL_REFERRAL_CAP)`,
@@ -1153,18 +1167,31 @@ export function ShortlistPanel({
             </span>
           </div>
         </div>
-        <dl className={shortlistStyles.factGrid}>
-          <Fact label="Sex" value={movement.sex} />
-          <Fact label="Age group" value={movement.cohort} />
-          <Fact label="Security" value={movement.security} />
-          <Fact label="Legal" value={movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus} />
-          <Fact label="Waiting" value={durMinutes(waitedMinutes)} urgent={overTarget} />
-          <Fact label="Target" value={durMinutes(targetMinutes)} />
-          {suburbLabel ? <Fact label="Suburb" value={suburbLabel} testId="ward-shortlist-suburb" /> : null}
-        </dl>
+        {isPhone ? (
+          <dl className={shortlistStyles.factGrid} data-phone="true">
+            <Fact label="Waiting" value={durMinutes(waitedMinutes)} urgent={overTarget} />
+            <Fact label="Target" value={durMinutes(targetMinutes)} />
+            <Fact label="Sex and age group" value={`${movement.sex}, ${movement.cohort.toLowerCase()}`} />
+            <Fact
+              label="Security and legal"
+              value={`${movement.security}, ${movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus}`}
+            />
+            {suburbLabel ? <Fact label="Suburb" value={suburbLabel} testId="ward-shortlist-suburb" /> : null}
+          </dl>
+        ) : (
+          <dl className={shortlistStyles.factGrid}>
+            <Fact label="Sex" value={movement.sex} />
+            <Fact label="Age group" value={movement.cohort} />
+            <Fact label="Security" value={movement.security} />
+            <Fact label="Legal" value={movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus} />
+            <Fact label="Waiting" value={durMinutes(waitedMinutes)} urgent={overTarget} />
+            <Fact label="Target" value={durMinutes(targetMinutes)} />
+            {suburbLabel ? <Fact label="Suburb" value={suburbLabel} testId="ward-shortlist-suburb" /> : null}
+          </dl>
+        )}
         {movement.legalForm ? (
           <p className={shortlistStyles.legalLine} data-urgent={legalBreached ? "true" : undefined}>
-            {`${legalFormLine(movement, now)} · ${movement.legalStatus}`}
+            {`${legalFormLine(movement, now, isPhone)} · ${movement.legalStatus}`}
             {legalDueAt !== undefined ? <LegalLimitsNotChecked variant="tag" /> : null}
           </p>
         ) : null}
@@ -1497,21 +1524,23 @@ export function ShortlistPanel({
       </section>
 
       <footer className={`${styles.shortlistActions} ${shortlistStyles.actionToolbar}`}>
-        <p className={`${styles.shortlistAutoAllocationNote} ${shortlistStyles.tabularNum}`}>
-          <span className={shortlistStyles.toWard} data-testid="ward-shortlist-to">
-            {referTargetNames.length === 0 ? (
-              "Choose a ward"
-            ) : (
-              <>
-                To <strong>{referTargetNames.join(", ")}</strong>
-              </>
-            )}
-          </span>
-          <span className={shortlistStyles.toMeta}>
-            {referTargets.length} selected · {movement.referredUnitIds.length} of {parallelReferralCap} parallel
-            referrals in use.
-          </span>
-        </p>
+        {isPhone && referTargetNames.length === 0 ? null : (
+          <p className={`${styles.shortlistAutoAllocationNote} ${shortlistStyles.tabularNum}`}>
+            <span className={shortlistStyles.toWard} data-testid="ward-shortlist-to">
+              {referTargetNames.length === 0 ? (
+                "Choose a ward"
+              ) : (
+                <>
+                  To <strong>{referTargetNames.join(", ")}</strong>
+                </>
+              )}
+            </span>
+            <span className={shortlistStyles.toMeta}>
+              {referTargets.length} selected · {movement.referredUnitIds.length} of {parallelReferralCap} parallel
+              referrals in use.
+            </span>
+          </p>
+        )}
 
         {/* Task 5 fix round 1: rendered only when `overrideSucceeded` — a real check against
             `movement.referredUnitIds`, not the mere existence of `overrideRecord`. A refused
@@ -1527,26 +1556,48 @@ export function ShortlistPanel({
         ) : null}
 
         <div className={styles.shortlistActionRow}>
-          <button
-            type="button"
-            data-testid="ward-shortlist-refer"
-            aria-disabled={canRefer ? undefined : "true"}
-            aria-describedby={canRefer ? undefined : "ward-shortlist-refer-unavailable"}
-            title={canRefer ? undefined : referUnavailableReason}
-            className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
-            onClick={canRefer ? handleRefer : ignoreUnavailableActivation}
-          >
-            {referTargetNames.length === 1 ? `Refer to ${referTargetNames[0]}` : "Refer"}
-          </button>
+          {/* Phone (v10): with no ward picked yet, Refer is never shown greyed. It reads "Choose a
+              ward to refer" and takes the person to the fits list; nothing is referred against a
+              default (Critical 2), so the choice stays a human tap on a ward. */}
+          {isPhone && !hasReferSelection && referralBlocked === undefined ? (
+            <button
+              type="button"
+              data-testid="ward-shortlist-refer"
+              data-phone-choose="true"
+              className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
+              onClick={(event) => focusFirstCandidate(event.currentTarget)}
+            >
+              Choose a ward to refer
+            </button>
+          ) : (
+            <button
+              type="button"
+              data-testid="ward-shortlist-refer"
+              aria-disabled={canRefer ? undefined : "true"}
+              aria-describedby={canRefer ? undefined : "ward-shortlist-refer-unavailable"}
+              title={canRefer ? undefined : referUnavailableReason}
+              className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
+              onClick={canRefer ? handleRefer : ignoreUnavailableActivation}
+            >
+              {referTargetNames.length === 1 ? `Refer to ${referTargetNames[0]}` : "Refer"}
+            </button>
+          )}
           <button
             type="button"
             data-testid="ward-shortlist-override-toggle"
-            aria-disabled={canOverride ? undefined : "true"}
+            aria-disabled={canOverride || isPhone ? undefined : "true"}
             aria-describedby={canOverride ? undefined : "ward-shortlist-override-unavailable"}
             title={canOverride ? undefined : overrideUnavailableReason}
             aria-expanded={overrideOpen}
             className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
-            onClick={canOverride ? () => setOverrideOpen((open) => !open) : ignoreUnavailableActivation}
+            onClick={
+              canOverride
+                ? () => setOverrideOpen((open) => !open)
+                : isPhone
+                  ? // Phone: never greyed; with no ward picked it takes the person to the list.
+                    (event) => focusFirstCandidate(event.currentTarget)
+                  : ignoreUnavailableActivation
+            }
           >
             Override
           </button>

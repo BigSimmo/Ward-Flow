@@ -15,7 +15,6 @@ import {
   Search,
   Settings,
   Truck,
-  UserRound,
   Wrench,
 } from "lucide-react";
 
@@ -392,8 +391,14 @@ function WhoLink({ role, onClose }: { role: WardChromeRole; onClose: () => void 
       onClick={onClose}
       aria-label={`${CHROME_ROLE_LABELS[role]}. Switch workstation in Settings`}
     >
-      <span className={styles.avatar} aria-hidden="true">
-        <UserRound aria-hidden="true" strokeWidth={1.75} />
+      {/* v10 Menu sheet: an initials avatar. The prototype has no signed-in person, so the
+          initials are the workstation's ("BC" for Bed coordinator), never an invented name. */}
+      <span className={`${styles.avatar} ${styles.avatarInitials}`} aria-hidden="true">
+        {CHROME_ROLE_LABELS[role]
+          .split(/\s+/u)
+          .slice(0, 2)
+          .map((word) => word[0]?.toUpperCase() ?? "")
+          .join("")}
       </span>
       <span className={styles.whoText}>
         <span className={styles.whoName}>{CHROME_ROLE_LABELS[role]}</span>

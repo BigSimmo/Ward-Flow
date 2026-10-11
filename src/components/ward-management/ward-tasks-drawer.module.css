@@ -1126,4 +1126,52 @@
   .btnIcon {
     width: auto;
   }
+
+  /* v10 Tasks sheet (phone): the title, one note line ("11 open · due first") and the rows. The
+     filter and sort controls and the count chip leave; the list is due first. Every action stays
+     on its row: tap a row to open it. */
+  .headingCount,
+  .controls,
+  .rowMeta[data-phone-hidden],
+  .rowWhen[data-phone-hidden] {
+    display: none;
+  }
+
+  .sectionHead[data-phone-quiet] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .drawerBody {
+    padding-top: var(--wf-s-3);
+  }
+
+  .rowHead {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .rowTitle {
+    min-height: 0;
+    font-size: var(--wf-fs-14);
+  }
+
+  .rowWho {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .rowDue {
+    color: var(--wf-ink-2);
+    font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .row {
+    cursor: pointer;
+  }
 }

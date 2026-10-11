@@ -36,7 +36,9 @@
   border: 1px solid var(--wf-line-2);
   border-bottom: 0;
   border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
-  background-color: var(--wf-glass-sheet, var(--wf-glass-thick));
+  /* Near solid (about 98%): sheet glass mixed toward the solid overlay surface, so page text under
+     the sheet never reads through it, even where the blur is unavailable or stopped. */
+  background-color: color-mix(in srgb, var(--wf-overlay) 85%, var(--wf-glass-sheet, var(--wf-glass-thick)));
   background-image: var(--wf-sheen);
   -webkit-backdrop-filter: blur(32px) saturate(1.4);
   backdrop-filter: blur(32px) saturate(1.4);

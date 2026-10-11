@@ -529,12 +529,83 @@ button.groupHead:focus-visible {
   cursor: pointer;
 }
 
+.sinceRowLines {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) 0;
+}
+
+.sinceRowTitle {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
 .sinceRowText {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The digest in the phone sheet: one card of rows, the word over its detail, the figure right. */
+.sinceSheetList {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  list-style: none;
+}
+
+.sinceSheetRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 56px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.sinceSheetRow:first-child {
+  border-top: 0;
+}
+
+.sinceSheetText {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sinceSheetWord {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.sinceSheetDetail {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sinceSheetFigure {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .sinceRowCount {
