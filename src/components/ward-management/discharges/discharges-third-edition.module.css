@@ -1688,9 +1688,9 @@
   --wf-ink-3: var(--wf-dim);
 }
 
-.workTable tr[data-act="true"] {
-  outline: 1px solid var(--wf-act-edge);
-  outline-offset: -1px;
+/* Act now: a thin red left edge, never a box (device audit, 11 Oct 2026). */
+.workTable tr[data-act="true"] > :first-child {
+  box-shadow: inset 2px 0 0 var(--wf-act-edge);
 }
 
 .tabBadgeAlert {

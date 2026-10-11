@@ -41,7 +41,9 @@ import {
 } from "@/components/ward-management/ward-bed-designation";
 import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
+import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
@@ -355,7 +357,9 @@ function SecurityLabel({ unit }: { unit: Unit }) {
 }
 
 const NEAR_FULL = 0.95;
-const SERVICE_LINE = 0.9;
+/* The one alert line (device audit, 11 Oct 2026): the rail's Bed alerts threshold, as on Home and
+   Capacity. It was 90% here, so All wards drew a "90% line" against everyone else's 85%. */
+const SERVICE_LINE = BED_ALERT_THRESHOLD_PERCENT / 100;
 
 type WardRow = {
   unit: Unit;
@@ -408,7 +412,6 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
       units.map((unit) => {
         const site = siteByCode(unit.siteCode);
         const states = bedStates(unit, admissions, bedReleases, leaveBeds);
-        const capacity = unitCapacity(unit, bedReleases);
         const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
         const incoming = movements.filter(
           (movement) =>
@@ -421,7 +424,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           siteName: site?.name ?? unit.siteCode,
           siteShort: site ? siteShortName(site.name) : unit.siteCode,
           states,
-          occupancy: unit.beds > 0 ? capacity.occupied / unit.beds : 0,
+          // Occupied or Pulled: the one occupancy count (`ward-occupancy.ts`).
+          occupancy: unit.beds > 0 ? wardBedsInUse(unit, admissions, bedReleases) / unit.beds : 0,
           ready: states.ready,
           pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
           out: breakdown.confirmedToday + breakdown.expectedToday,

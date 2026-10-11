@@ -1804,6 +1804,11 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
     "/mockups/ward-flow/statistics/ed/[edId]",
     "/mockups/ward-flow/statistics/service/[serviceId]",
     "/mockups/ward-flow/statistics/ward/[unitId]",
+    // Device audit, 11 Oct 2026 (stable shell): movements and a team page keep New referral too;
+    // Record a decision and Contact a team live on those pages, not in the header.
+    "/mockups/ward-flow/movements",
+    "/mockups/ward-flow/movements/[movementId]",
+    "/mockups/ward-flow/community/[teamId]",
   ];
 
   // Catcher item 4 — the anti-vacuity floor itself. An empty WARD_PRIMARY_ACTIONS and an empty
@@ -1870,10 +1875,8 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
         .sort();
 
     expect(routesOfKind("new-referral")).toEqual([...REFERRAL_MENU_ROUTES].sort());
-    expect(routesOfKind("record-decision")).toEqual(
-      ["/mockups/ward-flow/movements", "/mockups/ward-flow/movements/[movementId]"].sort(),
-    );
-    expect(routesOfKind("contact-team")).toEqual(["/mockups/ward-flow/community/[teamId]"]);
+    expect(routesOfKind("record-decision")).toEqual([]);
+    expect(routesOfKind("contact-team")).toEqual([]);
     // v10: no route carries Export the figures in the header any more (it lives in the statistics
     // hero). The kind stays in the union and the bar still renders it (ward-primary-action tests).
     expect(routesOfKind("export-figures")).toEqual([]);
@@ -1924,7 +1927,7 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
     // One shared menu object, not independent copies that could drift apart — every
     // "New referral" route entry points at the very same array.
     const referralEntries = WARD_PRIMARY_ACTIONS.filter((entry) => entry.action.kind === "new-referral");
-    expect(referralEntries.length).toBe(13); // 8 + the five statistics routes (v10, 10 Oct 2026)
+    expect(referralEntries.length).toBe(16); // 8 + five statistics routes (v10) + movements x2 and team (audit, 11 Oct)
     for (const entry of referralEntries) {
       if (entry.action.kind !== "new-referral") continue;
       expect(entry.action.menu, `${entry.route}'s New referral menu is not the shared WARD_NEW_REFERRAL_MENU`).toBe(

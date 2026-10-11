@@ -107,29 +107,76 @@
   }
 }
 
-/* Tablet portrait: the bar is tight, so the pill keeps only its ring and the page title keeps its
- * room. The button's aria-label still names the data mode; its panel is unchanged. */
+/* Tablet portrait (device audit, 11 Oct 2026): the Prototype pill keeps its word (the safety
+ * notice must stay legible) and New referral keeps its label. The room comes from the search field,
+ * which folds to its magnifier here and still opens the full smart search; Activity and Tools stay,
+ * because the portrait Menu sheet does not hold them. */
 @media (min-width: 48.0625rem) and (max-width: 1000px) {
-  /* The ring sits centred; the word is pushed past the clipped edge (no 0px text). */
-  .dataMode > div > button:first-child {
-    justify-content: flex-start;
-    gap: 40px;
-    width: 36px;
-    min-width: 36px;
-    padding: 0 0 0 14px;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-  .dataMode > div > button:first-child > span {
-    flex-shrink: 0;
-  }
-  /* The title keeps its full width; the search field gives up the room instead. */
+  /* The title keeps its full width. */
   .title {
     flex-shrink: 0;
   }
   /* A long ward name still ends in an ellipsis rather than pushing the bar off the screen. */
   .titleGroup .place {
     max-width: 13rem;
+  }
+
+  .bar .primaryPrefix,
+  .bar .primaryMain {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+
+  .bar .primaryPrefix {
+    margin: 0;
+    white-space: pre;
+  }
+
+  .bar .primaryPrefix + .primaryMain {
+    margin: 0 0 0 -7px;
+  }
+
+  .bar .centerGroup,
+  .bar .searchWrap {
+    flex: 0 0 auto;
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    margin-left: auto;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"]) {
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"] > div) {
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    padding: 0;
+    justify-content: center;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    max-width: none;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .bar .searchWrap :global([data-ward-search-shortcut]),
+  .bar .searchWrap :global([data-testid="ward-global-search-clear"]) {
+    display: none;
   }
 }
 
@@ -3005,6 +3052,16 @@
   /* The 18px line keeps a 48px tall hit area: 15px above and below. */
   .scopeBadgeBtn::before {
     inset: -15px -8px;
+  }
+
+  /* Device audit (11 Oct 2026): the whole title block — the page title and the service line under
+   * it — is the service control's tap target, not just the 91 x 18 line. On the phone the block is
+   * a <label> round the service button (ward-bar.tsx), so a tap anywhere in it activates the
+   * button; stretching it to the bar's full height makes the target the whole block. */
+  .title {
+    align-self: stretch;
+    justify-content: center;
+    cursor: pointer;
   }
 
   .bar[data-scrolled="true"] .scopeBadgeBtn > * {

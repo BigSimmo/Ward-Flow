@@ -64,7 +64,6 @@ import {
   DUE_SOON_RANGE_MINUTES,
   DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
-  OCCUPANCY_ALERT_PERCENT,
   OVERDUE_AFTER_MINUTES_BY_TIER,
   WARD_ANSWER_TARGET_MINUTES,
   SILENT_WARD_FIRST_REMINDER_MINUTES,
@@ -72,6 +71,7 @@ import {
   TRANSPORT_BOOKED_TARGET_MINUTES,
   UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { DECISION_TARGET_STEPS } from "@/components/ward-management/ward-decision-targets";
 import {
   enableActNowNotifications,
@@ -905,9 +905,9 @@ export function SettingsScreen() {
               setting="occupancy"
               title="Occupancy alert"
               sub="Bed alerts dot from"
-              value={OCCUPANCY_ALERT_PERCENT}
-              saved={OCCUPANCY_ALERT_PERCENT}
-              display={`${OCCUPANCY_ALERT_PERCENT}%`}
+              value={BED_ALERT_THRESHOLD_PERCENT}
+              saved={BED_ALERT_THRESHOLD_PERCENT}
+              display={`${BED_ALERT_THRESHOLD_PERCENT}%`}
               noun="occupancy alert"
               range={{
                 min: 80,

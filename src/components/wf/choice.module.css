@@ -419,3 +419,49 @@
     border-radius: var(--wf-r-pill);
   }
 }
+
+/* ── Edge fade for scrolling tabs and phone tracks (device audit, 11 Oct 2026) ─────────────────────
+ * A clipped row fades at its end so the cut item reads as "scroll for more". Scroll-driven: full at
+ * the start, none once scrolled to the end, and a row that does not overflow never fades. */
+@property --wf-row-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes wfRowFade {
+  from {
+    --wf-row-fade: 24px;
+  }
+  to {
+    --wf-row-fade: 0px;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .tabs {
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    animation: wfRowFade linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
+@media (max-width: 48rem) {
+  @supports (animation-timeline: scroll()) {
+    .seg,
+    .trk {
+      -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+      mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+      animation: wfRowFade linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
+}
+
+/* Touch tablets: tabs and choice pills reach the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
+.tab,
+.ptItem,
+.segItem {
+  min-height: var(--wf-tablet-tap, 0px);
+}

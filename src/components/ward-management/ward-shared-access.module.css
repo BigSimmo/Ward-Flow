@@ -85,6 +85,8 @@
   align-items: center;
   gap: 6px;
   height: 28px;
+  /* Touch tablets: the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
+  min-height: var(--wf-tablet-tap, 0px);
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
   border-radius: var(--wf-r-pill);

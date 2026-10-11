@@ -131,8 +131,8 @@ export function HomeBedflow({
   const reviewCount = fitGroupsForMovement?.review.length ?? 0;
 
   const occupancy = useMemo(
-    () => deriveServiceBedAlerts(units, bedReleases, undefined, movements, now),
-    [units, bedReleases, movements, now],
+    () => deriveServiceBedAlerts(units, bedReleases, undefined, movements, now, undefined, admissions),
+    [units, bedReleases, movements, now, admissions],
   );
   const occupancyByService = new Map(occupancy.services.map((row) => [row.shortName, row.occupancyPercent]));
 

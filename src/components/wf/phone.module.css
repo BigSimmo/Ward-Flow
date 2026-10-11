@@ -348,14 +348,15 @@
   list-style: none;
 }
 
-/* Act now: a thin red edge all round, never a fill (v9 sections 3 and 5, as the table's actNow).
-   Drawn on its own layer above the hover fill, so hover and press never hide it. */
+/* Act now: a thin red left edge on that row only, never a fill and never a box round the row
+   (device audit, 11 Oct 2026; as the table's actNow). Drawn on its own layer above the hover fill,
+   so hover and press never hide it. */
 .rowActNow::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 3;
-  box-shadow: inset 0 0 0 1px var(--wf-danger);
+  box-shadow: inset 2px 0 0 var(--wf-danger);
   pointer-events: none;
 }
 
@@ -707,8 +708,10 @@
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  /* Room for the children's focus rings, which would otherwise be clipped by the scroller. */
-  padding: 4px 2px;
+  /* Room for the children's focus rings, which would otherwise be clipped by the scroller. The end
+     padding is the fade's width, so the last chip clears the fade once the row is scrolled to its
+     end (device audit, 11 Oct 2026: clipped chips should read as scrollable). */
+  padding: 4px var(--phone-fade) 4px 2px;
   -webkit-mask-image: linear-gradient(
     to right,
     transparent 0,

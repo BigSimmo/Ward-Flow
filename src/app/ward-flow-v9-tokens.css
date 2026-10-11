@@ -25,6 +25,8 @@
 
   /* the smallest pointer target on desktop */
   --wf-target: 28px;
+  /* A control's floor on a touch tablet; 0 elsewhere, so desktop and phone are unchanged. */
+  --wf-tablet-tap: 0px;
 
   /* rows: one density setting. Default 44, dense 36, touch 52. Compact pages keep 44. */
   --wf-row-dense: 36px;
@@ -93,7 +95,9 @@
   /* cool glass, about 80% opaque by owner choice, in three tiers by role */
   --wf-glass-bar: rgba(244, 247, 250, 0.8);
   --wf-glass-pop: rgba(244, 247, 250, 0.84);
-  --wf-glass-sheet: rgba(246, 249, 252, 0.88);
+  /* Sheets and drawers are solid (device audit, 11 Oct 2026: content showed through Switch team,
+     the Governance review sheet and the Create sheet). Bars and popovers keep their glass. */
+  --wf-glass-sheet: rgb(246, 249, 252);
   --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.75), transparent 50%);
   --wf-glass-hl: rgba(255, 255, 255, 0.85);
   --wf-glass-thin: var(--wf-glass-bar);
@@ -132,7 +136,7 @@
   --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 50%);
   --wf-glass-bar: rgba(27, 39, 51, 0.78);
   --wf-glass-pop: rgba(27, 39, 51, 0.82);
-  --wf-glass-sheet: rgba(32, 45, 58, 0.86);
+  --wf-glass-sheet: rgb(32, 45, 58);
   --wf-glass-hl: rgba(255, 255, 255, 0.1);
   --wf-glass-thin: var(--wf-glass-bar);
   --wf-glass: var(--wf-glass-pop);
@@ -166,7 +170,7 @@
     --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 50%);
     --wf-glass-bar: rgba(27, 39, 51, 0.78);
     --wf-glass-pop: rgba(27, 39, 51, 0.82);
-    --wf-glass-sheet: rgba(32, 45, 58, 0.86);
+    --wf-glass-sheet: rgb(32, 45, 58);
     --wf-glass-hl: rgba(255, 255, 255, 0.1);
     --wf-glass-thin: var(--wf-glass-bar);
     --wf-glass: var(--wf-glass-pop);
@@ -329,5 +333,17 @@ tr[data-dim="true"] > :is(td, th) :is(a, b, strong, em, span, time, abbr, small,
 @keyframes wfFade {
   from {
     opacity: 0;
+  }
+}
+
+/* Touch tablets (device audit, 11 Oct 2026): a 44px touch size for controls on an iPad in either
+ * orientation, where 40 to 150 controls a page were under 32px. Scoped to a coarse primary pointer
+ * between phone and desktop widths, so a desktop with a mouse and the 390px phone design are
+ * unchanged. Primitives read `--wf-tablet-tap` as a min-height; `--wf-target` is the smallest
+ * pointer target. */
+@media (pointer: coarse) and (min-width: 48.0625rem) and (max-width: 80rem) {
+  :root {
+    --wf-target: var(--wf-touch);
+    --wf-tablet-tap: var(--wf-touch);
   }
 }

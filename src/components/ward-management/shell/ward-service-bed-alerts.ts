@@ -21,6 +21,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { wardSites } from "@/components/ward-management/ward-sites";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   OCCUPANCY_ALERT_PERCENT,
   OCCUPANCY_CRITICAL_PERCENT,
@@ -79,6 +80,8 @@ export interface ServiceBedAlertsSummary {
   totalFreeBeds: number;
   /** Occupied/total for the three metro services only; null when they have no beds. */
   metroOccupancyPercent: number | null;
+  /** Every service's wards together, the same count as `wardOccupancy` (`ward-occupancy.ts`). */
+  statewideOccupancyPercent: number | null;
   /** Remaining capacity percent for the three metro services only; null when they have no beds. */
   metroRemainingCapacityPercent?: number | null;
   mostPressing: ServiceBedAlert | null;
@@ -144,9 +147,11 @@ export function deriveServiceBedAlerts(
   now: Instant = 0,
   /** The configured ED access target; the rail passes `state.configuration.edAccessTargetMinutes`. */
   accessTargetMinutes?: number,
+  /** Admissions, so a live pull counts as a bed in use (`ward-occupancy.ts`). */
+  admissions: readonly Admission[] = [],
 ): ServiceBedAlertsSummary {
   // Leverage the comprehensive backend tracker
-  const report = trackServiceBedCapacity(units, bedReleases, movements, now, sites, accessTargetMinutes);
+  const report = trackServiceBedCapacity(units, bedReleases, movements, now, sites, accessTargetMinutes, admissions);
 
   const codePriority: Record<ServiceBedAlertCode, number> = {
     black: 4,
@@ -212,6 +217,7 @@ export function deriveServiceBedAlerts(
     services,
     totalFreeBeds,
     metroOccupancyPercent,
+    statewideOccupancyPercent: report.totalBeds > 0 ? report.statewideOccupancyPercent : null,
     metroRemainingCapacityPercent,
     mostPressing,
     metroEdSummary: report.metroEdSummary,
