@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronRight as RowChevron } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronRight as RowChevron, ShieldCheck, UserRound } from "lucide-react";
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
@@ -44,6 +44,7 @@ import {
   buttonClass,
   durMinutes,
   useIsPhone,
+  PhoneSheet,
 } from "@/components/wf";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
@@ -103,6 +104,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   // ward's gates fold, and the beds, census and answers are rows that open in place.
   const isPhone = useIsPhone();
   const [showAllFacts, setShowAllFacts] = useState(false);
+  // Phone (v10): the gates, beds, census and answers rows each open their panel as a bottom sheet.
+  const [phoneSheet, setPhoneSheet] = useState<string | null>(null);
   const [overrideReason, setOverrideReason] = useState<OverrideReason | undefined>(undefined);
   const [numConsulted, setNumConsulted] = useState(false);
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
@@ -367,12 +370,20 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       }
     : undefined;
 
-  /** Phone: the ward's own gates fold under one line saying whether this patient fits. */
+  /** Phone: the ward's own gates sit under one row saying whether this patient fits; it opens them as a sheet. */
   function phoneGatesSection(section: ReactNode, pass: number, total: number) {
     if (!isPhone) return section;
     return (
-      <details className={styles.phoneGates}>
-        <summary>
+      <>
+        <button
+          type="button"
+          className={styles.phoneGates}
+          aria-haspopup="dialog"
+          data-testid="ward-answer-fold-gates"
+          onClick={() => {
+            setPhoneSheet("gates");
+          }}
+        >
           <StatusGlyph tone={pass === total ? "success" : "warning"} size={10} />
           <span className={styles.phoneFoldText}>
             <span className={styles.phoneFoldTitle}>{pass === total ? "Fits this ward" : "Check the gates"}</span>
@@ -384,27 +395,62 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             </span>
           </span>
           <RowChevron size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
-        </summary>
-        {section}
-      </details>
+        </button>
+        <PhoneSheet
+          open={phoneSheet === "gates"}
+          onClose={() => {
+            setPhoneSheet(null);
+          }}
+          title="This ward's own gates"
+          description={`Checked against ${currentUnit.name} now`}
+          height="tall"
+        >
+          <div className={`${styles.phoneSheetScope} ${styles.phoneSheetGates}`}>{section}</div>
+        </PhoneSheet>
+      </>
     );
   }
 
-  /** Phone: a panel folds into one row (title, one line, a count) that opens it in place. */
+  /** Phone: a panel is one row (title, one line, a count) that opens it as a bottom sheet. */
   function phoneFold(id: string, title: string, line: ReactNode, count: ReactNode, panel: ReactNode) {
     if (!isPhone) return panel;
+    const description =
+      id === "capacity"
+        ? `Writes to ${currentUnit.name} only`
+        : id === "history"
+          ? "Recorded acceptances and declines for this ward"
+          : id === "census"
+            ? `${currentUnit.beds} beds · ${states.ready} ready`
+            : undefined;
     return (
-      <details className={styles.phoneFold} data-testid={`ward-answer-fold-${id}`}>
-        <summary>
+      <>
+        <button
+          type="button"
+          className={styles.phoneFold}
+          aria-haspopup="dialog"
+          data-testid={`ward-answer-fold-${id}`}
+          onClick={() => {
+            setPhoneSheet(id);
+          }}
+        >
           <span className={styles.phoneFoldText}>
             <span className={styles.phoneFoldTitle}>{title}</span>
             <span className={styles.phoneFoldLine}>{line}</span>
           </span>
           <span className={styles.phoneFoldCount}>{count}</span>
           <RowChevron size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
-        </summary>
-        <div className={styles.phoneFoldBody}>{panel}</div>
-      </details>
+        </button>
+        <PhoneSheet
+          open={phoneSheet === id}
+          onClose={() => {
+            setPhoneSheet(null);
+          }}
+          title={title}
+          description={description}
+        >
+          <div className={`${styles.phoneSheetScope} ${styles.phoneFoldBody}`}>{panel}</div>
+        </PhoneSheet>
+      </>
     );
   }
 
@@ -638,6 +684,32 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       </div>
                       <div className={styles.sbarCard}>
                         {/* Patient Dossier Header */}
+                        {isPhone ? (
+                          /* Phone (v10): "This patient" with the person tile; the facts below carry cohort and sex. */
+                          <div className={styles.phonePatientHead}>
+                            <span className={styles.phonePatientTile} aria-hidden="true">
+                              <UserRound size={18} />
+                            </span>
+                            <span className={styles.phoneFoldText}>
+                              <span className={styles.phoneFoldTitle}>This patient</span>
+                              <span className={styles.phonePatientLine}>Name and UMRN shared on acceptance</span>
+                            </span>
+                          </div>
+                        ) : null}
+                        {isPhone ? (
+                          <div className={styles.phonePatientChips}>
+                            <span className={styles.phonePatientChip}>
+                              <ShieldCheck size={14} aria-hidden="true" />
+                              {activeMovement.legalStatus}
+                            </span>
+                            {activeMovement.specialling ? (
+                              <span className={styles.phonePatientChip}>1:1 specialling</span>
+                            ) : null}
+                            {activeMovement.highAcuity ? (
+                              <span className={styles.phonePatientChip}>High acuity</span>
+                            ) : null}
+                          </div>
+                        ) : (
                         <div className={styles.patientDossierBanner}>
                           <div>
                             <div className={styles.patientNameLine}>Incoming patient</div>
@@ -662,6 +734,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             ) : null}
                           </div>
                         </div>
+                        )}
 
                         {/* SBAR Narrative Sections */}
                         {isPhone ? null : sbarSections}

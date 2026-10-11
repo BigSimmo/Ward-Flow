@@ -738,7 +738,7 @@ export function WardNetworkWorkspace() {
               selectedUnitId={selectedUnitId}
               onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
             />
-            <NetworkUnitDetail row={detailRow} now={now} />
+            <NetworkUnitDetail row={detailRow} now={now} onClose={() => setSelectedUnitId(undefined)} />
           </div>
         </div>
       </div>

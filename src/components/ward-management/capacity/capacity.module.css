@@ -1297,3 +1297,257 @@
     font-size: var(--wf-fs-12);
   }
 }
+
+/* Phone v10 Wards tab: region chips, highlight chips, then one list grouped by health service.
+ * Rendered only on phone, in place of the bed map and the ward table. */
+@media (max-width: 48rem) {
+  .columns[data-phone-tab="wards"] .capacityGrid,
+  .columns[data-phone-tab="wards"] .wardsSection {
+    display: none;
+  }
+
+  .screen .gapTable tfoot {
+    display: none;
+  }
+
+  .phoneWards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    min-width: 0;
+    scroll-margin-top: 64px;
+  }
+
+  .phoneChipRow {
+    display: flex;
+    gap: var(--wf-s-2);
+    margin-inline: calc(-1 * var(--wf-s-4));
+    padding-inline: var(--wf-s-4);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .phoneChipRow > * {
+    flex: none;
+  }
+
+  .phoneWardList {
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .phoneRegion {
+    scroll-margin-top: 64px;
+  }
+
+  .phoneRegion + .phoneRegion {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .phoneRegionHead {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    margin: 0;
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .phoneRegionDot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .phoneRegionName {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phoneRegionFigures {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .phoneRegionFigures b {
+    color: var(--wf-ink-1);
+    font-family: var(--wf-mono);
+  }
+
+  .phoneWardRows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .phoneWardRows > li + li {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .phoneWardRows > li[data-dim="true"] {
+    opacity: 0.45;
+  }
+
+  .phoneWardRow {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-3);
+    width: 100%;
+    min-height: 64px;
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border: 0;
+    background: transparent;
+    color: var(--wf-ink-1);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .phoneWardRow:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
+
+  .phoneWardText {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .phoneWardName {
+    overflow: hidden;
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phoneWardSub {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+    white-space: nowrap;
+  }
+
+  .phoneWardReady {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+    white-space: nowrap;
+  }
+
+  .phoneWardReady b {
+    color: var(--wf-ink-1);
+    font: 700 var(--wf-fs-16) / 1 var(--wf-mono);
+  }
+
+  .phoneWardSheet {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+  }
+
+  .phoneWardFacts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .phoneWardFacts > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--wf-s-3);
+  }
+
+  .phoneWardFacts > div:nth-child(odd) {
+    border-right: 1px solid var(--wf-line);
+  }
+
+  .phoneWardFacts > div:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .phoneWardFacts dt {
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+  }
+
+  .phoneWardFacts dd {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  }
+
+  .phoneWardConfirmed {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    margin: 0;
+    font-size: var(--wf-fs-13);
+  }
+
+  .phoneWardConfirmed b {
+    font-family: var(--wf-mono);
+  }
+
+  .phoneWardKv {
+    display: grid;
+    grid-template-columns: minmax(0, 6rem) minmax(0, 1fr);
+    gap: var(--wf-s-2) var(--wf-s-3);
+    margin: 0;
+    font-size: var(--wf-fs-13);
+  }
+
+  .phoneWardKv dt {
+    color: var(--wf-ink-3);
+  }
+
+  .phoneWardKv dd {
+    margin: 0;
+    font-weight: 600;
+  }
+}
+
+@media (max-width: 48rem) {
+  /* v10: one small square per bed, left-aligned, not stretched across the row. */
+  .phoneWardStrip {
+    flex-wrap: wrap;
+    height: auto;
+    margin-top: 2px;
+  }
+
+  .phoneWardStrip > span {
+    flex: 0 0 9px;
+    height: 9px;
+  }
+}

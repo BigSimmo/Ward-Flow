@@ -1346,3 +1346,30 @@
     font-size: var(--wf-fs-15);
   }
 }
+
+/* Phone (v10): only a pinned place shows a star, filled, beside its name. */
+@media (max-width: 48rem) {
+  .phonePinMark {
+    display: inline-block;
+    flex: none;
+    margin-left: 6px;
+    color: var(--wf-accent);
+    fill: currentColor;
+    vertical-align: -2px;
+  }
+}
+
+@media (max-width: 48rem) {
+  /* No pin button beside the row on phone, so the figures keep the card's inner edge. */
+  .resultMain {
+    padding-right: var(--wf-s-4);
+  }
+}
+
+@media (max-width: 48rem) {
+  /* The field has its own clear button, so the browser's search cancel mark is not drawn twice. */
+  .phoneSearchBox input::-webkit-search-cancel-button {
+    appearance: none;
+    display: none;
+  }
+}

@@ -343,7 +343,16 @@ export function HubScreen() {
           }}
         >
           <span className={styles.resultText}>
-            <span className={styles.resultName}>{entry.name}</span>
+            <span className={styles.resultName}>
+              {entry.name}
+              {/* Phone (v10): a pinned place carries a filled star by its name; pinning is in its sheet. */}
+              {isPhone && isPinned(entry.id) ? (
+                <>
+                  <Star className={styles.phonePinMark} size={14} aria-hidden="true" />
+                  <SrOnly>, pinned</SrOnly>
+                </>
+              ) : null}
+            </span>
             <span className={styles.resultSub}>
               {(entry.kind === "ward" ? [entry.site, entry.cohort, entry.security] : [entry.site, entry.service])
                 .filter(Boolean)
@@ -388,6 +397,7 @@ export function HubScreen() {
           </span>
         </button>
         {/* ⚠️ A sibling of the row button, not a child: a button inside a button is invalid HTML. */}
+        {isPhone ? null : (
         <button
           type="button"
           className={cx(styles.pinButton, isPinned(entry.id) && styles.pinButtonOn)}
@@ -397,6 +407,7 @@ export function HubScreen() {
         >
           <Star className={styles.pinIcon} size={15} aria-hidden="true" />
         </button>
+        )}
       </li>
     );
   }
@@ -1228,6 +1239,14 @@ export function HubScreen() {
             }
             className={styles.phonePreviewSheet}
             data-testid="hub-phone-preview"
+            secondary={
+              selected === undefined
+                ? undefined
+                : {
+                    label: isPinned(selected.id) ? "Unpin" : "Pin",
+                    onAction: () => toggleHubPin(selected.id),
+                  }
+            }
           >
             {selected === undefined ? null : renderPreview(selected)}
           </PhoneSheet>

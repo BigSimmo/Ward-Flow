@@ -36,6 +36,49 @@
   --mono: var(--wf-mono);
 }
 
+/* Phone sheets render in the overlay root, outside .answerScreen: they read the same names. */
+.phoneSheetScope {
+  --ground: var(--wf-canvas);
+  --surface: var(--wf-surface);
+  --surface-2: var(--wf-surface-2);
+  --sunk: var(--wf-surface-2);
+  --ink: var(--wf-ink-1);
+  --ink-soft: var(--wf-ink-2);
+  --muted: var(--wf-ink-2);
+  --line: var(--wf-line);
+  --line-strong: var(--wf-line-2);
+  --accent: var(--wf-accent);
+  --accent-ink: var(--wf-accent-ink);
+  --accent-soft: var(--wf-accent-tint);
+  --good: var(--wf-success-ink);
+  --good-soft: var(--wf-surface-2);
+  --warn: var(--wf-warning-ink);
+  --warn-soft: var(--wf-surface-2);
+  --danger: var(--wf-danger-ink);
+  --danger-soft: var(--wf-surface-2);
+  --body: var(--wf-font);
+  --mono: var(--wf-mono);
+  color: var(--ink);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+.phoneSheetScope .historyScopeNote {
+  display: none;
+}
+
+.phoneSheetScope {
+  --on-accent: var(--wf-on-accent);
+}
+
+/* Phone sheet: the ward's own Confirm is a full pill beside the stepper, as in the v10 sheet. */
+.phoneSheetScope .capacityForm .btnPrimary {
+  flex: 1 1 auto;
+  min-height: var(--wf-touch);
+  border-radius: var(--wf-r-pill);
+}
+
+
 /* Prototype Governance Banner (FF8) */
 .governanceBanner {
   display: flex;
@@ -2004,6 +2047,16 @@
 
 .phoneGates,
 .phoneFold {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
@@ -2074,13 +2127,24 @@ details[open] > summary > .phoneFoldChevron {
   color: var(--wf-ink-1);
 }
 
+.phoneGates:focus-visible,
+.phoneFold:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Inside the phone sheet the panel is one solid card; the sheet title replaces its heading. */
 .phoneFoldBody > section,
-.phoneGates > section {
+.phoneSheetGates > section {
   margin: 0;
-  border: 0;
-  border-top: 1px solid var(--wf-line);
-  border-radius: 0;
-  box-shadow: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phoneSheetGates .answerGatesHeading {
+  display: none;
 }
 
 .phoneFoldBody > section > :first-child {
@@ -2240,12 +2304,8 @@ details[open] > summary > .phoneFoldChevron {
     box-shadow: none;
   }
 
-  .phoneGates .answerGates {
+  .phoneSheetGates .answerGates {
     padding: var(--wf-s-2) var(--wf-s-3);
-  }
-
-  .phoneGates .answerGatesHeading {
-    display: none;
   }
 
   /* Decline and Accept in principle stay at the bottom of the screen. */
@@ -2311,5 +2371,84 @@ details[open] > summary > .phoneFoldChevron {
     justify-content: center;
     min-height: var(--wf-touch);
     border-radius: var(--wf-r-pill);
+  }
+}
+
+/* Phone: the eligibility sentence is a line of text, not a pill, so it never wraps inside one. */
+@media (max-width: 48rem) {
+  .badge[data-level] {
+    display: block;
+    height: auto;
+    padding: 0 var(--wf-s-1);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+    white-space: normal;
+  }
+}
+
+/* Phone (v10): the request card opens with "This patient" beside a person tile, then pill chips. */
+@media (max-width: 48rem) {
+  .phonePatientHead {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-4) 0;
+  }
+
+  .phonePatientTile {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-2);
+  }
+
+  .phonePatientLine {
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+  }
+
+  .phonePatientChips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4) 0;
+  }
+
+  .phonePatientChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    height: 28px;
+    padding: 0 10px;
+    overflow: hidden;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 48rem) {
+  .referralCard .answerFacts {
+    border: 1px solid var(--wf-line);
+  }
+
+  .referralCard .answerFacts > div:nth-last-child(-n + 2):nth-child(odd),
+  .referralCard .answerFacts > div:last-child {
+    border-bottom: 0;
   }
 }

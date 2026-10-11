@@ -41,6 +41,7 @@ import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-ser
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { wardIntakeConstraintLabels } from "@/components/ward-management/ward-change-reasons";
 import { BedMap } from "./bed-map";
+import { CapacityPhoneWards } from "./capacity-phone-wards";
 import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
 import { bedsForecast } from "./beds-forecast";
@@ -477,6 +478,20 @@ export function CapacityScreen() {
             />
           </div>
         ) : null}
+        {isPhone && phoneTab === "wards" ? (
+          <CapacityPhoneWards
+            groups={
+              service === null
+                ? networkServiceGroups
+                : networkServiceGroups.filter((group) => group.service === service)
+            }
+            filters={networkFilters}
+            activeFilterId={networkFilterId}
+            onFilter={setNetworkFilterId}
+            now={now}
+            isFresh={(unit) => isConfirmationFresh(unit, now)}
+          />
+        ) : null}
         <div className={styles.columns} data-phone-tab={isPhone ? phoneTab : undefined}>
           {/*
             🔴 **THE SCOPE BAR — MOUNTED ONLY WHILE A SERVICE IS CHOSEN**, per its own header
@@ -531,7 +546,7 @@ export function CapacityScreen() {
               </thead>
               <tbody>
                 {gapRows.map((row) => (
-                  <GapRow key={row.id} row={row} />
+                  <GapRow key={row.id} row={row} phone={isPhone} />
                 ))}
               </tbody>
               <tfoot>
@@ -547,7 +562,7 @@ export function CapacityScreen() {
                   <td data-testid="ward-capacity-gap-value">
                     <div className={styles.gapValueContainer}>
                       <GapWord gap={gapTotals.gap} />{" "}
-                      <span className={styles.gapNumber}>{formatGap(gapTotals.gap)}</span>
+                      <span className={styles.gapNumber}>{isPhone ? phoneGap(gapTotals.gap) : formatGap(gapTotals.gap)}</span>
                     </div>
                     <div
                       className={styles.gapMicroGauge}
@@ -1040,6 +1055,11 @@ function bedKindsServed(unit: Unit): string {
   return kinds.length > 0 ? kinds.join(" & ") : "Adult (no beds)";
 }
 
+/** Phone (v10): the word says short or spare, so the figure is the size of the gap; none when exact. */
+function phoneGap(gap: number): string {
+  return gap === 0 ? "" : String(Math.abs(gap));
+}
+
 function formatGap(gap: number): string {
   return gap > 0 ? `+${gap}` : `${gap}`;
 }
@@ -1065,7 +1085,7 @@ function gapWord(gap: number): { tone: WfTone; text: string } {
   return { tone: "success", text: "Spare" };
 }
 
-function GapRow({ row }: { row: BedKindGap }) {
+function GapRow({ row, phone = false }: { row: BedKindGap; phone?: boolean }) {
   const isDeficit = row.gap < 0;
   const isBalanced = row.gap === 0;
   const fillPct = row.waiting > 0 ? Math.min(100, Math.round((row.bedsThatFit / row.waiting) * 100)) : 100;
@@ -1082,7 +1102,7 @@ function GapRow({ row }: { row: BedKindGap }) {
       <td data-testid="ward-capacity-beds-that-fit">{row.bedsThatFit}</td>
       <td data-testid="ward-capacity-gap-value">
         <div className={styles.gapValueContainer}>
-          <GapWord gap={row.gap} /> <span className={styles.gapNumber}>{formatGap(row.gap)}</span>
+          <GapWord gap={row.gap} /> <span className={styles.gapNumber}>{phone ? phoneGap(row.gap) : formatGap(row.gap)}</span>
         </div>
         <div
           className={styles.gapMicroGauge}

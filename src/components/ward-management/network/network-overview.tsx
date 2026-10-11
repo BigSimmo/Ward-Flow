@@ -1,13 +1,17 @@
 "use client";
 
-import { BedDouble, MapPin, Network as NetworkIcon } from "lucide-react";
+import { BedDouble, ChevronRight, MapPin, Network as NetworkIcon } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
 
 import {
   Button,
   Card,
   CardHead,
   FilterChip,
+  PhoneSheet,
   Segmented,
   SrOnly,
   StatusGlyph,
@@ -491,6 +495,89 @@ export function ReadyByRoadTime({
       .sort((a, b) => a.route.min - b.route.min)
       .slice(0, 5);
   }, [ed, rows]);
+  // Phone (v10): one link row under the departments; the ranked list opens as a bottom sheet.
+  const isPhone = useIsPhone();
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const list =
+    ranked.length === 0 ? (
+      <p className={styles.empty}>No ward with a ready bed has a measured route from this department.</p>
+    ) : (
+      <ol className={styles.nearestList}>
+        {ranked.map(({ row, route }, index) => (
+          <li key={row.unit.id}>
+            <button
+              type="button"
+              className={cx(styles.nearestRow, row.unit.id === selectedUnitId && styles.rowSelected)}
+              aria-pressed={row.unit.id === selectedUnitId}
+              onClick={() => {
+                onSelectUnit(row.unit.id);
+                if (isPhone) setSheetOpen(false);
+              }}
+            >
+              <span className={styles.rank}>{index + 1}</span>
+              <span className={styles.nearestText}>
+                <span className={styles.unitName}>{row.unit.name}</span>
+                <span className={styles.unitMeta}>
+                  {row.states.ready} ready · {route.km} km
+                </span>
+              </span>
+              <span className={styles.drive}>
+                {route.min === 0 ? (
+                  <span className={styles.driveTime}>On site</span>
+                ) : (
+                  <>
+                    <span className={styles.driveTime}>{durMinutes(route.min)}</span>
+                    <span className={styles.unitMeta}>drive</span>
+                  </>
+                )}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ol>
+    );
+
+  if (isPhone) {
+    const first = ranked.at(0);
+    return (
+      <>
+        <button
+          type="button"
+          className={styles.roadLink}
+          aria-haspopup="dialog"
+          data-testid="ward-network-roadtime-row"
+          onClick={() => setSheetOpen(true)}
+        >
+          <MapPin size={18} aria-hidden="true" className={styles.roadLinkIcon} />
+          <span className={styles.roadLinkText}>
+            <span className={styles.roadLinkTitle}>
+              Ready beds by road time{ed === undefined ? "" : ` from ${ed.siteCode} ED`}
+            </span>
+            <span className={styles.unitMeta}>
+              {first === undefined
+                ? "No measured route to a ready bed"
+                : `${first.row.unit.name} · ${first.route.min === 0 ? "on site" : `${durMinutes(first.route.min)} drive`}`}
+            </span>
+          </span>
+          <ChevronRight size={16} aria-hidden="true" className={styles.roadLinkIcon} />
+        </button>
+        <PhoneSheet
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          title="Ready beds by road time"
+          description={ed === undefined ? "Indicative, not live traffic" : `From ${ed.name} · indicative, not live traffic`}
+          data-testid="ward-network-roadtime-sheet"
+        >
+          <div className={styles.roadSheet}>
+            {list}
+            <p className={styles.caveat}>{REFERENCE_DISTANCE_CAVEAT}</p>
+            <p className={styles.caveat}>Change the department under Emergency departments.</p>
+          </div>
+        </PhoneSheet>
+      </>
+    );
+  }
 
   return (
     <Card as="section" className={styles.nearest} aria-labelledby="ward-network-roadtime-heading">
@@ -540,7 +627,18 @@ export function ReadyByRoadTime({
 }
 
 /** The selected ward's figures. Bed-level tiles are not recorded in this prototype, so none are drawn. */
-export function NetworkUnitDetail({ row, now }: { row: NetworkUnitRow | undefined; now: Instant }) {
+export function NetworkUnitDetail({
+  row,
+  now,
+  onClose,
+}: {
+  row: NetworkUnitRow | undefined;
+  now: Instant;
+  /** Phone: closes the ward's bottom sheet (clears the selection). */
+  onClose?: () => void;
+}) {
+  const isPhone = useIsPhone();
+  if (isPhone && onClose) return <NetworkUnitSheet row={row} now={now} onClose={onClose} />;
   if (row === undefined) return null;
   const { unit, states } = row;
   return (
@@ -577,5 +675,89 @@ export function NetworkUnitDetail({ row, now }: { row: NetworkUnitRow | undefine
           : ""}
       </p>
     </Card>
+  );
+}
+
+/** Phone (v10): a ward picked on the network opens as a bottom sheet with its figures and two actions. */
+function NetworkUnitSheet({
+  row,
+  now,
+  onClose,
+}: {
+  row: NetworkUnitRow | undefined;
+  now: Instant;
+  onClose: () => void;
+}) {
+  const { dispatch } = useWardFlow();
+  const router = useRouter();
+  const unit = row?.unit;
+  return (
+    <PhoneSheet
+      open={row !== undefined}
+      onClose={onClose}
+      title={unit?.name ?? "Ward"}
+      description={
+        row === undefined || unit === undefined
+          ? undefined
+          : [row.service, unitMeta(unit)].filter(Boolean).join(" · ")
+      }
+      secondary={
+        unit === undefined
+          ? undefined
+          : {
+              label: "Ask to confirm",
+              onAction: () => dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: unit.id }),
+            }
+      }
+      primary={
+        unit === undefined
+          ? undefined
+          : { label: "Open ward page", onAction: () => router.push(unitHref(unit.id)) }
+      }
+      data-testid="ward-network-unit-sheet"
+    >
+      {row === undefined || unit === undefined ? null : (
+        <div className={styles.unitSheet}>
+          <dl className={styles.unitSheetFacts}>
+            <div>
+              <dt>Ready</dt>
+              <dd>
+                {row.states.ready > 0 ? <StatusGlyph tone="success" size={9} /> : null}
+                {row.states.ready}
+              </dd>
+            </div>
+            <div>
+              <dt>Pulled</dt>
+              <dd>{row.states.pulled}</dd>
+            </div>
+            <div>
+              <dt>Occupied</dt>
+              <dd>{row.states.occupied}</dd>
+            </div>
+            <div>
+              <dt>Expected today</dt>
+              <dd>+{row.expected}</dd>
+            </div>
+          </dl>
+          <BedStrip
+            counts={{ ...row.states, pendingPreparation: row.pendingPreparation }}
+            wardName={unit.name}
+            className={styles.unitSheetStrip}
+          />
+          <p className={styles.unitSheetLine}>
+            <b>{durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))}</b> since confirmed
+            {row.pendingPreparation > 0
+              ? ` · ${row.pendingPreparation} of the ready beds ${row.pendingPreparation === 1 ? "is" : "are"} still being made ready`
+              : ""}
+          </p>
+          <dl className={styles.unitSheetKv}>
+            <dt>Involuntary</dt>
+            <dd>{unit.authorised ? "Authorised hospital" : "Not authorised"}</dd>
+            <dt>Site</dt>
+            <dd>{siteByCode(unit.siteCode)?.name ?? unit.siteCode}</dd>
+          </dl>
+        </div>
+      )}
+    </PhoneSheet>
   );
 }
