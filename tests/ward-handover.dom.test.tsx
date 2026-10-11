@@ -129,7 +129,9 @@ describe("Handover page", () => {
 
   it("opens the patient drawer in presentation mode without revealing the background table row", () => {
     renderHandover();
-    fireEvent.click(screen.getByRole("button", { name: /^Present$/ }));
+    // Device audit 11 Oct 2026: Present sits behind the hero's More menu.
+    fireEvent.click(screen.getByTestId("ward-handover-more"));
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Present$/ }));
     const scroll = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
     scroll.mockClear();
     fireEvent.keyDown(window, { key: "j" });
