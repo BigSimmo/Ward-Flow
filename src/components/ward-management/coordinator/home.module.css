@@ -441,7 +441,7 @@
   inset-block: 0.625rem;
   inset-inline-start: 6px;
   width: 3px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--wf-danger);
   pointer-events: none;
 }
