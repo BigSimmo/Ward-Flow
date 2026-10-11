@@ -75,8 +75,11 @@ function PersonCard({
   testId,
   selected,
   onOpen,
+  showPlan = true,
 }: {
   person: PhonePerson;
+  /** False when every card would read the same plan state ("No plan" eighteen times). */
+  showPlan?: boolean;
   withReason?: boolean;
   first?: boolean;
   testId?: string;
@@ -103,7 +106,15 @@ function PersonCard({
       />
       <span className={styles.pcLine1}>
         <b>{person.name}</b>
-        {overdue ? (
+        {!showPlan ? (
+          // Device audit 11 Oct 2026: with no plan row the card is three lines, and the top line
+          // carries both the discharge date and the days away.
+          <span className={cx(styles.pcDue, !overdue && styles.pcDays)}>
+            {overdue ? <StatusGlyph tone="warning" size={9} /> : null}
+            {dueWords(person.offset)} · {person.daysLabel}
+            <SrOnly> away</SrOnly>
+          </span>
+        ) : overdue ? (
           <span className={styles.pcDue}>
             <StatusGlyph tone="warning" size={9} />
             {dueWords(person.offset)}
@@ -144,14 +155,16 @@ function PersonCard({
           {entry.unit.name} · {shortSiteName(entry.unit.siteCode)}
         </span>
       )}
-      <span className={styles.pcLine4}>
-        <StatusGlyph tone={STATUS_TONE[person.status]} size={9} />
-        <span>{RETURN_STATUS_SHORT[person.status]}</span>
-        <span className={styles.pcEnd}>
-          {person.offset === null ? "No discharge date" : `${person.daysLabel} away`}
+      {showPlan ? (
+        <span className={styles.pcLine4}>
+          <StatusGlyph tone={STATUS_TONE[person.status]} size={9} />
+          <span>{RETURN_STATUS_SHORT[person.status]}</span>
+          <span className={styles.pcEnd}>
+            {person.offset === null ? "No discharge date" : `${person.daysLabel} away`}
+          </span>
+          <Icon icon={ChevronRight} size={14} />
         </span>
-        <Icon icon={ChevronRight} size={14} />
-      </span>
+      ) : null}
     </li>
   );
 }
@@ -211,6 +224,7 @@ export function OutOfAreaPhone({
   const [tab, setTab] = useState<PhoneTab>("needs");
   const [mode, setMode] = useState<"peek" | "plan">("peek");
   const byId = new Map(people.map((person) => [person.entry.admission.id, person]));
+  const planVaries = new Set(people.map((person) => person.status)).size > 1;
   const leaving = [...leavingToday]
     .filter((record) => byId.has(record.admissionId))
     .sort((a, b) => a.estimatedAt - b.estimatedAt);
@@ -353,6 +367,7 @@ export function OutOfAreaPhone({
               <ul className={styles.phoneList}>
                 {ready.map((person, i) => (
                   <PersonCard
+                    showPlan={planVaries}
                     key={person.entry.admission.id}
                     person={person}
                     withReason
@@ -374,6 +389,7 @@ export function OutOfAreaPhone({
               <ul className={styles.phoneList}>
                 {soon.map((person) => (
                   <PersonCard
+                    showPlan={planVaries}
                     key={person.entry.admission.id}
                     person={person}
                     selected={person.entry.admission.id === selectedId}
@@ -416,6 +432,7 @@ export function OutOfAreaPhone({
           <ul className={styles.phoneList} data-testid="ward-out-of-area-cards">
             {people.map((person) => (
               <PersonCard
+                showPlan={planVaries}
                 key={person.entry.admission.id}
                 person={person}
                 testId={`ward-out-of-area-card-${person.entry.admission.id}`}
