@@ -1516,3 +1516,10 @@ button.taskLabel[aria-pressed="true"] {
     flex: 0 1 auto;
   }
 }
+
+/* "Show all N" under a folded group (device audit 11 Oct 2026). */
+.showAll {
+  display: flex;
+  justify-content: center;
+  padding: var(--wf-s-2) 0;
+}
