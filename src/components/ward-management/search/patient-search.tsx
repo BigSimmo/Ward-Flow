@@ -78,7 +78,6 @@ import { referralState } from "@/components/ward-management/ward-referrals";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import {
-  CENSUS_GROUPS,
   CENSUS_HIGHLIGHTS,
   buildCensus,
   censusLine,

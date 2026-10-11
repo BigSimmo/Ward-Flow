@@ -152,6 +152,11 @@ function boardUndoEvent(undo: NonNullable<BoardCheck["undo"]>, now: Instant): Wa
 }
 
 /** The router, or null where the screen renders outside the app router (a test or preview). */
+/** This ward's Handover page, scoped to the ward. */
+function wardHandoverHref(unitId: string): string {
+  return `/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unitId }))}`;
+}
+
 function useOptionalRouter(): ReturnType<typeof useRouter> | null {
   try {
     return useRouter();
@@ -1894,7 +1899,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   // Audit 11 Oct 2026: the phone chip row and the iPad portrait toolbar keep their main views and
   // put the less used actions in one More menu, so nothing clips at the edge.
-  const handoverHref = `/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`;
+  const handoverHref = wardHandoverHref(unit.id);
   const wardMoreMenu = (triggerClassName: string, tablet: boolean) => (
     <Menu
       label="More ward actions"

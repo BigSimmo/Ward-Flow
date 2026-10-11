@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Activity, CalendarRange, Check, ChevronRight, Clock, Layers } from "lucide-react";
 
 import {
-  FactGrid,
   GroupHead,
   IconTile,
   LiveChip,

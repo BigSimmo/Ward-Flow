@@ -81,7 +81,6 @@ import {
   waitTone,
   type BoardFilters,
   type BoardRow,
-  type WaitThreshold,
 } from "./delays-board-model";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
