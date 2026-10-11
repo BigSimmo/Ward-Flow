@@ -456,7 +456,7 @@ export function EdActionsMenu({
   onViewRecord: () => void;
   onEditPresentation: () => void;
   onEditPlan: () => void;
-  /** A small icon trigger beside a row's one Next button (ED mockup A2). */
+  /** A small icon trigger beside a board row's one Next button. */
   compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);

@@ -124,10 +124,6 @@ const PINNED: Record<string, string | null> = {
   // the full suite and none of them on any focused run**, because no register imports another and
   // nothing selects a test that reads the filesystem.
   settings: "SettingsScreen",
-  // 2026-10-11 preview-only mockup routes (audit/mock-a), deliberately unlisted from the nav.
-  "preview/edpage": "EdPagePreview",
-  "preview/ipadportrait": "PortraitPatternPreview",
-  "preview/patient": "PatientNowPreview",
   sovereign: "SovereignShowcaseScreen",
   statistics: "StatisticsScreen",
   "statistics/compare": "StatisticsCompareScreen",

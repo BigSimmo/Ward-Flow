@@ -1,6 +1,5 @@
 "use client";
 
-import type { MockupOption } from "@/components/ward-management/preview/preview-option";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
@@ -51,8 +50,6 @@ export const SYSTEMIC_HOLDS: SystemicDelayHold[] = [];
 export interface DelaysScreenProps {
   aliasFrom?: "queue" | "exceptions" | "escalation" | null;
   movements?: Movement[];
-  /** iPad portrait pattern mockup, from a preview route only. */
-  portraitPattern?: MockupOption;
 }
 
 function subscribeToLocation(listener: () => void) {
@@ -68,11 +65,7 @@ function readAliasFromLocation() {
  * (`delays-board.tsx`); this screen owns the data scope (chosen service), the old-bookmark banner,
  * the one write (Escalate to State bed coordination desk) and the page shell.
  */
-export function DelaysScreen({
-  aliasFrom: aliasFromProp,
-  movements: movementsOverride,
-  portraitPattern,
-}: DelaysScreenProps = {}) {
+export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
   const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
   const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
   const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
@@ -210,7 +203,6 @@ export function DelaysScreen({
             showNotice("Not wired in this prototype.");
           }}
           banner={banner}
-          portraitPattern={portraitPattern}
           empty={
             open.length === 0 ? (
               <p className={styles.absent} data-testid="ward-delays-nobody-waiting">

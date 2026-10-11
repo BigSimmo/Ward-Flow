@@ -77,9 +77,6 @@ import { DelaysScreen } from "@/components/ward-management/delays/delays-screen"
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
-import { EdPagePreview } from "@/components/ward-management/preview/ed-page-preview";
-import { PatientNowPreview } from "@/components/ward-management/preview/patient-now-preview";
-import { PortraitPatternPreview } from "@/components/ward-management/preview/portrait-pattern-preview";
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
@@ -1332,18 +1329,6 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/delays`, render: () => createElement(DelaysScreen) },
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },
-  {
-    route: `${ROUTE_PREFIX}/preview/patient`,
-    render: () => createElement(PatientNowPreview, { option: "A", patientId: "PT-001" }),
-  },
-  {
-    route: `${ROUTE_PREFIX}/preview/edpage`,
-    render: () => createElement(EdPagePreview, { option: "A", edId: "peel-ed" }),
-  },
-  {
-    route: `${ROUTE_PREFIX}/preview/ipadportrait`,
-    render: () => createElement(PortraitPatternPreview, { option: "A", page: "handover" }),
-  },
   { route: `${ROUTE_PREFIX}/sovereign`, render: () => createElement(SovereignShowcaseScreen) },
   // Read-only reports, 9 Oct 2026 (stream C).
   { route: `${ROUTE_PREFIX}/statistics/weekly`, render: () => createElement(WeeklyReportScreen) },
@@ -1442,7 +1427,7 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
      */
     // 39, not 36: the three read-only reports (statistics/weekly, reports/downtime, reports/chronology), 9 Oct 2026.
     // 43, not 39: the four statistics index pages (services, wards, eds, teams), 9 Oct 2026.
-    expect(RENDERABLE_ROUTES.length).toBe(46);
+    expect(RENDERABLE_ROUTES.length).toBe(43);
   });
 });
 

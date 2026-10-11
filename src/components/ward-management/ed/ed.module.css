@@ -7807,54 +7807,30 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   font-family: var(--wf-mono);
 }
 
-/* ---------- ED page mockups (preview routes only) ---------- */
+/* ---------- ED page (device audit 11 Oct 2026, owner pick A2) ---------- */
 
-/* Mockup A at desktop and iPad landscape: the board and one sticky Needs you rail side by side. */
-.main[data-preview-layout="rail"] {
+/* Wide screens: the board and one sticky Needs you rail side by side. */
+.main[data-layout="rail"] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
   align-items: start;
 }
 
-.main[data-preview-layout="rail"] > * {
+.main[data-layout="rail"] > * {
   grid-column: 1 / -1;
 }
 
-.main[data-preview-layout="rail"] > [data-pane="board"] {
+.main[data-layout="rail"] > [data-pane="board"] {
   grid-column: 1;
 }
 
-.main[data-preview-layout="rail"] > [data-preview-rail] {
+.main[data-layout="rail"] > [data-rail] {
   grid-column: 2;
   position: sticky;
-  top: var(--wf-s-3);
+  top: calc(3.75rem + var(--wf-s-3));
 }
 
-.previewGroup {
-  display: flex;
-  flex-direction: column;
-}
-
-.previewGroup + .previewGroup {
-  margin-top: var(--wf-s-3);
-}
-
-.previewGroupHead {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-1);
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  color: var(--wf-ink-1);
-}
-
-.previewGroupCount {
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-  color: var(--wf-ink-2);
-}
-
-/* ─── Mockup A2 (owner pick, 11 Oct 2026): A with today's full board table, refined ───
+/* ─── The board table (owner pick A2, 11 Oct 2026): today's columns, refined ───
  * Values read as text with glyphs; every edit happens in the person sheet. Each row has one Next
  * button and a small overflow menu. In ED is mono and never truncates; the name truncates first.
  * The header sticks while the page scrolls, so the section clips without becoming a scroller. */
@@ -8074,7 +8050,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   height: 18px;
 }
 
-/* Mockups: the ED person sheet opens from the right on iPad and desktop; it keeps the phone
+/* The ED person sheet opens from the right on iPad and desktop; it keeps the phone
  * sheet's layout there. Scoped to the right placement, so the live phone sheet is unchanged. */
 .phoneSheet[data-placement="right"] [data-phone-sheet-body] > * {
   flex: none;

@@ -10,16 +10,11 @@ import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./portrait.module.css";
 
 /**
- * iPad portrait pattern (device audit, 11 Oct 2026, Recommended point 5): at 820px a wide table
- * becomes list rows and the page's rail becomes a slide-over. Shared by any page that has a wide
- * table and a rail (Handover and Delays first). Desktop and phone keep their own layouts; a page
- * renders these parts only when `useIsTabletPortrait()` is true.
- *
- * Three row shapes and three rail modes exist so the owner can pick one; the page passes the same
- * rows and the same rail content to each.
+ * iPad portrait pattern (device audit, 11 Oct 2026, Recommended point 5; owner pick A): at 820px a
+ * wide table becomes list rows and the page's rail becomes a slide-over. Shared by any page that
+ * has a wide table and a rail (Handover and Delays first). Desktop and phone keep their own
+ * layouts; a page renders these parts only when `useIsTabletPortrait()` is true.
  */
-
-export type PortraitCell = { label: string; value: ReactNode };
 
 export type PortraitRowData = {
   id: string;
@@ -35,8 +30,6 @@ export type PortraitRowData = {
   tone?: WfTone;
   /** The next step, as words. */
   next?: string;
-  /** The table columns the row keeps, shown as labelled cells in the stacked shape. */
-  cells?: PortraitCell[];
   /** Act now: the thin red edge on this row only. */
   actNow?: boolean;
   selected?: boolean;
@@ -53,17 +46,13 @@ export type PortraitGroup = {
   rows: PortraitRowData[];
 };
 
-export type PortraitRowShape = "line" | "stack" | "grouped";
-
 export function PortraitList({
   groups,
-  shape,
   onOpen,
   label,
   footer,
 }: {
   groups: PortraitGroup[];
-  shape: PortraitRowShape;
   onOpen: (id: string) => void;
   label: string;
   footer?: ReactNode;
@@ -78,12 +67,12 @@ export function PortraitList({
     });
 
   return (
-    <section className={styles.list} data-shape={shape} aria-label={label} data-testid="wf-portrait-list">
+    <section className={styles.list} aria-label={label} data-testid="wf-portrait-list">
       {groups.map((group) => {
         if (group.rows.length === 0) return null;
         const isFolded = folded.has(group.id);
         return (
-          <div key={group.id} className={styles.group} data-shape={shape}>
+          <div key={group.id} className={styles.group}>
             <button
               type="button"
               className={styles.groupHead}
@@ -102,7 +91,6 @@ export function PortraitList({
                   <li
                     key={row.id}
                     className={cx(styles.row, row.actNow && styles.actNow)}
-                    data-shape={shape}
                     data-selected={row.selected ? "true" : undefined}
                     data-dim={row.dim ? "true" : undefined}
                   >
@@ -112,7 +100,17 @@ export function PortraitList({
                       onClick={() => onOpen(row.id)}
                       aria-label={`${row.name}${row.next ? `, next: ${row.next}` : ""}`}
                     >
-                      {shape === "stack" ? <StackRow row={row} /> : <LineRow row={row} />}
+                      <span className={styles.lead}>{row.tone ? <StatusGlyph tone={row.tone} size={9} /> : null}</span>
+                      <span className={styles.who}>
+                        <b className={styles.name}>{row.name}</b>
+                        {row.sub ? <span className={styles.sub}>{row.sub}</span> : null}
+                      </span>
+                      <span className={styles.figure}>
+                        <b className={styles.mono}>{row.figure}</b>
+                        {row.figureNote ? <span className={styles.figureNote}>{row.figureNote}</span> : null}
+                      </span>
+                      <span className={styles.next}>{row.next ?? ""}</span>
+                      <ChevronRight size={16} aria-hidden="true" className={styles.chevron} />
                     </button>
                   </li>
                 ))}
@@ -126,83 +124,27 @@ export function PortraitList({
   );
 }
 
-function LineRow({ row }: { row: PortraitRowData }) {
-  return (
-    <>
-      <span className={styles.lead}>{row.tone ? <StatusGlyph tone={row.tone} size={9} /> : null}</span>
-      <span className={styles.who}>
-        <b className={styles.name}>{row.name}</b>
-        {row.sub ? <span className={styles.sub}>{row.sub}</span> : null}
-      </span>
-      <span className={styles.figure}>
-        <b className={styles.mono}>{row.figure}</b>
-        {row.figureNote ? <span className={styles.figureNote}>{row.figureNote}</span> : null}
-      </span>
-      <span className={styles.next}>{row.next ?? ""}</span>
-      <ChevronRight size={16} aria-hidden="true" className={styles.chevron} />
-    </>
-  );
-}
-
-function StackRow({ row }: { row: PortraitRowData }) {
-  return (
-    <>
-      <span className={styles.stackTop}>
-        <span className={styles.lead}>{row.tone ? <StatusGlyph tone={row.tone} size={9} /> : null}</span>
-        <span className={styles.who}>
-          <b className={styles.name}>{row.name}</b>
-          {row.sub ? <span className={styles.sub}>{row.sub}</span> : null}
-        </span>
-        <span className={styles.figure}>
-          <b className={styles.mono}>{row.figure}</b>
-          {row.figureNote ? <span className={styles.figureNote}>{row.figureNote}</span> : null}
-        </span>
-        <ChevronRight size={16} aria-hidden="true" className={styles.chevron} />
-      </span>
-      {row.cells && row.cells.length > 0 ? (
-        <span className={styles.cells}>
-          {row.cells.map((cell) => (
-            <span key={cell.label} className={styles.cell}>
-              <span className={styles.cellLabel}>{cell.label}</span>
-              <span className={styles.cellValue}>{cell.value}</span>
-            </span>
-          ))}
-        </span>
-      ) : null}
-    </>
-  );
-}
-
-export type PortraitRailMode = "slide" | "tab" | "drawer";
-
 /**
- * The page rail at iPad portrait. "slide" is a toolbar button that opens a right slide-over;
- * "tab" is an edge tab that stays on screen at the right edge; "drawer" is a bar pinned at the
- * foot of the page that opens a tall bottom sheet. The same content renders in each.
+ * The page rail at iPad portrait: a toolbar button that opens the rail as a right slide-over.
  */
 export function PortraitRail({
-  mode,
   title,
   summary,
   open,
   onOpenChange,
-  primary,
   children,
   description,
 }: {
-  mode: PortraitRailMode;
   title: string;
   /** One short line: the rail's state, e.g. "3 of 5 checks". */
   summary: ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The rail's one primary, shown on the drawer bar (the rail content carries its own). */
-  primary?: { label: string; onAction: () => void; disabledReason?: string };
   children: ReactNode;
   description?: ReactNode;
 }) {
-  const trigger =
-    mode === "slide" ? (
+  return (
+    <>
       <Button
         variant="sec"
         size="sm"
@@ -215,48 +157,13 @@ export function PortraitRail({
         {title}
         <span className={styles.triggerSummary}>{summary}</span>
       </Button>
-    ) : mode === "tab" ? (
-      <button
-        type="button"
-        className={styles.edgeTab}
-        aria-expanded={open}
-        onClick={() => onOpenChange(true)}
-        data-testid="wf-portrait-rail-trigger"
-      >
-        <PanelRightOpen size={16} aria-hidden="true" />
-        <span className={styles.edgeTabText}>
-          {title} <span className={styles.edgeTabSummary}>{summary}</span>
-        </span>
-      </button>
-    ) : (
-      <div className={styles.drawerBar} data-testid="wf-portrait-rail-trigger">
-        <button type="button" className={styles.drawerOpen} aria-expanded={open} onClick={() => onOpenChange(true)}>
-          <span className={styles.drawerGrip} aria-hidden="true" />
-          <span className={styles.drawerText}>
-            <b>{title}</b>
-            <span>{summary}</span>
-          </span>
-          <ChevronRight size={16} aria-hidden="true" className={styles.drawerChevron} />
-        </button>
-        {primary ? (
-          <Button variant="pri" size="md" onClick={primary.onAction} disabledReason={primary.disabledReason}>
-            {primary.label}
-          </Button>
-        ) : null}
-      </div>
-    );
-
-  return (
-    <>
-      {trigger}
       <PhoneSheet
         open={open}
         onClose={() => onOpenChange(false)}
         title={title}
         description={description}
         height="tall"
-        placement={mode === "drawer" ? "bottom" : "right"}
-        className={mode === "drawer" ? styles.drawerSheet : undefined}
+        placement="right"
       >
         {children}
       </PhoneSheet>

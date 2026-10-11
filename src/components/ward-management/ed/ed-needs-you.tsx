@@ -9,7 +9,7 @@ import { StatusGlyph, cx } from "@/components/wf";
 import styles from "./ed-needs-you.module.css";
 
 /**
- * ED page mockups (device audit 11 Oct 2026, ED page, Recommended): one Needs you list that holds
+ * ED page (device audit 11 Oct 2026, owner pick A2): one Needs you list that holds
  * only items needing action, with the thin red edge on act-now items. Good news (an acceptance,
  * someone leaving) stays on the board row and is not listed here.
  */
@@ -36,7 +36,7 @@ export function EdNeedsYou({
   heading?: string;
   className?: string;
   "data-pane"?: string;
-  "data-preview-rail"?: string;
+  "data-rail"?: string;
 }) {
   return (
     <section

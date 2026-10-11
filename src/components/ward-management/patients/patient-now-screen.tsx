@@ -6,7 +6,6 @@ import {
   BedDouble,
   Check,
   ChevronLeft,
-  ChevronRight,
   Clock,
   Copy,
   FileText,
@@ -14,7 +13,6 @@ import {
   RotateCcw,
   Scale,
   Truck,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
@@ -23,8 +21,7 @@ import { PatientRecordOverview } from "./patient-record-overview";
 import { PatientFlightHeader } from "./patient-flight-header";
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
-import type { MockupOption } from "@/components/ward-management/preview/preview-option";
+import { edById } from "@/components/ward-management/ward-sites";
 import { callRows, type CallTarget } from "./patient-call-list";
 import { PatientNowLayout, PatientSheetRow, PatientSheetRows } from "./patient-now-layouts";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -52,12 +49,11 @@ import { PatientTransitOperations } from "./patient-transit-operations";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode, type PatientMode } from "./patient-mode";
-import { PatientStatusCard, buildPatientStatus, dayLabel, type PatientStatusContext } from "./patient-status-card";
+import { buildPatientStatus, dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
-  PatientContactsCard,
   PatientLastSeenCard,
   PatientLeaveCard,
   PatientLegalNowCard,
@@ -176,8 +172,6 @@ interface PatientNowScreenProps {
   movementId?: string;
   initialTaskAction?: "refer" | "contact";
   initialExampleId?: "WF-009" | "WF-004";
-  /** Now tab mockup layout, from a preview route only. Absent, Now renders as it does today. */
-  nowLayout?: MockupOption;
 }
 
 type TabKey = "now" | "history" | "community" | "details" | "documents";
@@ -210,7 +204,6 @@ export function PatientNowScreen({
   movementId,
   initialExampleId = "WF-009",
   initialTaskAction,
-  nowLayout,
 }: PatientNowScreenProps) {
   const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } = useWardFlow();
   const now = useWardFlowClock();
@@ -246,29 +239,16 @@ export function PatientNowScreen({
   // Where the rejection list stood at the last change, and for which stay, so a refusal never
   // follows the user to another patient.
   const [wardAttemptFor, setWardAttemptFor] = useState<{ admissionId: string; start: number }>();
-  const operationsRef = useRef<HTMLDivElement | null>(null);
-  // The placement work sits on Now in every placement mode, so opening it only moves focus there.
-  // v10 phone movement: the placement workspace waits behind the Destination row until opened.
-  const [phoneOpsOpen, setPhoneOpsOpen] = useState(initialTaskAction === "refer");
+  // The placement work opens as the Destination sheet; a task's Refer action lands there.
+  const [nowSheet, setNowSheet] = useState<"destination" | "transport" | null>(
+    initialTaskAction === "refer" ? "destination" : null,
+  );
   function openOperations() {
     setActiveTab("now");
-    setPhoneOpsOpen(true);
-    // Two frames: the phone workspace mounts on the first render after opening.
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        operationsRef.current?.focus();
-        operationsRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
-      }),
-    );
+    setNowSheet("destination");
   }
-  // A task's Refer action lands on the placement work, as it did when Now had a separate view.
-  useEffect(() => {
-    if (initialTaskAction !== "refer") return;
-    requestAnimationFrame(() => operationsRef.current?.scrollIntoView({ block: "start" }));
-  }, [initialTaskAction]);
   const [copied, setCopied] = useState(false);
   // Now mockups: destination and transport open as sheets from their cells.
-  const [previewSheet, setPreviewSheet] = useState<"destination" | "transport" | null>(null);
 
   // Transport booking state & overrides
   const [showTransportForm, setShowTransportForm] = useState(false);
@@ -618,15 +598,6 @@ export function PatientNowScreen({
         ? `No open placement or stay · discharged ${dayLabel(lastStay.leftAt, dayZero)}`
         : undefined;
 
-  function openTransportForm() {
-    setTransportCadDraft(displayCadNumber ?? "");
-    setTransportEtaDraft(displayEta ?? "");
-    setShowTransportForm(true);
-    requestAnimationFrame(() =>
-      document.getElementById("pnTransportHeading")?.scrollIntoView({ block: "center", behavior: "smooth" }),
-    );
-  }
-
   // D-38 ward actions on the stay, raised under the viewer's own role (the coordinator may take every
   // action, Josh 10 Oct 2026) and scoped to the ward the stay is on.
   function recordReturn() {
@@ -738,21 +709,19 @@ export function PatientNowScreen({
     hasBedHold: liveMovement ? movementHasBedHold(liveMovement, admissions) : false,
     now,
     dayZero,
-    onOpenPlacement: nowLayout ? () => setPreviewSheet("destination") : openOperations,
+    onOpenPlacement: () => setNowSheet("destination"),
     onClearance: (event) => {
       clearanceTriggerRef.current = event.currentTarget;
       setClearanceDraft("");
       setClearanceAttested(false);
       setShowClearanceModal(true);
     },
-    onBookTransport: nowLayout
-      ? () => {
-          setTransportCadDraft(displayCadNumber ?? "");
-          setTransportEtaDraft(displayEta ?? "");
-          setShowTransportForm(true);
-          setPreviewSheet("transport");
-        }
-      : openTransportForm,
+    onBookTransport: () => {
+      setTransportCadDraft(displayCadNumber ?? "");
+      setTransportEtaDraft(displayEta ?? "");
+      setShowTransportForm(true);
+      setNowSheet("transport");
+    },
     onArrivalTime: () => {
       setShowArrivalTimeModal(true);
     },
@@ -817,9 +786,8 @@ export function PatientNowScreen({
   if (livePatient?.generalPractitioner && !isLiveBedflow)
     contacts.push({ name: livePatient.generalPractitioner, role: "GP" });
 
-  /* Now mockups: the same people, each looked up in the On-call directory for a mock number. */
+  /* Who to call: the same people, each looked up in the On-call directory for a mock number. */
   const originEd = liveMovement ? edById(liveMovement.originEdId) : undefined;
-  const originService = originEd ? siteByCode(originEd.siteCode)?.service : undefined;
   const callTargets: CallTarget[] = contacts.map((row) => {
     if (originEd && row.name === originName)
       return { kind: "ed", name: row.name, role: row.role, siteCode: originEd.siteCode, line: "liaison" };
@@ -830,20 +798,6 @@ export function PatientNowScreen({
       return { kind: "transport", name: row.name, role: row.role };
     return { kind: "plain", name: row.name, role: row.role };
   });
-  const edLine = (name: string, role: string, line: "liaison" | "epic"): CallTarget | undefined =>
-    originEd ? { kind: "ed", name, role, siteCode: originEd.siteCode, line } : undefined;
-  const wardLine: CallTarget | undefined = acceptingUnit
-    ? { kind: "ward", name: acceptingUnit.name, role: "Receiving ward", unitId: acceptingUnit.id }
-    : undefined;
-  const ownerTargets: Partial<Record<string, CallTarget>> = {
-    bed: { kind: "bedFlow", name: "Bed coordinator", role: "Bed flow", service: originService },
-    clearance: edLine("ED doctor", "EPIC", "epic"),
-    transport: edLine("ED nurse in charge", "ED liaison", "liaison"),
-    collected: edLine("ED nurse in charge", "ED liaison", "liaison"),
-    arrival: wardLine,
-    receiving: wardLine,
-  };
-
   const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
     { key: "now", label: modeMeta.quiet ? "Overview" : "Now" },
     { key: "history", label: "History", count: record.presentations.length },
@@ -875,8 +829,8 @@ export function PatientNowScreen({
     ["placement_requested", "destination_review"].includes(liveMovement.stage) &&
     !liveMovement.acceptedUnitId;
 
-  /* Transport dispatch and the arrival plan. On the live Now tab they sit under the placement work;
-     the Now mockups (nowLayout) move them into the Transport sheet opened from the Transport cell. */
+  /* Transport dispatch and the arrival plan, in the Transport sheet opened from the Transport cell
+     (device audit 11 Oct 2026: the dispatch block is off Now). */
   const transportSection =
     (mode === "held" || mode === "transit") && liveMovement ? (
       <section
@@ -1217,14 +1171,13 @@ export function PatientNowScreen({
       </>
     ) : null;
 
-  /* Now tab mockups (preview routes only): one next step; destination and transport as sheets. */
+  /* Now tab: one next step; destination and transport open as sheets. */
   const openTab = (tab: TabKey) => {
     setActiveTab(tab);
     requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
   };
-  const nowPreview = nowLayout ? (
+  const nowPanel = (
     <PatientNowLayout
-      option={nowLayout}
       mode={mode}
       context={statusContext}
       statusCardProps={{
@@ -1304,8 +1257,6 @@ export function PatientNowScreen({
         </>
       }
       calls={callRows(callTargets, now)}
-      ownerTargets={ownerTargets}
-      ownerCalls={(target) => callRows([target], now)[0]}
       sheetRows={
         isLiveBedflow && liveMovement ? (
           <PatientSheetRows>
@@ -1319,7 +1270,7 @@ export function PatientNowScreen({
                     ? `${liveMovement.referredUnitIds.length} wards asked · shortlist`
                     : "Shortlist eligible wards · none asked"
               }
-              onOpen={() => setPreviewSheet("destination")}
+              onOpen={() => setNowSheet("destination")}
               testId="ward-patient-destination-row"
             />
             {mode === "held" || mode === "transit" ? (
@@ -1331,7 +1282,7 @@ export function PatientNowScreen({
                     ? `${displayProvider}${displayCadNumber ? ` · CAD ${displayCadNumber}` : ""}`
                     : "Not booked · booking, arrival plan, documents"
                 }
-                onOpen={() => setPreviewSheet("transport")}
+                onOpen={() => setNowSheet("transport")}
                 testId="ward-patient-transport-row"
               />
             ) : null}
@@ -1339,7 +1290,7 @@ export function PatientNowScreen({
               icon={<RotateCcw size={16} aria-hidden="true" />}
               title={canWithdraw ? "Withdraw referral" : "Review and corrections"}
               sub={canWithdraw ? "Closes the movement and frees any held bed" : "Step back with a recorded reason"}
-              onOpen={() => setPreviewSheet("destination")}
+              onOpen={() => setNowSheet("destination")}
             />
           </PatientSheetRows>
         ) : null
@@ -1371,7 +1322,7 @@ export function PatientNowScreen({
         ) : null
       }
     />
-  ) : null;
+  );
 
   return (
     <main
@@ -1853,275 +1804,7 @@ export function PatientNowScreen({
               aria-labelledby="pntab-now"
               hidden={activeTab !== "now"}
             >
-              {nowLayout ? (
-                nowPreview
-              ) : (
-                <>
-                  <PatientStatusCard
-                    mode={mode}
-                    context={statusContext}
-                    barLead={
-                      isPhone && !phoneMovement ? (
-                        <Button
-                          iconOnly
-                          icon={Copy}
-                          aria-label={copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary"}
-                          onClick={handleCopySummary}
-                        />
-                      ) : undefined
-                    }
-                    phoneFoot={phoneStatusFoot}
-                    barMain={
-                      isPhone && (mode === "idle" || mode === "cto") ? (
-                        <Link
-                          href={
-                            livePatient
-                              ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
-                              : "/mockups/ward-flow/referrals/new"
-                          }
-                          className={buttonClass({ variant: "pri" })}
-                          data-testid="ward-person-refer-outpatient"
-                        >
-                          <FileText size={16} aria-hidden="true" />
-                          New referral
-                        </Link>
-                      ) : undefined
-                    }
-                  />
-                  <div className={styles.gbCols}>
-                    <div className={styles.gbCol}>
-                      {phoneMovement && liveMovement ? (
-                        <>
-                          <section className={styles.phCard} aria-labelledby="ph-journey-head">
-                            <h2 id="ph-journey-head" className={styles.phCardHead}>
-                              Journey so far
-                            </h2>
-                            <div className={styles.phCardBody}>
-                              <JourneyStrip
-                                label="Journey since this movement opened"
-                                stages={patientJourneyStages(liveMovement, now)}
-                                formatDuration={dur}
-                                note={false}
-                              />
-                            </div>
-                          </section>
-                          <button
-                            type="button"
-                            className={styles.phMoreRow}
-                            aria-expanded={phoneOpsOpen}
-                            aria-controls="patient-operations"
-                            onClick={() => (phoneOpsOpen ? setPhoneOpsOpen(false) : openOperations())}
-                            data-testid="ward-patient-phone-destination"
-                          >
-                            <BedDouble size={16} aria-hidden="true" />
-                            <span className={styles.phMoreText}>
-                              <strong>Destination</strong>
-                              <span>
-                                {acceptingUnit
-                                  ? `${acceptingUnit.name} accepted`
-                                  : liveMovement.referredUnitIds.length > 0
-                                    ? `${liveMovement.referredUnitIds.length} ward${liveMovement.referredUnitIds.length === 1 ? "" : "s"} asked`
-                                    : "Shortlist eligible wards · none asked"}
-                              </span>
-                            </span>
-                            <ChevronRight
-                              size={16}
-                              aria-hidden="true"
-                              className={styles.phChevron}
-                              data-open={phoneOpsOpen}
-                            />
-                          </button>
-                        </>
-                      ) : null}
-                      {isLiveBedflow && liveMovement && (!phoneMovement || phoneOpsOpen) ? (
-                        <div
-                          id="patient-operations"
-                          ref={operationsRef}
-                          tabIndex={-1}
-                          aria-label="Transit operations workspace"
-                        >
-                          <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} />
-                        </div>
-                      ) : null}
-                      {transportSection}
-                      {arrivalSection}
-                      {mode === "ward" ? (
-                        <PatientWardChangeCard
-                          key={resolved.liveAdmission?.id}
-                          now={now}
-                          dayZero={dayZero}
-                          form={wardForm}
-                          onFormChange={setWardForm}
-                          onRecordLeave={recordLeave}
-                          onGoneToEd={goneToEd}
-                          onSaveDischarge={saveDischarge}
-                          dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
-                          refusal={wardRefusal}
-                          roleLimit={(eventType) => gate(eventType).reason}
-                        />
-                      ) : null}
-                      {(mode === "ward" || mode === "ed") && !isPhone ? (
-                        <PatientWhyCard
-                          title="Why admitted"
-                          chip={stayUnit ? stayUnit.name : undefined}
-                          history={resolved.liveReferral?.history}
-                          fallback={record.reason}
-                          patient={livePatient}
-                        />
-                      ) : null}
-                      {mode === "leave" && stayLeaveBed ? (
-                        <PatientLeaveCard
-                          dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
-                          onMarkAbsent={markAbsent}
-                        />
-                      ) : null}
-                      {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
-                        <PatientLastSeenCard
-                          wardName={stayUnit?.name}
-                          since={clock(stayLeaveBed.absentWithoutLeave.since)}
-                          onRecordReturn={recordReturn}
-                        />
-                      ) : null}
-                      {(mode === "idle" || mode === "cto") && !isPhone ? (
-                        <PatientRecordOverview
-                          patient={livePatient}
-                          record={record}
-                          onOpen={(tab) => {
-                            setActiveTab(tab);
-                            requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
-                          }}
-                        />
-                      ) : null}
-                    </div>
-                    {/* The shorter side column pins under the top bar once the columns sit side by side
-                    (they stack at 1120px and below). */}
-                    <div className={styles.gbCol} data-wf-rail="1121">
-                      {phoneMovement && liveMovement ? (
-                        <dl className={styles.phFacts} data-testid="ward-patient-phone-facts">
-                          <div>
-                            <dt>Needs</dt>
-                            <dd>
-                              {liveMovement.security} {liveMovement.cohort.toLowerCase()} bed
-                              {liveMovement.specialling ? ", 1:1" : ""}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt>Opened</dt>
-                            <dd className={styles.v6Mono}>{clock(liveMovement.openedAt)}</dd>
-                          </div>
-                          <div>
-                            <dt>Legal</dt>
-                            <dd>
-                              {liveMovement.legalForm
-                                ? `Form ${liveMovement.legalForm.code}`
-                                : (liveMovement.legalStatus ?? "Not recorded")}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt>Catchment</dt>
-                            <dd>{livePatient?.catchmentCommunityTeam ?? "Not recorded"}</dd>
-                          </div>
-                        </dl>
-                      ) : null}
-                      {isLiveBedflow && liveMovement && !phoneMovement ? (
-                        <PatientWhyCard
-                          title="Why they're here"
-                          chip={`Opened ${clock(liveMovement.openedAt)}`}
-                          history={resolved.liveReferral?.history}
-                          fallback={record.reason}
-                          movement={liveMovement}
-                          patient={livePatient}
-                        />
-                      ) : null}
-                      {(mode !== "idle" || isPhone) && !phoneMovement ? (
-                        <PatientLegalNowCard
-                          movement={movementInForce ? liveMovement : undefined}
-                          patient={livePatient}
-                          onAllForms={() => {
-                            setActiveTab("documents");
-                            requestAnimationFrame(() => document.getElementById("pntab-documents")?.focus());
-                          }}
-                        />
-                      ) : null}
-                      <PatientContactsCard rows={contacts} framed={phoneMovement} />
-                      {phoneMovement ? (
-                        <button
-                          type="button"
-                          className={styles.phMoreRow}
-                          onClick={openOperations}
-                          data-testid="ward-patient-phone-corrections"
-                        >
-                          <X size={16} aria-hidden="true" />
-                          <span className={styles.phMoreText}>
-                            <strong>{canWithdraw ? "Withdraw referral" : "Review and corrections"}</strong>
-                            <span>
-                              {canWithdraw
-                                ? "Closes the movement and frees any held bed"
-                                : "Step back with a recorded reason"}
-                            </span>
-                          </span>
-                          <ChevronRight size={16} aria-hidden="true" />
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                  {isPhone && !phoneMovement ? (
-                    /* v10 phone: Community and Details are rows one tap away at the foot of Now. */
-                    <ul className={styles.phMoreRows} data-testid="ward-patient-phone-more-tabs">
-                      {(mode === "idle" || mode === "cto") && !lastStay ? null : (
-                        <li>
-                          <button
-                            type="button"
-                            className={styles.phMoreRow}
-                            aria-controls="pnpane-history"
-                            data-testid="ward-patient-phone-why"
-                            onClick={() => {
-                              setActiveTab("history");
-                              requestAnimationFrame(() => window.scrollTo({ top: 0 }));
-                            }}
-                          >
-                            <span className={styles.phMoreText}>
-                              <strong>{mode === "idle" || mode === "cto" ? "Last admission" : "Why admitted"}</strong>
-                              <span>
-                                {(resolved.liveReferral?.history?.trim() || record.reason) +
-                                  (heroStayOrigin ? ` · ${heroStayOrigin}` : "")}
-                              </span>
-                            </span>
-                            <ChevronRight size={16} aria-hidden="true" />
-                          </button>
-                        </li>
-                      )}
-                      {tabs
-                        .filter((tab) => tab.key === "community" || tab.key === "details")
-                        .map((tab) => (
-                          <li key={tab.key}>
-                            <button
-                              type="button"
-                              className={styles.phMoreRow}
-                              aria-controls={`pnpane-${tab.key}`}
-                              onClick={() => {
-                                setActiveTab(tab.key);
-                                requestAnimationFrame(() => window.scrollTo({ top: 0 }));
-                              }}
-                            >
-                              <span className={styles.phMoreText}>
-                                <strong>{tab.label}</strong>
-                                <span>
-                                  {tab.key === "community"
-                                    ? record.community.teams.length > 0
-                                      ? `${record.community.teams.map((team) => team.name).join(", ")} · ${record.community.teams.length} on record`
-                                      : "No community team on record"
-                                    : "UMRN, date of birth, where they live"}
-                                </span>
-                              </span>
-                              <ChevronRight size={16} aria-hidden="true" />
-                            </button>
-                          </li>
-                        ))}
-                    </ul>
-                  ) : null}
-                </>
-              )}
+              {nowPanel}
             </div>
 
             {/* Tab 2: HISTORY */}
@@ -2313,11 +1996,11 @@ export function PatientNowScreen({
           />
         </>
       )}
-      {nowLayout && liveMovement ? (
+      {liveMovement ? (
         <>
           <PhoneSheet
-            open={previewSheet === "destination"}
-            onClose={() => setPreviewSheet(null)}
+            open={nowSheet === "destination"}
+            onClose={() => setNowSheet(null)}
             title="Destination and placement"
             description={acceptingUnit ? `${acceptingUnit.name} accepted` : "No ward has accepted yet"}
             height="tall"
@@ -2326,8 +2009,8 @@ export function PatientNowScreen({
             <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} bare />
           </PhoneSheet>
           <PhoneSheet
-            open={previewSheet === "transport"}
-            onClose={() => setPreviewSheet(null)}
+            open={nowSheet === "transport"}
+            onClose={() => setNowSheet(null)}
             title="Transport"
             description={isTransportBooked ? `${displayProvider} booked` : "Not booked yet"}
             height="tall"

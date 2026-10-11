@@ -2579,8 +2579,7 @@ button.gLaneL:hover {
 /* The person opens as a right slide-over in the slide and tab options, and a bottom sheet in the
    drawer option, so the person and the registers open from the same edge. */
 @media (max-width: 64rem) {
-  .split[data-portrait="slide"][data-person-open] > .side,
-  .split[data-portrait="tab"][data-person-open] > .side {
+  .split[data-portrait="slide"][data-person-open] > .side {
     top: 0;
     right: 0;
     bottom: 0;

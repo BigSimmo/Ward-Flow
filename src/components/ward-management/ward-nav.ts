@@ -454,18 +454,6 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
       "and search (search/ward-smart-search.ts).",
   ],
   [
-    "/mockups/ward-flow/preview/patient",
-    "Preview-only mockup (device audit 11 Oct 2026): three options for the Patient Now tab, for the owner to pick. Not the live page, deliberately unlisted.",
-  ],
-  [
-    "/mockups/ward-flow/preview/edpage",
-    "Preview-only mockup (device audit 11 Oct 2026): three options for the ED page, for the owner to pick. Not the live page, deliberately unlisted.",
-  ],
-  [
-    "/mockups/ward-flow/preview/ipadportrait",
-    "Preview-only mockup (device audit 11 Oct 2026): three options for the iPad portrait list and slide-over pattern on Handover and Delays. Not the live page, deliberately unlisted.",
-  ],
-  [
     "/mockups/ward-flow/sovereign",
     "Showcase workspace for the Sovereign Chrome, Navigation Rail & Drawers Suite (sovereign-sidebar-ultimate.html) — a demonstrator screen for cross-cutting shell and off-canvas drawer capabilities, deliberately unlisted from the operational clinical navigation rail.",
   ],

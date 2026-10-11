@@ -49,7 +49,6 @@ import {
   type PortraitGroup,
   type WfTone,
 } from "@/components/wf";
-import { PORTRAIT_PATTERNS, type MockupOption } from "@/components/ward-management/preview/preview-option";
 import { answerSilenceReminder, isCleared, type DelayCause, type DelayGroup } from "./delays-derivations";
 import { BandBar, Glyph, causeTitle } from "./delays-board-parts";
 import {
@@ -116,8 +115,6 @@ export type DelaysBoardProps = {
   banner?: ReactNode;
   /** Shown in place of the board's body when nobody is waiting. */
   empty?: ReactNode;
-  /** iPad portrait pattern mockup, from a preview route only. Absent, the board renders as before. */
-  portraitPattern?: MockupOption;
 };
 
 /** The origin department by name, or a sentence that names the record as the fault (task D1). */
@@ -209,15 +206,6 @@ function phonePrefix(row: BoardRow): ReactNode {
       </>
     );
   return null;
-}
-
-/** The legal cell as words, for the iPad portrait list rows. */
-function legalWords(row: BoardRow): string {
-  const form = row.movement.legalForm;
-  if (row.dueIn === undefined || form === undefined) return row.movement.legalStatus;
-  return row.dueIn < 0
-    ? `Form ${form.code}, ${splitDuration(-row.dueIn)} overdue`
-    : `Form ${form.code}, ${splitDuration(row.dueIn)} left`;
 }
 
 /** v10 phone: the right column's second line is how long nothing has been recorded. */
@@ -1023,7 +1011,6 @@ export function DelaysBoard({
   onNotWired,
   banner,
   empty,
-  portraitPattern,
 }: DelaysBoardProps) {
   const patientOf = usePatientOf();
   const rows = useMemo(() => boardRows(groups, now), [groups, now]);
@@ -1052,7 +1039,8 @@ export function DelaysBoard({
   // v10 phone: the registers, the longest quiet list and the graphs sit one tap away as cards.
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
-  const portrait = portraitPattern !== undefined && isTabletPortrait ? PORTRAIT_PATTERNS[portraitPattern] : undefined;
+  /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the registers as a slide-over. */
+  const portrait = isTabletPortrait;
   const [railOpen, setRailOpen] = useState(false);
   const [phoneSheet, setPhoneSheet] = useState<"registers" | "quiet" | "spread" | null>(null);
 
@@ -1489,11 +1477,6 @@ export function DelaysBoard({
       figureNote: phoneUpdate(row),
       tone: waitTone(row.waited),
       next: flat ? causeTitle(row.cause) : ward.text,
-      cells: [
-        { label: flat ? "Blocker" : "Wards", value: flat ? causeTitle(row.cause) : ward.text },
-        { label: "Legal", value: legalWords(row) },
-        { label: "Last update", value: phoneUpdate(row) },
-      ],
       actNow:
         row.owner === "yours" &&
         (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H),
@@ -1520,7 +1503,6 @@ export function DelaysBoard({
       });
   const portraitRail = portrait ? (
     <PortraitRail
-      mode={portrait.rail}
       title="Registers"
       summary={`Escalated ${escalated.length} · Attention ${attention.length}`}
       description="Escalations, attention, resolved today and the longest quiet"
@@ -1698,7 +1680,7 @@ export function DelaysBoard({
           <div
             className={styles.split}
             data-person-open={selected !== null || undefined}
-            data-portrait={portrait ? portrait.rail : undefined}
+            data-portrait={portrait ? "slide" : undefined}
           >
             <section
               ref={tableRef}
@@ -1832,11 +1814,11 @@ export function DelaysBoard({
               </div>
               {portrait ? (
                 <div className={styles.portraitBody}>
-                  {portrait.rail === "slide" ? <div className={styles.portraitTools}>{portraitRail}</div> : null}
-                  <PortraitList label="Waiting" shape={portrait.shape} groups={portraitGroups} onOpen={select} />
+                  <div className={styles.portraitTools}>{portraitRail}</div>
+                  <PortraitList label="Waiting" groups={portraitGroups} onOpen={select} />
                 </div>
               ) : null}
-              <div className={styles.tableWrap} hidden={portrait !== undefined}>
+              <div className={styles.tableWrap} hidden={portrait}>
                 <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
                   <colgroup>
                     <col className={styles.colP} />
@@ -1896,7 +1878,6 @@ export function DelaysBoard({
               registers
             )}
           </div>
-          {portrait && portrait.rail !== "slide" ? portraitRail : null}
 
           {isPhone ? (
             <div className={styles.phCards} data-testid="delays-phone-cards">

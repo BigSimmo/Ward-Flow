@@ -68,7 +68,6 @@ import {
   Popover,
   PortraitList,
   PortraitRail,
-  type PortraitRailMode,
   Segmented,
   Select,
   SrOnly,
@@ -81,7 +80,6 @@ import {
   tableClasses,
   useIsTabletPortrait,
 } from "@/components/wf";
-import { PORTRAIT_PATTERNS, type MockupOption } from "@/components/ward-management/preview/preview-option";
 
 import {
   DENSITY_COLUMNS,
@@ -114,8 +112,6 @@ import {
   toHandoverWard,
   wardIsStale,
   STAGE_LABEL,
-  destinationText,
-  dueShort,
   nextStep,
   type HandoverChip,
   type HandoverGrouping,
@@ -372,7 +368,7 @@ function mmss(ms: number): string {
  * patient is picked, then that patient's flow. Beds and History are tabs, and Print handover opens
  * the sheet builder, where what you see is what prints.
  */
-export function HandoverPage({ portraitPattern }: { portraitPattern?: MockupOption } = {}) {
+export function HandoverPage() {
   const {
     movements,
     units,
@@ -388,7 +384,8 @@ export function HandoverPage({ portraitPattern }: { portraitPattern?: MockupOpti
   const now = useWardFlowClock();
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
   const isTabletPortrait = useIsTabletPortrait();
-  const portrait = portraitPattern !== undefined && isTabletPortrait ? PORTRAIT_PATTERNS[portraitPattern] : undefined;
+  /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the rail as a slide-over. */
+  const portrait = isTabletPortrait;
 
   /* scope, read once from the URL */
   const searchParams = useSearchParams();
@@ -787,10 +784,9 @@ export function HandoverPage({ portraitPattern }: { portraitPattern?: MockupOpti
     />
   ) : null;
 
-  /* iPad portrait mockups: the rail (sign off, or the open patient) as a slide-over, edge tab or drawer. */
-  const railFor = (mode: PortraitRailMode, signedLine: string | null, checksDone: number) => (
+  /* iPad portrait: the rail (sign off, or the open patient) as a slide-over. */
+  const portraitRail = (signedLine: string | null, checksDone: number) => (
     <PortraitRail
-      mode={mode}
       title={selected ? selected.name : "Sign off"}
       summary={selected ? "Patient flow" : (signedLine ?? `${checksDone} of ${signChecks.length} checks`)}
       open={drawerOpen}
@@ -799,15 +795,6 @@ export function HandoverPage({ portraitPattern }: { portraitPattern?: MockupOpti
         setSelectedId(null);
         setDrawerOpen(open);
       }}
-      primary={
-        mode === "drawer" && signedAt === null
-          ? {
-              label: "Sign off",
-              onAction: handleSignOff,
-              disabledReason: canSignOff ? undefined : "This handover has passed. Choose the next one.",
-            }
-          : undefined
-      }
     >
       {flowPanel ?? signOffPanel}
     </PortraitRail>
@@ -1405,11 +1392,10 @@ export function HandoverPage({ portraitPattern }: { portraitPattern?: MockupOpti
           <span className={styles.portraitNote}>
             <b>{rows.length}</b> of {allRows.length} open · {scopeLabel}
           </span>
-          {portrait.rail === "slide" ? railFor(portrait.rail, signedLine, checksDone) : null}
+          {portraitRail(signedLine, checksDone)}
         </div>
         <PortraitList
           label="Handover patients"
-          shape={portrait.shape}
           onOpen={pick}
           groups={groups.map((group) => ({
             id: group.id,
@@ -1417,7 +1403,6 @@ export function HandoverPage({ portraitPattern }: { portraitPattern?: MockupOpti
             tone: group.tone ? GROUP_TONE[group.tone] : undefined,
             note: group.rows.length === 0 ? undefined : group.why,
             rows: group.rows.map((row) => {
-              const due = dueShort(row, now);
               const next = nextStep(row, now, cutoff, readyBeds);
               return {
                 id: row.id,
@@ -1427,11 +1412,6 @@ export function HandoverPage({ portraitPattern }: { portraitPattern?: MockupOpti
                 figureNote: "waiting",
                 tone: rowTone(row, ctx),
                 next: next.text,
-                cells: [
-                  { label: "Due", value: due ?? "None" },
-                  { label: "Next step", value: next.text },
-                  { label: "From and to", value: `${row.edShort} to ${destinationText(row)}` },
-                ],
                 actNow: isActNow(row, now),
                 selected: row.id === selectedId,
                 dim: anyHighlight && !isHighlighted(row),
@@ -1440,7 +1420,6 @@ export function HandoverPage({ portraitPattern }: { portraitPattern?: MockupOpti
           }))}
           footer={<span>Form times are as typed, not legally checked</span>}
         />
-        {portrait.rail === "slide" ? null : railFor(portrait.rail, signedLine, checksDone)}
       </TabPanel>
     );
   } else {
