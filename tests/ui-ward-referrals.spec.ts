@@ -115,17 +115,27 @@ type SlideOutReferral = {
  * Each answer is chosen here rather than inherited from a sample patient, for the reason the
  * retired intake helper gave: a journey that leans on defaults is pinned to behaviour nobody chose.
  */
+/**
+ * v10 phone (11 Oct 2026): a step opens as a sheet over the step list, so the next step is chosen
+ * after closing the open one ("Close step"), as a person does. Above the phone the steps sit beside
+ * the form and there is nothing to close.
+ */
+async function openReferralStep(sheet: Locator, name: string) {
+  const close = sheet.getByRole("button", { name: "Close step", exact: true });
+  if (await close.isVisible()) await close.click();
+  await sheet.getByRole("group", { name: "Referral sections" }).getByRole("button", { name, exact: true }).click();
+}
+
 async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   const sheet = page.getByTestId("ward-bar-referral-sheet");
   await expect(sheet).toBeVisible({ timeout: 15_000 });
-  const steps = sheet.getByRole("group", { name: "Referral sections" });
 
   // Refer to: a ward. That names the last two steps Clearance and Wards.
   await sheet.getByTestId("ward-referral-refer-to-ward").click();
   await expect(sheet.getByTestId("ward-referral-refer-to-ward")).toHaveAttribute("aria-pressed", "true");
 
   // Patient: register a new synthetic person and give the age band.
-  await steps.getByRole("button", { name: "Patient", exact: true }).click();
+  await openReferralStep(sheet, "Patient");
   await sheet.getByTestId("ward-referral-new-patient-toggle").click();
   const newPatient = sheet.getByTestId("ward-referral-new-patient");
   await newPatient.getByLabel("Family name", { exact: true }).fill(referral.patient.familyName);
@@ -143,7 +153,7 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   await expect(sheet.getByText("Catchment confirmed", { exact: true }).first()).toBeVisible();
 
   // Referral: from a community service, voluntary, the bed security, the urgency and bed needs.
-  await steps.getByRole("button", { name: "Referral", exact: true }).click();
+  await openReferralStep(sheet, "Referral");
   await sheet.getByRole("group", { name: "Source" }).getByRole("button", { name: "Community", exact: true }).click();
   await sheet.getByLabel("Referring service location", { exact: true }).selectOption(wardSites[0].code);
   await sheet.getByLabel("Referring community service", { exact: true }).fill("Synthetic community mental health team");
@@ -159,7 +169,7 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   await expect(acuity).toHaveAttribute("aria-checked", String(referral.highAcuityNursing));
 
   // Clearance: cleared, triaged, both charts attached, nothing else to attach.
-  await steps.getByRole("button", { name: "Clearance", exact: true }).click();
+  await openReferralStep(sheet, "Clearance");
   await tapChoice(
     sheet.getByRole("group", { name: "Has the patient been medically cleared?" }).getByRole("radio", { name: "Yes" }),
   );
@@ -170,7 +180,7 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   await tapChoice(sheet.getByRole("group", { name: "Anything else to attach?" }).getByRole("radio", { name: "No" }));
 
   // Wards: the named wards, then the transport for the arrival plan.
-  await steps.getByRole("button", { name: "Wards", exact: true }).click();
+  await openReferralStep(sheet, "Wards");
   const wards = sheet.getByRole("list", { name: "Placement Destination Options" });
   await expect(wards).toBeVisible();
   for (const unitId of referral.notOffered ?? []) {
@@ -809,13 +819,20 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     const raisedCard = page.getByTestId(`ward-referral-board-card-select-${referralId}`);
     await expect(raisedCard).toContainText("Tier 1");
-    await expect(raisedCard).toContainText(`${RAISED.ageBand} · ${RAISED.sex} · ${RAISED.homeRegion}`);
+    // v10 phone card (11 Oct 2026): age band and sex, then the count of bed needs; the home region
+    // is on the referral itself, not repeated on the short card.
+    await expect(raisedCard).toContainText(`${RAISED.ageBand} · ${RAISED.sex}`);
     // Length of wait is rendered on the card in its own right (D11), so the order the queue runs in
     // is never left implicit.
     await expect(page.getByTestId(`ward-referral-board-card-wait-${referralId}`)).toContainText("waiting");
 
     // --- Step 4: match it against the wards it names. ---
     await raisedCard.click();
+    // v10 phone (11 Oct 2026): at phone width the decision is the board's one scrolling sheet of
+    // fit groups, by design. The recipient choice, travel bands and acceptance this journey asserts
+    // are the wider match panel, from 769px. No reload: only the viewport changes, with the
+    // referral still selected.
+    await page.setViewportSize({ width: 769, height: 900 });
     const matchPanel = page.getByTestId("ward-referral-match-panel");
     await expect(matchPanel).toBeVisible();
     // Two wards were named, so the coordinator chooses which recipient to review. It opens on the
@@ -1062,6 +1079,10 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     const raisedId = (await queuedCardIds(page)).find((id) => !SEEDED_QUEUED_IDS.has(id));
     expect(raisedId, "the referral raised in the slide-out never reached the board").toBeDefined();
     await page.getByTestId(`ward-referral-board-card-select-${raisedId}`).click();
+    // v10 phone (11 Oct 2026): at phone width the match lists wards in fit groups, by design; the
+    // travel-band groups this journey asserts are the wider view, from 769px. No reload: only the
+    // viewport changes, with the referral still selected.
+    await page.setViewportSize({ width: 769, height: 900 });
 
     // The five groups, and the sentence saying the times are invented, on the screen where the
     // acceptance is actually taken.
@@ -1075,6 +1096,11 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // is the whole reason this step is worth doing in a browser. Its counts are visible while it is
     // still shut, which jsdom cannot show, because jsdom does not hide closed disclosure content.
     const farGroup = page.getByTestId(`ward-referral-match-band-group-${band}`);
+    // From 769px the groups mount open (shut is the phone default); shut it first so the accept
+    // control below is still reached by opening the group with a click.
+    if (await farGroup.evaluate((element) => (element as HTMLDetailsElement).open)) {
+      await farGroup.locator(":scope > summary").click();
+    }
     await expect(farGroup).toHaveJSProperty("open", false);
     /*
      * Phase 8, Task 10 fix round (F2). This replaces an
@@ -1128,6 +1154,8 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // not mounted anywhere in `src/` any more, and the third-edition rail puts the same links on
     // the phone screen rather than behind a button. This still navigates by tapping a real rail
     // link at 375px, which is what "through the coordinator's own rail" was asserting.
+    // Back to phone width (v10 note above): the ledger half runs on the phone, as it always has.
+    await page.setViewportSize({ width: 375, height: 812 });
     const ledgerRail = page.getByTestId("ward-rail");
     await expect(
       ledgerRail.or(page.getByTestId("ward-bar-phone-menu")).filter({ visible: true }),

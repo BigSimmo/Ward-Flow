@@ -1245,8 +1245,8 @@
   }
 }
 
-/* Phone: the selected record becomes a bottom sheet and table rows become cards. */
-@media (max-width: 40rem) {
+/* Phone (to 48rem, where the phone details render): the selected record becomes a bottom sheet. */
+@media (max-width: 48rem) {
   .scrim {
     display: block;
     position: fixed;
@@ -1275,7 +1275,10 @@
   .identity {
     padding-right: 3rem;
   }
+}
 
+/* Phone: table rows become cards. */
+@media (max-width: 40rem) {
   .workTable thead {
     position: absolute;
     width: 1px;

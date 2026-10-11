@@ -702,9 +702,11 @@ function NetworkUnitSheet({
   now: Instant;
   onClose: () => void;
 }) {
-  const { dispatch } = useWardFlow();
+  const { dispatch, refreshRequests } = useWardFlow();
   const router = useRouter();
   const unit = row?.unit;
+  // As on the places page: once asked, the sheet stops offering to ask again.
+  const alreadyAsked = unit !== undefined && refreshRequests.some((request) => request.unitId === unit.id);
   return (
     <PhoneSheet
       open={row !== undefined}
@@ -714,7 +716,7 @@ function NetworkUnitSheet({
         row === undefined || unit === undefined ? undefined : [row.service, unitMeta(unit)].filter(Boolean).join(" · ")
       }
       secondary={
-        unit === undefined
+        unit === undefined || alreadyAsked
           ? undefined
           : {
               label: "Ask to confirm",

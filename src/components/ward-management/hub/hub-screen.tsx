@@ -264,6 +264,8 @@ export function HubScreen() {
   const isPinned = (id: string) => pinnedIds.includes(id);
 
   const selected = results.find((entry) => entry.id === selectedId) ?? undefined;
+  // Phone "Check first": only a place the current filter shows, so its tap opens a preview.
+  const checkFirst = attention.filter((item) => results.some((entry) => entry.id === item.entry.id));
   const selectedRequest =
     selected === undefined ? undefined : refreshRequests.filter((entry) => entry.unitId === selected.id).at(-1);
 
@@ -910,24 +912,24 @@ export function HubScreen() {
                       </button>
                     </span>
                   </p>
-                ) : queryMatches === undefined && attention[0] ? (
+                ) : queryMatches === undefined && checkFirst[0] ? (
                   <button
                     type="button"
                     className={styles.phoneCheckFirst}
                     onClick={() => {
-                      select(attention[0].entry.id);
+                      select(checkFirst[0].entry.id);
                       setPhonePreviewOpen(true);
                     }}
                   >
                     <StatusGlyph tone="warning" size={10} />
                     <span className={styles.phoneCheckText}>
-                      <b>Check first: {attention[0].entry.name}</b>
+                      <b>Check first: {checkFirst[0].entry.name}</b>
                       <span>
-                        {attention[0].entry.ready === 0 ? "No ready beds" : `${attention[0].entry.ready ?? 0} ready`}
-                        {attention[0].entry.confirmedAt === undefined
+                        {checkFirst[0].entry.ready === 0 ? "No ready beds" : `${checkFirst[0].entry.ready ?? 0} ready`}
+                        {checkFirst[0].entry.confirmedAt === undefined
                           ? ""
-                          : `, count ${durMinutes(now - attention[0].entry.confirmedAt)} old`}
-                        {attention.length > 1 ? `. ${attention.length - 1} more need a check.` : "."}
+                          : `, count ${durMinutes(now - checkFirst[0].entry.confirmedAt)} old`}
+                        {checkFirst.length > 1 ? `. ${checkFirst.length - 1} more need a check.` : "."}
                       </span>
                     </span>
                     <ChevronRight size={16} aria-hidden="true" />

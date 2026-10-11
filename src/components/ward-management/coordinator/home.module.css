@@ -1919,15 +1919,18 @@ button.registerRow:hover {
     position: sticky;
     top: 3.5rem;
     z-index: 6;
-    margin: 0 calc(-1 * var(--wf-s-4));
-    padding: var(--wf-s-2) var(--wf-s-4);
+    margin: 0;
+    padding: var(--wf-s-2) 0;
     border-bottom: 0;
     background: var(--wf-canvas);
+    /* The canvas band runs to the screen edges without widening the region grid. */
+    box-shadow:
+      var(--wf-s-4) 0 0 var(--wf-canvas),
+      calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
   }
   :global(body:has([data-scrolled="true"])) .queueTools {
     top: 3.25rem;
   }
-
 
   .queueSeg.queueSeg {
     flex: 1 1 auto;

@@ -427,10 +427,12 @@ export function PatientNowScreen({
   }
 
   // Keyboard navigation for tablist
+  // Phone: a "contact" task opens on Community, so that tab stays on the phone's shorter list.
+  const phoneKeepsCommunity = initialTaskAction === "contact";
   const TAB_KEYS: TabKey[] = isPhone
     ? isLiveBedflow && liveMovement
-      ? ["now", "history", "details", "documents"]
-      : ["now", "history", "documents"]
+      ? ["now", "history", ...(phoneKeepsCommunity ? (["community"] as const) : []), "details", "documents"]
+      : ["now", "history", ...(phoneKeepsCommunity ? (["community"] as const) : []), "documents"]
     : ["now", "history", "community", "details", "documents"];
   function handleTabKeyDown(e: ReactKeyboardEvent) {
     const currentIndex = TAB_KEYS.indexOf(activeTab);
@@ -809,12 +811,18 @@ export function PatientNowScreen({
   const phoneMovement = isPhone && isLiveBedflow && liveMovement !== undefined;
   const phoneTabs = phoneMovement
     ? tabs
-        .filter((tab) => tab.key !== "community")
+        .filter((tab) => tab.key !== "community" || phoneKeepsCommunity)
         .map((tab) =>
           tab.key === "documents" ? { ...tab, label: "Docs", count: undefined } : { ...tab, count: undefined },
         )
     : tabs
-        .filter((tab) => tab.key === "now" || tab.key === "history" || tab.key === "documents")
+        .filter(
+          (tab) =>
+            tab.key === "now" ||
+            tab.key === "history" ||
+            tab.key === "documents" ||
+            (tab.key === "community" && phoneKeepsCommunity),
+        )
         .map((tab) => (tab.key === "documents" ? { ...tab, label: "Forms" } : tab));
   const canWithdraw =
     liveMovement !== undefined &&

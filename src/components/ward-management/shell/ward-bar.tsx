@@ -1085,6 +1085,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       const target = event.target as Node;
       if (panelRef.current?.contains(target)) return;
       if (triggerRef.current?.contains(target)) return;
+      // The phone service sheet's scrim closes it on its own click, so the tap never reaches the page.
+      if (target instanceof Element && target.closest("[data-ward-service-scrim]")) return;
       closePopover(activePanel, false);
     }
     document.addEventListener("mousedown", onPointerDown);
@@ -1249,6 +1251,14 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             </span>
           ) : null}
 
+          {isPhone && !isFixedJurisdiction && openPanel === "service" ? (
+            <div
+              className={styles.serviceScrim}
+              data-ward-service-scrim=""
+              aria-hidden="true"
+              onClick={() => closePopover("service", false)}
+            />
+          ) : null}
           {!isFixedJurisdiction && openPanel === "service" ? (
             <div
               id="ward-bar-service-panel"

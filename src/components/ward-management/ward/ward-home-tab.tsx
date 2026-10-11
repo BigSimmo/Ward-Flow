@@ -1302,7 +1302,7 @@ export function WardHomeTab({
             </div>
           ) : (
             <ul className={styles.phoneAwaitList}>
-              {incoming.map((movement) => (
+              {incoming.map((movement, index) => (
                 <li key={movement.id}>
                   <button
                     type="button"
@@ -1314,7 +1314,10 @@ export function WardHomeTab({
                     }}
                   >
                     <span className={styles.phoneAwaitText}>
-                      <span className={styles.phoneAwaitName}>{resolvePatientIdentity(movement).displayName}</span>
+                      {/* A ward sees no identity before it accepts (as the answer view's "Request n of N"). */}
+                      <span className={styles.phoneAwaitName}>
+                        Request {index + 1} · {movement.cohort}
+                      </span>
                       <span className={styles.phoneAwaitMeta}>
                         {[movement.sex, movement.legalStatus, edById(movement.originEdId)?.name]
                           .filter(Boolean)

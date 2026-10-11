@@ -1383,8 +1383,18 @@ export function ReferralMatchView({
 
     const candRow = (c: ReferralCandidate, kind: "yes" | "nobed" | "review") => {
       const failed = c.verdict.gates.find((gate) => !gate.pass);
+      // Tier 2 holds both a full ward and one whose bed count is not current: name which.
+      const noBed = c.verdict.gates.some((gate) => gate.gate === "allocatable_bed" && !gate.pass);
       const label =
-        kind === "yes" ? "Fits" : kind === "nobed" ? "No bed now" : failed ? GATE_LABELS[failed.gate] : "Review";
+        kind === "yes"
+          ? "Fits"
+          : kind === "nobed"
+            ? noBed
+              ? "No bed now"
+              : "Count not current"
+            : failed
+              ? GATE_LABELS[failed.gate]
+              : "Review";
       const tone = kind === "yes" ? "success" : kind === "nobed" ? "warning" : "neutral";
       const checked = pick?.unit.id === c.unit.id;
       return (

@@ -57,8 +57,9 @@ const DESTINATIONS = [
     navValue: "overview",
     /** The section chip's label on the phone Summary (v10 phone, 11 Oct 2026). */
     navLabel: "Overview",
-    /** A figure this screen derives, so an empty shell cannot pass as a rendered page. */
-    figure: "ward-statistics-overview-declines-population",
+    /** A figure this screen derives, so an empty shell cannot pass as a rendered page. The v10
+     * phone Summary (11 Oct 2026) shows its own capacity figures in place of the desktop cards. */
+    figure: "ward-statistics-overview-phone-capacity",
   },
   {
     // Statistics A (10 Oct 2026): Services opens its own index page, not the hub's chooser.
@@ -74,7 +75,8 @@ const DESTINATIONS = [
 /** Deep screens, reached from their chooser rather than from the hub. */
 const DEEP = [
   { path: "/mockups/ward-flow/statistics/ward/rph-adult-secure", marker: "ward-statistics-ward-screen" },
-  { path: "/mockups/ward-flow/statistics/ed/rph-ed", marker: "ward-stat-ed-wait-table" },
+  // v10 phone (11 Oct 2026): the department's wait table is a list of rows on the phone.
+  { path: "/mockups/ward-flow/statistics/ed/rph-ed", marker: "ward-statistics-ed-phone" },
 ] as const;
 
 /**
@@ -172,11 +174,20 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
      * So this test asks the question that survives either arrangement: whatever the table's width,
      * the PAGE must not move. A table that grows past its wrapper is fine; a page that grows is not.
      */
+    /*
+     * v10 phone (11 Oct 2026): at phone width the wait table is replaced by a list of rows that
+     * never needs a sideways scroll, so the page is checked there and the table's containment is
+     * checked at 769px, the narrowest width that still draws the table.
+     */
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/mockups/ward-flow/statistics/ed/rph-ed", { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     await waitForStreamToSettle(page);
+    await expect(page.getByTestId("ward-statistics-ed-phone")).toBeVisible({ timeout: 15_000 });
+    expect(await page.locator('[data-testid^="ward-stat-ed-phone-row-"]').count()).toBeGreaterThan(0);
+    await expectNoPageOverflow(page, "the phone wait list");
 
+    await page.setViewportSize({ width: 769, height: 812 });
     const table = page.getByTestId("ward-stat-ed-wait-table");
     await expect(table).toBeVisible({ timeout: 15_000 });
 
@@ -231,6 +242,11 @@ test.describe("@mockup page-specific statistics insights", () => {
   test("community handover and searchable comparison preserve team context on a phone", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/mockups/ward-flow/statistics/community/bentley", { waitUntil: "networkidle" });
+    // v10 phone (11 Oct 2026): the phone shows the team's own summary list; the handover chart and
+    // the searchable comparison are the tablet and desktop cards, checked at 769px below.
+    await expect(page.getByTestId("ward-statistics-community-phone")).toBeVisible();
+    await expectNoPageOverflow(page, "community phone summary");
+    await page.setViewportSize({ width: 769, height: 844 });
     await expect(page.getByTestId("statistics-community-handover-chart")).toContainText("Discharge dates are a subset");
     const detail = page.getByTestId("ward-statistics-community-comparison-disclosure");
     await expect(detail.locator("summary")).toHaveCount(0);
@@ -251,6 +267,11 @@ test.describe("@mockup page-specific statistics insights", () => {
 test("@mockup ward bed figures stay visible and the chart data view preserves records", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/mockups/ward-flow/statistics/ward/scgh-adult-open", { waitUntil: "networkidle" });
+  // v10 phone (11 Oct 2026): the phone keeps the bed figures in its own Beds group; the tiles
+  // card and the stay chart's Chart and Data switch are the tablet and desktop view, at 769px.
+  await expect(page.getByTestId("ward-statistics-ward-phone-beds")).toBeVisible();
+  await expectNoPageOverflow(page, "ward phone summary");
+  await page.setViewportSize({ width: 769, height: 844 });
   const beds = page.getByTestId("ward-statistics-ward-beds-now");
   await expect(beds.locator("details > summary")).toHaveCount(0);
   // v6 (7 Oct 2026): bed figures are tiles in the Beds now card, and the stay chart's exact

@@ -152,6 +152,12 @@ type ShortlistPanelProps = {
    *  `coordinator/priority-queue.tsx` reads for its own hold labels. Optional, defaulted, only so
    *  existing direct-render tests keep their older prop set. */
   pullHoldMinutes?: number;
+  /**
+   * Phone only (v10 Home "Refer to <ward>"): when given, Refer hands the chosen wards to the page,
+   * which records the same `REFER_TO_UNITS` through `useUndoableStep` so the toast says Offered
+   * with Undo. Absent (desktop, tablet, direct-render tests), Refer dispatches as before.
+   */
+  onRefer?: (unitIds: string[], unitNames: string[]) => void;
 };
 
 /**
@@ -414,6 +420,7 @@ export function ShortlistPanel({
   dispatch,
   parallelReferralCap,
   pullHoldMinutes = defaultWardConfiguration().pullHoldMinutes,
+  onRefer,
 }: ShortlistPanelProps) {
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number. Called unconditionally,
   // ahead of the `if (!movement)` early return below, so the hook order stays fixed.
@@ -793,7 +800,8 @@ export function ShortlistPanel({
    */
   function handleRefer() {
     if (!canRefer) return;
-    dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
+    if (onRefer) onRefer([...referTargets], referTargetNames);
+    else dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
     setOverrideOpen(false);
   }
 

@@ -250,6 +250,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // Phone (v10): This shift and Ward flow sit behind a chip and open as bottom sheets.
   const isPhone = useIsPhone();
   const [phonePanel, setPhonePanel] = useState<"shift" | "flow" | null>(null);
+  // A sheet left open when the screen widens past the phone is closed, not reopened on return.
+  const [panelWasPhone, setPanelWasPhone] = useState(isPhone);
+  if (panelWasPhone !== isPhone) {
+    setPanelWasPhone(isPhone);
+    if (!isPhone) setPhonePanel(null);
+  }
   const [phoneTodoCount, setPhoneTodoCount] = useState<number | undefined>(undefined);
   const [dismissedBuzzes, setDismissedBuzzes] = useState<number[]>([]);
   // Item 44, build plan task F3 (§2 "Bed board, ward page and all seven statistics screens: a

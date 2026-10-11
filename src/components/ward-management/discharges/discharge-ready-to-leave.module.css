@@ -132,3 +132,23 @@
     background: transparent;
   }
 }
+
+/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
+   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
+   tablet keep the toast above. */
+@media (max-width: 48rem) {
+  .toast {
+    position: fixed;
+    right: 12px;
+    bottom: 92px;
+    left: 12px;
+    z-index: var(--z-toast);
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    margin: 0 auto;
+  }
+  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
+  :global(html:has([role="dialog"][aria-modal="true"])) .toast {
+    bottom: 136px;
+  }
+}

@@ -2628,3 +2628,51 @@ details[open] > summary > .phoneFoldChevron {
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
+
+/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
+   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
+   tablet keep the toast above. */
+@media (max-width: 48rem) {
+  .toast {
+    --toast-bg: light-dark(
+      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
+      color-mix(in srgb, var(--wf-track) 97%, transparent)
+    );
+    --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
+    --toast-ring: light-dark(transparent, var(--wf-line-2));
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 92px;
+    left: 12px;
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    margin: 0 auto;
+    transform: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: var(--toast-bg);
+    box-shadow:
+      0 0 0 1px var(--toast-ring),
+      var(--wf-e2);
+    color: var(--toast-ink);
+    font: 500 var(--wf-fs-13) / 18px var(--wf-font);
+    text-align: left;
+    white-space: normal;
+    z-index: var(--z-toast);
+  }
+
+  .toast > svg {
+    display: none;
+  }
+  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
+  :global(html:has([role="dialog"][aria-modal="true"])) .toast {
+    bottom: 136px;
+  }
+}

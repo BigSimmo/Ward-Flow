@@ -936,7 +936,8 @@ function WardReferralDrawerContent({
     if (touchStartY.current === null) return;
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
     touchStartY.current = null;
-    if (deltaY > 60 && typeof window !== "undefined" && window.innerWidth <= 640) {
+    // The phone (to 48rem, the same width the sheet layout uses) closes on a downward swipe.
+    if (deltaY > 60 && isPhone) {
       requestClose();
     }
   };
@@ -1798,7 +1799,9 @@ function WardReferralDrawerContent({
                       className={styles.stepItem}
                       aria-pressed={activeSection === id}
                       aria-controls={`${sectionId}-${id}`}
-                      aria-describedby={`${sectionId}-${id}-state`}
+                      aria-describedby={
+                        isPhone ? `${sectionId}-${id}-hint ${sectionId}-${id}-state` : `${sectionId}-${id}-state`
+                      }
                       data-active={active}
                       data-done={done}
                       onClick={() => (isPhone ? phOpenStep(id) : selectSection(id))}
@@ -1808,7 +1811,12 @@ function WardReferralDrawerContent({
                       </span>
                       <span className={styles.stepText}>
                         <span className={styles.stepLabel}>{label}</span>
-                        {isPhone ? <span className={styles.phStepHint}>{phStepHint(id)}</span> : null}
+                        {/* The hint describes the step; the button's name stays its label alone. */}
+                        {isPhone ? (
+                          <span className={styles.phStepHint} id={`${sectionId}-${id}-hint`} aria-hidden="true">
+                            {phStepHint(id)}
+                          </span>
+                        ) : null}
                         <span
                           className={styles.stepState}
                           id={`${sectionId}-${id}-state`}

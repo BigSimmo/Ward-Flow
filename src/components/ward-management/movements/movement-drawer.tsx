@@ -326,6 +326,7 @@ export function MovementDrawer({
         waitTone={waitTone}
         legalTitle={legalTitle}
         legalWhen={legalWhen}
+        legalTone={legalTone}
         hasBlocker={hasBlocker && !closure}
         open={open}
         onClose={onClose}
@@ -735,6 +736,7 @@ function MovementPhoneSheet({
   waitTone,
   legalTitle,
   legalWhen,
+  legalTone,
   hasBlocker,
   open,
   onClose,
@@ -751,6 +753,8 @@ function MovementPhoneSheet({
   waitTone: "danger" | "warning" | undefined;
   legalTitle: string;
   legalWhen: string;
+  /** Set when the RECORDED expiry has passed or is near (D5: a typed time, never a computed one). */
+  legalTone: WfTone | undefined;
   hasBlocker: boolean;
   open: boolean;
   onClose: () => void;
@@ -819,9 +823,21 @@ function MovementPhoneSheet({
           </div>
           <div>
             <dt>Legal</dt>
-            <dd>{legalTitle}</dd>
+            <dd>
+              {legalTone ? <StatusGlyph tone={legalTone} size={9} /> : null}
+              {legalTitle}
+            </dd>
           </div>
         </dl>
+        {legalTone && !hasBlocker && !closure ? (
+          <div className={d.phBox} data-testid="ward-movement-phone-legal-expiry">
+            <h3 className={d.phLabel}>Legal</h3>
+            <p className={d.phLine}>
+              <StatusGlyph tone={legalTone} size={9} />
+              {legalTitle} · {legalWhen}
+            </p>
+          </div>
+        ) : null}
         {closure ? (
           <div className={d.phBox}>
             <h3 className={d.phLabel}>Ended</h3>

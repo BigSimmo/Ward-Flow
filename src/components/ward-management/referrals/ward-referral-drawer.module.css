@@ -3205,8 +3205,14 @@ details.refCard > summary {
     color: var(--wf-ink-2);
   }
 
+  /* Off the card face, but still part of the row's name (service and unit id). */
   .wardTable .wardMetaMore {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .wardTable .wardFigure {

@@ -31,14 +31,21 @@ import { expect, test } from "playwright/test";
 const COMPARE = "/mockups/ward-flow/statistics/compare";
 const TABLES = ["ward-statistics-compare-wards", "ward-statistics-compare-eds"] as const;
 
-/** Widths where the tables are narrower than they want to be. Above ~745px both fit and this is silent. */
-const NARROW_WIDTHS = [375, 641, 700] as const;
+/**
+ * Widths where the tables are drawn. v10 phone (11 Oct 2026): at 48rem and below the comparisons
+ * are a ranked bar list with no table, so no figure can lose its row there; the tables start at
+ * 769px, where they fit, and this guard holds the identity column at that narrowest width.
+ */
+const NARROW_WIDTHS = [769, 800] as const;
 
 test.describe("@mockup the comparisons screen keeps every row's identity on screen", () => {
   test("no row header leaves its scroller, at rest or scrolled to the end", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(COMPARE, { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
+    await expect(page.getByTestId("ward-statistics-compare-phone")).toBeVisible({ timeout: 15_000 });
+    await page.setViewportSize({ width: NARROW_WIDTHS[0], height: 812 });
+    await expect(page.getByTestId("ward-statistics-compare-phone")).toHaveCount(0);
     // v6: each comparison card opens on its chart; its Data view is the table measured below.
     for (const radio of await page.getByRole("radio", { name: "Data" }).all()) await radio.click();
 

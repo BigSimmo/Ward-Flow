@@ -401,7 +401,8 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
     // 2026: the referral decision sheet's .foot, the Delays person panel's .acts and the
     // Discharges detail sheet's .detailFooter. Ward answer's .decisionArea is a second edge
     // action row by owner decision (v10 mockup .wa-acts, "the decision bar stays in view while
-    // the request scrolls past", 11 Oct 2026).
+    // the request scrolls past", 11 Oct 2026). Page-local toasts (.actionToast, .phoneToast,
+    // .toastNotice) sit 92px up as the v10 phone toast pill, 11 Oct 2026: notices, not action rows.
     const actionRows = allBottomAnchored.filter(
       (selector) =>
         ![
@@ -409,6 +410,9 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
           ".detail",
           ".detailPanel",
           ".toast",
+          ".actionToast",
+          ".phoneToast",
+          ".toastNotice",
           ".shortlistColumn",
           ".popup",
           ".drawer",

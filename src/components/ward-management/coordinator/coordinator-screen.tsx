@@ -340,6 +340,25 @@ export function CoordinatorScreen() {
     );
   }
 
+  /*
+   * Refer from the phone patient sheet (v10 Home phone "Refer to <ward>"): the same
+   * `REFER_TO_UNITS` the panel would dispatch, run through the Undo step so the toast says Offered
+   * with Undo, as the bedflow Offer does. The sheet closes so the toast is not under its footer.
+   */
+  function referFromSheet(movement: Movement, unitIds: string[], unitNames: string[]) {
+    const who = patientOf(movement);
+    const names = unitNames.join(", ");
+    runStep(
+      { type: "REFER_TO_UNITS", role: "coordinator", now: liveNow, movementId: movement.id, unitIds },
+      {
+        success: `Offered ${names} to ${who.umrn}`,
+        undo: (at) => ({ type: "UNDO_REFER_TO_UNITS", role: "coordinator", now: at, movementId: movement.id }),
+        undone: `Offer withdrawn. ${names} ${unitNames.length === 1 ? "is" : "are"} no longer asked.`,
+      },
+    );
+    closeShortlist();
+  }
+
   // The work list is network-wide and open movements only, never scoped to the ED filter.
   const actionInbox = useMemo(
     () =>
@@ -560,6 +579,11 @@ export function CoordinatorScreen() {
                 dispatch={dispatch}
                 parallelReferralCap={configuration.parallelReferralCap}
                 pullHoldMinutes={configuration.pullHoldMinutes}
+                onRefer={
+                  isPhone && panelMovement
+                    ? (unitIds, unitNames) => referFromSheet(panelMovement, unitIds, unitNames)
+                    : undefined
+                }
               />
             )}
           </aside>

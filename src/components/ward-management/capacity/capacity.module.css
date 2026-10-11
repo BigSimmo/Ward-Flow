@@ -1305,10 +1305,6 @@
     display: none;
   }
 
-  .screen .gapTable tfoot {
-    display: none;
-  }
-
   .phoneWards {
     display: flex;
     flex-direction: column;

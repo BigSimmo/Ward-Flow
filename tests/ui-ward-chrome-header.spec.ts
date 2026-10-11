@@ -677,13 +677,23 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await expect(tasks.getByRole("button", { name: "Close tasks panel" })).toBeInViewport();
   // Stream D (9 Oct 2026): a planned admission row has no movement and opens Capacity, so the
   // journey is checked on the last card still labelled "Open patient", scrolled to like the rest.
-  const lastPatientCard = tasks
-    .locator("li")
-    .filter({ has: page.getByRole("button", { name: "Open patient", exact: true }) })
-    .last();
-  await lastPatientCard.scrollIntoViewIfNeeded();
-  await expect(lastPatientCard).toBeInViewport();
-  await lastPatientCard.getByRole("button", { name: "Open patient", exact: true }).click();
+  // v10 phone Tasks sheet (11 Oct 2026): a row shows its title, person and due time; tapping the
+  // title expands it to its actions, Open among them. Expand from the last row upward until one
+  // offers "Open patient".
+  const rows = tasks.locator("li");
+  let openPatient: Locator | null = null;
+  for (let index = (await rows.count()) - 1; index >= 0 && !openPatient; index -= 1) {
+    const row = rows.nth(index);
+    await row.scrollIntoViewIfNeeded();
+    const title = row.locator("button[aria-expanded]").first();
+    if ((await title.count()) && (await title.getAttribute("aria-expanded")) !== "true") await title.click();
+    const candidate = row.getByRole("button", { name: "Open patient", exact: true });
+    if (await candidate.count()) openPatient = candidate;
+  }
+  expect(openPatient, "no task row offers Open patient").not.toBeNull();
+  await openPatient!.scrollIntoViewIfNeeded();
+  await expect(openPatient!).toBeInViewport();
+  await openPatient!.click();
   // That card may be a move or a carer, PSP and MHAS discharge row (9 Oct 2026), which opens
   // its stay on the discharges board. Either way the task is reachable and the drawer closes.
   await expect(page).toHaveURL(/\/movements\/WF-|\/discharges\?admissionId=/u);
@@ -702,12 +712,18 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
   await expect(page.getByRole("dialog")).toHaveCount(1);
   const sections = referral.getByRole("group", { name: "Referral sections" });
+  // v10 phone (11 Oct 2026): each step opens as a sheet over the step list; closing it returns to
+  // the list, where the next step is chosen. The draft must survive the round trip.
+  const closeStep = referral.getByRole("button", { name: "Close step", exact: true });
   await sections.getByRole("button", { name: "Referral", exact: true }).click();
   await referral.locator("#refDocInput").fill("Synthetic draft clinician");
+  await closeStep.click();
   await sections.getByRole("button", { name: "Wards", exact: true }).click();
   await expect(referral.getByRole("list", { name: "Placement Destination Options" })).toBeVisible();
+  await closeStep.click();
   await sections.getByRole("button", { name: "Referral", exact: true }).click();
   await expect(referral.locator("#refDocInput")).toHaveValue("Synthetic draft clinician");
+  await closeStep.click();
   await sections.getByRole("button", { name: "Wards", exact: true }).click();
   await page.keyboard.press("/");
   await expect(sections.getByRole("button", { name: "Patient", exact: true })).toHaveAttribute("aria-pressed", "true");

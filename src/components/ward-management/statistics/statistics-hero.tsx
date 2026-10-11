@@ -310,6 +310,8 @@ export function StatisticsPage({
                 <>
                   <SrOnly>
                     <span data-testid="ward-statistics-section-eyebrow">{eyebrowLabel ?? section.label}</span> ·{" "}
+                    {/* The page's identity (for a service, its hospitals) stays readable. */}
+                    {eyebrowDetail ? <>{eyebrowDetail} · </> : null}
                   </SrOnly>
                   {phone.eyebrow}
                 </>

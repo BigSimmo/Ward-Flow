@@ -531,13 +531,15 @@ export function MovementsScreen() {
     return (movement: Movement) => movementBelongsToService(movement, chosenService, units);
   }, [service, units]);
 
-  const worklistMovements = useMemo(
-    () => (isInServiceScope ? movements.filter(isInServiceScope) : movements),
-    [movements, isInServiceScope],
-  );
+  // Phone: the first tab is "Open", so its rows and count are the open movements only; closed ones
+  // are on "Resolved today". Desktop's "Every movement" is unchanged.
+  const worklistMovements = useMemo(() => {
+    const scoped = isInServiceScope ? movements.filter(isInServiceScope) : movements;
+    return isPhone ? scoped.filter(isOpen) : scoped;
+  }, [movements, isInServiceScope, isPhone]);
   const worklistStages = useMemo(
-    () => (isInServiceScope ? journeyStages(worklistMovements, now) : stages),
-    [isInServiceScope, worklistMovements, stages, now],
+    () => (isInServiceScope || isPhone ? journeyStages(worklistMovements, now) : stages),
+    [isInServiceScope, isPhone, worklistMovements, stages, now],
   );
   const worklistClosedToday = useMemo(
     () => (isInServiceScope ? closedToday.filter(isInServiceScope) : closedToday),

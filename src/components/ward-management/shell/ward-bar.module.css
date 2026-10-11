@@ -3002,6 +3002,11 @@
     line-height: var(--wf-lh-12);
   }
 
+  /* The 18px line keeps a 48px tall hit area: 15px above and below. */
+  .scopeBadgeBtn::before {
+    inset: -15px -8px;
+  }
+
   .bar[data-scrolled="true"] .scopeBadgeBtn > * {
     opacity: 1;
   }
@@ -3076,7 +3081,8 @@
  * title and its quiet line, then one card of 48px rows (dot, name, open count, check). The rows are
  * the same buttons as the desktop popover. Desktop and tablet are unchanged. */
 .serviceSheetNote,
-.serviceAllCount {
+.serviceAllCount,
+.serviceScrim {
   display: none;
 }
 
@@ -3096,10 +3102,17 @@
     border-bottom: 0;
     border-radius: 22px 22px 0 0;
     background: var(--wf-surface-2);
-    box-shadow:
-      0 -8px 24px -12px color-mix(in srgb, var(--wf-ink-1) 30%, transparent),
-      0 0 0 100vmax var(--wf-scrim-strong);
+    box-shadow: 0 -8px 24px -12px color-mix(in srgb, var(--wf-ink-1) 30%, transparent);
     color: var(--wf-ink-1);
+  }
+
+  /* A real backdrop: a tap outside the sheet closes it and never reaches the page beneath. */
+  .serviceScrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 59;
+    background: var(--wf-scrim-strong);
   }
 
   /* The grip. */

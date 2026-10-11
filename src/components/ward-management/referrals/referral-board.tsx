@@ -725,7 +725,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           <dd>{r.intake?.legalStatus?.trim() || "Not recorded"}</dd>
         </div>
         {/* v10 phone: the facts read as a two by two grid, so the needs get their own cell. */}
-        <div className={a.stripPhone} aria-hidden="true">
+        {/* Hidden above the phone by CSS, so screen readers meet it only where it shows. */}
+        <div className={a.stripPhone}>
           <dt>Needs</dt>
           <dd>
             {(() => {
@@ -1018,10 +1019,12 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 <span className={a.footNote}>
                   Highlights dim rows and keep every referral. Search narrows the list.
                 </span>
-                {/* v10 phone: the order note sits under the list instead of in the toolbar. */}
-                <span className={a.phoneFootNote} aria-hidden="true">
-                  Longest wait first · tier breaks ties
-                </span>
+                {/* v10 phone: the order note sits under the queue instead of in the toolbar. */}
+                {view === "queue" ? (
+                  <span className={a.phoneFootNote} aria-hidden="true">
+                    Longest wait first · tier breaks ties
+                  </span>
+                ) : null}
               </div>
             </Card>
           </div>
@@ -1851,11 +1854,21 @@ function DecidedSection({
  * Triaged, Bed offered), sized by real time. Undefined while there is only one step to show.
  */
 function referralJourneyStages(referral: Referral, now: Instant): JourneyStage[] | undefined {
+  // Only a ward's acceptance offers a bed; an ED or community team accepting offers none.
   const offeredAt = referral.destinations
-    .filter((arm) => arm.state === "accepted" && arm.decidedAt !== undefined)
+    .filter(
+      (arm) => arm.destination.kind === "psychiatric_ward" && arm.state === "accepted" && arm.decidedAt !== undefined,
+    )
     .map((arm) => arm.decidedAt as number)
     .sort((x, y) => x - y)[0];
-  const triagedAt = referral.triagedAt;
+  // A triage time recorded before the referral was raised (or after the offer) cannot size the
+  // strip without counting time outside its own stage, so the strip leaves it out.
+  const triagedAt =
+    referral.triagedAt !== undefined &&
+    referral.triagedAt >= referral.raisedAt &&
+    (offeredAt === undefined || referral.triagedAt <= offeredAt)
+      ? referral.triagedAt
+      : undefined;
   if (triagedAt === undefined && offeredAt === undefined) return undefined;
   const stages: JourneyStage[] = [];
   const referredEnd = triagedAt ?? offeredAt ?? now;
