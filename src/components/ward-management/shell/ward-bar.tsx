@@ -562,6 +562,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const checksPublication = useWardChecks();
 
   const [openPanel, setOpenPanel] = useState<WardBarPopoverId | null>(null);
+  // A history Back is asynchronous. Keep the drawer identity here so repeated closes are
+  // ignored and a delayed popstate cannot close a drawer opened in the meantime.
+  const closingViaHistoryRef = useRef<WardBarPopoverId | null>(null);
   const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
   // The slide-out fills this with its guarded close, which asks before discarding a draft.
   const referralCloseRef = useRef<(() => void) | null>(null);
@@ -816,9 +819,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, []);
 
   const closePopover = useCallback((id: WardBarPopoverId, announce = true) => {
-    if (announce) announceToWardShell("Closed.");
+    // Do not issue another Back while the first one is still waiting for popstate.
+    if (closingViaHistoryRef.current !== null) return;
     if (typeof window === "undefined" || !window.history) {
       setOpenPanel((current) => (current === id ? null : current));
+      if (announce) announceToWardShell("Closed.");
       return;
     }
     const step = drawerCloseHistoryStep({
@@ -828,11 +833,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     });
     if (step === "back") {
       // Keep the sheet and its background lock until popstate completes the close.
-      // Removing it first allowed the next drawer/link to open while this old Back
-      // was still pending, so the old close could undo the person's next action.
+      closingViaHistoryRef.current = id;
       window.history.back();
     } else {
       setOpenPanel((current) => (current === id ? null : current));
+      if (announce) announceToWardShell("Closed.");
       if (step === "clear") {
         const nextState = { ...window.history.state };
         delete nextState.wardDrawer;
@@ -846,6 +851,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {
+      // A replacement open must wait for the pending Back; otherwise its popstate would
+      // be indistinguishable from the drawer that initiated the close.
+      if (closingViaHistoryRef.current !== null) return;
       setOpenPanel(id);
       if (typeof window !== "undefined" && window.history && isDrawerPanel(id)) {
         if (window.history.state?.wardDrawer) {
@@ -948,6 +956,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   useEffect(() => {
     function onPopState() {
+      const closingPanel = closingViaHistoryRef.current;
+      if (closingPanel !== null) {
+        // Only the drawer that initiated Back may be closed by its delayed event.
+        closingViaHistoryRef.current = null;
+        if (openPanel !== closingPanel) return;
+        setOpenPanel(null);
+        announceToWardShell("Closed.");
+        return;
+      }
       if (openPanel === null) return;
       setOpenPanel(null);
       // Announce in the event, outside React's state updater/render phase.
