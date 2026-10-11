@@ -661,8 +661,11 @@ function PersonPanel({
               onEscalate(movement);
             }}
             data-testid={`delays-escalate-${movement.id}`}
+            title="Escalate to State bed coordination desk"
           >
-            Escalate to State bed coordination desk
+            {/* Audit 11 Oct 2026: a short label beside Journey; the toast names the desk. */}
+            Escalate
+            <span className="sr-only"> to State bed coordination desk</span>
           </button>
         )}
         <Link className={styles.btn} href={`/mockups/ward-flow/movements/${movement.id}`}>
@@ -762,7 +765,13 @@ function Registers({
     { id: "resolved", label: "Resolved", count: closedToday.length },
     { id: "system", label: "System", count: 0 },
   ] as const;
-  const quietRows = rows.filter((row) => row.silent).sort((a, b) => b.quiet - a.quiet);
+  // Device audit (11 Oct 2026): the "Waiting on you" group already lists its own people beside this
+  // rail, so Longest quiet names the quiet people under every other blocker instead of repeating them.
+  // "Show all" still filters the table to everyone quiet, and says so.
+  const allQuietRows = rows.filter((row) => row.silent);
+  const quietRows = allQuietRows
+    .filter((row) => row.cause !== "awaiting_coordinator")
+    .sort((a, b) => b.quiet - a.quiet);
   const placedCount = closedToday.filter((movement) => movement.closure?.outcome === "arrived").length;
   const notProceededCount = closedToday.filter((movement) => movement.closure?.outcome === "did_not_proceed").length;
   const onTabKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -960,11 +969,14 @@ function Registers({
           <h4 className={styles.h4r}>
             Longest quiet <span className={styles.k}>{quietRows.length}</span>
           </h4>
+          <p className={styles.mute}>Not waiting on you</p>
           {quietRows.length === 0 ? (
             <p className={styles.mute}>
               {rows.length === 0
                 ? "Nobody is waiting."
-                : `Everyone has had something recorded in the last ${hoursWord(SILENT_MINUTES)}.`}
+                : allQuietRows.length > 0
+                  ? "Everyone quiet is waiting on you, in the table."
+                  : `Everyone has had something recorded in the last ${hoursWord(SILENT_MINUTES)}.`}
             </p>
           ) : (
             quietRows.slice(0, 7).map((row) => (
@@ -988,9 +1000,9 @@ function Registers({
             ))
           )}
         </div>
-        {quietRows.length > 0 ? (
+        {allQuietRows.length > 0 ? (
           <button type="button" className={styles.chip} aria-pressed={silentPressed} onClick={onSilent}>
-            {`Show all ${quietRows.length} in the table`}
+            {`Show all ${allQuietRows.length} quiet in the table`}
           </button>
         ) : null}
       </div>
@@ -1218,24 +1230,27 @@ export function DelaysBoard({
     });
   }
 
+  // Phone: only the first act-now row of yours in reading order carries the red edge, so one row
+  // reads as the next thing to do rather than every urgent row shouting at once.
+  let actRowMarked = false;
   const renderRow = (row: BoardRow) => {
     const { movement } = row;
     const patient = patientOf(movement);
     const isSelected = selectedId === movement.id;
     const ward = wardSummary(row, units);
+    const isActRow =
+      isPhone &&
+      !actRowMarked &&
+      row.owner === "yours" &&
+      (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H);
+    if (isActRow) actRowMarked = true;
     return [
       <tr
         role="row"
         key={movement.id}
         className={styles.r}
         aria-selected={isSelected}
-        data-act={
-          isPhone &&
-          row.owner === "yours" &&
-          (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H)
-            ? "true"
-            : undefined
-        }
+        data-act={isActRow ? "true" : undefined}
         data-testid={`delays-row-${movement.id}`}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest("button, a") === null) select(movement.id);
@@ -1344,7 +1359,17 @@ export function DelaysBoard({
             >
               <ChevronDown size={14} aria-hidden="true" className={open ? undefined : styles.folded} />
               <Glyph tone={list[0].severe ? "danger" : undefined} />
-              <span className={styles.gTitle}>{group.title}</span>
+              {/* Audit 11 Oct 2026, phone: a short heading so the bed pull row is not cut short. */}
+              <span className={styles.gTitle} title={group.title}>
+                {isPhone && group.cause === "bed_pull_expired" ? (
+                  <>
+                    <span aria-hidden="true">Bed held past time</span>
+                    <span className="sr-only">{group.title}</span>
+                  </>
+                ) : (
+                  group.title
+                )}
+              </span>
               <span className={styles.k} data-delays-group-count>
                 {list.length}
               </span>
@@ -1666,13 +1691,23 @@ export function DelaysBoard({
                   <span className={styles.ownName}>{tile.name}</span>
                 </span>
                 <BandBar bands={tile.bands} />
-                <small>
-                  <Glyph tone={tile.sub.count > 0 ? tile.sub.tone : undefined} />
-                  <span>
-                    <b className={styles.ownSubCount}>{tile.sub.count}</b>
-                    <span className={styles.ownSubText}>{` ${tile.sub.text}`}</span>
-                  </span>
-                </small>
+                {/* Audit 11 Oct 2026, phone: one count per chip; the glyph alone flags the sub fact. */}
+                {isPhone ? (
+                  tile.sub.count > 0 ? (
+                    <small>
+                      <Glyph tone={tile.sub.tone} />
+                      <span className="sr-only">{`${tile.sub.count} ${tile.sub.text}`}</span>
+                    </small>
+                  ) : null
+                ) : (
+                  <small>
+                    <Glyph tone={tile.sub.count > 0 ? tile.sub.tone : undefined} />
+                    <span>
+                      <b className={styles.ownSubCount}>{tile.sub.count}</b>
+                      <span className={styles.ownSubText}>{` ${tile.sub.text}`}</span>
+                    </span>
+                  </small>
+                )}
               </button>
             ))}
           </section>
@@ -1746,24 +1781,19 @@ export function DelaysBoard({
                 </div>
               </div>
               <div className={`${styles.chead} ${styles.fRow}`}>
-                <span className={styles.eyebrow}>Waited</span>
-                <div className={styles.seg} role="group" aria-label="Waited at least">
-                  {WAIT_THRESHOLD_LABELS.map((label, index) => (
-                    <button
-                      key={label}
-                      type="button"
-                      aria-pressed={filters.threshold === index}
-                      disabled={index > 0 && cumulative[index] === 0 && filters.threshold !== index}
-                      onClick={() => {
-                        if (index > 0 && cumulative[index] === 0 && filters.threshold !== index) return;
-                        set({ threshold: filters.threshold === index ? 0 : (index as WaitThreshold) });
-                      }}
-                    >
-                      <Glyph tone={index === 1 ? "warning" : index === 3 ? "danger" : undefined} />
-                      {label} <span className={styles.k}>{cumulative[index]}</span>
-                    </button>
-                  ))}
-                </div>
+                {/* Audit 11 Oct 2026: Over 8h and Over 24h filter from the hero figures, so only the
+                    12h step, which the hero does not carry, stays here as a chip. */}
+                <button
+                  type="button"
+                  className={styles.chip}
+                  aria-pressed={filters.threshold === 2}
+                  disabled={cumulative[2] === 0 && filters.threshold !== 2}
+                  onClick={() => {
+                    set({ threshold: filters.threshold === 2 ? 0 : 2 });
+                  }}
+                >
+                  {WAIT_THRESHOLD_LABELS[2]} <span className={styles.k}>{cumulative[2]}</span>
+                </button>
                 <button
                   type="button"
                   className={styles.chip}

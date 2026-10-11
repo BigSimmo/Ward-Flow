@@ -1254,6 +1254,21 @@ export function PatientNowScreen({
           {(mode === "idle" || mode === "cto") && !isPhone ? (
             <PatientRecordOverview patient={livePatient} record={record} onOpen={openTab} />
           ) : null}
+          {/* Device audit (11 Oct 2026): the journey ribbon sits below the body, not in the hero, so
+              the hero holds the status and the steps only. The phone keeps its own card above. */}
+          {isLiveBedflow && liveMovement && !phoneMovement ? (
+            <section className={styles.sec} aria-labelledby="pn-journey-head">
+              <h3 id="pn-journey-head" className={styles.secH}>
+                Journey so far
+              </h3>
+              <JourneyStrip
+                label="Journey since this movement opened"
+                stages={patientJourneyStages(liveMovement, now)}
+                formatDuration={dur}
+                note={false}
+              />
+            </section>
+          ) : null}
         </>
       }
       calls={callRows(callTargets, now)}
@@ -1592,15 +1607,6 @@ export function PatientNowScreen({
                   }
                   note={false}
                   className={`${styles.v6Journey} ${styles.phStayStrip}`}
-                />
-              ) : isLiveBedflow && liveMovement && !phoneMovement ? (
-                <JourneyStrip
-                  surface="hero"
-                  label="Journey since this movement opened"
-                  stages={patientJourneyStages(liveMovement, now)}
-                  formatDuration={dur}
-                  note={false}
-                  className={styles.v6Journey}
                 />
               ) : undefined
             }

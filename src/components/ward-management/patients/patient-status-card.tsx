@@ -44,6 +44,8 @@ export type StatusAction =
       onClick: (event: MouseEvent<HTMLButtonElement>) => void;
       /** The event this button dispatches, so the route's role can limit it (feature 11). */
       event?: WardFlowEventType;
+      /** A correction to something already recorded (Update booking): never the card's one primary. */
+      secondary?: boolean;
     }
   | { kind: "unavailable"; label: string; reason: string };
 
@@ -82,6 +84,8 @@ export interface PatientStatusContext {
   onClearance: (event: MouseEvent<HTMLButtonElement>) => void;
   onBookTransport: () => void;
   onArrivalTime: () => void;
+  /** Phone: the booking is updated from the Moving to card, as no separate transport block shows. */
+  bookingInCard?: boolean;
   /** D-38: the stay's held bed when on leave or absent, and the actions on it. */
   leaveBed?: LeaveBed;
   stayUnitName?: string;
@@ -128,6 +132,7 @@ function transportCell(
   ready: boolean,
   onBook: () => void,
   waitingFor = "an accepted bed",
+  bookingInCard = false,
 ): StatusCell {
   const job = movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
   if (job)
@@ -141,6 +146,18 @@ function transportCell(
       sub: job.cadNumber ? `CAD ${job.cadNumber}` : "CAD not recorded",
       time: job.estimatedAt !== undefined ? `ETA ${clock(job.estimatedAt)}, typed by the booker` : undefined,
       clear: true,
+      action: bookingInCard
+        ? {
+            kind: "button",
+            label: "Update booking",
+            secondary: true,
+            icon: Truck,
+            onClick: () => {
+              onBook();
+            },
+            event: "BOOK_TRANSPORT",
+          }
+        : undefined,
     };
   if (movement.transportNeed?.needed === false)
     return {
@@ -266,7 +283,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       cells: [
         bed,
         clearanceCell(movement, ctx.onClearance),
-        transportCell(movement, movement.stage === "pulled", ctx.onBookTransport, "the bed held"),
+        transportCell(movement, movement.stage === "pulled", ctx.onBookTransport, "the bed held", ctx.bookingInCard),
       ],
     });
     if (ctx.handoverRefusal) {
@@ -285,7 +302,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
     return {
       tone: late ? "danger" : "info",
       verdict: ctx.acceptedUnitName ? `Moving to ${ctx.acceptedUnitName}` : "Moving",
-      meta: movement.stage === "moving" ? "Collected and on the way" : "Handover ready, awaiting collection",
+      meta: movement.stage === "moving" ? "Collected and on the way" : "Awaiting collection",
       cells: [
         {
           key: "collected",
@@ -293,10 +310,24 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
           label: "Collected",
           owner: "ED nurse in charge",
           tone: job?.collectedAt !== undefined ? "success" : "warning",
+          // Device audit (11 Oct 2026): a ticked cell counts as clear, so the phone's "N of 3 Clear"
+          // agrees with the ticks on this card.
+          clear: job?.collectedAt !== undefined,
           value: job?.collectedAt !== undefined ? clock(job.collectedAt) : "Not yet",
           sub: job ? job.provider : "No transport logged",
           action: job
-            ? undefined
+            ? ctx.bookingInCard
+              ? {
+                  kind: "button",
+                  label: "Update booking",
+                  secondary: true,
+                  icon: Truck,
+                  onClick: () => {
+                    ctx.onBookTransport();
+                  },
+                  event: "BOOK_TRANSPORT",
+                }
+              : undefined
             : movement.stage === "handover_ready"
               ? {
                   kind: "button",
@@ -335,6 +366,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
           label: "Receiving ward",
           owner: "Ward nurse in charge",
           tone: ctx.hasBedHold ? "success" : "warning",
+          clear: ctx.hasBedHold,
           value: ctx.acceptedUnitName ?? "Not recorded",
           sub: ctx.hasBedHold ? "Bed held" : "No bed hold recorded",
         },
@@ -694,7 +726,7 @@ export function PatientStatusCard({
   const status = buildPatientStatus(mode, context);
   const primaryKey =
     status.rows?.find((r) => !r.done && r.action?.kind === "button")?.key ??
-    status.cells.find((c) => !c.clear && c.action?.kind === "button")?.key;
+    status.cells.find((c) => !c.clear && c.action?.kind === "button" && !c.action.secondary)?.key;
   const word = status.meterWord ?? "clear";
   /*
    * v10 Patient, Phone: "Its one primary is pinned in a sticky action bar and is not repeated in

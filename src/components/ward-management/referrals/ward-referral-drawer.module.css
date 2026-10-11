@@ -3274,3 +3274,18 @@ details.refCard > summary {
     padding: 0 var(--wf-s-3);
   }
 }
+
+/* Audit 11 Oct 2026, phone: the already-open note reads as one block with Open board under it. */
+@media (max-width: 48rem) {
+  .suggestion {
+    flex-wrap: wrap;
+  }
+
+  .suggestionText {
+    flex: 1 1 calc(100% - 2rem);
+  }
+
+  .suggestion > a {
+    margin-left: 19px;
+  }
+}

@@ -202,25 +202,31 @@ const OPENERS: ReadonlyArray<readonly [string, string, string]> = [
 ];
 
 /**
- * Phone (8 Oct 2026, locked lean bar 10 Oct 2026): at 48rem (768px) and below the bar drops
- * Activity and Tools, and its Menu button opens the phone menu, which carries Activity in its dock
- * and Tools as a row. Everything else stays in the bar.
+ * Phone (8 Oct 2026, locked lean bar 10 Oct 2026; device audit option A, 11 Oct 2026): at 48rem
+ * (768px) and below the bar drops Activity, Tasks and Tools. Activity and Tasks open from the dock
+ * on every phone page, and Tools is a row in the phone menu that the bar's Menu button opens.
  */
 const PHONE_BAR_MAX_WIDTH = 768;
-const PHONE_MENU_ROWS: Readonly<Record<string, string>> = {
+const PHONE_DOCK_BUTTONS: Readonly<Record<string, string>> = {
   "ward-bar-activity-trigger": "ward-phone-menu-activity",
+  "ward-bar-tasks-trigger": "ward-phone-menu-tasks",
+};
+const PHONE_MENU_ROWS: Readonly<Record<string, string>> = {
   "ward-bar-tools-trigger": "ward-phone-menu-tools",
 };
 const PHONE_MENU: readonly [string, string, string] = ["ward-bar-phone-menu", "ward-phone-menu", "the phone Menu"];
 
 function barOpeners(width: number): ReadonlyArray<readonly [string, string, string]> {
   return width <= PHONE_BAR_MAX_WIDTH
-    ? [...OPENERS.filter(([testId]) => !(testId in PHONE_MENU_ROWS)), PHONE_MENU]
+    ? [...OPENERS.filter(([testId]) => !(testId in PHONE_MENU_ROWS) && !(testId in PHONE_DOCK_BUTTONS)), PHONE_MENU]
     : OPENERS;
 }
 
 async function openFromBar(page: Page, testId: string, width: number) {
-  const row = width <= PHONE_BAR_MAX_WIDTH ? PHONE_MENU_ROWS[testId] : undefined;
+  const phone = width <= PHONE_BAR_MAX_WIDTH;
+  const dock = phone ? PHONE_DOCK_BUTTONS[testId] : undefined;
+  if (dock) return page.getByTestId(dock).click();
+  const row = phone ? PHONE_MENU_ROWS[testId] : undefined;
   if (!row) return page.getByTestId(testId).click();
   await page.getByTestId(PHONE_MENU[0]).click();
   await page.getByTestId(row).click();

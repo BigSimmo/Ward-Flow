@@ -2682,3 +2682,49 @@ details[open] > summary > .phoneFoldChevron {
     bottom: 136px;
   }
 }
+
+/* Device audit, 11 Oct 2026: the one primary (Accept in principle) sat at the bottom edge at
+   1440 x 900 and about 1,690px down on iPad portrait. Above phone width the decision row pins to
+   the foot of the window while its card is on screen, on a solid surface. The card clips rather
+   than hides its overflow, so the row can stick. Phone keeps its own pinned bar. */
+@media screen and (min-width: 48.0625rem) {
+  .gatesCard {
+    overflow: clip;
+  }
+
+  .decisionArea {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--wf-surface-2);
+    box-shadow: 0 -1px 0 var(--wf-line);
+  }
+}
+
+/* iPad portrait: the two cards stack, so the gates card (and its decision row) starts below the
+   fold. The row pins to the window foot, as the phone bar does, and the page keeps room for it. */
+@media screen and (min-width: 48.0625rem) and (max-width: 64rem) {
+  .answerScreen:has(.decisionArea) {
+    padding-bottom: 5rem;
+  }
+
+  .decisionArea {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    margin: 0;
+    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e2);
+  }
+}
+
+/* iPad portrait: the Census bed strip fits a 20-bed ward on one row (bed 19 no longer wraps). */
+@media screen and (min-width: 48.0625rem) and (max-width: 64rem) {
+  .bedGrid {
+    grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
+  }
+}

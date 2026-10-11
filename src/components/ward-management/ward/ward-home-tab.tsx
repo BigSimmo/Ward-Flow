@@ -492,7 +492,9 @@ export function WardHomeTab({
     const groups: { id: string; title: string; tone: WfTone | null; rows: typeof bedRows }[] = [
       { id: "act", title: "Act now", tone: "danger", rows: take((row) => row.glyph === "danger") },
       { id: "risk", title: "At risk", tone: "warning", rows: take((row) => row.glyph === "warning") },
-      { id: "leaving", title: "Leaving today", tone: "info", rows: take((row) => row.leaving) },
+      // Beds due out today that are not already listed under Act now or At risk, so the heading
+      // names that narrower set rather than repeating the Due out filter's wider count.
+      { id: "leaving", title: "Due out, on track", tone: "info", rows: take((row) => row.leaving) },
       { id: "free", title: "Free", tone: "success", rows: take((row) => row.free) },
       { id: "pulled", title: "Pulled", tone: "info", rows: take((row) => row.bed.status === "incoming") },
       { id: "leave", title: "On leave", tone: "neutral", rows: take((row) => row.bed.status === "leave") },
@@ -667,8 +669,9 @@ export function WardHomeTab({
       key: "departures",
       title: "Discharges to sign off",
       // Same population as the Discharges tab: every open release, held up ones counted apart.
-      detail: `${pendingBedReleases.length} open · ${heldUp.length} held up`,
-      meta: String(signOff),
+      // Every figure names its noun (audit 11 Oct 2026): the bare "12" beside "14 open" read as a
+      // third discharge count.
+      detail: `${signOff} ready · ${heldUp.length} held up · ${pendingBedReleases.length} open`,
       tone: "neutral",
       action: { label: "Open", run: () => onOpenDecisions?.() },
     });
@@ -824,9 +827,7 @@ export function WardHomeTab({
           Free
         </span>
       </span>
-      <span className={styles.keyTally}>
-        {bedTally.free} ready · {bedTally.pulled} pulled · {bedTally.closed} closed · {bedTally.occupied} occupied
-      </span>
+      {/* Audit 11 Oct 2026: the four bed counts sit once, in Ward figures, right now, just below. */}
       {onOpenBeds ? (
         <button type="button" className={styles.keyLink} onClick={onOpenBeds}>
           Full bed list
@@ -1197,17 +1198,7 @@ export function WardHomeTab({
         )}
         <div className={styles.shiftPane} data-active={shiftView === "todo"}>
           <div className={styles.todoGrid}>
-            {renderTodoColumn(
-              "now",
-              "Act now",
-              "danger",
-              actNow,
-              liveFormAlerts.length > 0 ? (
-                <span className={styles.legalTag}>
-                  <LegalLimitsNotChecked variant="tag" />
-                </span>
-              ) : undefined,
-            )}
+            {renderTodoColumn("now", "Act now", "danger", actNow)}
             {renderTodoColumn("later", "Later today", "neutral", laterToday)}
             {renderTodoColumn("done", "Done", "success", doneRows)}
           </div>
@@ -1274,6 +1265,12 @@ export function WardHomeTab({
           <span>
             <b>{checksDone}</b> of {shiftChecks.length} checks done
           </span>
+          {/* Audit 11 Oct 2026: one footnote for the form times, not a tag crowding Act now. */}
+          {liveFormAlerts.length > 0 ? (
+            <span className={styles.legalTag}>
+              Form times <LegalLimitsNotChecked variant="tag" />
+            </span>
+          ) : null}
         </div>
       </Card>
     );
@@ -1296,8 +1293,8 @@ export function WardHomeTab({
                 All clear
               </p>
               <p className={styles.phoneClearText}>
-                Nothing is waiting for {unit.name}. Answered {recentAnswers.length}
-                {expectedRows.length > 0 ? ` · ${expectedRows.length} coming in` : ""}.
+                Answered {recentAnswers.length}
+                {expectedRows.length > 0 ? ` · ${expectedRows.length} coming in` : ""}
               </p>
             </div>
           ) : (
@@ -1366,7 +1363,7 @@ export function WardHomeTab({
                     items={[
                       { id: "all", label: "All", count: bedRows.length },
                       { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
-                      { id: "leaving", label: "Leaving", count: bedRows.filter((row) => row.leaving).length },
+                      { id: "leaving", label: "Due out", count: bedRows.filter((row) => row.leaving).length },
                       { id: "free", label: "Free", count: bedRows.filter((row) => row.free).length },
                       // The hero's Occupied and Ready by pills set filters this group does not list,
                       // so the active one joins it while on and a radio is always checked.
@@ -1602,13 +1599,13 @@ export function WardHomeTab({
         {phoneSheets && !bedArea ? (
           <details className={styles.phoneFigures} data-testid="ward-phone-figures">
             <summary>
-              <span className={styles.phoneFiguresTitle}>Ward figures, right now</span>
+              {/* Audit 11 Oct 2026: the bed counts here repeated the hero and the group headings, so
+                  the fold keeps only the ward's details and what is not checked. */}
+              <span className={styles.phoneFiguresTitle}>Ward details and checks</span>
               {phoneFiguresSummary ? <span className={styles.phoneFiguresLine}>{phoneFiguresSummary}</span> : null}
             </summary>
             <div className={styles.phoneFiguresBody}>
               {phoneHeroFoot ? <div className={styles.phoneFiguresFoot}>{phoneHeroFoot}</div> : null}
-              {bedKeyBlock}
-              {figures ? <div className={styles.bedFigures}>{figures}</div> : null}
             </div>
           </details>
         ) : null}

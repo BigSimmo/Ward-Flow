@@ -1,8 +1,9 @@
 "use client";
 
 import { BedDouble, ChevronRight, MapPin, Network as NetworkIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 
@@ -176,6 +177,12 @@ export function NetworkBedflow({
           </span>
         </p>
       ) : null}
+      {/* Audit 11 Oct 2026: the page's answer leads the card instead of closing it. */}
+      {isPhone ? null : (
+        <div className={styles.versusTop}>
+          <ReadyAgainstWaiting groups={groups} />
+        </div>
+      )}
       <div className={styles.serviceGrid}>
         {shown.map((group) => {
           const share = occupiedPercent(group.occupied + group.pulled, group.beds);
@@ -279,7 +286,7 @@ export function NetworkBedflow({
                         <abbr title="Pulled">Pull</abbr>
                       </th>
                       <th scope="col" className={styles.num}>
-                        <abbr title="Expected today">Exp</abbr>
+                        <abbr title="Expected discharges, not yet confirmed">Exp</abbr>
                       </th>
                     </tr>
                   </thead>
@@ -342,11 +349,10 @@ export function NetworkBedflow({
             </section>
           );
         })}
-        {isPhone ? null : <ReadyAgainstWaiting groups={groups} />}
       </div>
       <footer className={styles.foot}>
         <BedStripLegend />
-        <span className={styles.footNote}>Rdy ready · Pull pulled · Exp expected today</span>
+        <span className={styles.footNote}>Rdy ready · Pull pulled · Exp expected discharges, not yet confirmed</span>
         <span className={styles.footEnd}>Schematic, not geographic</span>
       </footer>
     </Card>
@@ -407,12 +413,16 @@ const SERVICE_DOT: Partial<Record<HealthService, string>> = {
  */
 export function ReadyAgainstWaitingPhone({
   groups,
-  scope,
+  scope = "all",
   onScope,
+  wardsHref,
 }: {
   groups: readonly ServiceGroup[];
-  scope: HealthService | "all";
-  onScope: (scope: HealthService | "all") => void;
+  scope?: HealthService | "all";
+  /** Scopes a bed list below. Without it the rows are read-only figures. */
+  onScope?: (scope: HealthService | "all") => void;
+  /** Audit 11 Oct 2026: phone links to All wards instead of repeating every ward here. */
+  wardsHref?: string;
 }) {
   return (
     <section className={styles.phoneVersus} aria-labelledby="ward-network-versus-phone-heading">
@@ -420,7 +430,7 @@ export function ReadyAgainstWaitingPhone({
         <h2 id="ward-network-versus-phone-heading" className={styles.phoneVersusTitle}>
           Ready against waiting
         </h2>
-        <span className={styles.phoneVersusHint}>tap to scope beds</span>
+        {onScope ? <span className={styles.phoneVersusHint}>tap to scope beds</span> : null}
       </header>
       <ul className={styles.phoneVersusList}>
         {groups.map((group) => {
@@ -428,11 +438,10 @@ export function ReadyAgainstWaitingPhone({
           const selected = scope === group.service;
           return (
             <li key={group.service}>
-              <button
-                type="button"
+              <PhoneVersusRowShell
                 className={cx(styles.phoneVersusRow, selected && styles.rowSelected)}
-                aria-pressed={selected}
-                onClick={() => onScope(selected ? "all" : group.service)}
+                selected={selected}
+                onPress={onScope ? () => onScope(selected ? "all" : group.service) : undefined}
               >
                 <span
                   className={styles.phoneServiceDot}
@@ -459,12 +468,42 @@ export function ReadyAgainstWaitingPhone({
                     </>
                   )}
                 </span>
-              </button>
+              </PhoneVersusRowShell>
             </li>
           );
         })}
       </ul>
+      {wardsHref ? (
+        <Link className={styles.roadLink} href={wardsHref} data-testid="ward-network-all-wards-link">
+          <BedDouble size={18} aria-hidden="true" className={styles.roadLinkIcon} />
+          <span className={styles.roadLinkText}>
+            <span className={styles.roadLinkTitle}>Every ward</span>
+            <span className={styles.unitMeta}>Ready, pulled and expected beds, on All wards</span>
+          </span>
+          <ChevronRight size={16} aria-hidden="true" className={styles.roadLinkIcon} />
+        </Link>
+      ) : null}
     </section>
+  );
+}
+
+/** A Ready against waiting row: a button when it scopes a list, plain figures otherwise. */
+function PhoneVersusRowShell({
+  className,
+  selected,
+  onPress,
+  children,
+}: {
+  className?: string;
+  selected: boolean;
+  onPress?: () => void;
+  children: ReactNode;
+}) {
+  if (!onPress) return <div className={cx(className, styles.phoneVersusStatic)}>{children}</div>;
+  return (
+    <button type="button" className={className} aria-pressed={selected} onClick={onPress}>
+      {children}
+    </button>
   );
 }
 

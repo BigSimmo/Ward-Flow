@@ -6414,6 +6414,22 @@
   }
 }
 
+/* Audit 11 Oct 2026: iPad portrait folds Notices, Shift brief and Handover into one More menu so
+ * Raise referral is not clipped. Desktop and landscape keep the separate buttons. */
+.toolMore {
+  display: none;
+}
+
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .toolSolo {
+    display: none !important;
+  }
+
+  .toolMore {
+    display: inline-flex;
+  }
+}
+
 /* Phone: Home and Decisions take the first row. The tool row wraps below them with Find on its
  * own full-width line first and the actions after it, so none is hidden off screen. Desktop is
  * unchanged. */

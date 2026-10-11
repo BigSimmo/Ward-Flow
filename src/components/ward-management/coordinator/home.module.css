@@ -779,8 +779,11 @@
 }
 
 .groupName {
+  min-width: 0;
+  overflow: hidden;
   color: var(--wf-ink-1);
   font-weight: 600;
+  text-overflow: ellipsis;
   font-size: var(--wf-fs-12);
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -793,11 +796,10 @@
 }
 
 .groupFigures {
-  min-width: 0;
+  flex: none;
   margin-left: auto;
-  overflow: hidden;
   color: var(--wf-ink-2);
-  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -1197,6 +1199,9 @@ button.registerRow:hover {
 /* ---------- footer marker ---------- */
 
 .refusalMarker {
+  display: inline-block;
+  /* Never wraps (device audit, 11 Oct 2026: "0 refused" broke over two lines on iPad portrait). */
+  white-space: nowrap;
   margin-left: var(--wf-s-2);
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-line-2);
@@ -2173,4 +2178,11 @@ button.registerRow:hover {
 
 .sinceSheetFootRow > .sinceSheetFoot:last-child {
   flex: 1 1 auto;
+}
+
+.unitBestGlyph {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  color: var(--wf-ink-2);
 }

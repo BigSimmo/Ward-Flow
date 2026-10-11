@@ -1331,9 +1331,11 @@
 
   .drawerTrigger[data-bar-mode="activity"],
   .drawerTrigger[data-bar-mode="tools"],
+  .drawerTrigger[data-bar-mode="tasks"],
   .vsep,
   .primaryWrap {
-    /* .primaryWrap: the server render does not know it is a phone, so CSS hides it before hydration. */
+    /* .primaryWrap: the server render does not know it is a phone, so CSS hides it before hydration.
+       Tasks: the page dock carries it on the phone (device audit option A, 11 Oct 2026). */
     display: none;
   }
 

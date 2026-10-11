@@ -208,7 +208,8 @@ export interface ContactRow {
 export function PatientContactsCard({ rows, framed = false }: { rows: ContactRow[]; framed?: boolean }) {
   const isPhone = useIsPhone();
   if (isPhone && framed)
-    /* v10 Movement, phone: "Who to call" is a card with its head inside, a phone glyph per row. */
+    /* v10 Movement, phone: "Who to call" is a card with its head inside. No phone glyph per row: no
+       number is held, so a row cannot dial and must not look as if it does (device audit, 11 Oct 2026). */
     return (
       <section className={styles.phFramed} data-testid="ward-patient-who-to-call" aria-labelledby="pn-who-to-call">
         <h3 id="pn-who-to-call" className={styles.phFramedHead}>
@@ -218,7 +219,6 @@ export function PatientContactsCard({ rows, framed = false }: { rows: ContactRow
           <ul className={styles.phFramedList}>
             {rows.map((row) => (
               <li key={`${row.name}-${row.role}`} className={styles.phItem}>
-                <Phone size={16} aria-hidden="true" className={styles.phItemIcon} />
                 <span className={styles.phItemText}>
                   <strong>{row.name}</strong>
                   <span>{row.role}</span>

@@ -538,8 +538,7 @@ async function openNewReferralFromBoard(page: Page) {
     await page.getByTestId("ward-bar-primary-menu-ward").click();
     return;
   }
-  // Phone (10 Oct 2026): New referral is behind the phone menu's raised +.
-  await page.getByTestId("ward-bar-phone-menu").click();
+  // Phone (device audit option A, 11 Oct 2026): New referral is behind the page dock's raised +.
   await page.getByTestId("ward-phone-create").click();
   await page.getByTestId("ward-phone-create-referral").click();
 }
