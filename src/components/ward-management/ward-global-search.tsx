@@ -983,7 +983,7 @@ export function WardGlobalSearch({
         </div>
 
         <div className={styles.resultsFooter} data-testid="ward-global-search-footer">
-          <div className={styles.footerHints} aria-hidden="true">
+          <div className={styles.footerHints} aria-hidden="true" data-kbd-hint="">
             <span className={styles.hintItem}>
               <kbd className={styles.hintKbd}>↑</kbd>
               <kbd className={styles.hintKbd}>↓</kbd>

@@ -46,7 +46,12 @@ import { resetWardChecksForTests, useWardChecksPublisher } from "@/components/wa
 import type { WardReconciliationCheck } from "@/components/ward-management/shell/ward-shell-types";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { WARD_NAV, WARD_VIEWS, resolveWardPrimaryAction } from "@/components/ward-management/ward-nav";
+import {
+  WARD_NAV,
+  WARD_VIEWS,
+  resolveWardPrimaryAction,
+  type WardPrimaryAction,
+} from "@/components/ward-management/ward-nav";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /** Dispatches a raw Tab keydown the same way `tests/sheet-focus.dom.test.tsx` already does —
@@ -449,7 +454,7 @@ describe("task movement navigation", () => {
  * still renders everywhere (the drawing and `ui-ward-chrome-header.spec.ts` require it), but the
  * network inbox, its count and any acknowledge affordance are coordinator-only.
  */
-describe("assertion 8 — Tasks drawer network inbox is coordinator-only", () => {
+describe("assertion 8 — Tasks drawer network inbox follows the signed-in coordinator", () => {
   it("shows the coordinator route's real network inbox with its items and an Acknowledge affordance", async () => {
     const user = userEvent.setup();
     renderShell();
@@ -461,30 +466,25 @@ describe("assertion 8 — Tasks drawer network inbox is coordinator-only", () =>
     expect(await screen.findByTestId("ward-task-bed-pull-WF-004")).toBeTruthy();
   });
 
-  it("hides the network inbox, zeroes the badge, and offers no Acknowledge affordance on a ward route", async () => {
+  /*
+   * Device audit, 11 Oct 2026 (stable shell): Tasks follows the signed-in person (the bed
+   * coordinator, `WARD_SHELL_ROLE`), not the route, so the coordinator's count no longer drops to 0
+   * on a ward or ED page. The actions stay coordinator-only in EVENT_ROLE; the signed-in person IS
+   * the coordinator, so nothing is dispatched under a borrowed identity.
+   */
+  it.each([
+    ["ward", "/mockups/ward-flow/ward/rph-adult-secure/answer"],
+    ["ED", "/mockups/ward-flow/ed/answer"],
+  ])("keeps the signed-in coordinator's inbox and non-zero badge on a %s route", async (_kind, pathname) => {
     const user = userEvent.setup();
-    route.pathname = "/mockups/ward-flow/ward/rph-adult-secure/answer";
+    route.pathname = pathname;
     renderShell();
 
     const badge = within(screen.getByTestId("ward-bar-tasks-trigger")).getByText(/^\d+$/);
-    expect(badge.textContent).toBe("0");
+    expect(Number(badge.textContent)).toBeGreaterThan(0);
 
     await user.click(screen.getByTestId("ward-bar-tasks-trigger"));
-    expect(screen.queryByTestId("ward-task-bed-pull-WF-004")).toBeNull();
-    expect(screen.queryByRole("button", { name: /acknowledge/i })).toBeNull();
-  });
-
-  it("hides the network inbox on an ED route too", async () => {
-    const user = userEvent.setup();
-    route.pathname = "/mockups/ward-flow/ed/answer";
-    renderShell();
-
-    const badge = within(screen.getByTestId("ward-bar-tasks-trigger")).getByText(/^\d+$/);
-    expect(badge.textContent).toBe("0");
-
-    await user.click(screen.getByTestId("ward-bar-tasks-trigger"));
-    expect(screen.queryByTestId("ward-task-bed-pull-WF-004")).toBeNull();
-    expect(screen.queryByRole("button", { name: /acknowledge/i })).toBeNull();
+    expect(await screen.findByTestId("ward-task-bed-pull-WF-004")).toBeTruthy();
   });
 });
 
@@ -932,25 +932,26 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
    * The community route uses `COMMUNITY_TEAM_PAGES[0].id` — a REAL derived team slug, never a
    * hand-typed placeholder id that could stop matching `ward-nav.ts`'s dynamic-route pattern.
    */
-  const UNWIRED_PRIMARY_ROUTES: ReadonlyArray<readonly [string, string]> = [
-    ["/mockups/ward-flow/movements", "Record a decision"],
-    [`/mockups/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`, "Contact a team"],
-    // v10 (10 Oct 2026): Statistics no longer carries "Export the figures" in the header; New
-    // referral is the one header primary on every page and Export lives in the statistics hero.
-    // The export-figures kind itself stays covered in tests/ward-primary-action.dom.test.tsx.
+  // Device audit, 11 Oct 2026 (stable shell): no route resolves an unwired kind any more —
+  // movements and community now carry New referral like every page. The unwired panel is still
+  // real for the kinds, so it is exercised by passing each action to the bar directly.
+  const UNWIRED_PRIMARY_ACTIONS: ReadonlyArray<readonly [WardPrimaryAction["kind"], string]> = [
+    ["record-decision", "Record a decision"],
+    ["contact-team", "Contact a team"],
   ];
+  const STABLE_ROUTES = ["/mockups/ward-flow/movements", `/mockups/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`];
 
   // Unlike `renderShell()` above, this resolves and passes `primaryAction` for the given route —
   // `renderShell()` renders `<WardBar />` bare, which is why no earlier test in this file exercises
   // the primary-action area at all.
-  function renderShellAt(pathname: string) {
+  function renderShellAt(pathname: string, primaryAction = resolveWardPrimaryAction(pathname)) {
     route.pathname = pathname;
     return render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardLiveRegion />
         <ChecksPublisher checks={OK_CHECKS} />
         <WardRail />
-        <WardBar primaryAction={resolveWardPrimaryAction(pathname)} />
+        <WardBar primaryAction={primaryAction} />
       </WardFlowProvider>,
     );
   }
@@ -963,23 +964,16 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
     expect(screen.queryByText("Export the figures")).toBeNull();
   });
 
-  it("anti-vacuity: the routes actually resolve the kinds this test claims to cover", () => {
-    for (const [pathname, label] of UNWIRED_PRIMARY_ROUTES) {
-      const action = resolveWardPrimaryAction(pathname);
-      expect(action, `${pathname} resolved no primary action at all`).toBeDefined();
-      if (!action || action.kind === "none") {
-        throw new Error(`${pathname} resolved kind "none" or nothing, expected "${label}"`);
-      }
-      expect(action.label).toBe(label);
-    }
+  it.each(STABLE_ROUTES)("%s resolves New referral as its header primary", (pathname) => {
+    expect(resolveWardPrimaryAction(pathname)?.kind).toBe("new-referral");
   });
 
-  it.each(UNWIRED_PRIMARY_ROUTES)(
-    "on %s, clicking the unwired primary action shows the visible text exactly " +
+  it.each(UNWIRED_PRIMARY_ACTIONS)(
+    "for %s, clicking the unwired primary action shows the visible text exactly " +
       '"Not wired in this prototype.", and Escape closes it with focus returning to the button',
-    async (pathname, label) => {
+    async (kind, label) => {
       const user = userEvent.setup();
-      renderShellAt(pathname);
+      renderShellAt("/mockups/ward-flow", { kind, label } as WardPrimaryAction);
 
       const trigger = screen.getByTestId("ward-bar-primary-action");
       expect(trigger).toHaveTextContent(label);

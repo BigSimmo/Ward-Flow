@@ -1006,14 +1006,14 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 ) : null}
               </TabPanel>
               <div className={a.queueFoot}>
-                <span className={a.keyHint}>
+                <span className={a.keyHint} data-kbd-hint="">
                   <Kbd>J</Kbd>
                   <Kbd>K</Kbd> move
                 </span>
-                <span className={a.keyHint}>
+                <span className={a.keyHint} data-kbd-hint="">
                   <Kbd>Esc</Kbd> close
                 </span>
-                <button type="button" className={a.keyLink} onClick={() => setSheet("keys")}>
+                <button type="button" className={a.keyLink} data-kbd-hint="" onClick={() => setSheet("keys")}>
                   <Kbd>?</Kbd> all shortcuts
                 </button>
                 <span className={a.footNote}>

@@ -178,7 +178,7 @@ export function NetworkBedflow({
       ) : null}
       <div className={styles.serviceGrid}>
         {shown.map((group) => {
-          const share = occupiedPercent(group.occupied, group.beds);
+          const share = occupiedPercent(group.occupied + group.pulled, group.beds);
           return (
             <section key={group.service} className={styles.serviceBox} aria-label={group.service}>
               {isPhone ? (

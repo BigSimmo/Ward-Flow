@@ -191,7 +191,9 @@ describe("WardBarMount — the layout-level route resolution, D-16", () => {
     expect(screen.getByTestId("ward-bar-primary-action")).toHaveTextContent("New referral");
   });
 
-  it("resolves a movement detail route to the Record a decision button, with no href on it", () => {
+  // Device audit, 11 Oct 2026 (stable shell): the header primary stays New referral everywhere;
+  // Record a decision lives on the movement page itself.
+  it("resolves a movement detail route to New referral, like every other page", () => {
     route.pathname = "/mockups/ward-flow/movements/mv-0001";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -199,9 +201,7 @@ describe("WardBarMount — the layout-level route resolution, D-16", () => {
         <WardBarMount />
       </WardFlowProvider>,
     );
-    const control = screen.getByTestId("ward-bar-primary-action");
-    expect(control).toHaveTextContent("Record a decision");
-    expect(control.hasAttribute("href")).toBe(false);
+    expect(screen.getByTestId("ward-bar-primary-action")).toHaveTextContent("New referral");
   });
 
   // Universal header (Josh, 9 Oct 2026): every page offers New referral. A route the list does not

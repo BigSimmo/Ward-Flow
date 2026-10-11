@@ -16,8 +16,8 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
- * Stream A, 9 Oct 2026: the act-now notifier follows the Tasks drawer's role gate, so a ward, ED,
- * officer or community route is never notified of the coordinator's rows.
+ * Stream A, 9 Oct 2026: the act-now notifier follows the Tasks drawer's role gate. Since the device
+ * audit (11 Oct 2026) that gate is the signed-in person (`WARD_SHELL_ROLE`), not the route.
  */
 const NOW = NOW_ANCHOR;
 const shown: string[] = [];
@@ -84,11 +84,13 @@ describe("act-now notifier", () => {
     expect(shown[0]).toMatch(/^Ward Flow: act now: .*Synthetic demo data\.$/);
   });
 
+  // Device audit (11 Oct 2026): Tasks is the signed-in person's list on every page
+  // (`WARD_SHELL_ROLE`), so a ward or community page no longer silences the coordinator's alerts.
   it.each(["/mockups/ward-flow/ward/rph-adult-secure", "/mockups/ward-flow/community"])(
-    "stays silent on %s, whose Tasks drawer carries no coordinator rows",
+    "notifies on %s too, because the signed-in coordinator's Tasks follow them there",
     async (pathname) => {
       await renderAt(pathname);
-      expect(shown).toEqual([]);
+      expect(shown).toHaveLength(1);
     },
   );
 });

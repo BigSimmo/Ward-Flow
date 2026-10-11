@@ -2326,8 +2326,8 @@ details[open] > summary > .phoneFoldChevron {
     margin: 0;
     padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--wf-line);
-    background: var(--wf-glass-bar, var(--wf-surface));
-    backdrop-filter: blur(16px);
+    /* Solid, not glass (device audit, 11 Oct 2026): the list showed through the pinned bar. */
+    background: var(--wf-surface);
   }
 
   .decisionArea > .askButton {

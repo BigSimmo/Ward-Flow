@@ -8,6 +8,7 @@ import { LEAVING_DESTINATIONS } from "../ward-admissions";
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
+import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import type { DischargeOpenHandle, DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -224,14 +225,18 @@ export function CapacityScreen({ preview }: { preview?: WardPreviewOption } = {}
   // nothing and stops the next figure added here inheriting a silent `[]`.
   const networkRows = networkWardRows(units, now, bedReleases, admissions, leaveBeds);
   const netTotals = networkTotals(networkRows);
-  const totalOccupied = networkRows.reduce((sum, row) => sum + row.occupied, 0);
+  // One occupancy count on every page and in the rail (`ward-occupancy.ts`, device audit 11 Oct 2026).
+  const occupancy = wardOccupancy(
+    networkRows.map((row) => row.unit),
+    admissions,
+    bedReleases,
+  );
   const selectedRow = networkRows.find((row) => row.unit.id === selectedUnitId);
   const totalLockedReady = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
   const totalOpenReady = netTotals.ready - totalLockedReady;
   const totalPulled = networkRows.reduce((sum, row) => sum + row.pulled, 0);
   // Preview phone hero: the ring's figure without the ring, one decimal with %.
-  const occupancyPercentText =
-    netTotals.beds > 0 ? `${((totalOccupied / netTotals.beds) * 100).toFixed(1)}%` : "Not known";
+  const occupancyPercentText = formatWardOccupancy(occupancy, "Not known");
   // The ward whose count is oldest: the hero's jump chip opens it.
   const oldestCount = networkRows.reduce<NetworkWardRow | undefined>(
     (oldest, row) => (oldest === undefined || row.confirmedAt < oldest.confirmedAt ? row : oldest),
@@ -566,7 +571,7 @@ export function CapacityScreen({ preview }: { preview?: WardPreviewOption } = {}
             // v10 Capacity: the one ring on the page, ahead of the title. Preview: figures only on a phone.
             preview && isPhone ? undefined : (
               <OccupancyRing
-                percent={netTotals.beds > 0 ? (totalOccupied / netTotals.beds) * 100 : null}
+                percent={occupancy.percent}
                 alertAt={BED_ALERT_THRESHOLD_PERCENT}
                 scope={service ?? "Statewide"}
               />

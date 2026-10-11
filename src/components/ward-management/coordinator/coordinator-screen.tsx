@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 
-import { Copy, Pause, Play } from "lucide-react";
+import { Copy } from "lucide-react";
 import {
   Button,
   CheckingFoot,
@@ -24,7 +24,7 @@ import { answerSilenceReminder } from "@/components/ward-management/delays/delay
 import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import {
   allDeclines,
   allOverrides,
@@ -439,14 +439,12 @@ export function CoordinatorScreen() {
   const tierOneInQueue = queue.filter((movement) => movement.urgency === 1).length;
   const dueWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
 
-  // v10 hero: the one ring on the page is statewide occupancy, read from the same ward rows as the
-  // Capacity page's ring so the two pages show one figure, against the sidebar's alert line.
-  const statewideOccupancy = useMemo(() => {
-    const rows = networkWardRows(units, now, bedReleases, admissions, leaveBeds);
-    const beds = rows.reduce((sum, row) => sum + row.unit.beds, 0);
-    const occupied = rows.reduce((sum, row) => sum + row.occupied, 0);
-    return beds > 0 ? (occupied / beds) * 100 : null;
-  }, [units, now, bedReleases, admissions, leaveBeds]);
+  // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
+  // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
+  const statewideOccupancy = useMemo(
+    () => wardOccupancy(units, admissions, bedReleases).percent,
+    [units, admissions, bedReleases],
+  );
   // Checking foot: what this page watched, as counts. Never "All clear".
   const staleBedCounts = units.filter((unit) => now - unit.allocatable.confirmedAt > BED_COUNT_FRESH_MINUTES).length;
   const wardsNotReporting = units.filter(
@@ -608,7 +606,7 @@ export function CoordinatorScreen() {
             titleMeta={
               isPhone
                 ? `Prototype data, invented records${
-                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(0)}% of open beds full` : ""
+                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% occupied` : ""
                   }`
                 : undefined
             }
@@ -664,16 +662,6 @@ export function CoordinatorScreen() {
                     <b className={styles.phoneSinceMono}>{newEvents}</b> since you looked at{" "}
                     <span className={styles.phoneSinceMono}>{sinceClock}</span>
                   </Button>
-                  <Button
-                    variant="onHero"
-                    iconOnly
-                    icon={paused ? Play : Pause}
-                    // One name with aria-pressed: swapping the name too reads as "Resume, pressed".
-                    aria-label="Pause live updates"
-                    aria-pressed={paused}
-                    className={styles.phonePause}
-                    onClick={togglePause}
-                  />
                 </div>
               ) : (
                 <div className={styles.heroToggles}>
@@ -735,7 +723,13 @@ export function CoordinatorScreen() {
             }
             aside={
               isPhone ? (
-                <LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} />
+                // Device audit (11 Oct 2026): the pause is folded into the Live pill.
+                <LiveChip
+                  state={paused ? "paused" : "live"}
+                  onHero
+                  age={formatInstant(now)}
+                  onTogglePause={togglePause}
+                />
               ) : (
                 <>
                   <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
