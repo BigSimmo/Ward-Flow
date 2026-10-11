@@ -19,11 +19,20 @@
     display: block;
   }
 
+  /* Bottom bar (Josh, 11 Oct 2026, iPhone Safari): the icons sit 8px off the bottom edge, or just
+     clear of the home indicator where there is one, not 18px above it as well. The sides follow
+     the screen's own insets so a phone on its side keeps the bar clear of the notch. */
+  .pageDock.rise {
+    padding-right: max(4px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(4px, env(safe-area-inset-left, 0px));
+  }
+
   /* The page keeps its last rows clear of the dock, and any pinned phone bar rests on
      var(--wf-dock-clear) instead of bottom: 0. The local class keeps the selector pure for the
      webpack CSS Modules build. */
   :global(body):has(.pageDock) {
-    --wf-dock-clear: calc(96px + env(safe-area-inset-bottom, 0px));
+    --wf-dock-clear: calc(78px + max(8px, env(safe-area-inset-bottom, 0px)));
   }
 
   :global(body):has(.pageDock) :global([data-wf-scroller]) {

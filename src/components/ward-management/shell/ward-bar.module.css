@@ -3107,9 +3107,11 @@
  * count), an 8px service dot and a 16px caret. Controls keep their 48px hit area.
  */
 @media (max-width: 48rem) {
+  /* Edge to edge: the band runs to both sides, and on a phone turned on its side the controls
+     keep clear of the notch. */
   .bar,
   :global(html.dark) .bar {
-    padding: 0 6px 0 2px;
+    padding: 0 max(6px, env(safe-area-inset-right, 0px)) 0 max(2px, env(safe-area-inset-left, 0px));
   }
 
   .phoneOnly svg,
