@@ -163,7 +163,7 @@ for (const bad of [
   workflow.replace(' && test "$BUILD_RESULT" = success', ""),
   workflow.replace(' && test "$COVERAGE_RESULT" = success', ""),
   workflow.replace('--merge-reports="$WARD_SHARD_BLOBS" --coverage', '--merge-reports="$WARD_SHARD_BLOBS"'),
-  workflow.replace('WARD_SHARD_COUNT: "5"', 'WARD_SHARD_COUNT: "4"'),
+  workflow.replace('WARD_SHARD_COUNT: "8"', 'WARD_SHARD_COUNT: "7"'),
   workflow.replace(
     "          WARD_SHARD_COUNT:",
     "          WARD_COVERAGE_BLOB_DIR: ${{ runner.temp }}/x\n          WARD_SHARD_COUNT:",
@@ -191,7 +191,7 @@ for (const bad of [
     "        run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack",
     '        env:\n          WARD_GATE_BUILD: "1"\n        run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack',
   ),
-  workflow.replace("shard: [1, 2, 3, 4, 5]", "shard: [1, 2, 3, 4]"),
+  workflow.replace("shard: [1, 2, 3, 4, 5, 6, 7, 8]", "shard: [1, 2, 3, 4, 5, 6, 7]"),
   workflow.replaceAll("fail-fast: false", "fail-fast: true"),
   workflow.replace("group: [1, 2, 3]", "group: [1, 2]"),
   workflow.replace("node scripts/ward-ci-public/changed-checks.mjs", "echo skipped"),

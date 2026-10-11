@@ -65,7 +65,7 @@ function evidence(overrides: Record<string, unknown> = {}) {
 
 describe("main-push reuse decision", () => {
   it("reads the shard and group counts the workflow declares", () => {
-    expect(counts).toEqual({ "unit shard": 5, "browser group": 3, coverage: 1, "production build": 1 });
+    expect(counts).toEqual({ "unit shard": 8, "browser group": 3, coverage: 1, "production build": 1 });
   });
 
   it("verifies only an identical, up-to-date tree whose PR run really ran every reusable job", () => {
@@ -108,7 +108,7 @@ describe("main-push reuse decision", () => {
         greenJobs().filter((job) => job.name !== "Ward Flow unit shard 3"),
         counts,
       ),
-    ).toMatch(/4 of 5 unit shard/u);
+    ).toMatch(/7 of 8 unit shard/u);
     expect(
       runEvidenceGap(
         greenJobs().filter((job) => job.name !== "Ward Flow browser journeys 2"),

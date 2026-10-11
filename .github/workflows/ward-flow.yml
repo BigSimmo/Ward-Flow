@@ -193,7 +193,7 @@ jobs:
       # Every shard reports, so one red never hides another shard's result.
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -219,7 +219,7 @@ jobs:
         id: shard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
-          WARD_GATE_SHARD: ${{ matrix.shard }}/5
+          WARD_GATE_SHARD: ${{ matrix.shard }}/8
           WARD_COVERAGE_BLOB_DIR: ${{ runner.temp }}/ward-coverage-blobs
         run: npm run check:ward-expected-reds -- --print-signatures
       - name: Upload shard coverage blob
@@ -429,7 +429,7 @@ jobs:
         env:
           WARD_SHARD_BLOBS: ${{ runner.temp }}/ward-shard-blobs
           # Must equal the count in the unit job's WARD_GATE_SHARD (checked by check-contracts.mjs).
-          WARD_SHARD_COUNT: "5"
+          WARD_SHARD_COUNT: "8"
         run: |
           for shard in $(seq 1 "$WARD_SHARD_COUNT"); do
             ls "$WARD_SHARD_BLOBS"/blob-shard-"$shard"-of-"$WARD_SHARD_COUNT"-batch-*.json
