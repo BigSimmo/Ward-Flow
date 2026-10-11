@@ -26,9 +26,9 @@ Details that keep the split sound:
   to every fifth file). Every runner computes the same deal, so the shards stay disjoint. Each shard's
   floors scale with its share of the files, and each shard runs as one vitest process. Each shard is
   compared only with the expected-reds manifest entries for its own files, so the shards cover every
-  file and every entry exactly once. Refresh the cost record when the shards drift apart, from a recent
-  run's `ward-coverage-blob-*` artifacts: each shard's Vitest blob report records every file's cost on
-  the real runner, with coverage on.
+  file and every entry exactly once. Refresh the cost record when the shards drift apart: the
+  coverage job's "Report measured unit test costs" step prints every file's cost on that run, read from
+  the shards' Vitest blob reports (real runner, coverage on), in the record's own format.
 - **Longest first.** In CI (`CI` set) Vitest runs each unit shard's files, and the related-tests step's
   files, longest first by the same record (`scripts/ward-flow/unit-durations.mjs`). A fresh runner has
   no Vitest results cache, so its own order is the file listing, and a 2.5-minute file starting last
