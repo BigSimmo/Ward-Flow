@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
 
 /**
@@ -67,6 +67,28 @@ function tileButtonOfKind(container: HTMLElement, kind: string): HTMLButtonEleme
 }
 
 describe("ward board selection — nothing is chosen for the reader", () => {
+  it("cancels a pending shift-brief reveal when it is closed before the scroll starts", () => {
+    vi.useFakeTimers();
+    const scroll = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
+    const view = renderWardBoard(UNIT_ID);
+    try {
+      const toggle = screen.getByTestId("ward-board-top-sheet-toggle");
+      scroll.mockClear();
+      fireEvent.click(toggle);
+      fireEvent.click(toggle);
+      act(() => vi.advanceTimersByTime(100));
+      expect(toggle).toHaveAttribute("aria-expanded", "false");
+      expect(scroll).not.toHaveBeenCalled();
+      fireEvent.click(toggle);
+      act(() => vi.advanceTimersByTime(100));
+      expect(scroll).toHaveBeenCalledOnce();
+    } finally {
+      view.unmount();
+      scroll.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
   it("selects nobody on first render, and says so rather than showing an empty panel", () => {
     const { container } = renderWardBoard(UNIT_ID);
 

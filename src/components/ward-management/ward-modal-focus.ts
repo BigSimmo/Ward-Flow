@@ -45,7 +45,7 @@ export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | nu
     return () => {
       window.removeEventListener("keydown", keydown, true);
       popSheet(id);
-      if (previous?.isConnected && canRestoreFocusTo(previous)) previous.focus();
+      if (previous?.isConnected && canRestoreFocusTo(previous)) previous.focus({ preventScroll: true });
     };
   }, [open, ref, id]);
 }

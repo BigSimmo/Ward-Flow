@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { Check, ChevronDown, ChevronRight, ClipboardCopy, Clock, Eye, Timer } from "lucide-react";
 import {
   Button,
-  Count,
   Drawer,
   FactGrid,
   FilterChip,
@@ -27,12 +26,11 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { rowTone, type ColumnContext } from "./handover-columns";
+import { type ColumnContext } from "./handover-columns";
 import {
   HANDOVER_SHIFTS,
   STAGE_LABEL,
   destinationText,
-  dueShort,
   groupOf,
   handoverAt,
   handoverHasPassed,

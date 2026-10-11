@@ -1020,8 +1020,7 @@
 
 /* ─── v10 phone fidelity (11 Oct 2026) ───
  * Status and order sit beside the search; EDs, Wait lanes and By service run the full width and
- * stay pinned under the bar while the list scrolls (56px at rest, 52px once scrolled; the switch
- * only sticks after a scroll), on a canvas band so no row shows behind it. Phone-only elements. */
+ * stay pinned under the bar while the list scrolls below the stable shared header, on a canvas band so no row shows behind it. Phone-only elements. */
 .phoneSearchRow {
   display: flex;
   align-items: center;
@@ -1045,16 +1044,12 @@
 
 .phoneViewRow {
   position: sticky;
-  top: 3.5rem;
+  top: var(--wf-header-height, 3.5rem);
   z-index: 6;
   width: auto;
   margin: calc(var(--wf-s-2) * -1) calc(var(--wf-s-3) * -1);
   padding: var(--wf-s-2) var(--wf-s-3);
   background: var(--wf-canvas);
-}
-
-:global(body:has([data-scrolled="true"])) .phoneViewRow {
-  top: 3.25rem;
 }
 
 .phoneViewRow :global([role="radiogroup"]) {

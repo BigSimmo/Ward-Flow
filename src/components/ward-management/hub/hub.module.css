@@ -1162,10 +1162,10 @@
   padding-bottom: var(--wf-s-3);
 }
 
-/* The kind switch pins under the header (52px once the page scrolls), full bleed on the canvas. */
+/* The kind switch pins under the stable header, full bleed on the canvas. */
 .phoneKindBar {
   position: sticky;
-  top: 3.25rem;
+  top: var(--wf-header-height, 3.5rem);
   z-index: 6;
   margin: 0 calc(-1 * var(--wf-s-3)) var(--wf-s-1);
   padding: var(--wf-s-2) var(--wf-s-3);
