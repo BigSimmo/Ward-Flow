@@ -614,9 +614,16 @@ async function goToBoardViaPhoneRail(page: Page) {
   // The sheet portals to `document.body` by default (`components/ui/sheet.tsx`'s `Sheet`), so its
   // content sits outside `rail`'s own DOM subtree once open — the target link is looked up from
   // `page`, unscoped, rather than from `rail`.
-  if (await openRailSheetIfNeeded(page, rail)) {
-    // The phone menu lists Referrals twice (Needs you and the dock); both open the same page.
+  // Device audit option A (11 Oct 2026): the coordinator's phone dock carries Referrals on every
+  // phone page, and the phone menu shows each page once, so it leaves Referrals out. A phone user
+  // taps the dock; opening the menu first would only cover that link with the sheet.
+  const dockReferrals = page.getByTestId("ward-phone-dock").getByRole("link", { name: /^Referrals\b/iu });
+  if (await dockReferrals.isVisible()) {
+    await dockReferrals.click();
+  } else if (await openRailSheetIfNeeded(page, rail)) {
     await page
+      .getByTestId("ward-rail-more-pages")
+      .or(page.getByTestId("ward-phone-menu"))
       .getByRole("link", { name: /^Referrals\b/iu })
       .first()
       .click();
@@ -768,8 +775,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expectNoReloadSince(page, "board -> referral slide-out");
 
     // --- Step 2: raise the referral. R2.1: nothing arrives answered — the footer names how many
-    // answers are still needed until every one of them is given. ---
-    await expect(sheet).toContainText(/[0-9]+ answers? still needed/u);
+    // answers are still needed until every one of them is given. Audit 11 Oct 2026: the footer now
+    // counts in the Ready to send checklist's own unit ("5 of 9 items still needed"), so the two agree. ---
+    await expect(sheet).toContainText(/[1-9][0-9]* of [0-9]+ items still needed/u);
     // High-acuity nursing answered "no" here and "yes" in the far-placement journey below, so the
     // acuity gate is exercised both ways somewhere in this file rather than only ever seeing "no".
     // Transport is needed (Mental Health Transport), as it was on the retired form.
@@ -1326,11 +1334,17 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * Nothing below is relaxed to make room for these — together they close deletion, reordering,
      * renaming and hiding, and neither adds a matcher that could later be loosened.
      */
-    const LEDGER_COLUMNS = ["Patient", "Home region", "Placement", "Discharge", "Return", "Days away"];
+    // Device audit 11 Oct 2026 (`out-of-area-board.tsx`'s `planVaries`): Return shows only while the
+    // return-plan state differs between people, since a column where every row reads the same adds
+    // nothing. The other five stay pinned exactly; Return, when present, must sit fifth.
     const ledgerHeaders = tableScroll.locator("thead th");
+    const returnShown = (await ledgerHeaders.filter({ hasText: /^Return$/u }).count()) > 0;
+    const LEDGER_COLUMNS = ["Patient", "Home region", "Placement", "Discharge", "Return", "Days away"].filter(
+      (column) => returnShown || column !== "Return",
+    );
     await expect(
       ledgerHeaders,
-      "the out-of-area ledger's table no longer carries exactly these six columns, in this order",
+      "the out-of-area ledger's table no longer carries exactly these columns, in this order",
     ).toHaveText(LEDGER_COLUMNS);
     for (const [index, column] of LEDGER_COLUMNS.entries()) {
       await expect(

@@ -341,11 +341,15 @@ test.describe("@mockup Ward scroll geometry", () => {
     await page.setViewportSize({ width: 1440, height: 844 });
     await page.goto("/mockups/ward-flow/handover", { waitUntil: "networkidle" });
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
-    await page.getByRole("button", { name: "Present", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Exit present", exact: true })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    // Device audit 11 Oct 2026: Present sits behind the hero's More menu. The item reads "Exit
+    // present" once presentation mode is on, which is the page's own record of the mode.
+    const more = page.getByTestId("ward-handover-more");
+    await more.click();
+    await page.getByRole("menuitem", { name: "Present", exact: true }).click();
+    await more.click();
+    await expect(page.getByRole("menuitem", { name: "Exit present", exact: true })).toBeVisible();
+    await more.click();
+    await expect(page.getByRole("menuitem")).toHaveCount(0);
     const position = () =>
       page.evaluate(() => ({
         page: document.querySelector<HTMLElement>("[data-wf-scroller]")!.scrollTop,
