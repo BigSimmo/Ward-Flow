@@ -30,7 +30,14 @@ export {
 export { Badge, type BadgeProps, type BadgeVariant } from "./badge";
 export { Card, CardHead, CardBody, CardFoot, type CardProps, type CardHeadProps } from "./card";
 export { Hero, HeroStat, HeroSteps, type HeroProps, type HeroStatProps, type HeroStep } from "./hero";
-export { useWfBandActive, registerWfBandHero, WF_BAND_QUERY, WF_BAND_SCROLLED_PX, WF_BAND_TOP_SLACK_PX } from "./band";
+export {
+  useWfBandActive,
+  useWfBandBleed,
+  registerWfBandHero,
+  WF_BAND_QUERY,
+  WF_BAND_SCROLLED_PX,
+  WF_BAND_TOP_SLACK_PX,
+} from "./band";
 export {
   CheckingFoot,
   Frac,
@@ -109,7 +116,15 @@ export { Dialog, type DialogProps, type DialogAction } from "./dialog";
 export { StateLine, type StateLineProps, type StateKind, type StateAction } from "./state";
 export { ToastProvider, useOptionalToast, useToast, type ToastApi, type ToastInput } from "@/components/ui/toast";
 export { Tooltip, type TooltipProps } from "@/components/ui/tooltip";
-export { LiveChip, Timer, publishLiveClock, type LiveState, type LiveChipProps, type TimerProps, type TimerDirection } from "./live";
+export {
+  LiveChip,
+  Timer,
+  publishLiveClock,
+  type LiveState,
+  type LiveChipProps,
+  type TimerProps,
+  type TimerDirection,
+} from "./live";
 export {
   Field,
   TextInput,

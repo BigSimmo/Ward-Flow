@@ -335,9 +335,9 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
         {closedWithForms.map((movement) => {
           const outcome = movement.closure?.outcome;
           const ward = wardNameOf(movement);
-          const at = movement.closure?.at;
-          const face = at !== undefined ? formatInstant(at) : "";
-          const full = at !== undefined ? formatInstantWithDay(at, now) : "";
+          const closedAt = movement.closure?.at;
+          const face = closedAt !== undefined ? formatInstant(closedAt) : "";
+          const full = closedAt !== undefined ? formatInstantWithDay(closedAt, now) : "";
           return (
             <PhoneListRow
               key={movement.id}
@@ -353,7 +353,13 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                     : `Closed · ${edNameOf(movement)}`
               }
               value={face}
-              time={at === undefined ? undefined : full === face ? "today" : full.slice(face.length).replace(/^,?\s*/u, "")}
+              time={
+                closedAt === undefined
+                  ? undefined
+                  : full === face
+                    ? "today"
+                    : full.slice(face.length).replace(/^,?\s*/u, "")
+              }
             />
           );
         })}

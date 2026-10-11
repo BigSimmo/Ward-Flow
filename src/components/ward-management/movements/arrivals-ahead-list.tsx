@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { MovementHorizonLane } from "./movements-derivations";
 import styles from "./arrivals-ahead-list.module.css";
 
@@ -53,8 +53,9 @@ export function ArrivalsAheadList({ lanes, now }: { lanes: MovementHorizonLane[]
                   {events
                     .map(
                       (event) =>
-                        `${surname(event.patientName ?? event.title)} ${formatInstant(
+                        `${surname(event.patientName ?? event.title)} ${formatInstantWithDay(
                           (now + Math.round(event.startH * 60)) as Instant,
+                          now,
                         )}`,
                     )
                     .join(" · ")}

@@ -14,8 +14,8 @@ import {
   StatusGlyph,
   type PhoneRowAction,
   type WfTone,
+  useWfBandBleed,
 } from "@/components/wf";
-import { useWfBandBleed } from "@/components/wf/band";
 
 import css from "./community-team-phone.module.css";
 
@@ -338,4 +338,3 @@ export function CommunityPhoneFacts({ facts }: { facts: { label: string; value: 
     </dl>
   );
 }
-

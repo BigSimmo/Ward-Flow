@@ -148,9 +148,14 @@ export function SortHeader({
 }
 
 /** Tier digit tile (`.sq`). Tier 1 has danger ink and a stronger edge; the digit carries it. */
-export function TierTile({ tier, label = "Tier", className }: { tier: number; label?: string; className?: string }) {
+export function TierTile({
+  tier,
+  label = "Tier",
+  className,
+  ...rest
+}: Omit<ComponentPropsWithoutRef<"span">, "children"> & { tier: number; label?: string }) {
   return (
-    <span className={cx(styles.sq, tier === 1 && styles.t1, className)}>
+    <span {...rest} className={cx(styles.sq, tier === 1 && styles.t1, className)}>
       <SrOnly>
         {label} {tier}
       </SrOnly>

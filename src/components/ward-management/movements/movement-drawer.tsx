@@ -29,7 +29,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
-import { StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
+import { StatusGlyph, TierTile, buttonClass, type WfTone } from "@/components/wf";
 
 import { movementNextStep, nextStepTarget } from "./movement-next-step";
 import { declineReasonLabels } from "./movement-workspace-derivations";
@@ -334,11 +334,13 @@ export function MovementDrawer({
             ) : null}
           </p>
         </div>
-        <span className={d.tier} data-tier={movement.urgency} title={`Urgency tier ${movement.urgency}`}>
-          <span className="sr-only">Urgency tier </span>
-          <span aria-hidden="true">T</span>
-          {movement.urgency}
-        </span>
+        <TierTile
+          tier={movement.urgency}
+          label="Urgency tier"
+          className={d.tier}
+          data-tier={movement.urgency}
+          title={`Urgency tier ${movement.urgency}`}
+        />
         <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={recordHref} title="Open the Patient page">
           <span className={d.linkText}>Patient</span>
           <ChevronRight size={14} aria-hidden="true" />

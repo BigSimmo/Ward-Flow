@@ -46,7 +46,7 @@ import { PersonScreen } from "./person-screen";
 import { PatientTransitOperations } from "./patient-transit-operations";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
-import { PATIENT_MODES, patientMode } from "./patient-mode";
+import { PATIENT_MODES, patientMode, type PatientMode } from "./patient-mode";
 import { PatientStatusCard, buildPatientStatus, dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -173,6 +173,29 @@ interface PatientNowScreenProps {
 }
 
 type TabKey = "now" | "history" | "community" | "details" | "documents";
+
+/**
+ * v10 phone movement hero: how many of the "Cannot move" cells are clear. Its own component, so the
+ * status context (whose clearance handler remembers its trigger in a ref) is read as a prop rather
+ * than during the screen's render.
+ */
+function PhoneClearFact({ mode, context }: { mode: PatientMode; context: PatientStatusContext }) {
+  const status = buildPatientStatus(mode, context);
+  const clear = status.cells.filter((cell) => cell.clear).length;
+  return (
+    <span className={styles.v6HeroFact}>
+      <strong className={styles.v6HeroWait}>
+        {clear} of {status.cells.length}
+      </strong>
+      <span className={styles.phFigLabel}>
+        {clear < status.cells.length ? (
+          <StatusGlyph tone={status.tone === "danger" ? "danger" : "warning"} size={9} />
+        ) : null}
+        Clear
+      </span>
+    </span>
+  );
+}
 
 export function PatientNowScreen({
   patientId,
@@ -793,8 +816,6 @@ export function PatientNowScreen({
     : tabs
         .filter((tab) => tab.key === "now" || tab.key === "history" || tab.key === "documents")
         .map((tab) => (tab.key === "documents" ? { ...tab, label: "Forms" } : tab));
-  const phoneStatus = phoneMovement ? buildPatientStatus(mode, statusContext) : undefined;
-  const phoneClear = phoneStatus ? phoneStatus.cells.filter((cell) => cell.clear).length : 0;
   const canWithdraw =
     liveMovement !== undefined &&
     !liveMovement.closure &&
@@ -845,6 +866,7 @@ export function PatientNowScreen({
                 </span>
               )
             }
+            phoneFootKind="actions"
             phoneFoot={
               phoneMovement ? (
                 <div className={styles.phHeroActions}>
@@ -885,17 +907,7 @@ export function PatientNowScreen({
                     </strong>
                     <span>Stage</span>
                   </span>
-                  <span className={styles.v6HeroFact}>
-                    <strong className={styles.v6HeroWait}>
-                      {phoneClear} of {phoneStatus?.cells.length ?? 0}
-                    </strong>
-                    <span className={styles.phFigLabel}>
-                      {phoneStatus && phoneClear < phoneStatus.cells.length ? (
-                        <StatusGlyph tone={phoneStatus.tone === "danger" ? "danger" : "warning"} size={9} />
-                      ) : null}
-                      Clear
-                    </span>
-                  </span>
+                  <PhoneClearFact mode={mode} context={statusContext} />
                 </span>
               ) : isPhone && !isLiveBedflow ? (
                 /* v10 Patient, phone: three figures, the value over its label, from the record. */
@@ -1208,7 +1220,10 @@ export function PatientNowScreen({
             }
             actions={
               <>
-                {modeMeta.quiet ? null : <LiveChip state="live" onHero />}
+                {modeMeta.quiet ? null : (
+                  // v10 phone: the movement page reads "Live HH:MM", the patient page a plain "Live".
+                  <LiveChip state="live" age={phoneMovement ? undefined : null} onHero />
+                )}
                 {isPhone ? null : (
                   <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
                     {copied

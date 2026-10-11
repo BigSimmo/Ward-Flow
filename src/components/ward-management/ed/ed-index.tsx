@@ -385,7 +385,7 @@ export function EdIndex() {
           }
           aside={
             isPhone ? (
-              <LiveChip state={paused ? "paused" : "live"} onHero />
+              <LiveChip state={paused ? "paused" : "live"} age={null} onHero />
             ) : (
               <PageLiveChip paused={paused} onTogglePause={togglePause} />
             )
@@ -393,33 +393,37 @@ export function EdIndex() {
           stats={
             // v10 phone: the first three highlight figures sit on hairlines, value over label.
             isPhone
-              ? chips.slice(0, 3).map((chip) => (
+              ? chips
+                  .slice(0, 3)
+                  .map((chip) => (
+                    <HeroStat
+                      key={chip.id}
+                      value={chip.value}
+                      label={chip.label}
+                      tone={chip.tone && chip.value > 0 ? chip.tone : undefined}
+                      pressed={highlight === chip.id}
+                      onToggle={() => setHighlight((value) => (value === chip.id ? null : chip.id))}
+                    />
+                  ))
+              : undefined
+          }
+          bar={
+            isPhone ? undefined : (
+              <div className={styles.heroChips} role="group" aria-label="Highlight people waiting">
+                {chips.map((chip) => (
                   <HeroStat
                     key={chip.id}
+                    inline
                     value={chip.value}
                     label={chip.label}
                     tone={chip.tone && chip.value > 0 ? chip.tone : undefined}
                     pressed={highlight === chip.id}
                     onToggle={() => setHighlight((value) => (value === chip.id ? null : chip.id))}
                   />
-                ))
-              : undefined
+                ))}
+              </div>
+            )
           }
-          bar={isPhone ? undefined : (
-            <div className={styles.heroChips} role="group" aria-label="Highlight people waiting">
-              {chips.map((chip) => (
-                <HeroStat
-                  key={chip.id}
-                  inline
-                  value={chip.value}
-                  label={chip.label}
-                  tone={chip.tone && chip.value > 0 ? chip.tone : undefined}
-                  pressed={highlight === chip.id}
-                  onToggle={() => setHighlight((value) => (value === chip.id ? null : chip.id))}
-                />
-              ))}
-            </div>
-          )}
           barAside={
             activeChip ? (
               <span className={styles.heroNote} aria-live="polite" data-testid="ed-index-highlight-note">
@@ -435,18 +439,18 @@ export function EdIndex() {
           }
           foot={
             isPhone ? undefined : (
-            <CheckingFoot
-              items={[
-                {
-                  id: "longest",
-                  label: waiting > 0 && longestRow ? `Longest, ${longestRow.short}` : "Longest",
-                  value: waiting > 0 ? splitDuration(longest) : 0,
-                },
-                { id: "target", label: "Access target", value: waitLine(accessTarget) },
-                { id: "severe", label: "Severe line", value: waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES) },
-              ]}
-              notChecked={["referrals, open movements only"]}
-            />
+              <CheckingFoot
+                items={[
+                  {
+                    id: "longest",
+                    label: waiting > 0 && longestRow ? `Longest, ${longestRow.short}` : "Longest",
+                    value: waiting > 0 ? splitDuration(longest) : 0,
+                  },
+                  { id: "target", label: "Access target", value: waitLine(accessTarget) },
+                  { id: "severe", label: "Severe line", value: waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES) },
+                ]}
+                notChecked={["referrals, open movements only"]}
+              />
             )
           }
           footAside={isPhone ? undefined : <span>Lists update once a minute</span>}

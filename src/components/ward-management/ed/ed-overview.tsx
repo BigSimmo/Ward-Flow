@@ -9,9 +9,11 @@ import {
   CheckingFoot,
   Hero,
   HeroStat,
+  LiveChip,
   StatusGlyph,
   buttonClass,
   cx,
+  useIsPhone,
   type CheckingItem,
   type WfTone,
 } from "@/components/wf";
@@ -73,6 +75,7 @@ export function EdOverview({
   onRaiseReferral,
   referralOpen = false,
 }: Props) {
+  const isPhone = useIsPhone();
   const current = departments.find((department) => department.id === departmentId);
   if (!current) return null;
 
@@ -121,17 +124,21 @@ export function EdOverview({
         foot={<CheckingFoot items={checks} />}
         footAside={<span>Board updates once a minute</span>}
         aside={
-          <button
-            type="button"
-            className={buttonClass({ variant: "light", size: "sm" })}
-            data-testid="ward-ed-raise-referral-toggle"
-            aria-expanded={referralOpen}
-            aria-controls="ward-ed-referral-intake"
-            onClick={onRaiseReferral}
-          >
-            <Plus size={14} aria-hidden="true" />
-            Raise referral
-          </button>
+          <>
+            {/* v10 phone: a plain "Live" chip at the end of the eyebrow line (the hero places it). */}
+            {isPhone ? <LiveChip state="live" age={null} onHero /> : null}
+            <button
+              type="button"
+              className={buttonClass({ variant: "light", size: "sm" })}
+              data-testid="ward-ed-raise-referral-toggle"
+              aria-expanded={referralOpen}
+              aria-controls="ward-ed-referral-intake"
+              onClick={onRaiseReferral}
+            >
+              <Plus size={14} aria-hidden="true" />
+              Raise referral
+            </button>
+          </>
         }
       />
       <nav className={styles.strip} aria-label="Emergency departments">

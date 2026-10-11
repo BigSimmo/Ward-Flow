@@ -1670,7 +1670,7 @@ function WardReferralDrawerContent({
                   {sentReferralId ? (
                     <>
                       <span className={styles.phFigure}>
-                        <b className={styles.mono}>{sentAt === null ? "–" : formatInstant(sentAt)}</b>
+                        <b className={styles.mono}>{sentAt === null ? "–" : formatInstantWithDay(sentAt, now)}</b>
                         <span>Sent</span>
                       </span>
                       <span className={styles.phFigure}>

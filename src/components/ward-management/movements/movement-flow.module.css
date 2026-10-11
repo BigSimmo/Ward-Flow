@@ -282,29 +282,6 @@
   color: var(--wf-ink-3);
 }
 
-/* ---------- tier pill ---------- */
-
-.tier {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  min-width: 2rem;
-  height: 22px;
-  padding: 0 7px;
-  box-sizing: border-box;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-}
-
-.tier[data-tier="1"] {
-  border-color: var(--wf-line-3);
-  color: var(--wf-ink-1);
-}
-
 /* ---------- worklist ---------- */
 
 .toolbar {

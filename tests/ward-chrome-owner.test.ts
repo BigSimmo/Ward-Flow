@@ -240,6 +240,17 @@ const allBottomAnchored = Array.from(new Set(perFileChrome.flatMap((f) => f.bott
  */
 const KNOWN_BACKLOG_TOP_ANCHORED = [".modeHeader"];
 
+/*
+ * Dated 11 Oct 2026, an owner decision rather than backlog. The approved v10 phone mockup pins
+ * each page's view switch under the bar while the list scrolls (`.ph-seg`, "segmented control,
+ * pinned while the list scrolls"). These are in-content segmented rows that stick directly
+ * beneath WardBar's 56px `.bar` (top: 3.5rem); they hold no navigation, title or menu, so `.bar`
+ * stays the one chrome owner. Home's queue switch (.queueTools), the Alerts views (.tabsBar) and
+ * the ED and Community view switches (.phonePanes). Each must still be found, so a removal fails
+ * the line below instead of leaving a stale permission.
+ */
+const V10_PINNED_VIEW_SWITCHES = [".phonePanes", ".queueTools", ".tabsBar"];
+
 describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
   it("mounts the shared WardBar and does not import the retired ClinicalRail, even under an alias", () => {
     const layout = readModule(path.join(REPO_ROOT, "src/app/mockups/ward-flow/layout.tsx"));
@@ -308,12 +319,26 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
   });
 
   it("has exactly one mounted top-anchored phone element outside the documented backlog — .bar", () => {
-    const withoutBacklog = allTopAnchored.filter((selector) => !KNOWN_BACKLOG_TOP_ANCHORED.includes(selector));
+    const withoutBacklog = allTopAnchored.filter(
+      (selector) => !KNOWN_BACKLOG_TOP_ANCHORED.includes(selector) && !V10_PINNED_VIEW_SWITCHES.includes(selector),
+    );
     expect(
       withoutBacklog,
       "Ward Flow must have exactly one mounted top-anchored phone element (WardBar's " +
         `.bar) outside the documented backlog — found: ${withoutBacklog.join(", ") || "(none)"}`,
     ).toEqual([".bar"]);
+  });
+
+  it("names the v10 view switches pinned under the bar, and each sits exactly below it", () => {
+    expect(allTopAnchored.filter((selector) => V10_PINNED_VIEW_SWITCHES.includes(selector))).toEqual(
+      V10_PINNED_VIEW_SWITCHES,
+    );
+    for (const { file, topAnchored } of perFileChrome) {
+      for (const selector of topAnchored.filter((entry) => V10_PINNED_VIEW_SWITCHES.includes(entry))) {
+        const phone = splitMediaBlocks(stripComments(readModule(file))).narrowBlocks.join("\n");
+        expect(mergeDecls(parseRuleBlocks(phone).get(selector) ?? []).top, `${selector} in ${file}`).toBe("3.5rem");
+      }
+    }
   });
 
   it("names the one dated known-backlog duplicate, .modeHeader, so fixing it fails this line instead of hiding the fix", () => {
@@ -328,7 +353,11 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
     // full-screen phone sheet .popup, 9 Oct 2026, and the Ward page's bed slide-out .drawer, a modal
     // bottom sheet on phone, 9 Oct 2026, and the header service picker's .servicePanel, a modal
     // bottom sheet with its own scrim on phone, 11 Oct 2026) and .toast notifications are not
-    // action rows.
+    // action rows. Sheet footers sticky to their own sheet's scroller, not the viewport, 11 Oct
+    // 2026: the referral decision sheet's .foot, the Delays person panel's .acts and the
+    // Discharges detail sheet's .detailFooter. Ward answer's .decisionArea is a second edge
+    // action row by owner decision (v10 mockup .wa-acts, "the decision bar stays in view while
+    // the request scrolls past", 11 Oct 2026).
     const actionRows = allBottomAnchored.filter(
       (selector) =>
         ![
@@ -340,9 +369,12 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
           ".popup",
           ".drawer",
           ".servicePanel",
+          ".foot",
+          ".acts",
+          ".detailFooter",
         ].includes(selector),
     );
-    expect(actionRows).toEqual([".actionRow"]);
+    expect(actionRows).toEqual([".actionRow", ".decisionArea"]);
     const command = stripComments(readModule(path.join(WARD_ROOT, "coordinator/coordinator.module.css")));
     const phone = splitMediaBlocks(command).narrowBlocks.join("\n");
     expect(phone).toMatch(/\.shortlistActionRow\s*\{\s*position:\s*static;/u);

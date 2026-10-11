@@ -988,6 +988,7 @@ export function PatientSearchPage() {
                 )}
               </div>
             }
+            footKind={isPhone ? "actions" : "line"}
             foot={
               isPhone ? (
                 <div className={cs.phoneHeroFoot}>

@@ -3138,3 +3138,16 @@
     color: var(--wf-accent);
   }
 }
+
+/* v10 phone New referral: the sheet starts under the 56px bar, so the bar (title, Statewide,
+   search, tasks) stays above the referral hero as in the mockup. */
+@media (max-width: 48rem) {
+  .drawerBackdrop:has(> .drawerSheetReferral) {
+    top: 3.5rem !important;
+  }
+
+  /* The sheet is h-full of that shortened backdrop, so it ends at the bottom edge. */
+  .drawerSheetReferral {
+    border-radius: 0 !important;
+  }
+}

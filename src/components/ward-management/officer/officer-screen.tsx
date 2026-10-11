@@ -22,6 +22,7 @@ import {
   EmptyState,
   FilterChip,
   Hero,
+  LiveChip,
   HeroStat,
   Icon,
   Kbd,
@@ -1265,7 +1266,7 @@ export function OfficerScreen() {
           eyebrow="Transport dispatch"
           title={`${inCustody} on board`}
           titleMeta={`${crewEnRoute} ${crewEnRoute === 1 ? "crew" : "crews"} en route`}
-          aside={isPhone ? undefined : heroTools}
+          aside={isPhone ? <LiveChip state="live" onHero /> : heroTools}
           barAside={isPhone ? heroTools : undefined}
           bar={
             <div className={styles.heroPills} role="group" aria-label="Highlight jobs">

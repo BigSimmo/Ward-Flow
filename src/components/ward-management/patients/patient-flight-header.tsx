@@ -26,6 +26,7 @@ export function PatientFlightHeader({
   statePill,
   phoneEyebrow,
   phoneFoot,
+  phoneFootKind = "line",
   statusDetail,
   location,
   facts,
@@ -47,6 +48,8 @@ export function PatientFlightHeader({
   phoneEyebrow?: ReactNode;
   /** v10 phone: the band's foot (Movements back and Copy handover on a live movement). */
   phoneFoot?: ReactNode;
+  /** `"actions"` when `phoneFoot` holds buttons, so the hero drops the hairline and lets them wrap. */
+  phoneFootKind?: "line" | "actions";
   statusDetail: string;
   /** Where the person is now, when a movement records it. */
   location?: string;
@@ -129,6 +132,7 @@ export function PatientFlightHeader({
           </>
         }
         foot={isPhone && phoneFoot ? phoneFoot : undefined}
+        footKind={isPhone && phoneFoot ? phoneFootKind : "line"}
         bar={
           <div className={styles.v6HeroBar}>
             {isPhone ? null : idLine}

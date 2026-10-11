@@ -3,8 +3,7 @@
 import { ChevronRight, Clock, ListOrdered, TriangleAlert } from "lucide-react";
 import { useId, useRef, type ReactNode } from "react";
 
-import { Button, LiveChip, ScrollRow, StatusGlyph, cx } from "@/components/wf";
-import { useWfBandBleed } from "@/components/wf/band";
+import { Button, LiveChip, ScrollRow, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
 
 import styles from "./referral-board-phone.module.css";
 

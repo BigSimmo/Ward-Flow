@@ -68,6 +68,7 @@ import {
   StackBar,
   StatusGlyph,
   TextInput,
+  TierTile,
   Timer,
   buttonClass,
   cx,
@@ -1846,13 +1847,7 @@ function HighlightStat({
 
 /** Urgency tier as a T1 to T3 pill: neutral, never red, with the word "Tier" for screen readers. */
 function TierPill({ tier }: { tier: number }) {
-  return (
-    <span className={flow.tier} data-tier={tier}>
-      <span className="sr-only">Tier </span>
-      <span aria-hidden="true">T</span>
-      {tier}
-    </span>
-  );
+  return <TierTile tier={tier} data-tier={tier} />;
 }
 
 /**

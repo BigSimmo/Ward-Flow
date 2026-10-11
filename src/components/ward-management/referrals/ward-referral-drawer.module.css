@@ -2952,10 +2952,12 @@ details.refCard > summary {
     background: var(--wf-scrim);
   }
 
+  /* The carrier sheet already starts under the 56px bar and is this sheet's containing block,
+     so top 0 puts the step sheet's top edge just under the bar. */
   .drawerWide[data-ph-mode="sheet"] .drawerBody {
     position: fixed;
     z-index: 5;
-    top: 3.5rem;
+    top: 0;
     right: 0;
     bottom: 0;
     left: 0;
