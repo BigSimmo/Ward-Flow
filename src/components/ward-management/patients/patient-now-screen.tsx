@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -247,8 +248,8 @@ export function PatientNowScreen({
     // Two frames: the phone workspace mounts on the first render after opening.
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
-        operationsRef.current?.focus();
-        operationsRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+        operationsRef.current?.focus({ preventScroll: true });
+        operationsRef.current?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
       }),
     );
   }
@@ -612,7 +613,9 @@ export function PatientNowScreen({
     setTransportEtaDraft(displayEta ?? "");
     setShowTransportForm(true);
     requestAnimationFrame(() =>
-      document.getElementById("pnTransportHeading")?.scrollIntoView({ block: "center", behavior: "smooth" }),
+      document
+        .getElementById("pnTransportHeading")
+        ?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() }),
     );
   }
 
@@ -745,7 +748,7 @@ export function PatientNowScreen({
     onDischargeDate: () => {
       setWardForm("discharge");
       requestAnimationFrame(() =>
-        document.getElementById("pn-ward-change")?.scrollIntoView({ block: "center", behavior: "smooth" }),
+        document.getElementById("pn-ward-change")?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() }),
       );
     },
     onReturnFromEd: returnFromEd,

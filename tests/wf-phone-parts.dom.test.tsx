@@ -337,7 +337,7 @@ describe("ScrollRow", () => {
     Object.defineProperty(element, "scrollLeft", { configurable: true, writable: true, value: scrollLeft });
   }
 
-  it("keeps its chips on one row and fades only the edge with more content", () => {
+  it("keeps its chips on one row and fades only the edge with more content", async () => {
     render(
       <ScrollRow role="group" aria-label="Services" data-testid="track">
         <FilterChip pressed={false} onPressedChange={() => {}}>
@@ -360,16 +360,19 @@ describe("ScrollRow", () => {
 
     setScroll(track, { scrollWidth: 600, clientWidth: 300, scrollLeft: 0 });
     fireEvent.scroll(track);
+    await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
     expect(wrapper).not.toHaveAttribute("data-fade-start");
     expect(wrapper).toHaveAttribute("data-fade-end", "true");
 
     setScroll(track, { scrollWidth: 600, clientWidth: 300, scrollLeft: 150 });
     fireEvent.scroll(track);
+    await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
     expect(wrapper).toHaveAttribute("data-fade-start", "true");
     expect(wrapper).toHaveAttribute("data-fade-end", "true");
 
     setScroll(track, { scrollWidth: 600, clientWidth: 300, scrollLeft: 300 });
     fireEvent.scroll(track);
+    await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
     expect(wrapper).toHaveAttribute("data-fade-start", "true");
     expect(wrapper).not.toHaveAttribute("data-fade-end");
   });

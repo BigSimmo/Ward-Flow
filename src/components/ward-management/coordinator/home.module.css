@@ -1953,7 +1953,7 @@ button.registerRow:hover {
 
   .queueTools {
     position: sticky;
-    top: 3.5rem;
+    top: var(--wf-header-height, 3.5rem);
     z-index: 6;
     margin: 0;
     padding: var(--wf-s-2) 0;
@@ -1963,9 +1963,6 @@ button.registerRow:hover {
     box-shadow:
       var(--wf-s-4) 0 0 var(--wf-canvas),
       calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
-  }
-  :global(body:has([data-scrolled="true"])) .queueTools {
-    top: 3.25rem;
   }
 
   .queueSeg.queueSeg {

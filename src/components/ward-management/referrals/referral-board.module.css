@@ -1692,7 +1692,7 @@
    rather than a full-screen slide-over. The facts read as a two by two grid. */
 @media (max-width: 48rem) {
   [data-referral-layout="queue-panel"] .layout .detail.detail.detail[data-has-selection="true"] {
-    top: 3.5rem;
+    top: var(--wf-header-height, 3.5rem);
     width: 100vw;
     height: auto;
     max-height: none;

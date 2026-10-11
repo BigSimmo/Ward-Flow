@@ -1150,7 +1150,7 @@
 @media (max-width: 48rem) {
   .phonePanes {
     position: sticky;
-    top: 3.5rem;
+    top: var(--wf-header-height, 3.5rem);
     z-index: 6;
     margin: 0 calc(-1 * var(--wf-s-3));
     padding: var(--wf-s-2) var(--wf-s-3);
@@ -1280,16 +1280,12 @@
 
 /* ─── v10 phone fidelity (11 Oct 2026) ───
  * The view switch band runs the full width and, once the page has scrolled, sits flush under the
- * condensed 52px bar (56px at rest). The pinned "Reads alike" chip leaves the phone: the hero's
+ * stable shared header. The pinned "Reads alike" chip leaves the phone: the hero's
  * Read alike figure is that filter there. A name that reads like others says so at the end of its
  * meta line, as the mockup ("EMHS · 1 suburb · reads like 3 others"). Phone only. */
 @media (max-width: 48rem) {
   .phonePanes {
     max-width: none;
-  }
-
-  :global(body:has([data-scrolled="true"])) .phonePanes {
-    top: 3.25rem;
   }
 
   .phonePanes > div {
