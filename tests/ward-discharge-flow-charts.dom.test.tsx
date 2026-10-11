@@ -39,14 +39,16 @@ describe("Discharges charts under the table (direction A)", () => {
     const expected = Number(/: (\d+) due/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
     fireEvent.click(day!);
     // A click on a chart moves to the people view.
-    expect(screen.getByRole("button", { name: /^Admission records/u })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^History/u })).toHaveAttribute("aria-pressed", "true");
     const rows = worklistRows();
     const lit = rows.filter((row) => row.getAttribute("data-highlighted") === "true");
     expect(lit).toHaveLength(expected);
     // Highlighted people come first, and every other record is still listed.
     expect(rows.slice(0, expected)).toEqual(lit);
     expect(rows.length).toBeGreaterThan(expected);
-    expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(`${expected} highlighted`);
+    expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(
+      new RegExp(`${expected} of \\d+ highlighted, all rows stay`),
+    );
     fireEvent.click(within(screen.getByTestId("ward-discharge-highlight-note")).getByRole("button", { name: "Clear" }));
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
   });
@@ -65,15 +67,31 @@ describe("Discharges charts under the table (direction A)", () => {
 
   it("clears a hiding status filter on a chart click, and drops the highlight on a population switch", () => {
     renderBoard();
-    fireEvent.click(screen.getByRole("button", { name: /^Admission records/u }));
-    fireEvent.click(screen.getByTestId("ward-discharge-kpi-confirmed"));
+    fireEvent.click(screen.getByRole("button", { name: /^History/u }));
+    const confirmedTab = () =>
+      within(screen.getByLabelText("Filter by discharge status")).getByRole("button", { name: /^Confirmed/ });
+    fireEvent.click(confirmedTab());
     const first = within(screen.getByTestId("ward-discharge-barrier-bars")).getAllByRole("button")[0]!;
     const count = Number(/: (\d+) blocked/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
     expect(count).toBeGreaterThan(0);
     fireEvent.click(first);
-    expect(screen.getByTestId("ward-discharge-kpi-confirmed")).toHaveAttribute("aria-pressed", "false");
+    expect(confirmedTab()).toHaveAttribute("aria-pressed", "false");
     expect(worklistRows().filter((row) => row.getAttribute("data-highlighted") === "true")).toHaveLength(count);
-    fireEvent.click(screen.getByRole("button", { name: /^Anonymous releases/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Now,/u }));
+    expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
+  });
+
+  it("barrier quick chips highlight matching rows and hide none (v10: chips highlight, not filter)", () => {
+    renderBoard();
+    const before = worklistRows().length;
+    const bar = within(screen.getByRole("toolbar", { name: "Quick blocker filters" }));
+    const chip = bar.getAllByRole("button").find((button) => button.textContent?.startsWith("Accommodation"));
+    expect(chip).toBeDefined();
+    fireEvent.click(chip!);
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    expect(worklistRows()).toHaveLength(before);
+    expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(/all rows stay/);
+    fireEvent.click(chip!);
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
   });
 

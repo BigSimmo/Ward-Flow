@@ -29,13 +29,13 @@
 
 /* Act now: a thin red edge all round, never a fill (v9 section 5 and 9). */
 .actNow {
-  box-shadow: inset 0 0 0 1px var(--wf-danger);
+  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
 }
 
 .selected.actNow {
   box-shadow:
     inset 3px 0 0 var(--wf-accent-strong),
-    inset 0 0 0 1px var(--wf-danger);
+    inset 0 0 0 1px var(--wf-act-edge);
 }
 
 /* v9 section 8: a row's ring sits inside with a 2px gap, so it never touches the red edge or the
@@ -155,7 +155,8 @@
 
 .table th {
   height: 36px;
-  padding: 0 var(--wf-s-3);
+  /* --wf-cell-pad-y: set on a table whose cells wrap (reports) instead of redeclaring cell padding. */
+  padding: var(--wf-cell-pad-y, 0) var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
@@ -167,7 +168,7 @@
 
 .table td {
   height: var(--wf-row);
-  padding: 0 var(--wf-s-3);
+  padding: var(--wf-cell-pad-y, 0) var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
   white-space: nowrap;
   overflow: hidden;
@@ -194,7 +195,7 @@
 }
 
 .table tr.actNow {
-  outline: 1px solid var(--wf-danger);
+  outline: 1px solid var(--wf-act-edge);
   outline-offset: -1px;
 }
 

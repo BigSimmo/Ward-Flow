@@ -1,11 +1,20 @@
+"use client";
+
 import { ChevronDown } from "lucide-react";
-import { useId, type ElementType, type ReactNode } from "react";
+import { useId, useRef, type ElementType, type ReactNode } from "react";
+import { useWfBandBleed } from "./band";
 import { cx } from "./cx";
 import { SrOnly } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./hero.module.css";
 
 export type HeroProps = {
+  /**
+   * A leading visual before the title, such as an `OccupancyRing` (v10 Home, Capacity, Wards).
+   * Left of the title on desktop and tablet; under the title on phone, so the eyebrow and title
+   * always come first. Use this instead of putting the ring in `stats` and reordering it in CSS.
+   */
+  lead?: ReactNode;
   /** Uppercase eyebrow ("STATE BEDFLOW", "STATISTICS · AS AT 10:42"). */
   eyebrow?: ReactNode;
   /** Five words at most. */
@@ -30,14 +39,29 @@ export type HeroProps = {
   level?: 1 | 2;
   /** `data-testid` on the hero section, so a page needs no wrapper element to find it. */
   testId?: string;
+  /**
+   * Quiet hero (v10): a light inset card for an inactive record or a calm page. It never looks
+   * live and never takes the band.
+   */
+  quiet?: boolean;
+  /**
+   * Desktop and tablet band (v10 section 7.1). On by default: when the page opens on this hero it
+   * runs square across the work column and the header sits in hero ink over it at rest. Pass
+   * `false` for a hero that must stay an inset card even at the top of a page.
+   */
+  band?: boolean;
   className?: string;
 };
 
 /**
  * v6 hero band. One per page. Inside it status glyphs use their night values and focus turns
  * white. Use `light` for its one primary button and `onHero` for the rest.
+ *
+ * v10: a page that opens on this hero gets the band on desktop and tablet automatically (see
+ * `band.ts`). Put a `CheckingFoot` in `foot` to say what the page checked and what it could not.
  */
 export function Hero({
+  lead,
   eyebrow,
   title,
   titleMeta,
@@ -50,13 +74,28 @@ export function Hero({
   footAside,
   level = 2,
   testId,
+  quiet = false,
+  band = true,
   className,
 }: HeroProps) {
   const titleId = useId();
+  const sectionRef = useRef<HTMLElement>(null);
+  useWfBandBleed(sectionRef, band && !quiet);
   const Heading = `h${level}` as ElementType;
   return (
-    <section className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
-      <div className={styles.row}>
+    <section
+      ref={sectionRef}
+      className={cx(styles.hero, quiet && styles.quiet, className)}
+      aria-labelledby={titleId}
+      data-testid={testId}
+      data-wf-hero={quiet ? "quiet" : "band"}
+    >
+      <div className={cx(styles.row, styles.firstRow)}>
+        {lead ? (
+          <div className={styles.lead} data-wf-hero-lead="">
+            {lead}
+          </div>
+        ) : null}
         <div className={styles.titleBlock}>
           {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
           <div className={styles.titleLine}>
@@ -70,7 +109,7 @@ export function Hero({
         {aside ? <div className={styles.aside}>{aside}</div> : null}
       </div>
       {bar || barAside ? (
-        <div className={styles.row}>
+        <div className={cx(styles.row, styles.barRow)}>
           {bar ? <div className={styles.bar}>{bar}</div> : null}
           {barAside ? <div className={styles.aside}>{barAside}</div> : null}
         </div>
@@ -87,6 +126,11 @@ export function Hero({
 
 export type HeroStatProps = {
   value: ReactNode;
+  /**
+   * Slash form (v10): with `total` the value reads "2/7" on screen and "2 of 7" to a screen
+   * reader. Use for progress past a set ("2/7 steps"), not for a rate.
+   */
+  total?: ReactNode;
   label: ReactNode;
   /** Glyph before the label. Red (danger) only when it needs action now. */
   tone?: WfTone;
@@ -114,6 +158,7 @@ export type HeroStatProps = {
 /** A count on the hero band: mono value over a label, hairline separators between items. */
 export function HeroStat({
   value,
+  total,
   label,
   tone,
   trend,
@@ -130,7 +175,20 @@ export function HeroStat({
   const body = (
     <>
       <span className={styles.valueLine}>
-        <span className={styles.value}>{value}</span>
+        {total !== undefined ? (
+          <span className={styles.value}>
+            <span aria-hidden="true">
+              {value}
+              <span className={styles.slash}>/</span>
+              {total}
+            </span>
+            <SrOnly>
+              {value} of {total}
+            </SrOnly>
+          </span>
+        ) : (
+          <span className={styles.value}>{value}</span>
+        )}
         {trend ? <span className={styles.trend}>{trend}</span> : null}
       </span>
       <span className={styles.label}>

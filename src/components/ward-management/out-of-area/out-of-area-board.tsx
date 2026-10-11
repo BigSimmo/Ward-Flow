@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Printer, Route, Search, X } from "lucide-react";
 
@@ -8,6 +8,8 @@ import {
   Button,
   Card,
   CardFoot,
+  CheckingFoot,
+  Drawer,
   EmptyState,
   Hero,
   LiveChip,
@@ -19,11 +21,16 @@ import {
   cx,
   tableClasses,
   type WfTone,
+  useIsPhone,
+  useIsTabletPortrait,
+  DeltaTwin,
 } from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
@@ -56,6 +63,7 @@ import {
   type DaysAwayGroupId,
   type RepatDraft,
   type ReturnStatus,
+  bedMeetingComparison,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
@@ -86,22 +94,6 @@ import styles from "./out-of-area-board.module.css";
  * **Return status** reads the coordinator's recorded `RECORD_REPATRIATION` first, then the page's own
  * unsaved draft. Drafts live in React state only and are never written to browser storage.
  */
-
-const PHONE_QUERY = "(max-width: 48rem)";
-
-/** Phone is its own layout, not a reflow: the screen renders a different tree under 48rem. */
-function useIsPhone(): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      if (typeof window.matchMedia !== "function") return () => undefined;
-      const query = window.matchMedia(PHONE_QUERY);
-      query.addEventListener?.("change", notify);
-      return () => query.removeEventListener?.("change", notify);
-    },
-    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
-    () => false,
-  );
-}
 
 function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
   if (info.patient?.id) {
@@ -137,17 +129,30 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     movements,
     dispatch,
     dayZero,
+    rejections,
     repatriations: liveRepatriations,
   } = useWardFlow();
   const now = useWardFlowClock();
   const isPhone = useIsPhone();
+  const isTabletPortrait = useIsTabletPortrait();
   const repatriations: RepatriationRecord[] = liveRepatriations ?? [];
 
   const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
+  const meeting = bedMeetingComparison(admissions ?? liveAdmissions, units, now);
+  // The bed meeting can be yesterday's on an early shift, so the clock names its day when it is not today.
+  const meetingAt = formatInstantWithDay(meeting.at, now);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, RepatDraft>>({});
   const [repatNotice, setRepatNotice] = useState<string | null>(null);
+  // v10 pass 3: a recorded return offers Undo (`UNDO_REPATRIATION`) on the layout toast.
+  const { run: runStep } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: useRouteRole(),
+    onMessage: setRepatNotice,
+  });
   const [toolNote, setToolNote] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);
   const [region, setRegion] = useState<string | null>(null);
@@ -254,12 +259,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   };
 
   useEffect(() => {
-    if (selectedId === null || isPhone) return;
+    if (selectedId === null || isPhone || isTabletPortrait) return;
     if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1000px)").matches) return;
     window.requestAnimationFrame(() => {
       detailColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-  }, [selectedId, isPhone]);
+  }, [selectedId, isPhone, isTabletPortrait]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -315,29 +320,37 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     ) {
       return;
     }
-    dispatch({
-      type: "RECORD_REPATRIATION",
-      role: "coordinator",
-      now,
-      admissionId,
-      homeHospital: draft.homeHospital,
-      receivingWardAgreed: draft.receivingWardAgreed,
-      mode: draft.mode,
-      provider: draft.provider,
-      cadNumber: draft.cadNumber.trim(),
-      transportLegalStatus: draft.transportLegalStatus,
-      estimatedAt,
-    });
+    const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
+    const movementFeedback = draft.receivingWardAgreed
+      ? " Return transfer movement queued for bed placement at home health service."
+      : " Return movement pending receiving ward agreement.";
+    const recorded = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}.`;
+    runStep(
+      {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now,
+        admissionId,
+        homeHospital: draft.homeHospital,
+        receivingWardAgreed: draft.receivingWardAgreed,
+        mode: draft.mode,
+        provider: draft.provider,
+        cadNumber: draft.cadNumber.trim(),
+        transportLegalStatus: draft.transportLegalStatus,
+        estimatedAt,
+      },
+      {
+        success: `${recorded}${movementFeedback}`,
+        undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
+        undone: `Return undone for ${patientOf(entry).displayName}. Nothing is recorded.`,
+      },
+    );
     setDrafts((current) => {
       const next = { ...current };
       delete next[admissionId];
       return next;
     });
-    const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
-    const movementFeedback = draft.receivingWardAgreed
-      ? " Return transfer movement queued for bed placement at home health service."
-      : " Return movement pending receiving ward agreement.";
-    setRepatNotice(`Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}.${movementFeedback}`);
+    setRepatNotice(`${recorded}${movementFeedback}`);
   }
 
   const planPatient = (entry: OutOfAreaEntry): PlanPatient => {
@@ -510,6 +523,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             onSelect={(id) => setSelectedId(id)}
             onClose={() => setSelectedId(null)}
             nextUpId={nextUp?.admission.id}
+            since={
+              <>
+                <MeetingTwin was={meeting.away} now={entries.length} atLabel={meetingAt} /> since the {meetingAt} bed
+                meeting · <b className={styles.mono}>{bedDays}</b> bed days
+              </>
+            }
             onCopy={copySummary}
             toolNote={toolNote}
             renderPlan={(entry) => renderPlan(entry, undefined, "ward-out-of-area-phone-plan")}
@@ -559,27 +578,90 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     </button>
   );
 
+  const planCard = selected ? (
+    <Card
+      className={cx(styles.sideCard, styles.planCard)}
+      aria-labelledby="ward-out-of-area-plan-title"
+      data-testid="ward-out-of-area-subject"
+    >
+      {renderPlan(
+        selected,
+        <div className={styles.planHead}>
+          <span className={styles.planWho}>
+            <h2 id="ward-out-of-area-plan-title" className={styles.planName}>
+              <SrOnly>Return plan for </SrOnly>
+              {planPatient(selected).displayName}
+            </h2>
+            <span className={styles.mono}>{planPatient(selected).umrn}</span>
+          </span>
+          <span role="status" className={styles.planPosition}>
+            <SrOnly>Synthetic patient </SrOnly>
+            {selectedIndex + 1} of {sorted.length}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={ChevronLeft}
+            aria-label="Inspect previous patient"
+            disabled={selectedIndex <= 0}
+            onClick={() => step(-1)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={ChevronRight}
+            aria-label="Inspect next patient"
+            disabled={selectedIndex < 0 || selectedIndex >= sorted.length - 1}
+            onClick={() => step(1)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={X}
+            aria-label="Return to cohort overview"
+            title="Close (Escape)"
+            onClick={returnToOverview}
+          />
+        </div>,
+        "ward-out-of-area-plan",
+      )}
+    </Card>
+  ) : null;
+
   return (
     <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v8-a">
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow="Out of area"
+          eyebrow={`Out of area · Statewide · ${bedDays} bed days · longest ${longest} days`}
           title={`${entries.length} away from home`}
-          titleMeta={
-            <span className={styles.heroMeta}>
-              <span>
-                <b>{bedDays}</b> bed days
-              </span>
-              <span>
-                Longest <b>{longest} days</b>
-              </span>
-            </span>
-          }
-          stats={<DaysAwayStrip entries={entries} now={now} highlight={highlight} onToggle={toggleHighlight} />}
           aside={
             <span className={styles.heroActs}>
+              <span className={styles.since} data-testid="ward-out-of-area-since">
+                <span className={styles.sinceLabel}>Since the {meetingAt} bed meeting</span>
+                <span className={styles.sinceTwin}>
+                  <MeetingTwin was={meeting.away} now={entries.length} atLabel={meetingAt} />
+                  <span>away</span>
+                </span>
+                <span className={styles.sinceTwin}>
+                  <MeetingTwin was={meeting.passed} now={countOf("due")} atLabel={meetingAt} />
+                  <span>date passed</span>
+                </span>
+              </span>
               <LiveChip state="live" onHero />
+            </span>
+          }
+          bar={<DaysAwayStrip entries={entries} now={now} highlight={highlight} onToggle={toggleHighlight} />}
+          barAside={
+            <span className={styles.heroActs}>
+              {toolNote ? (
+                <span className={styles.heroNote} role="status">
+                  {toolNote}
+                </span>
+              ) : null}
               <Button
                 variant="light"
                 size="sm"
@@ -617,25 +699,25 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 iconOnly
                 icon={Printer}
                 aria-label="Print handover list"
+                className={styles.previewIcon}
                 disabledReason="Not wired in this prototype."
                 reasonDisplay="tooltip"
               />
             </span>
           }
-          bar={
-            <div className={styles.pills} role="group" aria-label="Highlight people">
-              {pill("due", "Discharge date passed", "warning")}
-              {pill("air", "Air only")}
-              {pill("road", TRAVEL_SHORT.three_hours_or_more)}
-              {pill("noplan", "No return plan", "closed")}
-              {pill("notagreed", "Ward not agreed", "neutral")}
-              {pill("bed", "Awaiting home bed", "neutral")}
-            </div>
-          }
-          barAside={
-            <span className={styles.heroNote} role="status">
-              {toolNote}
-            </span>
+          foot={
+            <CheckingFoot
+              items={[
+                { id: "due", label: "Discharge date passed", value: countOf("due"), tone: "warning" },
+                { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "closed" },
+                {
+                  id: "noband",
+                  label: "Other records without home area or travel time",
+                  value: notBanded,
+                  tone: "neutral",
+                },
+              ]}
+            />
           }
         />
 
@@ -696,11 +778,20 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               </div>
             ) : (
               <div role="tabpanel" id="ward-out-of-area-view-panel-now" aria-labelledby="ward-out-of-area-view-tab-now">
+                <div className={styles.pills} role="group" aria-label="Highlight people">
+                  {pill("due", "Date passed", "warning")}
+                  {pill("air", "Air only")}
+                  {pill("road", TRAVEL_SHORT.three_hours_or_more)}
+                  {pill("noplan", "No plan", "closed")}
+                  {pill("notagreed", "Not agreed", "neutral")}
+                  {pill("bed", "Awaiting home bed", "neutral")}
+                </div>
                 <div className={styles.hlLine}>
                   <span aria-live="polite">
                     {anyHighlight ? (
                       <>
-                        <b className={styles.mono}>{highlightedCount}</b> synthetic records highlighted
+                        <b className={styles.mono}>{highlightedCount}</b> of {entries.length}{" "}
+                        <SrOnly>synthetic records</SrOnly> highlighted, all rows stay
                       </>
                     ) : (
                       <>{entries.length} synthetic records</>
@@ -761,7 +852,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                             key={entry.admission.id}
                             data-testid={`ward-out-of-area-row-${entry.admission.id}`}
                             data-highlighted={lit || undefined}
-                            className={cx(styles.row, isSelected && tableClasses.selected, lit && styles.rowLit)}
+                            data-dim={anyHighlight && !lit ? "true" : undefined}
+                            className={cx(styles.row, isSelected && tableClasses.selected)}
                             aria-selected={isSelected}
                             tabIndex={0}
                             aria-label={`View placement detail for ${info.displayName} (${info.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
@@ -865,57 +957,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           {/* The shorter right column pins under the top bar on desktop (data-wf-rail, ward-shell.module.css).
               It holds a stack of cards rather than one long list, so the whole rail scrolls inside itself. */}
           <div ref={detailColumnRef} className={styles.side} data-wf-rail>
-            {selected ? (
-              <Card
-                className={cx(styles.sideCard, styles.planCard)}
-                aria-labelledby="ward-out-of-area-plan-title"
-                data-testid="ward-out-of-area-subject"
-              >
-                {renderPlan(
-                  selected,
-                  <div className={styles.planHead}>
-                    <span className={styles.planWho}>
-                      <h2 id="ward-out-of-area-plan-title" className={styles.planName}>
-                        <SrOnly>Return plan for </SrOnly>
-                        {planPatient(selected).displayName}
-                      </h2>
-                      <span className={styles.mono}>{planPatient(selected).umrn}</span>
-                    </span>
-                    <span role="status" className={styles.planPosition}>
-                      <SrOnly>Synthetic patient </SrOnly>
-                      {selectedIndex + 1} of {sorted.length}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      iconOnly
-                      icon={ChevronLeft}
-                      aria-label="Inspect previous patient"
-                      disabled={selectedIndex <= 0}
-                      onClick={() => step(-1)}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      iconOnly
-                      icon={ChevronRight}
-                      aria-label="Inspect next patient"
-                      disabled={selectedIndex < 0 || selectedIndex >= sorted.length - 1}
-                      onClick={() => step(1)}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      iconOnly
-                      icon={X}
-                      aria-label="Return to cohort overview"
-                      title="Close (Escape)"
-                      onClick={returnToOverview}
-                    />
-                  </div>,
-                  "ward-out-of-area-plan",
-                )}
-              </Card>
+            {selected && !isTabletPortrait ? (
+              planCard
             ) : (
               <>
                 <ShiftCard
@@ -944,6 +987,18 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               </>
             )}
           </div>
+          {isTabletPortrait && selected ? (
+            // Tablet portrait (v10): the register keeps the width and the plan slides over it.
+            <Drawer
+              open
+              onClose={returnToOverview}
+              title={planPatient(selected).displayName}
+              description="Return plan"
+              testId="ward-out-of-area-plan-sheet"
+            >
+              {planCard}
+            </Drawer>
+          ) : null}
         </div>
 
         <WardPrototypeFooter
@@ -1094,4 +1149,17 @@ export function sinceArrivalLabel(entry: OutOfAreaEntry, now: Instant): string {
   if (days === null) return "Arrival not recorded";
   if (days === 0) return "Under a day";
   return `${days} ${days === 1 ? "day" : "days"}`;
+}
+
+/** The shared DeltaTwin on the hero band, read against the morning bed meeting. */
+function MeetingTwin({ was, now, atLabel }: { was: number; now: number; atLabel: string }) {
+  return (
+    <DeltaTwin
+      was={was}
+      now={now}
+      label={`${was} at the ${atLabel} bed meeting, ${now} now`}
+      surface="hero"
+      testId="ward-out-of-area-twin"
+    />
+  );
 }

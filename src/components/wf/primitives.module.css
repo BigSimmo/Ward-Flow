@@ -61,6 +61,30 @@
   background: var(--wf-surface);
 }
 
+/* v10 count circle: 18px edged circle, 12px mono, ringed in the colour behind it. */
+.countCircle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  box-shadow: 0 0 0 2px var(--wf-count-ring, var(--wf-surface-2));
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+}
+
+.countCircle[data-urgent="true"] {
+  border-color: var(--wf-warning);
+  color: var(--wf-ink-1);
+}
+
 .divider {
   height: 1px;
   background: var(--wf-line);
@@ -127,6 +151,7 @@
   .kbd,
   .count,
   .bubble,
+  .countCircle,
   .tile {
     border: 1px solid CanvasText;
   }

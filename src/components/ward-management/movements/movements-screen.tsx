@@ -876,7 +876,7 @@ export function MovementsScreen() {
               // D-b (Ward Lead's decisions, 2026-09-17): built off `openMovements`, never the scoped
               // worklist, and a movement outside the chosen service says so.
               <ul className={flow.needsList}>
-                {attentionMovements.map((movement) => {
+                {attentionMovements.map((movement, index) => {
                   const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
                   const who = resolveSubjectPatient(movement, { patients, referrals }).displayName;
                   const reason = meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
@@ -886,6 +886,8 @@ export function MovementsScreen() {
                         type="button"
                         className={flow.needsItem}
                         data-record-key={movement.id}
+                        // v10: the first act-now item (past the access target) takes the thin red edge.
+                        data-act-now={index === 0 && now - movement.openedAt >= accessTarget ? "true" : undefined}
                         onClick={() => jumpToMovement(movement.id)}
                         aria-label={`Find ${who} in worklist: ${reason}${outsideService ? ` — outside ${service}` : ""}`}
                       >

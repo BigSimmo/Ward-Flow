@@ -144,7 +144,7 @@
 
 .siteName {
   display: inline-block;
-  max-width: 130px;
+  max-width: 104px;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: bottom;
@@ -769,4 +769,14 @@
   .serviceTile:first-child {
     border-top: 0;
   }
+}
+
+/* Dim (v10): a row a pressed filter does not match recedes by colour only and stays in place and
+   focusable. Parts that set their own ink or fill follow it here. */
+.table tr[data-dim="true"] :is(.code, .zero, .occValue, .muted, .sub, .rowLink, .statusCell) {
+  color: var(--wf-dim);
+}
+
+.table tr[data-dim="true"] :is(.occFill, .occTick) {
+  background: var(--wf-glyph-dim);
 }

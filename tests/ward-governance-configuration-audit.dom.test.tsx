@@ -57,8 +57,9 @@ describe("a saved configuration change appears in the governance register", () =
     // Filter to the new category — proves categoryLabels/the select option exist for it.
     fireEvent.change(screen.getByLabelText("Filter event category"), { target: { value: "configuration" } });
 
-    const workbench = screen.getByTestId("ward-governance-workbench");
-    const row = within(workbench).getByText(/Change configuration/);
+    // The register itself: the rail at rest also lists the next events to review (v10 pass 3).
+    const register = screen.getByRole("region", { name: "Captured events" });
+    const row = within(register).getByText(/Change configuration/);
     expect(row).toBeInTheDocument();
 
     fireEvent.click(row.closest("button") as HTMLButtonElement);

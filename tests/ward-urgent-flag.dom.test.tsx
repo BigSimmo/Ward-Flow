@@ -218,9 +218,9 @@ describe("the queue footer states the order of the tab on show", () => {
         onClearFilter={() => {}}
       />,
     );
-    expect(screen.getByText("Tier first, then longest wait")).toBeInTheDocument();
+    expect(screen.getByText("Urgent first, then tier, then longest wait")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: /^Referrals/ }));
     expect(screen.getByText("Longest wait first")).toBeInTheDocument();
-    expect(screen.queryByText("Tier first, then longest wait")).toBeNull();
+    expect(screen.queryByText("Urgent first, then tier, then longest wait")).toBeNull();
   });
 });

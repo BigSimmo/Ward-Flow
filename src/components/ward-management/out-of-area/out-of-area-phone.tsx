@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Phone, Route, Search } from "lucide-react";
 
-import { Button, Icon, Sheet, SrOnly, StatusGlyph, Tabs, TextInput, cx, type WfTone } from "@/components/wf";
+import { Button, Icon, Sheet, SrOnly, Segmented, StatusGlyph, TextInput, cx, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
@@ -70,7 +70,8 @@ function PersonCard({
   const reason = entry.admission.blockReason;
   return (
     <li
-      className={cx(styles.phoneCard, person.highlighted && styles.phoneCardLit, first && styles.phoneCardFirst)}
+      className={cx(styles.phoneCard, person.highlighted && styles.phoneCardLit)}
+      data-first={first || undefined}
       data-testid={testId}
       data-selected={selected || undefined}
     >
@@ -163,6 +164,7 @@ export function OutOfAreaPhone({
   renderPlan,
   shift,
   beds,
+  since,
 }: {
   people: PhonePerson[];
   totalAway: number;
@@ -187,6 +189,8 @@ export function OutOfAreaPhone({
   renderPlan: (entry: OutOfAreaEntry) => ReactNode;
   shift: ReactNode;
   beds: ReactNode;
+  /** "+1 since the 08:30 bed meeting · 42 bed days", under the three figures. */
+  since?: ReactNode;
 }) {
   const [tab, setTab] = useState<PhoneTab>("needs");
   const [mode, setMode] = useState<"peek" | "plan">("peek");
@@ -277,12 +281,14 @@ export function OutOfAreaPhone({
             No plan
           </span>
         </button>
+        {since ? <p className={styles.phoneSince}>{since}</p> : null}
       </section>
 
-      <Tabs
+      {/* Phone (v10): Needs you, Everyone and Beds as one 44px segmented control. */}
+      <Segmented<PhoneTab>
         label="Out of area view"
-        idPrefix="ward-out-of-area-phone"
         className={styles.phoneTabs}
+        size="md"
         value={tab}
         onChange={setTab}
         items={[
@@ -293,12 +299,7 @@ export function OutOfAreaPhone({
       />
 
       {tab === "needs" ? (
-        <div
-          className={styles.phonePanel}
-          role="tabpanel"
-          id="ward-out-of-area-phone-panel-needs"
-          aria-labelledby="ward-out-of-area-phone-tab-needs"
-        >
+        <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-needs" aria-label="Needs you">
           {leaving.length ? (
             <section className={styles.phoneSection} aria-label="Leaving today">
               <h2 className={styles.phoneSectionTitle}>
@@ -376,12 +377,7 @@ export function OutOfAreaPhone({
       ) : null}
 
       <div hidden={tab !== "all"}>
-        <div
-          className={styles.phonePanel}
-          role="tabpanel"
-          id="ward-out-of-area-phone-panel-all"
-          aria-labelledby="ward-out-of-area-phone-tab-all"
-        >
+        <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-all" aria-label="Everyone">
           <TextInput
             icon={Search}
             boxClassName={styles.phoneSearch}
@@ -416,12 +412,7 @@ export function OutOfAreaPhone({
       </div>
 
       {tab === "beds" ? (
-        <div
-          className={styles.phonePanel}
-          role="tabpanel"
-          id="ward-out-of-area-phone-panel-beds"
-          aria-labelledby="ward-out-of-area-phone-tab-beds"
-        >
+        <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-beds" aria-label="Beds">
           {shift}
           {beds}
         </div>

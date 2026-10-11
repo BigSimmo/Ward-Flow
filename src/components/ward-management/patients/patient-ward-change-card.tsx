@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CalendarDays, DoorOpen, Stethoscope } from "lucide-react";
-import { Button, Card, CardHead } from "@/components/wf";
+import { Button, Card, CardHead, StatusGlyph } from "@/components/wf";
 import {
   MINUTES_PER_DAY,
   calendarDateOf,
@@ -174,7 +174,7 @@ export function PatientWardChangeCard({
       ) : null}
       {refusal ? (
         <p className={styles.refusal} role="alert">
-          Not recorded: {refusal}
+          <StatusGlyph tone="danger" size={9} /> Not recorded: {refusal}
         </p>
       ) : null}
     </Card>

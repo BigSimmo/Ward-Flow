@@ -62,6 +62,13 @@
   background: var(--wf-data-3);
 }
 
+/* Inside a dimmed row or card (v10 data-dim), the coloured states recede to the dim glyph tone. */
+[data-dim="true"] .ready,
+[data-dim="true"] .closed,
+[data-dim="true"] .pulled {
+  background: var(--wf-glyph-dim);
+}
+
 .legend {
   display: inline-flex;
   align-items: center;

@@ -1782,6 +1782,13 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
     "/mockups/ward-flow/ward/[unitId]/answer",
     "/mockups/ward-flow/board/[unitId]",
     "/mockups/ward-flow/ed/[edId]",
+    // v10 (10 Oct 2026): New referral is the one header primary on every page, Statistics included;
+    // Export the figures moved into the statistics hero.
+    "/mockups/ward-flow/statistics",
+    "/mockups/ward-flow/statistics/community/[teamId]",
+    "/mockups/ward-flow/statistics/ed/[edId]",
+    "/mockups/ward-flow/statistics/service/[serviceId]",
+    "/mockups/ward-flow/statistics/ward/[unitId]",
   ];
 
   // Catcher item 4 — the anti-vacuity floor itself. An empty WARD_PRIMARY_ACTIONS and an empty
@@ -1852,15 +1859,9 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
       ["/mockups/ward-flow/movements", "/mockups/ward-flow/movements/[movementId]"].sort(),
     );
     expect(routesOfKind("contact-team")).toEqual(["/mockups/ward-flow/community/[teamId]"]);
-    expect(routesOfKind("export-figures")).toEqual(
-      [
-        "/mockups/ward-flow/statistics",
-        "/mockups/ward-flow/statistics/community/[teamId]",
-        "/mockups/ward-flow/statistics/ed/[edId]",
-        "/mockups/ward-flow/statistics/service/[serviceId]",
-        "/mockups/ward-flow/statistics/ward/[unitId]",
-      ].sort(),
-    );
+    // v10: no route carries Export the figures in the header any more (it lives in the statistics
+    // hero). The kind stays in the union and the bar still renders it (ward-primary-action tests).
+    expect(routesOfKind("export-figures")).toEqual([]);
     expect(routesOfKind("none")).toEqual([...NONE_IN_BAR_ROUTES].sort());
 
     for (const entry of WARD_PRIMARY_ACTIONS) {
@@ -1908,7 +1909,7 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
     // One shared menu object, not independent copies that could drift apart — every
     // "New referral" route entry points at the very same array.
     const referralEntries = WARD_PRIMARY_ACTIONS.filter((entry) => entry.action.kind === "new-referral");
-    expect(referralEntries.length).toBe(8);
+    expect(referralEntries.length).toBe(13); // 8 + the five statistics routes (v10, 10 Oct 2026)
     for (const entry of referralEntries) {
       if (entry.action.kind !== "new-referral") continue;
       expect(entry.action.menu, `${entry.route}'s New referral menu is not the shared WARD_NEW_REFERRAL_MENU`).toBe(
@@ -1984,8 +1985,9 @@ describe("resolveWardPrimaryAction — D-16's pathname-to-action lookup", () => 
 
   it("tolerates a single trailing slash, matching wardPlaceFor's own tolerance", () => {
     expect(resolveWardPrimaryAction("/mockups/ward-flow/statistics/")).toEqual({
-      kind: "export-figures",
-      label: "Export the figures",
+      kind: "new-referral",
+      label: "New referral",
+      menu: WARD_NEW_REFERRAL_MENU,
     });
   });
 });

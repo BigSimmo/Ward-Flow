@@ -230,9 +230,23 @@ export function StatisticsWardScreen({
       now={now}
       paused={live.paused}
       onTogglePause={live.togglePause}
+      exportFigures={{
+        stem: unit.id,
+        scope: unit.name,
+        figures: () => [
+          ["Beds", unit.beds],
+          ["Occupied", wardOccupancy.occupied],
+          ["Occupied percent", occupancyPct],
+          ["Pulled, not arrived", wardOccupancy.pulled],
+          ["Ready", capacity.available],
+          ["Average stay, days", averageStay ?? "none"],
+          ["Due out, 7 days", dueThisWeek],
+        ],
+      }}
       stats={
         <>
-          <HeroStat value={unit.beds} label="Beds" />
+          {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
+              out; the export still carries it. */}
           <HeroStat value={wardOccupancy.occupied} label={`${occupancyPct}% occupied`} />
           <HeroStat
             value={wardOccupancy.pulled}

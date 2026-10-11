@@ -642,26 +642,27 @@ export const WARD_PRIMARY_ACTIONS: readonly WardPrimaryActionEntry[] = [
     route: "/mockups/ward-flow/community/[teamId]",
     action: { kind: "contact-team", label: "Contact a team" },
   },
-  // Export the figures — Statistics and its Ward, Community team, ED and Service detail routes.
+  // Statistics and its Ward, Community team, ED and Service detail routes. v10 (10 Oct 2026): New
+  // referral is the one header primary on every page; Export moves into the statistics hero.
   {
     route: "/mockups/ward-flow/statistics",
-    action: { kind: "export-figures", label: "Export the figures" },
+    action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
     route: "/mockups/ward-flow/statistics/ward/[unitId]",
-    action: { kind: "export-figures", label: "Export the figures" },
+    action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
     route: "/mockups/ward-flow/statistics/community/[teamId]",
-    action: { kind: "export-figures", label: "Export the figures" },
+    action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
     route: "/mockups/ward-flow/statistics/ed/[edId]",
-    action: { kind: "export-figures", label: "Export the figures" },
+    action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
     route: "/mockups/ward-flow/statistics/service/[serviceId]",
-    action: { kind: "export-figures", label: "Export the figures" },
+    action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   // None in the bar — Patient search, Patient, Search hub, Raise a referral (the slide-out is already open).
   { route: "/mockups/ward-flow/search", action: { kind: "none" } },
@@ -757,6 +758,8 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (normalized.startsWith("/mockups/ward-flow/capacity")) return "Capacity";
   if (normalized.startsWith("/mockups/ward-flow/network")) return "Network";
   if (normalized.startsWith("/mockups/ward-flow/governance")) return "Governance";
+  if (normalized === "/mockups/ward-flow/reports/downtime") return "Downtime pack";
+  if (normalized === "/mockups/ward-flow/reports/chronology") return "Patient chronology";
   if (normalized === "/mockups/ward-flow/referrals/new") return "New referral";
   if (normalized.startsWith("/mockups/ward-flow/referrals")) return "Referrals";
   if (normalized === "/mockups/ward-flow/people/new") return "Add a patient";

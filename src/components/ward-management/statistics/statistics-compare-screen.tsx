@@ -35,7 +35,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import { allWardStatistics, type WardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { axisMax } from "./statistics-axis";
-import { csvCell } from "./statistics-csv";
+import { downloadCsv } from "./statistics-csv";
 import { edWaitFigures } from "./statistics-ed-waits";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool } from "./statistics-hero-tools";
@@ -243,17 +243,6 @@ function sortRows<T extends { name: string; value: number | null }>(rows: T[], o
     const bv = b.value ?? -Infinity;
     return order === "high" ? bv - av : av - bv;
   });
-}
-
-function downloadCsv(filename: string, lines: (string | number)[][]) {
-  const url = URL.createObjectURL(
-    new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-  );
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 type View = "chart" | "data";

@@ -96,6 +96,24 @@
   flex-shrink: 0;
 }
 
+/*
+ * Below the desktop width the note wraps instead of holding one long line: an unbreakable note made
+ * the whole page scroll sideways at 820px (v10 pass 4). The right group drops under it when needed.
+ */
+@media (max-width: 75rem) {
+  .footer {
+    flex-wrap: wrap;
+  }
+  .leftGroup {
+    flex-basis: 20rem;
+  }
+  .footerNote {
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 @media (max-width: 48rem) {
   .footer {
     flex-direction: column;

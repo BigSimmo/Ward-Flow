@@ -6,6 +6,9 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent }
 import {
   BusFront,
   ChevronLeft,
+  ChevronRight,
+  Monitor,
+  Search,
   FileText,
   History,
   Lock,
@@ -26,7 +29,12 @@ import {
   CardFoot,
   CardHead,
   Field,
+  Frac,
+  Hero,
   Icon,
+  PhoneHero,
+  PhoneListRow,
+  PhoneSheet,
   Segmented,
   Select,
   Sheet,
@@ -35,10 +43,18 @@ import {
   Textarea,
   buttonClass,
   cx,
+  useIsPhone,
   type ChoiceItem,
 } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { duplicateCandidates, GENDERS, type Gender, type Patient } from "@/components/ward-management/ward-patients";
+import {
+  duplicateCandidates,
+  GENDERS,
+  patientAddedOnDayOf,
+  type Gender,
+  type Patient,
+} from "@/components/ward-management/ward-patients";
+import { useOptionalToast } from "@/components/wf";
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 
 import styles from "./add-patient.module.css";
@@ -87,6 +103,14 @@ function answeredDraft(draft: PatientDraft): PatientDraft | undefined {
 
 const UNAVAILABLE_REASON_ID = "ward-add-patient-unavailable-reason";
 const NOT_WIRED = "Not wired in this prototype.";
+/** The phone's "On a larger screen" sheet: what the short phone form leaves out. */
+const LARGER_SCREEN_ROWS: readonly (readonly [string, string])[] = [
+  ["Gender, Aboriginal or Torres Strait Islander", "Optional · bed matching"],
+  ["Address, suburb", "Address is not saved"],
+  ["Presenting facility, health service", "Not saved in this prototype"],
+  ["Clinical intake", "ATS, legal form, complaint, notes · layout only"],
+  ["Duplicate check beside the form", "The phone runs the same check below the form"],
+];
 const GENDER_NOT_RECORDED = "not-recorded" as const;
 type GenderChoice = Gender | typeof GENDER_NOT_RECORDED;
 
@@ -205,6 +229,15 @@ export function AddPatientForm() {
   const [d4Notice, setD4Notice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const toast = useOptionalToast();
+  /*
+   * v10 Add a patient, Phone: "search first as the one primary". The phone opens on Find an
+   * existing patient; "Show the form anyway" gives the short identity form with the same check and
+   * a sticky Add bar. Desktop never reads any of this.
+   */
+  const isPhone = useIsPhone();
+  const [phoneForm, setPhoneForm] = useState(() => Boolean(handoff));
+  const [phoneSheet, setPhoneSheet] = useState<"larger" | "recent" | null>(null);
   const priorSubmissionRef = useRef<{ patients: typeof patients; rejectionCount: number } | null>(null);
 
   const identityChanged =
@@ -236,7 +269,44 @@ export function AddPatientForm() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty, isSubmitting]);
 
+  /** Everything Reset clears, so Undo can put every field back (v10 acceptance check). */
+  const formSnapshot = () => ({
+    draft,
+    genderChoice,
+    indigenousStatus,
+    address,
+    suburb,
+    healthService,
+    facility,
+    triageUrgency,
+    legalStatus,
+    presentingComplaint,
+    clinicalNotes,
+  });
+  const restoreSnapshot = (snap: ReturnType<typeof formSnapshot>) => {
+    setDraft(snap.draft);
+    setGenderChoice(snap.genderChoice);
+    setIndigenousStatus(snap.indigenousStatus);
+    setAddress(snap.address);
+    setSuburb(snap.suburb);
+    setHealthService(snap.healthService);
+    setFacility(snap.facility);
+    setTriageUrgency(snap.triageUrgency);
+    setLegalStatus(snap.legalStatus);
+    setPresentingComplaint(snap.presentingComplaint);
+    setClinicalNotes(snap.clinicalNotes);
+  };
+
   const performReset = () => {
+    if (isDirty && toast) {
+      const snap = formSnapshot();
+      toast.push({
+        tone: "info",
+        title: "Form cleared",
+        body: "Nothing was saved to the record.",
+        undo: { durationMs: 8000, onUndo: () => restoreSnapshot(snap) },
+      });
+    }
     setDraft(initialDraft());
     setGenderChoice(GENDER_NOT_RECORDED);
     setIndigenousStatus("not-stated");
@@ -286,6 +356,7 @@ export function AddPatientForm() {
   const foundSomething = matches.length > 0;
 
   const recentRecords = useMemo(() => patients.slice(-RECENT_RECORDS_SHOWN).reverse(), [patients]);
+  const addedToday = patients.filter((patient) => patientAddedOnDayOf(patient, now)).length;
 
   useEffect(() => {
     const prior = priorSubmissionRef.current;
@@ -358,42 +429,180 @@ export function AddPatientForm() {
       data-ward-design="v6"
       data-ward-rebuilt-screen="add-patient"
     >
-      <main id="main-content" className={styles.main}>
-        <h1 className={styles.srOnly} id="pageTitle">
-          Add a patient
-        </h1>
-
-        <Card className={styles.topBar}>
-          <nav className={styles.topLead} aria-label="Breadcrumb navigation">
-            <Link
-              className={buttonClass({ variant: "ghost", size: "sm", className: styles.backLink })}
-              href="/mockups/ward-flow/search"
-              aria-label="Back to patient search"
-            >
-              <Icon icon={ChevronLeft} size={14} />
-              Patient search
-            </Link>
-          </nav>
-          <span className={styles.topMarker}>
-            <Icon icon={ShieldCheck} size={14} />
-            Synthetic records only
-          </span>
-          <span className={styles.topActions}>
-            {d4Notice ? (
-              <span className={styles.d4Notice} role="status" data-testid="ward-add-patient-d4-notice">
-                {d4Notice}
-              </span>
+      <main id="main-content" className={styles.main} data-phone-form={isPhone && phoneForm ? "true" : undefined}>
+        {isPhone ? (
+          <PhoneHero
+            level={1}
+            title="Add a patient"
+            sub={phoneForm ? "Identity only · same duplicate check" : "Synthetic records only · search before adding"}
+            data-testid="ward-add-patient-phone-hero"
+            figures={[
+              { id: "records", value: patients.length, label: "Records" },
+              { id: "today", value: addedToday, label: "Added today" },
+              { id: "required", value: `${answeredCount}/${REQUIRED_FIELDS.length}`, label: "Required" },
+            ]}
+          />
+        ) : null}
+        {isPhone && !phoneForm ? (
+          <div className={styles.phLanding} data-testid="ward-add-patient-phone-landing">
+            <Card className={styles.phBig}>
+              <div className={styles.phBigBody}>
+                <span className={styles.phBigIcon}>
+                  <Icon icon={Monitor} size={20} />
+                </span>
+                <b>Add a patient needs a larger screen</b>
+                <span className={styles.muted}>
+                  Most people are already on record. Search first, then add from a tablet or computer.
+                </span>
+              </div>
+              <div className={styles.phBigFoot}>
+                <Link
+                  className={buttonClass({ variant: "pri", className: styles.phBtn })}
+                  href="/mockups/ward-flow/search"
+                >
+                  <Icon icon={Search} size={16} />
+                  Find an existing patient
+                </Link>
+                <Button
+                  className={styles.phBtn}
+                  data-testid="ward-add-patient-phone-show-form"
+                  onClick={() => setPhoneForm(true)}
+                >
+                  Show the form anyway
+                </Button>
+              </div>
+            </Card>
+            <PhoneListRow
+              className={styles.phCard}
+              name="What the larger screen adds"
+              meta="Address, facility, clinical intake, side-by-side check"
+              onSelect={() => setPhoneSheet("larger")}
+              value={<Icon icon={ChevronRight} size={16} />}
+            />
+            <h2 className={styles.phHead}>Recently added</h2>
+            <ul className={styles.phList}>
+              {recentRecords.slice(0, 4).map((p) => (
+                <PhoneListRow
+                  as="li"
+                  key={p.id}
+                  name={`${p.familyName}, ${p.givenName}`}
+                  meta={p.suburb}
+                  value={<span className={styles.mono}>{p.umrn}</span>}
+                  href={`/mockups/ward-flow/people/${p.id}`}
+                />
+              ))}
+            </ul>
+            {recentRecords.length > 4 ? (
+              <Button variant="ghost" className={styles.phBtn} onClick={() => setPhoneSheet("recent")}>
+                Show all {recentRecords.length} recently added
+              </Button>
             ) : null}
-            <Button variant="ghost" size="sm" icon={Printer} onClick={() => setD4Notice(NOT_WIRED)}>
-              Print
-            </Button>
-            <Button size="sm" onClick={() => setD4Notice(NOT_WIRED)}>
-              Save draft
-            </Button>
-          </span>
-        </Card>
+            <p className={styles.phNote}>
+              <StatusGlyph tone="neutral" size={9} />
+              Synthetic prototype · invented records only
+            </p>
+          </div>
+        ) : null}
+        <PhoneSheet
+          open={phoneSheet !== null}
+          onClose={() => setPhoneSheet(null)}
+          title={phoneSheet === "recent" ? "Recently added" : "On a larger screen"}
+          description={
+            phoneSheet === "recent"
+              ? `${addedToday} today · ${patients.length} records in all`
+              : "Kept off the phone so the form stays short"
+          }
+          height={phoneSheet === "recent" ? "tall" : "content"}
+          secondary={{ label: "Done", onAction: () => setPhoneSheet(null) }}
+          data-testid="ward-add-patient-phone-sheet"
+        >
+          <ul className={styles.phList}>
+            {phoneSheet === "recent"
+              ? recentRecords.map((p) => (
+                  <PhoneListRow
+                    as="li"
+                    key={p.id}
+                    name={`${p.familyName}, ${p.givenName}`}
+                    value={<span className={styles.mono}>{p.umrn}</span>}
+                    href={`/mockups/ward-flow/people/${p.id}`}
+                  />
+                ))
+              : LARGER_SCREEN_ROWS.map(([name, meta]) => <PhoneListRow as="li" key={name} name={name} meta={meta} />)}
+          </ul>
+        </PhoneSheet>
+        {isPhone ? null : (
+          <Hero
+            level={1}
+            className={styles.apHero}
+            eyebrow="Patients · new record"
+            title="Add a patient"
+            titleMeta={
+              <span className={styles.draftPill} data-testid="ward-add-patient-draft-pill">
+                <StatusGlyph tone="neutral" size={9} />
+                Draft
+              </span>
+            }
+            aside={
+              <span className={styles.heroActions}>
+                {d4Notice ? (
+                  <span className={styles.d4Notice} role="status" data-testid="ward-add-patient-d4-notice">
+                    {d4Notice}
+                  </span>
+                ) : null}
+                <Link
+                  className={buttonClass({ variant: "onHero", size: "sm" })}
+                  href="/mockups/ward-flow/search"
+                  aria-label="Back to patient search"
+                >
+                  <Icon icon={ChevronLeft} size={14} />
+                  Patient search
+                </Link>
+                <Button
+                  variant="onHero"
+                  size="sm"
+                  icon={Printer}
+                  className={styles.desktopOnly}
+                  onClick={() => setD4Notice(NOT_WIRED)}
+                >
+                  Print
+                </Button>
+                <Button variant="light" size="sm" onClick={() => setD4Notice(NOT_WIRED)}>
+                  Save draft
+                </Button>
+              </span>
+            }
+            bar={
+              <div className={styles.heroBar}>
+                <p className={styles.heroLine}>
+                  <Icon icon={ShieldCheck} size={14} />
+                  Identity is saved to the record. Check for an existing record before adding. Synthetic records only.
+                </p>
+                <div className={styles.heroChips} data-testid="ward-add-patient-hero-chips">
+                  <span className={styles.heroChip}>
+                    <Frac
+                      done={answeredCount}
+                      total={REQUIRED_FIELDS.length}
+                      label="required fields"
+                      tone={answeredCount === REQUIRED_FIELDS.length ? "success" : undefined}
+                    />
+                    <span aria-hidden="true">required fields</span>
+                  </span>
+                  <span className={styles.heroChip}>
+                    <b>{matches.length}</b> possible {matches.length === 1 ? "duplicate" : "duplicates"}
+                  </span>
+                  <span className={styles.heroChip}>
+                    <b>{patients.length}</b> records checked
+                  </span>
+                  <span className={styles.heroChip} data-testid="ward-add-patient-added-today">
+                    <b>{addedToday}</b> added today
+                  </span>
+                </div>
+              </div>
+            }
+          />
+        )}
 
-        <div className={styles.layout}>
+        <div className={styles.layout} hidden={isPhone && !phoneForm}>
           <form className={styles.form} onSubmit={handleSubmit} data-testid="ward-add-patient-form">
             {carriedSearch && assignedSearch !== carriedSearch ? (
               <Card
@@ -490,7 +699,7 @@ export function AddPatientForm() {
                   />
                 </Field>
 
-                <div className={cx(styles.span2, styles.choiceField)}>
+                <div className={cx(styles.span2, styles.choiceField, styles.phHide)}>
                   <div className={styles.choiceLabelRow}>
                     <span className={styles.choiceLabel} id="apGenderL">
                       Gender
@@ -511,7 +720,7 @@ export function AddPatientForm() {
                   label="Aboriginal or Torres Strait Islander"
                   hint="not saved"
                   id="ward-add-patient-indigenous"
-                  className={styles.span2}
+                  className={cx(styles.span2, styles.phHide)}
                 >
                   <Select value={indigenousStatus} onChange={(e) => setIndigenousStatus(e.target.value)}>
                     {INDIGENOUS_STATUS_OPTIONS.map((opt) => (
@@ -522,10 +731,20 @@ export function AddPatientForm() {
                   </Select>
                 </Field>
 
-                <Field label="Address" hint="not saved" id="ward-add-patient-address" className={styles.span2}>
+                <Field
+                  label="Address"
+                  hint="not saved"
+                  id="ward-add-patient-address"
+                  className={cx(styles.span2, styles.phHide)}
+                >
                   <TextInput value={address} onChange={(e) => setAddress(e.target.value)} />
                 </Field>
-                <Field label="Suburb" hint="optional" id="ward-add-patient-suburb" className={styles.span2}>
+                <Field
+                  label="Suburb"
+                  hint="optional"
+                  id="ward-add-patient-suburb"
+                  className={cx(styles.span2, styles.phHide)}
+                >
                   <TextInput
                     data-testid="ward-add-patient-suburb"
                     value={suburb}
@@ -537,7 +756,7 @@ export function AddPatientForm() {
                   label="Presenting facility"
                   hint="not saved"
                   id="ward-add-patient-facility"
-                  className={styles.span2}
+                  className={cx(styles.span2, styles.phHide)}
                 >
                   <Select value={facility} onChange={(e) => setFacility(e.target.value)}>
                     {PRESENTING_FACILITIES.map((fac) => (
@@ -547,7 +766,12 @@ export function AddPatientForm() {
                     ))}
                   </Select>
                 </Field>
-                <Field label="Health service" hint="not saved" id="ward-add-patient-service" className={styles.span2}>
+                <Field
+                  label="Health service"
+                  hint="not saved"
+                  id="ward-add-patient-service"
+                  className={cx(styles.span2, styles.phHide)}
+                >
                   <Select value={healthService} onChange={(e) => setHealthService(e.target.value)}>
                     {HEALTH_SERVICES.map((svc) => (
                       <option key={svc.value} value={svc.value}>
@@ -559,7 +783,7 @@ export function AddPatientForm() {
               </CardBody>
             </Card>
 
-            <Card aria-labelledby="apIntakeH">
+            <Card aria-labelledby="apIntakeH" className={styles.phHide}>
               <CardHead
                 id="apIntakeH"
                 icon={Stethoscope}
@@ -770,7 +994,7 @@ export function AddPatientForm() {
               <CardFoot meta={`Duplicate check covers all ${patients.length} patient records.`} />
             </Card>
 
-            <Card>
+            <Card className={styles.phHide}>
               <CardHead title="After adding" level={2} action={<span className={styles.muted}>Once added</span>} />
               <CardBody className={styles.afterRow}>
                 <Button size="sm" icon={FileText} disabledReason="Add the patient first" reasonDisplay="tooltip">
@@ -782,7 +1006,7 @@ export function AddPatientForm() {
               </CardBody>
             </Card>
 
-            <Card>
+            <Card className={styles.phHide}>
               <CardHead
                 icon={History}
                 title="Recently added"
@@ -807,6 +1031,15 @@ export function AddPatientForm() {
                 </ul>
               </CardBody>
             </Card>
+            {isPhone ? (
+              <PhoneListRow
+                className={styles.phCard}
+                name="Address, facility and intake"
+                meta="On a larger screen · intake is not saved"
+                onSelect={() => setPhoneSheet("larger")}
+                value={<Icon icon={ChevronRight} size={16} />}
+              />
+            ) : null}
           </aside>
         </div>
 

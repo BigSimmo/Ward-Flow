@@ -316,7 +316,7 @@ export function MovementHorizonGantt({
           <div className={styles.ganttControlsBar}>
             <div className={styles.ganttScrubberWrap}>
               <label htmlFor={scrubberId} className={styles.ganttScrubLabel}>
-                Scrub
+                Slide
               </label>
               <button
                 type="button"

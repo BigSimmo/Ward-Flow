@@ -114,11 +114,9 @@
   0%,
   100% {
     transform: scale(1);
-    opacity: 1;
   }
   50% {
     transform: scale(1.2);
-    opacity: 0.75;
   }
 }
 
@@ -236,16 +234,36 @@
   color: var(--accent);
 }
 
-.metricToneGood {
-  color: var(--good);
-}
-
-.metricToneWarn {
-  color: var(--warn);
-}
-
+/* v10: words and figures stay neutral ink; a round glyph before the figure carries the tone. */
+.metricToneGood,
+.metricToneWarn,
 .metricToneDanger {
-  color: var(--danger, var(--ward-danger));
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text);
+}
+
+.metricToneGood::before,
+.metricToneWarn::before,
+.metricToneDanger::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: var(--pill, 9999px);
+  flex-shrink: 0;
+}
+
+.metricToneGood::before {
+  background: var(--good);
+}
+
+.metricToneWarn::before {
+  background: var(--warn);
+}
+
+.metricToneDanger::before {
+  background: var(--danger, var(--ward-danger));
 }
 
 .metricToneMuted {

@@ -215,7 +215,14 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
       document.body.appendChild(anchor);
       anchor.click();
     }, UNIT_ID);
-    await page.locator(`#ward-board-tile-${release.admissionId}`).click();
+    // The board settles its layout just after it first paints, which can drop a click made in
+    // that moment; choose the tile until the board shows it chosen.
+    await expect(page.getByTestId("ward-board")).toBeVisible({ timeout: 15_000 });
+    const tile = page.locator(`#ward-board-tile-${release.admissionId}`);
+    await expect(async () => {
+      await tile.click();
+      await expect(tile).toHaveAttribute("aria-pressed", "true", { timeout: 1_000 });
+    }).toPass({ timeout: 15_000 });
     await page.getByTestId("ward-board-record-leaving-submit").click();
     const departureDialog = page.getByRole("dialog", { name: "Confirm patient departure" });
     await expect(departureDialog).toBeVisible();
@@ -374,7 +381,7 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.getByRole("button", { name: /Record that they have left/ }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
       await page.locator('[data-testid="ward-rail-link"][href="/mockups/ward-flow/discharges"]').click();
-      await page.getByRole("button", { name: /Admission records/ }).click();
+      await page.getByTestId("ward-discharge-history").click();
       await page.locator("#discharges-filter-destination").selectOption(destination.id);
       await page.getByRole("button", { name, exact: true }).click();
       const detail = page.getByRole("region", { name: "Selected discharge details" });
@@ -392,11 +399,9 @@ test.describe("@mockup WA disposition pathways", () => {
     });
   }
 
-  test("Plan departure leads to the chosen ward's Decisions tab", async ({ page }) => {
-    await page.goto("/mockups/ward-flow/discharges");
-    await page.getByTestId("ward-discharge-plan-departure").click();
-    await page.getByRole("combobox", { name: "Ward for departure planning" }).selectOption(release.unitId);
-    await page.getByRole("link", { name: "Open ward departure planning" }).click();
+  // v10: Plan departure left the hero; departure planning stays on the ward's Decisions tab.
+  test("the ward's Decisions tab still holds departure planning", async ({ page }) => {
+    await page.goto(`/mockups/ward-flow/ward/${encodeURIComponent(release.unitId)}?tab=departure-planning`);
     await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("heading", { name: "Staffing", exact: true })).toBeVisible();
   });
@@ -408,7 +413,7 @@ test.describe("@mockup complete care dossier", () => {
     const a = seed.admissions.find((a) => a.state === "occupied" && a.expectedDischargeAt !== null && a.patientId)!;
     const p = seed.patients.find((p) => p.id === a.patientId)!;
     await page.goto("/mockups/ward-flow/discharges");
-    await page.getByRole("button", { name: /Admission records/ }).click();
+    await page.getByTestId("ward-discharge-history").click();
     await page.getByRole("button", { name: `${p.familyName}, ${p.givenName}`, exact: true }).click();
     const detail = page.getByRole("region", { name: "Selected discharge details" });
     await detail.getByRole("tab", { name: "Dossier", exact: true }).click();

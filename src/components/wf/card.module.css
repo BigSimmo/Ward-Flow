@@ -124,3 +124,9 @@
     border-color: CanvasText;
   }
 }
+
+/* CardHead `iconPlain`: the line icon alone, ink-3, no tile. */
+.plainIcon {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+}

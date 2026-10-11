@@ -77,14 +77,12 @@
 }
 
 .corridor[data-kind="accepted"] {
-  stroke: var(--accent);
-  opacity: 0.66;
+  stroke: color-mix(in srgb, var(--accent) 66%, transparent);
 }
 
 .corridor[data-kind="refused"] {
-  stroke: var(--warn);
+  stroke: color-mix(in srgb, var(--warn) 72%, transparent);
   stroke-dasharray: 4 6;
-  opacity: 0.72;
 }
 
 /* Dark mode elevations: ensure accepted paths (--accent) and declined paths (--warn)
@@ -92,34 +90,33 @@
  * At opacity 0.85, --accent achieves 7.27:1 and --warn achieves 7.82:1 against dark ground.
  */
 :global([data-theme="dark"]) .corridor[data-kind="accepted"] {
-  stroke: var(--accent);
-  opacity: 0.85;
+  stroke: color-mix(in srgb, var(--accent) 85%, transparent);
 }
 
 :global([data-theme="dark"]) .corridor[data-kind="refused"] {
-  stroke: var(--warn);
-  opacity: 0.85;
+  stroke: color-mix(in srgb, var(--warn) 85%, transparent);
 }
 
 /* Hover isolation styling: active paths highlighted, inactive paths dimmed to 0.2 */
 .corridor.corridorActive,
 .corridor[data-active="true"] {
-  opacity: 1;
+  stroke: var(--accent);
 }
 
 :global([data-theme="dark"]) .corridor.corridorActive,
 :global([data-theme="dark"]) .corridor[data-active="true"] {
-  opacity: 1;
+  stroke: var(--accent);
 }
 
+/* Dim by colour (v10), never opacity. */
 .corridor.corridorDimmed,
 .corridor[data-dimmed="true"] {
-  opacity: 0.2;
+  stroke: var(--wf-glyph-dim);
 }
 
 :global([data-theme="dark"]) .corridor.corridorDimmed,
 :global([data-theme="dark"]) .corridor[data-dimmed="true"] {
-  opacity: 0.2;
+  stroke: var(--wf-glyph-dim);
 }
 
 .endpointNode {
@@ -151,7 +148,13 @@
 
 .endpointNode.endpointDimmed,
 .endpointNode[data-dimmed="true"] {
-  opacity: 0.6;
+  border-color: var(--wf-line);
+  color: var(--wf-dim);
+}
+
+.endpointNode.endpointDimmed *,
+.endpointNode[data-dimmed="true"] * {
+  color: var(--wf-dim);
 }
 
 .railItemActive {

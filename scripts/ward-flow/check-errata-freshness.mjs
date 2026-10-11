@@ -94,9 +94,12 @@ const CLAIMS = [
     //
     // 2026-10-06: nineteen. The capacity review pass adds tests/ward-capacity-review.dom.test.tsx.
     // Same rule: the count must match and the named file must be the reason.
+    //
+    // 2026-10-10: twenty. The v10 Capacity build adds tests/ward-capacity-table-view.dom.test.tsx
+    // for the Table view (Capacity keeps Grid, Rows and Table). Same rule again.
     claim:
-      "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; nineteen now for unrelated " +
-      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01, capacity review on 2026-10-06), which does not make the plan's figure right",
+      "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; twenty now for unrelated " +
+      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01, capacity review on 2026-10-06, v10 Capacity table view on 2026-10-10), which does not make the plan's figure right",
     check: () => {
       const n = existsSync(p("tests"))
         ? readdirSync(p("tests")).filter((f) => f.startsWith("ward-capacity")).length
@@ -106,10 +109,11 @@ const CLAIMS = [
       const serviceScope = existsSync(p("tests/ward-capacity-service-scope.dom.test.tsx"));
       const capacityForm = existsSync(p("tests/ward-capacity.dom.test.tsx"));
       const review = existsSync(p("tests/ward-capacity-review.dom.test.tsx"));
+      const tableView = existsSync(p("tests/ward-capacity-table-view.dom.test.tsx"));
       // Every half, so this cannot pass by a DIFFERENT file arriving or a named one being renamed.
       return {
-        ok: n === 19 && absorbed && controls && serviceScope && capacityForm && review,
-        saw: `${n} files, D9 addition ${absorbed ? "present" : "ABSENT"}, WF-27 addition ${controls ? "present" : "ABSENT"}, C1 addition ${serviceScope ? "present" : "ABSENT"}, capacity-confirmation form addition ${capacityForm ? "present" : "ABSENT"}, review addition ${review ? "present" : "ABSENT"}`,
+        ok: n === 20 && absorbed && controls && serviceScope && capacityForm && review && tableView,
+        saw: `${n} files, D9 addition ${absorbed ? "present" : "ABSENT"}, WF-27 addition ${controls ? "present" : "ABSENT"}, C1 addition ${serviceScope ? "present" : "ABSENT"}, capacity-confirmation form addition ${capacityForm ? "present" : "ABSENT"}, review addition ${review ? "present" : "ABSENT"}, table-view addition ${tableView ? "present" : "ABSENT"}`,
       };
     },
   },

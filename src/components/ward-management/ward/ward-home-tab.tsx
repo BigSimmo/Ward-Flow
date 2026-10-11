@@ -1,6 +1,6 @@
 "use client";
 
-import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { bedsPendingPreparation, releaseBand } from "@/components/ward-management/ward-bed-availability";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -36,9 +36,9 @@ import {
   Segmented,
   SrOnly,
   StatusGlyph,
+  useIsPhone,
   type WfTone,
 } from "@/components/wf";
-import { dayOf } from "@/components/ward-management/ward-clock";
 import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 
@@ -154,6 +154,11 @@ interface WardHomeTabProps {
   onOpenBeds?: () => void;
   /** Lets the screen return focus to a bed's tile when its drawer closes. */
   registerBedTrigger?: (bedNumber: number, element: HTMLButtonElement | null) => void;
+  /**
+   * Bed board tab (v10 pass 3): replaces Every bed and This shift with the board, so Ward flow
+   * stays beside it in the rail exactly as on Home.
+   */
+  bedArea?: React.ReactNode;
 }
 
 export function WardHomeTab({
@@ -200,6 +205,7 @@ export function WardHomeTab({
   onOpenArrivals,
   onOpenBeds,
   registerBedTrigger,
+  bedArea,
 }: WardHomeTabProps) {
   const { bedReleases, leaveBeds = [] } = useWardFlow();
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
@@ -229,6 +235,8 @@ export function WardHomeTab({
   const shiftView = shiftViewProp ?? innerShiftView;
   const setShiftView = onShiftViewChange ?? setInnerShiftView;
   const [boardView, setBoardView] = useState<"board" | "list">("board");
+  const isPhone = useIsPhone();
+  const [showSettled, setShowSettled] = useState(false);
 
   function focusAwaiting() {
     setFlowTab("referrals");
@@ -363,7 +371,9 @@ export function WardHomeTab({
             : "On leave"
           : bed.status === "incoming"
             ? "Pulled"
-            : "Occupied";
+            : bed.status === "closed"
+              ? "Closed"
+              : "Occupied";
     const days = typeof bed.stayDays === "number" ? `${bed.stayDays}d` : "";
     const note = awayAtEd
       ? `Away at an ED ${bed.awayAtEdHours}h`
@@ -400,7 +410,9 @@ export function WardHomeTab({
   const [innerBedFilter, setInnerBedFilter] = useState<WardBedFilter>("all");
   const bedFilter = bedFilterProp ?? innerBedFilter;
   const setBedFilter = onBedFilterChange ?? setInnerBedFilter;
-  const shownBeds = bedRows.filter((row) => {
+  // v10: a filter or a search highlights the beds it matches and dims the rest by colour. No bed
+  // is ever hidden, so the board keeps its shape and every tile stays focusable.
+  const matchesFilter = (row: (typeof bedRows)[number]) => {
     switch (bedFilter) {
       case "look":
         return row.look;
@@ -409,14 +421,14 @@ export function WardHomeTab({
       case "free":
         return row.free;
       case "occupied":
-        // Every bed that is not ready, as the Occupied figure counts every bed that is not empty.
-        return !row.free;
+        // The ruled Occupied state, as the hero and the bed figures count it (leave holds inside).
+        return row.bed.status === "occupied" || row.bed.status === "leave";
       case "shift-end":
         return row.readyByShiftEnd;
       default:
         return true;
     }
-  });
+  };
   const query = bedQuery.trim().toLowerCase();
   const matchesQuery = (row: (typeof bedRows)[number]) =>
     query === "" ||
@@ -425,11 +437,40 @@ export function WardHomeTab({
     String(row.bed.patientAlias ?? "")
       .toLowerCase()
       .includes(query);
+  const highlighting = bedFilter !== "all" || query !== "";
+  const isLit = (row: (typeof bedRows)[number]) => matchesFilter(row) && matchesQuery(row);
+  const litCount = bedRows.filter(isLit).length;
+  const shownBeds = bedRows;
+  // One partition, the ruled four bed states, so this key, the hero and the bed figures agree.
   const bedTally = {
     occupied: bedRows.filter((row) => row.bed.status === "occupied" || row.bed.status === "leave").length,
     free: bedRows.filter((row) => row.free).length,
     pulled: bedRows.filter((row) => row.bed.status === "incoming").length,
+    closed: bedRows.filter((row) => row.bed.status === "closed").length,
   };
+  // Phone (v10 build guide): every bed grouped by state, worst first. Settled beds sit behind Show
+  // all. Each bed appears once, in the first group it belongs to. Filters still highlight and dim.
+  const phoneGroups = (() => {
+    const used = new Set<number | string>();
+    const take = (test: (row: (typeof bedRows)[number]) => boolean) =>
+      bedRows.filter((row) => {
+        if (used.has(row.bed.bedNumber) || !test(row)) return false;
+        used.add(row.bed.bedNumber);
+        return true;
+      });
+    const groups: { id: string; title: string; tone: WfTone | null; rows: typeof bedRows }[] = [
+      { id: "act", title: "Act now", tone: "danger", rows: take((row) => row.glyph === "danger") },
+      { id: "risk", title: "At risk", tone: "warning", rows: take((row) => row.glyph === "warning") },
+      { id: "leaving", title: "Leaving today", tone: "info", rows: take((row) => row.leaving) },
+      { id: "free", title: "Free", tone: "success", rows: take((row) => row.free) },
+      { id: "pulled", title: "Pulled", tone: "info", rows: take((row) => row.bed.status === "incoming") },
+      { id: "leave", title: "On leave", tone: "neutral", rows: take((row) => row.bed.status === "leave") },
+      { id: "settled", title: "Settled", tone: null, rows: take((row) => row.bed.status === "occupied") },
+      { id: "closed", title: "Closed", tone: "closed", rows: take(() => true) },
+    ];
+    return groups.filter((group) => group.rows.length > 0);
+  })();
+
   const bedByAdmission = (admissionId: string | undefined) =>
     admissionId === undefined ? undefined : (bedsList ?? []).find((item) => item.admissionId === admissionId);
 
@@ -477,7 +518,9 @@ export function WardHomeTab({
     .sort((left, right) => left.expectedAt - right.expectedAt)
     .map((release) => {
       const bed = bedByAdmission(release.admissionId);
-      const group = release.blocker ? "held" : dayOf(release.expectedAt) <= dayOf(now) ? "today" : "later";
+      // The same day bands the bed figures count (`releaseBand`), so "Today and tomorrow" here
+      // holds the unblocked share of Confirmed and Expected there.
+      const group = release.blocker ? "held" : releaseBand(release, now) !== "beyond-today" ? "today" : "later";
       const tone: WfTone = release.blocker ? "danger" : release.state === "confirmed" ? "success" : "neutral";
       return {
         key: release.id,
@@ -592,7 +635,8 @@ export function WardHomeTab({
     laterToday.push({
       key: "departures",
       title: "Discharges to sign off",
-      detail: `${pendingBedReleases.length} expected out · ${confirmedOut} confirmed`,
+      // Same population as the Discharges tab: every open release, held up ones counted apart.
+      detail: `${pendingBedReleases.length} open · ${heldUp.length} held up`,
       meta: String(signOff),
       tone: "neutral",
       action: { label: "Open", run: () => onOpenDecisions?.() },
@@ -726,8 +770,10 @@ export function WardHomeTab({
     <div className={styles.homeWrap}>
       <span className="sr-only">{pendingPreparation} being made ready</span>
 
-      <div className={styles.homeTop}>
+      <div className={styles.homeTop} data-board={bedArea ? "true" : undefined}>
+        {bedArea ? <div className={styles.boardArea}>{bedArea}</div> : null}
         <Card
+          hidden={bedArea ? true : undefined}
           className={`${styles.areaBeds} ${styles.v6Card}`}
           id="bed-capacity"
           tabIndex={-1}
@@ -749,9 +795,15 @@ export function WardHomeTab({
                     // The hero's Occupied and Ready by pills set filters this group does not list,
                     // so the active one joins it while on and a radio is always checked.
                     ...(bedFilter === "occupied"
-                      ? [{ id: "occupied" as const, label: "Occupied", count: shownBeds.length }]
+                      ? [{ id: "occupied" as const, label: "Occupied", count: bedTally.occupied }]
                       : bedFilter === "shift-end"
-                        ? [{ id: "shift-end" as const, label: "Ready by shift end", count: shownBeds.length }]
+                        ? [
+                            {
+                              id: "shift-end" as const,
+                              label: "Ready by shift end",
+                              count: bedRows.filter((row) => row.readyByShiftEnd).length,
+                            },
+                          ]
                         : []),
                   ]}
                   value={bedFilter}
@@ -784,8 +836,95 @@ export function WardHomeTab({
               </span>
             }
           />
+          {highlighting && bedRows.length > 0 ? (
+            <p className={styles.highlightNote} data-testid="ward-bed-highlight-note">
+              <span>
+                <b>{litCount}</b> of <b>{bedRows.length}</b> beds highlighted. All beds stay on the board.
+              </span>
+              {litCount === 0 ? <span>No bed matches this choice.</span> : null}
+              {bedFilter === "all" ? null : (
+                <button
+                  type="button"
+                  className={styles.keyLink}
+                  onClick={() => {
+                    setBedFilter("all");
+                  }}
+                >
+                  Clear highlight
+                </button>
+              )}
+            </p>
+          ) : null}
           {bedRows.length === 0 ? (
             <p className={styles.v6Empty}>No beds are recorded for {unit.name}.</p>
+          ) : isPhone ? (
+            <div className={styles.phoneGroups} data-testid="ward-phone-bed-groups">
+              {phoneGroups.map((group) => {
+                const settledFolded = group.id === "settled" && !showSettled && !highlighting;
+                const rows = settledFolded ? group.rows.slice(0, 3) : group.rows;
+                return (
+                  <section key={group.id} aria-label={`${group.title}, ${group.rows.length}`}>
+                    <h3 className={styles.phoneGroupHead}>
+                      {group.tone ? <StatusGlyph tone={group.tone} size={9} /> : null}
+                      <span>{group.title}</span>
+                      <Count n={group.rows.length} />
+                    </h3>
+                    <ul className={styles.phoneRows}>
+                      {rows.map((row) => (
+                        <li key={row.bed.bedNumber}>
+                          <button
+                            type="button"
+                            className={styles.phoneRow}
+                            data-act={row.glyph === "danger" ? "true" : undefined}
+                            data-dim={isLit(row) ? undefined : "true"}
+                            aria-haspopup="dialog"
+                            aria-label={row.accessibleName}
+                            ref={(element) => registerBedTrigger?.(Number(row.bed.bedNumber), element)}
+                            onClick={() => {
+                              onSelectBed?.(Number(row.bed.bedNumber));
+                            }}
+                          >
+                            <span className={styles.phoneRowNo} aria-hidden="true">
+                              {row.number}
+                            </span>
+                            <span className={styles.phoneRowText} aria-hidden="true">
+                              <span className={styles.phoneRowName}>{row.name}</span>
+                              <span className={styles.phoneRowNote}>
+                                {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : null}
+                                <span>
+                                  {row.note === row.name
+                                    ? row.free
+                                      ? "Ready"
+                                      : row.bed.status === "closed"
+                                        ? "Not offered"
+                                        : row.stateWord
+                                    : row.note}
+                                </span>
+                              </span>
+                            </span>
+                            <span className={styles.phoneRowDays} aria-hidden="true">
+                              {row.days || (row.free ? "Free" : "")}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    {settledFolded && group.rows.length > rows.length ? (
+                      <button
+                        type="button"
+                        className={styles.phoneMore}
+                        aria-expanded="false"
+                        onClick={() => {
+                          setShowSettled(true);
+                        }}
+                      >
+                        Show all {group.rows.length} settled beds
+                      </button>
+                    ) : null}
+                  </section>
+                );
+              })}
+            </div>
           ) : boardView === "board" ? (
             <ul className={styles.bedTiles} aria-label={`Beds at ${unit.name}`}>
               {shownBeds.map((row) => (
@@ -796,7 +935,9 @@ export function WardHomeTab({
                     className={styles.bedTile}
                     data-status={String(row.bed.status)}
                     data-look={row.look ? "true" : undefined}
-                    data-miss={matchesQuery(row) ? undefined : "true"}
+                    data-act={row.glyph === "danger" ? "true" : undefined}
+                    data-lit={highlighting && isLit(row) ? "true" : undefined}
+                    data-dim={isLit(row) ? undefined : "true"}
                     aria-haspopup="dialog"
                     aria-label={row.accessibleName}
                     onClick={() => {
@@ -819,7 +960,6 @@ export function WardHomeTab({
                   </button>
                 </li>
               ))}
-              {shownBeds.length === 0 ? <li className={styles.v6Empty}>No bed matches this choice.</li> : null}
             </ul>
           ) : (
             <div className={styles.bedTableWrap}>
@@ -835,8 +975,12 @@ export function WardHomeTab({
                   </tr>
                 </thead>
                 <tbody>
-                  {shownBeds.filter(matchesQuery).map((row) => (
-                    <tr key={row.bed.bedNumber} data-look={row.look ? "true" : undefined}>
+                  {shownBeds.map((row) => (
+                    <tr
+                      key={row.bed.bedNumber}
+                      data-look={row.look ? "true" : undefined}
+                      data-dim={isLit(row) ? undefined : "true"}
+                    >
                       <td>
                         <button
                           type="button"
@@ -861,7 +1005,10 @@ export function WardHomeTab({
                           </span>
                         ) : null}
                       </td>
-                      <td className={styles.bedTableMono}>{row.days || "Not recorded"}</td>
+                      {/* A stay belongs to someone in the bed: none for a free, closed or pulled bed. */}
+                      <td className={styles.bedTableMono}>
+                        {row.bed.status === "occupied" || row.bed.status === "leave" ? row.days || "Not recorded" : ""}
+                      </td>
                       <td>{row.bed.legalStatusLabel ?? "Not recorded"}</td>
                       <td>{row.free ? "" : (row.bed.expectedDischargeLabel ?? "Not recorded")}</td>
                       <td className={styles.bedTableNow}>{row.note}</td>
@@ -869,9 +1016,6 @@ export function WardHomeTab({
                   ))}
                 </tbody>
               </table>
-              {shownBeds.filter(matchesQuery).length === 0 ? (
-                <p className={styles.v6Empty}>No bed matches this choice.</p>
-              ) : null}
             </div>
           )}
           <div className={styles.bedKey}>
@@ -898,7 +1042,7 @@ export function WardHomeTab({
               </span>
             </span>
             <span className={styles.keyTally}>
-              {bedTally.occupied} occupied · {bedTally.free} free · {bedTally.pulled} pulled
+              {bedTally.free} ready · {bedTally.pulled} pulled · {bedTally.closed} closed · {bedTally.occupied} occupied
             </span>
             {onOpenBeds ? (
               <button type="button" className={styles.keyLink} onClick={onOpenBeds}>
@@ -1170,7 +1314,7 @@ export function WardHomeTab({
                   (
                     [
                       ["held", "Held up", "danger", heldRows],
-                      ["today", "Today", "info", todayRows],
+                      ["today", "Today and tomorrow", "info", todayRows],
                       ["later", "Later", "neutral", laterRows],
                     ] as const
                   )
@@ -1242,7 +1386,12 @@ export function WardHomeTab({
         </div>
       </div>
 
-      <Card className={`${styles.shiftCard} ${styles.v6Card}`} id="ward-this-shift" aria-labelledby="ward-home-shift">
+      <Card
+        hidden={bedArea ? true : undefined}
+        className={`${styles.shiftCard} ${styles.v6Card}`}
+        id="ward-this-shift"
+        aria-labelledby="ward-home-shift"
+      >
         <CardHead
           id="ward-home-shift"
           icon={ListChecks}

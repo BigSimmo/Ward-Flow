@@ -49,6 +49,7 @@ import {
   type PhonePushState,
 } from "@/components/ward-management/shell/ward-phone-push";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { useWardShared } from "@/components/ward-management/ward-shared-access";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 
@@ -115,9 +116,11 @@ describe("phone alerts row", () => {
 
   it("the local demonstration shows the row disabled with the shared-workspace reason", () => {
     render(
-      <WardFlowProvider>
-        <SettingsScreen />
-      </WardFlowProvider>,
+      <ToastProvider>
+        <WardFlowProvider>
+          <SettingsScreen />
+        </WardFlowProvider>
+      </ToastProvider>,
     );
     fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
     const row = screen.getByTestId("setting-phone-alerts-row");

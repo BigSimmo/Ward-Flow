@@ -41,7 +41,7 @@ it("populates the existing clock time when editing tomorrow's departure", () => 
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByRole("button", { name: "Set tomorrow" }));
-  fireEvent.click(screen.getByRole("button", { name: /Admission records/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^History/ }));
   const row = within(screen.getByRole("region", { name: "Discharge worklist" }))
     .getByText(screen.getByTestId("target-umrn").textContent!)
     .closest("tr")!;

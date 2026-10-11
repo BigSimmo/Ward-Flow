@@ -55,6 +55,8 @@ export type BarListRow = {
   fill?: WfFill;
   /** Glyph before the value when it crosses a threshold. */
   flag?: WfTone;
+  /** With `onPick`, the test id of this row's button. */
+  testId?: string;
 };
 
 export type BarListProps = {
@@ -73,6 +75,13 @@ export type BarListProps = {
   /** Width of the label column, a CSS grid track size. */
   labelWidth?: string;
   className?: string;
+  /**
+   * Makes each row a button that highlights it (a filter that highlights and dims, never hides).
+   * The rows then form a group named by `label`, each button read as "Label: value".
+   */
+  onPick?: (id: string) => void;
+  /** With `onPick`, the highlighted row (`aria-pressed`); the others dim by colour. */
+  picked?: string | null;
 };
 
 /** Horizontal labelled bars with direct values, rounded ends and an optional dashed mean. */
@@ -86,6 +95,8 @@ export function BarList({
   label,
   labelWidth,
   className,
+  onPick,
+  picked = null,
 }: BarListProps) {
   const ticks = axis ? niceTicks(maxProp ?? Math.max(1, ...rows.map((r) => r.value)), 4, maxProp) : [];
   const max = maxProp ?? (axis ? ticks[ticks.length - 1]! : Math.max(1, ...rows.map((r) => r.value)));
@@ -95,9 +106,18 @@ export function BarList({
 
   return (
     <figure className={cx(styles.chart, className)} style={{ margin: 0 }}>
-      <div className={styles.barGrid} style={style} aria-hidden="true">
+      <div
+        className={styles.barGrid}
+        style={style}
+        {...(onPick ? { role: "group", "aria-label": label } : { "aria-hidden": true })}
+      >
         {showTop ? (
-          <div className={styles.axisRow} style={{ gridRow: 1 }}>
+          <div
+            aria-hidden="true"
+            className={styles.axisRow}
+            style={{ gridRow: 1 }}
+            data-two-lines={ticks.length > 0 && mean != null ? "true" : undefined}
+          >
             {ticks.map((t) => (
               <span key={t} className={styles.tickLabel} style={{ left: `${pct(t, max)}%` }}>
                 {t}
@@ -110,7 +130,11 @@ export function BarList({
             ) : null}
           </div>
         ) : null}
-        <div className={styles.overlay} style={{ gridRow: `${firstRow} / ${firstRow + rows.length}` }}>
+        <div
+          aria-hidden="true"
+          className={styles.overlay}
+          style={{ gridRow: `${firstRow} / ${firstRow + rows.length}` }}
+        >
           {/* Zero is the bars' own baseline, so at most four faint gridlines are drawn. */}
           {ticks
             .filter((t) => t > 0)
@@ -121,22 +145,55 @@ export function BarList({
         </div>
         {rows.map((row, index) => {
           const gridRow = firstRow + index;
+          // A pick highlights one row and dims the rest by colour (v10 dim rule); nothing is hidden.
+          const dim = onPick && picked != null && picked !== row.id ? "true" : undefined;
+          const text = row.labelText ?? (typeof row.label === "string" ? row.label : row.id);
           return (
             <div key={row.id} style={{ display: "contents" }}>
-              <span className={styles.barLabel} style={{ gridRow }}>
+              {onPick ? (
+                <button
+                  type="button"
+                  className={styles.barPick}
+                  style={{ gridRow }}
+                  aria-pressed={picked === row.id}
+                  aria-label={`${text}: ${row.value}`}
+                  onClick={() => onPick(row.id)}
+                  data-testid={row.testId}
+                  data-dim={dim}
+                />
+              ) : null}
+              <span
+                className={styles.barLabel}
+                style={{ gridRow }}
+                data-dim={dim}
+                aria-hidden={onPick ? true : undefined}
+              >
                 <span>{row.label}</span>
                 {row.sub ? <span className={styles.barSub}>{row.sub}</span> : null}
               </span>
-              <span className={styles.barCell} style={{ gridRow }}>
+              <span
+                className={styles.barCell}
+                style={{ gridRow }}
+                data-dim={dim}
+                aria-hidden={onPick ? true : undefined}
+              >
                 {track ? <span className={styles.barTrack} /> : null}
                 {row.value > 0 ? (
                   <span
                     className={styles.bar}
-                    style={{ width: `${pct(row.value, max)}%`, background: fillVar(row.fill) }}
+                    style={{
+                      width: `${pct(row.value, max)}%`,
+                      background: dim ? "var(--wf-glyph-dim)" : fillVar(row.fill),
+                    }}
                   />
                 ) : null}
               </span>
-              <span className={cx(styles.barValue, row.value === 0 && styles.none)} style={{ gridRow }}>
+              <span
+                className={cx(styles.barValue, row.value === 0 && styles.none)}
+                style={{ gridRow }}
+                data-dim={dim}
+                aria-hidden={onPick ? true : undefined}
+              >
                 {row.flag ? <StatusGlyph tone={row.flag} size={9} /> : null}
                 {row.display ?? (row.value === 0 ? "none" : row.value)}
               </span>
@@ -149,11 +206,14 @@ export function BarList({
       </figcaption>
       <SrOnly>
         <ul>
-          {rows.map((row) => (
-            <li key={row.id}>
-              {row.labelText ?? (typeof row.label === "string" ? row.label : row.id)}: {row.value}
-            </li>
-          ))}
+          {/* With `onPick` each row is already a named button, so the list keeps only the mean. */}
+          {onPick
+            ? null
+            : rows.map((row) => (
+                <li key={row.id}>
+                  {row.labelText ?? (typeof row.label === "string" ? row.label : row.id)}: {row.value}
+                </li>
+              ))}
           {mean != null ? (
             <li>
               {meanLabel}: {Number(mean.toFixed(1))}

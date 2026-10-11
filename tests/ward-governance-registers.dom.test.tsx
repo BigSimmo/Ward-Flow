@@ -169,3 +169,32 @@ describe("the override and decision registers hold only what this session record
     expect(document.body.textContent).not.toContain("no adverse patient safety events");
   });
 });
+
+describe("Governance v10 pass (10 Oct 2026)", () => {
+  it("reads Gaps by site as a real table with a Frac pill in each applicable cell", () => {
+    const seed = seedWardFlowState();
+    render(
+      <WardFlowProvider initialNow={NOW}>
+        <GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: /^Gaps by site/ }));
+    const table = within(screen.getByRole("region", { name: "Gaps by site" })).getByRole("table");
+    const fracs = within(table).getAllByTestId("wf-frac");
+    expect(fracs.length).toBeGreaterThan(0);
+    for (const frac of fracs) expect(frac.textContent).toMatch(/^\d+\/\d+\d+ of \d+ .+ recorded$/);
+  });
+
+  it("keeps the restrictive practice registers as Preview cards named by record, not a bare form code", () => {
+    const seed = seedWardFlowState();
+    render(
+      <WardFlowProvider initialNow={NOW}>
+        <GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: /^Registers/ }));
+    expect(screen.getByRole("region", { name: "Seclusion register" })).toHaveTextContent("Preview");
+    expect(screen.getByRole("region", { name: "Bodily restraint register" })).toHaveTextContent("Preview");
+    expect(document.body.textContent).not.toMatch(/Form 1[01]\b/);
+  });
+});

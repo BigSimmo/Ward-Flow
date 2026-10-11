@@ -279,7 +279,7 @@
 .hospitalHead {
   padding: 0 var(--wf-s-2) var(--wf-s-1);
   border-bottom: 1px solid var(--wf-line);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -364,7 +364,7 @@
 }
 
 .hospitalName small {
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 

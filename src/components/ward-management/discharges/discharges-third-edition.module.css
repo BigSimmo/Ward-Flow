@@ -146,7 +146,7 @@
   padding: 1px 5px;
   border-radius: var(--wf-r-xs);
   background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
 }
 
 .populationSwitch button[aria-pressed="true"] .popCount {
@@ -463,7 +463,7 @@
   border-radius: var(--wf-r-xs);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   text-align: center;
   letter-spacing: 0;
   text-transform: none;
@@ -499,7 +499,7 @@
 .workTable thead th {
   background: var(--wf-surface-2);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   border-bottom-color: var(--wf-line);
@@ -639,7 +639,7 @@
   gap: 6px;
   margin: 0;
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -874,7 +874,7 @@
 
 .tabBadgeAlert {
   color: var(--wf-danger-ink);
-  font: 700 var(--wf-fs-11) / 1 var(--wf-font);
+  font: 700 var(--wf-fs-12) / 1 var(--wf-font);
 }
 
 .tabPane {
@@ -900,7 +900,7 @@
   gap: 6px;
   margin: 0;
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -1300,7 +1300,7 @@
     content: attr(data-label);
     display: block;
     color: var(--wf-ink-3);
-    font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -1411,7 +1411,7 @@
     position: absolute;
     top: var(--wf-s-3);
     right: var(--wf-s-4);
-    line-height: var(--wf-lh-11);
+    line-height: var(--wf-lh-12);
   }
 
   .kpiStrip {
@@ -1438,7 +1438,7 @@
   .kpiLabel {
     min-width: 0;
     max-width: 100%;
-    font-size: var(--wf-fs-11);
+    font-size: var(--wf-fs-12);
   }
 
   .kpiLabel > span:last-child {
@@ -1606,4 +1606,163 @@
   .statusFilters button {
     font-size: var(--wf-fs-12);
   }
+}
+
+/* ── v10 Discharges ─────────────────────────────────────────────────────────────────────────
+ * Hero chips are pills in one row that highlight (never filter). Highlighted rows keep an accent
+ * edge with no tint; the rest dim through data-dim. Blocked rows take the thin red full edge only.
+ * Words stay neutral; glyphs carry tone. */
+.kpiStrip {
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+  overflow: hidden;
+}
+
+.kpi {
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--wf-s-1);
+  height: var(--wf-h-sm, 28px);
+  padding: 0 var(--wf-s-3) 0 var(--wf-s-1);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+}
+
+.kpi:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+}
+
+.kpi[aria-pressed="true"] {
+  border-color: var(--wf-hero-ink);
+  background: var(--wf-hero-ink);
+  color: var(--wf-hero-2);
+}
+
+.kpi[aria-pressed="true"] .kpiLabel {
+  color: var(--wf-hero-2);
+}
+
+.kpi .kpiValue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 var(--wf-s-1);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  font: 600 var(--wf-fs-15) / 1 var(--wf-mono);
+  letter-spacing: 0;
+}
+
+.kpi[aria-pressed="true"] .kpiValue {
+  background: var(--wf-hero-2);
+  color: var(--wf-hero-ink);
+  text-decoration: none;
+}
+
+.kpi .kpiLabel {
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+}
+
+.bedDaysPast {
+  color: var(--wf-hero-ink-2);
+}
+
+.bedDaysPast strong {
+  color: var(--wf-hero-ink);
+}
+
+.workTable tr[data-highlighted="true"] td {
+  background: none;
+}
+
+.workTable tr[data-dim="true"] {
+  --wf-ink-1: var(--wf-dim);
+  --wf-ink-2: var(--wf-dim);
+  --wf-ink-3: var(--wf-dim);
+}
+
+.workTable tr[data-act="true"] {
+  outline: 1px solid var(--wf-act-edge);
+  outline-offset: -1px;
+}
+
+.tabBadgeAlert {
+  color: var(--wf-ink-1);
+}
+
+@media screen and (max-width: 48rem) {
+  .desktopOnly {
+    display: none;
+  }
+
+  .kpiStrip {
+    gap: 0;
+  }
+
+  .kpi {
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    height: auto;
+    padding: 0 0 0 var(--wf-s-3);
+    border: 0;
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    border-radius: 0;
+    background: none;
+  }
+
+  .kpi[aria-pressed="true"] {
+    background: none;
+    color: var(--wf-hero-ink);
+  }
+
+  .kpi[aria-pressed="true"] .kpiLabel {
+    color: var(--wf-hero-ink);
+  }
+
+  .kpi .kpiValue,
+  .kpi[aria-pressed="true"] .kpiValue {
+    justify-content: flex-start;
+    min-width: 0;
+    padding: 0;
+    background: none;
+    color: var(--wf-hero-ink);
+  }
+
+  .kpi[aria-pressed="true"] .kpiValue {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .kpi .kpiLabel {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: var(--wf-fs-12);
+  }
+
+  .populationSwitch {
+    display: flex;
+    width: 100%;
+  }
+
+  .populationSwitch button {
+    flex: 1 1 0;
+    justify-content: center;
+    height: var(--wf-touch, 44px);
+    padding: 0 var(--wf-s-4);
+  }
+}
+
+/* v10 phone: the two charts as cards that open sheets. */
+.phChartCards {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
 }

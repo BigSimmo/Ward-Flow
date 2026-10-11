@@ -195,6 +195,11 @@ type ReferralMatchViewProps = {
   rejections: Rejection[];
   patientInfo?: { displayName: string; umrn: string };
   hideDossierHeader?: boolean;
+  /**
+   * v10: called straight after an Accept or Decline is dispatched, with the toast title. The board
+   * checks the reducer took it and offers Undo (`useReferralDecisionUndo`).
+   */
+  onDecision?: (title: string) => void;
 };
 
 /**
@@ -348,6 +353,7 @@ export function ReferralMatchView({
   rejections,
   patientInfo,
   hideDossierHeader = false,
+  onDecision,
 }: ReferralMatchViewProps) {
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
@@ -548,16 +554,19 @@ export function ReferralMatchView({
   if (!ward) {
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">
-        <div className={styles.presentationNoticeCard}>
-          <div className={styles.presentationNoticeHeader}>
-            <span className={styles.presentationBadge}>Direct Presentation · Non-Inpatient</span>
-            <span className={styles.presentationMeta}>Triage &amp; Departmental Review</span>
-          </div>
-          <p className={styles.matchSummary}>
+        {/* v10: an eyebrow naming the ask, one plain card for where it went, then the decision. */}
+        <p className={styles.v10AskEyebrow}>
+          {edAddressing ? "ED review" : communityAddressing ? "Community follow-up" : "Not a bed request"}
+        </p>
+        <div className={styles.v10AskCard}>
+          <b className={styles.v10AskWhere}>{referralDestinationLabels(referral).join(" · ")}</b>
+          <span className={styles.v10AskWhat}>
+            {edAddressing ? "Psychiatric review, not answered by a bed" : "Answered by a team, not by a bed"}
+          </span>
+          <p className="sr-only">
             {patientInfo ? (
               <>
-                <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>{" "}
-                <span className="sr-only">{referral.id}</span>
+                {formatUmrn(patientInfo.umrn)} <span>{referral.id}</span>
               </>
             ) : (
               referral.id
@@ -565,65 +574,10 @@ export function ReferralMatchView({
             was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by
             matching a bed. There is no bed shortlist for this referral.
           </p>
-          {gpSourceNotice}
         </div>
+        {gpSourceNotice}
 
-        <div className={styles.presentationActionCard}>
-          <div className={styles.presentationActionHeader}>
-            <span className={styles.presentationActionTitle}>Departmental Intake Actions</span>
-            <span className={styles.presentationActionSubtitle}>Record presentation outcome</span>
-          </div>
-
-          {edAddressing && edAddressing.state === "queued" ? (
-            <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-emergency_department">
-              {!edAcceptConfirmOpen ? (
-                <button
-                  type="button"
-                  className={styles.acceptPresentationBtn}
-                  data-testid="ward-referral-match-accept-emergency_department"
-                  onClick={() => setEdAcceptConfirmOpen(true)}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="15"
-                    height="15"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  <span>Accept presentation / referral</span>
-                </button>
-              ) : (
-                <div
-                  className={styles.confirmActionRow}
-                  data-testid="ward-referral-match-accept-confirm-group-emergency_department"
-                >
-                  <button
-                    type="button"
-                    className={styles.acceptPresentationBtn}
-                    data-testid="ward-referral-match-confirm-accept-emergency_department"
-                    onClick={handleEdAccept}
-                  >
-                    Confirm acceptance
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.cancelBtn}
-                    data-testid="ward-referral-match-cancel-accept-emergency_department"
-                    onClick={() => setEdAcceptConfirmOpen(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : null}
-
+        <div className={styles.v10AskActions}>
           {edAddressing && edAddressing.state === "queued" ? (
             <div
               className={styles.declineControls}
@@ -681,35 +635,53 @@ export function ReferralMatchView({
             </div>
           ) : null}
 
-          {communityAddressing && communityAddressing.state === "queued" ? (
-            <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-community_team">
-              {/*
-               * RB5 (item 16, 2026-09-17) — "a community team may accept, for follow-up only". Same
-               * button style as the ward bed accept above (`styles.acceptButton`), no reason and no
-               * unit to gate on (see `handleCommunityAccept`'s own doc comment), so unlike every
-               * decline control on this screen this one is never `aria-disabled`.
-               */}
-              <button
-                type="button"
-                className={styles.acceptPresentationBtn}
-                data-testid="ward-referral-match-accept-community_team"
-                onClick={handleCommunityAccept}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="15"
-                  height="15"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+          {edAddressing && edAddressing.state === "queued" ? (
+            <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-emergency_department">
+              {!edAcceptConfirmOpen ? (
+                <button
+                  type="button"
+                  className={styles.acceptPresentationBtn}
+                  data-testid="ward-referral-match-accept-emergency_department"
+                  onClick={() => setEdAcceptConfirmOpen(true)}
                 >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>Accept referral</span>
-              </button>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="15"
+                    height="15"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Accept presentation</span>
+                </button>
+              ) : (
+                <div
+                  className={styles.confirmActionRow}
+                  data-testid="ward-referral-match-accept-confirm-group-emergency_department"
+                >
+                  <button
+                    type="button"
+                    className={styles.acceptPresentationBtn}
+                    data-testid="ward-referral-match-confirm-accept-emergency_department"
+                    onClick={handleEdAccept}
+                  >
+                    Confirm acceptance
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.cancelBtn}
+                    data-testid="ward-referral-match-cancel-accept-emergency_department"
+                    onClick={() => setEdAcceptConfirmOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           ) : null}
 
@@ -764,6 +736,39 @@ export function ReferralMatchView({
               ) : null}
             </div>
           ) : null}
+
+          {communityAddressing && communityAddressing.state === "queued" ? (
+            <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-community_team">
+              {/*
+               * RB5 (item 16, 2026-09-17) — "a community team may accept, for follow-up only". Same
+               * button style as the ward bed accept above (`styles.acceptButton`), no reason and no
+               * unit to gate on (see `handleCommunityAccept`'s own doc comment), so unlike every
+               * decline control on this screen this one is never `aria-disabled`.
+               */}
+              <button
+                type="button"
+                className={styles.acceptPresentationBtn}
+                data-testid="ward-referral-match-accept-community_team"
+                onClick={handleCommunityAccept}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Accept referral</span>
+              </button>
+            </div>
+          ) : null}
+          <p className={styles.v10AskNote}>Decline needs a reason first. Accept records the decision only.</p>
 
           {wholeWithdrawControl}
         </div>
@@ -874,6 +879,7 @@ export function ReferralMatchView({
       genderPlacementChecked,
     });
     setCheckToken((token) => token + 1);
+    onDecision?.(`Accepted at ${units.find((unit) => unit.id === unitId)?.name ?? "the ward"}`);
   }
 
   /**
@@ -928,6 +934,7 @@ export function ReferralMatchView({
       reason: declineReason,
     });
     setCheckToken((token) => token + 1);
+    onDecision?.("Referral declined");
   }
 
   /**
@@ -951,6 +958,7 @@ export function ReferralMatchView({
       reason: communityDeclineReason,
     });
     setCheckToken((token) => token + 1);
+    onDecision?.("Community referral declined");
   }
 
   /**
@@ -977,6 +985,7 @@ export function ReferralMatchView({
       destinationKind: "community_team",
     });
     setCheckToken((token) => token + 1);
+    onDecision?.("Accepted for community follow-up");
   }
 
   function handleEdAccept() {
@@ -990,6 +999,7 @@ export function ReferralMatchView({
     });
     setEdAcceptConfirmOpen(false);
     setCheckToken((token) => token + 1);
+    onDecision?.("Accepted by the emergency department");
   }
 
   /**

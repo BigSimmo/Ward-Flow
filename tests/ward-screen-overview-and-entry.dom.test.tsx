@@ -146,10 +146,13 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     }
     expect(screen.getAllByRole("radio", { name: "All" }).length).toBeGreaterThanOrEqual(2);
 
-    // Statewide capacity counts on the hero band
-    for (const label of ["Occupied", "Ready now", "Pulled", "1:1 specialling", "Stale counts"]) {
-      expect(screen.getByText(label)).toBeInTheDocument();
+    // Statewide capacity counts on the hero band. v10 (10 Oct 2026): the title answers how many
+    // beds are ready, occupancy moved into the hero's ring, and the chips are five or fewer.
+    for (const label of ["Ready now", "Pulled", "Stale counts"]) {
+      expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }
+    expect(screen.getByTestId("wf-occupancy-ring")).toBeInTheDocument();
+    expect(screen.getByTestId("wf-checking-foot")).toBeInTheDocument();
   });
 
   it("links to every ward the live provider holds — none hand-picked, none missing", () => {
@@ -175,8 +178,11 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     const searchInput = screen.getByRole("searchbox", { name: "Filter wards by keyword" });
     fireEvent.change(searchInput, { target: { value: "FSH" } });
 
-    // FSH units should be visible, others filtered out
-    expect(screen.getByText("FSH Adult Secure")).toBeInTheDocument();
+    // FSH units are highlighted; v10 dims the others by colour and never hides them.
+    const card = (name: string) => screen.getByRole("heading", { level: 3, name }).closest("article");
+    expect(card("FSH Adult Secure")).not.toHaveAttribute("data-dim");
+    expect(card("Dabakarn")).toHaveAttribute("data-dim", "true");
+    expect(screen.getByTestId("ward-index-count-note")).toHaveTextContent(/of \d+ wards highlighted/);
 
     // Reset filters
     const resetBtn = screen.getByRole("button", { name: "Reset filters" });

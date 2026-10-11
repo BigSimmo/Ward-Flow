@@ -1180,7 +1180,9 @@ describe("emergency department — repeat examination (owner item 7)", () => {
 describe("P3-2 (Ward Lead audit, 2026-09-17): 'Under a form' counts a legal form, not legalStatus alone", () => {
   it("does not count a raised referral whose legalStatus is set but which carries no legal form", () => {
     renderEd();
-    const before = screen.getByRole("button", { name: /Under a form/ }).textContent;
+    const before = within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", {
+      name: /Under a form/,
+    }).textContent;
 
     fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
     fillRequiredReferralFields();
@@ -1196,7 +1198,10 @@ describe("P3-2 (Ward Lead audit, 2026-09-17): 'Under a form' counts a legal form
     expect(id).not.toBe("none");
     expect(formCode).toBe("no-form");
 
-    expect(screen.getByRole("button", { name: /Under a form/ }).textContent).toBe(before);
+    expect(
+      within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /Under a form/ })
+        .textContent,
+    ).toBe(before);
   });
 });
 

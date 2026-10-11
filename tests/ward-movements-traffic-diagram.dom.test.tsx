@@ -194,17 +194,18 @@ describe("TrafficDiagram hover isolation and visual elevations", () => {
     expect(contrastRatio(blendedWarn, darkGround)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("verifies CSS rules in traffic-diagram.module.css for dark mode elevation and 0.2 dimmed opacity", () => {
+  it("verifies CSS rules in traffic-diagram.module.css for dark mode elevation and colour-only dimming", () => {
     const cssPath = path.resolve(__dirname, "../src/components/ward-management/movements/traffic-diagram.module.css");
     const css = fs.readFileSync(cssPath, "utf-8");
 
-    // Verify dark mode elevation rules
+    // Dark mode keeps its stronger corridor strokes (85% mixes, no opacity).
     expect(css).toContain('[data-theme="dark"]');
-    expect(css).toMatch(/opacity:\s*0\.85/u);
+    expect(css).toMatch(/color-mix\(in srgb, var\(--accent\) 85%, transparent\)/u);
 
-    // Verify hover isolation dimming to 0.2 opacity
-    expect(css).toMatch(/corridorDimmed[\s\S]*?opacity:\s*0\.2/u);
-    expect(css).toMatch(/\[data-dimmed="true"\][\s\S]*?opacity:\s*0\.2/u);
+    // v10 dim convention: hover isolation dims by colour (--wf-glyph-dim), never opacity.
+    expect(css).toMatch(/corridorDimmed[\s\S]*?stroke:\s*var\(--wf-glyph-dim\)/u);
+    expect(css).toMatch(/\[data-dimmed="true"\][\s\S]*?stroke:\s*var\(--wf-glyph-dim\)/u);
+    expect(css).not.toMatch(/opacity:\s*0\.[0-9]/u);
   });
 
   it("verifies movement-horizon.module.css for mobile < 480px clamp and .ganttBar sheen", () => {

@@ -48,9 +48,12 @@ describe("discharge actions stay usable and accessible across filters", () => {
   it("does not offer release shortcuts in incompatible status or record views", () => {
     wrap(<DischargeBoard />);
     expect(shortcut()).not.toBeNull();
-    fireEvent.click(screen.getByTestId("ward-discharge-kpi-confirmed"));
+    // v10: the hero chips highlight; the status tabs over the table are what narrow the list.
+    fireEvent.click(
+      within(screen.getByLabelText("Filter by discharge status")).getByRole("button", { name: /^Confirmed/ }),
+    );
     expect(shortcut()).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Admission records/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
     expect(shortcut()).toBeNull();
   });
   it("offers every blocker in both populations and announces pipeline counts", () => {
@@ -76,7 +79,7 @@ describe("discharge actions stay usable and accessible across filters", () => {
     ).toEqual(labels);
     fireEvent.change(screen.getByRole("combobox", { name: "Blocker" }), { target: { value: "pharmacy" } });
     expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Bed releases: \d+ blocked/);
-    fireEvent.click(screen.getByRole("button", { name: /Admission records/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
     expect(within(screen.getByRole("combobox", { name: "Blocker" })).getAllByRole("option")).toHaveLength(
       labels.length,
     );

@@ -10,9 +10,11 @@ import {
   Segmented,
   StatusGlyph,
   TextInput,
+  TimeRail,
   Timeline,
   buttonClass,
   cx,
+  type TimeRailMark,
   type TimelineItem,
 } from "@/components/wf";
 import { formatInstantWithDay, minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
@@ -40,9 +42,16 @@ import {
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
 
-/** The board's clock states, in the order the ring and its legend draw them. */
+/** The board's clock states, in the order the legend line names them. */
 export type RingState = "act" | "soon" | "running" | "demo" | "unwritten";
 const RING_ORDER: RingState[] = ["act", "soon", "running", "demo", "unwritten"];
+const RING_TONE: Record<RingState, "danger" | "warning" | "neutral" | "closed"> = {
+  act: "danger",
+  soon: "warning",
+  running: "neutral",
+  demo: "closed",
+  unwritten: "closed",
+};
 
 export function ringStateOf(movement: Movement, standing: ClockStanding, dayZero: Date): RingState {
   if (standing === "passed" || standing === "urgent") return "act";
@@ -55,53 +64,91 @@ function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): Timelin
   return items.map(({ id, sortAt, tone, text }) => ({ id, at: formatInstantWithDay(sortAt, now), tone, text }));
 }
 
-/** The ring of clock states: one arc per state, drawn page-locally (no shared chart has segments). */
-function StateRing({ counts, total }: { counts: Record<RingState, number>; total: number }) {
-  const radius = 34;
-  const circumference = 2 * Math.PI * radius;
-  const gap = total > 1 ? 3 : 0;
-  const lengths = RING_ORDER.map((state) => (total === 0 ? 0 : (counts[state] / total) * circumference));
-  const starts = lengths.map((_, index) => lengths.slice(0, index).reduce((sum, length) => sum + length, 0));
-  return (
-    <div className={styles.ring}>
-      <svg viewBox="0 0 84 84" aria-hidden="true">
-        <circle className={styles.ringTrack} cx="42" cy="42" r={radius} />
-        {RING_ORDER.map((state, index) => {
-          const length = lengths[index];
-          if (length === 0) return null;
-          return (
-            <circle
-              key={state}
-              className={styles.ringArc}
-              data-state={state}
-              cx="42"
-              cy="42"
-              r={radius}
-              strokeDasharray={`${Math.max(0, length - gap)} ${circumference}`}
-              strokeDashoffset={-starts[index]}
-            />
-          );
-        })}
-      </svg>
-      <span className={styles.ringValue}>
-        <strong>{total}</strong>
-        <span>forms</span>
-      </span>
-    </div>
-  );
-}
-
 export const RING_LABEL: Record<RingState, string> = {
   act: "Act now",
   soon: "Within window",
-  running: "Clock running",
+  running: "Later",
   demo: "Demo period only",
   unwritten: "No expiry typed",
 };
 
 /**
- * SUMMARY. The side panel when nobody is selected (owner, 9 Oct 2026): the board's clock states,
- * the next typed expiries, and the warning windows that colour them.
+ * The clock rail, on the shared v10 TimeRail: a Passed bay above, then every typed expiry in the
+ * next twelve hours on one line. D5: only an expiry a person typed (`legalForm.dueAt`) is a mark;
+ * demo Act periods never reach the rail. Each mark opens the first form it holds.
+ */
+export function ClockRail({
+  movements,
+  now,
+  onSelect,
+}: {
+  movements: Movement[];
+  now: Instant;
+  onSelect: (movement: Movement) => void;
+}) {
+  const marks: TimeRailMark[] = movements
+    .filter((movement) => movement.legalForm?.dueAt !== undefined)
+    .map((movement) => ({
+      id: movement.id,
+      at: movement.legalForm!.dueAt!,
+      code: movement.legalForm!.code,
+      name: `Form ${movement.legalForm!.code}`,
+      tone: STANDING_TONE[clockStanding(movement, now)],
+      onSelect: () => onSelect(movement),
+    }));
+  return (
+    <TimeRail
+      marks={marks}
+      now={now}
+      formatTime={(at) => formatInstantWithDay(at, now)}
+      verbs={{ passed: "expired", upcoming: "expires" }}
+      laterText={(later) =>
+        later > 0
+          ? `${later} more ${later === 1 ? "expires" : "expire"} after the rail`
+          : "Nothing typed beyond the rail"
+      }
+      testId="ward-legal-clock-rail"
+    />
+  );
+}
+
+/**
+ * The warning windows as one threshold bar: the first window, the second, then the rest of the
+ * twelve hours. The edges are the coordinator's own settings, not legal limits.
+ */
+function ThresholdBar({ urgentHours, soonHours }: { urgentHours: number; soonHours: number }) {
+  const span = 12;
+  const urgent = Math.min(urgentHours, span);
+  const soon = Math.min(Math.max(soonHours, urgent), span);
+  return (
+    <div className={styles.threshold}>
+      <div
+        className={styles.thresholdBar}
+        role="img"
+        aria-label={`First window ${urgentHours} hours, second window ${soonHours} hours`}
+      >
+        <span data-tone="danger" style={{ width: `${(urgent / span) * 100}%` }} />
+        <span data-tone="warning" style={{ width: `${((soon - urgent) / span) * 100}%` }} />
+        <span data-tone="rest" />
+      </div>
+      <div className={styles.windows}>
+        <span className={styles.windowChip}>
+          <StatusGlyph tone="danger" size={9} />
+          First <strong>{urgentHours}h</strong>
+        </span>
+        <span className={styles.windowChip}>
+          <StatusGlyph tone="warning" size={9} />
+          Second <strong>{soonHours}h</strong>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * SUMMARY (Board now). The side panel when nobody is selected: the clock rail with its Passed bay,
+ * the board's clock states as one counted line (no ring: v10 keeps rings in the hero only), the
+ * next typed expiries, and the warning windows as one threshold bar.
  */
 export function SummaryPanel({
   rows,
@@ -135,22 +182,20 @@ export function SummaryPanel({
     <section className={styles.panel} aria-label="Forms summary" data-testid="ward-legal-summary">
       <div className={styles.panelBlock}>
         <div className={styles.panelEyebrowLine}>
-          <span className={styles.eyebrow}>Board now</span>
+          <h2 className={styles.panelHeadTitle}>Board now</h2>
           <span className={styles.mono}>{formatInstantWithDay(now, now)}</span>
         </div>
-        <h2 className={styles.panelTitle}>{rows.length} on open moves</h2>
-        <div className={styles.ringRow}>
-          <StateRing counts={counts} total={rows.length} />
-          <ul className={styles.legend} aria-label="Forms by clock state">
-            {RING_ORDER.map((state) => (
-              <li key={state}>
-                <span className={styles.legendKey} data-state={state} aria-hidden="true" />
-                <span>{label[state]}</span>
-                <span className={styles.legendValue}>{counts[state]}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <h3 className={styles.eyebrow}>Typed expiries ahead</h3>
+        <ClockRail movements={rows} now={now} onSelect={onSelect} />
+        <ul className={styles.legend} aria-label={`${rows.length} on open moves, by clock state`}>
+          {RING_ORDER.filter((state) => counts[state] > 0 || state === "act").map((state) => (
+            <li key={state}>
+              <StatusGlyph tone={RING_TONE[state]} size={9} />
+              <span>{label[state]}</span>
+              <span className={styles.legendValue}>{counts[state]}</span>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className={styles.panelBlock}>
@@ -193,20 +238,11 @@ export function SummaryPanel({
             Settings
           </Link>
         </div>
-        <div className={styles.windows}>
-          <span className={styles.windowChip}>
-            <StatusGlyph tone="danger" size={9} />
-            First <strong>{urgentHours}h</strong>
-          </span>
-          <span className={styles.windowChip}>
-            <StatusGlyph tone="warning" size={9} />
-            Second <strong>{soonHours}h</strong>
-          </span>
-        </div>
+        <ThresholdBar urgentHours={urgentHours} soonHours={soonHours} />
         <p className={styles.footnote}>Your defaults, not legal limits</p>
       </div>
 
-      <p className={styles.panelHint}>Tap a patient to open their form here</p>
+      <p className={styles.panelHint}>Press a patient to open their form here</p>
     </section>
   );
 }
@@ -300,7 +336,7 @@ export function FocusPanel({
     setChanging(false);
   };
 
-  const ringFraction = elapsedFraction(movement, now);
+  const elapsed = elapsedFraction(movement, now);
   const remaining = legalForm?.dueAt !== undefined ? minutesUntil(legalForm.dueAt, now) : undefined;
 
   return (
@@ -317,34 +353,35 @@ export function FocusPanel({
         <Button variant="ghost" size="sm" iconOnly icon={X} aria-label="Close and show the summary" onClick={onClose} />
       </div>
 
-      <div className={styles.focusClock}>
-        <div
-          className={styles.clockDial}
-          data-tone={STANDING_TONE[standing]}
-          style={{ ["--done" as string]: `${Math.round(ringFraction * 360)}deg` }}
-          aria-hidden="true"
-        >
-          <StatusGlyph tone={STANDING_TONE[standing]} size={12} />
-        </div>
-        <div className={styles.cellStack}>
+      <div className={styles.focusClock} data-tone={STANDING_TONE[standing]}>
+        <div className={styles.focusClockLine}>
+          <StatusGlyph tone={STANDING_TONE[standing]} size={10} />
           {remaining !== undefined ? (
             <>
-              <span className={styles.clockBig}>
-                {leftText(movement, now)}
-                <span className={styles.clockWord}>{remaining < 0 ? "passed" : "left"}</span>
+              <span className={styles.clockBig}>{leftText(movement, now)}</span>
+              <span className={styles.clockWord}>
+                {remaining < 0 ? "since the typed expiry" : "until the typed expiry"}
               </span>
-              <span className={styles.sub}>
-                {remaining < 0 ? "Expired" : "Expires"} {formatInstantWithDay(legalForm!.dueAt!, now)}, typed from the
-                form
-              </span>
+              <span className={cx(styles.mono, styles.clockAt)}>{formatInstantWithDay(legalForm!.dueAt!, now)}</span>
             </>
           ) : (
             <>
               <span className={styles.clockBig}>{standingWord(standing)}</span>
-              <span className={styles.sub}>{legalDeadlineText(movement, now)}</span>
+              <span className={styles.clockWord}>{legalDeadlineText(movement, now)}</span>
             </>
           )}
         </div>
+        {remaining !== undefined ? (
+          <>
+            <span className={styles.progress} data-tone={STANDING_TONE[standing]} aria-hidden="true">
+              <span style={{ width: `${Math.round(elapsed * 100)}%` }} />
+            </span>
+            <span className={styles.srOnly}>
+              {remaining < 0 ? "Expired" : "Expires"} {formatInstantWithDay(legalForm!.dueAt!, now)}, typed from the
+              form
+            </span>
+          </>
+        ) : null}
       </div>
       {reading ? (
         <p className={styles.demoNote} data-testid="ward-legal-act-period">

@@ -84,6 +84,7 @@ import {
   ReadyByRoadTime,
   NetworkBedflow,
   NetworkUnitDetail,
+  type NetworkHighlight,
 } from "@/components/ward-management/network/network-overview";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 
@@ -547,6 +548,12 @@ export function WardNetworkWorkspace() {
   const { movements, units, bedReleases, leaveBeds, admissions } = useWardFlow();
   const { now, paused, togglePause } = usePageLive();
   const [view, setView] = useState<NetworkView>("overview");
+  // v10 Network: a pressed hero figure highlights the bed flow; pressing it again clears it.
+  const [heroHighlight, setHeroHighlight] = useState<NetworkHighlight | undefined>(undefined);
+  function toggleHighlight(next: NetworkHighlight) {
+    setHeroHighlight((current) => (current === next ? undefined : next));
+    setView("overview");
+  }
   const [selectedEdId, setSelectedEdId] = useState<string | undefined>();
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>();
 
@@ -592,12 +599,36 @@ export function WardNetworkWorkspace() {
         title={
           shortfall === undefined ? "Ready beds cover the wait" : `${shortfall.service} short ${-readyGap(shortfall)}`
         }
+        titleMeta={`${readyNow} ready ${readyNow === 1 ? "bed" : "beds"} against ${waitingInEd} waiting in ED`}
         stats={
           <>
-            <HeroStat value={waitingInEd} label="Waiting in ED" />
-            <HeroStat value={readyNow} label="Ready now" tone="success" />
-            <HeroStat value={pulledNow} label="Pulled" tone="warning" />
-            <HeroStat value={expectedToday} label="Expected today" />
+            {/* v10 Network: each figure highlights the bed flow cells and rows it counts. */}
+            <HeroStat
+              value={waitingInEd}
+              label="Waiting in ED"
+              pressed={heroHighlight === "waiting"}
+              onToggle={() => toggleHighlight("waiting")}
+            />
+            <HeroStat
+              value={readyNow}
+              label="Ready now"
+              tone="success"
+              pressed={heroHighlight === "ready"}
+              onToggle={() => toggleHighlight("ready")}
+            />
+            <HeroStat
+              value={pulledNow}
+              label="Pulled"
+              tone="warning"
+              pressed={heroHighlight === "pulled"}
+              onToggle={() => toggleHighlight("pulled")}
+            />
+            <HeroStat
+              value={expectedToday}
+              label="Expected today"
+              pressed={heroHighlight === "expected"}
+              onToggle={() => toggleHighlight("expected")}
+            />
             <HeroStat value={units.length} label="Units" />
           </>
         }
@@ -678,6 +709,8 @@ export function WardNetworkWorkspace() {
             groups={groups}
             selectedUnitId={selectedUnitId}
             onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
+            highlight={heroHighlight}
+            onClearHighlight={() => setHeroHighlight(undefined)}
           />
           <div className={thirdEdition.overviewSide} data-wf-rail="1281">
             <ReadyByRoadTime

@@ -43,10 +43,17 @@ describe("capacity review corrections", () => {
     expect(document.getElementById("capacity-wards")).toHaveFocus();
     expect(within(table).getAllByText("Matches this filter").length).toBeGreaterThan(0);
     expect(table.querySelectorAll('[data-testid^="ward-capacity-network-row-"]')).toHaveLength(before);
-    const all = screen.getByRole("button", { name: /^\d+\s*Wards$/u });
-    all.focus();
+    // v10: the Wards count moved into the hero eyebrow, so a hero highlight chip pressed a second
+    // time is what clears the highlight.
+    const locked = screen.getByRole("button", { name: /^\d+\s*Locked ready$/u });
+    locked.focus();
     await user.keyboard("{Enter}");
-    expect(all).toHaveAttribute("aria-pressed", "true");
+    expect(locked).toHaveAttribute("aria-pressed", "true");
+    expect(within(table).getAllByText("Matches this filter").length).toBeGreaterThan(0);
+    // Pressing moved focus to the table, so come back to the chip first.
+    locked.focus();
+    await user.keyboard("{Enter}");
+    expect(locked).toHaveAttribute("aria-pressed", "false");
     expect(within(table).queryByText("Matches this filter")).toBeNull();
   });
 

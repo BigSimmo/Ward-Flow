@@ -148,12 +148,10 @@
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
 }
 
-.soon {
-  color: var(--wf-warning-ink);
-}
-
+/* Words stay neutral; the StatusGlyph beside them carries the tone (v10). */
+.soon,
 .over {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 @keyframes wfLivePulse {

@@ -31,6 +31,7 @@ import {
   useWardFlow,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -48,9 +49,11 @@ function Override({ children, value }: { children: ReactNode; value: Partial<War
 }
 function renderFlow(children: ReactNode, value: Partial<WardFlowContextValue> = {}) {
   return render(
-    <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <Override value={value}>{children}</Override>
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Override value={value}>{children}</Override>
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 const baseUnit = allUnits()[0];
@@ -203,7 +206,7 @@ describe("PR15 recorded facts and unavailable data", () => {
     const hud = screen.getByTestId("ward-on-call-hud-island");
     // v6 hero (approved mockup, October 2026): counts only; live cover is stated as not verified
     // in the role panel beside the table.
-    expect(within(hud).getByRole("heading", { level: 1, name: "On-call directory" })).toBeTruthy();
+    expect(within(hud).getByRole("heading", { level: 1, name: /^\d+ lines? answering$/u })).toBeTruthy();
     expect(within(screen.getByTestId("ward-on-call-role-panel")).getByText("Not verified")).toBeTruthy();
     expect(hud.textContent).not.toMatch(/networks active|On Standby|EDs active/);
   });
@@ -266,7 +269,7 @@ describe("PR15 discharge and referral provenance", () => {
       readDischargeRecords: () => ({ status: "allowed", value: [record] }),
       readDischargeRecord: () => ({ status: "allowed", value: record }),
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Admission records/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
     fireEvent.click(
       within(worklist)
@@ -385,10 +388,11 @@ describe("PR15 discharge and referral provenance", () => {
     renderFlow(<LegalFormsScreen />, {
       movements: [{ ...movement, legalForm: { ...movement.legalForm!, dueAt: NOW_ANCHOR - 1 } }],
     });
-    // Forms hero (9 Oct 2026): the passed count is the bay at the start of the clock rail; the
-    // next-to-end card beside it may also read "Passed", so the bay is the first match.
+    // Forms v10 (10 Oct 2026): the clock rail moved from the hero to the Board now rail; the
+    // passed count is its bay, above the twelve-hour line.
     const hud = screen.getByTestId("ward-legal-hud-island");
-    expect(within(hud).getAllByText("Passed")[0]!.parentElement?.textContent).toBe("1Passed");
+    const rail = screen.getByTestId("ward-legal-clock-rail");
+    expect(within(rail).getAllByText("Passed")[0]!.parentElement?.textContent).toBe("Passed1");
     expect(hud.textContent).toContain("forms on open moves");
     expect(hud.textContent).not.toContain("statutory deadline");
   });

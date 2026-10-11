@@ -47,6 +47,8 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     sex: "Female",
     // R7 (2026-09-25): the admission's own gender copy, so the built fixture carries every field.
     gender: "Female",
+    // v10 pass 2 (2026-10-10): the Bed board's bed number, so the built fixture carries every field.
+    bedNumber: 1,
     homeRegion: "Perth Metropolitan",
     // A block, never a condition, and `null` is equally ordinary — the base admission here carries
     // one so that a test overriding it to `null` is testing the absence deliberately.
@@ -562,6 +564,10 @@ describe("Admission privacy — structural", () => {
     // in, never a fact about the person. Contains no forbidden stem, so it needs no
     // `AUTHORISED_PERSON_FACTS` entry and must never acquire one.
     "bedKind",
+    // WIDENED ON PURPOSE, 2026-10-10 — Josh, v10 pass 2 (the ward Bed board's pick up and place).
+    // A fact about the WARD'S ACT, in the category `bedKind` sits in: which numbered bed the ward
+    // put this stay in. Never a fact about the person; no `AUTHORISED_PERSON_FACTS` entry.
+    "bedNumber",
     "dischargeBarrier",
     "stepDownCandidate",
     "state",
@@ -600,6 +606,7 @@ describe("Admission privacy — structural", () => {
       // Populated, not null — this fixture's whole job is to carry EVERY field at a real value, so
       // a null here would leave the new field indistinguishable from an absent one.
       awayAtEmergencyDepartmentSince: 9 * 60,
+      bedNumber: 4,
       id: "ADM-CANON",
       unitId: "rph-adult-open",
       // TRUE, not false — this fixture's whole job is to carry EVERY field at a real value.

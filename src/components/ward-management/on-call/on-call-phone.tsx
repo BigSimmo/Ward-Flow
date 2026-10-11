@@ -174,12 +174,14 @@ function PhoneRow({
   actions,
   byRole,
   highlighted,
+  dimmed = false,
   onOpen,
 }: {
   entry: DirectoryEntry;
   actions: ContactActions;
   byRole: boolean;
   highlighted: boolean;
+  dimmed?: boolean;
   onOpen: (id: string) => void;
 }) {
   const now = availability(entry, actions.minute);
@@ -192,7 +194,11 @@ function PhoneRow({
       ? SERVICE_META[entry.service].short
       : (line?.label ?? entry.purpose);
   return (
-    <li className={cx(styles.phoneRow, highlighted && styles.rowHighlight, now.kind === "off" && styles.phoneRowOff)}>
+    <li
+      className={cx(styles.phoneRow, now.kind === "off" && styles.phoneRowOff)}
+      data-highlighted={highlighted || undefined}
+      data-dim={dimmed ? "true" : undefined}
+    >
       <button type="button" className={styles.phoneRowOpen} onClick={() => onOpen(entry.id)}>
         <span className={styles.phoneRowName}>
           <b>
@@ -219,6 +225,7 @@ export function PhoneDirectory({
   groupBy,
   actions,
   isHighlighted,
+  dimming = false,
   queryActive,
   hitCount,
   otherHits,
@@ -231,6 +238,7 @@ export function PhoneDirectory({
   groupBy: "place" | "role";
   actions: ContactActions;
   isHighlighted: (entry: DirectoryEntry) => boolean;
+  dimming?: boolean;
   queryActive: boolean;
   hitCount: number;
   otherHits: readonly { section: string; label: string; count: number; onShow: () => void }[];
@@ -311,6 +319,7 @@ export function PhoneDirectory({
                         actions={actions}
                         byRole={byRole}
                         highlighted={isHighlighted(entry)}
+                        dimmed={dimming && !isHighlighted(entry)}
                         onOpen={onOpen}
                       />
                     ))}

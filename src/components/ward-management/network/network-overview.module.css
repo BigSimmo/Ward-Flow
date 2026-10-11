@@ -16,7 +16,7 @@
   border: 1px solid var(--wf-line-ctl);
   border-radius: var(--wf-r-xs);
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   color: var(--wf-ink-2);
   vertical-align: middle;
@@ -104,7 +104,7 @@
   padding: 6px var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-align: left;
@@ -202,15 +202,17 @@
 
 .unitGrid th.num {
   font-family: var(--wf-font);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
 }
 
+/* v10: figures stay neutral ink; the bar beside them carries the tone. */
 .readyNum {
-  color: var(--wf-success-ink);
+  color: var(--wf-ink-1);
+  font-weight: 600;
 }
 
 .pulledNum {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .empty {
@@ -479,4 +481,54 @@
   .unitGrid th:nth-child(2) {
     width: auto;
   }
+}
+
+/* v10 Network: a pressed hero figure marks the matching cells; other rows recede by colour, never
+ * opacity, and stay in place. The mark is an edge, not a tint (only free or fit places are tinted). */
+.unitGrid tbody tr[data-dim="true"] .unitName,
+.unitGrid tbody tr[data-dim="true"] .unitMeta,
+.unitGrid tbody tr[data-dim="true"] .num {
+  color: var(--wf-dim);
+}
+
+.unitGrid tbody tr[data-dim="true"] .barCell span {
+  background-color: var(--wf-glyph-dim);
+  background-image: none;
+}
+
+.unitGrid td[data-hl="true"],
+.serviceMeta[data-hl="true"] b {
+  color: var(--wf-ink-1);
+  box-shadow: inset 0 -2px 0 var(--wf-ink-1);
+}
+
+.highlightNote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.highlightNote b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+/* Phone scope chips: one scrolling row, 44px targets, none cut off (v10 Network, Phone). */
+.scopeChips {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.scopeChip {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
 }

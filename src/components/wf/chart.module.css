@@ -32,6 +32,11 @@
   height: 28px;
 }
 
+/* Tick numbers and the mean label each get their own line, so two 12px lines never touch. */
+.axisRow[data-two-lines="true"] {
+  height: calc(2 * var(--wf-lh-12) + 6px);
+}
+
 .tickLabel {
   position: absolute;
   top: 0;
@@ -108,6 +113,47 @@
   min-height: 22px;
   display: flex;
   align-items: center;
+}
+
+/* BarList onPick: a transparent button over the whole row; the cells stay the visual. */
+.barPick {
+  grid-column: 1 / -1;
+  align-self: stretch;
+  min-height: 28px;
+  margin: 0 calc(-1 * var(--wf-s-1));
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  cursor: pointer;
+  z-index: 0;
+}
+
+/* The cells paint over the button's hover fill and let the press through to it. */
+.barPick ~ .barLabel,
+.barPick ~ .barCell,
+.barPick ~ .barValue {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.barPick:hover {
+  background: var(--wf-hover);
+}
+
+.barPick[aria-pressed="true"] {
+  border-color: var(--wf-line-ctl);
+}
+
+.barPick:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.barLabel[data-dim="true"] .barSub,
+.barValue[data-dim="true"] {
+  color: var(--wf-dim);
 }
 
 .barTrack {

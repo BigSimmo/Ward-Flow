@@ -64,7 +64,7 @@ describe("current-capacity explorer", () => {
     expect(legend.queryByText("Held")).not.toBeInTheDocument();
   });
 
-  it("filters both the plotted population and summary, without keeping hidden detail", () => {
+  it("highlights a service and dims the rest by colour, never hiding a row (v10)", () => {
     chart();
     fireEvent.click(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ }));
     // v6: the service filter is a segmented control ("South" for South Metro), and the summary
@@ -72,15 +72,17 @@ describe("current-capacity explorer", () => {
     fireEvent.click(
       within(screen.getByRole("radiogroup", { name: "Health service filter" })).getByRole("radio", { name: "South" }),
     );
-    expect(screen.queryByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).not.toBeInTheDocument();
+    // The other service's row stays, dimmed by colour; the summary counts the highlighted rows.
+    expect(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).toHaveAttribute("data-dim", "true");
     expect(screen.queryByTestId("capacity-details")).not.toBeInTheDocument();
     expect(screen.getByText(/ready of 5 (synthetic )?beds/)).toBeInTheDocument();
     expect(screen.getByTestId("ward-statistics-capacity-showing")).toHaveTextContent(
-      "Showing 1 of 2 hospitals matched",
+      "1 of 2 hospitals highlighted, all rows stay",
     );
-    expect(
-      screen.getByRole("button", { name: /Fiona Stanley Hospital: 0 ready, 0 pulled, 0 closed, 5 occupied/ }),
-    ).toBeInTheDocument();
+    const fiona = screen.getByRole("button", {
+      name: /Fiona Stanley Hospital: 0 ready, 0 pulled, 0 closed, 5 occupied/,
+    });
+    expect(fiona).not.toHaveAttribute("data-dim");
   });
 
   it("switches to wards and searches within a hospital rather than including unmatched wards", () => {
@@ -105,8 +107,14 @@ describe("current-capacity explorer", () => {
     expect(smallBar).toHaveStyle({ width: "25%" });
     fireEvent.click(screen.getByRole("radio", { name: "%" }));
     expect(smallBar).toHaveStyle({ width: "100%" });
-    // Fiona Stanley is 100% occupied, the only row over the 85% alert line.
-    expect(screen.getByTestId("ward-statistics-capacity-showing")).toHaveTextContent("1 over the alert line");
+    // Fiona Stanley is 100% occupied, the only row at or over the 85% alert line.
+    const overChip = screen.getByRole("button", { name: /At or over the alert line/ });
+    expect(overChip).toHaveTextContent("1");
+    // The chip highlights that row and dims the rest; every row stays.
+    fireEvent.click(overChip);
+    expect(overChip).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /Fiona Stanley Hospital: 0 ready/ })).not.toHaveAttribute("data-dim");
+    expect(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).toHaveAttribute("data-dim", "true");
   });
 
   it("can aggregate hospitals from a service ward view and reset to that view", () => {

@@ -606,7 +606,7 @@ test.describe("@mockup Ward shell bar", () => {
 const UNWIRED_PRIMARY_ROUTES: ReadonlyArray<readonly [string, string, string]> = [
   ["/mockups/ward-flow/movements", "Record a decision", "Movements"],
   [`/mockups/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`, "Contact a team", "a community team"],
-  ["/mockups/ward-flow/statistics", "Export the figures", "Statistics"],
+  // v10 (10 Oct 2026): Statistics now carries New referral in the header; Export moved to its hero.
 ];
 
 test.describe("@mockup Ward shell bar — item 43: the unwired primary action's popover", () => {
@@ -615,9 +615,9 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
   // Anti-vacuity: if a route stopped resolving one of these three kinds, every test below would
   // simply find no trigger and fail loudly at the first `toBeVisible()` — but that failure would
   // name the wrong thing, so state the premise once, explicitly.
-  test("CONTROL: all three routes are still covered by this list", () => {
-    expect(UNWIRED_PRIMARY_ROUTES.length).toBe(3);
-    expect(new Set(UNWIRED_PRIMARY_ROUTES.map(([, label]) => label)).size).toBe(3);
+  test("CONTROL: both routed unwired kinds are still covered by this list", () => {
+    expect(UNWIRED_PRIMARY_ROUTES.length).toBe(2);
+    expect(new Set(UNWIRED_PRIMARY_ROUTES.map(([, label]) => label)).size).toBe(2);
   });
 
   for (const [route, label, routeLabel] of UNWIRED_PRIMARY_ROUTES) {

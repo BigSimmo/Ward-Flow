@@ -53,6 +53,13 @@
   cursor: pointer;
 }
 
+@media (max-width: 48rem) {
+  .layoutSwitch button {
+    min-height: 48px;
+    height: 48px;
+  }
+}
+
 .layoutSwitch button:hover,
 .serviceNav button:hover {
   color: var(--wf-ink-1);
@@ -84,7 +91,7 @@
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface-2);
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
   text-align: center;
 }
@@ -167,7 +174,7 @@
 }
 
 .serviceNameText {
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -214,7 +221,8 @@
 
 .serviceArrowBtn:disabled,
 .flankingArrow:disabled {
-  opacity: 0.4;
+  border-color: var(--wf-line);
+  color: var(--wf-dim);
   cursor: default;
 }
 
@@ -284,6 +292,23 @@
 .wardBlock[data-selected="true"] {
   border-color: var(--wf-ink-3);
   background: var(--wf-selected);
+}
+
+/* A highlight that does not match: words and squares recede by colour, never opacity. */
+.wardBlock[data-dim="true"],
+.wardBlock[data-dim="true"] * {
+  color: var(--wf-dim);
+}
+
+.wardBlock[data-dim="true"] .square,
+.wardBlock[data-dim="true"] .ribbonSegment {
+  background-color: var(--wf-glyph-dim);
+  background-image: none;
+}
+
+/* Table: one shared WardCapacityRow per ward (v10 Capacity). */
+.capacityRows {
+  min-width: 0;
 }
 
 .wardBlockHeader {
@@ -446,7 +471,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -476,7 +501,7 @@
 }
 
 .bayLabel {
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 

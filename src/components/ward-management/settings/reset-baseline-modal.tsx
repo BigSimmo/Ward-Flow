@@ -30,7 +30,7 @@ function restoredValues(): readonly (readonly [string, string])[] {
     ["First warning", shortDuration(defaults.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)],
     ["Second warning", shortDuration(defaults.dueSoonMinutes ?? DUE_SOON_MINUTES)],
     ["Theme", "Auto"],
-    ["Sidebar", "Open"],
+    ["Sidebar", "Full"],
     ["Buzz sound", "On"],
   ];
 }

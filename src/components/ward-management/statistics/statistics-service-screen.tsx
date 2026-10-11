@@ -239,6 +239,19 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       now={now}
       paused={live.paused}
       onTogglePause={live.togglePause}
+      exportFigures={{
+        stem: service.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-"),
+        scope: service,
+        figures: () => [
+          ["Beds", totalBedBase],
+          ["Occupied percent", occupancyPct],
+          ["Ready", totalReady],
+          ["Being made ready", pendingPreparation],
+          ["Wards", serviceUnits.length],
+          ["EDs", serviceEds.length],
+          ["Out of area", outOfAreaEntries.length],
+        ],
+      }}
       stats={
         <>
           <HeroStat
@@ -254,7 +267,8 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             label={pendingPreparation > 0 ? `Ready, ${pendingPreparation} being made ready` : "Ready"}
           />
           <HeroStat value={serviceUnits.length} label="Wards" />
-          <HeroStat value={serviceEds.length} label="EDs" />
+          {/* Five figures at most (v10). The ED count is on the ED waits card's head ("N waiting in
+              M EDs"), so the hero leaves it out; the export still carries it. */}
           <HeroStat
             value={<span data-testid="ward-statistics-service-exec-ooa">{outOfAreaEntries.length}</span>}
             label={

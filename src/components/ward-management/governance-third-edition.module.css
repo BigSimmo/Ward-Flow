@@ -38,6 +38,12 @@
   min-width: 0;
 }
 
+/* Side by side cards sit flush at equal heights (v10): the register stretches to the rail. */
+.govLayout > .registerCard,
+.govLayout > .capturedCard {
+  align-self: stretch;
+}
+
 .tableScroll {
   overflow-x: auto;
 }
@@ -121,7 +127,7 @@
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-sm);
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
 .clip {
@@ -200,7 +206,7 @@
 .eyebrow {
   margin: 0;
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -356,7 +362,7 @@
 .snapshotStack h3 {
   margin: 0;
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -466,7 +472,7 @@
   min-height: 36px;
   border-bottom: 1px solid var(--wf-line);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -758,7 +764,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -878,4 +884,186 @@
     forced-color-adjust: none;
     background: CanvasText;
   }
+}
+
+/* v10 dim: a row a hero chip does not match recedes by colour, never by opacity. */
+.eventRow[data-dim="true"],
+.eventRow[data-dim="true"] * {
+  color: var(--wf-dim);
+}
+
+/* Preview controls on the hero are dashed and carry their reason. */
+.previewButton {
+  border-style: dashed;
+}
+
+/* ---------- Phone tree (v10): its own design at 390 ---------- */
+.phoneScreen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.phoneTabs {
+  width: 100%;
+}
+
+.phoneTabs [role="radio"] {
+  flex: 1 1 0;
+  min-height: var(--wf-touch);
+}
+
+.phoneList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneRow[data-dim="true"],
+.phoneRow[data-dim="true"] * {
+  color: var(--wf-dim);
+}
+
+.phoneSite {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneMore {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.phoneMoreCard {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-touch);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneMoreCard > .stack {
+  flex: 1 1 auto;
+}
+
+.phoneMoreCard:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneNotice {
+  margin: 0;
+}
+
+/* The record's UMRN under the person (v10: patients by UMRN). */
+.umrn {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The rail at rest: this session, then the next events to review (v10). */
+.restSummary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.restHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.restCells {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.restCells > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.restCells > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+
+.restCells dt {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.restCells dd {
+  margin: 0;
+  font: 600 var(--wf-fs-15) / 1.2 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.restNext {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  list-style: none;
+}
+
+.restNext > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.restNextRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: left;
+  cursor: pointer;
+}
+
+.restNextRow:hover {
+  background: var(--wf-hover);
+}
+
+.restNextRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.restClear {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
 }

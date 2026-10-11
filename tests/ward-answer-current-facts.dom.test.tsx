@@ -211,9 +211,12 @@ describe("Ward answer current facts", () => {
     expect(within(capacityPanel).getByText("Allocatable")).toBeInTheDocument();
 
     const nextCapacity = HISTORY_UNIT.allocatable.value + 1;
-    fireEvent.change(within(capacityPanel).getByTestId("ward-capacity-input"), {
-      target: { value: String(nextCapacity) },
-    });
+    // v10: allocatable is a stepper only (no free number box).
+    fireEvent.click(within(capacityPanel).getByRole("button", { name: "Increase allocatable beds" }));
+    expect(within(capacityPanel).getByTestId("ward-capacity-input")).toHaveAttribute(
+      "aria-valuenow",
+      String(nextCapacity),
+    );
     fireEvent.click(within(capacityPanel).getByTestId("ward-capacity-submit"));
     expect(within(capacityPanel).getByText(new RegExp(`Currently confirmed ${nextCapacity} at`))).toBeInTheDocument();
 

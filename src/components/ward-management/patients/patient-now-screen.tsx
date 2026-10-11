@@ -30,7 +30,7 @@ import { PatientTransitOperations } from "./patient-transit-operations";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
-import { PatientStatusCard, type PatientStatusContext } from "./patient-status-card";
+import { PatientStatusCard, dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -46,7 +46,18 @@ import { movementHasBedHold } from "@/components/ward-management/ward-movement-b
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { Badge, Button, Card, CardHead, LiveChip, StatusGlyph, buttonClass } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  Card,
+  CardHead,
+  JourneyStrip,
+  LiveChip,
+  StatusGlyph,
+  buttonClass,
+  useIsPhone,
+} from "@/components/wf";
+import { patientJourneyStages } from "./patient-journey";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -176,6 +187,7 @@ export function PatientNowScreen({
     setSelectedId(routeId);
   }
 
+  const isPhone = useIsPhone();
   const [activeTab, setActiveTab] = useState<TabKey>(initialTaskAction === "contact" ? "community" : "now");
   // The ward's change form on Now (leave, discharge date) and where its last attempt started, so a
   // refusal from the engine shows beside the form that caused it.
@@ -368,7 +380,9 @@ export function PatientNowScreen({
   }
 
   // Keyboard navigation for tablist
-  const TAB_KEYS: TabKey[] = ["now", "history", "community", "details", "documents"];
+  const TAB_KEYS: TabKey[] = isPhone
+    ? ["now", "history", "documents"]
+    : ["now", "history", "community", "details", "documents"];
   function handleTabKeyDown(e: ReactKeyboardEvent) {
     const currentIndex = TAB_KEYS.indexOf(activeTab);
     let nextIndex = -1;
@@ -674,6 +688,10 @@ export function PatientNowScreen({
     { key: "details", label: "Details" },
     { key: "documents", label: "Documents", count: documentCount },
   ];
+  /* v10 Patient, Phone: "Segmented control: Now, History, Forms." */
+  const phoneTabs = tabs
+    .filter((tab) => tab.key === "now" || tab.key === "history" || tab.key === "documents")
+    .map((tab) => (tab.key === "documents" ? { ...tab, label: "Forms" } : tab));
 
   return (
     <main
@@ -767,10 +785,40 @@ export function PatientNowScreen({
                   {(mode === "ward" || mode === "leave" || mode === "ed") && stayDay !== undefined ? (
                     <span className={styles.v6HeroFact}>
                       <strong className={styles.v6HeroWait}>Day {stayDay}</strong>
+                      on the ward
+                    </span>
+                  ) : null}
+                  {stayCurrent && resolved.liveAdmission ? (
+                    <span className={styles.v6HeroFact} data-testid="ward-patient-hero-discharge">
+                      {typeof resolved.liveAdmission.expectedDischargeAt === "number" ? (
+                        <>
+                          <strong>
+                            {dayLabel(resolved.liveAdmission.expectedDischargeAt, dayZero).replace(",", "")}
+                          </strong>
+                          discharge date
+                        </>
+                      ) : (
+                        <>
+                          <strong>None</strong>
+                          discharge date yet
+                        </>
+                      )}
                     </span>
                   ) : null}
                 </span>
               )
+            }
+            journey={
+              isLiveBedflow && liveMovement ? (
+                <JourneyStrip
+                  surface="hero"
+                  label="Journey since this movement opened"
+                  stages={patientJourneyStages(liveMovement, now)}
+                  formatDuration={dur}
+                  note={false}
+                  className={styles.v6Journey}
+                />
+              ) : undefined
             }
             steps={
               isLiveBedflow ? (
@@ -845,28 +893,50 @@ export function PatientNowScreen({
               ) : null
             }
             tabs={
-              <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    className={styles.v6Tab}
-                    type="button"
-                    role="tab"
-                    id={`pntab-${tab.key}`}
-                    aria-controls={`pnpane-${tab.key}`}
-                    aria-selected={activeTab === tab.key}
-                    tabIndex={activeTab === tab.key ? 0 : -1}
-                    onClick={() => setActiveTab(tab.key)}
-                  >
-                    {tab.label}
-                    {tab.count !== undefined ? (
-                      <span className={styles.v6TabCount} id={`pncount-${tab.key}`}>
-                        {tab.count}
-                      </span>
-                    ) : null}
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
+                  {(isPhone ? phoneTabs : tabs).map((tab) => (
+                    <button
+                      key={tab.key}
+                      className={styles.v6Tab}
+                      type="button"
+                      role="tab"
+                      id={`pntab-${tab.key}`}
+                      aria-controls={`pnpane-${tab.key}`}
+                      aria-selected={activeTab === tab.key}
+                      tabIndex={activeTab === tab.key ? 0 : -1}
+                      onClick={() => setActiveTab(tab.key)}
+                    >
+                      {tab.label}
+                      {tab.count !== undefined ? (
+                        <span className={styles.v6TabCount} id={`pncount-${tab.key}`}>
+                          {tab.count}
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+                {isPhone ? (
+                  /* v10 phone: Community and Details sit one tap away beside the segmented control. */
+                  <div className={styles.v6PhoneMore} data-testid="ward-patient-phone-more-tabs">
+                    {tabs
+                      .filter((tab) => tab.key === "community" || tab.key === "details")
+                      .map((tab) => (
+                        <Button
+                          key={tab.key}
+                          variant="ghost"
+                          size="sm"
+                          aria-pressed={activeTab === tab.key}
+                          aria-controls={`pnpane-${tab.key}`}
+                          onClick={() => setActiveTab(tab.key)}
+                        >
+                          {tab.label}
+                          {tab.count !== undefined ? ` ${tab.count}` : ""}
+                        </Button>
+                      ))}
+                  </div>
+                ) : null}
+              </>
             }
             actions={
               <>
@@ -1218,7 +1288,11 @@ export function PatientNowScreen({
                                 data-testid="ward-patient-overdue-alert"
                                 title={OPERATIONAL_DEFAULT_LABEL}
                               >
-                                <AlertCircle size={18} style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+                                <AlertCircle
+                                  size={18}
+                                  style={{ flexShrink: 0, marginTop: 2, color: "var(--wf-danger)" }}
+                                  aria-hidden="true"
+                                />
                                 <div>
                                   <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES}{" "}
                                   minutes past estimated arrival time (

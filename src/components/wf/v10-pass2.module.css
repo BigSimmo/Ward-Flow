@@ -1,0 +1,432 @@
+/*
+ * Design system v10 shared parts, pass 2 (v10-pass2.tsx). Tokens only. Tone in glyphs and edges,
+ * words in neutral ink, 12px floor, no tinted fills except a free or fit place.
+ */
+
+/* ── HeroChip / HeroChips: an edged pill, mono figure then words. One line, never wraps. ── */
+.chips {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 5px var(--wf-s-3);
+  box-sizing: border-box;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.chip > svg {
+  align-self: center;
+}
+
+.chipButton {
+  cursor: pointer;
+}
+
+.chipButton:hover {
+  background: var(--wf-on-hero-hl);
+}
+
+.chipButton[aria-pressed="true"] {
+  background: var(--wf-hero-ink);
+  color: var(--wf-hero-2);
+}
+
+.chipButton:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+.chipValue {
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.chipTwin {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-on-hero-ink);
+}
+
+.chipLabel {
+  color: var(--wf-on-hero-ink);
+}
+
+.chipButton[aria-pressed="true"] .chipLabel,
+.chipButton[aria-pressed="true"] .chipTwin {
+  color: inherit;
+}
+
+@media (max-width: 48rem) {
+  .chip {
+    min-height: var(--wf-touch);
+    align-items: center;
+  }
+}
+
+/* ── FactGrid ── */
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+}
+
+.fact dt {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.fact dd {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+/* ── StatusPill: neutral words, the glyph carries tone, never a fill ── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0 9px 0 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.pillSm {
+  height: 20px;
+  padding: 0 7px 0 6px;
+}
+
+.pillText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-dim="true"] .pill {
+  color: var(--wf-dim);
+}
+
+/* ── TimeRail (from the Legal forms clock rail) ── */
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.railBay {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px dashed var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.railBay[data-on="true"] {
+  border-style: solid;
+  border-color: var(--wf-act-edge);
+}
+
+.railBayValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.railBayMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.railBayMark:hover {
+  background: var(--wf-hover);
+}
+
+.railBayMark:focus-visible,
+.railMark:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.railPlot {
+  position: relative;
+  min-height: 82px;
+  margin: 0 18px;
+}
+
+.railLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50px;
+  height: 2px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.railMark {
+  position: absolute;
+  top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 28px;
+  min-height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  color: var(--wf-ink-1);
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.railMark[data-lane="1"] {
+  top: 20px;
+}
+
+.railLabel {
+  display: inline-flex;
+  gap: 4px;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.railCode {
+  font-weight: 700;
+  color: var(--wf-ink-1);
+}
+
+.railMore {
+  color: var(--wf-ink-3);
+}
+
+.railDot {
+  position: absolute;
+  top: 40px;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--wf-ink-3);
+  background: var(--wf-surface);
+}
+
+.railMark[data-lane="1"] .railDot {
+  top: 24px;
+}
+
+.railDot[data-tone="danger"] {
+  border-color: var(--wf-danger);
+  background: var(--wf-danger);
+}
+
+.railDot[data-tone="warning"] {
+  border-color: var(--wf-warning);
+  background: var(--wf-warning);
+}
+
+.railTick {
+  position: absolute;
+  top: 62px;
+  transform: translateX(-50%);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.railTick[data-first="true"] {
+  transform: none;
+  font-family: var(--wf-font);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.railTick[data-last="true"] {
+  transform: translateX(-100%);
+}
+
+.railFoot {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+/* ── JourneyStrip (v10 JourneyRibbon): stages sized by real duration ── */
+.journey {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.journeyBar {
+  display: flex;
+  gap: 3px;
+  height: 28px;
+  min-width: 0;
+}
+
+.journeySeg {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 28px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.journeySeg:first-child {
+  border-radius: var(--wf-r-pill) var(--wf-r-sm) var(--wf-r-sm) var(--wf-r-pill);
+}
+
+.journeySeg[data-quiet="true"] {
+  background: var(--wf-hatch-faint), var(--wf-surface);
+}
+
+.journeySeg[data-now="true"] {
+  gap: 6px;
+  border-color: var(--wf-info);
+  border-radius: var(--wf-r-sm) var(--wf-r-pill) var(--wf-r-pill) var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+.journeySeg[data-now="true"]::before {
+  content: "";
+  flex: none;
+  width: 12px;
+  height: 7px;
+  border-radius: 3px;
+  background: var(--wf-info);
+}
+
+.journeyLabels {
+  display: flex;
+  gap: 3px;
+  min-width: 0;
+}
+
+.journeyLabels span {
+  min-width: 28px;
+  padding-left: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.journeyNote {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.journeyHero .journeySeg {
+  border-color: var(--wf-on-hero-line);
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink-2);
+}
+
+.journeyHero .journeySeg[data-quiet="true"] {
+  background: var(--wf-hatch), var(--wf-on-hero-track);
+}
+
+.journeyHero .journeySeg[data-now="true"] {
+  border-color: var(--wf-info);
+  background: var(--wf-on-hero-hl);
+  color: var(--wf-hero-ink);
+}
+
+.journeyHero .journeyLabels span,
+.journeyHero .journeyNote {
+  color: var(--wf-hero-ink-3);
+}
+
+@media (forced-colors: active) {
+  .chip,
+  .pill,
+  .journeySeg {
+    border-color: CanvasText;
+  }
+}

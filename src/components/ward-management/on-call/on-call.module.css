@@ -109,7 +109,7 @@
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface);
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   letter-spacing: 0.02em;
   color: var(--wf-ink-2);
   white-space: nowrap;
@@ -126,7 +126,7 @@
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
   border-radius: var(--wf-r-pill);
   color: var(--wf-hero-ink-2);
-  font: 400 var(--wf-fs-11) / 1 var(--wf-font);
+  font: 400 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;
 }
 
@@ -141,7 +141,7 @@
 }
 
 .heroLabel {
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--wf-hero-ink-3);
@@ -279,8 +279,8 @@
   align-items: center;
   gap: 5px;
   min-width: 0;
-  font-size: var(--wf-fs-11);
-  line-height: var(--wf-lh-11);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
   color: var(--wf-hero-ink-2);
   white-space: nowrap;
 }
@@ -503,9 +503,16 @@
   display: none;
 }
 
-.rowHighlight > td,
-.rowHighlight {
-  background: color-mix(in srgb, var(--wf-accent) 9%, var(--wf-surface));
+/* v10: a highlight never tints. Rows it does not match recede by colour; nothing hides. */
+.row[data-dim="true"] td,
+.row[data-dim="true"] td *,
+.phoneRow[data-dim="true"] .phoneRowOpen,
+.phoneRow[data-dim="true"] .phoneRowOpen * {
+  color: var(--wf-dim);
+}
+
+.previewButton {
+  border-style: dashed;
 }
 
 .starCell {
@@ -652,7 +659,7 @@
 
 .untilSoon .untilMain,
 .untilSoon b {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .emailCell {
@@ -870,7 +877,7 @@
 
 .eyebrow {
   flex: 1 1 auto;
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--wf-ink-3);
@@ -1006,7 +1013,7 @@
 .dayTicks {
   display: flex;
   justify-content: space-between;
-  font: 400 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 400 var(--wf-fs-12) / 1 var(--wf-mono);
   color: var(--wf-ink-3);
 }
 

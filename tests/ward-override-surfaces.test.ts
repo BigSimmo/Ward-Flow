@@ -252,6 +252,11 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // Approved recipient inbox accepts only through normal engine eligibility; refusals remain visible.
   // Exceptional placement continues in the existing coordinator review with its recorded reason.
   "src/components/ward-management/referrals/ward-referral-inbox.tsx": "ACCEPT_REFERRAL",
+  // v10 pass 3 (Josh, 10 Oct 2026): the ward page's Bed board "place in a bed" is the same ordinary
+  // ward acceptance as the inbox's Accept referral, with a bed number. It accepts through normal
+  // engine eligibility, shows any refusal on the board, and leaves exceptional placement with the
+  // coordinator review that records the reason.
+  "src/components/ward-management/ward/ward-screen.tsx": "ACCEPT_REFERRAL",
   // RB5 (item 16, 2026-09-17): community-screen.tsx's handleConfirmAccept is the community team's
   // OWN acceptance of a community_team destination. ward-flow-reducer.ts's ACCEPT_REFERRAL case
   // only reads overrideReason inside its psychiatric_ward branch -- a community acceptance holds
@@ -260,6 +265,11 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // no entry here because that FILE already builds an overrideReason on its separate
   // psychiatric_ward site (handleAccept) -- this file has no such site at all.
   "src/components/ward-management/community/community-screen.tsx": "ACCEPT_REFERRAL",
+  // v10 Home (pass 3, 10 Oct 2026): State bedflow's Offer, with Undo. It dispatches only for a
+  // ward that passes every gate with a bed ready (`fitKind` "bed", a referable stage, no gender
+  // placement outstanding). Any ward that would need a reason is chosen in Placement instead,
+  // where shortlist-panel.tsx's Override records one. So there is no override to record here.
+  "src/components/ward-management/coordinator/coordinator-screen.tsx": "REFER_TO_UNITS",
 };
 
 const derivedMembers = deriveWardFlowEventMembers();
@@ -395,6 +405,14 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
   // ⚠️ ITEM 37 (2026-09-17) split both console and drawer urgent-flag toggles into literal CLEAR
   // and FLAG dispatches, eliminating the 2 computed ternaries.
   // As a result, every dispatch(...) call under ward-management now declares a plain literal type.
+  //
+  // v10 pass 3 (10 Oct 2026): the shared Undo hook forwards events it is handed. Read on that date:
+  // every caller builds its step and its undo as object literals with a literal `type` at the call
+  // site, so the construction-site scan above still sees and counts each one.
+  "src/components/ward-management/use-undoable-step.ts :: event":
+    "useUndoableStep's run(): dispatches the step its caller built with a literal type",
+  "src/components/ward-management/use-undoable-step.ts :: undoEvent":
+    "useUndoableStep's toast Undo: dispatches the undo event its caller built with a literal type",
 };
 
 const wardManagementDispatchCalls = findWardManagementDispatchCalls();
@@ -559,8 +577,9 @@ describe("ward override-surface guard", () => {
     // call sites", "at least one construction site supplies an overrideReason field") and by the
     // compliance guard below actually passing against real, non-empty groups.
     // User-approved ward inbox offers normal acceptance only; coordinator review retains overrides.
-    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(2);
-    expect(stillInViolation.size).toBe(2);
+    // v10 pass 3: the ward page's Bed board placement (3) and Home's Offer, plain fits only (4).
+    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(4);
+    expect(stillInViolation.size).toBe(4);
   });
 
   // --- The compliance guard: every site the scan CAN see meets the rule. ---
@@ -594,7 +613,9 @@ describe("ward override-surface guard", () => {
     // 2) item 37 (owner-approved 2026-09-17) split both console and drawer computed urgent-flag
     //    ternaries into explicit literal CLEAR and FLAG dispatches.
     // Re-derived by running this file, not by arithmetic.
-    expect(nonLiteralDispatchCalls.length).toBe(0);
+    // 0 -> 2, v10 pass 3 (10 Oct 2026): the two forwarding calls in use-undoable-step.ts, each
+    // named with its reason in DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE.
+    expect(nonLiteralDispatchCalls.length).toBe(2);
   });
 
   /**
@@ -650,6 +671,8 @@ describe("ward override-surface guard", () => {
       // RB5 (item 16, 2026-09-17): this team's own acceptance of its own referral -- see this
       // file's entry in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON above for why it needs no reason.
       "src/components/ward-management/community/community-screen.tsx::ACCEPT_REFERRAL": 1,
+      // v10 Home pass 3: State bedflow's Offer with Undo, plain fits only (allowlisted above).
+      "src/components/ward-management/coordinator/coordinator-screen.tsx::REFER_TO_UNITS": 1,
       "src/components/ward-management/referrals/ward-referral-inbox.tsx::ACCEPT_REFERRAL": 1,
       // 2 -> 3, T12 (item 9, 2026-09-17): the non-binary placement form dispatches the same
       // REFER_TO_UNITS with genderPlacementReason and genderPlacementChecked. Verified by reading
@@ -674,7 +697,11 @@ describe("ward override-surface guard", () => {
       // second is the override re-dispatch and carries one. Exactly the shape shortlist-panel.tsx
       // already had, which is why the (file, eventType) grouping is right: demanding a reason on
       // the first press would be demanding a justification before there is anything to justify.
-      "src/components/ward-management/ward/ward-screen.tsx::ACCEPT_IN_PRINCIPLE": 2,
+      // 2 -> 3, v10 pass 3 (10 Oct 2026): the Bed board places a coordinator-sent person in a
+      // numbered bed (ordinary acceptance with `bedNumber`, no reason before any refusal).
+      "src/components/ward-management/ward/ward-screen.tsx::ACCEPT_IN_PRINCIPLE": 3,
+      // v10 pass 3: the Bed board's place in a bed (ordinary acceptance with a bed number).
+      "src/components/ward-management/ward/ward-screen.tsx::ACCEPT_REFERRAL": 1,
       "src/components/ward-management/ward/ward-screen.tsx::PULL_PATIENT": 2,
     });
   });

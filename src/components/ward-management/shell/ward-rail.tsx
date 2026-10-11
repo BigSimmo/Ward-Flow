@@ -13,7 +13,6 @@ import {
   LayoutGrid,
   Menu,
   PanelLeftOpen,
-  Plus,
   Settings,
   SunMoon,
 } from "lucide-react";
@@ -66,7 +65,8 @@ export type { ServiceBedAlert } from "./ward-service-bed-alerts";
  *   from `deriveServiceBedAlerts`, never typed here.
  * - The "Reconciliation not published" line is removed from the rail. `ward-reconciliation-line.tsx`
  *   stays (the Search hub still imports its sentence composer) but is no longer mounted here.
- * - The rail's New referral is a secondary button; the header keeps the only primary.
+ * - The rail carries no New referral (v10, Josh 10 Oct 2026): the header holds the one primary,
+ *   and Shift+R still opens the referral slide-out from anywhere.
  * - Selection is a slate tint with a fine edge. No bar or stripe on any edge (owner ruling Q-11).
  * - Status markers are round: a filled amber circle at or over 85%, a neutral ring under it.
  *
@@ -150,6 +150,15 @@ const COMPACT_CORE_ENTRY_IDS = new Set<string>(RAIL_GROUPS.flatMap((group) => gr
 const NARROW_CORE_ENTRY_IDS = new Set(["command", "movements", "capacity"]);
 
 const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 1001px)";
+/**
+ * Tablet landscape (v10 shell, "Landscape 1180"): the 64px icon rail whatever is stored, with
+ * Today and Where, then More, which opens the full sidebar over the page. Above 1200px the stored
+ * open or closed preference applies as before; at 1000px and below the tablet portrait and phone
+ * shapes take over.
+ */
+export const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 1001px) and (max-width: 1200px)";
+/** Tablet landscape shows the first two RAIL_GROUPS (Today, Where); More holds the rest. */
+const TABLET_LANDSCAPE_GROUP_COUNT = 2;
 const GOVERNANCE_HREF = WARD_VIEWS.find((view) => view.id === "governance")?.href ?? WARD_HOME_HREF;
 
 // Visual abbreviations for the tablet row. Full registry names and live counts remain on the
@@ -177,6 +186,21 @@ function getClosedRailCardsSnapshot() {
     typeof window !== "undefined" &&
     typeof window.matchMedia === "function" &&
     window.matchMedia(CLOSED_RAIL_CARD_MEDIA_QUERY).matches
+  );
+}
+
+function subscribeToTabletLandscape(callback: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
+  const media = window.matchMedia(TABLET_LANDSCAPE_RAIL_QUERY);
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+
+function getTabletLandscapeSnapshot() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia(TABLET_LANDSCAPE_RAIL_QUERY).matches
   );
 }
 
@@ -281,6 +305,9 @@ export function WardRail() {
     getClosedRailCardsSnapshot,
     () => false,
   );
+  const isTabletLandscape = useSyncExternalStore(subscribeToTabletLandscape, getTabletLandscapeSnapshot, () => false);
+  // The shape drawn: the stored preference, except tablet landscape always draws the icon rail.
+  const shownOpen = open && !isTabletLandscape;
   const entries = railEntries();
   const currentPersona = CLINICAL_PERSONAS.find((p) => p.id === activePersona) ?? CLINICAL_PERSONAS[0];
   const boardMinute = minuteOfDay(now);
@@ -394,11 +421,16 @@ export function WardRail() {
 
       if (event.key !== "[") return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isTabletLandscape) {
+        moreTriggerRef.current = null;
+        setMoreOpen(true);
+        return;
+      }
       setOpen(!open);
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen, roleSwitcherOpen, appearanceOpen, alertsOpen]);
+  }, [open, setOpen, roleSwitcherOpen, appearanceOpen, alertsOpen, isTabletLandscape]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -458,7 +490,7 @@ export function WardRail() {
     const label = wardNavCountLabel(entry.label, count);
     const compactLabel = COMPACT_LABELS[entry.id] ?? entry.label;
     const abbreviated = compactLabel !== entry.label;
-    const showClosedRailCard = !options.sheet && !open && isClosedRailCardViewport;
+    const showClosedRailCard = !options.sheet && !shownOpen && isClosedRailCardViewport;
     const hoverCard = count ? `${entry.label} · ${count.value}\n${sentenceStart(count.noun)}` : entry.label;
     const link = (
       <Link
@@ -547,21 +579,22 @@ export function WardRail() {
   return (
     <nav
       className={styles.rail}
-      data-rail={open ? "open" : "closed"}
+      data-rail={shownOpen ? "open" : "closed"}
+      data-tablet={isTabletLandscape ? "landscape" : undefined}
       aria-label="Ward Flow sections"
       data-testid="ward-rail"
     >
       <div className={styles.brand}>
         {/* Closed desktop strip (Josh, 8 October 2026): the mark opens the full rail. Everywhere
             else it stays the home link. */}
-        {!open && isClosedRailCardViewport ? (
+        {!shownOpen && isClosedRailCardViewport ? (
           <button
             type="button"
             className={styles.brandLink}
             aria-label="Ward Flow, open the menu"
             title="Open the menu"
             data-testid="ward-rail-brand-open"
-            onClick={() => setOpen(true)}
+            onClick={(event) => (isTabletLandscape ? openMore(event.currentTarget) : setOpen(true))}
           >
             <span className={styles.brandEmblem} aria-hidden="true">
               <WardFlowMark className={styles.emblemGlyph} />
@@ -628,7 +661,7 @@ export function WardRail() {
             data-testid="ward-rail-service-dot"
             aria-hidden="true"
           />
-          {open ? `Service: ${service}` : SERVICE_SHORT_LABEL[service]}
+          {shownOpen ? `Service: ${service}` : SERVICE_SHORT_LABEL[service]}
         </p>
       ) : null}
 
@@ -807,24 +840,8 @@ export function WardRail() {
       ) : null}
 
       <div className={styles.railScroll}>
-        <div className={styles.railActionBox}>
-          <button
-            type="button"
-            data-testid="ward-rail-referral-trigger"
-            className={styles.btnRailReferral}
-            title="Start a new referral"
-            onClick={() => {
-              openWardDrawer("referral");
-              announceToWardShell("Opening the new referral drawer.");
-            }}
-          >
-            <Plus aria-hidden="true" className={styles.btnRailReferralIcon} strokeWidth={1.75} />
-            <span>New referral</span>
-          </button>
-        </div>
-
         <nav aria-label="Ward Flow views" className={styles.railNav}>
-          {groups.map((group, groupIndex) => (
+          {(isTabletLandscape ? groups.slice(0, TABLET_LANDSCAPE_GROUP_COUNT) : groups).map((group, groupIndex) => (
             <section key={group.label} aria-label={group.label} className={styles.railGroup}>
               <div className={styles.groupHead}>
                 <p className={styles.eyebrow}>{group.label}</p>
@@ -847,6 +864,22 @@ export function WardRail() {
               </ul>
             </section>
           ))}
+          {isTabletLandscape ? (
+            <button
+              type="button"
+              className={styles.stripMore}
+              aria-haspopup="dialog"
+              aria-expanded={moreOpen}
+              aria-controls="ward-rail-more-pages"
+              aria-label="More pages"
+              title="More pages"
+              data-testid="ward-rail-tablet-more"
+              onClick={(event) => openMore(event.currentTarget)}
+            >
+              <LayoutGrid aria-hidden="true" className={styles.railGlyph} strokeWidth={1.75} />
+              <span className={styles.stripMoreLabel}>More</span>
+            </button>
+          ) : null}
         </nav>
       </div>
 
@@ -990,7 +1023,8 @@ export function WardRail() {
         onClose={() => setMoreOpen(false)}
         title="Ward Flow navigation"
         description="Every workspace and your shift"
-        placement="right"
+        placement="left"
+        contentStyle={{ maxWidth: "min(17.5rem, calc(100vw - 1rem))" }}
         initialFocusRef={firstMoreLinkRef}
         returnFocusRef={moreTriggerRef}
         headerLeading={

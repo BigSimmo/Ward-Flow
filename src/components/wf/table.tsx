@@ -41,6 +41,11 @@ export type DataRowProps = Omit<ComponentPropsWithoutRef<"div">, "style"> & {
   compact?: boolean;
   /** Hover surface, for rows that open something. */
   interactive?: boolean;
+  /**
+   * v10 dim, never hide: a row a highlight does not match recedes by colour (`data-dim`, see
+   * ward-flow-v9-tokens.css). It stays in place, in order and focusable.
+   */
+  dim?: boolean;
   /** Header row: 36px, surface-2. Use `Th` and `SortHeader` cells inside. */
   head?: boolean;
   as?: "div" | "li";
@@ -57,6 +62,7 @@ export function DataRow({
   actNow = false,
   compact = false,
   interactive = false,
+  dim = false,
   head = false,
   as = "div",
   className,
@@ -77,6 +83,7 @@ export function DataRow({
       )}
       style={{ gridTemplateColumns: columns, ...style }}
       aria-selected={rest.role === "row" && !head ? selected : undefined}
+      data-dim={dim && !head ? "true" : undefined}
       {...rest}
     />
   );

@@ -5,9 +5,18 @@
 export { cx } from "./cx";
 export { dur, durMinutes, clk, durParts } from "./format";
 export { useMinuteNow } from "./use-minute-now";
+export {
+  useIsPhone,
+  useIsTabletLandscape,
+  useIsTabletPortrait,
+  useMediaQuery,
+  WF_PHONE_QUERY,
+  WF_TABLET_LANDSCAPE_QUERY,
+  WF_TABLET_PORTRAIT_QUERY,
+} from "./use-is-phone";
 export { StatusGlyph, Dot, type WfTone } from "./status-glyph";
 export { Icon, type IconProps, type IconSize } from "./icon";
-export { SrOnly, Kbd, Count, CountBubble, Divider, Inset, Spinner, IconTile } from "./primitives";
+export { SrOnly, Kbd, Count, CountBubble, CountCircle, Divider, Inset, Spinner, IconTile } from "./primitives";
 export {
   Button,
   DisabledReason,
@@ -21,6 +30,39 @@ export {
 export { Badge, type BadgeProps, type BadgeVariant } from "./badge";
 export { Card, CardHead, CardBody, CardFoot, type CardProps, type CardHeadProps } from "./card";
 export { Hero, HeroStat, HeroSteps, type HeroProps, type HeroStatProps, type HeroStep } from "./hero";
+export { useWfBandActive, registerWfBandHero, WF_BAND_QUERY, WF_BAND_SCROLLED_PX, WF_BAND_TOP_SLACK_PX } from "./band";
+export {
+  CheckingFoot,
+  Frac,
+  StepsDots,
+  OccupancyRing,
+  WardCapacityRow,
+  WardCapacityRows,
+  GroupHead,
+  SinceYouLooked,
+  type CheckingItem,
+  type CheckingFootProps,
+  type StepState,
+  type OccupancyRingProps,
+  type WardCapacityRowProps,
+  type GroupHeadProps,
+  type SinceItem,
+} from "./v10-parts";
+export {
+  HeroChip,
+  HeroChips,
+  FactGrid,
+  StatusPill,
+  rowDim,
+  TimeRail,
+  JourneyStrip,
+  type HeroChipProps,
+  type Fact,
+  type TimeRailMark,
+  type TimeRailProps,
+  type JourneyStage,
+} from "./v10-pass2";
+export { RowSpark, RowTrend, trendDelta, DeltaTwin } from "./v10-pass4";
 export {
   Stat,
   StatGroup,
@@ -36,6 +78,7 @@ export {
 } from "./stat";
 export {
   Tabs,
+  PillTabs,
   TabPanel,
   Segmented,
   HeroTrack,
@@ -44,6 +87,7 @@ export {
   ChipGroup,
   type ChoiceItem,
   type TabsProps,
+  type PillTabsProps,
   type SegmentedProps,
   type FilterChipProps,
 } from "./choice";
@@ -63,7 +107,7 @@ export { Menu, Popover, type MenuItem, type MenuProps, type MenuTriggerProps, ty
 export { ToastView, type ToastViewProps, type ToastUndo } from "./toast";
 export { Dialog, type DialogProps, type DialogAction } from "./dialog";
 export { StateLine, type StateLineProps, type StateKind, type StateAction } from "./state";
-export { ToastProvider, useToast, type ToastInput } from "@/components/ui/toast";
+export { ToastProvider, useOptionalToast, useToast, type ToastApi, type ToastInput } from "@/components/ui/toast";
 export { Tooltip, type TooltipProps } from "@/components/ui/tooltip";
 export { LiveChip, Timer, type LiveState, type LiveChipProps, type TimerProps, type TimerDirection } from "./live";
 export {

@@ -1,6 +1,7 @@
 // src/components/ward-management/ed/ed-home-derivations.ts
 import { minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { ED_TREND_SPAN_MINUTES, ED_TREND_STEP_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   type EmergencyDepartment,
   type HealthService,
@@ -246,6 +247,37 @@ export function groupByHealthService(summaries: readonly EdSummary[]): ServiceBa
     service,
     departments: summaries.filter((summary) => summary.service === service),
   }));
+}
+
+/** The RowSpark window lives with the other operational defaults. */
+export { ED_TREND_SPAN_MINUTES, ED_TREND_STEP_MINUTES };
+
+/**
+ * How many people were waiting at one department at each 2 hour point over the last 12 hours,
+ * oldest first, the last point now. Read from the record only: a movement counts at a point when it
+ * had opened by then and had not yet closed (`closure.at`). A movement that reads "arrived" with no
+ * closure time cannot be placed in the past, so it is left out of every point, the same as `isOpen`
+ * leaves it out now. Nothing is invented: a department with no closures shows a rising line.
+ */
+export function edWaitingSeries(
+  movements: readonly Movement[],
+  edId: string,
+  now: Instant,
+  spanMinutes: number = ED_TREND_SPAN_MINUTES,
+  stepMinutes: number = ED_TREND_STEP_MINUTES,
+): number[] {
+  const mine = movements.filter(
+    (movement) => movement.originEdId === edId && (movement.closure !== undefined || movement.stage !== "arrived"),
+  );
+  const points: number[] = [];
+  for (let back = spanMinutes; back >= 0; back -= stepMinutes) {
+    const at = now - back;
+    points.push(
+      mine.filter((movement) => movement.openedAt <= at && (movement.closure === undefined || movement.closure.at > at))
+        .length,
+    );
+  }
+  return points;
 }
 
 /** `of 8 departments` / `of 1 department` — the population-naming rule Task 5 exists for, applied

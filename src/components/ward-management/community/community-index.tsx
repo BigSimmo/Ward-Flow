@@ -10,12 +10,15 @@ import {
   Card,
   CardBody,
   CardHead,
+  CheckingFoot,
   Drawer,
   FilterChip,
   Hero,
   HeroStat,
   Icon,
+  GroupHead,
   Kbd,
+  ScrollRow,
   Segmented,
   Select,
   SrOnly,
@@ -23,6 +26,7 @@ import {
   TextInput,
   buttonClass,
   tableClasses,
+  useIsPhone,
   type BarListRow,
 } from "@/components/wf";
 import {
@@ -248,8 +252,13 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const [query, setQuery] = useState("");
   const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
   const [alikeOnly, setAlikeOnly] = useState(false);
+  /** Hero chip: highlight the teams a suburb row names together with another team. */
+  const [sharedSuburbOnly, setSharedSuburbOnly] = useState(false);
   const [familyIndex, setFamilyIndex] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  /** Phone (v10): A to Z, Suburb, Alike and Services are one tap apart. */
+  const isPhone = useIsPhone();
+  const [phonePane, setPhonePane] = useState<"az" | "suburb" | "alike" | "services">("az");
 
   // `useSyncExternalStore` through `createBrowserStore`: the recent list lives in localStorage, and
   // a server render (and `renderToStaticMarkup` in tests) sees the empty server snapshot.
@@ -316,30 +325,59 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
 
   const normalizedQuery = query.trim().toLowerCase();
 
+  // Suburbs whose own catchment row names two or more teams, and the teams those rows name.
+  const sharedSuburbs = useMemo(() => {
+    const suburbs = new Set<string>();
+    const teams = new Set<string>();
+    for (const row of S2015_CATCHMENT_ROWS) {
+      const clinics = parseFollowUpClinicSet(row.followUpClinicVerbatim);
+      if (clinics.length < 2) continue;
+      suburbs.add(row.suburb.toLowerCase());
+      for (const clinic of clinics) {
+        const team = teamByKey.get(clinicKey(clinic));
+        if (team) teams.add(team.name);
+      }
+    }
+    return { suburbs: suburbs.size, teams };
+  }, [teamByKey]);
+
+  // v10 rule 5: filters highlight and dim. Every team name stays in the A to Z, in place.
   const filteredTeams = useMemo(
     () =>
       allTeams.filter((team) => {
         if (serviceFilter !== "all" && teamFacts.get(team.name)?.service !== serviceFilter) return false;
         if (alikeOnly && !collisionByName.has(team.name)) return false;
+        if (sharedSuburbOnly && !sharedSuburbs.teams.has(team.name)) return false;
         if (normalizedQuery) {
           const haystack = teamSearchHaystack.get(team.name) ?? team.name.toLowerCase();
           if (!haystack.includes(normalizedQuery)) return false;
         }
         return true;
       }),
-    [allTeams, serviceFilter, alikeOnly, teamFacts, collisionByName, teamSearchHaystack, normalizedQuery],
+    [
+      allTeams,
+      serviceFilter,
+      alikeOnly,
+      sharedSuburbOnly,
+      sharedSuburbs,
+      teamFacts,
+      collisionByName,
+      teamSearchHaystack,
+      normalizedQuery,
+    ],
   );
+  const matchingNames = useMemo(() => new Set(filteredTeams.map((team) => team.name)), [filteredTeams]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, CommunityTeam[]>();
-    for (const team of filteredTeams) {
+    for (const team of allTeams) {
       const letter = team.name.charAt(0).toUpperCase();
       const bucket = map.get(letter);
       if (bucket) bucket.push(team);
       else map.set(letter, [team]);
     }
     return map;
-  }, [filteredTeams]);
+  }, [allTeams]);
 
   const serviceCounts = useMemo(() => {
     const counts = new Map<string, { teams: number; alike: number }>();
@@ -369,12 +407,13 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     return suburbs.size;
   }, [teamByKey]);
 
-  const filtersActive = query.trim() !== "" || serviceFilter !== "all" || alikeOnly;
+  const filtersActive = query.trim() !== "" || serviceFilter !== "all" || alikeOnly || sharedSuburbOnly;
 
   function resetFilters() {
     setQuery("");
     setServiceFilter("all");
     setAlikeOnly(false);
+    setSharedSuburbOnly(false);
   }
 
   // "Show in list" clears the filters first; the focus waits a tick so the row has rendered.
@@ -416,15 +455,42 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow="Community"
-          title="Community teams"
-          stats={
+          eyebrow="Community · Team directory"
+          title={
             <>
-              <HeroStat value={allTeams.length} label="Team names" />
-              <HeroStat value={alikeTeamCount} label="Read alike" tone={alikeTeamCount > 0 ? "warning" : undefined} />
-              <HeroStat value={serviceCounts.size} label="Health services" />
-              <HeroStat value={suburbsMapped} label="Suburbs mapped" />
+              <SrOnly>Community: </SrOnly>
+              <b className={styles.heroFigure}>{allTeams.length}</b> names,{" "}
+              <b className={styles.heroFigure}>{alikeTeamCount}</b> read alike
             </>
+          }
+          stats={
+            <div className={styles.heroChips} role="group" aria-label="Highlight team names">
+              <HeroStat
+                inline
+                value={alikeTeamCount}
+                label="Read alike"
+                tone={alikeTeamCount > 0 ? "warning" : undefined}
+                pressed={alikeOnly}
+                onToggle={() => setAlikeOnly((value) => !value)}
+              />
+              <HeroStat
+                inline
+                value={sharedSuburbs.suburbs}
+                label="Suburbs with two names"
+                pressed={sharedSuburbOnly}
+                onToggle={() => setSharedSuburbOnly((value) => !value)}
+              />
+            </div>
+          }
+          foot={
+            <CheckingFoot
+              items={[
+                { id: "names", label: "Team names", value: allTeams.length },
+                { id: "services", label: "Health services", value: serviceCounts.size },
+                { id: "suburbs", label: "Suburbs mapped", value: suburbsMapped },
+              ]}
+              notChecked={["verified services, these are recorded names"]}
+            />
           }
           aside={
             <div className={styles.heroActions}>
@@ -481,12 +547,30 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               </section>
             ) : undefined
           }
-          barAside={<span className={styles.heroNote}>Recorded names, not verified services</span>}
+          barAside={recentNames.length > 0 ? <span className={styles.heroNote}>Recorded names</span> : undefined}
         />
 
-        <div className={styles.layout}>
+        {isPhone ? (
+          <ScrollRow className={styles.phonePanes}>
+            <Segmented
+              label="Show"
+              size="md"
+              value={phonePane}
+              onChange={setPhonePane}
+              items={[
+                { id: "az" as const, label: "A to Z" },
+                { id: "suburb" as const, label: "Suburb" },
+                { id: "alike" as const, label: "Alike" },
+                { id: "services" as const, label: "Services" },
+              ]}
+            />
+          </ScrollRow>
+        ) : null}
+
+        <div className={styles.layout} data-phone-pane={isPhone ? phonePane : undefined}>
           <Card
             className={styles.directoryCard}
+            data-pane="az"
             aria-label="A–Z"
             data-testid="community-index-teams"
             data-ward-primitive="panel"
@@ -499,6 +583,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 aside={
                   <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
                     <strong>{filteredTeams.length}</strong> of {allTeams.length} synthetic team names
+                    {filtersActive ? <span className={styles.resultHint}>, all names stay</span> : null}
                   </p>
                 }
               />
@@ -594,10 +679,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                     any exist. Read it as a page that found nothing, not as a service that has nothing.
                   </p>
                 </div>
-              ) : filteredTeams.length === 0 ? (
-                <SearchEmptyNotice query={query.trim()} alikeOnly={alikeOnly} />
               ) : (
                 <div className={styles.listWrap} role="region" aria-label="Community team directory" tabIndex={0}>
+                  {filteredTeams.length === 0 ? <SearchEmptyNotice query={query.trim()} alikeOnly={alikeOnly} /> : null}
                   <div className={styles.columnHead} aria-hidden="true">
                     <span />
                     <span>Team</span>
@@ -608,9 +692,21 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   </div>
                   {[...grouped.keys()].sort().map((letter) => (
                     <section key={letter} className={styles.letterSection} aria-labelledby={letterHeadingId(letter)}>
-                      <h3 id={letterHeadingId(letter)} tabIndex={-1} className={styles.letterHeading}>
-                        {letter}
-                      </h3>
+                      {/* v10: the shared GroupHead letter row; the heading role and id keep the letter jump. */}
+                      <div
+                        id={letterHeadingId(letter)}
+                        role="heading"
+                        aria-level={3}
+                        tabIndex={-1}
+                        className={styles.letterHeading}
+                      >
+                        <GroupHead
+                          variant="letter"
+                          title={letter}
+                          count={isPhone ? (grouped.get(letter) ?? []).length : undefined}
+                          className={styles.letterRow}
+                        />
+                      </div>
                       <ul className={styles.teamList}>
                         {(grouped.get(letter) ?? []).map((team) => (
                           <TeamRow
@@ -620,6 +716,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                             query={normalizedQuery}
                             collision={collisionByName.get(team.name)}
                             onOpenFamily={openFamily}
+                            dim={filtersActive && !matchingNames.has(team.name)}
                           />
                         ))}
                       </ul>
@@ -631,13 +728,23 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           </Card>
 
           <div className={styles.side} data-testid="community-index-side">
-            <SuburbLookup teamByKey={teamByKey} factsFor={factsFor} onShowInList={showInList} />
+            <div data-pane="suburb" className={styles.paneWrap}>
+              <SuburbLookup
+                teamByKey={teamByKey}
+                factsFor={factsFor}
+                onShowInList={(name) => {
+                  setPhonePane("az");
+                  showInList(name);
+                }}
+              />
+            </div>
 
             <Card
               id={FAMILY_CARD_ID}
               className={styles.sideCard}
               aria-labelledby="community-gateway-family-title"
               data-testid="community-gateway-family-panel"
+              data-pane="alike"
             >
               <CardHead
                 id="community-gateway-family-title"
@@ -686,7 +793,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               </CardBody>
             </Card>
 
-            <Card className={styles.sideCard} aria-labelledby="community-gateway-service-title">
+            <Card className={styles.sideCard} aria-labelledby="community-gateway-service-title" data-pane="services">
               <CardHead
                 id="community-gateway-service-title"
                 title="Teams by service"
@@ -962,15 +1069,18 @@ function TeamRow({
   query,
   collision,
   onOpenFamily,
+  dim = false,
 }: {
   team: CommunityTeam;
   facts: TeamFacts | undefined;
   query: string;
   collision: CommunityNameCollision | undefined;
   onOpenFamily: (collision: CommunityNameCollision) => void;
+  /** A filter or hero chip does not match this name: it stays in place and dims by colour. */
+  dim?: boolean;
 }) {
   return (
-    <li className={styles.teamRow} id={teamRowId(team.id)}>
+    <li className={styles.teamRow} id={teamRowId(team.id)} data-dim={dim ? "true" : undefined}>
       <Link
         className={styles.teamRowLink}
         href={communityTeamHref(team)}
@@ -1302,7 +1412,7 @@ function SearchEmptyNotice({ query, alikeOnly }: { query: string; alikeOnly: boo
           {alikeOnly ? "No team in this service reads like another." : "No teams found matching active filters."}
         </strong>
       </p>
-      <p>Reset the filters to view all teams.</p>
+      <p>Every name stays in the list below, dimmed. Reset the filters to clear the highlight.</p>
     </div>
   );
 }

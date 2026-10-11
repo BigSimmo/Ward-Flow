@@ -66,7 +66,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // ED strip (heading for screen readers), the queue, State bedflow, and Placement showing the
     // top of the queue at rest.
     const atRest = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
-    expect(atRest[0]).toMatch(/^\d+ waiting for \d+ ready beds?$/u);
+    expect(atRest[0]).toMatch(/^\d+ waiting, \d+ beds? ready$/u);
     expect(atRest.slice(1)).toEqual(["ED pressure", "Priority queue", "State bedflow", "Placement"]);
     expect(screen.getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));

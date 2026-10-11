@@ -50,12 +50,18 @@ const HIGHLIGHT_LABEL: Record<QueueHighlight, string> = { overdue: "overdue", ti
 const MS_PER_MINUTE = 60_000;
 
 /**
- * Wait thresholds for the queue (design system v6 §5): Tier 1 is due soon at 2h and overdue at 4h,
- * other tiers at 8h and 24h. Synthetic thresholds; they need clinical sign-off.
+ * Tier targets for the queue (v10 Home): Tier 1 8h, Tier 2 24h, Tier 3 72h. A row is overdue past
+ * its target and "due in" within the hour before it. Invented values, pending clinical sign-off.
  */
+const TIER_TARGET_HOURS: Record<number, number> = { 1: 8, 2: 24, 3: 72 };
+
 export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue: number } {
-  return urgency === 1 ? { dueSoon: 2 * 60, overdue: 4 * 60 } : { dueSoon: 8 * 60, overdue: 24 * 60 };
+  const overdue = (TIER_TARGET_HOURS[urgency] ?? TIER_TARGET_HOURS[3]) * 60;
+  return { dueSoon: overdue - 60, overdue };
 }
+
+/** Shown wherever the tier targets drive a figure. */
+export const TIER_TARGETS_NOTE = "Targets T1 8h, T2 24h, T3 72h, pending clinical sign-off";
 
 /** "Soon": a recorded legal form due within the due-soon window, or already past it. */
 function isSoon(movement: Movement, now: Instant) {
@@ -98,6 +104,11 @@ type PriorityQueueProps = {
   /** Rows the hero asked to highlight. The others dim; none is hidden or reordered. */
   highlight?: QueueHighlight;
   onClearHighlight?: () => void;
+  /**
+   * Phone only: render the first `rowCap` patient rows with a "Show all" button for the rest, so
+   * nothing is lost and the cards below the queue stay reachable (v10 Home phone, direction A).
+   */
+  rowCap?: number;
 };
 
 /**
@@ -123,7 +134,9 @@ export function PriorityQueue({
   delaysHref = "/mockups/ward-flow/delays",
   highlight,
   onClearHighlight,
+  rowCap,
 }: PriorityQueueProps) {
+  const [showAllRows, setShowAllRows] = useState(false);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
   const [soonOnly, setSoonOnly] = useState(false);
@@ -140,6 +153,8 @@ export function PriorityQueue({
   const matchesHighlight = (movement: Movement) =>
     highlight === "overdue" ? isOverdue(movement) : highlight === "tier1" ? movement.urgency === 1 : true;
   const highlighted = highlight ? rows.filter(matchesHighlight).length : 0;
+  const capped = rowCap !== undefined && rows.length > rowCap;
+  const shownRows = capped && !showAllRows ? rows.slice(0, rowCap) : rows;
 
   const headCount =
     activeTab === "referrals"
@@ -202,7 +217,7 @@ export function PriorityQueue({
             {soonOnly ? "Nothing due soon" : "No open movements"}
           </p>
         ) : (
-          rows.map((movement) => {
+          shownRows.map((movement) => {
             const selected = movement.id === selectedId;
             const who = patientOf(movement);
             const originEd = edsById.get(movement.originEdId);
@@ -212,17 +227,11 @@ export function PriorityQueue({
             const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
             const waitedMinutes = Math.max(0, now - movement.openedAt);
             const thresholds = queueWaitThresholds(movement.urgency);
-            const toDueSoon = thresholds.dueSoon - waitedMinutes;
             const level =
               waitedMinutes >= thresholds.overdue ? "over" : waitedMinutes >= thresholds.dueSoon ? "soon" : null;
-            const word =
-              level === "over"
-                ? "Overdue"
-                : level === "soon"
-                  ? "Due soon"
-                  : toDueSoon <= 60
-                    ? `due in ${durMinutes(toDueSoon)}`
-                    : "waiting";
+            // Neutral words (v10): the glyph on the timer carries the tone.
+            const toTarget = thresholds.overdue - waitedMinutes;
+            const word = level === "over" ? "overdue" : toTarget <= 60 ? `due in ${durMinutes(toTarget)}` : "waiting";
             const arrival = movement.arrivalDetails;
             const arrivalMode = arrival
               ? (arrival.modeOfArrival ??
@@ -261,9 +270,18 @@ export function PriorityQueue({
                     <strong>{who.formalName}</strong>
                   </span>
                   <span className={styles.queueSub}>
+                    {/* v10 Home: "▲ Urgent · Adult open · RPH · UM827674". The word stays neutral and
+                        the red triangle carries the tone; "Flagged" stays for assistive technology. */}
+                    {movement.flaggedUrgent ? (
+                      <span className={styles.queueFlag} data-testid={`ward-queue-flag-${movement.id}`}>
+                        <StatusGlyph tone="danger" size={9} />
+                        <SrOnly>Flagged </SrOnly>Urgent
+                      </span>
+                    ) : null}
                     <span className={styles.queueSubText}>
+                      {movement.flaggedUrgent ? "· " : ""}
                       {movement.cohort} {movement.security.toLowerCase()} ·{" "}
-                      {originEd ? originEd.siteCode : "unknown ED"}
+                      {originEd ? originEd.siteCode : "unknown ED"} · {who.umrn}
                     </span>
                     {/* The operational score, painted small and labelled "Op" so it never reads as
                         clinical severity; the screen-reader line below says "Operational" in full. */}
@@ -278,15 +296,12 @@ export function PriorityQueue({
                   </span>
                   {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}
                   <span className={styles.queueMarks}>
-                    <span className={styles.queueMark}>
-                      {movement.atsCategory === undefined ? "ATS not recorded" : `ATS ${movement.atsCategory}`}
-                    </span>
-                    {movement.flaggedUrgent ? (
-                      <span className={styles.queueFlag} data-testid={`ward-queue-flag-${movement.id}`}>
-                        <StatusGlyph tone="danger" size={9} />
-                        Flagged urgent
-                      </span>
-                    ) : null}
+                    {/* The mockup drops the "ATS not recorded" filler from sight; a recorded ATS shows. */}
+                    {movement.atsCategory === undefined ? (
+                      <SrOnly>ATS not recorded</SrOnly>
+                    ) : (
+                      <span className={styles.queueMark}>{`ATS ${movement.atsCategory}`}</span>
+                    )}
                     {movement.declines.length > 0 ? (
                       <span className={styles.queueMark}>
                         <StatusGlyph tone="closed" size={9} />
@@ -356,6 +371,17 @@ export function PriorityQueue({
             );
           })
         )}
+        {capped ? (
+          <button
+            type="button"
+            className={styles.queueMore}
+            aria-expanded={showAllRows}
+            onClick={() => setShowAllRows((value) => !value)}
+            data-testid="ward-queue-show-all"
+          >
+            {showAllRows ? `Show top ${rowCap}` : `Show all ${rows.length}`}
+          </button>
+        ) : null}
       </div>
 
       <div
@@ -425,11 +451,11 @@ export function PriorityQueue({
         {activeTab === "patients" && highlight ? (
           <span className={styles.footMeta} data-testid="ward-queue-highlight-foot">
             <span className={styles.mono}>{highlighted}</span> of <span className={styles.mono}>{rows.length}</span>{" "}
-            {HIGHLIGHT_LABEL[highlight]} highlighted
+            {HIGHLIGHT_LABEL[highlight]} highlighted, all rows stay
           </span>
         ) : (
-          <span className={styles.footMeta}>
-            {activeTab === "referrals" ? "Longest wait first" : "Tier first, then longest wait"}
+          <span className={styles.footMeta} title={activeTab === "referrals" ? undefined : TIER_TARGETS_NOTE}>
+            {activeTab === "referrals" ? "Longest wait first" : "Urgent first, then tier, then longest wait"}
           </span>
         )}
         {activeTab === "patients" && highlight && onClearHighlight ? (

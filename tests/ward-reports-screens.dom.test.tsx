@@ -24,12 +24,19 @@ import {
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
+import { ToastProvider } from "@/components/wf";
 import { OperationalLinks } from "@/components/ward-management/tools/ward-tools-workspace";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-const inProvider = (node: ReactNode) => render(<WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>);
+// The ward layout wraps every route in the shared wf ToastProvider; the screens rely on it.
+const inProvider = (node: ReactNode) =>
+  render(
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>
+    </ToastProvider>,
+  );
 
 afterEach(() => {
   forgetDowntimePack();
@@ -65,6 +72,54 @@ describe("read-only report screens", () => {
     expect(screen.getByTestId("ward-chronology-print")).toBeTruthy();
   });
 
+  it("confirms Copy row in the shared wf toast, and says so when the copy fails", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    try {
+      inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+      const table = screen.getByTestId("ward-chronology-table");
+      fireEvent.click(within(table).getAllByRole("button", { expanded: false })[0]);
+      fireEvent.click(screen.getByRole("button", { name: "Copy row" }));
+      await act(async () => undefined);
+      expect(writeText).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId("toast-region")).toHaveTextContent("Row copied");
+
+      writeText.mockRejectedValueOnce(new Error("blocked"));
+      fireEvent.click(screen.getByRole("button", { name: "Copy row" }));
+      await act(async () => undefined);
+      expect(screen.getByTestId("toast-region")).toHaveTextContent("Could not copy the row");
+    } finally {
+      Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
+
+  it("on a phone keeps record kind and the role view one tap away, in a sheet", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+      const filters = screen.getByTestId("ward-chronology-phone-filters");
+      expect(filters).toHaveTextContent("Every record kind · Bed coordinator");
+      fireEvent.click(within(filters).getByRole("button"));
+      const sheet = screen.getByRole("dialog", { name: "Record kind and view" });
+      expect(within(sheet).getByRole("radiogroup", { name: "View as" })).toBeTruthy();
+      fireEvent.click(within(sheet).getByRole("radio", { name: "Ward nurse" }));
+      fireEvent.click(within(sheet).getByRole("button", { name: "Done" }));
+      expect(screen.getByTestId("ward-chronology-phone-filters")).toHaveTextContent("Ward nurse");
+      expect(screen.getByTestId("ward-chronology-nurse-view")).toBeTruthy();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("asks for a patient before showing any chronology", () => {
     inProvider(<PatientChronologyScreen />);
     expect(screen.queryByTestId("ward-chronology-table")).toBeNull();
@@ -84,7 +139,7 @@ describe("read-only report screens", () => {
 
   it("takes a stamped downtime snapshot and keeps it in tab memory", () => {
     inProvider(<DowntimePackScreen />);
-    expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(/^Generated /u);
+    expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(/^Taken .* does not update while open$/u);
     expect(screen.getByTestId("ward-downtime-beds")).toBeTruthy();
     expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);
   });
@@ -204,6 +259,70 @@ describe("read-only report screens", () => {
       .map((cell) => cell.textContent);
     // Ward, service, beds, ready, being made ready, ...
     expect(cells.slice(1, 4)).toEqual(["4", "2", "1"]);
+  });
+
+  it("groups beds by service with subtotals that add up to the hero's ready count", () => {
+    inProvider(<DowntimePackScreen />);
+    const pack = lastDowntimePack()!;
+    const subtotals = screen.getAllByTestId("ward-downtime-subtotal");
+    expect(subtotals.length).toBe(new Set(pack.wards.map((ward) => ward.service)).size);
+    const readySum = subtotals.reduce((sum, row) => sum + Number(within(row).getAllByRole("cell")[1].textContent), 0);
+    expect(readySum).toBe(pack.totals.ready);
+    expect(screen.getByTestId("ward-downtime-total-ready").textContent).toBe(String(pack.totals.ready));
+    expect(screen.getByTestId("ward-downtime-frozen").textContent).toMatch(/^Frozen \d\d:\d\d$/u);
+  });
+
+  it("shows a delta twin on each hero figure after a new snapshot", () => {
+    vi.useFakeTimers();
+    try {
+      inProvider(<DowntimePackScreen />);
+      expect(screen.queryByText(/since the last pack/u)).toBeNull();
+      fireEvent.click(screen.getByTestId("ward-downtime-refresh"));
+      expect(screen.getByTestId("ward-downtime-refresh").textContent).toContain("Taking snapshot");
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(screen.getAllByText(/since the last pack/u)).toHaveLength(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("filters the chronology by source and keeps the count line equal to the rows shown", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+    const bodyRows = () =>
+      within(screen.getByTestId("ward-chronology-table"))
+        .getAllByRole("row")
+        .filter((row) => within(row).queryAllByRole("button").length > 0);
+    const all = bodyRows().length;
+    fireEvent.click(screen.getByRole("radio", { name: "Records" }));
+    const records = bodyRows().length;
+    expect(records).toBeLessThanOrEqual(all);
+    expect(screen.getByTestId("ward-chronology-count").textContent).toBe(`${records} of ${all} shown`);
+  });
+
+  it("opens a clicked event in the side panel and narrows the sources for the ward nurse view", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+    const table = within(screen.getByTestId("ward-chronology-table"));
+    fireEvent.click(table.getAllByRole("button")[0]);
+    expect(screen.getByRole("button", { name: "Copy row" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Next" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "Ward nurse" }));
+    expect(screen.getByTestId("ward-chronology-nurse-view")).toBeTruthy();
+    expect(screen.queryByRole("radio", { name: "Audit" })).toBeNull();
+  });
+
+  it("offers Clear filters when nothing matches", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find an action, person or reason" }), {
+      target: { value: "zzzz no such words" },
+    });
+    expect(screen.queryByTestId("ward-chronology-table")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByTestId("ward-chronology-table")).toBeTruthy();
   });
 
   it("is reachable from the Tools drawer's shortcuts", () => {

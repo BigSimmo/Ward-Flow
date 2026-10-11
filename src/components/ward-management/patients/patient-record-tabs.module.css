@@ -84,7 +84,7 @@
 .day {
   padding: var(--wf-s-2) 0 2px;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -101,7 +101,7 @@
 
 .event time {
   color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
 }
 
 .event span {
@@ -166,7 +166,7 @@
   border: 1px dashed var(--wf-line-3);
   border-radius: var(--wf-r-pill);
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -180,7 +180,7 @@
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
   color: var(--wf-ink-2);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   white-space: nowrap;
 }

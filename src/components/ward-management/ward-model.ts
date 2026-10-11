@@ -816,7 +816,18 @@ export type Override = {
    * placement overrides recorded before gate-specific facts were available.
    */
   gate?: EligibilityGate | "high_acuity_staffing" | "specialling_staffing" | "locked_bed_capacity";
+  /**
+   * v10 pass 3 (Josh, 10 Oct 2026): who gave the override's second sign-off, as the role they
+   * signed in and the name or initials typed. Optional: absent on overrides recorded before it
+   * existed, and on any override recorded without one. Typed text, so a session that records one
+   * is never saved to browser storage (`eventCarriesTypedTextPayload`).
+   */
+  secondSignOff?: OverrideSignOff;
 };
+
+/** The second sign-off on an override: the acting role and a typed name or initials (1 to 60 characters). */
+export type OverrideSignOff = { role: WardFlowRole; name: string };
+export const OVERRIDE_SIGN_OFF_NAME_MAX = 60;
 
 /**
  * T12 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`, item 9, owner answer 9,
@@ -1481,6 +1492,12 @@ export type Movement = {
   /** Units currently holding a live referral. Never longer than PARALLEL_REFERRAL_CAP. */
   referredUnitIds: string[];
   acceptedUnitId?: string;
+  /**
+   * v10 pass 3 (Josh, 10 Oct 2026): the numbered bed the accepting ward placed this person in on its
+   * Bed board (`ACCEPT_IN_PRINCIPLE.bedNumber`). Optional: absent is no bed named yet, the ordinary
+   * case, and every seeded movement. Cleared with the acceptance by `UNDO_ACCEPT_IN_PRINCIPLE`.
+   */
+  heldBedNumber?: number;
   /** When `ACCEPT_IN_PRINCIPLE` (ward-flow-reducer.ts) set `acceptedUnitId`. Absent for every
    *  movement in the seed fixture (`ward-movements.ts`), which is hand-authored with
    *  `acceptedUnitId` already set rather than reached by dispatching that event — this field is
@@ -1491,7 +1508,12 @@ export type Movement = {
    * When this movement was referred to units — written by `REFER_TO_UNITS` beside
    * `referredUnitIds`, which is the one place a movement becomes referred.
    *
-   * ⚠️ **OPTIONAL, AND ABSENT ON EVERY SEEDED MOVEMENT ON PURPOSE.** Same discipline as
+   * v10 pass 3 (Josh, 10 Oct 2026): the demo seed now gives referred movements a synthetic
+   * `referredAt`, and accepted ones `acceptedAt`, through `withDemoStageTimes`
+   * (`ward-demo-stage-times.ts`), so the Journey strip shows real stages. The hand-authored fixture
+   * itself still carries neither, and a movement without one still says so, as below.
+   *
+   * ⚠️ **OPTIONAL, AND ABSENT ON EVERY HAND-AUTHORED MOVEMENT.** Same discipline as
    * `acceptedAt` below: a hand-authored fixture carries no referral time, so a row that has none
    * says so rather than falling back to `openedAt`. Substituting arrival time under a "referred"
    * label answers a different question while reading as plausible — the ED outbox's own comment
@@ -2460,6 +2482,12 @@ export type ReferralAddressing = {
    * took back one destination's own live request", rather than a second list for this narrower act.
    */
   withdrawalReason?: WardRequestWithdrawalReason;
+  /**
+   * v10 pass 2 (Josh, 10 Oct 2026, ward Bed board "Place here"): the bed number, 1 to `Unit.beds`,
+   * the accepting ward placed this referral in. Only ever beside `acceptedUnitId`, and only when the
+   * acceptance named a bed (`ACCEPT_REFERRAL.bedNumber`). A fact about the ward's act, not the person.
+   */
+  heldBedNumber?: number;
 };
 
 /** The ward arm, named so signatures can require it. */

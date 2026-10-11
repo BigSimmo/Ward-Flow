@@ -1,0 +1,81 @@
+/* Statistics Summary on a phone (v10, 390 wide). 12px gutters; touch targets come from the shared
+   phone parts. */
+.page {
+  min-width: 0;
+  padding: var(--wf-s-3);
+  box-sizing: border-box;
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.heroActions {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  width: 100%;
+}
+
+.heroActions > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.seg {
+  width: 100%;
+}
+
+.seg :is(a, button) {
+  flex: 1 1 0;
+  min-height: var(--wf-touch);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.list > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.inUse {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}

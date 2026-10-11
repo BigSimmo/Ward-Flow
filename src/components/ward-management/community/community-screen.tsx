@@ -10,18 +10,24 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 
 import Link from "next/link";
 import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
+import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import {
   Badge,
   Button,
+  CheckingFoot,
   Count,
   Hero,
   HeroStat,
   Icon,
   Menu,
+  Drawer,
   Popover,
+  SinceYouLooked,
   SrOnly,
   StatusGlyph,
   TextInput,
+  useOptionalToast,
+  type SinceItem,
   type WfTone,
 } from "@/components/wf";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
@@ -465,6 +471,42 @@ const BLANK_INTAKE_DRAFT: IntakeDraft = {
  * a duration is allowed to carry, per the owner's ruling that a first draft applied silently and
  * with nothing beside it saying so.
  */
+/**
+ * Since you looked (v10, team page): what changed for this team since the current shift began, read
+ * from the record. The prototype keeps no per-person "last looked" time, so the shift start stands
+ * in for it, as Handover does. Referrals in counts referrals naming this team raised in the window;
+ * accepted and declined count this team's answers decided in the window.
+ */
+function teamSinceItems(
+  referrals: readonly {
+    raisedAt: Instant;
+    destinations: readonly { destination: { kind: string; teamName?: string }; state: string; decidedAt?: Instant }[];
+  }[],
+  names: readonly string[],
+  since: Instant,
+  now: Instant,
+  waiting: number,
+): SinceItem[] {
+  const within = (at: Instant | undefined) => at !== undefined && at >= since && at <= now;
+  const ours = (entry: { destination: { kind: string; teamName?: string } }) =>
+    entry.destination.kind === "community_team" && names.includes(entry.destination.teamName ?? "");
+  const addressed = referrals.filter((referral) => referral.destinations.some(ours));
+  const decided = (state: string) =>
+    addressed.filter((referral) =>
+      referral.destinations.some((entry) => ours(entry) && entry.state === state && within(entry.decidedAt)),
+    ).length;
+  return [
+    {
+      id: "in",
+      value: addressed.filter((referral) => within(referral.raisedAt)).length,
+      word: "referrals in",
+    },
+    { id: "accepted", value: decided("accepted"), word: "accepted" },
+    { id: "declined", value: decided("declined"), word: "declined" },
+    { id: "waiting", value: waiting, word: "still waiting an answer" },
+  ];
+}
+
 export function CommunityScreen({
   teamId,
   admissions,
@@ -526,6 +568,80 @@ export function CommunityScreen({
   const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
   const selectedReferral = (referrals ?? liveReferrals).find((referral) => referral.id === selectedReferralId);
   const [pendingAcceptance, setPendingAcceptance] = useState<{ id: string; rejectionCount: number } | null>(null);
+
+  /*
+   * v10 pass 3: an Accept or Decline recorded here shows a toast with Undo
+   * (`UNDO_REFERRAL_DECISION`, this team's own decision). `rejectionsRef` reads the newest count at
+   * the moment Undo is pressed, and a refused Undo says why.
+   */
+  const toast = useOptionalToast();
+  const rejectionsRef = useRef(rejections.length);
+  useEffect(() => {
+    rejectionsRef.current = rejections.length;
+  }, [rejections]);
+  const toastedAcceptRef = useRef<string | null>(null);
+  const declineCheckRef = useRef<{ referralId: string; count: number } | null>(null);
+  const [declineCheckToken, setDeclineCheckToken] = useState(0);
+  const undoCheckRef = useRef<number | null>(null);
+  const [undoCheckToken, setUndoCheckToken] = useState(0);
+  const [switchOpen, setSwitchOpen] = useState(false);
+  const [switchQuery, setSwitchQuery] = useState("");
+  const switchTriggerRef = useRef<HTMLButtonElement>(null);
+
+  const pushDecisionToast = useCallback(
+    (referralId: string, word: "accepted" | "declined") => {
+      toast?.push({
+        tone: "success",
+        title: `Referral ${word}`,
+        body: "Undo puts it back in the queue.",
+        undo: {
+          durationMs: 8000,
+          onUndo: () => {
+            undoCheckRef.current = rejectionsRef.current;
+            dispatch({ type: "UNDO_REFERRAL_DECISION", role: "community", now, referralId });
+            setUndoCheckToken((token) => token + 1);
+          },
+        },
+      });
+    },
+    [toast, dispatch, now],
+  );
+
+  useEffect(() => {
+    if (!pendingAcceptance || !team || toastedAcceptRef.current === pendingAcceptance.id) return;
+    const names = [team.name, ...ratifiedSameServiceNames(team.name)];
+    const accepted = liveReferrals
+      .find((referral) => referral.id === pendingAcceptance.id)
+      ?.destinations.some(
+        (entry) =>
+          entry.destination.kind === "community_team" &&
+          names.includes(entry.destination.teamName) &&
+          entry.state === "accepted",
+      );
+    if (!accepted) return;
+    toastedAcceptRef.current = pendingAcceptance.id;
+    pushDecisionToast(pendingAcceptance.id, "accepted");
+  }, [pendingAcceptance, liveReferrals, team, pushDecisionToast]);
+
+  useEffect(() => {
+    const check = declineCheckRef.current;
+    if (declineCheckToken === 0 || check === null) return;
+    declineCheckRef.current = null;
+    if (rejections.length > check.count) return;
+    pushDecisionToast(check.referralId, "declined");
+  }, [rejections, declineCheckToken, pushDecisionToast]);
+
+  useEffect(() => {
+    if (undoCheckToken === 0 || undoCheckRef.current === null) return;
+    if (rejections.length > undoCheckRef.current) {
+      toast?.push({ tone: "warning", title: "Undo was refused", body: rejections[rejections.length - 1].reason });
+    } else {
+      toast?.push({ tone: "info", title: "Decision undone", body: "The referral is back in the queue." });
+    }
+    undoCheckRef.current = null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rejections, undoCheckToken]);
+
   const [acceptanceError, setAcceptanceError] = useState<string | null>(null);
   const [showCareEditor, setShowCareEditor] = useState(false);
   const [careAccess, setCareAccess] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
@@ -675,6 +791,8 @@ export function CommunityScreen({
   const handleConfirmDecline = useCallback(
     (referralId: string) => {
       if (declineDraft === undefined) return;
+      declineCheckRef.current = { referralId, count: rejectionsRef.current };
+      setDeclineCheckToken((token) => token + 1);
       dispatch({
         type: "DECLINE_REFERRAL",
         role: "community",
@@ -1150,50 +1268,34 @@ export function CommunityScreen({
             eyebrow="Community team"
             title={team.name}
             titleMeta={
-              <Popover
-                label="WA community mental health teams"
-                panelClassName={v6.teamPanel}
-                trigger={(props) => (
-                  <button
-                    {...props}
-                    type="button"
-                    className={v6.heroMenuButton}
-                    aria-label="Change team"
-                    title="Switch community team"
-                  >
-                    <Icon icon={ChevronDown} size={14} />
-                  </button>
-                )}
-              >
-                {(close) => (
-                  <div className={v6.teamMenu}>
-                    <p className={v6.teamMenuHead}>
-                      <span>WA community mental health teams</span>
-                      <span>{COMMUNITY_TEAM_PAGES.length} teams</span>
-                    </p>
-                    <ul className={v6.teamMenuList}>
-                      {COMMUNITY_TEAM_PAGES.map((other) => (
-                        <li key={other.id}>
-                          <Link
-                            className={v6.teamMenuItem}
-                            href={communityTeamHref(other)}
-                            aria-current={other.id === team.id ? "page" : undefined}
-                            onClick={close}
-                          >
-                            <span>{other.name}</span>
-                            {other.id === team.id ? <Badge size="sm">Active</Badge> : null}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </Popover>
+              <>
+                <span className={v6.heroAnswer} data-testid="ward-community-hero-answer">
+                  <b>{isDemoMode ? teamConfig.caseload : caseloadRows.length}</b> on the caseload
+                </span>
+                <button
+                  ref={switchTriggerRef}
+                  type="button"
+                  className={v6.heroMenuButton}
+                  aria-label="Change team"
+                  title="Switch community team"
+                  aria-haspopup="dialog"
+                  aria-expanded={switchOpen}
+                  onClick={() => setSwitchOpen(true)}
+                  data-testid="ward-community-switch-team"
+                >
+                  <Icon icon={ChevronDown} size={14} />
+                </button>
+              </>
             }
             stats={
-              <div className={v6.heroStats}>
-                <HeroStat value={isDemoMode ? teamConfig.caseload : caseloadRows.length} label="Caseload" />
+              /*
+               * v10 (10 Oct 2026): four list chips at most five. Each one switches the list below,
+               * like its tab. The caseload is the answer beside the title; crisis episodes are not
+               * recorded anywhere in the model, so they sit in the Checking foot as not checked.
+               */
+              <div className={v6.heroStats} role="group" aria-label="Show a list">
                 <HeroStat
+                  inline
                   value={isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
                   trend={
                     isDemoMode && !hasAnyReferralsForTeam
@@ -1203,31 +1305,65 @@ export function CommunityScreen({
                         : undefined
                   }
                   label="Waiting answer"
+                  pressed={activeTab === "tab-triage"}
+                  onToggle={() => {
+                    setActiveTab("tab-triage");
+                    scrollToSection("ward-community-waiting");
+                  }}
                 />
                 <HeroStat
+                  inline
                   // One figure with the tab: everyone in a bed or holding one, and how many of
                   // those hold a pulled bed they have not yet reached.
                   value={isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
-                  trend={
-                    isDemoMode
-                      ? `of ${teamConfig.inpatientsTotal}`
-                      : bedPulledCount > 0
-                        ? `${bedPulledCount} bed pulled`
-                        : undefined
-                  }
                   label="In a bed"
+                  pressed={activeTab === "tab-inpatients"}
+                  onToggle={() => {
+                    setActiveTab("tab-inpatients");
+                    scrollToSection("ward-community-admitted");
+                  }}
                 />
-                <HeroStat value={isDemoMode ? teamConfig.egress : lists.expectedBack.length} label="Expected back" />
-                <HeroStat value={isDemoMode ? teamConfig.cto : form5ACount} label="On a CTO" />
-                {/* No record in the model holds a team's open crisis episodes, so outside the
-                    demonstration the count is not shown rather than invented. */}
                 <HeroStat
-                  value={isDemoMode ? teamConfig.crisis : <span aria-hidden="true">–</span>}
-                  trend={isDemoMode ? undefined : "Not recorded"}
-                  label="Crisis open"
-                  tone="info"
+                  inline
+                  value={isDemoMode ? teamConfig.egress : lists.expectedBack.length}
+                  label="Expected back"
+                  pressed={activeTab === "tab-egress"}
+                  onToggle={() => {
+                    setActiveTab("tab-egress");
+                    scrollToSection("ward-community-expected-back");
+                  }}
+                />
+                <HeroStat
+                  inline
+                  value={isDemoMode ? teamConfig.cto : form5ACount}
+                  label="On a CTO"
+                  pressed={activeTab === "tab-caseload"}
+                  onToggle={() => {
+                    setActiveTab("tab-caseload");
+                    scrollToSection("section-caseload");
+                  }}
                 />
               </div>
+            }
+            foot={
+              <CheckingFoot
+                items={[
+                  { id: "caseload", label: "Caseload", value: isDemoMode ? teamConfig.caseload : caseloadRows.length },
+                  {
+                    id: "urgent",
+                    label: "Urgent answers",
+                    value: isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount,
+                    tone:
+                      (isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount) > 0
+                        ? "danger"
+                        : undefined,
+                  },
+                  ...(isDemoMode
+                    ? [{ id: "crisis", label: "Crisis open", value: teamConfig.crisis }]
+                    : [{ id: "pulled", label: "Bed pulled", value: bedPulledCount }]),
+                ]}
+                notChecked={isDemoMode ? [] : ["Crisis open, no record holds a team's crisis episodes"]}
+              />
             }
             aside={
               <>
@@ -1569,6 +1705,86 @@ export function CommunityScreen({
             </details>
           </nav>
         </div>
+
+        <SinceYouLooked
+          id="ward-community-since"
+          className={v6.since}
+          // This page renders elapsed time, never a clock face (owner ruling), so the window is named.
+          since="the start of this shift"
+          items={teamSinceItems(
+            sourceReferrals,
+            [team.name, ...ratifiedSameServiceNames(team.name)],
+            currentShiftStartInstant(now),
+            now,
+            waitingReferrals.length,
+          )}
+          onCopy={() => {
+            const lines = teamSinceItems(
+              sourceReferrals,
+              [team.name, ...ratifiedSameServiceNames(team.name)],
+              currentShiftStartInstant(now),
+              now,
+              waitingReferrals.length,
+            ).map((item) => `${item.value} ${item.word}`);
+            const text = `${team.name}, since the start of this shift (synthetic prototype): ${lines.join(", ")}.`;
+            void navigator.clipboard?.writeText(text).then(
+              () => toast?.push({ tone: "success", title: "Copied as handover text" }),
+              () => toast?.push({ tone: "warning", title: "Could not copy", body: text }),
+            );
+          }}
+        />
+
+        <Drawer
+          open={switchOpen}
+          onClose={() => {
+            setSwitchOpen(false);
+            setSwitchQuery("");
+          }}
+          title="Switch team"
+          description={`${COMMUNITY_TEAM_PAGES.length} WA community mental health teams`}
+          returnFocusRef={switchTriggerRef}
+          testId="ward-community-switch-drawer"
+        >
+          <div className={v6.switchBody}>
+            <TextInput
+              type="search"
+              icon={Search}
+              aria-label="Find a team"
+              placeholder="Find a team"
+              value={switchQuery}
+              onChange={(event) => setSwitchQuery(event.target.value)}
+              onClear={() => setSwitchQuery("")}
+              autoComplete="off"
+              data-sheet-autofocus
+            />
+            <ul className={v6.switchList}>
+              {COMMUNITY_TEAM_PAGES.filter((other) =>
+                other.name.toLowerCase().includes(switchQuery.trim().toLowerCase()),
+              ).map((other) => {
+                const suburbs = communityTeamSuburbCounts().get(other.name);
+                return (
+                  <li key={other.id}>
+                    <Link
+                      className={v6.switchItem}
+                      href={communityTeamHref(other)}
+                      aria-current={other.id === team.id ? "page" : undefined}
+                      onClick={() => setSwitchOpen(false)}
+                    >
+                      <span className={v6.switchName}>{other.name}</span>
+                      <span className={v6.switchMeta}>
+                        {other.id === team.id
+                          ? "This team"
+                          : suburbs
+                            ? `${suburbs} ${suburbs === 1 ? "suburb" : "suburbs"}`
+                            : ""}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </Drawer>
 
         <div className={`${styles.contentWorkspace} ${v6.workspace}`}>
           {/* ── Tab 1: Priority Referral Triage Queue ── */}
@@ -4432,6 +4648,7 @@ export function CommunityScreen({
                         <div
                           key={task.id}
                           id={task.id}
+                          data-dim={isDismissed ? "true" : undefined}
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -4440,7 +4657,6 @@ export function CommunityScreen({
                             background: isDismissed ? "var(--surface-2)" : "var(--surface)",
                             border: "1px solid var(--line)",
                             borderRadius: "var(--r2)",
-                            opacity: isDismissed ? 0.5 : 1,
                           }}
                         >
                           <div>

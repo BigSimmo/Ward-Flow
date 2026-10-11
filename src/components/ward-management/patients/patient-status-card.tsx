@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { BedDouble, CalendarDays, Clock, DoorOpen, Eye, Scale, Stethoscope, Truck, Users } from "lucide-react";
-import { Button, StatusGlyph, type WfTone } from "@/components/wf";
+import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   ABSENCE_STEPS,
@@ -176,7 +176,7 @@ function transportCell(
 }
 
 /** A demo instant as a calendar day, "Tue 14 Oct". */
-function dayLabel(instant: number, dayZero: Date): string {
+export function dayLabel(instant: number, dayZero: Date): string {
   return calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", {
     weekday: "short",
     day: "numeric",
@@ -681,68 +681,97 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
     status.rows?.find((r) => !r.done && r.action?.kind === "button")?.key ??
     status.cells.find((c) => !c.clear && c.action?.kind === "button")?.key;
   const word = status.meterWord ?? "clear";
+  /*
+   * v10 Patient, Phone: "Its one primary is pinned in a sticky action bar and is not repeated in
+   * the list." On a phone the primary leaves its row or cell and sits in the bar below the card.
+   */
+  const isPhone = useIsPhone();
+  const pinned = isPhone
+    ? (status.rows?.find((r) => r.key === primaryKey)?.action ?? status.cells.find((c) => c.key === primaryKey)?.action)
+    : undefined;
+  const inList = (key: string) => !(pinned && key === primaryKey);
   return (
-    <section className={styles.card} aria-label="Status" data-testid="ward-patient-status-card">
-      <div className={styles.head}>
-        <span className={styles.verdict} data-testid="ward-patient-status-verdict">
-          <StatusGlyph tone={status.tone} size={12} />
-          {status.verdict}
-        </span>
-        {status.meter ? (
-          <span className={styles.meterGroup}>
-            <span
-              className={styles.meter}
-              role="img"
-              aria-label={`${status.meter.clear} of ${status.meter.of} ${word}`}
-            >
-              {Array.from({ length: status.meter.of }, (_, i) => (
-                <i key={i} data-on={i < (status.meter?.clear ?? 0)} />
-              ))}
-            </span>
-            <span className={styles.meterText} aria-hidden="true">
-              {status.meter.clear} of {status.meter.of} {word}
-            </span>
+    <>
+      <section
+        className={styles.card}
+        aria-label="Status"
+        data-act={status.tone === "danger" || undefined}
+        data-testid="ward-patient-status-card"
+      >
+        <div className={styles.head}>
+          <span className={styles.verdict} data-testid="ward-patient-status-verdict">
+            <StatusGlyph tone={status.tone} size={12} />
+            {status.verdict}
           </span>
-        ) : null}
-        <span className={styles.meta}>{status.meta}</span>
-      </div>
-      {status.rows ? (
-        <ul className={styles.rows} aria-label="Missing person steps">
-          {status.rows.map((row) => (
-            <li key={row.key} className={styles.row} data-testid={`ward-patient-step-${row.key}`}>
-              <StatusGlyph tone={row.done ? "success" : "warning"} size={11} />
-              <span className={styles.rowText}>
-                <strong>{row.label}</strong>
-                {row.sub ? <span>{row.sub}</span> : null}
+          {status.meter ? (
+            <span className={styles.meterGroup}>
+              <span
+                className={styles.meter}
+                role="img"
+                aria-label={`${status.meter.clear} of ${status.meter.of} ${word}`}
+              >
+                {Array.from({ length: status.meter.of }, (_, i) => (
+                  <i key={i} data-on={i < (status.meter?.clear ?? 0)} />
+                ))}
               </span>
-              {row.time ? <span className={styles.time}>{row.time}</span> : <span className={styles.nr}>Not yet</span>}
-              {row.action ? <CellAction action={row.action} primary={row.key === primaryKey} /> : <span />}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <div className={styles.cells} hidden={status.cells.length === 0}>
-        {status.cells.map((cell) => (
-          <div key={cell.key} className={styles.cell} data-testid={`ward-patient-gate-${cell.key}`}>
-            <div className={styles.label}>
-              <cell.icon size={14} aria-hidden="true" />
-              <span>{cell.label}</span>
-              <span className={styles.owner}>{cell.owner}</span>
-            </div>
-            <div className={styles.value}>
-              {cell.tone ? <StatusGlyph tone={cell.tone} size={11} /> : null}
-              <span>{cell.value}</span>
-            </div>
-            <div className={styles.sub}>{cell.sub}</div>
-            {cell.time ? <div className={styles.time}>{cell.time}</div> : null}
-            {cell.action ? (
-              <div className={styles.action}>
-                <CellAction action={cell.action} primary={cell.key === primaryKey} />
+              <span className={styles.meterText} aria-hidden="true">
+                {status.meter.clear} of {status.meter.of} {word}
+              </span>
+            </span>
+          ) : null}
+          <span className={styles.meta}>{status.meta}</span>
+        </div>
+        {status.rows ? (
+          <ul className={styles.rows} aria-label="Missing person steps">
+            {status.rows.map((row) => (
+              <li key={row.key} className={styles.row} data-testid={`ward-patient-step-${row.key}`}>
+                <StatusGlyph tone={row.done ? "success" : "warning"} size={11} />
+                <span className={styles.rowText}>
+                  <strong>{row.label}</strong>
+                  {row.sub ? <span>{row.sub}</span> : null}
+                </span>
+                {row.time ? (
+                  <span className={styles.time}>{row.time}</span>
+                ) : (
+                  <span className={styles.nr}>Not yet</span>
+                )}
+                {row.action && inList(row.key) ? (
+                  <CellAction action={row.action} primary={row.key === primaryKey} />
+                ) : (
+                  <span />
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <div className={styles.cells} hidden={status.cells.length === 0}>
+          {status.cells.map((cell) => (
+            <div key={cell.key} className={styles.cell} data-testid={`ward-patient-gate-${cell.key}`}>
+              <div className={styles.label}>
+                <cell.icon size={14} aria-hidden="true" />
+                <span>{cell.label}</span>
+                <span className={styles.owner}>{cell.owner}</span>
               </div>
-            ) : null}
-          </div>
-        ))}
-      </div>
-    </section>
+              <div className={styles.value}>
+                {cell.tone ? <StatusGlyph tone={cell.tone} size={11} /> : null}
+                <span>{cell.value}</span>
+              </div>
+              <div className={styles.sub}>{cell.sub}</div>
+              {cell.time ? <div className={styles.time}>{cell.time}</div> : null}
+              {cell.action && inList(cell.key) ? (
+                <div className={styles.action}>
+                  <CellAction action={cell.action} primary={cell.key === primaryKey} />
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </section>
+      {pinned ? (
+        <div className={styles.phBar} data-testid="ward-patient-phone-action-bar">
+          <CellAction action={pinned} primary />
+        </div>
+      ) : null}
+    </>
   );
 }

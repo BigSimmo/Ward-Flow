@@ -278,6 +278,22 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CHANGE_PLANNED_ADMISSION",
   "CANCEL_PLANNED_ADMISSION",
   "CONVERT_PLANNED_ADMISSION",
+  // v10 pass 2, 10 Oct 2026: Undo and the Bed board. Ids, whole bed numbers, a generation counter
+  // and instants only. An undo restores records the session already held; it adds no typed text.
+  "UNDO_REFERRAL_DECISION",
+  "UNDO_AUDIT_REVIEW",
+  "PLACE_IN_BED",
+  "UNDO_PLACE_IN_BED",
+  // v10 pass 3, 10 Oct 2026: the step undos. Ids and instants only; an undo restores records the
+  // session already held and adds no typed text.
+  "UNDO_REFER_TO_UNITS",
+  "UNDO_ACCEPT_IN_PRINCIPLE",
+  "UNDO_LEGAL_FORM_RECORD",
+  "UNDO_SUPPORT_NOTIFICATION",
+  "UNDO_REPATRIATION",
+  "UNDO_HANDOVER_SIGN_OFF",
+  "UNDO_ED_STEP",
+  "UNDO_TRANSPORT_STEP",
 ] as const satisfies readonly WardFlowEvent["type"][];
 
 /** Runtime form of the tuple above — an O(1)-lookup `Set`, used by the reducer wrapper and by the
@@ -389,7 +405,9 @@ type WardFlowReviewedStringOrUnknownKey =
   | "plannedAdmissionId"
   // Stream D: the demo calendar's "yyyy-mm-dd" date at `now`, computed by the panel from
   // `calendarDateOf(now, dayZero)` for the linked age-group check. Not about a person; never typed.
-  | "calendarDate";
+  | "calendarDate"
+  // v10 pass 2: `UNDO_AUDIT_REVIEW` names an `AuditReview.id`; the reducer finds the review or refuses.
+  | "reviewId";
 
 /** True exactly when `T` is (or includes) the wide `string` type — never for a literal or a union of
  *  literals, which is what lets a closed code-shaped union field pass untouched while a genuine
@@ -513,6 +531,18 @@ export type _AssertNoUnreviewedRaiseReferralDraftFields = AssertNever<Unreviewed
  * helper turns that static guarantee into a runtime one the test suite can assert on directly, and
  * one that fires the day a new event type is added to the union without a decision recorded here.
  */
+/**
+ * v10 pass 3 (Josh, 10 Oct 2026): the payload-level exception to "the type decides". An override's
+ * second sign-off (`overrideSignOff` on `REFER_TO_UNITS`, `ACCEPT_IN_PRINCIPLE` and `PULL_PATIENT`)
+ * carries a typed name or initials inside a nested object, which the compile-time check above
+ * cannot see (its known nested-object gap). Those three events stay on the safe list for every
+ * ordinary dispatch; one that carries a sign-off locks persistence exactly like a typed-text event,
+ * whether or not the reducer accepts it.
+ */
+export function eventCarriesTypedTextPayload(event: WardFlowEvent): boolean {
+  return "overrideSignOff" in event && event.overrideSignOff !== undefined;
+}
+
 export function findWardFlowEventTypeCoverageGaps(types: readonly string[]): string[] {
   return types.filter(
     (type) =>

@@ -144,17 +144,31 @@ describe("Ward Flow Master Search Hub — search and the type filter", () => {
     expect(screen.getByText(A_REAL_TEAM)).toBeInTheDocument();
   });
 
-  it("narrows the visible list to what the query actually matches", () => {
+  // v10 pass 3 (rule: filters highlight and dim, they do not hide): the search lights what it
+  // matches and dims every other row, and every row stays on the list.
+  it("highlights what the query actually matches and dims the rest, hiding nothing", () => {
     renderHub();
+    const row = (name: string) => screen.getByText(name).closest("li");
     const search = screen.getByRole("searchbox", { name: /search/i });
     fireEvent.change(search, { target: { value: "Mental Health Unit" } });
 
-    // The one item the query names is still there...
-    expect(screen.getByText("Mental Health Unit")).toBeInTheDocument();
-    // ...but an unrelated ward and an unrelated community team, both visible a moment ago, are
-    // not — a screen that ignored the query and kept the whole list would fail only this half.
-    expect(screen.queryByText("Dabakarn")).not.toBeInTheDocument();
-    expect(screen.queryByText(A_REAL_TEAM)).not.toBeInTheDocument();
+    // The one item the query names is lit...
+    expect(row("Mental Health Unit")).not.toHaveAttribute("data-dim");
+    // ...and an unrelated ward and an unrelated community team stay on the list, dimmed. A screen
+    // that ignored the query would leave them undimmed; one that narrowed would remove them.
+    expect(row("Dabakarn")).toHaveAttribute("data-dim", "true");
+    expect(row(A_REAL_TEAM)).toHaveAttribute("data-dim", "true");
+    expect(screen.getByTestId("hub-highlight-note")).toHaveTextContent(/highlighted\. All rows stay/);
+  });
+
+  it("says when nothing matches and offers Clear search, with every row still listed", () => {
+    renderHub();
+    fireEvent.change(screen.getByRole("searchbox", { name: /search/i }), { target: { value: "zzzz-no-place" } });
+    expect(screen.getByTestId("hub-no-match")).toHaveTextContent(/matches “zzzz-no-place”/);
+    expect(screen.getByText("Dabakarn").closest("li")).toHaveAttribute("data-dim", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(screen.queryByTestId("hub-no-match")).not.toBeInTheDocument();
+    expect(screen.getByText("Dabakarn").closest("li")).not.toHaveAttribute("data-dim");
   });
 
   /**
@@ -175,7 +189,9 @@ describe("Ward Flow Master Search Hub — search and the type filter", () => {
    * departments, which is what makes the mutant die; the floor below refuses to run the case at all
    * if a fixture change ever takes that property away.
    */
-  it("the count in the category filter option is how many rows selecting that category actually shows, not how many exist", () => {
+  // v10 pass 3: the search highlights rather than narrows, so the rows a category shows no longer
+  // follow the query, and neither does its count. The lit rows follow the query instead.
+  it("the count in the category filter option is how many rows selecting that category actually shows, and the search lights a subset of them", () => {
     renderHub();
     const results = () => within(screen.getByRole("region", { name: /search results/i }));
     // v6: the category control is a segmented radio group; each radio carries its count in `.k`.
@@ -184,24 +200,18 @@ describe("Ward Flow Master Search Hub — search and the type filter", () => {
       return match ? Number(match[1]) : 0;
     };
 
-    const unfilteredWardCount = categoryOptionCount("ward");
-
     fireEvent.change(screen.getByRole("searchbox", { name: /search/i }), { target: { value: "metro" } });
-
     const claimed = categoryOptionCount("ward");
-    expect(
-      claimed,
-      "the category dropdown still claims the whole ward population while the query has narrowed the list",
-    ).toBeLessThan(unfilteredWardCount);
-    // The discriminating floor: unless this query also matches a non-ward, a ward tally that
-    // actually counted EVERY kind would print the same number and nothing below could tell.
-    expect(
-      categoryOptionCount("ed"),
-      'the query "metro" no longer matches any emergency department — this case can no longer tell a ward count from a total',
-    ).toBeGreaterThan(0);
 
     fireEvent.click(categoryRadio("ward"));
-    expect(results().getAllByRole("listitem")).toHaveLength(claimed);
+    const rows = results().getAllByRole("listitem");
+    expect(rows).toHaveLength(claimed);
+    const lit = rows.filter((row) => !row.hasAttribute("data-dim"));
+    // The discriminating floor: "metro" lights some wards and dims others. A search that lit
+    // everything or nothing could not tell highlighting from ignoring the query.
+    expect(lit.length).toBeGreaterThan(0);
+    expect(lit.length).toBeLessThan(claimed);
+    expect(screen.getByTestId("hub-highlight-note")).toHaveTextContent(new RegExp(`${lit.length} of ${claimed}`));
   });
 
   it("restricts the list to one kind when that kind is selected in the category dropdown, with an empty query", () => {
@@ -407,20 +417,23 @@ describe("Ward Flow Master Search Hub — every flagged state carries a word, no
 describe("Ward Flow Master Search Hub — a search must not change what the screen says the network is", () => {
   it("the glance pane states one ward count, not one filtered and one not, while a query is narrowing the list", () => {
     renderHub();
-    // v6: the network sentence moved from the glance pane's subtitle to the hero title.
-    const networkSentence = () => screen.getByRole("heading", { level: 1 });
+    // v6: the network sentence moved from the glance pane's subtitle to the hero. v10: the title
+    // is the count plus noun ("96 places") and the kinds sit in the hero eyebrow.
+    const networkSentence = () => document.querySelector<HTMLElement>("[data-wf-hero]")!;
 
     const initialSubtitle = networkSentence().textContent ?? "";
-    expect(initialSubtitle).toMatch(/wards,.*EDs,.*community teams/i);
+    expect(initialSubtitle).toMatch(/wards,.*EDs,.*teams/i);
     const initialWards = Number(/(\d+)\s+wards/i.exec(initialSubtitle)?.[1]);
 
     // Before any query the two are trivially equal, so this is measured only after narrowing —
     // and the narrowing is proven to have happened before anything is compared.
     fireEvent.change(screen.getByRole("searchbox", { name: /search/i }), { target: { value: "fremantle" } });
-    const results = within(screen.getByRole("region", { name: /search results/i })).getAllByRole("listitem");
+    const lit = within(screen.getByRole("region", { name: /search results/i }))
+      .getAllByRole("listitem")
+      .filter((row) => !row.hasAttribute("data-dim"));
     expect(
-      results.length,
-      'the query "fremantle" no longer narrows the list — this case can no longer tell a filtered figure from an unfiltered one',
+      lit.length,
+      'the query "fremantle" no longer narrows the highlight — this case can no longer tell a filtered figure from an unfiltered one',
     ).toBeLessThan(10);
 
     const subtitle = networkSentence().textContent ?? "";
@@ -469,13 +482,20 @@ describe("Ward Flow Master Search Hub — the keyboard reaches everything the mo
     expect(previewed()).toBe(first);
   });
 
-  it("Escape clears the search, restoring rows the query had removed", () => {
+  it("Escape clears the search, restoring rows the query had dimmed", () => {
     renderHub();
     fireEvent.change(search(), { target: { value: "scgh" } });
-    expect(screen.queryByText("Dabakarn")).not.toBeInTheDocument();
+    expect(screen.getByText("Dabakarn").closest("li")).toHaveAttribute("data-dim", "true");
 
     fireEvent.keyDown(search(), { key: "Escape" });
-    expect(screen.getByText("Dabakarn")).toBeInTheDocument();
+    expect(screen.getByText("Dabakarn").closest("li")).not.toHaveAttribute("data-dim");
+  });
+
+  it("with a search typed, the arrow keys step through the matches only", () => {
+    renderHub();
+    fireEvent.change(search(), { target: { value: "Mental Health Unit" } });
+    fireEvent.keyDown(search(), { key: "ArrowDown" });
+    expect(previewed()).toMatch(/Mental Health Unit/);
   });
 
   it("selecting different categories in the dropdown updates the list accordingly", () => {
@@ -496,22 +516,24 @@ describe("Ward Flow Master Search Hub — the keyboard reaches everything the mo
     expect(categoryRadio("all").tabIndex).toBe(0);
   });
 
-  it("toggling the ready beds quick filter restricts the results to wards with available beds", () => {
+  it("toggling the ready beds quick filter highlights wards with available beds and dims the rest", () => {
     renderHub();
     const results = () => within(document.getElementById("hub-results") as HTMLElement);
+    const row = (name: string) => results().getByText(name).closest("li");
     const readyToggle = screen.getByRole("button", { name: /ready beds only/i });
     fireEvent.click(readyToggle);
 
-    // Mental Health Unit has 2 ready beds, so it must be visible in results
-    expect(results().getByText("Mental Health Unit")).toBeInTheDocument();
+    // Mental Health Unit has 2 ready beds, so it stays lit.
+    expect(row("Mental Health Unit")).not.toHaveAttribute("data-dim");
 
-    // Graylands Older Adult has 0 ready beds in fixture, so it must NOT be visible in results
-    expect(results().queryByText("Graylands Older Adult")).not.toBeInTheDocument();
+    // v10: Graylands Older Adult has 0 ready beds, so it is dimmed by colour, never hidden.
+    expect(row("Graylands Older Adult")).toHaveAttribute("data-dim", "true");
+    expect(screen.getByTestId("hub-highlight-note")).toHaveTextContent(/highlighted\. All rows stay/);
 
     // Reset button appears and resets the filter
     const resetBtn = screen.getByRole("button", { name: /reset all filters/i });
     fireEvent.click(resetBtn);
-    expect(results().getByText("Graylands Older Adult")).toBeInTheDocument();
+    expect(row("Graylands Older Adult")).not.toHaveAttribute("data-dim");
   });
 });
 

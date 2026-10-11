@@ -935,7 +935,9 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
   const UNWIRED_PRIMARY_ROUTES: ReadonlyArray<readonly [string, string]> = [
     ["/mockups/ward-flow/movements", "Record a decision"],
     [`/mockups/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`, "Contact a team"],
-    ["/mockups/ward-flow/statistics", "Export the figures"],
+    // v10 (10 Oct 2026): Statistics no longer carries "Export the figures" in the header; New
+    // referral is the one header primary on every page and Export lives in the statistics hero.
+    // The export-figures kind itself stays covered in tests/ward-primary-action.dom.test.tsx.
   ];
 
   // Unlike `renderShell()` above, this resolves and passes `primaryAction` for the given route —
@@ -953,7 +955,15 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
     );
   }
 
-  it("anti-vacuity: the three routes actually resolve the three kinds this test claims to cover", () => {
+  it("v10: Statistics carries New referral as its header primary, never Export the figures", () => {
+    const action = resolveWardPrimaryAction("/mockups/ward-flow/statistics");
+    expect(action?.kind).toBe("new-referral");
+    renderShellAt("/mockups/ward-flow/statistics");
+    expect(screen.getByTestId("ward-bar-primary-action")).toHaveTextContent("New referral");
+    expect(screen.queryByText("Export the figures")).toBeNull();
+  });
+
+  it("anti-vacuity: the routes actually resolve the kinds this test claims to cover", () => {
     for (const [pathname, label] of UNWIRED_PRIMARY_ROUTES) {
       const action = resolveWardPrimaryAction(pathname);
       expect(action, `${pathname} resolved no primary action at all`).toBeDefined();

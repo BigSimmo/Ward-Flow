@@ -10,6 +10,7 @@ vi.mock("next/link", () => ({
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -36,15 +37,17 @@ function importPayload(payload: unknown, container: HTMLElement) {
 
 it.each(["raw", "backup"])("loads a valid %s configuration into draft and applies it only after Save", (kind) => {
   const { container } = render(
-    <WardFlowProvider>
-      <SettingsScreen />
-      <ConfigurationProbe />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+        <ConfigurationProbe />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
   const before = screen.getByTestId("import-saved-configuration").textContent;
   const configuration = { ...defaultWardConfiguration(), edAccessTargetMinutes: 720 };
   importPayload(kind === "backup" ? { configuration, exportedAt: "synthetic backup" } : configuration, container);
-  expect((document.getElementById("setting-ed-threshold") as HTMLInputElement).value).toBe("720");
+  expect(screen.getByRole("spinbutton", { name: "ED access target" })).toHaveAttribute("aria-valuenow", "720");
   expect(screen.getByTestId("import-saved-configuration").textContent).toBe(before);
   fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
   expect(JSON.parse(screen.getByTestId("import-saved-configuration").textContent!)).toEqual(configuration);
@@ -58,16 +61,19 @@ it.each([
   { payload: { ...defaultWardConfiguration(), unexpected: 1 } },
 ])("refuses invalid imported configuration without replacing the edited draft ($payload)", ({ payload }) => {
   const { container } = render(
-    <WardFlowProvider>
-      <SettingsScreen />
-      <ConfigurationProbe />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+        <ConfigurationProbe />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
   const before = screen.getByTestId("import-saved-configuration").textContent;
-  const slider = document.getElementById("setting-ed-threshold") as HTMLInputElement;
-  fireEvent.change(slider, { target: { value: "720" } });
+  // v10: the ED target is one stepper; Home sets its range minimum, 12h (720 minutes).
+  const stepper = screen.getByRole("spinbutton", { name: "ED access target" });
+  fireEvent.keyDown(stepper, { key: "Home" });
   importPayload(payload, container);
-  expect(slider.value).toBe("720");
+  expect(screen.getByRole("spinbutton", { name: "ED access target" })).toHaveAttribute("aria-valuenow", "720");
   expect(screen.getByTestId("import-saved-configuration").textContent).toBe(before);
   expect(screen.getByText("Invalid configuration file format.")).toBeVisible();
 });

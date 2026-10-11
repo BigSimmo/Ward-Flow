@@ -8,16 +8,17 @@ import { describe, expect, it } from "vitest";
  */
 describe("Ward screen — perfected tab order (R2-12)", () => {
   // Ward Hub (Josh, 9 Oct 2026, approved Bed board mockup): Arrivals, Discharges and Beds moved
-  // onto Home as the Ward flow panel and the bed board, so two tabs remain.
-  it("keeps the two operational tabs in drawing order with drawing labels", () => {
+  // onto Home as the Ward flow panel and the bed board, so two tabs remain. v10 pass 3 (build guide
+  // "Tab bar ... Home and Decisions, with Bed board as the third tab"): the pick up and place board.
+  it("keeps the three operational tabs in drawing order with drawing labels", () => {
     const source = readFileSync(resolve(process.cwd(), "src/components/ward-management/ward/ward-screen.tsx"), "utf8");
     const tabIds = [...source.matchAll(/id="tabBtn-([^"]+)"/g)].map((m) => m[1]);
-    expect(tabIds).toEqual(["attn", "return"]);
+    expect(tabIds).toEqual(["attn", "board", "return"]);
 
     const labels = [...source.matchAll(/id="tabBtn-[^"]+"[\s\S]*?<span>([^<]+)<\/span>/g)].map((m) =>
       m[1].replace(/&rsquo;/g, "\u2019").replace(/&amp;/g, "&"),
     );
-    expect(labels).toEqual(["Home", "Decisions"]);
+    expect(labels).toEqual(["Home", "Bed board", "Decisions"]);
   });
 
   it("keeps Today’s return panel flex basis at 20rem", () => {

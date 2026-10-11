@@ -256,6 +256,8 @@ describe("the breakpoint scale", () => {
     // 48.0625rem is the exclusive complement of the phone's existing max-width 48rem, the same
     // split Referrals registers, so the phone keeps its own queue styling.
     "src/components/ward-management/coordinator/home.module.css: 48.0625",
+    // v10 band header (10 Oct 2026): desktop and tablet only, the same complement of phone's 48rem.
+    "src/components/ward-management/shell/ward-bar.module.css: 48.0625",
     // The same drawing introduces the full three-column, viewport-bounded Command surface at
     // 1400px. This app rule carries that exact 87.5rem design boundary; the older 90rem rules in
     // the module remain separately pinned because they govern legacy layout.
@@ -397,6 +399,10 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/patients/add-patient.module.css: 64",
     "src/components/ward-management/patients/person.module.css: 64",
     "src/components/ward-management/referrals/referrals.module.css: 48.0625",
+    // v10 (10 Oct 2026): the Referrals queue toolbar stays on one row above the phone range.
+    "src/components/ward-management/referrals/referral-board.module.css: 48.0625",
+    // v10 Discharges: the Ready to leave rows grow to 44px on the phone.
+    "src/components/ward-management/discharges/discharge-ready-to-leave.module.css: 48",
     "src/components/ward-management/ward-management-network-third-edition.module.css: 64",
     "src/components/ward-management/ward/ward.module.css: 48.001",
     // Command's independently scrolling diagram and shortlist share its reviewed 1400px split.
@@ -415,6 +421,16 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/capacity/bed-map.module.css: 85",
     "src/components/ward-management/capacity/capacity.module.css: 68",
     "src/components/ward-management/capacity/capacity.module.css: 45",
+    // v10 Capacity: desktop/tablet band rules sit above the phone range (FOUNDATION contract).
+    "src/components/ward-management/capacity/capacity.module.css: 48.0625",
+    // v10 tablet portrait (10 Oct 2026): 769px to 1000px drops the rail; the bar's Menu opens the
+    // full sidebar sheet. The exclusive complement of the phone's 48rem, as in ward-bar.module.css.
+    "src/components/ward-management/shell/ward-rail.module.css: 48.0625",
+    // v10 Home (10 Oct 2026): the tablet-landscape split starts at the shell's 1001px boundary,
+    // the same literal 62.5625rem every page above registers.
+    "src/components/ward-management/coordinator/home.module.css: 62.5625",
+    // v10 Settings: touch targets grow to 44px on a coarse-pointer tablet, above the phone range.
+    "src/components/ward-management/settings/settings.module.css: 48.0625",
   ];
 
   it("introduces no breakpoint outside the known set", () => {

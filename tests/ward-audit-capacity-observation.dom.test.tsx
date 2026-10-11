@@ -33,14 +33,19 @@ describe("capacity observations on the answer screen", () => {
   it("replaces an old draft when a resource change advances the observation", () => {
     const unit = context.units[0];
     const view = render(<WardAnswerView unitId={unit.id} />);
-    fireEvent.change(screen.getByTestId("ward-capacity-input"), { target: { value: "7" } });
+    // v10: allocatable is a stepper only. Step the draft away from the confirmed figure.
+    fireEvent.click(screen.getByRole("button", { name: "Increase allocatable beds" }));
+    expect(screen.getByTestId("ward-capacity-input")).toHaveAttribute(
+      "aria-valuenow",
+      String(Math.min(unit.beds, unit.allocatable.value + 1)),
+    );
     context.units = context.units.map((item) =>
       item.id === unit.id
         ? { ...item, allocatable: { ...item.allocatable, value: 2, revision: (item.allocatable.revision ?? 0) + 1 } }
         : item,
     );
     view.rerender(<WardAnswerView unitId={unit.id} />);
-    expect(screen.getByTestId("ward-capacity-input")).toHaveValue(2);
+    expect(screen.getByTestId("ward-capacity-input")).toHaveAttribute("aria-valuenow", "2");
     fireEvent.click(screen.getByTestId("ward-capacity-submit"));
     expect(context.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -58,9 +63,12 @@ describe("capacity observations on the answer screen", () => {
   it("does not carry one ward's draft into another ward", () => {
     const [first, second] = context.units;
     const view = render(<WardAnswerView unitId={first.id} />);
-    fireEvent.change(screen.getByTestId("ward-capacity-input"), { target: { value: "7" } });
+    fireEvent.click(screen.getByRole("button", { name: "Increase allocatable beds" }));
     view.rerender(<WardAnswerView unitId={second.id} />);
-    expect(screen.getByTestId("ward-capacity-input")).toHaveValue(second.allocatable.value);
+    expect(screen.getByTestId("ward-capacity-input")).toHaveAttribute(
+      "aria-valuenow",
+      String(second.allocatable.value),
+    );
     fireEvent.click(screen.getByTestId("ward-capacity-submit"));
     expect(context.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({

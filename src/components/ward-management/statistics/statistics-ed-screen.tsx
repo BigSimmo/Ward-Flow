@@ -218,6 +218,18 @@ export function StatisticsEdScreen({
       now={now}
       paused={live.paused}
       onTogglePause={live.togglePause}
+      exportFigures={{
+        stem: department.id,
+        scope: department.name,
+        figures: () => [
+          ["Waiting", onTheList],
+          ["Longest wait", longestWait ? splitDuration(longestWait.waitMinutes) : "none"],
+          ["Median wait", median === null ? "none" : splitDuration(Math.round(median))],
+          ["Urgent", urgent],
+          [`Over ${longHours}h`, over24h],
+          ["No ward yet", unplaced],
+        ],
+      }}
       stats={
         <>
           <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{onTheList}</span>} label="Waiting" />
@@ -237,7 +249,8 @@ export function StatisticsEdScreen({
           <HeroStat value={median === null ? "none" : splitDuration(Math.round(median))} label="Median" />
           <HeroStat value={urgent} label="Urgent" />
           <HeroStat value={over24h} label={`Over ${longHours}h`} />
-          <HeroStat value={unplaced} label="No ward yet" />
+          {/* Five figures at most (v10). No ward yet is the wait list's own No ward filter count,
+              so the hero leaves it out; the export still carries it. */}
         </>
       }
     >

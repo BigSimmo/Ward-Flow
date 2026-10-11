@@ -30,7 +30,13 @@ import {
   type RecordRead,
   type WardRecordActor,
 } from "./ward-discharge-records";
-import { readAuditEvents, readAuditReviews, type AuditEvent, type AuditReview } from "./ward-audit";
+import {
+  readAuditEvents,
+  readAuditReviews,
+  readGovernanceAuditEvents,
+  type AuditEvent,
+  type AuditReview,
+} from "./ward-audit";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -67,6 +73,7 @@ import { activateScenarioNetwork, type WardScenario } from "@/components/ward-ma
 import { eventLogEntryFor, type EventLogEntry } from "@/components/ward-management/ward-event-log";
 import {
   WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
+  eventCarriesTypedTextPayload,
   WARD_FLOW_TYPED_TEXT_EVENT_TYPES,
   findWardFlowEventTypeCoverageGaps,
   type AssertNever,
@@ -108,6 +115,8 @@ type WardFlowContextValue = {
     handle: DischargeOpenHandle | null,
   ): RecordRead<DischargeRecord>;
   readAuditEvents(actor: WardRecordActor): RecordRead<readonly AuditEvent[]>;
+  /** v10 pass 2: `readAuditEvents` plus the synthetic seeded governance entries, for Governance. */
+  readGovernanceAuditEvents?(actor: WardRecordActor): RecordRead<readonly AuditEvent[]>;
   readAuditReviews(actor: WardRecordActor): RecordRead<readonly AuditReview[]>;
   movements: Movement[];
   units: Unit[];
@@ -153,6 +162,8 @@ type WardFlowContextValue = {
   /** Stream A, 9 Oct 2026: inbox row ownership and snooze histories, read-only like the two above. */
   inboxOwnership: WardFlowState["inboxOwnership"];
   inboxSnoozes: WardFlowState["inboxSnoozes"];
+  /** Undo records, read-only: a toast's Undo names the exact step it was offered for. */
+  undoRecords?: WardFlowState["undoRecords"];
   /** Authored notices remain reducer-owned; Activity reads their existing audience and time. */
   notices: WardFlowState["notices"];
   morningRollupConfirmations: WardFlowState["morningRollupConfirmations"];
@@ -403,7 +414,8 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
     return { ...container, world: nextWorld, typedTextSeen: false, eventLog: [logged] };
   }
   const eventLog = [...(container.eventLog ?? []), logged];
-  const typedTextSeen = container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type);
+  const typedTextSeen =
+    container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
   return { ...container, world: nextWorld, typedTextSeen, eventLog };
 }
 
@@ -1040,6 +1052,7 @@ function WardFlowWorld({
       readDischargeRecords: (actor, unitId) => selectDischargeRecords(state, actor, unitId),
       readDischargeRecord: (actor, admissionId, handle) => readOpenedDischargeRecord(state, actor, admissionId, handle),
       readAuditEvents: (actor) => readAuditEvents(state, actor),
+      readGovernanceAuditEvents: (actor) => readGovernanceAuditEvents(state, actor),
       readAuditReviews: (actor) => readAuditReviews(state, actor),
       openDischargeRecord: (actor, admissionId) => {
         if (!safeCounter(openRequestSequence.current) || openRequestSequence.current >= Number.MAX_SAFE_INTEGER)
@@ -1070,6 +1083,7 @@ function WardFlowWorld({
       inboxCompletions: state.inboxCompletions,
       inboxOwnership: state.inboxOwnership,
       inboxSnoozes: state.inboxSnoozes,
+      undoRecords: state.undoRecords,
       notices: state.notices,
       morningRollupConfirmations: state.morningRollupConfirmations,
       resolvePatientIdentity: (subject) =>

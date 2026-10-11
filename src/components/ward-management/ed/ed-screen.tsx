@@ -43,6 +43,8 @@ import {
   type UrgencyChangeReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import {
   TENTATIVE_DIAGNOSIS_BLOCKS,
@@ -91,6 +93,7 @@ import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-m
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
   LATE_ARRIVAL_GRACE_MINUTES,
   LONG_WAIT_MINUTES,
   LONG_WAIT_TEXT,
@@ -105,7 +108,16 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 
 import { ChevronDown } from "lucide-react";
-import { buttonClass } from "@/components/wf";
+import {
+  buttonClass,
+  JourneyStrip,
+  ScrollRow,
+  Segmented,
+  StatusGlyph,
+  useIsPhone,
+  useOptionalToast,
+} from "@/components/wf";
+import { edJourneyStages } from "./ed-journey";
 import styles from "./ed.module.css";
 import { EdOverview } from "./ed-overview";
 import { EdActionsMenu, EdPlanPicker, EdPresentation, EdReviewStatus } from "./ed-board-controls";
@@ -155,6 +167,11 @@ type EdClockLine = {
  */
 function asLineHeading(term: string): string {
   return term.charAt(0).toUpperCase() + term.slice(1);
+}
+
+/** "24h", "8h": a wait line as a person says it, never "1d" or "8h 00m". */
+function waitLine(minutes: number): string {
+  return minutes % 60 === 0 ? `${minutes / 60}h` : splitDuration(minutes);
 }
 
 function urgencyGlyph(urgency: 1 | 2 | 3): string {
@@ -1224,6 +1241,34 @@ function AttentionToneIcon({ tone }: { tone: "danger" | "warn" | "good" | "quiet
   );
 }
 
+type EdStepEvent = Extract<
+  WardFlowEvent,
+  {
+    type:
+      | "RECORD_ARRIVED_IN_DEPARTMENT"
+      | "RECORD_EXAMINATION"
+      | "RECORD_MEDICAL_CLEARANCE"
+      | "RECORD_TRANSPORT_NEED"
+      | "HANDOVER_READY";
+  }
+>;
+
+/** What the toast says once the engine accepts an ED next step. */
+function edStepSaid(event: EdStepEvent): string {
+  switch (event.type) {
+    case "RECORD_ARRIVED_IN_DEPARTMENT":
+      return "Marked arrived in department";
+    case "RECORD_EXAMINATION":
+      return "Examination recorded";
+    case "RECORD_MEDICAL_CLEARANCE":
+      return event.cleared ? "Recorded medically cleared" : "Recorded not medically cleared";
+    case "RECORD_TRANSPORT_NEED":
+      return event.needed ? "Recorded: transport needed" : "Recorded: no transport needed";
+    case "HANDOVER_READY":
+      return "Marked handover ready";
+  }
+}
+
 export function EdScreen({ edId }: EdScreenProps) {
   const {
     movements,
@@ -1425,11 +1470,36 @@ export function EdScreen({ edId }: EdScreenProps) {
   );
   const priorRejectionCountRef = useRef(rejections.length);
   const [declineCheckToken, setDeclineCheckToken] = useState(0);
+  /**
+   * v10 pass 3: a recorded decline shows a toast with Undo (`UNDO_REFERRAL_DECISION`, the ED's own
+   * decision only, within the engine's undo window). `pendingDeclineRef` holds the referral just
+   * declined until the rejection check says whether the reducer accepted it; `undoCheckRef` holds
+   * the count before an Undo so a refused Undo can say why.
+   */
+  const toast = useOptionalToast();
+  // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
+  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
+  function recordEdStep(event: EdStepEvent) {
+    const subject = "referralId" in event ? { referralId: event.referralId } : { movementId: event.movementId };
+    runStep(event, {
+      success: edStepSaid(event),
+      undo: (at) => ({ type: "UNDO_ED_STEP", role: "ed", now: at, ...subject }),
+      undone: "Undone. Back as it was.",
+    });
+  }
+  /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */
+  const isPhone = useIsPhone();
+  const [phonePane, setPhonePane] = useState<"board" | "needs" | "lists">("board");
+  const pendingDeclineRef = useRef<string | undefined>(undefined);
+  const undoCheckRef = useRef<number | undefined>(undefined);
+  const [undoCheckToken, setUndoCheckToken] = useState(0);
   type DepartmentTabKey = "review" | "cleared" | "expected" | "forms" | "referred";
   const [departmentListTab, setDepartmentListTab] = useState<DepartmentTabKey>("review");
   const [boardFilter, setBoardFilter] = useState<
     "all" | "not_reviewed" | "under_form" | "no_destination" | "discharge" | "withdrawn"
   >("all");
+  /** v10 hero highlight: the pressed hero chip keeps its rows solid and dims the rest. */
+  const [heroHighlight, setHeroHighlight] = useState<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   // The board's inline row, opened under one patient at a time (separate from the record dialog).
   const [expandedPatientId, setExpandedPatientId] = useState<string | null>(null);
@@ -1539,9 +1609,41 @@ export function EdScreen({ edId }: EdScreenProps) {
       );
     } else {
       setDeclineRejection(undefined);
+      const declined = pendingDeclineRef.current;
+      if (declined !== undefined) {
+        toast?.push({
+          tone: "success",
+          title: "Referral declined",
+          body: "The referrer sees the reason. Undo puts it back in the inbox.",
+          undo: {
+            durationMs: 8000,
+            onUndo: () => {
+              undoCheckRef.current = rejections.length;
+              dispatch({ type: "UNDO_REFERRAL_DECISION", role: "ed", now, referralId: declined });
+              setUndoCheckToken((token) => token + 1);
+            },
+          },
+        });
+      }
     }
+    pendingDeclineRef.current = undefined;
     priorRejectionCountRef.current = rejections.length;
+    // `toast`, `dispatch` and `now` are read at the moment the check runs; the check itself is keyed
+    // on the dispatch token so it runs once per decline.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, declineCheckToken]);
+
+  useEffect(() => {
+    if (undoCheckToken === 0 || undoCheckRef.current === undefined) return;
+    if (rejections.length > undoCheckRef.current) {
+      const newest = rejections[rejections.length - 1];
+      toast?.push({ tone: "warning", title: "Undo was refused", body: newest.reason });
+    } else {
+      toast?.push({ tone: "info", title: "Decline undone", body: "The referral is back in the inbox." });
+    }
+    undoCheckRef.current = undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rejections, undoCheckToken]);
 
   if (!department) {
     return (
@@ -1744,7 +1846,8 @@ export function EdScreen({ edId }: EdScreenProps) {
   const isEdAlarm = breachesCount > 0;
   const isEdWarn = awaitingBedCount > 3;
 
-  const filteredPatients = patients.filter((m) => {
+  // v10 rule 5: the board filters and the search highlight and dim. Every person stays on the board.
+  const matchesBoardFilter = (m: Movement) => {
     if (boardFilter === "not_reviewed") return !m.examination && !m.edOutcome && !isEdInitiatedWithdrawal(m);
     if (boardFilter === "under_form") return !!m.legalForm && !isEdInitiatedWithdrawal(m);
     if (boardFilter === "no_destination")
@@ -1752,21 +1855,34 @@ export function EdScreen({ edId }: EdScreenProps) {
     if (boardFilter === "discharge") return m.edOutcome === "for_discharge";
     if (boardFilter === "withdrawn") return isEdInitiatedWithdrawal(m);
     return true;
-  });
+  };
+  const matchesPatientQuery = (movement: Movement) => {
+    const q = patientQuery.trim().toLowerCase();
+    if (!q) return true;
+    const person = resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements });
+    return `${person.displayName} ${person.umrn}`.toLowerCase().includes(q);
+  };
+  const heroHighlightMatch: Record<string, (m: Movement) => boolean> = {
+    past: (m) => now - m.openedAt >= accessTarget,
+    severe: (m) => now - m.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
+    no_bed: (m) =>
+      (m.stage === "placement_requested" || m.stage === "destination_review") && !isEdInitiatedWithdrawal(m),
+    under_form: (m) => !!m.legalForm && !isEdInitiatedWithdrawal(m),
+  };
+  const boardMatchCount = patients.filter((m) => matchesBoardFilter(m) && matchesPatientQuery(m)).length;
+  const isBoardRowDim = (m: Movement) =>
+    !matchesBoardFilter(m) ||
+    !matchesPatientQuery(m) ||
+    (heroHighlight !== null && !(heroHighlightMatch[heroHighlight]?.(m) ?? true));
 
-  const visiblePatients = filteredPatients
-    .filter((movement) => {
-      const person = resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements });
-      return `${person.displayName} ${person.umrn}`.toLowerCase().includes(patientQuery.trim().toLowerCase());
-    })
-    .sort((a, b) => {
-      if (patientSort === "longest") return a.openedAt - b.openedAt;
-      if (patientSort === "name")
-        return resolveSubjectPatient(a, { patients: registryPatients, referrals, movements }).displayName.localeCompare(
-          resolveSubjectPatient(b, { patients: registryPatients, referrals, movements }).displayName,
-        );
-      return 0;
-    });
+  const visiblePatients = [...patients].sort((a, b) => {
+    if (patientSort === "longest") return a.openedAt - b.openedAt;
+    if (patientSort === "name")
+      return resolveSubjectPatient(a, { patients: registryPatients, referrals, movements }).displayName.localeCompare(
+        resolveSubjectPatient(b, { patients: registryPatients, referrals, movements }).displayName,
+      );
+    return 0;
+  });
 
   const selectedPatient = selectedPatientId ? patients.find((p) => p.id === selectedPatientId) : null;
   const selectedPatientInfo = selectedPatient
@@ -1928,7 +2044,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         when: `waiting ${splitDuration(waiting)}`,
         actionLabel: "Mark arrived in department",
         onAction: () => {
-          dispatch({
+          recordEdStep({
             type: "RECORD_ARRIVED_IN_DEPARTMENT",
             role: "ed",
             now,
@@ -2449,7 +2565,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   function submitExamination(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!examinationOutcome) return;
-    dispatch({ type: "RECORD_EXAMINATION", role: "ed", now, movementId, outcome: examinationOutcome });
+    recordEdStep({ type: "RECORD_EXAMINATION", role: "ed", now, movementId, outcome: examinationOutcome });
     setExaminationOpenFor(undefined);
     setExaminationOutcome(undefined);
   }
@@ -2580,6 +2696,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     // button, so the control declines to advertise a decline it knows would be rejected.
     if (declineDraft === undefined) return;
     priorRejectionCountRef.current = rejections.length;
+    pendingDeclineRef.current = referralId;
     dispatch({
       type: "DECLINE_REFERRAL",
       role: "ed",
@@ -2635,6 +2752,39 @@ export function EdScreen({ edId }: EdScreenProps) {
     ? Math.max(...patients.map((movement) => Math.max(now - movement.openedAt, 0)))
     : undefined;
 
+  const leavingForWard = patients.filter(
+    (movement) => movement.stage === "handover_ready" || movement.stage === "moving",
+  ).length;
+  const heroChips = [
+    {
+      id: "past",
+      label: `Past ${waitLine(accessTarget)}`,
+      word: `past ${waitLine(accessTarget)}`,
+      value: patients.filter(heroHighlightMatch.past).length,
+      tone: "danger" as const,
+    },
+    {
+      id: "severe",
+      label: `Over ${waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
+      word: `over ${waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
+      value: patients.filter(heroHighlightMatch.severe).length,
+      tone: "warning" as const,
+    },
+    {
+      id: "no_bed",
+      label: "No bed yet",
+      word: "with no bed yet",
+      value: patients.filter(heroHighlightMatch.no_bed).length,
+    },
+    {
+      id: "under_form",
+      label: "Under a form",
+      word: "under a form",
+      value: patients.filter(heroHighlightMatch.under_form).length,
+    },
+  ];
+  const activeHeroChip = heroChips.find((chip) => chip.id === heroHighlight);
+
   const arrivalPlanMovement = arrivalPlanOpenFor ? movements.find((m) => m.id === arrivalPlanOpenFor) : undefined;
 
   return (
@@ -2644,7 +2794,7 @@ export function EdScreen({ edId }: EdScreenProps) {
       data-ward-design="third-edition"
       data-ward-rebuilt-screen="emergency-department"
     >
-      <main id="main-content" className={styles.main}>
+      <main id="main-content" className={styles.main} data-phone-pane={isPhone ? phonePane : undefined}>
         <EdOverview
           key={department.id}
           departmentId={department.id}
@@ -2670,20 +2820,29 @@ export function EdScreen({ edId }: EdScreenProps) {
               breaches: candidateMovements.filter((movement) => now - movement.openedAt > accessTarget).length,
             };
           })}
-          figures={[
-            { label: "On the board", value: patients.length },
+          onBoard={patients.length}
+          chips={heroChips}
+          highlight={heroHighlight}
+          onHighlight={setHeroHighlight}
+          highlightNote={
+            activeHeroChip ? (
+              <>
+                <b>{patients.filter(heroHighlightMatch[activeHeroChip.id]).length}</b> of {patients.length}{" "}
+                {activeHeroChip.word}, everyone stays on the board
+              </>
+            ) : undefined
+          }
+          checks={[
             {
-              label: "Waiting for a bed",
-              value: waitingForBed,
-              tone: waitingForBed > 0 ? "warning" : undefined,
-            },
-            { label: "To review", value: inbox.length },
-            { label: "Under a form", value: patients.filter((movement) => !!movement.legalForm).length },
-            {
+              id: "longest",
               label: "Longest here",
-              value: longestHere === undefined ? "—" : splitDuration(longestHere),
+              value: longestHere === undefined ? 0 : splitDuration(longestHere),
               tone: longestHere !== undefined && longestHere > accessTarget ? "danger" : undefined,
             },
+            { id: "held", label: "Bed held", value: waitingForBed },
+            { id: "leaving", label: "Leaving for a ward", value: leavingForWard },
+            { id: "unreviewed", label: "Not reviewed", value: notReviewedCount },
+            { id: "target", label: "Access target", value: waitLine(accessTarget) },
           ]}
           referralOpen={referralOpen}
           onRaiseReferral={() => {
@@ -3021,8 +3180,25 @@ export function EdScreen({ edId }: EdScreenProps) {
           )}
         </section>
 
+        {isPhone ? (
+          <ScrollRow className={styles.phonePanes}>
+            <Segmented
+              label="Show"
+              size="md"
+              value={phonePane}
+              onChange={setPhonePane}
+              items={[
+                { id: "board" as const, label: "Board", count: patients.length },
+                { id: "needs" as const, label: "Needs you", count: priorityFlags.length },
+                { id: "lists" as const, label: "Lists" },
+              ]}
+            />
+          </ScrollRow>
+        ) : null}
+
         <section
           aria-label="This department's patients"
+          data-pane="board"
           className={`${styles.panel} ${styles.full} ${styles.listSection}${fullscreenBoard ? ` ${styles.fullscreenBoard}` : ""}`}
           tabIndex={0}
         >
@@ -3061,7 +3237,7 @@ export function EdScreen({ edId }: EdScreenProps) {
               </span>
             </div>
           </div>
-          <div className={styles.boardChips} role="tablist" aria-label="Filter the board">
+          <div className={styles.boardChips} role="group" aria-label="Filter the board">
             <button
               type="button"
               className={styles.boardChip}
@@ -3078,7 +3254,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               Not reviewed{" "}
               <span className={styles.c} data-zero={notReviewedCount === 0 ? "true" : undefined}>
-                {notReviewedCount === 0 ? "none" : notReviewedCount}
+                {notReviewedCount}
               </span>
             </button>
             <button
@@ -3089,7 +3265,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               Under a form{" "}
               <span className={styles.c} data-zero={underFormCount === 0 ? "true" : undefined}>
-                {underFormCount === 0 ? "none" : underFormCount}
+                {underFormCount}
               </span>
             </button>
             <button
@@ -3100,7 +3276,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               No destination{" "}
               <span className={styles.c} data-zero={noDestCount === 0 ? "true" : undefined}>
-                {noDestCount === 0 ? "none" : noDestCount}
+                {noDestCount}
               </span>
             </button>
             <button
@@ -3111,7 +3287,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               For discharge{" "}
               <span className={styles.c} data-zero={dischargeCount === 0 ? "true" : undefined}>
-                {dischargeCount === 0 ? "none" : dischargeCount}
+                {dischargeCount}
               </span>
             </button>
             <button
@@ -3122,7 +3298,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               Withdrawn{" "}
               <span className={styles.c} data-zero={withdrawnCount === 0 ? "true" : undefined}>
-                {withdrawnCount === 0 ? "none" : withdrawnCount}
+                {withdrawnCount}
               </span>
             </button>
           </div>
@@ -3149,7 +3325,8 @@ export function EdScreen({ edId }: EdScreenProps) {
               {hasBoardDrafts ? "Unsaved changes · This screen only" : "Draft fields · This screen only"}
             </span>
             <span className={styles.boardResult} role="status">
-              {visiblePatients.length} of {patients.length} patients<span className="sr-only"> · Synthetic data</span>
+              <span className={styles.boardHint}>Filters highlight, everyone stays</span> <b>{boardMatchCount}</b> of{" "}
+              {patients.length} match<span className="sr-only"> · Synthetic data</span>
             </span>
           </div>
           {patients.length === 0 ? (
@@ -3186,10 +3363,10 @@ export function EdScreen({ edId }: EdScreenProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {visiblePatients.length === 0 && (
+                  {boardMatchCount === 0 && (
                     <tr>
                       <td colSpan={9} className={styles.noPatientMatches}>
-                        No patients match this search and filter.
+                        No one matches this search and filter. Everyone stays below, dimmed.
                       </td>
                     </tr>
                   )}
@@ -3335,7 +3512,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                   blocked: handoverBlocked,
                                   describedBy: `ward-ed-handover-unavailable-${movement.id}`,
                                   run: () =>
-                                    dispatch({
+                                    recordEdStep({
                                       type: "HANDOVER_READY",
                                       role: "ed",
                                       now,
@@ -3352,6 +3529,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           data-minutes-in-department={minutesInDepartment}
                           data-selected={selectedPatientId === movement.id ? "true" : undefined}
                           data-unfolded={isUnfolded ? "true" : undefined}
+                          data-dim={isBoardRowDim(movement) ? "true" : undefined}
                           className={styles.qRow}
                         >
                           <td className={styles.tierCell}>
@@ -3376,8 +3554,10 @@ export function EdScreen({ edId }: EdScreenProps) {
                               onClick={() =>
                                 setSelectedPatientId(selectedPatientId === movement.id ? null : movement.id)
                               }
+                              data-testid={`ward-ed-row-name-${movement.id}`}
                             >
-                              {patientInfo.displayName}
+                              {/* v10 content rule: board rows read "Surname, Given". */}
+                              {patientInfo.formalName}
                             </button>
                             <span className={styles.sub}>
                               <span className="sr-only">UMRN </span>
@@ -3489,7 +3669,11 @@ export function EdScreen({ edId }: EdScreenProps) {
                               data-state={minutesInDepartment > accessTarget ? "over" : "under"}
                               title={`Access target ${splitDuration(accessTarget)}. ${accessTargetLine(minutesInDepartment, accessTarget)}`}
                             >
-                              {minutesInDepartment > accessTarget && <span aria-hidden="true">Over target</span>}
+                              {minutesInDepartment > accessTarget && (
+                                <span aria-hidden="true">
+                                  <StatusGlyph tone="danger" size={8} /> Over target
+                                </span>
+                              )}
                               <span className="sr-only">
                                 Access target {splitDuration(accessTarget)}.{" "}
                                 {accessTargetLine(minutesInDepartment, accessTarget)}
@@ -3811,7 +3995,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                         handoverBlocked
                                           ? ignoreUnavailableActivation
                                           : () =>
-                                              dispatch({
+                                              recordEdStep({
                                                 type: "HANDOVER_READY",
                                                 role: "ed",
                                                 now,
@@ -3878,7 +4062,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                         data-testid={`ward-ed-no-transport-needed-${movement.id}`}
                                         className={styles.acceptButton}
                                         onClick={() =>
-                                          dispatch({
+                                          recordEdStep({
                                             type: "RECORD_TRANSPORT_NEED",
                                             role: "ed",
                                             now,
@@ -4953,6 +5137,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             className={`${styles.panel} ${styles.mod}`}
             aria-labelledby="ward-ed-attention-heading"
             data-wf-rail="1201"
+            data-pane="needs"
           >
             <div className={styles.ph}>
               <h2 id="ward-ed-attention-heading">Needs you</h2>
@@ -5038,7 +5223,11 @@ export function EdScreen({ edId }: EdScreenProps) {
               )}
             </div>
           </section>
-          <section className={`${styles.panel} ${styles.mod}`} aria-labelledby="ward-ed-lists-heading">
+          <section
+            className={`${styles.panel} ${styles.mod}`}
+            aria-labelledby="ward-ed-lists-heading"
+            data-pane="lists"
+          >
             <div className={styles.ph}>
               <h2 id="ward-ed-lists-heading">Lists</h2>
 
@@ -5248,7 +5437,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                 className={styles.inboxBtn}
                                 data-testid={`ward-ed-inbox-clearance-yes-${referral.id}`}
                                 onClick={() =>
-                                  dispatch({
+                                  recordEdStep({
                                     type: "RECORD_MEDICAL_CLEARANCE",
                                     role: "ed",
                                     now,
@@ -5264,7 +5453,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                 className={styles.inboxBtn}
                                 data-testid={`ward-ed-inbox-clearance-no-${referral.id}`}
                                 onClick={() =>
-                                  dispatch({
+                                  recordEdStep({
                                     type: "RECORD_MEDICAL_CLEARANCE",
                                     role: "ed",
                                     now,
@@ -5560,7 +5749,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           className={styles.arrivedButton}
                           data-testid={`ward-ed-expects-arrived-${referral.id}`}
                           onClick={() =>
-                            dispatch({
+                            recordEdStep({
                               type: "RECORD_ARRIVED_IN_DEPARTMENT",
                               role: "ed",
                               now,
@@ -5763,10 +5952,10 @@ export function EdScreen({ edId }: EdScreenProps) {
                            * ⚠️ **NOT A REFERRAL CLOCK, AND `referralClocks` MUST NEVER BE REACHED FOR
                            * HERE.** This row is a `Movement`; `triagedAt` lives on a `Referral` and
                            * nothing joins the two. What a move being owed is counted from is
-                           * `acceptedAt`, which `ACCEPT_IN_PRINCIPLE` writes and which is deliberately
-                           * absent from every hand-authored movement in the seed — so a seeded row
-                           * still states the absence, and only the absence, in the same register the
-                           * rest of the board uses for a fact it does not hold. Substituting
+                           * `acceptedAt`, which `ACCEPT_IN_PRINCIPLE` writes (and, since v10 pass 3,
+                           * the seed's synthetic `withDemoStageTimes`); a row without one still states
+                           * the absence, and only the absence, in the same register the rest of the
+                           * board uses for a fact it does not hold. Substituting
                            * `openedAt` here would answer a different question (how long they have been
                            * in the department) under this label, and read as plausible while doing it.
                            */}
@@ -5988,6 +6177,19 @@ export function EdScreen({ edId }: EdScreenProps) {
                 </p>
               </div>
               <div className={`${styles.popBody} ${styles.pxBody}`}>
+                <section className={styles.pxBlock} data-testid="ward-ed-person-journey">
+                  <h3>Where their time went</h3>
+                  <JourneyStrip
+                    stages={edJourneyStages(
+                      selectedPatient,
+                      movementMedicalClearance(selectedPatient, referrals),
+                      stageCopy[selectedPatient.stage].label,
+                      now,
+                    )}
+                    formatDuration={splitDuration}
+                    label="Time in the department"
+                  />
+                </section>
                 <section className={styles.pxBlock}>
                   <h3>Where they are up to</h3>
                   <dl className={styles.pairs}>

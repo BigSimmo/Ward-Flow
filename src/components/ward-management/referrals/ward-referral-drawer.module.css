@@ -209,7 +209,7 @@
   background: var(--wf-line);
   color: var(--wf-ink-2);
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   line-height: 1;
 }
@@ -223,7 +223,7 @@
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   line-height: 1;
 }
@@ -299,7 +299,7 @@
   background: var(--wf-surface);
   color: var(--wf-ink-2);
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
 }
 
@@ -329,13 +329,15 @@
   align-items: center;
   gap: 4px;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
-  line-height: var(--wf-lh-11);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
   white-space: nowrap;
 }
 
+/* v10: words stay neutral; the glyph beside them carries the tone. */
 .stepState[data-erred="true"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
+  font-weight: 600;
 }
 
 /* Inbox ward picker */
@@ -501,7 +503,7 @@
   border-radius: var(--wf-r-xs);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -521,9 +523,9 @@
 .eyebrow {
   margin: 0;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
-  line-height: var(--wf-lh-11);
+  line-height: var(--wf-lh-12);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -792,7 +794,7 @@
   border-radius: var(--wf-r-sm);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
 }
 
@@ -825,7 +827,7 @@
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-xs);
   color: var(--wf-ink-2);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -965,7 +967,7 @@
 }
 
 .lateNote {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-2);
 }
 
 .confirmRow {
@@ -1123,9 +1125,13 @@
   align-items: center;
   gap: 6px;
   margin: 0;
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
+}
+
+.flowError svg {
+  color: var(--wf-danger);
 }
 
 .flowField {
@@ -1248,7 +1254,7 @@
 }
 
 .tierDigit[data-tier="1"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .tierWords {
@@ -1552,7 +1558,7 @@
 .wardTableHead {
   height: 32px;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1639,7 +1645,7 @@
 
 .wardFigure small {
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   white-space: nowrap;
 }
 
@@ -1664,9 +1670,9 @@
 
 .factGrid dt {
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
-  line-height: var(--wf-lh-11);
+  line-height: var(--wf-lh-12);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -1826,7 +1832,7 @@
 
 .confirmationFacts strong {
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1876,7 +1882,7 @@ details.refCard > summary {
 
 .inboxPane > .refCard > .refCardTitle {
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -1957,7 +1963,7 @@ details.refCard > summary {
 }
 
 .sendTargetLabel[data-tone="danger"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .sendTargetName {
@@ -2081,7 +2087,7 @@ details.refCard > summary {
 
 .categoryTrack > button:disabled {
   cursor: default;
-  opacity: 0.6;
+  color: var(--wf-dim);
 }
 
 .fromText {
@@ -2161,12 +2167,15 @@ details.refCard > summary {
 }
 
 .railCard[data-layout="pair"] small {
+  display: block;
+  min-width: 0;
   overflow: hidden;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   text-overflow: ellipsis;
-  /* Wraps at the 12px floor instead of cutting a short note such as "Check before sending". */
-  white-space: normal;
+  /* v10: one line. A long note such as "Check before sending" truncates (full words in its
+     title) rather than wrapping the pair onto a second line. */
+  white-space: nowrap;
 }
 
 .railHead {
@@ -2175,6 +2184,10 @@ details.refCard > summary {
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2);
+}
+
+.railFrac {
+  margin-left: auto;
 }
 
 .railCount {
@@ -2189,7 +2202,7 @@ details.refCard > summary {
   gap: var(--wf-s-1);
   margin: 0;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   white-space: nowrap;
 }
 
@@ -2343,8 +2356,9 @@ details.refCard > summary {
   font-size: var(--wf-fs-12);
 }
 
+/* Discard is a quiet destructive action: neutral words, never red (red means act now only). */
 .btnDanger {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .guard {
@@ -2452,5 +2466,38 @@ details.refCard > summary {
 
   .guardActions {
     flex-wrap: wrap;
+  }
+}
+
+/* v10 phone: compact ready answer above Refer to, and 44px Refer to buttons. */
+.phReady {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .phReady {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    min-width: 0;
+    margin: 0;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-13);
+  }
+
+  .phReadyText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phReadyText b {
+    color: var(--wf-ink-1);
+    font-family: var(--wf-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .categoryTrack > button {
+    min-height: var(--wf-touch, 44px);
   }
 }

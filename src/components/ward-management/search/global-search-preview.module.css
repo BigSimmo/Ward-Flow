@@ -85,8 +85,8 @@
   align-items: center;
   gap: 4px;
   min-width: 0;
-  font-size: var(--wf-fs-11);
-  line-height: var(--wf-lh-11);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
   color: var(--wf-ink-3);
 }
 
@@ -111,7 +111,7 @@
   border-radius: 50%;
   border: 1.5px solid var(--wf-line-3);
   background: var(--wf-surface);
-  font: 600 10px / 1 var(--wf-mono);
+  font: 600 12px / 1 var(--wf-mono);
 }
 
 .journeyStep[data-state="done"] .node {
@@ -204,7 +204,7 @@
 }
 
 .statLabel {
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 

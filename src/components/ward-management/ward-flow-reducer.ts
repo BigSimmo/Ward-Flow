@@ -12,10 +12,30 @@ import {
   appendAudit,
   classifyAuditEvent,
   finiteInstant,
+  governanceAuditEvents,
   reviewDecision,
   type AuditDecision,
   type WardAuditState,
 } from "./ward-audit";
+import {
+  bedPlacementUndoFor,
+  referralDecisionUndoFor,
+  sameRecord,
+  undoRoleRefusal,
+  undoWindowRefusal,
+  withUndoRecord,
+  withoutUndoRecord,
+  type UndoRecord,
+  applyStepUndo,
+  diffForStepUndo,
+  nextStepUndoSeq,
+  stepChangedSince,
+  stepUndoFor,
+  undoStepSubjectId,
+  undoStepTypeFor,
+  type StepUndo,
+  type UndoStepType,
+} from "./ward-undo";
 import {
   dischargeIdentity,
   readOpenedDischargeRecord,
@@ -129,6 +149,8 @@ import {
   type ReferralDeclineReason,
   TRANSPORT_LEGAL_STATUSES,
   TRANSPORT_PROVIDERS,
+  OVERRIDE_SIGN_OFF_NAME_MAX,
+  type OverrideSignOff,
 } from "@/components/ward-management/ward-model";
 import type {
   MovementId,
@@ -173,6 +195,7 @@ import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import {
   remainingHighAcuityCapacity,
   remainingSpeciallingCapacity,
+  bedIsOccupied,
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
@@ -197,6 +220,7 @@ const wardPatients: Patient[] = [
 ];
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { withDemoPlannedMoveTimes } from "@/components/ward-management/ward-demo-planned-moves";
+import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage-times";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
@@ -543,6 +567,12 @@ export type WardFlowState = WardAuditState & {
    * load; holds typed text, so a non-empty list is never persisted (see storage validation).
    */
   supportNotifications?: SupportNotificationRecord[];
+  /**
+   * v10 pass 2 (Josh, 10 Oct 2026): what the newest referral decision and Bed board placement on
+   * each subject changed, so `UNDO_REFERRAL_DECISION` and `UNDO_PLACE_IN_BED` can restore it exactly
+   * (`ward-undo.ts`). Optional: absent is an empty list, so older saves and seeds need nothing.
+   */
+  undoRecords?: UndoRecord[];
 };
 
 /** Phone-log of a repatriation arranged off-system. Never a booked transport job. */
@@ -638,7 +668,10 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     auditSequence: 0,
     auditReviewSequence: 0,
     auditCaptureStartedAt: NOW_ANCHOR,
-    movements: withDemoPlannedMoveTimes(structuredClone(network?.movements ?? wardMovements), NOW_ANCHOR),
+    movements: withDemoStageTimes(
+      withDemoPlannedMoveTimes(structuredClone(network?.movements ?? wardMovements), NOW_ANCHOR),
+      NOW_ANCHOR,
+    ),
     units: scenarioUnits(scenario),
     rejections: [],
     clockOffsetMinutes: 0,
@@ -709,7 +742,21 @@ function subjectId(event: WardFlowEvent): string {
     case "RECORD_ADMISSION_FOLLOW_UP":
     case "OPEN_DISCHARGE_RECORD":
     case "REVIEW_AUDIT_EVENT":
+    case "UNDO_AUDIT_REVIEW":
     case "SET_CONFIGURATION":
+      return "none";
+    // v10 pass 2: undo and Bed board placement name the referral or the stay they act on.
+    case "UNDO_REFERRAL_DECISION":
+      return event.referralId;
+    case "PLACE_IN_BED":
+    case "UNDO_PLACE_IN_BED":
+      return event.admissionId;
+    // v10 pass 3: a step undo is filed against the subject it names; a handover sign-off has none.
+    case "UNDO_REPATRIATION":
+    case "UNDO_ED_STEP":
+    case "UNDO_SUPPORT_NOTIFICATION":
+      return undoStepSubjectId(event);
+    case "UNDO_HANDOVER_SIGN_OFF":
       return "none";
     case "RAISE_REFERRAL":
       return event.edId;
@@ -1006,6 +1053,7 @@ function pullOverrides(
       by: WARD_FLOW_ROLE_LABELS[event.role],
       reason: event.overrideReason!,
       unitIds: [unit.id],
+      ...overrideSignOffField(event),
       gate,
       ...(gate === "high_acuity_staffing" && event.numConsulted === true ? { numConsulted: true as const } : {}),
     })),
@@ -1019,6 +1067,30 @@ function reducePlannedAdmission(state: WardFlowState, event: WardFlowEvent, deci
       eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now),
     ) ?? state
   );
+}
+
+/**
+ * v10 pass 3: the override's second sign-off as stored on `Override.secondSignOff`, trimmed, or
+ * nothing. Validated before any placement event runs (`overrideSignOffRefusal`).
+ */
+function overrideSignOffField(event: { overrideSignOff?: OverrideSignOff }): { secondSignOff?: OverrideSignOff } {
+  const signOff = event.overrideSignOff;
+  return signOff === undefined ? {} : { secondSignOff: { role: signOff.role, name: signOff.name.trim() } };
+}
+
+/** Why an event's override sign-off cannot be kept, or null (absent is always fine). */
+function overrideSignOffRefusal(event: WardFlowEvent): string | null {
+  if (!("overrideSignOff" in event) || event.overrideSignOff === undefined) return null;
+  const signOff = event.overrideSignOff as unknown;
+  if (typeof signOff !== "object" || signOff === null) return "The second sign-off must name a role and a person";
+  const { role, name } = signOff as { role?: unknown; name?: unknown };
+  if (typeof role !== "string" || !(role in WARD_FLOW_ROLE_LABELS))
+    return "The second sign-off must name the role it was given in";
+  if (typeof name !== "string" || name.trim().length === 0 || name.trim().length > OVERRIDE_SIGN_OFF_NAME_MAX)
+    return `The second sign-off needs a name or initials, up to ${OVERRIDE_SIGN_OFF_NAME_MAX} characters`;
+  if (!("overrideReason" in event) || event.overrideReason === undefined)
+    return "A second sign-off is recorded only with an override reason";
+  return null;
 }
 
 function eligibilityRefusal(
@@ -1653,6 +1725,7 @@ type ProtectedRecordEvent = Extract<
     type:
       | "OPEN_DISCHARGE_RECORD"
       | "REVIEW_AUDIT_EVENT"
+      | "UNDO_AUDIT_REVIEW"
       | "RECORD_PATIENT_DISCHARGE"
       | "RECORD_ADMISSION_FOLLOW_UP"
       | "RECORD_ADMISSION_CARE";
@@ -1752,13 +1825,38 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
     rejectionReason?: string,
   ) => protectedRefusal(state, event, { outcome, reasonCode }, rejectionReason);
   // Role is inspected before any protected payload or legacy rejection helper.
-  if (!EVENT_ROLE[event.type].includes(event.role)) return deny("role");
+  if (!EVENT_ROLE[event.type].includes(event.role))
+    return deny("role", "denied", event.type === "UNDO_AUDIT_REVIEW" ? "Coordinator only" : undefined);
   if (finiteInstant(event.now) === null || !safeCounter(event.expectedGeneration)) return deny("invalid-payload");
   if (event.expectedGeneration !== state.worldGeneration) return deny("generation", "stale");
 
+  if (event.type === "UNDO_AUDIT_REVIEW") {
+    // v10 pass 2: takes back one review exactly — the review list returns to what it was before it.
+    // The audit log keeps both the review and this undo; review ids are never reused.
+    const review = uniqueRecord(state.auditReviews, event.reviewId);
+    if (!review || review.generation !== state.worldGeneration)
+      return deny("missing-or-inaccessible", "denied", "That review is not on record, so it cannot be undone");
+    const index = state.auditReviews.indexOf(review);
+    if (
+      state.auditReviews.some(
+        (other, at) => at > index && other.eventId === review.eventId && other.generation === review.generation,
+      )
+    )
+      return deny("revision", "stale", "A later review of this event is on record; undo that one first");
+    const windowRefusal = undoWindowRefusal(review.at, event.now);
+    if (windowRefusal) return deny("transition", "denied", windowRefusal);
+    return appendAudit(
+      state,
+      { ...state, auditReviews: state.auditReviews.filter((other) => other !== review) },
+      event,
+      { outcome: "accepted", reasonCode: "none" },
+    );
+  }
+
   if (event.type === "REVIEW_AUDIT_EVENT") {
     if (!safeCounter(event.expectedReviewCount) || !reviewDecision(event.decision)) return deny("invalid-payload");
-    const entry = uniqueRecord(state.auditEvents, event.eventId);
+    // v10 pass 2: the synthetic seeded governance entries (`ward-governance-seed.ts`) are reviewable too.
+    const entry = uniqueRecord(governanceAuditEvents(state), event.eventId);
     if (!entry || entry.generation !== state.worldGeneration || entry.category === "review")
       return deny("missing-or-inaccessible");
     const count = state.auditReviews.filter(
@@ -2081,11 +2179,137 @@ function advanceResourceRevisions(before: WardFlowState, after: WardFlowState): 
   };
 }
 
+/**
+ * Why a stay cannot go in bed `bedNumber` of `unit` (v10 pass 2, Bed board), or null. The number
+ * must be a whole bed on the unit, and no other current stay on the unit may be recorded in it.
+ */
+function bedNumberRefusal(
+  state: WardFlowState,
+  unit: Unit,
+  bedNumber: number,
+  exceptAdmissionId: string | undefined,
+): string | null {
+  if (!Number.isInteger(bedNumber) || bedNumber < 1 || bedNumber > unit.beds)
+    return `Bed ${String(bedNumber)} is not one of ${unit.name}'s ${unit.beds} beds`;
+  const holder = state.admissions.find(
+    (candidate) =>
+      candidate.id !== exceptAdmissionId &&
+      candidate.unitId === unit.id &&
+      candidate.bedNumber === bedNumber &&
+      bedIsOccupied(candidate),
+  );
+  return holder ? `Bed ${bedNumber} on ${unit.name} is already taken` : null;
+}
+
+/**
+ * v10 pass 3: why bed `bedNumber` of `unit` is already held for somebody on their way, or null. A
+ * bed is held by another open movement this ward accepted into it, or by an accepted referral.
+ */
+function heldBedRefusal(
+  state: WardFlowState,
+  unit: Unit,
+  bedNumber: number,
+  exceptMovementId?: string,
+  exceptReferralId?: string,
+): string | null {
+  const heldByMovement = state.movements.some(
+    (other) =>
+      other.id !== exceptMovementId &&
+      other.closure === undefined &&
+      other.acceptedUnitId === unit.id &&
+      other.heldBedNumber === bedNumber,
+  );
+  const heldByReferral = state.referrals.some(
+    (referral) =>
+      referral.id !== exceptReferralId &&
+      // A patient who has arrived on THIS ward no longer needs the bed held; an arrival elsewhere does.
+      !state.movements.some(
+        (movement) =>
+          movement.referralId === referral.id && movement.stage === "arrived" && movement.acceptedUnitId === unit.id,
+      ) &&
+      referral.destinations.some(
+        (arm) =>
+          arm.state === "accepted" &&
+          arm.heldBedNumber === bedNumber &&
+          arm.destination.kind === "psychiatric_ward" &&
+          arm.destination.unitId === unit.id,
+      ),
+  );
+  return heldByMovement || heldByReferral ? `Bed ${bedNumber} on ${unit.name} is already held for someone` : null;
+}
+
+/**
+ * v10 pass 2: after an ACCEPTED `ACCEPT_REFERRAL` or `DECLINE_REFERRAL`, keeps what it changed so
+ * `UNDO_REFERRAL_DECISION` can restore it exactly. A refused decision changes nothing to undo.
+ */
+function withReferralDecisionUndo(state: WardFlowState, next: WardFlowState, event: WardFlowEvent): WardFlowState {
+  if (event.type !== "ACCEPT_REFERRAL" && event.type !== "DECLINE_REFERRAL") return next;
+  if (next.rejections.length !== state.rejections.length) return next;
+  const before = findReferral(state, event.referralId);
+  const after = findReferral(next, event.referralId);
+  if (!before || !after || before === after) return next;
+  return {
+    ...next,
+    undoRecords: withUndoRecord(next.undoRecords, {
+      kind: "referral-decision",
+      action: event.type,
+      referralId: before.id,
+      at: event.now,
+      role: event.role,
+      unitId: event.destinationKind === "psychiatric_ward" ? (event.unitId ?? null) : null,
+      before,
+      after,
+      noticeIds: next.notices.slice(state.notices.length).map((notice) => notice.id),
+    }),
+  };
+}
+
+/** What each step undo says when there is nothing of its kind on the subject to take back. */
+const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
+  UNDO_REFER_TO_UNITS: "There is no referral to wards on this patient to undo",
+  UNDO_ACCEPT_IN_PRINCIPLE: "There is no acceptance on this patient to undo",
+  UNDO_LEGAL_FORM_RECORD: "There is no legal form record on this patient to undo",
+  UNDO_SUPPORT_NOTIFICATION: "There is no Tell record on this move to undo",
+  UNDO_REPATRIATION: "There is no repatriation on this stay to undo",
+  UNDO_HANDOVER_SIGN_OFF: "There is no handover sign-off to undo",
+  UNDO_ED_STEP: "There is no ED step on this patient to undo",
+  UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
+};
+
+/**
+ * v10 pass 3: after an undoable step that changed something, keeps exactly what it changed so its
+ * undo event can restore it (`UNDO_STEP_ACTIONS`). A refused step changes nothing to undo; a partly
+ * refused one (a ward held back from a referral) keeps what it did do.
+ */
+function withStepUndo(state: WardFlowState, next: WardFlowState, event: WardFlowEvent): WardFlowState {
+  const undoType = undoStepTypeFor(event.type);
+  if (!undoType) return next;
+  const changes = diffForStepUndo(state, next);
+  if (changes.length === 0) return next;
+  const acting = "actingUnitId" in event && typeof event.actingUnitId === "string" ? event.actingUnitId : undefined;
+  const unitId = event.role !== "ward" ? null : event.type === "ACCEPT_IN_PRINCIPLE" ? event.unitId : (acting ?? null);
+  return {
+    ...next,
+    undoRecords: withUndoRecord(next.undoRecords, {
+      kind: "step",
+      undoType,
+      action: event.type as StepUndo["action"],
+      subjectId: undoStepSubjectId(event),
+      at: event.now,
+      seq: nextStepUndoSeq(next.undoRecords, state.auditSequence),
+      role: event.role,
+      unitId,
+      changes,
+    }),
+  };
+}
+
 /** Capture is one reducer-boundary append; clinical branches supply their actual verdict. */
 export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): WardFlowState {
   const protectedEvent =
     event.type === "OPEN_DISCHARGE_RECORD" ||
     event.type === "REVIEW_AUDIT_EVENT" ||
+    event.type === "UNDO_AUDIT_REVIEW" ||
     event.type === "RECORD_PATIENT_DISCHARGE" ||
     event.type === "RECORD_ADMISSION_FOLLOW_UP" ||
     event.type === "RECORD_ADMISSION_CARE";
@@ -2112,9 +2336,9 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
     if (!safeCounter(revision) || revision >= Number.MAX_SAFE_INTEGER) return state;
   }
   const decision: AuditDecision = { outcome: "denied", reasonCode: "transition" };
-  let next = reduceClinicalEvent(state, event, decision);
+  let next = withReferralDecisionUndo(state, reduceClinicalEvent(state, event, decision), event);
   if (event.type !== "RESET_SCENARIO" && event.type !== "SET_SCENARIO") {
-    next = advanceResourceRevisions(state, next);
+    next = withStepUndo(state, advanceResourceRevisions(state, next), event);
   }
   // 🔴 `next.movements !== state.movements` ADDED here (Y4 privacy fix round 2, P3 finding 6): a
   // genuine reseed (`seedWardFlowStateAt`) always produces a FRESH `movements` array, while every
@@ -2148,6 +2372,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         : `Unknown or unpermitted event type: ${event.type}`,
     );
   }
+
+  // v10 pass 3: a malformed second sign-off is refused whole, before anything is recorded.
+  const signOffRefusal = overrideSignOffRefusal(event);
+  if (signOffRefusal) return reject(state, event, signOffRefusal);
 
   // D-34 is an explicit recorded pause, not an inference from absent clearance.
   const pausedPlacementEvents: readonly WardFlowEvent["type"][] = [
@@ -2214,7 +2442,121 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_ADMISSION_FOLLOW_UP":
     case "OPEN_DISCHARGE_RECORD":
     case "REVIEW_AUDIT_EVENT":
+    case "UNDO_AUDIT_REVIEW":
       return state;
+
+    case "UNDO_REFERRAL_DECISION": {
+      const referral = findReferral(state, event.referralId);
+      if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
+      const record = referralDecisionUndoFor(state.undoRecords, referral.id);
+      if (!record) return reject(state, event, "There is no decision on this referral to undo");
+      const refusal =
+        undoRoleRefusal(record, event.role, event.actingUnitId) ??
+        undoWindowRefusal(record.at, event.now) ??
+        (sameRecord(referral, record.after)
+          ? null
+          : "This referral has changed since the decision, so it cannot be undone");
+      if (refusal) return reject(state, event, refusal);
+      const restored = replaceReferral(state, referral.id, structuredClone(record.before));
+      const raised = new Set(record.noticeIds);
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      return {
+        ...restored,
+        notices: restored.notices.filter((notice) => !(raised.has(notice.id) && notice.raisedAt === record.at)),
+        undoRecords: withoutUndoRecord(state.undoRecords, record),
+      };
+    }
+
+    case "PLACE_IN_BED": {
+      const admission = findAdmission(state, event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.role === "ward" && event.actingUnitId !== admission.unitId)
+        return reject(state, event, "A ward may only move patients between its own beds");
+      if (!bedIsOccupied(admission)) return reject(state, event, "Only a current stay can be placed in a bed");
+      const unit = findUnit(state, admission.unitId);
+      if (!unit) return reject(state, event, `no unit found for id ${admission.unitId}`);
+      if (admission.bedNumber === event.bedNumber)
+        return reject(state, event, `This stay is already recorded in bed ${event.bedNumber}`);
+      const bedRefusal = bedNumberRefusal(state, unit, event.bedNumber, admission.id);
+      if (bedRefusal) return reject(state, event, bedRefusal);
+      const heldRefusal = heldBedRefusal(state, unit, event.bedNumber);
+      if (heldRefusal) return reject(state, event, heldRefusal);
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const placed = replaceAdmission(state, admission.id, { ...admission, bedNumber: event.bedNumber });
+      return {
+        ...placed,
+        undoRecords: withUndoRecord(state.undoRecords, {
+          kind: "bed-placement",
+          admissionId: admission.id,
+          unitId: admission.unitId,
+          at: event.now,
+          role: event.role,
+          beforeBed: admission.bedNumber ?? null,
+          afterBed: event.bedNumber,
+        }),
+      };
+    }
+
+    case "UNDO_PLACE_IN_BED": {
+      const admission = findAdmission(state, event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      const record = bedPlacementUndoFor(state.undoRecords, admission.id);
+      if (!record) return reject(state, event, "There is no bed move on this stay to undo");
+      const refusal =
+        undoRoleRefusal(record, event.role, event.actingUnitId) ??
+        undoWindowRefusal(record.at, event.now) ??
+        (admission.unitId === record.unitId && admission.bedNumber === record.afterBed && bedIsOccupied(admission)
+          ? null
+          : "This stay has changed since the bed move, so it cannot be undone");
+      if (refusal) return reject(state, event, refusal);
+      const unit = findUnit(state, admission.unitId);
+      if (!unit) return reject(state, event, `no unit found for id ${admission.unitId}`);
+      if (record.beforeBed !== null) {
+        const bedRefusal = bedNumberRefusal(state, unit, record.beforeBed, admission.id);
+        if (bedRefusal) return reject(state, event, `${bedRefusal}, so the move cannot be undone`);
+      }
+      // Exact: a stay that had no bed number before gets none back (the key absent, not undefined).
+      const { bedNumber: _placed, ...unplaced } = admission;
+      void _placed;
+      const restored: Admission = record.beforeBed === null ? unplaced : { ...admission, bedNumber: record.beforeBed };
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      return {
+        ...replaceAdmission(state, admission.id, restored),
+        undoRecords: withoutUndoRecord(state.undoRecords, record),
+      };
+    }
+
+    case "UNDO_REFER_TO_UNITS":
+    case "UNDO_ACCEPT_IN_PRINCIPLE":
+    case "UNDO_LEGAL_FORM_RECORD":
+    case "UNDO_SUPPORT_NOTIFICATION":
+    case "UNDO_REPATRIATION":
+    case "UNDO_HANDOVER_SIGN_OFF":
+    case "UNDO_ED_STEP":
+    case "UNDO_TRANSPORT_STEP": {
+      // v10 pass 3: takes back the newest step of this kind on this subject, exactly (`ward-undo.ts`).
+      const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
+      if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);
+      // An older toast's Undo must not take back a newer step that replaced its record.
+      if (event.recordSeq !== undefined && record.seq !== event.recordSeq)
+        return reject(state, event, "A later step replaced this one, so this Undo no longer applies");
+      const refusal =
+        undoRoleRefusal(record, event.role, "actingUnitId" in event ? event.actingUnitId : undefined) ??
+        undoWindowRefusal(record.at, event.now) ??
+        (stepChangedSince(state, record) ? "This has changed since, so it cannot be undone" : null);
+      if (refusal) return reject(state, event, refusal);
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const undone = applyStepUndo(state, record);
+      // A stay the step created and the undo removed takes its own bed-move record with it.
+      const remaining = withoutUndoRecord(state.undoRecords, record).filter(
+        (other) => other.kind !== "bed-placement" || undone.admissions.some((stay) => stay.id === other.admissionId),
+      );
+      return { ...undone, undoRecords: remaining };
+    }
 
     case "UPDATE_EXPECTED_DISCHARGE": {
       const admission = findAdmission(state, event.admissionId);
@@ -2298,6 +2640,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // `dueAt` uses above for the same reason: the two shapes must not silently mean one thing.
         ...(event.gender === undefined ? {} : { gender: event.gender }),
         ...(suburb === undefined ? {} : { suburb }),
+        // v10 pass 2: when the record was added, so Add patient can count "Added today".
+        addedAt: event.now,
       };
       return { ...state, patients: [...state.patients, patient], patientSequence: state.patientSequence + 1 };
     }
@@ -3770,6 +4114,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
                   // The NEWLY added wards this call actually referred to, not the wards asked for and
                   // never a ward already live — an accountability record names what THIS act did.
                   unitIds: [...permitted],
+                  ...overrideSignOffField(event),
                 },
               ],
         // T12 (item 9): narrowed to the units this call ACTUALLY referred to (`permitted`), the
@@ -3863,6 +4208,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
        */
       const acceptRefusal = eligibilityRefusal(event, movement, acceptedUnit, event.now);
       if (acceptRefusal) return reject(state, event, acceptRefusal);
+      // v10 pass 3: the Bed board names a bed as it accepts; a taken or held bed is refused.
+      if (event.bedNumber !== undefined) {
+        const bedRefusal =
+          bedNumberRefusal(state, acceptedUnit, event.bedNumber, undefined) ??
+          heldBedRefusal(state, acceptedUnit, event.bedNumber, movement.id);
+        if (bedRefusal) return reject(state, event, bedRefusal);
+      }
       // An override is filed here only when it is NEW: a gate genuinely fails for this unit, and no
       // override already on the movement covers it. A reason against a unit that passes every gate
       // bought nothing (the rule `referralAcceptanceRefusal` follows), and the override that
@@ -3890,6 +4242,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const updated: Movement = {
         ...movement,
         acceptedUnitId: event.unitId,
+        ...(event.bedNumber === undefined ? {} : { heldBedNumber: event.bedNumber }),
         // OD-3 (2026-09-02): an overridden acceptance is made accountable, never impossible — the
         // reason that bought the gate past is recorded, exactly as REFER_TO_UNITS records its own.
         overrides:
@@ -3901,6 +4254,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
                   by: WARD_FLOW_ROLE_LABELS[event.role],
                   reason: event.overrideReason,
                   unitIds: [event.unitId],
+                  ...overrideSignOffField(event),
                 },
               ]
             : movement.overrides,
@@ -5132,6 +5486,25 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       ) {
         return reject(state, event, "Arrival needs this movement's matching held admission at its accepted ward.");
       }
+      const heldReferral =
+        movement.referralId === undefined
+          ? undefined
+          : state.referrals
+              .find((referral) => referral.id === movement.referralId)
+              ?.destinations.find(
+                (arm) =>
+                  arm.state === "accepted" &&
+                  arm.heldBedNumber !== undefined &&
+                  arm.destination.kind === "psychiatric_ward" &&
+                  arm.destination.unitId === unit.id,
+              );
+      // The patient lands in the bed held for them; if that bed has since been taken they still
+      // arrive, with no bed recorded, rather than being refused at the door.
+      const heldBed = movement.heldBedNumber ?? heldReferral?.heldBedNumber;
+      const heldBedNumber =
+        heldBed !== undefined && bedNumberRefusal(state, unit, heldBed, linkedAdmission?.id) === null
+          ? heldBed
+          : undefined;
       const isBedTurnaround = unit.empty.value <= 0;
 
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
@@ -5175,8 +5548,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             }
           : {}),
       };
+      const { heldBedNumber: _heldBedNumber, ...movementWithoutHeldBed } = movement;
+      void _heldBedNumber;
       const updatedMovement: Movement = {
-        ...movement,
+        ...movementWithoutHeldBed,
         stage: "arrived",
         // `noTransportNeeded` (above) means no LIVE job was ever booked, but a cancelled job may
         // still sit on `movement.transport` — this route never writes `arrivedAt` onto it. Every
@@ -5228,6 +5603,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           state: "occupied",
           gender: movement.gender,
           arrivedAt: event.now,
+          ...(heldBedNumber === undefined ? {} : { bedNumber: heldBedNumber }),
           ...(isBedTurnaround ? { blockReason: "Awaiting clean" } : {}),
         });
       } else {
@@ -5255,6 +5631,26 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             [source.id]: (withPerson.dischargeRevisions[source.id] ?? 0) + 1,
           },
         };
+      }
+      if (heldReferral && movement.referralId) {
+        const referral = findReferral(withPerson, movement.referralId);
+        if (referral) {
+          withPerson = replaceReferral(withPerson, referral.id, {
+            ...referral,
+            destinations: referral.destinations.map((arm) => {
+              if (
+                arm.state !== "accepted" ||
+                arm.heldBedNumber === undefined ||
+                arm.destination.kind !== "psychiatric_ward" ||
+                arm.destination.unitId !== unit.id
+              )
+                return arm;
+              const { heldBedNumber: _heldBed, ...releasedArm } = arm;
+              void _heldBed;
+              return releasedArm;
+            }),
+          });
+        }
       }
       return replaceMovement(withPerson, movement.id, updatedMovement);
     }
@@ -6956,6 +7352,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         }
         const unit = findUnit(state, event.unitId);
         if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
+        if (event.bedNumber !== undefined) {
+          const bedRefusal = bedNumberRefusal(state, unit, event.bedNumber, undefined);
+          if (bedRefusal) return reject(state, event, bedRefusal);
+        }
         /*
          * 🔴 T12 (item 9, owner answer 9): the front door's own half of the same rule
          * `REFER_TO_UNITS` holds on the movement path — see `GenderPlacement`'s own doc comment
@@ -7002,6 +7402,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           genderPlacementAddition === undefined
             ? referral
             : { ...referral, genderPlacements: [...(referral.genderPlacements ?? []), genderPlacementAddition] };
+        if (event.bedNumber !== undefined) {
+          const bedRefusal =
+            bedNumberRefusal(state, unit, event.bedNumber, undefined) ??
+            heldBedRefusal(state, unit, event.bedNumber, undefined, referral.id);
+          if (bedRefusal) return reject(state, event, bedRefusal);
+        }
         const acceptRefusal = referralAcceptanceRefusal(
           event,
           referralForEligibility,
@@ -7021,6 +7427,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           // otherwise carry a reason forward from an earlier state onto a clean acceptance, which
           // would read afterwards as a rule bent that nobody bent.
           acceptOverrideReason: acceptRefusal.overrideApplied ? event.overrideReason : undefined,
+          ...(event.bedNumber === undefined ? {} : { heldBedNumber: event.bedNumber }),
         };
       } else {
         // An ED, a medical ward and a community team are answered by a person or a team. There is
@@ -7032,6 +7439,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             event,
             `${event.destinationKind.replace(/_/g, " ")} is answered by a team, not a bed — it cannot name a unit`,
           );
+        }
+        if (event.bedNumber !== undefined) {
+          return reject(state, event, "Only a psychiatric ward answer can place a referral in a bed");
         }
         accepted = {
           ...addressing,

@@ -36,6 +36,7 @@ import {
   referralClocks,
 } from "@/components/ward-management/ward-referrals";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { splitDuration } from "@/components/ward-management/ward-clock";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 /**
@@ -756,9 +757,19 @@ describe("the hub's two lists", () => {
     // `openedAt` here was tried as a mutation and this list's stays are all under an hour, so it
     // rendered "45m since accepted" and slipped straight through the hour-scale pattern — a guard
     // that only catches the long version of a defect the fixture cannot currently produce.
-    expect(text, "the outbox renders an elapsed figure from an instant it does not hold").not.toMatch(
-      /\b\d+\s*[hmd]\b/,
+    // v10 pass 3 (10 Oct 2026): the seed now carries synthetic acceptance times
+    // (`withDemoStageTimes`), so a row may show "N since accepted". The ban is kept, narrowed to
+    // what it guards: every elapsed figure left on this list must be one counted from a recorded
+    // `acceptedAt` (checked per row below), never from `openedAt`.
+    const acceptedFigures = new Set(
+      seedWardFlowState()
+        .movements.filter((movement) => movement.acceptedAt !== undefined)
+        .map((movement) => `${splitDuration(Math.max(NOW_ANCHOR - movement.acceptedAt!, 0))} since accepted`),
     );
+    expect(
+      text.replace(/(\d+\s*[hmd]\s*)+since accepted/gu, ""),
+      "the outbox renders an elapsed figure from an instant it does not hold",
+    ).not.toMatch(/\b\d+\s*[hmd]\b/);
     expect(text, 'the outbox renders a "time since" figure').not.toMatch(/\bago\b/i);
 
     /*
@@ -789,6 +800,13 @@ describe("the hub's two lists", () => {
        * its worst member. Tolerance is bought by listing more FULL spellings, never by listing a
        * fragment of one.
        */
+      const sinceAccepted = /((?:\d+\s*[hmd]\s*)+since accepted)/u.exec(row.textContent ?? "")?.[1]?.trim();
+      if (sinceAccepted !== undefined) {
+        expect(acceptedFigures, `outbox row ${index + 1}'s figure is not counted from a recorded acceptedAt`).toContain(
+          sinceAccepted,
+        );
+        continue;
+      }
       expectSays(row, `the acceptance-time absence line on outbox row ${index + 1}`, [
         "acceptance time not recorded",
         "acceptance time: none",
@@ -1742,7 +1760,17 @@ describe("the ED referral board never invents a time since referral", () => {
       0,
     );
 
+    // v10 pass 3 (10 Oct 2026): seeded movements now carry a synthetic `referredAt`
+    // (`withDemoStageTimes`). A row whose movement holds one no longer states the absence; a row
+    // whose movement does not still must. Neither may claim a time since referral on this row.
+    const seeded = seedWardFlowState().movements;
     for (const row of rows) {
+      const movement = seeded.find((candidate) => row.dataset.testid === `ward-ed-referred-${candidate.id}`);
+      if (movement?.referredAt !== undefined) {
+        expect(row.textContent?.toLowerCase()).not.toContain("referral time not recorded");
+        expect(row.textContent).not.toContain("since referral");
+        continue;
+      }
       /*
        * 🔴 **THE WEAKEST OF THE THREE ON THIS SCREEN — BOTH SPELLINGS FAILED IN BOTH DIRECTIONS.**
        * Measured on the real component:

@@ -44,7 +44,6 @@ import {
   setActNowNotificationPreference,
   useActNowNotificationPreference,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
-import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   WA_BROADCAST_TEMPLATES,
   getActiveBroadcastAlert,
@@ -105,6 +104,8 @@ import {
   Hero,
   HeroStat,
   IconTile,
+  PhoneHero,
+  PhoneSheet,
   Kbd,
   Segmented,
   Select,
@@ -112,9 +113,11 @@ import {
   StatusGlyph,
   TabPanel,
   Tabs,
+  useIsPhone,
   TextInput,
   Textarea,
   type WfTone,
+  useIsTabletPortrait,
 } from "@/components/wf";
 
 /**
@@ -134,19 +137,6 @@ import {
 export { extractOverdue } from "./alerts-model";
 
 const COORDINATOR = WARD_FLOW_ROLE_LABELS.coordinator;
-
-/** Phone layout: the selected alert opens in a sheet instead of the side panel. */
-const PHONE_MEDIA_QUERY = "(max-width: 48rem)";
-const usePhoneLayout = createBrowserStore<boolean>(
-  (onStoreChange) => {
-    if (typeof window.matchMedia !== "function") return () => {};
-    const media = window.matchMedia(PHONE_MEDIA_QUERY);
-    media.addEventListener("change", onStoreChange);
-    return () => media.removeEventListener("change", onStoreChange);
-  },
-  () => (typeof window.matchMedia === "function" ? window.matchMedia(PHONE_MEDIA_QUERY).matches : false),
-  false,
-);
 
 type AlertsTab = "now" | "broadcast" | "notices" | "history";
 type ArrangeBy = "urgency" | "lanes" | "owner";
@@ -183,7 +173,11 @@ function AlertsWorkspace() {
   const clockNow = useWardFlowClock();
   const live = usePageLive();
   const now = live.now;
-  const isPhone = usePhoneLayout();
+  // Phone layout: the selected alert opens in a sheet instead of the side panel.
+  const isPhone = useIsPhone();
+  // Tablet portrait (v10): the queue takes the width and an alert opens as a slide-over.
+  const isTabletPortrait = useIsTabletPortrait();
+  const slideOver = isPhone || isTabletPortrait;
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const plannedAdmissions = state.plannedAdmissions;
@@ -210,6 +204,7 @@ function AlertsWorkspace() {
   const [watchHighlight, setWatchHighlight] = useState<AlertKind | null>(null);
   const [chosenId, setChosenId] = useState<string | undefined>(undefined);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [phoneChecks, setPhoneChecks] = useState(false);
   // A request to focus the release reason once the panel or sheet has drawn it.
   const [releaseRequest, setReleaseRequest] = useState(0);
   const releasePending = useRef(false);
@@ -423,25 +418,35 @@ function AlertsWorkspace() {
       (watchHighlight !== null && alertKindOf(entry.item.id) === watchHighlight),
     [pill, ownerHighlight, watchHighlight],
   );
+  const highlightOn = pill !== null || ownerHighlight !== null || watchHighlight !== null;
   const toEntries = useCallback(
     (items: InboxItem[], snoozed: boolean): QueueEntry[] =>
       items
         .map((item) => entryFor(item, snoozed))
-        .map((entry) => ({ ...entry, highlighted: isHighlighted(entry) }))
+        .map((entry) => {
+          const highlighted = isHighlighted(entry);
+          return { ...entry, highlighted, dimmed: highlightOn && !highlighted };
+        })
         .sort((a, b) => byOldest({ at: a.raised }, { at: b.raised })),
-    [entryFor, isHighlighted],
+    [entryFor, isHighlighted, highlightOn],
   );
   const activeEntries = useMemo(() => toEntries(inbox, false), [toEntries, inbox]);
   const snoozedEntries = useMemo(() => toEntries(snoozedInbox, true), [toEntries, snoozedInbox]);
+  const oldestRaised = useMemo(() => {
+    const times = activeEntries.flatMap((entry) =>
+      entry.group === "running" || entry.raised === undefined ? [] : [entry.raised],
+    );
+    return times.length > 0 ? Math.min(...times) : undefined;
+  }, [activeEntries]);
   const actEntries = activeEntries.filter((entry) => entry.group === "act");
   const waitEntries = activeEntries.filter((entry) => entry.group === "wait");
   const runningEntries = activeEntries.filter((entry) => entry.group === "running");
   const allEntries = useMemo(() => [...activeEntries, ...snoozedEntries], [activeEntries, snoozedEntries]);
-  const countedActive = activeEntries.filter((entry) => entry.group !== "running");
+  const countedActive = useMemo(() => activeEntries.filter((entry) => entry.group !== "running"), [activeEntries]);
   const yoursCount = countedActive.filter((entry) => entry.mine).length;
   const needYouCount = actEntries.filter((entry) => entry.mine && !entry.seen).length;
   const highlightedCount = allEntries.filter((entry) => entry.highlighted).length;
-  const anyHighlight = pill !== null || ownerHighlight !== null || watchHighlight !== null;
+  const anyHighlight = highlightOn;
   const maxAge = Math.max(1, ...allEntries.map((entry) => (entry.raised === undefined ? 0 : now - entry.raised)));
   const owners = useMemo(() => {
     const names = [...new Set(allEntries.map((entry) => entry.owner))];
@@ -459,21 +464,22 @@ function AlertsWorkspace() {
     );
     return ranked.length > 0 ? ranked : countedActive;
   }, [countedActive]);
+  const openCount = countedActive.length;
 
   const chosen = allEntries.find((entry) => entry.item.id === chosenId);
   // On the desktop the panel always shows an alert: the chosen one, else the first in line.
-  const selected = chosen ?? (isPhone ? undefined : (nextQueue[0] ?? allEntries[0]));
+  const selected = chosen ?? (slideOver ? undefined : (nextQueue[0] ?? allEntries[0]));
 
   const select = useCallback(
     (entry: QueueEntry, options: { release?: boolean } = {}) => {
       setChosenId(entry.item.id);
-      if (isPhone) setSheetOpen(true);
+      if (slideOver) setSheetOpen(true);
       if (options.release) {
         releasePending.current = true;
         setReleaseRequest((count) => count + 1);
       }
     },
-    [isPhone],
+    [slideOver],
   );
 
   useEffect(() => {
@@ -1059,148 +1065,220 @@ function AlertsWorkspace() {
     />
   ) : null;
 
+  const checkingFoot = (
+    <div className={styles.checking}>
+      <span className={styles.checkingLabel}>Checking</span>
+      <ul className={styles.checkList} aria-label="Conditions checked">
+        {checks.map((check) => {
+          const scopeId = `alerts-check-${check.key}`;
+          const body = (
+            <>
+              <span className={styles.mono}>{check.n}</span>
+              {check.label}
+            </>
+          );
+          return (
+            <li key={check.key} aria-label={check.label} data-zero={check.n === 0 ? "true" : undefined}>
+              {!check.href && !check.kind ? (
+                <span className={styles.check} title={check.scope} aria-describedby={scopeId}>
+                  {body}
+                </span>
+              ) : check.href ? (
+                <Link className={styles.check} href={check.href} title={check.scope} aria-describedby={scopeId}>
+                  {body}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.check}
+                  title={check.scope}
+                  aria-pressed={watchHighlight === check.kind}
+                  aria-describedby={scopeId}
+                  onClick={() => {
+                    setTab("now");
+                    setWatchHighlight((current) => (current === check.kind ? null : (check.kind ?? null)));
+                  }}
+                >
+                  {body}
+                </button>
+              )}
+              <SrOnly id={scopeId}>{check.scope}</SrOnly>
+            </li>
+          );
+        })}
+        <li aria-label="Not checked: handover sheets" className={styles.notChecked}>
+          <span className={styles.check} title="Nothing in this system records when a shift hands over.">
+            <X size={12} aria-hidden="true" />
+            Not checked: handover sheets
+          </span>
+          <SrOnly>
+            Handover sheets. Nothing in this system records when a shift hands over, so there is no deadline to measure
+            and this screen cannot tell you whether one is due.
+          </SrOnly>
+        </li>
+      </ul>
+    </div>
+  );
+
   return (
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v8">
       <main id="main-content" className={styles.main}>
-        <Hero
-          level={1}
-          eyebrow="Alerts"
-          title={heroTitle}
-          stats={
-            <div className={styles.heroStats} role="group" aria-label="Alert summary">
-              <HeroStat
-                value={actEntries.length}
-                label="Act now"
-                tone={actEntries.length > 0 ? "danger" : undefined}
-                pressed={pill === "act"}
-                onToggle={() => togglePill("act")}
-              />
-              <HeroStat
-                value={waitEntries.length}
-                label="Waiting"
-                tone={waitEntries.length > 0 ? "warning" : undefined}
-                pressed={pill === "wait"}
-                onToggle={() => togglePill("wait")}
-              />
-              <HeroStat
-                value={yoursCount}
-                label="Yours"
-                pressed={pill === "mine"}
-                onToggle={() => togglePill("mine")}
-              />
-            </div>
-          }
-          aside={
-            <div className={styles.heroTools}>
-              <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
-              <Button variant="onHero" size="sm" icon={ChevronRight} onClick={handleNext}>
-                Next alert
-              </Button>
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={notifyOn ? BellRing : Bell}
-                aria-pressed={notifyOn}
-                title="Act-now alerts notify in this open tab. No patient detail is shown."
-                onClick={handleNotify}
-              >
-                Notify me
-              </Button>
-              <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
-                Handover
-              </Button>
-              <Button
-                ref={broadcastTriggerRef}
-                variant="light"
-                size="sm"
-                icon={Radio}
-                onClick={(event) => openComposer(event.currentTarget)}
-              >
-                Broadcast alert
-              </Button>
-            </div>
-          }
-          bar={
-            activeBroadcast ? (
-              <button
-                type="button"
-                className={styles.heroBroadcast}
-                title="Open the broadcast desk"
-                onClick={() => setTab("broadcast")}
-              >
-                <TimeRing
-                  from={activeBroadcast.dispatchedAt}
-                  until={activeBroadcast.expiresAt}
-                  now={now}
-                  size={30}
-                  onHero
-                />
-                <StatusGlyph tone={directiveTone} />
-                <span className={styles.heroBroadcastTitle}>{activeBroadcast.title}</span>
-                <span className={styles.heroBroadcastMeta}>
-                  ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
-                  <span className={styles.deskOnly}>
-                    {" "}
-                    · <span className={styles.mono}>{activeBroadcast.acknowledgedUnits.length}</span> acknowledged
-                  </span>
-                </span>
-              </button>
-            ) : undefined
-          }
-          foot={
-            <div className={styles.checking}>
-              <span className={styles.checkingLabel}>Checking</span>
-              <ul className={styles.checkList} aria-label="Conditions checked">
-                {checks.map((check) => {
-                  const scopeId = `alerts-check-${check.key}`;
-                  const body = (
+        {isPhone ? (
+          <>
+            <PhoneHero
+              level={1}
+              data-testid="ward-alerts-phone-hero"
+              title={heroTitle}
+              sub={
+                openCount > 0
+                  ? `${openCount} open${
+                      oldestRaised !== undefined ? ` · oldest ${minutesText(Math.max(0, now - oldestRaised))}` : ""
+                    }`
+                  : "Checking every condition below"
+              }
+              figures={[
+                { id: "act", value: actEntries.length, label: "Act now", tone: "danger" },
+                { id: "wait", value: waitEntries.length, label: "Waiting", tone: "warning" },
+                { id: "mine", value: yoursCount, label: "Yours" },
+              ]}
+              actions={
+                <>
+                  <Button variant="onHero" icon={ChevronRight} onClick={handleNext}>
+                    Next alert
+                  </Button>
+                  <Button
+                    ref={broadcastTriggerRef}
+                    variant="light"
+                    icon={Radio}
+                    onClick={(event) => openComposer(event.currentTarget)}
+                  >
+                    Broadcast
+                  </Button>
+                </>
+              }
+            />
+            <button type="button" className={styles.phoneChecking} onClick={() => setPhoneChecks(true)}>
+              <span className={styles.phoneCheckingLabel}>Checking</span>
+              <span className={styles.phoneCheckingText}>
+                <span className={styles.mono}>{checks.length}</span> conditions,{" "}
+                <span className={styles.mono}>{checks.reduce((sum, check) => sum + check.n, 0)}</span> found
+              </span>
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+            <PhoneSheet open={phoneChecks} onClose={() => setPhoneChecks(false)} title="Checking" height="tall">
+              <div className={styles.phoneChecks}>{checkingFoot}</div>
+            </PhoneSheet>
+          </>
+        ) : (
+          <Hero
+            level={1}
+            eyebrow="Alerts"
+            title={heroTitle}
+            titleMeta={
+              openCount > 0 ? (
+                <span className={styles.heroMeta}>
+                  <span className={styles.mono}>{openCount}</span> open
+                  {oldestRaised !== undefined ? (
                     <>
-                      <span className={styles.mono}>{check.n}</span>
-                      {check.label}
+                      {" "}
+                      · oldest <span className={styles.mono}>{minutesText(Math.max(0, now - oldestRaised))}</span>
                     </>
-                  );
-                  return (
-                    <li key={check.key} aria-label={check.label} data-zero={check.n === 0 ? "true" : undefined}>
-                      {!check.href && !check.kind ? (
-                        <span className={styles.check} title={check.scope} aria-describedby={scopeId}>
-                          {body}
-                        </span>
-                      ) : check.href ? (
-                        <Link className={styles.check} href={check.href} title={check.scope} aria-describedby={scopeId}>
-                          {body}
-                        </Link>
-                      ) : (
-                        <button
-                          type="button"
-                          className={styles.check}
-                          title={check.scope}
-                          aria-pressed={watchHighlight === check.kind}
-                          aria-describedby={scopeId}
-                          onClick={() => {
-                            setTab("now");
-                            setWatchHighlight((current) => (current === check.kind ? null : (check.kind ?? null)));
-                          }}
-                        >
-                          {body}
-                        </button>
-                      )}
-                      <SrOnly id={scopeId}>{check.scope}</SrOnly>
-                    </li>
-                  );
-                })}
-                <li aria-label="Not checked: handover sheets" className={styles.notChecked}>
-                  <span className={styles.check} title="Nothing in this system records when a shift hands over.">
-                    <X size={12} aria-hidden="true" />1 not checked
-                  </span>
-                  <SrOnly>
-                    Handover sheets. Nothing in this system records when a shift hands over, so there is no deadline to
-                    measure and this screen cannot tell you whether one is due.
-                  </SrOnly>
-                </li>
-              </ul>
-            </div>
-          }
-        />
+                  ) : null}
+                </span>
+              ) : undefined
+            }
+            aside={
+              <div className={styles.heroTools}>
+                <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
+                <Button
+                  variant="onHero"
+                  size="sm"
+                  icon={notifyOn ? BellRing : Bell}
+                  aria-pressed={notifyOn}
+                  title="Act-now alerts notify in this open tab. No patient detail is shown."
+                  onClick={handleNotify}
+                >
+                  Notify me
+                </Button>
+                <Button
+                  ref={broadcastTriggerRef}
+                  variant="light"
+                  size="sm"
+                  icon={Radio}
+                  onClick={(event) => openComposer(event.currentTarget)}
+                >
+                  Broadcast alert
+                </Button>
+              </div>
+            }
+            bar={
+              <div className={styles.heroBar}>
+                <div className={styles.heroStats} role="group" aria-label="Alert summary">
+                  <HeroStat
+                    inline
+                    value={actEntries.length}
+                    label="Act now"
+                    tone="danger"
+                    pressed={pill === "act"}
+                    onToggle={() => togglePill("act")}
+                  />
+                  <HeroStat
+                    inline
+                    value={waitEntries.length}
+                    label="Waiting"
+                    tone="warning"
+                    pressed={pill === "wait"}
+                    onToggle={() => togglePill("wait")}
+                  />
+                  <HeroStat
+                    inline
+                    value={yoursCount}
+                    label="Yours"
+                    tone="neutral"
+                    pressed={pill === "mine"}
+                    onToggle={() => togglePill("mine")}
+                  />
+                </div>
+                {activeBroadcast ? (
+                  <button
+                    type="button"
+                    className={styles.heroBroadcast}
+                    title="Open the broadcast desk"
+                    onClick={() => setTab("broadcast")}
+                  >
+                    <TimeRing
+                      from={activeBroadcast.dispatchedAt}
+                      until={activeBroadcast.expiresAt}
+                      now={now}
+                      size={30}
+                      onHero
+                    />
+                    <StatusGlyph tone={directiveTone} />
+                    <span className={styles.heroBroadcastTitle}>{activeBroadcast.title}</span>
+                    <span className={styles.heroBroadcastMeta}>
+                      ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
+                      <span className={styles.deskOnly}>
+                        {" "}
+                        · <span className={styles.mono}>{activeBroadcast.acknowledgedUnits.length}</span> acknowledged
+                      </span>
+                    </span>
+                  </button>
+                ) : null}
+              </div>
+            }
+            barAside={
+              <div className={styles.heroTools}>
+                <Button variant="onHero" size="sm" icon={ChevronRight} onClick={handleNext}>
+                  Next alert <span className={styles.mono}>{openCount}</span>
+                </Button>
+                <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
+                  Copy for handover
+                </Button>
+              </div>
+            }
+            foot={checkingFoot}
+          />
+        )}
 
         {/* Feedback after a broadcast or an act on a row */}
         {broadcastFeedback && (!broadcastRefused || !isBroadcastModalOpen) && (
@@ -1232,7 +1310,19 @@ function AlertsWorkspace() {
           <div className={styles.column}>
             <Card as="section" className={styles.queueCard} aria-label="Alerts">
               <div className={styles.tabsBar}>
-                <Tabs items={tabs} value={tab} onChange={setTab} label="Alerts views" idPrefix="alerts" />
+                {isPhone ? (
+                  // Phone (v10): the four views as one 44px segmented control, not a tab strip.
+                  <Segmented<AlertsTab>
+                    className={styles.phoneTabs}
+                    items={tabs}
+                    value={tab}
+                    onChange={setTab}
+                    label="Alerts views"
+                    size="md"
+                  />
+                ) : (
+                  <Tabs items={tabs} value={tab} onChange={setTab} label="Alerts views" idPrefix="alerts" />
+                )}
               </div>
 
               {tab === "now" ? (
@@ -1287,6 +1377,12 @@ function AlertsWorkspace() {
                         </FilterChip>
                       ))}
                     </div>
+                    {anyHighlight ? (
+                      <span className={styles.highlightNote} role="status">
+                        {highlightedCount} of {allEntries.length} <SrOnly>synthetic rows</SrOnly> highlighted, all rows
+                        stay
+                      </span>
+                    ) : null}
                     {anyHighlight ? (
                       <Button
                         size="sm"
@@ -1553,7 +1649,7 @@ function AlertsWorkspace() {
             </Card>
           </div>
 
-          {isPhone ? null : (
+          {slideOver ? null : (
             <aside className={styles.panel} aria-label="Selected alert" data-wf-rail>
               <Card as="div" className={styles.panelCard}>
                 {selectedPanel ?? <EmptyState icon={Bell} title="Pick an alert to see it here" />}
@@ -1562,7 +1658,7 @@ function AlertsWorkspace() {
           )}
         </div>
 
-        {isPhone && selected ? (
+        {slideOver && selected ? (
           <Drawer
             open={sheetOpen}
             onClose={() => setSheetOpen(false)}

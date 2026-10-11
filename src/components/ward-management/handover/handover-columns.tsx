@@ -168,6 +168,11 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
       const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
       return (
         <span className={`${styles.next} ${styles[`next_${step.tone}`]}`} title={step.text}>
+          {step.tone === "act" || step.tone === "due" ? (
+            <>
+              <StatusGlyph tone={step.tone === "act" ? "danger" : "warning"} size={8} />{" "}
+            </>
+          ) : null}
           {step.text}
         </span>
       );

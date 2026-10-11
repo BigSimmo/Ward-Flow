@@ -457,6 +457,22 @@ describe("who may raise which event", () => {
     CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
     // Advisory carer/PSP/MHAS checklist, 9 Oct 2026 (stream B): recorded where the move completes.
     RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+    // v10 pass 2 (Josh, 10 Oct 2026): Undo and the ward Bed board. The reducer narrows the referral
+    // undo to the role that decided (a ward to its own unit) or the coordinator.
+    UNDO_REFERRAL_DECISION: ["ward", "coordinator", "ed", "community"],
+    UNDO_AUDIT_REVIEW: ["coordinator"],
+    PLACE_IN_BED: ["ward", "coordinator"],
+    UNDO_PLACE_IN_BED: ["ward", "coordinator"],
+    // v10 pass 3 (Josh, 10 Oct 2026): each step undo carries its step's roles; the reducer narrows
+    // it to the role that acted (a ward to its own unit), or the coordinator.
+    UNDO_REFER_TO_UNITS: ["coordinator"],
+    UNDO_ACCEPT_IN_PRINCIPLE: ["ward", "coordinator"],
+    UNDO_LEGAL_FORM_RECORD: ["ed", "coordinator", "ward", "community"],
+    UNDO_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+    UNDO_REPATRIATION: ["coordinator"],
+    UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
+    UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
+    UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
   };
 
   it("covers every event that exists, so a new event cannot arrive unpermissioned", () => {

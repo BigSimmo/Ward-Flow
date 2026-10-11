@@ -28,6 +28,8 @@ export type QueueEntry = {
   snooze: Extract<InboxSnoozeEntry, { kind: "snoozed" }> | undefined;
   action: AlertAction;
   highlighted: boolean;
+  /** v10: a highlight is on and this row does not match it, so it recedes by colour. */
+  dimmed?: boolean;
 };
 
 export type QueueHandlers = {
@@ -141,6 +143,8 @@ function rowData(entry: QueueEntry, handlers: QueueHandlers) {
     "data-tone": entry.item.tone,
     "data-selected": handlers.selectedId === entry.item.id ? "true" : undefined,
     "data-highlighted": entry.highlighted ? "true" : undefined,
+    "data-dim": entry.dimmed ? "true" : undefined,
+    "data-act": entry.group === "act" && !entry.snooze ? "true" : undefined,
     "data-snoozed": entry.snooze ? "true" : undefined,
     "data-testid": entry.snooze ? `ward-alerts-snoozed-${entry.item.id}` : undefined,
   };

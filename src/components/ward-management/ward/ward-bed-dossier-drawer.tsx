@@ -31,6 +31,10 @@ interface WardBedDossierDrawerProps {
   onNextBed?: () => void;
   bedDrawerRef: React.RefObject<HTMLElement | null>;
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
+  /** Bed board (v10 pass 3): picks this stay up on the board, to place in another bed. */
+  onMove?: () => void;
+  /** Bed board (v10 pass 3): opens the board, where a waiting referral can be placed here. */
+  onOpenBoard?: () => void;
 }
 
 const VITAL_SIGNS_NOTE = "Not recorded in Ward Flow. Check the ward's own observation chart.";
@@ -103,6 +107,8 @@ export function WardBedDossierDrawer({
   onRecordLeft,
   onUpdateBlocker,
   onMarkAtEd,
+  onMove,
+  onOpenBoard,
   onMarkBack,
   onPrevBed,
   onNextBed,
@@ -508,12 +514,19 @@ export function WardBedDossierDrawer({
 
         <footer className={styles.drawerFoot}>
           {isReady ? (
-            <Link
-              className={buttonClass({ variant: "pri", size: "lg", className: styles.pill })}
-              href="/mockups/ward-flow/referrals"
-            >
-              Review current referrals
-            </Link>
+            <>
+              <Link
+                className={buttonClass({ variant: "pri", size: "lg", className: styles.pill })}
+                href="/mockups/ward-flow/referrals"
+              >
+                Review current referrals
+              </Link>
+              {onOpenBoard ? (
+                <Button variant="sec" size="lg" className={styles.pill} onClick={onOpenBoard}>
+                  Place someone here
+                </Button>
+              ) : null}
+            </>
           ) : (
             <>
               {isOccupied && bedItem?.admissionId ? (
@@ -576,6 +589,11 @@ export function WardBedDossierDrawer({
                     {isAwayAtEd ? "Mark them back" : "Mark at an ED"}
                   </Button>
                 </>
+              ) : null}
+              {onMove && bedItem?.stayAdmissionId ? (
+                <Button variant="sec" size="lg" className={styles.pill} onClick={onMove}>
+                  Move to another bed
+                </Button>
               ) : null}
             </>
           )}

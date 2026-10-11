@@ -876,79 +876,6 @@
   outline-offset: 2px;
 }
 
-/* ── New referral (secondary; the header keeps the one primary) ─────────────────────────────── */
-
-.railActionBox {
-  flex-shrink: 0;
-  padding: 0;
-}
-
-/*
- * Wave-2 chrome (#4 / A4): the full button keeps the 48px pointer and keyboard target. The visible
- * face is the v6 36px secondary button, drawn by `::before`, and the negative block margins keep
- * the rhythm between the cards above and the nav below at 8px.
- */
-.btnRailReferral {
-  position: relative;
-  isolation: isolate;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4375rem;
-  width: 100%;
-  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
-  min-width: var(--ward-tap, var(--spacing-tap, 3rem));
-  margin: calc((var(--wf-h-md) - var(--ward-tap)) / 2) 0;
-  margin-top: calc(0.5rem + (var(--wf-h-md) - var(--ward-tap)) / 2);
-  padding: 0 0.75rem;
-  box-sizing: border-box;
-  border: 0;
-  border-radius: var(--wf-r-md);
-  background: transparent;
-  color: var(--wf-ink-1);
-  font: inherit;
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  white-space: nowrap;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.btnRailReferral::before {
-  content: "";
-  position: absolute;
-  inset: calc((var(--ward-tap) - var(--wf-h-md)) / 2) 0;
-  z-index: -1;
-  pointer-events: none;
-  border: 1px solid var(--wf-line-2);
-  border-radius: inherit;
-  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
-  box-shadow:
-    inset 0 1px 0 var(--wf-hl),
-    0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
-  transition: border-color var(--wf-m-fast);
-}
-
-.btnRailReferral:hover::before {
-  border-color: var(--wf-line-3);
-}
-
-.btnRailReferral:focus-visible {
-  outline: none;
-}
-
-.btnRailReferral:focus-visible::before {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-.btnRailReferralIcon {
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
-  color: var(--wf-ink-2);
-}
-
 /* ── Navigation ────────────────────────────────────────────────────────────────────────────── */
 
 .railScroll {
@@ -1955,7 +1882,6 @@
   .rail[data-rail="closed"] .brandStateText,
   .rail[data-rail="closed"] .shiftCockpit,
   .rail[data-rail="closed"] .capacityPulseStrip,
-  .rail[data-rail="closed"] .railActionBox,
   .rail[data-rail="closed"] .groupHead,
   .rail[data-rail="closed"] .railLabel,
   .rail[data-rail="closed"] .railState,
@@ -2323,8 +2249,7 @@
   }
 
   .railToggle::before,
-  .capacityPulseStrip,
-  .btnRailReferral::before {
+  .capacityPulseStrip {
     border: 1px solid CanvasText;
   }
 
@@ -2387,5 +2312,66 @@
     width: 100%;
     margin: 0;
     order: 1;
+  }
+}
+
+/* ── Tablet (v10 shell, 10 Oct 2026) ───────────────────────────────────────────────────────────
+ * Landscape 1180 (1001px to 1200px): the 64px icon rail whatever is stored (`data-tablet`, set by
+ * `TABLET_LANDSCAPE_RAIL_QUERY`), Today and Where only, then More, which opens the full sidebar
+ * over the page. 44px targets. The expand toggle goes: the mark and More open the sheet instead.
+ * Portrait 820 (769px to 1000px): no sidebar at all. The bar's Menu, at the left of the header,
+ * opens the same full sidebar as a 280px sheet over a scrim. Desktop above 1200px and the phone
+ * are unchanged. These blocks sit last so they win over the 1000px wrapping-row block above. */
+.stripMore {
+  display: none;
+}
+
+@media (min-width: 1001px) and (max-width: 1200px) {
+  .rail[data-tablet="landscape"] .railToggle {
+    display: none;
+  }
+
+  .rail[data-tablet="landscape"] {
+    padding-bottom: 0.75rem;
+  }
+
+  .rail[data-tablet="landscape"] .railLink,
+  .rail[data-tablet="landscape"] .railLink[data-two-line="true"] {
+    min-height: 2.75rem;
+  }
+
+  .rail[data-tablet="landscape"] .stripMore {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 2.75rem;
+    min-height: 2.75rem;
+    margin: 0.25rem auto 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--wf-r-sm);
+    background: transparent;
+    color: var(--wf-ink-2);
+    font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+    cursor: pointer;
+  }
+
+  .rail[data-tablet="landscape"] .stripMore:hover {
+    background: var(--wf-hover);
+    color: var(--wf-ink-1);
+  }
+
+  .rail[data-tablet="landscape"] .stripMore:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
+}
+
+@media (min-width: 48.0625rem) and (max-width: 1000px) {
+  .rail,
+  .rail[data-rail="closed"] {
+    display: none;
   }
 }

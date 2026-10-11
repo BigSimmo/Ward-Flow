@@ -75,7 +75,7 @@ describe("the on-call screen", () => {
   it("names the page and opens on a contact card", () => {
     renderOnCall();
     const hud = screen.getByTestId("ward-on-call-hud-island");
-    expect(within(hud).getByRole("heading", { level: 1, name: "On-call directory" })).toBeVisible();
+    expect(within(hud).getByRole("heading", { level: 1, name: /^\d+ lines? answering$/u })).toBeVisible();
     expect(panel().getByRole("heading", { level: 2, name: "Bed flow coordinator" })).toBeVisible();
     expect(panel().getByText("Not verified")).toBeVisible();
   });
@@ -159,15 +159,28 @@ describe("the on-call screen", () => {
     const before = table.querySelectorAll("tbody tr[data-testid]").length;
     fireEvent.click(screen.getByRole("button", { name: /^Has email/u }));
     expect(table.querySelectorAll("tbody tr[data-testid]").length).toBe(before);
-    expect(row("nmhs-bfc").className).toMatch(/rowHighlight/u);
-    expect(row("nmhs-scon").className).not.toMatch(/rowHighlight/u);
+    expect(row("nmhs-bfc")).toHaveAttribute("data-highlighted", "true");
+    expect(row("nmhs-scon")).not.toHaveAttribute("data-highlighted");
+    expect(row("nmhs-scon")).toHaveAttribute("data-dim", "true");
+  });
+
+  it("v10: the title count equals the hero answering chip, and Downtime card is a dashed Preview", () => {
+    renderOnCall();
+    const hud = screen.getByTestId("ward-on-call-hud-island");
+    const title = within(hud).getByRole("heading", { level: 1 }).textContent ?? "";
+    const chip = within(hud).getByRole("button", { name: /answering/u }).textContent ?? "";
+    expect(title.match(/\d+/u)?.[0]).toBe(chip.match(/\d+/u)?.[0]);
+    expect(within(hud).getByRole("button", { name: /Downtime card/u })).toHaveAttribute(
+      "title",
+      "Preview until the Downtime page exists",
+    );
   });
 
   it("search highlights matches in place and lists them in the panel", () => {
     renderOnCall();
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "EPIC" } });
     expect(panel().getByRole("heading", { name: "Matches" })).toBeVisible();
-    expect(row("scgh-epic").className).toMatch(/rowHighlight/u);
+    expect(row("scgh-epic")).toHaveAttribute("data-highlighted", "true");
     fireEvent.click(panel().getByRole("button", { name: "Clear" }));
     expect(panel().getByRole("heading", { name: "Bed flow coordinator" })).toBeVisible();
   });
@@ -175,7 +188,7 @@ describe("the on-call screen", () => {
   it("finds a site by its code, and one click on a match opens its card with a link to that ED", () => {
     renderOnCall();
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "SCGH" } });
-    expect(row("scgh-epic").className).toMatch(/rowHighlight/u);
+    expect(row("scgh-epic")).toHaveAttribute("data-highlighted", "true");
     const match = panel()
       .getAllByRole("button")
       .find((button) => button.textContent?.startsWith("EPIC"))!;

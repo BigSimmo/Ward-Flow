@@ -717,7 +717,8 @@
 }
 
 .bedCell.occupied {
-  opacity: 0.85;
+  /* Recedes by colour, never opacity (v10 dim rule). */
+  color: var(--wf-ink-2);
 }
 
 /* Closed: physically empty, not offered (`ward-bed-states.ts`). */
@@ -1290,6 +1291,16 @@
     gap: 0;
     padding: 0;
     background: transparent;
+  }
+
+  /* Nothing to answer: the one sentence keeps the card's inset and the card spans the row. */
+  .sbarCard > p:only-child {
+    margin: 0;
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .answerGrid > .panel[data-empty="true"] {
+    align-self: stretch;
   }
 
   .patientDossierBanner {
@@ -1927,5 +1938,66 @@
     width: auto;
     align-self: stretch;
     margin-inline: var(--wf-s-3);
+  }
+}
+
+/* v10 hero (10 Oct 2026): Previous, the request position and Next in the aside; five bed facts
+   on one row; the back link and the oldest wait in the foot. */
+.heroNav {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  white-space: nowrap;
+}
+
+.heroNavPos {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-hero-ink-2);
+}
+
+.heroNavPos b,
+.heroFootMeta b {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--wf-hero-ink);
+}
+
+.heroChips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.heroFoot {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.heroFootMeta {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-hero-ink-2);
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 48rem) {
+  .heroChips {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .heroChips > * {
+    flex: none;
+  }
+
+  .heroNav button {
+    min-height: var(--wf-touch, 44px);
   }
 }

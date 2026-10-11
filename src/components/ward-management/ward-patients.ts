@@ -161,6 +161,12 @@ export type Patient = {
    * ended (`END_COMMUNITY_TREATMENT_ORDER`).
    */
   communityTreatmentOrder?: CommunityTreatmentOrder;
+  /**
+   * WHEN THIS RECORD WAS ADDED through Add patient (`ADD_PATIENT`) — v10 pass 2 (Josh, 10 Oct 2026),
+   * so the Add patient page can count "Added today". A fact about the RECORD, never about the person.
+   * Absent on every seeded patient and on any patient saved before this field existed.
+   */
+  addedAt?: Instant;
 };
 
 /** Form 5A is the community treatment order form under the Mental Health Act 2014 (WA).
@@ -210,7 +216,18 @@ export const PATIENT_FIELDS = [
   "aboriginalOrTorresStraitIslanderStatus",
   "interpreterLanguage",
   "communityTreatmentOrder",
+  "addedAt",
 ] as const;
+
+/** Whether this record was added through Add patient on the same demonstration day as `now`
+ *  (instants are minutes from day zero's midnight, so a day is 1440 of them). */
+export function patientAddedOnDayOf(patient: Patient, now: Instant): boolean {
+  return (
+    typeof patient.addedAt === "number" &&
+    Number.isFinite(patient.addedAt) &&
+    Math.floor(patient.addedAt / 1440) === Math.floor(now / 1440)
+  );
+}
 
 /** Whole years, from the stored date of birth and a supplied "today". Never stored: see the field's
  *  own comment. `today` is passed rather than read so this stays deterministic. */
