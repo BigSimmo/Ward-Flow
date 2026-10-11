@@ -277,6 +277,7 @@
 
   background: var(--wf-act-tint);
   position: relative;
+  padding-inline-start: 13px;
 }
 
 .cell[data-dim="true"] {
