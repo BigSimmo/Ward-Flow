@@ -226,7 +226,7 @@ test("@mockup approved overdue queue treatment fits phone, tablet and desktop", 
         };
       });
       expect(treatment.markerWidth).toBe("3px");
-      expect(treatment.markerRadius).toBe("999px");
+      expect(treatment.markerRadius).toBe("9999px");
       expect(treatment.markerHeight).toBeGreaterThan(0);
       expect(treatment.markerHeight).toBeLessThan(treatment.height);
       expect(treatment.shadow).not.toMatch(/0px 0px 0px 1px/);
