@@ -852,3 +852,298 @@
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
 }
+
+/* ---------- Phone (v10 mockup, 11 Oct 2026) ----------
+ * The band keeps three figures and one "Next in my queue" action; the stage chips sit on the
+ * canvas under it; the timeline, corridors and transport open as sheets from three nav cards; each
+ * worklist row reads name, from and to, then the barrier, with the wait on the right. The phone-only
+ * classes (ph*) render only on phone; every other rule sits under 48rem. */
+.phStages,
+.phNav {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  /* Hero figures: three across, number over label, thin dividers, no pill. */
+  .highlights.highlights {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    overflow: visible;
+  }
+
+  .highlights > .highlight:nth-child(n + 4) {
+    display: none;
+  }
+
+  .highlights > .highlight {
+    justify-content: flex-start;
+    height: auto;
+    min-height: var(--ward-tap, 3rem);
+    padding: 0 var(--wf-s-3);
+    border: 0;
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .highlights > .highlight:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .highlights > .highlight[aria-pressed="true"] {
+    background: transparent;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .highlights .highlightFigure {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: var(--wf-s-1);
+    min-width: 0;
+  }
+
+  .highlights .highlightValue {
+    min-width: 0;
+    font-size: var(--wf-fs-16, 1rem);
+    text-align: left;
+  }
+
+  .highlights .highlightLabel {
+    font-size: var(--wf-fs-13);
+    white-space: nowrap;
+  }
+
+  .heroTools > :last-child {
+    min-height: var(--ward-tap, 3rem);
+    border-radius: var(--wf-r-pill);
+  }
+
+  /* Stage chips on the canvas: white pills, number first, scrolling sideways. */
+  .phStages {
+    position: relative;
+    display: flex;
+    gap: var(--wf-s-2);
+    margin: 0 0 var(--wf-s-3);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .phStage {
+    display: inline-flex;
+    flex: none;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--ward-tap, 3rem);
+    padding: 0 var(--wf-s-4);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+    white-space: nowrap;
+    box-shadow: var(--wf-e1);
+    cursor: pointer;
+  }
+
+  .phStage[aria-pressed="true"] {
+    border-color: var(--wf-ink-1);
+  }
+
+  .phStage:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .phStageCount {
+    font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Needs you rows: name and wait on one line, reason under; the act-now edge stays thin red. */
+  .needsItem {
+    min-height: var(--ward-tap, 3rem);
+  }
+
+  /* Nav cards: one card per panel, each a 48px-plus row that opens its sheet. */
+  .phNav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-2);
+    margin: var(--wf-s-3) 0;
+  }
+
+  .phNavCard {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-3);
+    width: 100%;
+    min-height: 3.5rem;
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    text-align: left;
+    box-shadow: var(--wf-e1);
+    cursor: pointer;
+  }
+
+  .phNavCard:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .phNavIcon,
+  .phNavChevron {
+    flex: none;
+    color: var(--wf-ink-3);
+  }
+
+  .phNavText {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .phNavText > strong {
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  }
+
+  .phNavText > span {
+    overflow: hidden;
+    color: var(--wf-ink-2);
+    font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .phNavText b {
+    color: var(--wf-ink-1);
+    font-weight: 600;
+  }
+
+  /* Sheet lists (corridors and transport). */
+  .phList {
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    list-style: none;
+  }
+
+  .phListRow {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-3);
+    min-height: 3.5rem;
+    padding: var(--wf-s-2) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .phListRow:last-child {
+    border-bottom: 0;
+  }
+
+  .phListMain {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .phListMain > strong,
+  .phListMain > span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .phListMain > strong {
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  }
+
+  .phListMain > span {
+    color: var(--wf-ink-2);
+    font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  }
+
+  .phListCount {
+    flex: none;
+    font: 600 var(--wf-fs-14) / 1 var(--wf-mono);
+    font-feature-settings: "tnum" 1;
+  }
+
+  .phSheetAction {
+    width: 100%;
+    min-height: var(--ward-tap, 3rem);
+    margin-top: var(--wf-s-4);
+    border-radius: var(--wf-r-pill);
+  }
+
+  /* Worklist rows: tier | name, route, barrier | wait. UMRN, the transport and legal lines, the
+   * meter and the next-step action stay in the record pop-up the row opens. */
+  .grid.row.row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "tier who wait"
+      "tier route wait"
+      "tier barrier wait";
+    align-items: start;
+    row-gap: 2px;
+    column-gap: var(--wf-s-3);
+    min-height: var(--ward-tap, 3rem);
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .row > :nth-child(1) {
+    padding-top: 2px;
+  }
+
+  .row > :nth-child(5) {
+    align-self: start;
+  }
+
+  .row > :nth-child(6),
+  .row > :nth-child(7),
+  .row .sub,
+  .row .meter {
+    display: none;
+  }
+
+  .row .name {
+    font-size: var(--wf-fs-14);
+  }
+
+  .row .main {
+    overflow: hidden;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .row > :nth-child(3) .main > :first-child {
+    color: var(--wf-ink-1);
+    font-weight: 600;
+  }
+
+  .row .waitWord {
+    text-transform: lowercase;
+  }
+}
+
+@media (max-width: 48rem) {
+  .phList .trRow {
+    min-height: 3.5rem;
+    padding-inline: var(--wf-s-4);
+    border-radius: 0;
+  }
+}

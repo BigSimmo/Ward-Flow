@@ -277,6 +277,9 @@ describe("the Delays board's data views", () => {
     });
     try {
       renderDelays();
+      // Phone (v10 mockup, 11 Oct 2026): the rail's Longest quiet list opens from its own card.
+      const quietCard = screen.queryByRole("button", { name: /^Longest quiet/u });
+      if (quietCard) fireEvent.click(quietCard);
       const rail = screen.getByRole("region", { name: "Escalations and resolved" });
       const quietButton = within(rail)
         .getAllByRole("button")

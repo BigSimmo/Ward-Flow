@@ -969,6 +969,10 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 <span className={a.footNote}>
                   Highlights dim rows and keep every referral. Search narrows the list.
                 </span>
+                {/* v10 phone: the order note sits under the list instead of in the toolbar. */}
+                <span className={a.phoneFootNote} aria-hidden="true">
+                  Longest wait first · tier breaks ties
+                </span>
               </div>
             </Card>
           </div>
@@ -1094,6 +1098,22 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     <div data-testid="ward-referral-detail-legal-status">
                       <dt>Legal status</dt>
                       <dd>{selectedReferral.intake?.legalStatus?.trim() || "Not recorded"}</dd>
+                    </div>
+                    {/* v10 phone: the facts read as a two by two grid, so the needs get their own cell. */}
+                    <div className={a.stripPhone} aria-hidden="true">
+                      <dt>Needs</dt>
+                      <dd>
+                        {(() => {
+                          const ward = wardArm(selectedReferral)?.destination;
+                          const words = [
+                            ward?.secureBedNeeded ? "Secure bed" : undefined,
+                            ward?.involuntaryBedNeeded ? "Involuntary" : undefined,
+                            ward?.highAcuityNursingNeeded ? "High acuity" : undefined,
+                            selectedReferral.transportNeeded ? "Transport" : undefined,
+                          ].filter(Boolean);
+                          return words.length > 0 ? words.join(", ") : "None";
+                        })()}
+                      </dd>
                     </div>
                   </dl>
 
@@ -1436,6 +1456,14 @@ function QueuedSection({
               const assignedUnit = unitId ? units.find((u) => u.id === unitId) : undefined;
               const selected = referral.id === selectedId;
               const dueAt = referralDueAt(referral, now);
+              const cardWait = referralWaitLine(referral, now);
+              const cardWard = wardArm(referral)?.destination;
+              const cardNeeds = [
+                cardWard?.secureBedNeeded,
+                cardWard?.involuntaryBedNeeded,
+                cardWard?.highAcuityNursingNeeded,
+                referral.transportNeeded,
+              ].filter(Boolean).length;
 
               return (
                 <li
@@ -1470,16 +1498,27 @@ function QueuedSection({
                         />
                       </span>
                       <span className={a.cardRoute}>
-                        {referral.originSiteCode} to {askingForShort(referral)}
+                        <b>{referral.originSiteCode}</b> to {askingForShort(referral)}
                       </span>
+                      {/* v10 phone row: age band and sex, then how many bed needs, never the region. */}
                       <span className={a.cardFacts} data-testid={`ward-referral-board-card-service-${referral.id}`}>
-                        {referralPersonFactsStatingSex(referral).join(" · ")}
+                        {[
+                          ...referralPersonFactsStatingSex(referral).slice(0, 2),
+                          ...(cardNeeds > 0 ? [`${cardNeeds} ${cardNeeds === 1 ? "need" : "needs"}`] : []),
+                        ].join(" · ")}
                         {assignedUnit ? ` · Bed at ${assignedUnit.name}` : ""}
                       </span>
                     </span>
                     <span className={a.cardClock}>
                       <span className={a.cardWait} data-testid={`ward-referral-board-card-wait-${referral.id}`}>
-                        {referralWaitLine(referral, now)}
+                        {cardWait.endsWith(" waiting") ? (
+                          <>
+                            {cardWait.slice(0, -" waiting".length)}
+                            <span className="sr-only"> waiting</span>
+                          </>
+                        ) : (
+                          cardWait
+                        )}
                       </span>
                       {dueAt !== undefined ? <DueTimer dueAt={dueAt} now={now} /> : null}
                     </span>

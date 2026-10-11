@@ -3,7 +3,18 @@ import { DischargeCareJourney } from "./discharge-care-journey";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight, ClipboardList, Copy, List, OctagonAlert, Printer, Truck, X } from "lucide-react";
+import {
+  ChevronRight,
+  ClipboardList,
+  Copy,
+  Filter,
+  List,
+  OctagonAlert,
+  Printer,
+  TrendingUp,
+  Truck,
+  X,
+} from "lucide-react";
 import { MissingValue } from "@/components/ui/missing-value";
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import {
@@ -39,7 +50,6 @@ import {
   FilterChip,
   Hero,
   LiveChip,
-  PhoneListRow,
   PhoneSheet,
   Select,
   StatusGlyph,
@@ -387,6 +397,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const [openError, setOpenError] = useState(false);
   const isPhone = useIsPhone();
   const [phoneChart, setPhoneChart] = useState<"days" | "barriers" | null>(null);
+  // v10 phone: the filters sit one tap away behind the filter button beside Now and History.
+  const [phoneFiltersOpen, setPhoneFiltersOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<"milestones" | "barriers" | "transport" | "dossier">("milestones");
   const [view, setView] = useState<TableView>("list");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
@@ -914,6 +926,236 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     </button>
   );
 
+  // Now and History: in the hero on desktop and tablet, under it on a phone (v10).
+  const populationSwitch = (
+    <div className={pageStyles.populationSwitch} role="group" aria-label="Now or history">
+      <button
+        type="button"
+        aria-pressed={population === "releases"}
+        data-testid="ward-discharge-now"
+        onClick={() => {
+          setPopulation("releases");
+          setStatus("all");
+          setDestination("all");
+          setBlockerCategory("all");
+          setHighlight(null);
+          clearSelection();
+        }}
+      >
+        Now
+        <span className="sr-only">, anonymous releases {bedReleases.length}</span>
+      </button>
+      <button
+        type="button"
+        aria-pressed={population === "records"}
+        data-testid="ward-discharge-history"
+        onClick={() => {
+          setPopulation("records");
+          setStatus("all");
+          setDestination("all");
+          setBlockerCategory("all");
+          setHighlight(null);
+          clearSelection();
+        }}
+      >
+        History
+        <span className="sr-only">
+          , admission records {guarded.status === "allowed" ? records.length : "unavailable"}
+        </span>
+      </button>
+    </div>
+  );
+  const filterCard = (
+    <Card as="div" className={pageStyles.filterCard} aria-label="Discharge filters" role="region">
+      <div className={pageStyles.filters}>
+        <label htmlFor="discharges-filter-service" className={pageStyles.filterField}>
+          <span className={pageStyles.filterLabelText}>Service</span>
+          <Select
+            id="discharges-filter-service"
+            name="dischargesFilterService"
+            value={service}
+            boxClassName={pageStyles.filterSelect}
+            onChange={(event) => {
+              setService(event.target.value);
+              setWard("all");
+              clearSelection();
+            }}
+          >
+            <option value="all">All services</option>
+            {services.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </Select>
+        </label>
+        <label htmlFor="discharges-filter-ward" className={pageStyles.filterField}>
+          <span className={pageStyles.filterLabelText}>Ward</span>
+          <Select
+            id="discharges-filter-ward"
+            name="dischargesFilterWard"
+            value={ward}
+            boxClassName={pageStyles.filterSelect}
+            onChange={(event) => {
+              setWard(event.target.value);
+              clearSelection();
+            }}
+          >
+            <option value="all">All wards</option>
+            {scopedUnits.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.name}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label htmlFor="discharges-filter-blocker" className={pageStyles.filterField}>
+          <span className={pageStyles.filterLabelText}>Blocker</span>
+          <Select
+            id="discharges-filter-blocker"
+            name="dischargesFilterBlocker"
+            value={blockerCategory}
+            boxClassName={pageStyles.filterSelect}
+            onChange={(event) => {
+              setBlockerCategory(event.target.value);
+              clearSelection();
+            }}
+          >
+            <option value="all">All blockers</option>
+            {BLOCKER_CATEGORIES.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.label}
+              </option>
+            ))}
+          </Select>
+        </label>
+        {population === "records" && (
+          <>
+            <label htmlFor="discharges-filter-identity" className={pageStyles.filterField}>
+              <span className={pageStyles.filterLabelText}>Patient link</span>
+              <Select
+                id="discharges-filter-identity"
+                name="dischargesFilterIdentity"
+                value={identity}
+                boxClassName={pageStyles.filterSelect}
+                onChange={(event) => {
+                  setIdentity(event.target.value);
+                  clearSelection();
+                }}
+              >
+                <option value="all">All records</option>
+                <option value="linked">Linked patient</option>
+                <option value="missing">Missing or unavailable</option>
+              </Select>
+            </label>
+            <label htmlFor="discharges-filter-destination" className={pageStyles.filterField}>
+              <span className={pageStyles.filterLabelText}>Destination</span>
+              <Select
+                id="discharges-filter-destination"
+                name="dischargesFilterDestination"
+                value={destination}
+                boxClassName={pageStyles.filterSelect}
+                onChange={(event) => {
+                  setDestination(event.target.value);
+                  clearSelection();
+                }}
+              >
+                <option value="all">All destinations</option>
+                {LEAVING_DESTINATIONS.map((dest) => (
+                  <option key={dest.id} value={dest.id}>
+                    {dest.label}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          </>
+        )}
+        <label htmlFor="discharges-sort" className={pageStyles.filterField}>
+          <span className={pageStyles.filterLabelText}>Sort</span>
+          <Select
+            id="discharges-sort"
+            name="dischargesSort"
+            value={sortMode}
+            boxClassName={pageStyles.filterSelect}
+            data-testid="ward-discharges-sort"
+            onChange={(event) => {
+              setSortMode(event.target.value as DueSortMode);
+            }}
+          >
+            {DUE_SORT_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </label>
+        {filtersActive && (
+          <Button size="sm" variant="ghost" className={pageStyles.clearButton} onClick={clearAllFilters}>
+            Clear filters
+          </Button>
+        )}
+      </div>
+      {population === "records" ? (
+        <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick destination filters">
+          <span className={pageStyles.filterLabelText}>Destination</span>
+          <FilterChip
+            className={pageStyles.quickChip}
+            pressed={destination === "all"}
+            count={destinationCount("all")}
+            onPressedChange={() => {
+              setDestination("all");
+              clearSelection();
+            }}
+          >
+            All
+          </FilterChip>
+          {LEAVING_DESTINATIONS.slice(0, 4).map((item) => (
+            <FilterChip
+              key={item.id}
+              className={pageStyles.quickChip}
+              pressed={destination === item.id}
+              count={destinationCount(item.id)}
+              onPressedChange={() => {
+                setDestination(destination === item.id ? "all" : item.id);
+                clearSelection();
+              }}
+            >
+              {item.label}
+            </FilterChip>
+          ))}
+        </div>
+      ) : (
+        <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick blocker filters">
+          <span className={pageStyles.filterLabelText}>Blocker</span>
+          {/* v10: the barrier chips highlight matching rows and dim the rest; none is hidden. */}
+          <FilterChip
+            className={pageStyles.quickChip}
+            pressed={highlight?.kind !== "barrier"}
+            count={blockerCount("all")}
+            onPressedChange={() => {
+              if (highlight?.kind === "barrier") setHighlight(null);
+            }}
+          >
+            All
+          </FilterChip>
+          {BLOCKER_CATEGORIES.slice(0, 4).map((cat) => (
+            <FilterChip
+              key={cat.id}
+              className={pageStyles.quickChip}
+              pressed={highlight?.kind === "barrier" && highlight.id === cat.id}
+              count={blockerCount(cat.id)}
+              onPressedChange={() =>
+                setHighlight(
+                  highlight?.kind === "barrier" && highlight.id === cat.id ? null : { kind: "barrier", id: cat.id },
+                )
+              }
+            >
+              {cat.label}
+            </FilterChip>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+
   return (
     <div className={`${styles.screen} ${pageStyles.screen}`} data-testid="ward-discharge-board" data-ward-design="v6">
       <main id="main-content" className={pageStyles.main}>
@@ -938,7 +1180,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         </p>
         <Hero
           className={pageStyles.phoneHero}
-          eyebrow={population === "releases" ? "Bed release · all services" : "History · admission records"}
+          eyebrow={
+            population === "releases"
+              ? isPhone
+                ? `Bed release · ${service === "all" ? "statewide" : service}`
+                : "Bed release · all services"
+              : "History · admission records"
+          }
           title={`${openCount} ${openCount === 1 ? "discharge" : "discharges"} open`}
           titleMeta={
             <span className={pageStyles.bedDaysPast} data-testid="ward-discharge-bed-days-past">
@@ -948,13 +1196,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           aside={
             <div className={pageStyles.heroTools}>
               <LiveChip state="live" onHero />
-              <Button size="sm" variant="onHero" icon={Copy} onClick={copySummary} data-testid="ward-discharge-copy">
-                Copy summary
-              </Button>
+              {isPhone ? null : (
+                <Button size="sm" variant="onHero" icon={Copy} onClick={copySummary} data-testid="ward-discharge-copy">
+                  Copy summary
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="onHero"
                 icon={Printer}
+                className={pageStyles.desktopOnly}
                 onClick={() => window.print()}
                 data-testid="ward-discharge-print"
               >
@@ -966,277 +1217,123 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             </div>
           }
           bar={
-            <div
-              className={pageStyles.kpiStrip}
-              data-testid="ward-discharge-kpi-strip"
-              role="region"
-              aria-label="Discharge pipeline highlights"
-            >
-              {WORK_ORDER.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  data-testid={`ward-discharge-kpi-${key}`}
-                  className={pageStyles.kpi}
-                  aria-pressed={statusHighlight === key}
-                  aria-label={`${kpiCardLabel(key, population)}: ${counts[key]}`}
-                  onClick={() => {
-                    setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
-                    setStatus("all");
-                  }}
+            <>
+              <div
+                className={pageStyles.kpiStrip}
+                data-testid="ward-discharge-kpi-strip"
+                role="region"
+                aria-label="Discharge pipeline highlights"
+              >
+                {WORK_ORDER.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    data-testid={`ward-discharge-kpi-${key}`}
+                    className={pageStyles.kpi}
+                    aria-pressed={statusHighlight === key}
+                    aria-label={`${kpiCardLabel(key, population)}: ${counts[key]}`}
+                    onClick={() => {
+                      setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
+                      setStatus("all");
+                    }}
+                  >
+                    <strong className={pageStyles.kpiValue}>{counts[key]}</strong>
+                    <span className={pageStyles.kpiLabel}>
+                      {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
+                      <span>
+                        {isPhone && key === "blocked" && population === "releases"
+                          ? "Blocked"
+                          : kpiCardLabel(key, population)}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {isPhone ? (
+                /* v10 phone: the hero's one action, full width under the figures. */
+                <Button
+                  variant="onHero"
+                  icon={Copy}
+                  className={pageStyles.phHeroAction}
+                  onClick={copySummary}
+                  data-testid="ward-discharge-copy"
                 >
-                  <strong className={pageStyles.kpiValue}>{counts[key]}</strong>
-                  <span className={pageStyles.kpiLabel}>
-                    {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
-                    <span>{kpiCardLabel(key, population)}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
+                  Copy summary
+                </Button>
+              ) : null}
+            </>
           }
-          barAside={
-            <div className={pageStyles.populationSwitch} role="group" aria-label="Now or history">
-              <button
-                type="button"
-                aria-pressed={population === "releases"}
-                data-testid="ward-discharge-now"
-                onClick={() => {
-                  setPopulation("releases");
-                  setStatus("all");
-                  setDestination("all");
-                  setBlockerCategory("all");
-                  setHighlight(null);
-                  clearSelection();
-                }}
-              >
-                Now
-                <span className="sr-only">, anonymous releases {bedReleases.length}</span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={population === "records"}
-                data-testid="ward-discharge-history"
-                onClick={() => {
-                  setPopulation("records");
-                  setStatus("all");
-                  setDestination("all");
-                  setBlockerCategory("all");
-                  setHighlight(null);
-                  clearSelection();
-                }}
-              >
-                History
-                <span className="sr-only">
-                  , admission records {guarded.status === "allowed" ? records.length : "unavailable"}
-                </span>
-              </button>
-            </div>
-          }
+          barAside={isPhone ? undefined : populationSwitch}
         />
-        <Card as="div" className={pageStyles.filterCard} aria-label="Discharge filters" role="region">
-          <div className={pageStyles.filters}>
-            <label htmlFor="discharges-filter-service" className={pageStyles.filterField}>
-              <span className={pageStyles.filterLabelText}>Service</span>
-              <Select
-                id="discharges-filter-service"
-                name="dischargesFilterService"
-                value={service}
-                boxClassName={pageStyles.filterSelect}
-                onChange={(event) => {
-                  setService(event.target.value);
-                  setWard("all");
-                  clearSelection();
-                }}
-              >
-                <option value="all">All services</option>
-                {services.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </Select>
-            </label>
-            <label htmlFor="discharges-filter-ward" className={pageStyles.filterField}>
-              <span className={pageStyles.filterLabelText}>Ward</span>
-              <Select
-                id="discharges-filter-ward"
-                name="dischargesFilterWard"
-                value={ward}
-                boxClassName={pageStyles.filterSelect}
-                onChange={(event) => {
-                  setWard(event.target.value);
-                  clearSelection();
-                }}
-              >
-                <option value="all">All wards</option>
-                {scopedUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <label htmlFor="discharges-filter-blocker" className={pageStyles.filterField}>
-              <span className={pageStyles.filterLabelText}>Blocker</span>
-              <Select
-                id="discharges-filter-blocker"
-                name="dischargesFilterBlocker"
-                value={blockerCategory}
-                boxClassName={pageStyles.filterSelect}
-                onChange={(event) => {
-                  setBlockerCategory(event.target.value);
-                  clearSelection();
-                }}
-              >
-                <option value="all">All blockers</option>
-                {BLOCKER_CATEGORIES.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            {population === "records" && (
-              <>
-                <label htmlFor="discharges-filter-identity" className={pageStyles.filterField}>
-                  <span className={pageStyles.filterLabelText}>Patient link</span>
-                  <Select
-                    id="discharges-filter-identity"
-                    name="dischargesFilterIdentity"
-                    value={identity}
-                    boxClassName={pageStyles.filterSelect}
-                    onChange={(event) => {
-                      setIdentity(event.target.value);
-                      clearSelection();
-                    }}
-                  >
-                    <option value="all">All records</option>
-                    <option value="linked">Linked patient</option>
-                    <option value="missing">Missing or unavailable</option>
-                  </Select>
-                </label>
-                <label htmlFor="discharges-filter-destination" className={pageStyles.filterField}>
-                  <span className={pageStyles.filterLabelText}>Destination</span>
-                  <Select
-                    id="discharges-filter-destination"
-                    name="dischargesFilterDestination"
-                    value={destination}
-                    boxClassName={pageStyles.filterSelect}
-                    onChange={(event) => {
-                      setDestination(event.target.value);
-                      clearSelection();
-                    }}
-                  >
-                    <option value="all">All destinations</option>
-                    {LEAVING_DESTINATIONS.map((dest) => (
-                      <option key={dest.id} value={dest.id}>
-                        {dest.label}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
-              </>
-            )}
-            <label htmlFor="discharges-sort" className={pageStyles.filterField}>
-              <span className={pageStyles.filterLabelText}>Sort</span>
-              <Select
-                id="discharges-sort"
-                name="dischargesSort"
-                value={sortMode}
-                boxClassName={pageStyles.filterSelect}
-                data-testid="ward-discharges-sort"
-                onChange={(event) => {
-                  setSortMode(event.target.value as DueSortMode);
-                }}
-              >
-                {DUE_SORT_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            {filtersActive && (
-              <Button size="sm" variant="ghost" className={pageStyles.clearButton} onClick={clearAllFilters}>
-                Clear filters
-              </Button>
-            )}
+        {isPhone ? (
+          <div className={pageStyles.phToolbar}>
+            {populationSwitch}
+            <button
+              type="button"
+              className={pageStyles.phFilterButton}
+              aria-label={filtersActive ? "Filters, some applied" : "Filters"}
+              aria-expanded={phoneFiltersOpen}
+              data-active={filtersActive || undefined}
+              onClick={() => setPhoneFiltersOpen(true)}
+              data-testid="ward-discharge-phone-filters"
+            >
+              <Filter size={18} aria-hidden="true" />
+            </button>
           </div>
-          {population === "records" ? (
-            <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick destination filters">
-              <span className={pageStyles.filterLabelText}>Destination</span>
-              <FilterChip
-                className={pageStyles.quickChip}
-                pressed={destination === "all"}
-                count={destinationCount("all")}
-                onPressedChange={() => {
-                  setDestination("all");
-                  clearSelection();
-                }}
-              >
-                All
-              </FilterChip>
-              {LEAVING_DESTINATIONS.slice(0, 4).map((item) => (
-                <FilterChip
-                  key={item.id}
-                  className={pageStyles.quickChip}
-                  pressed={destination === item.id}
-                  count={destinationCount(item.id)}
-                  onPressedChange={() => {
-                    setDestination(destination === item.id ? "all" : item.id);
-                    clearSelection();
-                  }}
-                >
-                  {item.label}
-                </FilterChip>
-              ))}
-            </div>
-          ) : (
-            <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick blocker filters">
-              <span className={pageStyles.filterLabelText}>Blocker</span>
-              {/* v10: the barrier chips highlight matching rows and dim the rest; none is hidden. */}
-              <FilterChip
-                className={pageStyles.quickChip}
-                pressed={highlight?.kind !== "barrier"}
-                count={blockerCount("all")}
-                onPressedChange={() => {
-                  if (highlight?.kind === "barrier") setHighlight(null);
-                }}
-              >
-                All
-              </FilterChip>
-              {BLOCKER_CATEGORIES.slice(0, 4).map((cat) => (
-                <FilterChip
-                  key={cat.id}
-                  className={pageStyles.quickChip}
-                  pressed={highlight?.kind === "barrier" && highlight.id === cat.id}
-                  count={blockerCount(cat.id)}
-                  onPressedChange={() =>
-                    setHighlight(
-                      highlight?.kind === "barrier" && highlight.id === cat.id ? null : { kind: "barrier", id: cat.id },
-                    )
-                  }
-                >
-                  {cat.label}
-                </FilterChip>
-              ))}
-            </div>
-          )}
-        </Card>
+        ) : null}
+        {isPhone ? (
+          <PhoneSheet
+            open={phoneFiltersOpen}
+            onClose={() => setPhoneFiltersOpen(false)}
+            title="Filters"
+            description="Filters narrow the list. Highlights never hide anyone."
+            height="tall"
+          >
+            {filterCard}
+          </PhoneSheet>
+        ) : (
+          filterCard
+        )}
         {guarded.status === "allowed" && isPhone ? (
           /* v10 phone: the two charts are one tap away as cards; each opens a sheet that scrolls
              sideways with 48px tap columns. A tap highlights rows and closes the sheet. */
           <div className={pageStyles.phChartCards} data-testid="ward-discharge-phone-chart-cards">
-            <PhoneListRow
-              name="Expected discharges per day"
-              meta={`Passed and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
-              value={chartDays.reduce((sum, day) => sum + day.expected + day.blocked, 0)}
-              onSelect={() => setPhoneChart("days")}
-            />
-            <PhoneListRow
-              name="Blocked by barrier"
-              meta={`${barrierCounts.filter((barrier) => barrier.count > 0).length} barriers`}
-              value={barrierCounts.reduce((sum, barrier) => sum + barrier.count, 0)}
-              onSelect={() => setPhoneChart("barriers")}
-            />
+            <button
+              type="button"
+              className={pageStyles.phChartCard}
+              aria-label={`Expected discharges per day, passed and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
+              onClick={() => setPhoneChart("days")}
+            >
+              <TrendingUp size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
+              <span className={pageStyles.phChartText}>
+                <span className={pageStyles.phChartTitle}>Per day</span>
+                <span className={pageStyles.phChartMeta}>
+                  <b>
+                    {(() => {
+                      const day = chartDays.find((candidate) => candidate.key === 0);
+                      return day ? day.expected + day.blocked : 0;
+                    })()}
+                  </b>{" "}
+                  today · <b>{chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0}</b> past
+                </span>
+              </span>
+              <ChevronRight size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
+            </button>
+            <button
+              type="button"
+              className={pageStyles.phChartCard}
+              aria-label={`Blocked by barrier, ${barrierCounts.filter((barrier) => barrier.count > 0).length} barriers`}
+              onClick={() => setPhoneChart("barriers")}
+            >
+              <OctagonAlert size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
+              <span className={pageStyles.phChartText}>
+                <span className={pageStyles.phChartTitle}>By barrier</span>
+                <span className={pageStyles.phChartMeta}>
+                  {barrierCounts[0] && barrierCounts[0].count > 0 ? `Most: ${barrierCounts[0].label}` : "None blocked"}
+                </span>
+              </span>
+              <ChevronRight size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
+            </button>
             <PhoneSheet
               open={phoneChart !== null}
               onClose={() => setPhoneChart(null)}

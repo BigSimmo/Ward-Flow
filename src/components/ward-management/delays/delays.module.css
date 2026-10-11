@@ -2040,7 +2040,7 @@
    clipping the last one. */
 @media (max-width: 48rem) {
   .screen[data-ward-design="v6"] .main {
-    padding: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-8);
   }
 
   .screen[data-ward-page="delays"] [data-ward-primitive="panel-header"] {

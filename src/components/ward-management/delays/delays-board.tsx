@@ -19,7 +19,7 @@ import {
   type RefObject,
 } from "react";
 import Link from "next/link";
-import { ChevronDown, Search, X } from "lucide-react";
+import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-react";
 
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
@@ -36,7 +36,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById } from "@/components/ward-management/ward-sites";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { currentDueSoonThresholds } from "@/components/ward-management/ward-clock";
-import { CheckingFoot, Hero, LiveChip, TierTile, type WfTone } from "@/components/wf";
+import { CheckingFoot, Hero, LiveChip, PhoneSheet, TierTile, useIsPhone, type WfTone } from "@/components/wf";
 import { answerSilenceReminder, isCleared, type DelayCause, type DelayGroup } from "./delays-derivations";
 import { BandBar, Glyph, causeTitle } from "./delays-board-parts";
 import {
@@ -663,7 +663,10 @@ function Registers({
   onSilent,
   onPick,
   onNotWired,
+  part = "all",
 }: {
+  /** v10 phone: the registers and the longest quiet list each open in their own sheet. */
+  part?: "all" | "registers" | "quiet";
   escalated: Movement[];
   attention: { movement: Movement; title: string | undefined }[];
   closedToday: Movement[];
@@ -713,8 +716,9 @@ function Registers({
       aria-label="Escalations and resolved"
       data-ward-primitive="panel"
       data-wf-rail
+      data-part={part === "all" ? undefined : part}
     >
-      <div className={styles.sideB}>
+      <div className={styles.sideB} hidden={part === "quiet"}>
         <div className={styles.seg} role="tablist" aria-label="Registers" onKeyDown={onTabKey}>
           {tabs.map((entry) => (
             <button
@@ -878,7 +882,7 @@ function Registers({
           </section>
         </div>
       </div>
-      <div className={`${styles.sideB} ${styles.sideSplit}`}>
+      <div className={`${styles.sideB} ${styles.sideSplit}`} hidden={part === "registers"}>
         <div className={styles.sec}>
           <h4 className={styles.h4r}>
             Longest quiet <span className={styles.k}>{quietRows.length}</span>
@@ -959,6 +963,9 @@ export function DelaysBoard({
   const tableRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const sheet = useSheetLayout();
+  // v10 phone: the registers, the longest quiet list and the graphs sit one tap away as cards.
+  const isPhone = useIsPhone();
+  const [phoneSheet, setPhoneSheet] = useState<"registers" | "quiet" | "spread" | null>(null);
 
   const nameOf = useCallback(
     (movement: Movement) => `${patientOf(movement).formalName} ${patientOf(movement).umrn}`,
@@ -1380,7 +1387,7 @@ export function DelaysBoard({
     <>
       <Hero
         level={1}
-        eyebrow="Delays"
+        eyebrow={isPhone ? `Delays · ${service ?? "Statewide"}` : "Delays"}
         title={`${rows.length} ${rows.length === 1 ? "person" : "people"} waiting`}
         testId="delays-hero"
         className={styles.delaysHero}
@@ -1412,7 +1419,7 @@ export function DelaysBoard({
             )}
             {heroStat(
               dueSoon,
-              `Due within ${urgentMinutes}m`,
+              isPhone ? `Due in ${urgentMinutes}m` : `Due within ${urgentMinutes}m`,
               "danger",
               filters.dueSoon,
               dueSoon > 0 || filters.dueSoon
@@ -1503,7 +1510,10 @@ export function DelaysBoard({
                 <BandBar bands={tile.bands} />
                 <small>
                   <Glyph tone={tile.sub.count > 0 ? tile.sub.tone : undefined} />
-                  {`${tile.sub.count} ${tile.sub.text}`}
+                  <span>
+                    <b className={styles.ownSubCount}>{tile.sub.count}</b>
+                    <span className={styles.ownSubText}>{` ${tile.sub.text}`}</span>
+                  </span>
                 </small>
               </button>
             ))}
@@ -1696,32 +1706,147 @@ export function DelaysBoard({
                   panelRef={panelRef}
                 />
               </>
-            ) : (
+            ) : isPhone ? null : (
               registers
             )}
           </div>
 
-          <DelaysBoardGraphs
-            rows={rows}
-            shown={shown}
-            bins={bins}
-            now={now}
-            filters={filters}
-            catchments={boardCatchments(rows)}
-            selectedId={selectedId}
-            onFilters={(patch, toFlat) => {
-              set(patch);
-              if (toFlat) setFlat(true);
-            }}
-            onClear={() => {
-              setFilters(NO_FILTERS);
-            }}
-            onPick={reveal}
-            onToTable={() => {
-              tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-              tableRef.current?.focus({ preventScroll: true });
-            }}
-          />
+          {isPhone ? (
+            <div className={styles.phCards} data-testid="delays-phone-cards">
+              <button type="button" className={styles.phCard} onClick={() => setPhoneSheet("registers")}>
+                <Flag size={16} aria-hidden="true" className={styles.phCardIcon} />
+                <span className={styles.phCardText}>
+                  <span className={styles.phCardTitle}>Registers</span>
+                  <span className={styles.phCardMeta}>
+                    Escalated <b>{escalated.length}</b> · Attention <b>{attention.length}</b> · Resolved{" "}
+                    <b>{closedToday.length}</b>
+                  </span>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" className={styles.phCardIcon} />
+              </button>
+              <button type="button" className={styles.phCard} onClick={() => setPhoneSheet("quiet")}>
+                <Activity size={16} aria-hidden="true" className={styles.phCardIcon} />
+                <span className={styles.phCardText}>
+                  <span className={styles.phCardTitle}>Longest quiet</span>
+                  <span className={styles.phCardMeta}>Who has gone longest with nothing recorded</span>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" className={styles.phCardIcon} />
+              </button>
+              <button type="button" className={styles.phCard} onClick={() => setPhoneSheet("spread")}>
+                <Activity size={16} aria-hidden="true" className={styles.phCardIcon} />
+                <span className={styles.phCardText}>
+                  <span className={styles.phCardTitle}>Wait spread and the next 4 hours</span>
+                  <span className={styles.phCardMeta}>Where the waits sit, and who crosses {H8} next</span>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" className={styles.phCardIcon} />
+              </button>
+              <div className={styles.phCard}>
+                <Glyph tone="success" />
+                <span className={styles.phCardText}>
+                  <span className={styles.phCardTitle}>Delays with no named person</span>
+                  <span className={styles.phCardMeta}>None recorded statewide</span>
+                </span>
+                <button
+                  type="button"
+                  className={styles.phCardAction}
+                  onClick={onNotWired}
+                  aria-label="Record a service-wide or facility delay. Not wired in this prototype."
+                  title="Not wired in this prototype."
+                >
+                  Record
+                </button>
+              </div>
+              <PhoneSheet
+                open={phoneSheet === "registers" || phoneSheet === "quiet"}
+                onClose={() => setPhoneSheet(null)}
+                title={phoneSheet === "quiet" ? "Longest quiet" : "Registers"}
+                description={
+                  phoneSheet === "quiet"
+                    ? "Who has gone longest with nothing recorded"
+                    : "Escalations, attention and resolved today"
+                }
+                height="tall"
+              >
+                <Registers
+                  escalated={escalated}
+                  attention={attention}
+                  closedToday={closedToday}
+                  rows={rows}
+                  now={now}
+                  units={units}
+                  service={service}
+                  isOutsideService={isOutsideService}
+                  silentPressed={filters.silent}
+                  onSilent={() => {
+                    set({ silent: !filters.silent });
+                    setPhoneSheet(null);
+                  }}
+                  onPick={(id) => {
+                    setPhoneSheet(null);
+                    reveal(id);
+                  }}
+                  onNotWired={onNotWired}
+                  part={phoneSheet === "quiet" ? "quiet" : "registers"}
+                />
+              </PhoneSheet>
+              <PhoneSheet
+                open={phoneSheet === "spread"}
+                onClose={() => setPhoneSheet(null)}
+                title="Wait spread and the next 4 hours"
+                description="Dots and columns follow the same filters as the list"
+                height="tall"
+              >
+                <DelaysBoardGraphs
+                  rows={rows}
+                  shown={shown}
+                  bins={bins}
+                  now={now}
+                  filters={filters}
+                  catchments={boardCatchments(rows)}
+                  selectedId={selectedId}
+                  onFilters={(patch, toFlat) => {
+                    set(patch);
+                    if (toFlat) setFlat(true);
+                  }}
+                  onClear={() => {
+                    setFilters(NO_FILTERS);
+                  }}
+                  onPick={(id) => {
+                    setPhoneSheet(null);
+                    reveal(id);
+                  }}
+                  onToTable={() => {
+                    setPhoneSheet(null);
+                    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                />
+              </PhoneSheet>
+            </div>
+          ) : null}
+
+          {isPhone ? null : (
+            <DelaysBoardGraphs
+              rows={rows}
+              shown={shown}
+              bins={bins}
+              now={now}
+              filters={filters}
+              catchments={boardCatchments(rows)}
+              selectedId={selectedId}
+              onFilters={(patch, toFlat) => {
+                set(patch);
+                if (toFlat) setFlat(true);
+              }}
+              onClear={() => {
+                setFilters(NO_FILTERS);
+              }}
+              onPick={reveal}
+              onToTable={() => {
+                tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                tableRef.current?.focus({ preventScroll: true });
+              }}
+            />
+          )}
         </>
       )}
     </>

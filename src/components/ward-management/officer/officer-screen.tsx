@@ -366,12 +366,22 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  */
 export function OfficerScreen() {
   const { movements, units, dispatch, rejections, patients, referrals, dayZero } = useWardFlow();
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 48rem)");
+    const sync = () => setIsPhone(query.matches);
+    sync();
+    query.addEventListener?.("change", sync);
+    return () => query.removeEventListener?.("change", sync);
+  }, []);
   const officerPatientName = useCallback(
     (movement: Movement) => {
       const info = resolveSubjectPatient(movement, { patients, referrals, movements });
-      return info.patient ? info.displayName : "Not recorded";
+      // Phone (v10) lists people surname first.
+      return info.patient ? (isPhone ? info.formalName : info.displayName) : "Not recorded";
     },
-    [patients, referrals, movements],
+    [patients, referrals, movements, isPhone],
   );
   // Owner, 26 Sept 2026: undefined (not "Not recorded") lets the blocked-reason helpers below
   // fall back to their own "This patient" wording instead of printing a placeholder mid-sentence.
@@ -536,15 +546,7 @@ export function OfficerScreen() {
   }, [selectedId]);
   // On a phone the panel is a modal bottom sheet, so it takes focus, traps Tab, isolates the page
   // behind it and hands focus back on close. Wider screens keep the side panel non-modal.
-  const [isPhone, setIsPhone] = useState(false);
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(max-width: 48rem)");
-    const sync = () => setIsPhone(query.matches);
-    sync();
-    query.addEventListener?.("change", sync);
-    return () => query.removeEventListener?.("change", sync);
-  }, []);
+  // isPhone is declared above officerPatientName, which reads it.
 
   const formModalSheetId = useId();
   useEffect(() => {
@@ -1199,6 +1201,58 @@ export function OfficerScreen() {
     />
   );
 
+  // Hero tools: beside the title on the larger screen, under the figures on phone (v10).
+  const heroTools = (
+    <div className={styles.heroTools}>
+      {nextArrival ? (
+        <span className={styles.nextArrival} title="Next expected arrival">
+          <Icon icon={Clock} size={14} />
+          Next <b>{formatInstantWithDay(nextArrival.at, now)}</b>
+          <span className={styles.nextArrivalPlace}>{destinationLabelFor(nextArrival.movement)}</span>
+        </span>
+      ) : null}
+      <Button
+        variant="onHero"
+        size="sm"
+        icon={Copy}
+        className={styles.copyButton}
+        onClick={copyHandover}
+        aria-label="Copy handover"
+        title="Copy a plain text summary of open jobs"
+      >
+        <span className={styles.longLabel}>Copy handover</span>
+      </Button>
+      {/* Phone (v10): Arrivals jumps to the arrivals list below the jobs. */}
+      {isPhone ? (
+        <Button
+          variant="onHero"
+          size="sm"
+          icon={Clock}
+          className={styles.phArrivalsButton}
+          onClick={() =>
+            document
+              .getElementById("ward-officer-arrivals-heading")
+              ?.scrollIntoView({ block: "start", behavior: "smooth" })
+          }
+        >
+          Arrivals <span className={styles.phArrivalsCount}>{upcoming}</span>
+        </Button>
+      ) : null}
+      <span className={cx(styles.preview, styles.onHeroPreview, styles.deskOnly)}>Preview</span>
+      <Button
+        variant="onHero"
+        size="sm"
+        icon={Truck}
+        className={cx(styles.previewButton, styles.deskOnly)}
+        aria-disabled="true"
+        title="Not wired in this prototype."
+        onClick={(event) => event.preventDefault()}
+      >
+        Log booking
+      </Button>
+    </div>
+  );
+
   const panelOpen = selectedJob !== undefined && selectedJob.transport !== undefined;
   useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
 
@@ -1211,40 +1265,8 @@ export function OfficerScreen() {
           eyebrow="Transport dispatch"
           title={`${inCustody} on board`}
           titleMeta={`${crewEnRoute} ${crewEnRoute === 1 ? "crew" : "crews"} en route`}
-          aside={
-            <div className={styles.heroTools}>
-              {nextArrival ? (
-                <span className={styles.nextArrival} title="Next expected arrival">
-                  <Icon icon={Clock} size={14} />
-                  Next <b>{formatInstantWithDay(nextArrival.at, now)}</b>
-                  <span className={styles.nextArrivalPlace}>{destinationLabelFor(nextArrival.movement)}</span>
-                </span>
-              ) : null}
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={Copy}
-                className={styles.copyButton}
-                onClick={copyHandover}
-                aria-label="Copy handover"
-                title="Copy a plain text summary of open jobs"
-              >
-                <span className={styles.longLabel}>Copy handover</span>
-              </Button>
-              <span className={cx(styles.preview, styles.onHeroPreview, styles.deskOnly)}>Preview</span>
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={Truck}
-                className={cx(styles.previewButton, styles.deskOnly)}
-                aria-disabled="true"
-                title="Not wired in this prototype."
-                onClick={(event) => event.preventDefault()}
-              >
-                Log booking
-              </Button>
-            </div>
-          }
+          aside={isPhone ? undefined : heroTools}
+          barAside={isPhone ? heroTools : undefined}
           bar={
             <div className={styles.heroPills} role="group" aria-label="Highlight jobs">
               {pillStat("requested", awaitingDeparture, "Not accepted", "To accept", "neutral")}
@@ -1319,6 +1341,29 @@ export function OfficerScreen() {
               {nextButton(topJob, "ward-officer-nextcard", "pri", "lg")}
             </div>
           </Card>
+        ) : null}
+
+        {isPhone ? (
+          <div className={styles.phProviders} role="group" aria-label="Highlight jobs by provider">
+            {TRANSPORT_PROVIDERS.map((provider) => {
+              const isSelected = providerHighlight === provider;
+              return (
+                <button
+                  key={provider}
+                  type="button"
+                  className={styles.phProvider}
+                  onClick={() => setProviderHighlight((prev) => (prev === provider ? null : provider))}
+                  title={isSelected ? "Stop highlighting this provider" : `Highlight ${provider} jobs`}
+                  aria-pressed={isSelected}
+                >
+                  <span className={styles.phProviderCount}>
+                    {jobs.filter((movement) => movement.transport?.provider === provider).length}
+                  </span>
+                  {provider.replace(/ service$/, "")}
+                </button>
+              );
+            })}
+          </div>
         ) : null}
 
         <div className={styles.layout} data-open={panelOpen ? "true" : undefined}>
@@ -1466,14 +1511,24 @@ export function OfficerScreen() {
                                   >
                                     {officerPatientName(movement)}
                                   </strong>
+                                  {isPhone && transport.escortRequired ? (
+                                    <ShieldCheck size={14} className={styles.phEscort} aria-label="Escort required" />
+                                  ) : null}
                                   <span className={styles.jobUmrn}>{umrnFor(movement)}</span>
                                 </button>
                               </td>
                               <td>
-                                <span className={styles.jobRoute}>
-                                  <span className={styles.jobRouteTo}>{destinationLabelFor(movement)}</span>
-                                  <span className={styles.jobRouteFrom}> from {originShortFor(movement)}</span>
-                                </span>
+                                {isPhone ? (
+                                  // Phone (v10): from first, as the mockup's "ARM to ward" line reads.
+                                  <span className={styles.jobRoute}>
+                                    <b>{originShortFor(movement)}</b> to {destinationLabelFor(movement)}
+                                  </span>
+                                ) : (
+                                  <span className={styles.jobRoute}>
+                                    <span className={styles.jobRouteTo}>{destinationLabelFor(movement)}</span>
+                                    <span className={styles.jobRouteFrom}> from {originShortFor(movement)}</span>
+                                  </span>
+                                )}
                                 <span className={styles.jobMeta}>
                                   {transport.provider.replace(/ service$/, "")}
                                   {transport.escortRequired ? " · escort" : ""}

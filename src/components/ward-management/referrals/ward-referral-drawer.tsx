@@ -6,6 +6,7 @@ import {
   BedDouble,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   Copy,
   Eye,
   FileText,
@@ -14,6 +15,7 @@ import {
   Inbox,
   Info,
   ListChecks,
+  Lock,
   MapPin,
   Phone,
   Search,
@@ -106,7 +108,7 @@ import {
   useReferralDraftAutosave,
 } from "./referral-draft-store";
 import { referralIsbarText, referralLetterText, type ReferralTextInput } from "./referral-letter";
-import { Frac, StatusGlyph, type WfTone } from "@/components/wf";
+import { Frac, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
@@ -799,6 +801,9 @@ function WardReferralDrawerContent({
   const submissionRef = useRef<{ intake: ReferralIntakeDetails; rejectionCount: number } | null>(null);
   const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
   const [inboxUnitId, setInboxUnitId] = useState<string | null>(null);
+  // v10 phone: the four steps are a list, and the chosen step opens as a tall sheet over it.
+  const isPhone = useIsPhone();
+  const [phoneStepOpen, setPhoneStepOpen] = useState(false);
 
   const sampleProfiles = useMemo(
     () =>
@@ -1536,12 +1541,65 @@ function WardReferralDrawerContent({
     };
   })();
 
+  // v10 phone: which of the four phone layouts shows. The list holds the steps; the sheet holds one
+  // step (or the letter, or the contact check before Send). Desktop never reads this.
+  const phMode: "list" | "sheet" | "sent" | "inbox" =
+    view === "inbox"
+      ? "inbox"
+      : sentReferralId
+        ? "sent"
+        : phoneStepOpen || confirmationOpen || previewOpen
+          ? "sheet"
+          : "list";
+  const phFirstNeeded = SECTION_IDS.find((id) => needed[id] > 0);
+  const phNeededLabels = readyRows.filter((row) => row.state === "needed").map((row) => row.label);
+  const phNeedsLine = phNeededLabels.length
+    ? `Needs ${phNeededLabels.slice(0, 3).join(", ")}${phNeededLabels.length > 3 ? ` and ${phNeededLabels.length - 3} more` : ""}`
+    : "Every row the letter needs is ready";
+  function phStepHint(id: DrawerSection): string {
+    if (id === "patient") {
+      return patientRecord
+        ? `${currentPatient.name} · ${catchmentConfirmed && catchmentTeam.trim() ? catchmentTeam : "catchment to confirm"}`
+        : "Find a patient by name or UMRN";
+    }
+    if (id === "referral") {
+      return originValid
+        ? [originLabel, legalStatus, tier === undefined ? "urgency" : `Tier ${tier}`].join(" · ")
+        : "Source · legal status · urgency";
+    }
+    if (id === "documentation") {
+      return needed.documentation
+        ? `${needed.documentation} to answer`
+        : checksDone !== undefined
+          ? `${checksDone} of ${CLEARANCE_CHECKS.length} done`
+          : "Answered";
+    }
+    if (selectedDestinations.length) {
+      return recipientLabels.length > 1
+        ? `${recipientLabels[0]!.split(" · ").at(-1)} and ${recipientLabels.length - 1} more`
+        : placeRow;
+    }
+    return destType === "ward" ? "Choose up to 3 wards" : destType === "community" ? "Choose a team" : "Choose an ED";
+  }
+  function phCloseSheet() {
+    setPhoneStepOpen(false);
+    setPreviewOpen(false);
+    setConfirmationOpen(false);
+    setFlowError(null);
+  }
+  function phOpenStep(id: DrawerSection) {
+    selectSection(id);
+    setPhoneStepOpen(true);
+  }
+  const phStepIndex = SECTION_IDS.indexOf(activeSection);
+
   return (
     <>
       {withBackdrop ? <div className={styles.drawerBackdrop} onClick={requestClose} aria-hidden="true" /> : null}
       <div
         ref={drawerRef}
         className={styles.drawerWide}
+        data-ph-mode={isPhone ? phMode : undefined}
         role={withBackdrop ? "dialog" : "complementary"}
         aria-modal={withBackdrop ? true : undefined}
         aria-labelledby="referralDrawerTitle"
@@ -1556,6 +1614,104 @@ function WardReferralDrawerContent({
       >
         <div className={styles.drawerHead} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className={styles.dragHandle} aria-hidden="true" />
+          {isPhone ? (
+            <section className={styles.phHero} aria-label="Referral progress" data-testid="ward-referral-phone-hero">
+              <div className={styles.phHeroTop}>
+                <span className={styles.phEyebrow}>
+                  {view === "inbox"
+                    ? "Referrals · inbox"
+                    : sentReferralId
+                      ? `New referral · ${destination.label}`
+                      : `New referral · to ${destination.label}`}
+                </span>
+                {view === "new" && !sentReferralId ? (
+                  <button
+                    type="button"
+                    className={styles.phHeroChip}
+                    onClick={() => onViewChange("inbox")}
+                    data-testid="ward-referral-phone-inbox"
+                  >
+                    <Inbox aria-hidden="true" />
+                    Inbox <b className={styles.mono}>{inboxCount}</b>
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className={styles.phHeroClose}
+                  onClick={requestClose}
+                  aria-label="Close referral side drawer"
+                >
+                  <X aria-hidden="true" />
+                </button>
+              </div>
+              <p className={styles.phHeroTitle}>
+                {view === "inbox"
+                  ? `${inboxCount} waiting in ward inboxes`
+                  : sentReferralId
+                    ? "Referral sent"
+                    : `${readyDone} of ${readyRows.length} ready to send`}
+              </p>
+              <p className={styles.phHeroSub}>
+                {view === "inbox"
+                  ? "Longest wait first"
+                  : sentReferralId
+                    ? `To ${recipientLabels.length > 1 ? `${recipientLabels[0]!.split(" · ").at(-1)} and ${recipientLabels.length - 1} more` : (recipientLabels[0]?.split(" · ").at(-1) ?? "the chosen locations")}`
+                    : patientRecord
+                      ? `${currentPatient.name} · ${currentPatient.umrn}`
+                      : "Start with the patient"}
+              </p>
+              {view === "inbox" ? (
+                <button type="button" className={styles.phHeroAction} onClick={() => onViewChange("new")}>
+                  <Send aria-hidden="true" />
+                  Back to new referral
+                </button>
+              ) : (
+                <div className={styles.phFigures}>
+                  {sentReferralId ? (
+                    <>
+                      <span className={styles.phFigure}>
+                        <b className={styles.mono}>{sentAt === null ? "–" : formatInstant(sentAt)}</b>
+                        <span>Sent</span>
+                      </span>
+                      <span className={styles.phFigure}>
+                        <b className={styles.mono}>{(sentAt !== null && decisionDueAt(sentAt)) || "–"}</b>
+                        <span>Decision due</span>
+                      </span>
+                      <span className={styles.phFigure}>
+                        <b className={styles.mono}>{tier === undefined ? "–" : `T${tier}`}</b>
+                        <span>Urgency</span>
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className={styles.phFigure}>
+                        <b className={styles.mono}>{totalNeeded}</b>
+                        <span>Answers left</span>
+                      </span>
+                      <span className={styles.phFigure} title={OPERATIONAL_DEFAULT_LABEL}>
+                        <b className={styles.mono}>{decisionDueAt(now) ?? "–"}</b>
+                        <span>Decision due</span>
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.phFigure}
+                        aria-pressed={previewOpen}
+                        data-testid="ward-referral-phone-preview-letter"
+                        onClick={() => {
+                          setPreviewOpen((open) => !open);
+                          setSummaryOpen(false);
+                          if (bodyRef.current) bodyRef.current.scrollTop = 0;
+                        }}
+                      >
+                        <Eye aria-hidden="true" />
+                        <span>Preview letter</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </section>
+          ) : null}
           <div className={styles.drawerHeadTop}>
             <span className={styles.headIcon} aria-hidden="true">
               <Send aria-hidden="true" />
@@ -1645,13 +1801,14 @@ function WardReferralDrawerContent({
                       aria-describedby={`${sectionId}-${id}-state`}
                       data-active={active}
                       data-done={done}
-                      onClick={() => selectSection(id)}
+                      onClick={() => (isPhone ? phOpenStep(id) : selectSection(id))}
                     >
                       <span className={styles.stepMark} aria-hidden="true">
-                        {done && !active ? <StatusGlyph tone="success" size={10} /> : index + 1}
+                        {done && (!active || isPhone) ? <StatusGlyph tone="success" size={10} /> : index + 1}
                       </span>
                       <span className={styles.stepText}>
                         <span className={styles.stepLabel}>{label}</span>
+                        {isPhone ? <span className={styles.phStepHint}>{phStepHint(id)}</span> : null}
                         <span
                           className={styles.stepState}
                           id={`${sectionId}-${id}-state`}
@@ -1662,6 +1819,21 @@ function WardReferralDrawerContent({
                           {done ? "Complete" : `${needed[id]} needed`}
                         </span>
                       </span>
+                      {isPhone ? (
+                        <>
+                          <span className={styles.phStepState} aria-hidden="true">
+                            {erred ? <StatusGlyph tone="danger" size={8} /> : null}
+                            {done ? (
+                              "Complete"
+                            ) : (
+                              <>
+                                <b>{needed[id]}</b> needed
+                              </>
+                            )}
+                          </span>
+                          <ChevronRight aria-hidden="true" className={styles.phStepChevron} />
+                        </>
+                      ) : null}
                     </button>
                   );
                 })}
@@ -1687,7 +1859,47 @@ function WardReferralDrawerContent({
         </div>
 
         <div className={styles.sheetMain}>
+          {isPhone && phMode === "sheet" ? (
+            <div className={styles.phScrim} onClick={phCloseSheet} aria-hidden="true" />
+          ) : null}
           <div ref={bodyRef} className={styles.drawerBody}>
+            {isPhone && phMode === "sheet" ? (
+              <div className={styles.phSheetHead}>
+                <span className={styles.phSheetGrip} aria-hidden="true" />
+                <div className={styles.phSheetTitleRow}>
+                  <div className={styles.phSheetTitleBlock}>
+                    <p className={styles.phSheetTitle}>
+                      {previewOpen
+                        ? "Letter preview"
+                        : confirmationOpen
+                          ? "Before you send"
+                          : `${phStepIndex + 1} · ${sectionLabel(activeSection, destType)}`}
+                    </p>
+                    <p className={styles.phSheetMeta}>
+                      {previewOpen
+                        ? "Read-only. Edit the steps to change it."
+                        : confirmationOpen
+                          ? "Your contact details go on the letter."
+                          : `${needed[activeSection] === 0 ? "Complete" : `${needed[activeSection]} needed`} · step ${phStepIndex + 1} of ${SECTION_IDS.length}`}
+                    </p>
+                    {previewOpen || confirmationOpen ? null : (
+                      <span className={styles.phSheetDots} aria-hidden="true">
+                        {SECTION_IDS.map((id, index) => (
+                          <i
+                            key={id}
+                            data-on={index === phStepIndex ? "true" : undefined}
+                            data-done={needed[id] === 0 ? "true" : undefined}
+                          />
+                        ))}
+                      </span>
+                    )}
+                  </div>
+                  <button type="button" className={styles.phSheetClose} onClick={phCloseSheet} aria-label="Close step">
+                    <X aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            ) : null}
             {view === "inbox" ? (
               inboxWard ? (
                 <div className={styles.inboxPane}>
@@ -3268,6 +3480,24 @@ function WardReferralDrawerContent({
               </>
             )}
           </div>
+          {isPhone && phMode === "list" ? (
+            <button
+              type="button"
+              className={styles.phChecklist}
+              aria-expanded={summaryOpen}
+              aria-controls={`${sectionId}-summary`}
+              onClick={() => setSummaryOpen((open) => !open)}
+            >
+              <ListChecks aria-hidden="true" />
+              <span className={styles.phChecklistText}>
+                <span className={styles.phChecklistTitle}>Send checklist</span>
+                <span className={styles.phChecklistMeta}>
+                  Every row the letter needs, <b>{readyRows.length}</b> in all
+                </span>
+              </span>
+              <ChevronDown aria-hidden="true" data-open={summaryOpen ? "true" : undefined} />
+            </button>
+          ) : null}
           {view === "new" ? (
             <aside
               className={styles.rail}
@@ -3385,8 +3615,64 @@ function WardReferralDrawerContent({
             </span>
             <span className={styles.sendTargetName}>{footStatus.second}</span>
           </div>
+          {isPhone && phMode === "list" ? (
+            <p className={styles.phFootNote}>
+              {phNeededLabels.length ? <Lock aria-hidden="true" /> : null}
+              <span>{phNeedsLine}</span>
+            </p>
+          ) : null}
           <div className={styles.sendActionCluster}>
-            {view === "inbox" ? (
+            {isPhone && phMode === "list" ? (
+              <button
+                type="button"
+                className={styles.btnSendReferral}
+                data-testid="ward-referral-phone-continue"
+                disabled={sendPending}
+                onClick={() => {
+                  if (phFirstNeeded) {
+                    phOpenStep(phFirstNeeded);
+                  } else {
+                    setPhoneStepOpen(true);
+                    handleDispatch();
+                  }
+                }}
+              >
+                {phFirstNeeded ? (
+                  `Continue: ${sectionLabel(phFirstNeeded, destType)}`
+                ) : (
+                  <>
+                    <Send aria-hidden="true" />
+                    Send referral
+                  </>
+                )}
+              </button>
+            ) : isPhone && phMode === "sheet" && !confirmationOpen && !previewOpen ? (
+              <>
+                <button
+                  type="button"
+                  className={styles.btnCancelReferral}
+                  disabled={sendPending}
+                  onClick={activeSection === "patient" ? phCloseSheet : goBack}
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnSendReferral}
+                  disabled={sendPending}
+                  onClick={activeSection === "placement" ? handleDispatch : () => goNext(activeSection)}
+                >
+                  {activeSection === "placement" ? (
+                    <>
+                      <Send aria-hidden="true" />
+                      Send referral
+                    </>
+                  ) : (
+                    `Next: ${sectionLabel(SECTION_IDS[phStepIndex + 1]!, destType)}`
+                  )}
+                </button>
+              </>
+            ) : view === "inbox" ? (
               <Link className={styles.btnCancelReferral} href="/mockups/ward-flow/referrals" onClick={onClose}>
                 Open referrals board
               </Link>

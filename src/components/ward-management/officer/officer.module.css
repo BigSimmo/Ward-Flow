@@ -1642,3 +1642,253 @@
     display: block;
   }
 }
+
+/* Phone (v10 mockup, 11 Oct 2026): the band carries three plain figures and two actions (Copy
+ * handover, Arrivals); provider chips sit on the canvas under Next action; the Jobs / History tabs
+ * are a pill segment; each job reads name, "ARM to ward", then the stage and forms dots, with the
+ * ETA on the right. The search, highlight chips, UMRN and per-row step button stay on the larger
+ * screen and in the job sheet the row opens. The ph* classes render only on phone. */
+.phProviders {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .heroPills > .heroPill:not(.deskOnly) {
+    padding: 0 var(--wf-s-3);
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+
+  .heroPills > .heroPill:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .heroPill > button {
+    justify-content: flex-start;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+  }
+
+  .heroTools.heroTools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--wf-s-2);
+    width: 100%;
+  }
+
+  .nextArrival {
+    display: none;
+  }
+
+  .copyButton.copyButton {
+    position: static;
+    width: auto;
+    height: auto;
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-4);
+    border-radius: var(--wf-r-pill);
+  }
+
+  .copyButton.copyButton .longLabel {
+    display: inline;
+  }
+
+  .phArrivalsButton {
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-4);
+    border-radius: var(--wf-r-pill);
+  }
+
+  .phArrivalsCount {
+    min-width: 1.5rem;
+    padding: 1px 6px;
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-hero-ink);
+    color: var(--wf-hero-2);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+    text-align: center;
+  }
+
+  .nextCard {
+    border-color: var(--wf-line);
+  }
+
+  .phProviders {
+    position: relative;
+    display: flex;
+    gap: var(--wf-s-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .phProvider {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-4);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+    white-space: nowrap;
+    box-shadow: var(--wf-e1);
+    cursor: pointer;
+  }
+
+  .phProvider[aria-pressed="true"] {
+    border-color: var(--wf-ink-1);
+  }
+
+  .phProvider:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .phProviderCount {
+    font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Jobs: no card around the tabs; the tabs are a full-width pill segment. */
+  .jobsPanel.jobsPanel {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .tabsRow.tabsRow {
+    padding: 0 0 var(--wf-s-3);
+    border: 0;
+  }
+
+  .tabsRow [role="tablist"] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    padding: var(--wf-s-1);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-track);
+  }
+
+  .tabsRow [role="tab"] {
+    justify-content: center;
+    min-height: 2.75rem;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .tabsRow [role="tab"][aria-selected="true"] {
+    background: var(--wf-surface);
+    box-shadow: 0 0 0 1px var(--wf-line-ctl);
+  }
+
+  .tabsRow [role="tab"]::after {
+    display: none;
+  }
+
+  .toolbar.toolbar {
+    display: none;
+  }
+
+  .tableScroll.tableScroll {
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  /* One job: name | ETA, route | note, stage · forms. */
+  .jobsTable .jobRow.jobRow {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "who who eta"
+      "route route eta"
+      "stage forms forms";
+    column-gap: var(--wf-s-3);
+    row-gap: 2px;
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .jobsTable .jobRow:last-child {
+    border-bottom: 0;
+  }
+
+  .jobsTable .jobRow.jobRow > td:nth-child(3) {
+    display: flex;
+    align-items: center;
+    margin-top: 2px;
+  }
+
+  .jobsTable .jobRow.jobRow > td:nth-child(4) {
+    display: flex;
+    align-items: center;
+    margin-top: 2px;
+  }
+
+  .jobRow > td:nth-child(4)::before {
+    margin-right: var(--wf-s-1);
+    color: var(--wf-ink-3);
+    content: "·";
+  }
+
+  .jobsTable .jobRow.jobRow > td:nth-child(6),
+  .jobUmrn,
+  .jobEscort,
+  .stageFor {
+    display: none;
+  }
+
+  .jobsTable .jobRow > td:nth-child(5) {
+    align-self: start;
+    text-align: right;
+  }
+
+  .phEscort {
+    flex: none;
+    color: var(--wf-ink-3);
+  }
+
+  .selectButton.selectButton {
+    align-items: center;
+    gap: var(--wf-s-1);
+    min-height: 0;
+  }
+
+  .jobRoute {
+    display: block;
+    overflow: hidden;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .jobRoute > b {
+    color: var(--wf-ink-1);
+    font-weight: 600;
+  }
+
+  .stageLine {
+    font-size: var(--wf-fs-12);
+  }
+
+  .stageLine > strong {
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 48rem) {
+  .formsCell::after {
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    content: "forms";
+  }
+}

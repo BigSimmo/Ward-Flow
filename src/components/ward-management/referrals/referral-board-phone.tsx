@@ -1,9 +1,10 @@
 "use client";
 
 import { ChevronRight, Clock, ListOrdered, TriangleAlert } from "lucide-react";
-import { useId, type ReactNode } from "react";
+import { useId, useRef, type ReactNode } from "react";
 
 import { Button, LiveChip, ScrollRow, StatusGlyph, cx } from "@/components/wf";
+import { useWfBandBleed } from "@/components/wf/band";
 
 import styles from "./referral-board-phone.module.css";
 
@@ -44,8 +45,17 @@ export function ReferralPhoneHero({
   onMeeting: () => void;
 }) {
   const titleId = useId();
+  const heroRef = useRef<HTMLElement>(null);
+  // v10 phone: the hero opens the page as the square band under the lean bar, like the shared Hero.
+  useWfBandBleed(heroRef, true);
   return (
-    <section className={styles.phHero} aria-labelledby={titleId} data-testid="ward-referral-phone-hero">
+    <section
+      ref={heroRef}
+      className={styles.phHero}
+      aria-labelledby={titleId}
+      data-testid="ward-referral-phone-hero"
+      data-wf-hero="band"
+    >
       <div className={styles.eyebrow}>
         <span className={styles.eyebrowText}>Referrals · statewide</span>
         <LiveChip state="live" onHero />
