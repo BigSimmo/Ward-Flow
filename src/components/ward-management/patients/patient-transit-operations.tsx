@@ -39,9 +39,12 @@ import styles from "./patient-transit-operations.module.css";
 export function PatientTransitOperations({
   movement,
   showMetrics = true,
+  bare = false,
 }: {
   movement: Movement;
   showMetrics?: boolean;
+  /** Inside a sheet that already names it (the Patient Now mockups): no section heading. */
+  bare?: boolean;
 }) {
   const { units, admissions, dispatch, rejections, readAuditEvents } = useWardFlow();
   const now = useWardFlowClock();
@@ -777,7 +780,7 @@ export function PatientTransitOperations({
   );
   return (
     <section className={styles.deck} aria-labelledby="transit-title">
-      <header className={styles.heading}>
+      <header className={styles.heading} hidden={bare}>
         <div>
           <span className={styles.eyebrow}>PATIENT NOW / BEDFLOW</span>
           <h2 id="transit-title">Transit operations</h2>

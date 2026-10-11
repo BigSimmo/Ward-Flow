@@ -11,7 +11,9 @@ import {
   Copy,
   FileText,
   FileUp,
+  RotateCcw,
   Scale,
+  Truck,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -21,7 +23,10 @@ import { PatientRecordOverview } from "./patient-record-overview";
 import { PatientFlightHeader } from "./patient-flight-header";
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { edById } from "@/components/ward-management/ward-sites";
+import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import type { MockupOption } from "@/components/ward-management/preview/preview-option";
+import { callRows, type CallTarget } from "./patient-call-list";
+import { PatientNowLayout, PatientSheetRow, PatientSheetRows } from "./patient-now-layouts";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Movement, TransportProvider, TransportLegalStatus } from "@/components/ward-management/ward-model";
 import {
@@ -71,6 +76,7 @@ import {
   JourneyStrip,
   LiveChip,
   type JourneyStage,
+  PhoneSheet,
   StatusGlyph,
   buttonClass,
   useIsPhone,
@@ -170,6 +176,8 @@ interface PatientNowScreenProps {
   movementId?: string;
   initialTaskAction?: "refer" | "contact";
   initialExampleId?: "WF-009" | "WF-004";
+  /** Now tab mockup layout, from a preview route only. Absent, Now renders as it does today. */
+  nowLayout?: MockupOption;
 }
 
 type TabKey = "now" | "history" | "community" | "details" | "documents";
@@ -202,6 +210,7 @@ export function PatientNowScreen({
   movementId,
   initialExampleId = "WF-009",
   initialTaskAction,
+  nowLayout,
 }: PatientNowScreenProps) {
   const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } = useWardFlow();
   const now = useWardFlowClock();
@@ -258,6 +267,8 @@ export function PatientNowScreen({
     requestAnimationFrame(() => operationsRef.current?.scrollIntoView({ block: "start" }));
   }, [initialTaskAction]);
   const [copied, setCopied] = useState(false);
+  // Now mockups: destination and transport open as sheets from their cells.
+  const [previewSheet, setPreviewSheet] = useState<"destination" | "transport" | null>(null);
 
   // Transport booking state & overrides
   const [showTransportForm, setShowTransportForm] = useState(false);
@@ -727,14 +738,21 @@ export function PatientNowScreen({
     hasBedHold: liveMovement ? movementHasBedHold(liveMovement, admissions) : false,
     now,
     dayZero,
-    onOpenPlacement: openOperations,
+    onOpenPlacement: nowLayout ? () => setPreviewSheet("destination") : openOperations,
     onClearance: (event) => {
       clearanceTriggerRef.current = event.currentTarget;
       setClearanceDraft("");
       setClearanceAttested(false);
       setShowClearanceModal(true);
     },
-    onBookTransport: openTransportForm,
+    onBookTransport: nowLayout
+      ? () => {
+          setTransportCadDraft(displayCadNumber ?? "");
+          setTransportEtaDraft(displayEta ?? "");
+          setShowTransportForm(true);
+          setPreviewSheet("transport");
+        }
+      : openTransportForm,
     onArrivalTime: () => {
       setShowArrivalTimeModal(true);
     },
@@ -799,6 +817,33 @@ export function PatientNowScreen({
   if (livePatient?.generalPractitioner && !isLiveBedflow)
     contacts.push({ name: livePatient.generalPractitioner, role: "GP" });
 
+  /* Now mockups: the same people, each looked up in the On-call directory for a mock number. */
+  const originEd = liveMovement ? edById(liveMovement.originEdId) : undefined;
+  const originService = originEd ? siteByCode(originEd.siteCode)?.service : undefined;
+  const callTargets: CallTarget[] = contacts.map((row) => {
+    if (originEd && row.name === originName)
+      return { kind: "ed", name: row.name, role: row.role, siteCode: originEd.siteCode, line: "liaison" };
+    const wardUnit = units.find((unit) => unit.name === row.name);
+    if (wardUnit) return { kind: "ward", name: row.name, role: row.role, unitId: wardUnit.id };
+    if (row.name === livePatient?.catchmentCommunityTeam) return { kind: "team", name: row.name, role: row.role };
+    if (isTransportBooked && row.name === liveMovement?.transport?.provider)
+      return { kind: "transport", name: row.name, role: row.role };
+    return { kind: "plain", name: row.name, role: row.role };
+  });
+  const edLine = (name: string, role: string, line: "liaison" | "epic"): CallTarget | undefined =>
+    originEd ? { kind: "ed", name, role, siteCode: originEd.siteCode, line } : undefined;
+  const wardLine: CallTarget | undefined = acceptingUnit
+    ? { kind: "ward", name: acceptingUnit.name, role: "Receiving ward", unitId: acceptingUnit.id }
+    : undefined;
+  const ownerTargets: Partial<Record<string, CallTarget>> = {
+    bed: { kind: "bedFlow", name: "Bed coordinator", role: "Bed flow", service: originService },
+    clearance: edLine("ED doctor", "EPIC", "epic"),
+    transport: edLine("ED nurse in charge", "ED liaison", "liaison"),
+    collected: edLine("ED nurse in charge", "ED liaison", "liaison"),
+    arrival: wardLine,
+    receiving: wardLine,
+  };
+
   const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
     { key: "now", label: modeMeta.quiet ? "Overview" : "Now" },
     { key: "history", label: "History", count: record.presentations.length },
@@ -829,6 +874,504 @@ export function PatientNowScreen({
     !liveMovement.closure &&
     ["placement_requested", "destination_review"].includes(liveMovement.stage) &&
     !liveMovement.acceptedUnitId;
+
+  /* Transport dispatch and the arrival plan. On the live Now tab they sit under the placement work;
+     the Now mockups (nowLayout) move them into the Transport sheet opened from the Transport cell. */
+  const transportSection =
+    (mode === "held" || mode === "transit") && liveMovement ? (
+      <section
+        className={`${styles.sec} ${styles.transportSec}`}
+        aria-labelledby="pnTransportHeading"
+        data-testid="ward-patient-transport-section"
+      >
+        <div className={styles.transportHeader}>
+          <div className={styles.transportTitleCluster}>
+            <span className={styles.transportIcon} aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="1" y="3" width="15" height="13" />
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                <circle cx="5.5" cy="18.5" r="2.5" />
+                <circle cx="18.5" cy="18.5" r="2.5" />
+              </svg>
+            </span>
+            <h3 id="pnTransportHeading" className={styles.secH} style={{ margin: 0 }}>
+              {liveMovement ? "Transport dispatch" : "Transport"}
+            </h3>
+          </div>
+          {liveMovement && (
+            <div className={styles.transportStatusCluster}>
+              <span
+                className={styles.transportBadge}
+                data-booked={isTransportBooked ? "true" : "false"}
+                data-testid="ward-patient-transport-badge"
+              >
+                {isTransportBooked ? "✓ Transport Booked" : "Awaiting Transport Booking"}
+              </span>
+              {!showTransportForm && (
+                <button
+                  type="button"
+                  className={isTransportBooked ? styles.transportActionBtnSecondary : styles.transportActionBtn}
+                  onClick={() => {
+                    setTransportCadDraft(displayCadNumber ?? "");
+                    setTransportEtaDraft(displayEta ?? "");
+                    setShowTransportForm(true);
+                  }}
+                  data-testid="ward-patient-book-transport-btn"
+                >
+                  {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {liveMovement && bookingRejection && <p role="alert">Booking was not recorded: {bookingRejection.reason}</p>}
+        {/* Form for logging/updating transport */}
+        {liveMovement && showTransportForm && (
+          <form
+            className={styles.transportForm}
+            onSubmit={handleSaveTransportBooking}
+            data-testid="ward-patient-transport-form"
+          >
+            <div className={styles.transportFormGrid}>
+              <div className={styles.transportFormField}>
+                <label htmlFor="transport-cad" className={styles.transportFormLabel}>
+                  CAD (dispatch) number <span style={{ color: "var(--danger)" }}>*</span>
+                </label>
+                <input
+                  id="transport-cad"
+                  type="text"
+                  className={styles.transportInput}
+                  placeholder="e.g. CAD-84920"
+                  value={transportCadDraft}
+                  onChange={(e) => setTransportCadDraft(e.target.value)}
+                  required
+                  data-testid="ward-patient-input-cad"
+                />
+              </div>
+
+              <div className={styles.transportFormField}>
+                <label htmlFor="transport-eta" className={styles.transportFormLabel}>
+                  Quoted ETA by Transport Company
+                </label>
+                <input
+                  id="transport-eta"
+                  type="text"
+                  className={styles.transportInput}
+                  placeholder="e.g. 11:15 or ~45m"
+                  value={transportEtaDraft}
+                  onChange={(e) => setTransportEtaDraft(e.target.value)}
+                  data-testid="ward-patient-input-eta"
+                />
+              </div>
+
+              <div className={styles.transportFormField}>
+                <label htmlFor="transport-provider" className={styles.transportFormLabel}>
+                  Transport Provider
+                </label>
+                <select
+                  id="transport-provider"
+                  className={styles.transportSelect}
+                  value={transportProviderDraft}
+                  onChange={(e) => setTransportProviderDraft(e.target.value as TransportProvider)}
+                  data-testid="ward-patient-select-provider"
+                >
+                  {TRANSPORT_PROVIDERS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.transportFormField}>
+                <label htmlFor="transport-legal" className={styles.transportFormLabel}>
+                  Transport Legal Status
+                </label>
+                <select
+                  id="transport-legal"
+                  className={styles.transportSelect}
+                  value={transportLegalDraft}
+                  onChange={(e) => setTransportLegalDraft(e.target.value as TransportLegalStatus)}
+                  data-testid="ward-patient-select-legal"
+                >
+                  <option value="involuntary">Involuntary</option>
+                  <option value="voluntary">Voluntary</option>
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.transportCheckboxRow}>
+              <input
+                id="transport-escort"
+                type="checkbox"
+                checked={transportEscortDraft}
+                onChange={(e) => setTransportEscortDraft(e.target.checked)}
+                data-testid="ward-patient-checkbox-escort"
+              />
+              <label htmlFor="transport-escort">Clinical escort required for transfer</label>
+            </div>
+
+            <div className={styles.transportFormActions}>
+              <button
+                type="button"
+                className={styles.transportActionBtnSecondary}
+                onClick={() => setShowTransportForm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className={styles.transportActionBtn}
+                data-testid="ward-patient-confirm-transport-btn"
+                {...gate("BOOK_TRANSPORT").buttonProps}
+              >
+                Save Transport Booking
+              </button>
+              {gate("BOOK_TRANSPORT").note}
+            </div>
+          </form>
+        )}
+
+        {/* Display booked facts */}
+        {isTransportBooked && !showTransportForm && (
+          <div className={styles.transportGrid} data-testid="ward-patient-transport-details">
+            <div className={styles.transportFact}>
+              <span className={styles.transportFactLabel}>CAD (dispatch) number</span>
+              <span className={styles.transportFactValue} data-testid="ward-patient-cad-number">
+                {displayCadNumber || "Not recorded"}
+              </span>
+            </div>
+            <div className={styles.transportFact}>
+              <span className={styles.transportFactLabel}>Quoted ETA</span>
+              <span className={styles.transportFactValue} data-testid="ward-patient-transport-eta">
+                {displayEta || "Not recorded"}
+              </span>
+            </div>
+            <div className={styles.transportFact}>
+              <span className={styles.transportFactLabel}>Transport Provider</span>
+              <span className={styles.transportFactValue} data-testid="ward-patient-transport-provider">
+                {displayProvider}
+              </span>
+            </div>
+            <div className={styles.transportFact}>
+              <span className={styles.transportFactLabel}>Authority / Escort</span>
+              <span className={styles.transportFactValue} data-testid="ward-patient-transport-authority">
+                {displayLegalStatus}{" "}
+                {displayEscort === undefined
+                  ? "· Escort not recorded"
+                  : displayEscort
+                    ? "· Escort req."
+                    : "· No escort"}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Empty state when not booked */}
+        {!liveMovement || (!isTransportBooked && !showTransportForm) ? (
+          <div className={styles.transportEmptyState}>
+            <p className={styles.transportEmptyText}>
+              {liveMovement ? (
+                <>
+                  No transport vehicle has been logged for this patient yet. Once arranged by phone with the transport
+                  provider, click <strong>Mark as Booked</strong> to record the CAD (dispatch) number and quoted ETA.
+                </>
+              ) : (
+                "No linked transport record displayed."
+              )}
+            </p>
+          </div>
+        ) : null}
+      </section>
+    ) : null;
+  const arrivalSection =
+    (mode === "held" || mode === "transit") && liveMovement ? (
+      <>
+        {(isPulled || hasArrivalPlan) && (
+          <details className={styles.arrivalDisclosure}>
+            <summary>Arrival plan & transport documents</summary>
+            <div className={styles.pulledBanner} data-testid="ward-patient-pulled-banner">
+              <div className={styles.pulledBannerHeader}>
+                <div className={styles.pulledBadgeCluster}>
+                  <span className={styles.pulledStatusBadge}>Bed Pulled &amp; Reserved</span>
+                  <span className={styles.pulledWardTarget}>
+                    Accepting Ward: <strong>{acceptingWardName}</strong>
+                  </span>
+                </div>
+                {hasArrivalPlan ? (
+                  <span className={styles.pulledClockBadge}>
+                    <Clock size={14} aria-hidden="true" />
+                    <span>ETA: {clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120)} AWST</span>
+                  </span>
+                ) : pullExpiresAt !== undefined ? (
+                  <span
+                    className={styles.pulledClockBadge}
+                    data-tone={isHoldExpired ? "danger" : "normal"}
+                    data-testid="ward-patient-pull-hold-remaining"
+                  >
+                    <Clock size={14} aria-hidden="true" />
+                    <span>Bed pull {pullHoldRemainingLabel(pullExpiresAt, now)}</span>
+                  </span>
+                ) : null}
+              </div>
+
+              {isOverdue && (
+                <div
+                  className={styles.pulledOverdueAlert}
+                  role="alert"
+                  data-testid="ward-patient-overdue-alert"
+                  title={OPERATIONAL_DEFAULT_LABEL}
+                >
+                  <AlertCircle
+                    size={18}
+                    style={{ flexShrink: 0, marginTop: 2, color: "var(--wf-danger)" }}
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
+                    estimated arrival time ({clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now)} AWST).
+                    Notification is not recorded here.
+                  </div>
+                </div>
+              )}
+
+              <div className={styles.pulledDetailsGrid}>
+                <div className={styles.pulledDetailItem}>
+                  <span className={styles.pulledDetailLabel}>Arrival Mode</span>
+                  <span className={styles.pulledDetailValue}>
+                    {hasArrivalPlan && liveMovement?.arrivalDetails?.mode
+                      ? ARRIVAL_MODE_LABELS[liveMovement.arrivalDetails.mode]
+                      : "Default / Pending Confirmation"}
+                  </span>
+                </div>
+                <div className={styles.pulledDetailItem}>
+                  <span className={styles.pulledDetailLabel}>Tracking / CAD (dispatch) number</span>
+                  <span className={styles.pulledDetailValue}>
+                    {liveMovement?.arrivalDetails?.trackingNumber || displayCadNumber || "Not recorded"}
+                  </span>
+                </div>
+                <div className={styles.pulledDetailItem}>
+                  <span className={styles.pulledDetailLabel}>Hold Status</span>
+                  <span className={styles.pulledDetailValue}>
+                    {hasArrivalPlan
+                      ? "Hold clock cleared (Arrival time scheduled)"
+                      : isHoldExpired
+                        ? "4h window passed — review the hold"
+                        : "4h standard countdown active"}
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.pulledActionRow}>
+                <div className={styles.pulledActionBtns}>
+                  <button
+                    type="button"
+                    className={`${styles.pulledActionBtn} ${styles.pulledActionBtnPrimary}`}
+                    onClick={() => setShowArrivalTimeModal(true)}
+                    data-testid="ward-patient-update-arrival-btn"
+                  >
+                    <Clock size={15} aria-hidden="true" />
+                    <span>{hasArrivalPlan ? "Edit Arrival Time" : "Update Arrival Time"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.pulledActionBtn}
+                    onClick={() => setShowUploadFormsModal(true)}
+                    data-testid="ward-patient-upload-forms-btn"
+                  >
+                    <FileUp size={15} aria-hidden="true" />
+                    <span>Record transport document details</span>
+                  </button>
+                </div>
+
+                {hasArrivalPlan && liveMovement?.arrivalDetails && (
+                  <span style={{ fontSize: "var(--t-0, 0.75rem)", color: "var(--muted)" }}>
+                    Updated by {liveMovement.arrivalDetails.recordedBy} at{" "}
+                    {clock(liveMovement.arrivalDetails.recordedAt)}
+                  </span>
+                )}
+              </div>
+
+              {uploadedForms.length > 0 && (
+                <div className={styles.pulledFormsList} data-testid="ward-patient-uploaded-forms">
+                  <div className={styles.pulledFormsHeader}>
+                    <FileText size={14} aria-hidden="true" />
+                    <span>Transport document details ({uploadedForms.length}) — file contents not stored</span>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {uploadedForms.map((form) => (
+                      <div key={form.id} className={styles.pulledFormChip}>
+                        <span style={{ fontWeight: 600 }}>{form.formName}</span>
+                        <span className={styles.pulledFormChipMeta}>
+                          {form.fileName} · {clock(form.uploadedAt)} ({form.uploadedBy})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </details>
+        )}
+      </>
+    ) : null;
+
+  /* Now tab mockups (preview routes only): one next step; destination and transport as sheets. */
+  const openTab = (tab: TabKey) => {
+    setActiveTab(tab);
+    requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
+  };
+  const nowPreview = nowLayout ? (
+    <PatientNowLayout
+      option={nowLayout}
+      mode={mode}
+      context={statusContext}
+      statusCardProps={{
+        barLead:
+          isPhone && !phoneMovement ? (
+            <Button
+              iconOnly
+              icon={Copy}
+              aria-label={copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary"}
+              onClick={handleCopySummary}
+            />
+          ) : undefined,
+        phoneFoot: phoneStatusFoot,
+      }}
+      legal={
+        mode !== "idle" || isPhone ? (
+          <PatientLegalNowCard
+            movement={movementInForce ? liveMovement : undefined}
+            patient={livePatient}
+            onAllForms={() => openTab("documents")}
+          />
+        ) : null
+      }
+      why={
+        isLiveBedflow && liveMovement ? (
+          <PatientWhyCard
+            title="Why they're here"
+            chip={`Opened ${clock(liveMovement.openedAt)}`}
+            history={resolved.liveReferral?.history}
+            fallback={record.reason}
+            movement={liveMovement}
+            patient={livePatient}
+          />
+        ) : mode === "ward" || mode === "ed" ? (
+          <PatientWhyCard
+            title="Why admitted"
+            chip={stayUnit ? stayUnit.name : undefined}
+            history={resolved.liveReferral?.history}
+            fallback={record.reason}
+            patient={livePatient}
+          />
+        ) : null
+      }
+      change={
+        <>
+          {mode === "ward" ? (
+            <PatientWardChangeCard
+              key={resolved.liveAdmission?.id}
+              now={now}
+              dayZero={dayZero}
+              form={wardForm}
+              onFormChange={setWardForm}
+              onRecordLeave={recordLeave}
+              onGoneToEd={goneToEd}
+              onSaveDischarge={saveDischarge}
+              dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
+              refusal={wardRefusal}
+              roleLimit={(eventType) => gate(eventType).reason}
+            />
+          ) : null}
+          {mode === "leave" && stayLeaveBed ? (
+            <PatientLeaveCard
+              dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
+              onMarkAbsent={markAbsent}
+            />
+          ) : null}
+          {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
+            <PatientLastSeenCard
+              wardName={stayUnit?.name}
+              since={clock(stayLeaveBed.absentWithoutLeave.since)}
+              onRecordReturn={recordReturn}
+            />
+          ) : null}
+          {(mode === "idle" || mode === "cto") && !isPhone ? (
+            <PatientRecordOverview patient={livePatient} record={record} onOpen={openTab} />
+          ) : null}
+        </>
+      }
+      calls={callRows(callTargets, now)}
+      ownerTargets={ownerTargets}
+      ownerCalls={(target) => callRows([target], now)[0]}
+      sheetRows={
+        isLiveBedflow && liveMovement ? (
+          <PatientSheetRows>
+            <PatientSheetRow
+              icon={<BedDouble size={16} aria-hidden="true" />}
+              title="Destination"
+              sub={
+                acceptingUnit
+                  ? `${acceptingUnit.name} accepted · bed hold and placement`
+                  : liveMovement.referredUnitIds.length > 0
+                    ? `${liveMovement.referredUnitIds.length} wards asked · shortlist`
+                    : "Shortlist eligible wards · none asked"
+              }
+              onOpen={() => setPreviewSheet("destination")}
+              testId="ward-patient-destination-row"
+            />
+            {mode === "held" || mode === "transit" ? (
+              <PatientSheetRow
+                icon={<Truck size={16} aria-hidden="true" />}
+                title="Transport"
+                sub={
+                  isTransportBooked
+                    ? `${displayProvider}${displayCadNumber ? ` · CAD ${displayCadNumber}` : ""}`
+                    : "Not booked · booking, arrival plan, documents"
+                }
+                onOpen={() => setPreviewSheet("transport")}
+                testId="ward-patient-transport-row"
+              />
+            ) : null}
+            <PatientSheetRow
+              icon={<RotateCcw size={16} aria-hidden="true" />}
+              title={canWithdraw ? "Withdraw referral" : "Review and corrections"}
+              sub={canWithdraw ? "Closes the movement and frees any held bed" : "Step back with a recorded reason"}
+              onOpen={() => setPreviewSheet("destination")}
+            />
+          </PatientSheetRows>
+        ) : null
+      }
+      phoneMore={
+        isPhone ? (
+          <PatientSheetRows>
+            {tabs
+              .filter((tab) => tab.key === "community" || tab.key === "details")
+              .map((tab) => (
+                <PatientSheetRow
+                  key={tab.key}
+                  icon={<FileText size={16} aria-hidden="true" />}
+                  title={tab.label}
+                  sub={
+                    tab.key === "community"
+                      ? record.community.teams.length > 0
+                        ? `${record.community.teams.length} team on record`
+                        : "No community team on record"
+                      : "UMRN, date of birth, where they live"
+                  }
+                  onOpen={() => {
+                    setActiveTab(tab.key);
+                    requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+                  }}
+                />
+              ))}
+          </PatientSheetRows>
+        ) : null
+      }
+    />
+  ) : null;
 
   return (
     <main
@@ -1310,621 +1853,275 @@ export function PatientNowScreen({
               aria-labelledby="pntab-now"
               hidden={activeTab !== "now"}
             >
-              <PatientStatusCard
-                mode={mode}
-                context={statusContext}
-                barLead={
-                  isPhone && !phoneMovement ? (
-                    <Button
-                      iconOnly
-                      icon={Copy}
-                      aria-label={copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary"}
-                      onClick={handleCopySummary}
-                    />
-                  ) : undefined
-                }
-                phoneFoot={phoneStatusFoot}
-                barMain={
-                  isPhone && (mode === "idle" || mode === "cto") ? (
-                    <Link
-                      href={
-                        livePatient
-                          ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
-                          : "/mockups/ward-flow/referrals/new"
-                      }
-                      className={buttonClass({ variant: "pri" })}
-                      data-testid="ward-person-refer-outpatient"
-                    >
-                      <FileText size={16} aria-hidden="true" />
-                      New referral
-                    </Link>
-                  ) : undefined
-                }
-              />
-              <div className={styles.gbCols}>
-                <div className={styles.gbCol}>
-                  {phoneMovement && liveMovement ? (
-                    <>
-                      <section className={styles.phCard} aria-labelledby="ph-journey-head">
-                        <h2 id="ph-journey-head" className={styles.phCardHead}>
-                          Journey so far
-                        </h2>
-                        <div className={styles.phCardBody}>
-                          <JourneyStrip
-                            label="Journey since this movement opened"
-                            stages={patientJourneyStages(liveMovement, now)}
-                            formatDuration={dur}
-                            note={false}
-                          />
-                        </div>
-                      </section>
-                      <button
-                        type="button"
-                        className={styles.phMoreRow}
-                        aria-expanded={phoneOpsOpen}
-                        aria-controls="patient-operations"
-                        onClick={() => (phoneOpsOpen ? setPhoneOpsOpen(false) : openOperations())}
-                        data-testid="ward-patient-phone-destination"
-                      >
-                        <BedDouble size={16} aria-hidden="true" />
-                        <span className={styles.phMoreText}>
-                          <strong>Destination</strong>
-                          <span>
-                            {acceptingUnit
-                              ? `${acceptingUnit.name} accepted`
-                              : liveMovement.referredUnitIds.length > 0
-                                ? `${liveMovement.referredUnitIds.length} ward${liveMovement.referredUnitIds.length === 1 ? "" : "s"} asked`
-                                : "Shortlist eligible wards · none asked"}
-                          </span>
-                        </span>
-                        <ChevronRight
-                          size={16}
-                          aria-hidden="true"
-                          className={styles.phChevron}
-                          data-open={phoneOpsOpen}
+              {nowLayout ? (
+                nowPreview
+              ) : (
+                <>
+                  <PatientStatusCard
+                    mode={mode}
+                    context={statusContext}
+                    barLead={
+                      isPhone && !phoneMovement ? (
+                        <Button
+                          iconOnly
+                          icon={Copy}
+                          aria-label={copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary"}
+                          onClick={handleCopySummary}
                         />
-                      </button>
-                    </>
-                  ) : null}
-                  {isLiveBedflow && liveMovement && (!phoneMovement || phoneOpsOpen) ? (
-                    <div
-                      id="patient-operations"
-                      ref={operationsRef}
-                      tabIndex={-1}
-                      aria-label="Transit operations workspace"
-                    >
-                      <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} />
-                    </div>
-                  ) : null}
-                  {(mode === "held" || mode === "transit") && liveMovement ? (
-                    <section
-                      className={`${styles.sec} ${styles.transportSec}`}
-                      aria-labelledby="pnTransportHeading"
-                      data-testid="ward-patient-transport-section"
-                    >
-                      <div className={styles.transportHeader}>
-                        <div className={styles.transportTitleCluster}>
-                          <span className={styles.transportIcon} aria-hidden="true">
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <rect x="1" y="3" width="15" height="13" />
-                              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-                              <circle cx="5.5" cy="18.5" r="2.5" />
-                              <circle cx="18.5" cy="18.5" r="2.5" />
-                            </svg>
-                          </span>
-                          <h3 id="pnTransportHeading" className={styles.secH} style={{ margin: 0 }}>
-                            {liveMovement ? "Transport dispatch" : "Transport"}
-                          </h3>
-                        </div>
-                        {liveMovement && (
-                          <div className={styles.transportStatusCluster}>
-                            <span
-                              className={styles.transportBadge}
-                              data-booked={isTransportBooked ? "true" : "false"}
-                              data-testid="ward-patient-transport-badge"
-                            >
-                              {isTransportBooked ? "✓ Transport Booked" : "Awaiting Transport Booking"}
-                            </span>
-                            {!showTransportForm && (
-                              <button
-                                type="button"
-                                className={
-                                  isTransportBooked ? styles.transportActionBtnSecondary : styles.transportActionBtn
-                                }
-                                onClick={() => {
-                                  setTransportCadDraft(displayCadNumber ?? "");
-                                  setTransportEtaDraft(displayEta ?? "");
-                                  setShowTransportForm(true);
-                                }}
-                                data-testid="ward-patient-book-transport-btn"
-                              >
-                                {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {liveMovement && bookingRejection && (
-                        <p role="alert">Booking was not recorded: {bookingRejection.reason}</p>
-                      )}
-                      {/* Form for logging/updating transport */}
-                      {liveMovement && showTransportForm && (
-                        <form
-                          className={styles.transportForm}
-                          onSubmit={handleSaveTransportBooking}
-                          data-testid="ward-patient-transport-form"
+                      ) : undefined
+                    }
+                    phoneFoot={phoneStatusFoot}
+                    barMain={
+                      isPhone && (mode === "idle" || mode === "cto") ? (
+                        <Link
+                          href={
+                            livePatient
+                              ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
+                              : "/mockups/ward-flow/referrals/new"
+                          }
+                          className={buttonClass({ variant: "pri" })}
+                          data-testid="ward-person-refer-outpatient"
                         >
-                          <div className={styles.transportFormGrid}>
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-cad" className={styles.transportFormLabel}>
-                                CAD (dispatch) number <span style={{ color: "var(--danger)" }}>*</span>
-                              </label>
-                              <input
-                                id="transport-cad"
-                                type="text"
-                                className={styles.transportInput}
-                                placeholder="e.g. CAD-84920"
-                                value={transportCadDraft}
-                                onChange={(e) => setTransportCadDraft(e.target.value)}
-                                required
-                                data-testid="ward-patient-input-cad"
+                          <FileText size={16} aria-hidden="true" />
+                          New referral
+                        </Link>
+                      ) : undefined
+                    }
+                  />
+                  <div className={styles.gbCols}>
+                    <div className={styles.gbCol}>
+                      {phoneMovement && liveMovement ? (
+                        <>
+                          <section className={styles.phCard} aria-labelledby="ph-journey-head">
+                            <h2 id="ph-journey-head" className={styles.phCardHead}>
+                              Journey so far
+                            </h2>
+                            <div className={styles.phCardBody}>
+                              <JourneyStrip
+                                label="Journey since this movement opened"
+                                stages={patientJourneyStages(liveMovement, now)}
+                                formatDuration={dur}
+                                note={false}
                               />
                             </div>
-
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-eta" className={styles.transportFormLabel}>
-                                Quoted ETA by Transport Company
-                              </label>
-                              <input
-                                id="transport-eta"
-                                type="text"
-                                className={styles.transportInput}
-                                placeholder="e.g. 11:15 or ~45m"
-                                value={transportEtaDraft}
-                                onChange={(e) => setTransportEtaDraft(e.target.value)}
-                                data-testid="ward-patient-input-eta"
-                              />
-                            </div>
-
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-provider" className={styles.transportFormLabel}>
-                                Transport Provider
-                              </label>
-                              <select
-                                id="transport-provider"
-                                className={styles.transportSelect}
-                                value={transportProviderDraft}
-                                onChange={(e) => setTransportProviderDraft(e.target.value as TransportProvider)}
-                                data-testid="ward-patient-select-provider"
-                              >
-                                {TRANSPORT_PROVIDERS.map((p) => (
-                                  <option key={p} value={p}>
-                                    {p}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-legal" className={styles.transportFormLabel}>
-                                Transport Legal Status
-                              </label>
-                              <select
-                                id="transport-legal"
-                                className={styles.transportSelect}
-                                value={transportLegalDraft}
-                                onChange={(e) => setTransportLegalDraft(e.target.value as TransportLegalStatus)}
-                                data-testid="ward-patient-select-legal"
-                              >
-                                <option value="involuntary">Involuntary</option>
-                                <option value="voluntary">Voluntary</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          <div className={styles.transportCheckboxRow}>
-                            <input
-                              id="transport-escort"
-                              type="checkbox"
-                              checked={transportEscortDraft}
-                              onChange={(e) => setTransportEscortDraft(e.target.checked)}
-                              data-testid="ward-patient-checkbox-escort"
+                          </section>
+                          <button
+                            type="button"
+                            className={styles.phMoreRow}
+                            aria-expanded={phoneOpsOpen}
+                            aria-controls="patient-operations"
+                            onClick={() => (phoneOpsOpen ? setPhoneOpsOpen(false) : openOperations())}
+                            data-testid="ward-patient-phone-destination"
+                          >
+                            <BedDouble size={16} aria-hidden="true" />
+                            <span className={styles.phMoreText}>
+                              <strong>Destination</strong>
+                              <span>
+                                {acceptingUnit
+                                  ? `${acceptingUnit.name} accepted`
+                                  : liveMovement.referredUnitIds.length > 0
+                                    ? `${liveMovement.referredUnitIds.length} ward${liveMovement.referredUnitIds.length === 1 ? "" : "s"} asked`
+                                    : "Shortlist eligible wards · none asked"}
+                              </span>
+                            </span>
+                            <ChevronRight
+                              size={16}
+                              aria-hidden="true"
+                              className={styles.phChevron}
+                              data-open={phoneOpsOpen}
                             />
-                            <label htmlFor="transport-escort">Clinical escort required for transfer</label>
-                          </div>
-
-                          <div className={styles.transportFormActions}>
-                            <button
-                              type="button"
-                              className={styles.transportActionBtnSecondary}
-                              onClick={() => setShowTransportForm(false)}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              className={styles.transportActionBtn}
-                              data-testid="ward-patient-confirm-transport-btn"
-                              {...gate("BOOK_TRANSPORT").buttonProps}
-                            >
-                              Save Transport Booking
-                            </button>
-                            {gate("BOOK_TRANSPORT").note}
-                          </div>
-                        </form>
-                      )}
-
-                      {/* Display booked facts */}
-                      {isTransportBooked && !showTransportForm && (
-                        <div className={styles.transportGrid} data-testid="ward-patient-transport-details">
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>CAD (dispatch) number</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-cad-number">
-                              {displayCadNumber || "Not recorded"}
-                            </span>
-                          </div>
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>Quoted ETA</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-transport-eta">
-                              {displayEta || "Not recorded"}
-                            </span>
-                          </div>
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>Transport Provider</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-transport-provider">
-                              {displayProvider}
-                            </span>
-                          </div>
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>Authority / Escort</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-transport-authority">
-                              {displayLegalStatus}{" "}
-                              {displayEscort === undefined
-                                ? "· Escort not recorded"
-                                : displayEscort
-                                  ? "· Escort req."
-                                  : "· No escort"}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Empty state when not booked */}
-                      {!liveMovement || (!isTransportBooked && !showTransportForm) ? (
-                        <div className={styles.transportEmptyState}>
-                          <p className={styles.transportEmptyText}>
-                            {liveMovement ? (
-                              <>
-                                No transport vehicle has been logged for this patient yet. Once arranged by phone with
-                                the transport provider, click <strong>Mark as Booked</strong> to record the CAD
-                                (dispatch) number and quoted ETA.
-                              </>
-                            ) : (
-                              "No linked transport record displayed."
-                            )}
-                          </p>
+                          </button>
+                        </>
+                      ) : null}
+                      {isLiveBedflow && liveMovement && (!phoneMovement || phoneOpsOpen) ? (
+                        <div
+                          id="patient-operations"
+                          ref={operationsRef}
+                          tabIndex={-1}
+                          aria-label="Transit operations workspace"
+                        >
+                          <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} />
                         </div>
                       ) : null}
-                    </section>
-                  ) : null}
-                  {(mode === "held" || mode === "transit") && liveMovement ? (
-                    <>
-                      {(isPulled || hasArrivalPlan) && (
-                        <details className={styles.arrivalDisclosure}>
-                          <summary>Arrival plan & transport documents</summary>
-                          <div className={styles.pulledBanner} data-testid="ward-patient-pulled-banner">
-                            <div className={styles.pulledBannerHeader}>
-                              <div className={styles.pulledBadgeCluster}>
-                                <span className={styles.pulledStatusBadge}>Bed Pulled &amp; Reserved</span>
-                                <span className={styles.pulledWardTarget}>
-                                  Accepting Ward: <strong>{acceptingWardName}</strong>
-                                </span>
-                              </div>
-                              {hasArrivalPlan ? (
-                                <span className={styles.pulledClockBadge}>
-                                  <Clock size={14} aria-hidden="true" />
-                                  <span>
-                                    ETA: {clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120)} AWST
-                                  </span>
-                                </span>
-                              ) : pullExpiresAt !== undefined ? (
-                                <span
-                                  className={styles.pulledClockBadge}
-                                  data-tone={isHoldExpired ? "danger" : "normal"}
-                                  data-testid="ward-patient-pull-hold-remaining"
-                                >
-                                  <Clock size={14} aria-hidden="true" />
-                                  <span>Bed pull {pullHoldRemainingLabel(pullExpiresAt, now)}</span>
-                                </span>
-                              ) : null}
-                            </div>
-
-                            {isOverdue && (
-                              <div
-                                className={styles.pulledOverdueAlert}
-                                role="alert"
-                                data-testid="ward-patient-overdue-alert"
-                                title={OPERATIONAL_DEFAULT_LABEL}
-                              >
-                                <AlertCircle
-                                  size={18}
-                                  style={{ flexShrink: 0, marginTop: 2, color: "var(--wf-danger)" }}
-                                  aria-hidden="true"
-                                />
-                                <div>
-                                  <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES}{" "}
-                                  minutes past estimated arrival time (
-                                  {clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now)} AWST). Notification
-                                  is not recorded here.
-                                </div>
-                              </div>
-                            )}
-
-                            <div className={styles.pulledDetailsGrid}>
-                              <div className={styles.pulledDetailItem}>
-                                <span className={styles.pulledDetailLabel}>Arrival Mode</span>
-                                <span className={styles.pulledDetailValue}>
-                                  {hasArrivalPlan && liveMovement?.arrivalDetails?.mode
-                                    ? ARRIVAL_MODE_LABELS[liveMovement.arrivalDetails.mode]
-                                    : "Default / Pending Confirmation"}
-                                </span>
-                              </div>
-                              <div className={styles.pulledDetailItem}>
-                                <span className={styles.pulledDetailLabel}>Tracking / CAD (dispatch) number</span>
-                                <span className={styles.pulledDetailValue}>
-                                  {liveMovement?.arrivalDetails?.trackingNumber || displayCadNumber || "Not recorded"}
-                                </span>
-                              </div>
-                              <div className={styles.pulledDetailItem}>
-                                <span className={styles.pulledDetailLabel}>Hold Status</span>
-                                <span className={styles.pulledDetailValue}>
-                                  {hasArrivalPlan
-                                    ? "Hold clock cleared (Arrival time scheduled)"
-                                    : isHoldExpired
-                                      ? "4h window passed — review the hold"
-                                      : "4h standard countdown active"}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className={styles.pulledActionRow}>
-                              <div className={styles.pulledActionBtns}>
-                                <button
-                                  type="button"
-                                  className={`${styles.pulledActionBtn} ${styles.pulledActionBtnPrimary}`}
-                                  onClick={() => setShowArrivalTimeModal(true)}
-                                  data-testid="ward-patient-update-arrival-btn"
-                                >
-                                  <Clock size={15} aria-hidden="true" />
-                                  <span>{hasArrivalPlan ? "Edit Arrival Time" : "Update Arrival Time"}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className={styles.pulledActionBtn}
-                                  onClick={() => setShowUploadFormsModal(true)}
-                                  data-testid="ward-patient-upload-forms-btn"
-                                >
-                                  <FileUp size={15} aria-hidden="true" />
-                                  <span>Record transport document details</span>
-                                </button>
-                              </div>
-
-                              {hasArrivalPlan && liveMovement?.arrivalDetails && (
-                                <span style={{ fontSize: "var(--t-0, 0.75rem)", color: "var(--muted)" }}>
-                                  Updated by {liveMovement.arrivalDetails.recordedBy} at{" "}
-                                  {clock(liveMovement.arrivalDetails.recordedAt)}
-                                </span>
-                              )}
-                            </div>
-
-                            {uploadedForms.length > 0 && (
-                              <div className={styles.pulledFormsList} data-testid="ward-patient-uploaded-forms">
-                                <div className={styles.pulledFormsHeader}>
-                                  <FileText size={14} aria-hidden="true" />
-                                  <span>
-                                    Transport document details ({uploadedForms.length}) — file contents not stored
-                                  </span>
-                                </div>
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                                  {uploadedForms.map((form) => (
-                                    <div key={form.id} className={styles.pulledFormChip}>
-                                      <span style={{ fontWeight: 600 }}>{form.formName}</span>
-                                      <span className={styles.pulledFormChipMeta}>
-                                        {form.fileName} · {clock(form.uploadedAt)} ({form.uploadedBy})
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </details>
-                      )}
-                    </>
-                  ) : null}
-                  {mode === "ward" ? (
-                    <PatientWardChangeCard
-                      key={resolved.liveAdmission?.id}
-                      now={now}
-                      dayZero={dayZero}
-                      form={wardForm}
-                      onFormChange={setWardForm}
-                      onRecordLeave={recordLeave}
-                      onGoneToEd={goneToEd}
-                      onSaveDischarge={saveDischarge}
-                      dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
-                      refusal={wardRefusal}
-                      roleLimit={(eventType) => gate(eventType).reason}
-                    />
-                  ) : null}
-                  {(mode === "ward" || mode === "ed") && !isPhone ? (
-                    <PatientWhyCard
-                      title="Why admitted"
-                      chip={stayUnit ? stayUnit.name : undefined}
-                      history={resolved.liveReferral?.history}
-                      fallback={record.reason}
-                      patient={livePatient}
-                    />
-                  ) : null}
-                  {mode === "leave" && stayLeaveBed ? (
-                    <PatientLeaveCard
-                      dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
-                      onMarkAbsent={markAbsent}
-                    />
-                  ) : null}
-                  {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
-                    <PatientLastSeenCard
-                      wardName={stayUnit?.name}
-                      since={clock(stayLeaveBed.absentWithoutLeave.since)}
-                      onRecordReturn={recordReturn}
-                    />
-                  ) : null}
-                  {(mode === "idle" || mode === "cto") && !isPhone ? (
-                    <PatientRecordOverview
-                      patient={livePatient}
-                      record={record}
-                      onOpen={(tab) => {
-                        setActiveTab(tab);
-                        requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
-                      }}
-                    />
-                  ) : null}
-                </div>
-                {/* The shorter side column pins under the top bar once the columns sit side by side
+                      {transportSection}
+                      {arrivalSection}
+                      {mode === "ward" ? (
+                        <PatientWardChangeCard
+                          key={resolved.liveAdmission?.id}
+                          now={now}
+                          dayZero={dayZero}
+                          form={wardForm}
+                          onFormChange={setWardForm}
+                          onRecordLeave={recordLeave}
+                          onGoneToEd={goneToEd}
+                          onSaveDischarge={saveDischarge}
+                          dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
+                          refusal={wardRefusal}
+                          roleLimit={(eventType) => gate(eventType).reason}
+                        />
+                      ) : null}
+                      {(mode === "ward" || mode === "ed") && !isPhone ? (
+                        <PatientWhyCard
+                          title="Why admitted"
+                          chip={stayUnit ? stayUnit.name : undefined}
+                          history={resolved.liveReferral?.history}
+                          fallback={record.reason}
+                          patient={livePatient}
+                        />
+                      ) : null}
+                      {mode === "leave" && stayLeaveBed ? (
+                        <PatientLeaveCard
+                          dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
+                          onMarkAbsent={markAbsent}
+                        />
+                      ) : null}
+                      {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
+                        <PatientLastSeenCard
+                          wardName={stayUnit?.name}
+                          since={clock(stayLeaveBed.absentWithoutLeave.since)}
+                          onRecordReturn={recordReturn}
+                        />
+                      ) : null}
+                      {(mode === "idle" || mode === "cto") && !isPhone ? (
+                        <PatientRecordOverview
+                          patient={livePatient}
+                          record={record}
+                          onOpen={(tab) => {
+                            setActiveTab(tab);
+                            requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
+                          }}
+                        />
+                      ) : null}
+                    </div>
+                    {/* The shorter side column pins under the top bar once the columns sit side by side
                     (they stack at 1120px and below). */}
-                <div className={styles.gbCol} data-wf-rail="1121">
-                  {phoneMovement && liveMovement ? (
-                    <dl className={styles.phFacts} data-testid="ward-patient-phone-facts">
-                      <div>
-                        <dt>Needs</dt>
-                        <dd>
-                          {liveMovement.security} {liveMovement.cohort.toLowerCase()} bed
-                          {liveMovement.specialling ? ", 1:1" : ""}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Opened</dt>
-                        <dd className={styles.v6Mono}>{clock(liveMovement.openedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Legal</dt>
-                        <dd>
-                          {liveMovement.legalForm
-                            ? `Form ${liveMovement.legalForm.code}`
-                            : (liveMovement.legalStatus ?? "Not recorded")}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Catchment</dt>
-                        <dd>{livePatient?.catchmentCommunityTeam ?? "Not recorded"}</dd>
-                      </div>
-                    </dl>
-                  ) : null}
-                  {isLiveBedflow && liveMovement && !phoneMovement ? (
-                    <PatientWhyCard
-                      title="Why they're here"
-                      chip={`Opened ${clock(liveMovement.openedAt)}`}
-                      history={resolved.liveReferral?.history}
-                      fallback={record.reason}
-                      movement={liveMovement}
-                      patient={livePatient}
-                    />
-                  ) : null}
-                  {(mode !== "idle" || isPhone) && !phoneMovement ? (
-                    <PatientLegalNowCard
-                      movement={movementInForce ? liveMovement : undefined}
-                      patient={livePatient}
-                      onAllForms={() => {
-                        setActiveTab("documents");
-                        requestAnimationFrame(() => document.getElementById("pntab-documents")?.focus());
-                      }}
-                    />
-                  ) : null}
-                  <PatientContactsCard rows={contacts} framed={phoneMovement} />
-                  {phoneMovement ? (
-                    <button
-                      type="button"
-                      className={styles.phMoreRow}
-                      onClick={openOperations}
-                      data-testid="ward-patient-phone-corrections"
-                    >
-                      <X size={16} aria-hidden="true" />
-                      <span className={styles.phMoreText}>
-                        <strong>{canWithdraw ? "Withdraw referral" : "Review and corrections"}</strong>
-                        <span>
-                          {canWithdraw
-                            ? "Closes the movement and frees any held bed"
-                            : "Step back with a recorded reason"}
-                        </span>
-                      </span>
-                      <ChevronRight size={16} aria-hidden="true" />
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-              {isPhone && !phoneMovement ? (
-                /* v10 phone: Community and Details are rows one tap away at the foot of Now. */
-                <ul className={styles.phMoreRows} data-testid="ward-patient-phone-more-tabs">
-                  {(mode === "idle" || mode === "cto") && !lastStay ? null : (
-                    <li>
-                      <button
-                        type="button"
-                        className={styles.phMoreRow}
-                        aria-controls="pnpane-history"
-                        data-testid="ward-patient-phone-why"
-                        onClick={() => {
-                          setActiveTab("history");
-                          requestAnimationFrame(() => window.scrollTo({ top: 0 }));
-                        }}
-                      >
-                        <span className={styles.phMoreText}>
-                          <strong>{mode === "idle" || mode === "cto" ? "Last admission" : "Why admitted"}</strong>
-                          <span>
-                            {(resolved.liveReferral?.history?.trim() || record.reason) +
-                              (heroStayOrigin ? ` · ${heroStayOrigin}` : "")}
-                          </span>
-                        </span>
-                        <ChevronRight size={16} aria-hidden="true" />
-                      </button>
-                    </li>
-                  )}
-                  {tabs
-                    .filter((tab) => tab.key === "community" || tab.key === "details")
-                    .map((tab) => (
-                      <li key={tab.key}>
+                    <div className={styles.gbCol} data-wf-rail="1121">
+                      {phoneMovement && liveMovement ? (
+                        <dl className={styles.phFacts} data-testid="ward-patient-phone-facts">
+                          <div>
+                            <dt>Needs</dt>
+                            <dd>
+                              {liveMovement.security} {liveMovement.cohort.toLowerCase()} bed
+                              {liveMovement.specialling ? ", 1:1" : ""}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Opened</dt>
+                            <dd className={styles.v6Mono}>{clock(liveMovement.openedAt)}</dd>
+                          </div>
+                          <div>
+                            <dt>Legal</dt>
+                            <dd>
+                              {liveMovement.legalForm
+                                ? `Form ${liveMovement.legalForm.code}`
+                                : (liveMovement.legalStatus ?? "Not recorded")}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Catchment</dt>
+                            <dd>{livePatient?.catchmentCommunityTeam ?? "Not recorded"}</dd>
+                          </div>
+                        </dl>
+                      ) : null}
+                      {isLiveBedflow && liveMovement && !phoneMovement ? (
+                        <PatientWhyCard
+                          title="Why they're here"
+                          chip={`Opened ${clock(liveMovement.openedAt)}`}
+                          history={resolved.liveReferral?.history}
+                          fallback={record.reason}
+                          movement={liveMovement}
+                          patient={livePatient}
+                        />
+                      ) : null}
+                      {(mode !== "idle" || isPhone) && !phoneMovement ? (
+                        <PatientLegalNowCard
+                          movement={movementInForce ? liveMovement : undefined}
+                          patient={livePatient}
+                          onAllForms={() => {
+                            setActiveTab("documents");
+                            requestAnimationFrame(() => document.getElementById("pntab-documents")?.focus());
+                          }}
+                        />
+                      ) : null}
+                      <PatientContactsCard rows={contacts} framed={phoneMovement} />
+                      {phoneMovement ? (
                         <button
                           type="button"
                           className={styles.phMoreRow}
-                          aria-controls={`pnpane-${tab.key}`}
-                          onClick={() => {
-                            setActiveTab(tab.key);
-                            requestAnimationFrame(() => window.scrollTo({ top: 0 }));
-                          }}
+                          onClick={openOperations}
+                          data-testid="ward-patient-phone-corrections"
                         >
+                          <X size={16} aria-hidden="true" />
                           <span className={styles.phMoreText}>
-                            <strong>{tab.label}</strong>
+                            <strong>{canWithdraw ? "Withdraw referral" : "Review and corrections"}</strong>
                             <span>
-                              {tab.key === "community"
-                                ? record.community.teams.length > 0
-                                  ? `${record.community.teams.map((team) => team.name).join(", ")} · ${record.community.teams.length} on record`
-                                  : "No community team on record"
-                                : "UMRN, date of birth, where they live"}
+                              {canWithdraw
+                                ? "Closes the movement and frees any held bed"
+                                : "Step back with a recorded reason"}
                             </span>
                           </span>
                           <ChevronRight size={16} aria-hidden="true" />
                         </button>
-                      </li>
-                    ))}
-                </ul>
-              ) : null}
+                      ) : null}
+                    </div>
+                  </div>
+                  {isPhone && !phoneMovement ? (
+                    /* v10 phone: Community and Details are rows one tap away at the foot of Now. */
+                    <ul className={styles.phMoreRows} data-testid="ward-patient-phone-more-tabs">
+                      {(mode === "idle" || mode === "cto") && !lastStay ? null : (
+                        <li>
+                          <button
+                            type="button"
+                            className={styles.phMoreRow}
+                            aria-controls="pnpane-history"
+                            data-testid="ward-patient-phone-why"
+                            onClick={() => {
+                              setActiveTab("history");
+                              requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+                            }}
+                          >
+                            <span className={styles.phMoreText}>
+                              <strong>{mode === "idle" || mode === "cto" ? "Last admission" : "Why admitted"}</strong>
+                              <span>
+                                {(resolved.liveReferral?.history?.trim() || record.reason) +
+                                  (heroStayOrigin ? ` · ${heroStayOrigin}` : "")}
+                              </span>
+                            </span>
+                            <ChevronRight size={16} aria-hidden="true" />
+                          </button>
+                        </li>
+                      )}
+                      {tabs
+                        .filter((tab) => tab.key === "community" || tab.key === "details")
+                        .map((tab) => (
+                          <li key={tab.key}>
+                            <button
+                              type="button"
+                              className={styles.phMoreRow}
+                              aria-controls={`pnpane-${tab.key}`}
+                              onClick={() => {
+                                setActiveTab(tab.key);
+                                requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+                              }}
+                            >
+                              <span className={styles.phMoreText}>
+                                <strong>{tab.label}</strong>
+                                <span>
+                                  {tab.key === "community"
+                                    ? record.community.teams.length > 0
+                                      ? `${record.community.teams.map((team) => team.name).join(", ")} · ${record.community.teams.length} on record`
+                                      : "No community team on record"
+                                    : "UMRN, date of birth, where they live"}
+                                </span>
+                              </span>
+                              <ChevronRight size={16} aria-hidden="true" />
+                            </button>
+                          </li>
+                        ))}
+                    </ul>
+                  ) : null}
+                </>
+              )}
             </div>
 
             {/* Tab 2: HISTORY */}
@@ -2116,6 +2313,31 @@ export function PatientNowScreen({
           />
         </>
       )}
+      {nowLayout && liveMovement ? (
+        <>
+          <PhoneSheet
+            open={previewSheet === "destination"}
+            onClose={() => setPreviewSheet(null)}
+            title="Destination and placement"
+            description={acceptingUnit ? `${acceptingUnit.name} accepted` : "No ward has accepted yet"}
+            height="tall"
+            placement={isPhone ? "bottom" : "right"}
+          >
+            <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} bare />
+          </PhoneSheet>
+          <PhoneSheet
+            open={previewSheet === "transport"}
+            onClose={() => setPreviewSheet(null)}
+            title="Transport"
+            description={isTransportBooked ? `${displayProvider} booked` : "Not booked yet"}
+            height="tall"
+            placement={isPhone ? "bottom" : "right"}
+          >
+            {transportSection}
+            {arrivalSection}
+          </PhoneSheet>
+        </>
+      ) : null}
       <WardPrototypeFooter testId="ward-patient-now-governance" />
     </main>
   );

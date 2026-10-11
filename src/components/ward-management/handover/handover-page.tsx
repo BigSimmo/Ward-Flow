@@ -66,6 +66,9 @@ import {
   Icon,
   LiveChip,
   Popover,
+  PortraitList,
+  PortraitRail,
+  type PortraitRailMode,
   Segmented,
   Select,
   SrOnly,
@@ -76,13 +79,16 @@ import {
   cx,
   durMinutes,
   tableClasses,
+  useIsTabletPortrait,
 } from "@/components/wf";
+import { PORTRAIT_PATTERNS, type MockupOption } from "@/components/ward-management/preview/preview-option";
 
 import {
   DENSITY_COLUMNS,
   DENSITY_LABEL,
   HANDOVER_COLUMNS,
   columnsFor,
+  rowTone,
   type ColumnContext,
   type HandoverColumnId,
   type HandoverDensity,
@@ -107,6 +113,10 @@ import {
   toHandoverRow,
   toHandoverWard,
   wardIsStale,
+  STAGE_LABEL,
+  destinationText,
+  dueShort,
+  nextStep,
   type HandoverChip,
   type HandoverGrouping,
   type HandoverPill,
@@ -362,7 +372,7 @@ function mmss(ms: number): string {
  * patient is picked, then that patient's flow. Beds and History are tabs, and Print handover opens
  * the sheet builder, where what you see is what prints.
  */
-export function HandoverPage() {
+export function HandoverPage({ portraitPattern }: { portraitPattern?: MockupOption } = {}) {
   const {
     movements,
     units,
@@ -377,6 +387,8 @@ export function HandoverPage() {
   } = useWardFlow();
   const now = useWardFlowClock();
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
+  const isTabletPortrait = useIsTabletPortrait();
+  const portrait = portraitPattern !== undefined && isTabletPortrait ? PORTRAIT_PATTERNS[portraitPattern] : undefined;
 
   /* scope, read once from the URL */
   const searchParams = useSearchParams();
@@ -573,7 +585,7 @@ export function HandoverPage() {
   const selected = selectedId === null ? undefined : allRows.find((row) => row.id === selectedId);
   const pick = (id: string) => {
     setSelectedId(id);
-    if (wide || isPhoneWidth) setDrawerOpen(true);
+    if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
   };
   const step = useCallback(
     (direction: 1 | -1) => {
@@ -582,12 +594,12 @@ export function HandoverPage() {
       const next = index < 0 ? 0 : Math.max(0, Math.min(visibleOrder.length - 1, index + direction));
       const id = visibleOrder[next]!.id;
       setSelectedId(id);
-      if (wide || isPhoneWidth) setDrawerOpen(true);
+      if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
       if (typeof document !== "undefined") {
         document.querySelector(`[data-row-id="${CSS.escape(id)}"]`)?.scrollIntoView?.({ block: "nearest" });
       }
     },
-    [visibleOrder, selectedId, wide, isPhoneWidth, setDrawerOpen],
+    [visibleOrder, selectedId, wide, isPhoneWidth, portrait, setDrawerOpen],
   );
 
   /* sign-off */
@@ -616,7 +628,7 @@ export function HandoverPage() {
     setSheetOpen(false);
     setTab("pts");
     setSelectedId(null);
-    if (wide || isPhoneWidth) setDrawerOpen(true);
+    if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
     window.requestAnimationFrame(() => signOffRef.current?.querySelector<HTMLElement>("button")?.focus());
   };
 
@@ -774,6 +786,32 @@ export function HandoverPage() {
       onCopyIsbar={copyIsbar}
     />
   ) : null;
+
+  /* iPad portrait mockups: the rail (sign off, or the open patient) as a slide-over, edge tab or drawer. */
+  const railFor = (mode: PortraitRailMode, signedLine: string | null, checksDone: number) => (
+    <PortraitRail
+      mode={mode}
+      title={selected ? selected.name : "Sign off"}
+      summary={selected ? "Patient flow" : (signedLine ?? `${checksDone} of ${signChecks.length} checks`)}
+      open={drawerOpen}
+      onOpenChange={(open) => {
+        // The trigger opens the rest state (sign off); closing returns to it.
+        setSelectedId(null);
+        setDrawerOpen(open);
+      }}
+      primary={
+        mode === "drawer" && signedAt === null
+          ? {
+              label: "Sign off",
+              onAction: handleSignOff,
+              disabledReason: canSignOff ? undefined : "This handover has passed. Choose the next one.",
+            }
+          : undefined
+      }
+    >
+      {flowPanel ?? signOffPanel}
+    </PortraitRail>
+  );
 
   const togglePill = (next: HandoverPill) => {
     setPill((current) => (current === next ? null : next));
@@ -1358,6 +1396,53 @@ export function HandoverPage() {
         <HandoverHistory signOffs={handoverSignOffs} meetings={meetings} takenAt={takenAt} now={now} />
       </TabPanel>
     );
+  } else if (portrait) {
+    const signedLine = signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : null;
+    const checksDone = signChecks.filter((check) => check.done).length;
+    body = (
+      <TabPanel idPrefix="ward-handover-tab" id="pts">
+        <div className={styles.portraitTools}>
+          <span className={styles.portraitNote}>
+            <b>{rows.length}</b> of {allRows.length} open · {scopeLabel}
+          </span>
+          {portrait.rail === "slide" ? railFor(portrait.rail, signedLine, checksDone) : null}
+        </div>
+        <PortraitList
+          label="Handover patients"
+          shape={portrait.shape}
+          onOpen={pick}
+          groups={groups.map((group) => ({
+            id: group.id,
+            title: group.title,
+            tone: group.tone ? GROUP_TONE[group.tone] : undefined,
+            note: group.rows.length === 0 ? undefined : group.why,
+            rows: group.rows.map((row) => {
+              const due = dueShort(row, now);
+              const next = nextStep(row, now, cutoff, readyBeds);
+              return {
+                id: row.id,
+                name: row.name,
+                sub: `${row.umrn} · T${row.tier} · ${STAGE_LABEL[row.stage]}`,
+                figure: durMinutes(now - row.openedAt),
+                figureNote: "waiting",
+                tone: rowTone(row, ctx),
+                next: next.text,
+                cells: [
+                  { label: "Due", value: due ?? "None" },
+                  { label: "Next step", value: next.text },
+                  { label: "From and to", value: `${row.edShort} to ${destinationText(row)}` },
+                ],
+                actNow: isActNow(row, now),
+                selected: row.id === selectedId,
+                dim: anyHighlight && !isHighlighted(row),
+              };
+            }),
+          }))}
+          footer={<span>Form times are as typed, not legally checked</span>}
+        />
+        {portrait.rail === "slide" ? null : railFor(portrait.rail, signedLine, checksDone)}
+      </TabPanel>
+    );
   } else {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
@@ -1391,7 +1476,7 @@ export function HandoverPage() {
       {sheetOpen ? null : sinceStrip}
       {sheetOpen ? null : toolbar}
       {body}
-      {wide ? (
+      {wide && !portrait ? (
         <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title={selected ? selected.name : "Sign off"}>
           {flowPanel ?? signOffPanel}
         </Drawer>

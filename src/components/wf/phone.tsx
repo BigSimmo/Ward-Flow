@@ -66,6 +66,11 @@ export type PhoneSheetProps = {
   returnFocusRef?: RefObject<HTMLElement | null>;
   /** `content` sizes to its body (up to the top safe area). `tall` opens near full height. */
   height?: "content" | "tall";
+  /**
+   * Where the sheet docks. "bottom" (the default) is the phone sheet. "right" is the tablet
+   * slide-over: full height against the right edge, the same header, body and footer.
+   */
+  placement?: "bottom" | "right";
   className?: string;
   "data-testid"?: string;
 };
@@ -106,6 +111,7 @@ export function PhoneSheet({
   initialFocusRef,
   returnFocusRef,
   height = "content",
+  placement = "bottom",
   className,
   ...data
 }: PhoneSheetProps) {
@@ -243,6 +249,7 @@ export function PhoneSheet({
       <div
         ref={setScrimRef}
         className={styles.sheetScrim}
+        data-placement={placement === "right" ? "right" : undefined}
         onPointerDown={(event) => {
           scrimPressRef.current = event.target === event.currentTarget;
         }}
@@ -260,6 +267,7 @@ export function PhoneSheet({
           aria-describedby={present(description) ? descId : undefined}
           tabIndex={-1}
           data-height={height}
+          data-placement={placement === "right" ? "right" : undefined}
           className={cx(styles.sheet, !hasFooter && styles.sheetNoFooter, className)}
           {...data}
         >

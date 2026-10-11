@@ -1,0 +1,380 @@
+/* iPad portrait pattern: list rows in place of a wide table, and the rail as a slide-over. */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.group {
+  min-width: 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+/* Line and stacked shapes read as one list: groups join under one edge. */
+.list[data-shape="line"],
+.list[data-shape="stack"] {
+  gap: 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.list[data-shape="line"] .group,
+.list[data-shape="stack"] .group {
+  border: 0;
+  border-radius: 0;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.group[data-shape="grouped"] .groupHead {
+  min-height: 52px;
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-14);
+}
+
+.groupChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-fast, 120ms) var(--wf-ease);
+}
+
+.groupChevron[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.groupTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.groupCount {
+  flex: none;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+
+.groupNote {
+  margin-left: auto;
+  flex: none;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  position: relative;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row[data-selected="true"] {
+  background: var(--wf-selected);
+}
+
+.row[data-dim="true"] {
+  opacity: 0.45;
+}
+
+/* Act now: a thin red edge on this row only, never a fill. */
+.actNow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  box-shadow: inset 0 0 0 1px var(--wf-danger);
+  pointer-events: none;
+}
+
+.rowButton {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto minmax(0, 0.9fr) 16px;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.rowButton:hover {
+  background: var(--wf-hover);
+}
+
+.rowButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.row[data-shape="stack"] .rowButton {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  padding-bottom: var(--wf-s-3);
+}
+
+.stackTop {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto 16px;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+}
+
+.lead {
+  display: inline-flex;
+  justify-content: center;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name,
+.sub,
+.next {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name {
+  font-weight: 600;
+  font-size: var(--wf-fs-14);
+}
+
+.sub {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.mono {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.figureNote {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.next {
+  color: var(--wf-ink-2);
+}
+
+.chevron {
+  color: var(--wf-ink-3);
+}
+
+.cells {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  padding-left: calc(16px + var(--wf-s-3));
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cellLabel {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.cellValue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.listFoot {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+/* ---------- rail ---------- */
+
+.slideTrigger {
+  min-height: 44px;
+}
+
+.triggerSummary {
+  margin-left: var(--wf-s-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+
+/* The edge tab stays at the right edge, part way down, and never covers a row's figure. */
+.edgeTab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 48px;
+  padding: var(--wf-s-3) 0;
+  border: 1px solid var(--wf-line-2);
+  border-right: 0;
+  border-radius: var(--wf-r-lg) 0 0 var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+  color: var(--wf-ink-1);
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.edgeTabText {
+  writing-mode: vertical-rl;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+}
+
+.edgeTabSummary {
+  font-family: var(--wf-mono);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+
+/* The drawer bar pins at the foot of the page and holds the rail's one primary. */
+.drawerBar {
+  position: sticky;
+  bottom: var(--wf-s-3);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  margin-top: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xl);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+}
+
+.drawerOpen {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-lg);
+  background: transparent;
+  color: var(--wf-ink-1);
+  text-align: left;
+  cursor: pointer;
+}
+
+.drawerOpen:hover {
+  background: var(--wf-hover);
+}
+
+.drawerGrip {
+  flex: none;
+  width: 4px;
+  height: 28px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-line-3);
+}
+
+.drawerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.drawerText b {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.drawerText span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.drawerChevron {
+  flex: none;
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  transform: rotate(-90deg);
+}
+
+.drawerSheet.drawerSheet {
+  max-width: 820px;
+}
+
+@media (forced-colors: active) {
+  .actNow::before {
+    box-shadow: none;
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+}

@@ -1136,3 +1136,22 @@
 .gap {
   font-family: var(--wf-font);
 }
+
+/* iPad portrait mockups: one tools line above the list rows. */
+.portraitTools {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 44px;
+  margin-bottom: var(--wf-s-3);
+}
+
+.portraitNote {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}

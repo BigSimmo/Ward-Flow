@@ -7806,3 +7806,50 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 .phoneSheetPairs dd.phoneSheetMono {
   font-family: var(--wf-mono);
 }
+
+/* ---------- ED page mockups (preview routes only) ---------- */
+
+/* Mockup A at desktop and iPad landscape: the board and one sticky Needs you rail side by side. */
+.main[data-preview-layout="rail"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+  align-items: start;
+}
+
+.main[data-preview-layout="rail"] > * {
+  grid-column: 1 / -1;
+}
+
+.main[data-preview-layout="rail"] > [data-pane="board"] {
+  grid-column: 1;
+}
+
+.main[data-preview-layout="rail"] > [data-preview-rail] {
+  grid-column: 2;
+  position: sticky;
+  top: var(--wf-s-3);
+}
+
+.previewGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.previewGroup + .previewGroup {
+  margin-top: var(--wf-s-3);
+}
+
+.previewGroupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.previewGroupCount {
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
+}

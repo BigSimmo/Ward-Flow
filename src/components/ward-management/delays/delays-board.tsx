@@ -36,7 +36,20 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById } from "@/components/ward-management/ward-sites";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { currentDueSoonThresholds } from "@/components/ward-management/ward-clock";
-import { CheckingFoot, Hero, LiveChip, PhoneSheet, TierTile, useIsPhone, type WfTone } from "@/components/wf";
+import {
+  CheckingFoot,
+  Hero,
+  LiveChip,
+  PhoneSheet,
+  PortraitList,
+  PortraitRail,
+  TierTile,
+  useIsPhone,
+  useIsTabletPortrait,
+  type PortraitGroup,
+  type WfTone,
+} from "@/components/wf";
+import { PORTRAIT_PATTERNS, type MockupOption } from "@/components/ward-management/preview/preview-option";
 import { answerSilenceReminder, isCleared, type DelayCause, type DelayGroup } from "./delays-derivations";
 import { BandBar, Glyph, causeTitle } from "./delays-board-parts";
 import {
@@ -103,6 +116,8 @@ export type DelaysBoardProps = {
   banner?: ReactNode;
   /** Shown in place of the board's body when nobody is waiting. */
   empty?: ReactNode;
+  /** iPad portrait pattern mockup, from a preview route only. Absent, the board renders as before. */
+  portraitPattern?: MockupOption;
 };
 
 /** The origin department by name, or a sentence that names the record as the fault (task D1). */
@@ -196,8 +211,17 @@ function phonePrefix(row: BoardRow): ReactNode {
   return null;
 }
 
+/** The legal cell as words, for the iPad portrait list rows. */
+function legalWords(row: BoardRow): string {
+  const form = row.movement.legalForm;
+  if (row.dueIn === undefined || form === undefined) return row.movement.legalStatus;
+  return row.dueIn < 0
+    ? `Form ${form.code}, ${splitDuration(-row.dueIn)} overdue`
+    : `Form ${form.code}, ${splitDuration(row.dueIn)} left`;
+}
+
 /** v10 phone: the right column's second line is how long nothing has been recorded. */
-function phoneUpdate(row: BoardRow): ReactNode {
+function phoneUpdate(row: BoardRow): string {
   return row.activity === undefined ? "no update" : `quiet ${splitDuration(row.quiet)}`;
 }
 
@@ -999,6 +1023,7 @@ export function DelaysBoard({
   onNotWired,
   banner,
   empty,
+  portraitPattern,
 }: DelaysBoardProps) {
   const patientOf = usePatientOf();
   const rows = useMemo(() => boardRows(groups, now), [groups, now]);
@@ -1026,6 +1051,9 @@ export function DelaysBoard({
   const sheet = useSheetLayout();
   // v10 phone: the registers, the longest quiet list and the graphs sit one tap away as cards.
   const isPhone = useIsPhone();
+  const isTabletPortrait = useIsTabletPortrait();
+  const portrait = portraitPattern !== undefined && isTabletPortrait ? PORTRAIT_PATTERNS[portraitPattern] : undefined;
+  const [railOpen, setRailOpen] = useState(false);
   const [phoneSheet, setPhoneSheet] = useState<"registers" | "quiet" | "spread" | null>(null);
 
   const nameOf = useCallback(
@@ -1450,6 +1478,77 @@ export function DelaysBoard({
       onNotWired={onNotWired}
     />
   );
+  const portraitRow = (row: BoardRow) => {
+    const patient = patientOf(row.movement);
+    const ward = wardSummary(row, units);
+    return {
+      id: row.movement.id,
+      name: patient.formalName,
+      sub: [patient.umrn, originLabel(row.movement)].filter(Boolean).join(" · "),
+      figure: splitDuration(row.waited),
+      figureNote: phoneUpdate(row),
+      tone: waitTone(row.waited),
+      next: flat ? causeTitle(row.cause) : ward.text,
+      cells: [
+        { label: flat ? "Blocker" : "Wards", value: flat ? causeTitle(row.cause) : ward.text },
+        { label: "Legal", value: legalWords(row) },
+        { label: "Last update", value: phoneUpdate(row) },
+      ],
+      actNow:
+        row.owner === "yours" &&
+        (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H),
+      selected: selectedId === row.movement.id,
+    };
+  };
+  const portraitGroups: PortraitGroup[] = flat
+    ? [
+        {
+          id: "flat",
+          title: "Longest wait first",
+          rows: [...shown].sort(byWait).map(portraitRow),
+        },
+      ]
+    : groups.map((group) => {
+        const list = shown.filter((row) => row.cause === group.cause).sort(byWait);
+        return {
+          id: group.cause,
+          title: group.title,
+          tone: list[0]?.severe ? ("danger" as const) : undefined,
+          note: list[0] ? `${ownerName(list[0].owner)} to clear` : undefined,
+          rows: list.map(portraitRow),
+        };
+      });
+  const portraitRail = portrait ? (
+    <PortraitRail
+      mode={portrait.rail}
+      title="Registers"
+      summary={`Escalated ${escalated.length} · Attention ${attention.length}`}
+      description="Escalations, attention, resolved today and the longest quiet"
+      open={railOpen}
+      onOpenChange={setRailOpen}
+    >
+      <Registers
+        escalated={escalated}
+        attention={attention}
+        closedToday={closedToday}
+        rows={rows}
+        now={now}
+        units={units}
+        service={service}
+        isOutsideService={isOutsideService}
+        silentPressed={filters.silent}
+        onSilent={() => {
+          set({ silent: !filters.silent });
+          setRailOpen(false);
+        }}
+        onPick={(id) => {
+          setRailOpen(false);
+          reveal(id);
+        }}
+        onNotWired={onNotWired}
+      />
+    </PortraitRail>
+  ) : null;
   const tiles = ownerTiles(rows);
   const cumulative = WAIT_THRESHOLDS.map((limit) => rows.filter((row) => row.waited >= limit).length);
 
@@ -1596,7 +1695,11 @@ export function DelaysBoard({
             ))}
           </section>
 
-          <div className={styles.split} data-person-open={selected !== null || undefined}>
+          <div
+            className={styles.split}
+            data-person-open={selected !== null || undefined}
+            data-portrait={portrait ? portrait.rail : undefined}
+          >
             <section
               ref={tableRef}
               id="delays-table"
@@ -1727,7 +1830,13 @@ export function DelaysBoard({
                   </button>
                 ) : null}
               </div>
-              <div className={styles.tableWrap}>
+              {portrait ? (
+                <div className={styles.portraitBody}>
+                  {portrait.rail === "slide" ? <div className={styles.portraitTools}>{portraitRail}</div> : null}
+                  <PortraitList label="Waiting" shape={portrait.shape} groups={portraitGroups} onOpen={select} />
+                </div>
+              ) : null}
+              <div className={styles.tableWrap} hidden={portrait !== undefined}>
                 <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
                   <colgroup>
                     <col className={styles.colP} />
@@ -1783,10 +1892,11 @@ export function DelaysBoard({
                   panelRef={panelRef}
                 />
               </>
-            ) : isPhone ? null : (
+            ) : isPhone || portrait ? null : (
               registers
             )}
           </div>
+          {portrait && portrait.rail !== "slide" ? portraitRail : null}
 
           {isPhone ? (
             <div className={styles.phCards} data-testid="delays-phone-cards">

@@ -56,6 +56,40 @@
   height: 100%;
 }
 
+/* Tablet slide-over: the same sheet docked full height to the right edge. */
+.sheetScrim[data-placement="right"] {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0 env(safe-area-inset-right) 0 0;
+}
+
+.sheet[data-placement="right"] {
+  width: min(440px, 92vw);
+  max-width: 440px;
+  height: 100%;
+  border-bottom: 1px solid var(--wf-line-2);
+  border-right: 0;
+  border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
+  animation-name: wfPhoneSheetInRight;
+}
+
+.sheet[data-placement="right"] .handle {
+  display: none;
+}
+
+.sheet[data-placement="right"] .sheetHeader {
+  padding-top: var(--wf-s-4);
+}
+
+@keyframes wfPhoneSheetInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
 .sheet:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -4px;
@@ -193,6 +227,9 @@
   .sheet {
     animation-name: wfPhoneSheetFade;
     transition: none;
+  }
+  .sheet[data-placement="right"] {
+    animation-name: wfPhoneSheetFade;
   }
 }
 

@@ -650,7 +650,7 @@ function withMeter(status: PatientStatus): PatientStatus {
   return { ...status, meter: { clear, of: status.cells.length } };
 }
 
-function CellAction({ action, primary }: { action: StatusAction; primary: boolean }): ReactNode {
+export function CellAction({ action, primary }: { action: StatusAction; primary: boolean }): ReactNode {
   if (action.kind === "unavailable")
     return (
       <Button size="sm" disabledReason={action.reason} reasonDisplay="tooltip">

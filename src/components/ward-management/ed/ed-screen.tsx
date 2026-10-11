@@ -113,12 +113,16 @@ import {
   JourneyStrip,
   PhoneListRow,
   PhoneSheet,
+  PortraitRail,
   ScrollRow,
   Segmented,
   StatusGlyph,
   useIsPhone,
+  useIsTabletPortrait,
   useOptionalToast,
 } from "@/components/wf";
+import type { MockupOption } from "@/components/ward-management/preview/preview-option";
+import { EdElsewhereLinks, EdNeedsYou, type EdNeedsItem } from "./ed-needs-you";
 import { edJourneyStages } from "./ed-journey";
 import styles from "./ed.module.css";
 import { EdOverview } from "./ed-overview";
@@ -129,7 +133,11 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 
 const RECORDED_ED_FORMS = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
 
-type EdScreenProps = { edId: string };
+type EdScreenProps = {
+  edId: string;
+  /** ED page mockup layout (device audit 11 Oct 2026), from a preview route only. */
+  preview?: MockupOption;
+};
 
 /**
  * THE TWO CLOCKS ON AN INBOX ROW, AND WHY THIS SCREEN NOW HAS THEM.
@@ -1271,7 +1279,7 @@ function edStepSaid(event: EdStepEvent): string {
   }
 }
 
-export function EdScreen({ edId }: EdScreenProps) {
+export function EdScreen({ edId, preview }: EdScreenProps) {
   const {
     movements,
     units,
@@ -1491,6 +1499,10 @@ export function EdScreen({ edId }: EdScreenProps) {
   }
   /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */
   const isPhone = useIsPhone();
+  const isTabletPortrait = useIsTabletPortrait();
+  /** Mockups: the board is list rows with one Next button on every width; edits live in the sheet. */
+  const listRows = isPhone || preview !== undefined;
+  const [needsRailOpen, setNeedsRailOpen] = useState(false);
   const [phonePane, setPhonePane] = useState<"board" | "needs" | "lists">("board");
   /** Phone: the board row whose person sheet is open, and why the last tapped action is unavailable. */
   const [phoneSheetFor, setPhoneSheetFor] = useState<string | undefined>(undefined);
@@ -1881,7 +1893,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     (heroHighlight !== null && !(heroHighlightMatch[heroHighlight]?.(m) ?? true));
 
   const visiblePatients = [...patients].sort((a, b) => {
-    if (patientSort === "longest") return a.openedAt - b.openedAt;
+    if (preview !== undefined || patientSort === "longest") return a.openedAt - b.openedAt;
     if (patientSort === "name")
       return resolveSubjectPatient(a, { patients: registryPatients, referrals, movements }).displayName.localeCompare(
         resolveSubjectPatient(b, { patients: registryPatients, referrals, movements }).displayName,
@@ -2788,6 +2800,25 @@ export function EdScreen({ edId }: EdScreenProps) {
       value: patients.filter(heroHighlightMatch.under_form).length,
     },
   ];
+  /* Mockups: Needs you holds only items needing action (good news stays on the row). */
+  const needsYouFlags = priorityFlags.filter((flag) => flag.tone === "danger" || flag.tone === "warn");
+  // A row past the access target needs action too, so it leads mockup C's board with the flagged rows.
+  const needsYouIds = new Set([
+    ...needsYouFlags.map((flag) => flag.recordId),
+    ...patients.filter((m) => now - m.openedAt > accessTarget).map((m) => m.id),
+  ]);
+  const needsYouItems: EdNeedsItem[] = needsYouFlags.map((flag, index) => ({
+    key: `${flag.recordId}-${index}`,
+    actNow: flag.tone === "danger",
+    kind: flag.kind,
+    person: flag.personName ?? flag.recordId,
+    when: flag.when,
+    actionLabel: flag.actionLabel,
+    onAction: flag.onAction,
+    onOpen: patients.some((patient) => patient.id === flag.recordId)
+      ? () => setPhoneSheetFor(flag.recordId)
+      : undefined,
+  }));
   const activeHeroChip = heroChips.find((chip) => chip.id === heroHighlight);
 
   const arrivalPlanMovement = arrivalPlanOpenFor ? movements.find((m) => m.id === arrivalPlanOpenFor) : undefined;
@@ -2799,7 +2830,12 @@ export function EdScreen({ edId }: EdScreenProps) {
       data-ward-design="third-edition"
       data-ward-rebuilt-screen="emergency-department"
     >
-      <main id="main-content" className={styles.main} data-phone-pane={isPhone ? phonePane : undefined}>
+      <main
+        id="main-content"
+        className={styles.main}
+        data-phone-pane={isPhone && (preview === undefined || preview === "A") ? phonePane : undefined}
+        data-preview-layout={preview === "A" && !isPhone && !isTabletPortrait ? "rail" : undefined}
+      >
         <EdOverview
           key={department.id}
           departmentId={department.id}
@@ -3185,7 +3221,7 @@ export function EdScreen({ edId }: EdScreenProps) {
           )}
         </section>
 
-        {isPhone ? (
+        {isPhone && preview === undefined ? (
           <ScrollRow className={styles.phonePanes}>
             <Segmented
               label="Show"
@@ -3200,6 +3236,22 @@ export function EdScreen({ edId }: EdScreenProps) {
             />
           </ScrollRow>
         ) : null}
+
+        {isPhone && preview === "A" ? (
+          <ScrollRow className={styles.phonePanes}>
+            <Segmented
+              label="Show"
+              size="md"
+              value={phonePane === "lists" ? "board" : phonePane}
+              onChange={setPhonePane}
+              items={[
+                { id: "board" as const, label: "Board", count: patients.length },
+                { id: "needs" as const, label: "Needs you", count: needsYouItems.length },
+              ]}
+            />
+          </ScrollRow>
+        ) : null}
+        {preview === "B" ? <EdNeedsYou items={needsYouItems} /> : null}
 
         <section
           aria-label="This department's patients"
@@ -3318,14 +3370,16 @@ export function EdScreen({ edId }: EdScreenProps) {
                 onChange={(event) => setPatientQuery(event.target.value)}
               />
             </label>
-            <label className={styles.patientSort}>
-              Sort{" "}
-              <select value={patientSort} onChange={(event) => setPatientSort(event.target.value)}>
-                <option value="current">Current order</option>
-                <option value="longest">Longest in ED</option>
-                <option value="name">Patient name</option>
-              </select>
-            </label>
+            {preview === undefined ? (
+              <label className={styles.patientSort}>
+                Sort{" "}
+                <select value={patientSort} onChange={(event) => setPatientSort(event.target.value)}>
+                  <option value="current">Current order</option>
+                  <option value="longest">Longest in ED</option>
+                  <option value="name">Patient name</option>
+                </select>
+              </label>
+            ) : null}
             <span className={styles.draftNote} role="status">
               {hasBoardDrafts ? "Unsaved changes · This screen only" : "Draft fields · This screen only"}
             </span>
@@ -4034,7 +4088,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                       </p>
                     ) : (
                       <>
-                        {nextAction && !isPhone ? (
+                        {nextAction && !listRows ? (
                           <button
                             type="button"
                             data-testid={`ward-ed-next-${movement.id}`}
@@ -4048,7 +4102,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             {nextAction.label}
                           </button>
                         ) : null}
-                        {isPhone ? (
+                        {listRows ? (
                           <div
                             className={styles.phoneSheetActions}
                             role="group"
@@ -4096,7 +4150,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             {menuItems}
                           </EdActionsMenu>
                         )}
-                        {isPhone && phoneSheetReason ? (
+                        {listRows && phoneSheetReason ? (
                           <p className={styles.phoneSheetReason} role="status">
                             {phoneSheetReason}
                           </p>
@@ -4927,7 +4981,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                   legalStatusChangeOpen ||
                   legalFormExpiryOpen ||
                   receiptCorrectionOpen;
-                if (isPhone) {
+                if (listRows) {
                   const phoneOverTarget = minutesInDepartment > accessTarget;
                   const phoneWaitTone = phoneOverTarget
                     ? ("danger" as const)
@@ -4968,11 +5022,30 @@ export function EdScreen({ edId }: EdScreenProps) {
                           </span>
                         }
                         name={patientInfo.formalName}
-                        meta={[
-                          phoneBay,
-                          destinationLabel,
-                          movement.legalForm ? `Form ${movement.legalForm.code}` : undefined,
-                        ]
+                        meta={(preview === undefined
+                          ? [
+                              phoneBay,
+                              destinationLabel,
+                              movement.legalForm ? `Form ${movement.legalForm.code}` : undefined,
+                            ]
+                          : [
+                              // Mockups: no em-dash, no truncated destination; the form lives in the sheet
+                              // on a phone, and wider screens read the board values as text.
+                              phoneBay,
+                              acceptedUnit ? `to ${acceptedUnit.name.split(" — ")[0]}` : "In department",
+                              ...(isPhone
+                                ? []
+                                : [
+                                    movement.legalForm ? `Form ${movement.legalForm.code}` : "No form",
+                                    medicalClearance === undefined
+                                      ? "Clearance pending"
+                                      : medicalClearance.cleared
+                                        ? "Cleared"
+                                        : "Not cleared",
+                                    movement.examination ? "Reviewed" : "Not reviewed",
+                                  ]),
+                            ]
+                        )
                           .filter(Boolean)
                           .join(" · ")}
                         value={
@@ -4982,7 +5055,12 @@ export function EdScreen({ edId }: EdScreenProps) {
                             {phoneOverTarget ? <span className="sr-only"> · over the access target</span> : null}
                           </>
                         }
-                        time={phoneNextLabel}
+                        time={isPhone ? phoneNextLabel : undefined}
+                        action={
+                          !isPhone && nextAction && !movement.closure
+                            ? { label: nextAction.label, disabledReason: nextAction.blocked, onAction: nextAction.run }
+                            : undefined
+                        }
                         onSelect={() => {
                           setPhoneSheetReason(undefined);
                           setPhoneSheetFor(movement.id);
@@ -5000,6 +5078,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             </>
                           }
                           height="tall"
+                          placement={isPhone ? "bottom" : "right"}
                           className={styles.phoneSheet}
                           data-testid={`ward-ed-phone-sheet-${movement.id}`}
                           secondary={{
@@ -5258,16 +5337,47 @@ export function EdScreen({ edId }: EdScreenProps) {
                   </Fragment>
                 );
               };
-              return isPhone ? (
+              return listRows ? (
                 <>
                   {boardMatchCount === 0 ? (
                     <p className={styles.noPatientMatches}>
                       No one matches this search and filter. Everyone stays below, dimmed.
                     </p>
                   ) : null}
-                  <ul className={styles.phoneBoardList} aria-label="Emergency department board">
-                    {visiblePatients.map(renderBoardRow)}
-                  </ul>
+                  {preview === "C" ? (
+                    /* Mockup C: the people who need action lead the board as their own group. */
+                    <>
+                      {[
+                        {
+                          id: "needs",
+                          title: "Needs you",
+                          rows: visiblePatients.filter((m) => needsYouIds.has(m.id)),
+                        },
+                        {
+                          id: "rest",
+                          title: "Everyone else, longest wait first",
+                          rows: visiblePatients.filter((m) => !needsYouIds.has(m.id)),
+                        },
+                      ]
+                        .filter((group) => group.rows.length > 0)
+                        .map((group) => (
+                          <div key={group.id} className={styles.previewGroup}>
+                            <h3 className={styles.previewGroupHead}>
+                              {group.id === "needs" ? <StatusGlyph tone="danger" size={9} /> : null}
+                              {group.title}
+                              <span className={styles.previewGroupCount}>{group.rows.length}</span>
+                            </h3>
+                            <ul className={styles.phoneBoardList} aria-label={group.title}>
+                              {group.rows.map(renderBoardRow)}
+                            </ul>
+                          </div>
+                        ))}
+                    </>
+                  ) : (
+                    <ul className={styles.phoneBoardList} aria-label="Emergency department board">
+                      {visiblePatients.map(renderBoardRow)}
+                    </ul>
+                  )}
                 </>
               ) : (
                 <div
@@ -5314,428 +5424,533 @@ export function EdScreen({ edId }: EdScreenProps) {
           )}
         </section>
 
-        <section className={styles.departmentWorkspace} aria-label="Selected department work">
-          <section
-            className={`${styles.panel} ${styles.mod}`}
-            aria-labelledby="ward-ed-attention-heading"
-            data-wf-rail="1201"
-            data-pane="needs"
-          >
-            <div className={styles.ph}>
-              <h2 id="ward-ed-attention-heading">Needs you</h2>
+        {preview === "A" ? (
+          isTabletPortrait ? (
+            <PortraitRail
+              mode="slide"
+              title="Needs you"
+              summary={String(needsYouItems.length)}
+              open={needsRailOpen}
+              onOpenChange={setNeedsRailOpen}
+            >
+              <EdNeedsYou items={needsYouItems} framed={false} />
+            </PortraitRail>
+          ) : (
+            <EdNeedsYou items={needsYouItems} data-pane="needs" data-preview-rail="" />
+          )
+        ) : null}
+        {preview !== undefined ? (
+          <EdElsewhereLinks
+            links={[
+              {
+                href: "/mockups/ward-flow/capacity",
+                title: "Statewide capacity",
+                sub: "Every unit's beds, on the Capacity page",
+              },
+              {
+                href: "/mockups/ward-flow/governance",
+                title: "Seen in the last 24 hours",
+                sub: "This department's recorded events, in the Governance audit",
+              },
+            ]}
+          />
+        ) : null}
+        {preview !== undefined ? null : (
+          <section className={styles.departmentWorkspace} aria-label="Selected department work">
+            <section
+              className={`${styles.panel} ${styles.mod}`}
+              aria-labelledby="ward-ed-attention-heading"
+              data-wf-rail="1201"
+              data-pane="needs"
+            >
+              <div className={styles.ph}>
+                <h2 id="ward-ed-attention-heading">Needs you</h2>
 
-              <span className={styles.count}>
-                {priorityFlags.length === 0
-                  ? "none"
-                  : `${priorityFlags.length} flag${priorityFlags.length === 1 ? "" : "s"}`}
-              </span>
-            </div>
+                <span className={styles.count}>
+                  {priorityFlags.length === 0
+                    ? "none"
+                    : `${priorityFlags.length} flag${priorityFlags.length === 1 ? "" : "s"}`}
+                </span>
+              </div>
 
-            <div className={styles.attentionWrap}>
-              {priorityFlags.length === 0 ? (
-                <p className={styles.none}>No outstanding flags recorded for this department.</p>
-              ) : (
-                <ul className={styles.attentionList}>
-                  {priorityFlags.map((flag, idx) => (
-                    <li key={idx} className={styles.attentionRow} data-tone={flag.tone}>
-                      <div className={styles.attentionHeader}>
-                        <span className={styles.attentionBadge} data-tone={flag.tone} aria-hidden="true">
-                          <span className={styles.attentionBadgeGlyph}>
-                            <AttentionToneIcon tone={flag.tone} />
+              <div className={styles.attentionWrap}>
+                {priorityFlags.length === 0 ? (
+                  <p className={styles.none}>No outstanding flags recorded for this department.</p>
+                ) : (
+                  <ul className={styles.attentionList}>
+                    {priorityFlags.map((flag, idx) => (
+                      <li key={idx} className={styles.attentionRow} data-tone={flag.tone}>
+                        <div className={styles.attentionHeader}>
+                          <span className={styles.attentionBadge} data-tone={flag.tone} aria-hidden="true">
+                            <span className={styles.attentionBadgeGlyph}>
+                              <AttentionToneIcon tone={flag.tone} />
+                            </span>
                           </span>
-                        </span>
-                        <span className="sr-only">
-                          {flag.tone === "danger"
-                            ? "Urgent warning: "
-                            : flag.tone === "warn"
-                              ? "Warning: "
-                              : flag.tone === "good"
-                                ? "Accepted: "
-                                : "Status: "}
-                        </span>
-                        <span className={styles.attentionTitle}>{flag.kind}</span>
-                        <span className={styles.attentionMeta}>
-                          <span className={styles.attentionMetaDot} aria-hidden="true">
-                            &middot;
+                          <span className="sr-only">
+                            {flag.tone === "danger"
+                              ? "Urgent warning: "
+                              : flag.tone === "warn"
+                                ? "Warning: "
+                                : flag.tone === "good"
+                                  ? "Accepted: "
+                                  : "Status: "}
                           </span>
-                          <button
-                            type="button"
-                            className={styles.attentionIdBtn}
-                            onClick={() => {
-                              if (patients.some((p) => p.id === flag.recordId)) {
-                                setSelectedPatientId(flag.recordId);
-                              }
-                            }}
-                          >
-                            {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number
-                             * — `personName` is unset for a referral-sourced flag, which keeps its
-                             * own id (RF-…, out of this change's scope). */}
-                            {flag.personName ?? flag.recordId}
-                          </button>
-                          <span className={styles.attentionDemographics}>{flag.meta}</span>
-                        </span>
-                        <span className={styles.attentionStamp} data-tone={flag.tone}>
-                          {flag.when}
-                        </span>
-                      </div>
-                      <div className={styles.attentionBody}>
-                        <span className={styles.attentionWhy}>{flag.why}</span>
-                        <div className={styles.attentionFooter}>
-                          {flag.actionLabel ? (
-                            <button type="button" className={styles.attentionNext} onClick={flag.onAction}>
-                              <span>Next:</span> {flag.actionLabel}
-                            </button>
-                          ) : (
-                            <span />
-                          )}
-                          {patients.some((patient) => patient.id === flag.recordId) && (
+                          <span className={styles.attentionTitle}>{flag.kind}</span>
+                          <span className={styles.attentionMeta}>
+                            <span className={styles.attentionMetaDot} aria-hidden="true">
+                              &middot;
+                            </span>
                             <button
                               type="button"
-                              className={styles.attentionRecord}
-                              onClick={() => setSelectedPatientId(flag.recordId)}
+                              className={styles.attentionIdBtn}
+                              onClick={() => {
+                                if (patients.some((p) => p.id === flag.recordId)) {
+                                  setSelectedPatientId(flag.recordId);
+                                }
+                              }}
                             >
-                              View record <span aria-hidden="true">›</span>
+                              {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number
+                               * — `personName` is unset for a referral-sourced flag, which keeps its
+                               * own id (RF-…, out of this change's scope). */}
+                              {flag.personName ?? flag.recordId}
                             </button>
-                          )}
+                            <span className={styles.attentionDemographics}>{flag.meta}</span>
+                          </span>
+                          <span className={styles.attentionStamp} data-tone={flag.tone}>
+                            {flag.when}
+                          </span>
                         </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </section>
-          <section
-            className={`${styles.panel} ${styles.mod}`}
-            aria-labelledby="ward-ed-lists-heading"
-            data-pane="lists"
-          >
-            <div className={styles.ph}>
-              <h2 id="ward-ed-lists-heading">Lists</h2>
-
-              <span className={styles.count}>
-                {departmentListTab === "review"
-                  ? `${awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length} awaiting review`
-                  : departmentListTab === "cleared"
-                    ? `${clearedPatients.length === 0 ? "none" : clearedPatients.length} medical clearance`
-                    : departmentListTab === "expected"
-                      ? `${expects.length === 0 ? "none" : expects.length} expected`
-                      : departmentListTab === "forms"
-                        ? `${underFormPatients.length === 0 ? "none" : underFormPatients.length} under a form`
-                        : `${outbox.length + answeredAll.length === 0 ? "none" : outbox.length + answeredAll.length} referred`}
-              </span>
-            </div>
-            <div
-              className={`${styles.tabbar} ${styles.departmentListTabs}`}
-              role="tablist"
-              aria-label="Lists"
-              onKeyDown={onDepartmentListKeyDown}
-            >
-              <button
-                type="button"
-                role="tab"
-                id="ward-ed-review-tab"
-                aria-label={`Awaiting Review, ${awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length} patients`}
-                aria-selected={departmentListTab === "review"}
-                aria-controls="ward-ed-review-panel"
-                tabIndex={departmentListTab === "review" ? 0 : -1}
-                className={styles.tabBtn}
-                onClick={() => setDepartmentListTab("review")}
-              >
-                Review{" "}
-                <span className={styles.tabNum} data-zero={awaitingReviewPatients.length === 0 ? "true" : undefined}>
-                  {awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length}
-                </span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="ward-ed-cleared-tab"
-                aria-label={`Medical Clearance, ${clearedPatients.length === 0 ? "none" : clearedPatients.length}`}
-                aria-selected={departmentListTab === "cleared"}
-                aria-controls="ward-ed-cleared-panel"
-                tabIndex={departmentListTab === "cleared" ? 0 : -1}
-                className={styles.tabBtn}
-                onClick={() => setDepartmentListTab("cleared")}
-              >
-                Med Clear{" "}
-                <span className={styles.tabNum} data-zero={clearedPatients.length === 0 ? "true" : undefined}>
-                  {clearedPatients.length === 0 ? "none" : clearedPatients.length}
-                </span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="ward-ed-expected-tab"
-                aria-label={`Expects, ${expects.length === 0 ? "none" : expects.length}`}
-                aria-selected={departmentListTab === "expected"}
-                aria-controls="ward-ed-expected-panel"
-                tabIndex={departmentListTab === "expected" ? 0 : -1}
-                className={styles.tabBtn}
-                onClick={() => setDepartmentListTab("expected")}
-              >
-                Expects{" "}
-                <span className={styles.tabNum} data-zero={expects.length === 0 ? "true" : undefined}>
-                  {expects.length === 0 ? "none" : expects.length}
-                </span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="ward-ed-forms-tab"
-                aria-label={`Forms, ${underFormPatients.length === 0 ? "none" : underFormPatients.length}`}
-                aria-selected={departmentListTab === "forms"}
-                aria-controls="ward-ed-forms-panel"
-                tabIndex={departmentListTab === "forms" ? 0 : -1}
-                className={styles.tabBtn}
-                onClick={() => setDepartmentListTab("forms")}
-              >
-                Forms{" "}
-                <span className={styles.tabNum} data-zero={underFormPatients.length === 0 ? "true" : undefined}>
-                  {underFormPatients.length === 0 ? "none" : underFormPatients.length}
-                </span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="ward-ed-referred-tab"
-                aria-label="Referred · Still to be moved"
-                aria-selected={departmentListTab === "referred"}
-                aria-controls="ward-ed-outbox-panel"
-                tabIndex={departmentListTab === "referred" ? 0 : -1}
-                className={styles.tabBtn}
-                onClick={() => setDepartmentListTab("referred")}
-              >
-                Referred{" "}
-                <span
-                  className={styles.tabNum}
-                  data-zero={outbox.length + answeredAll.length === 0 ? "true" : undefined}
-                >
-                  {outbox.length + answeredAll.length === 0 ? "none" : outbox.length + answeredAll.length}
-                </span>
-              </button>
-            </div>
-
-            <section
-              id="ward-ed-review-panel"
-              role="tabpanel"
-              aria-labelledby="ward-ed-review-tab"
-              aria-label="Awaiting Review"
-              hidden={departmentListTab !== "review"}
-              className={styles.lstWrap}
-              tabIndex={0}
-            >
-              <section aria-label="Referrals" className={styles.inboxSection} data-testid="ward-ed-inbox" tabIndex={0}>
-                <h3 className={styles.inboxSubheading}>
-                  Referrals &middot; {inbox.length} patient{inbox.length === 1 ? "" : "s"}
-                </h3>
-                <p className={styles.inboxMeta}>
-                  Oldest first · Department time is from recorded triage; referral time is separate.
-                </p>
-                {inbox.length === 0 ? (
-                  <p className={styles.placeholder} data-testid="ward-ed-inbox-empty">
-                    No referral for psychiatric review is addressed to {department.name}. Bed-only and medical requests
-                    are outside this list.
-                  </p>
-                ) : (
-                  <ul className={styles.inboxList}>
-                    {inbox.map(({ referral, destination, addressing }) => {
-                      const clocks = referralClocks(referral, now);
-                      const lines = edReferralClockLines(clocks);
-                      const declineOpen = declineOpenFor === referral.id;
-                      const declineBlocked = declineReasonBlockedReason(declineDraft);
-                      const hasLinkedMovement = movements.some((movement) => movement.referralId === referral.id);
-                      const referralPatient = resolveSubjectPatient(referral, {
-                        patients: registryPatients,
-                        referrals,
-                      });
-                      return (
-                        <li
-                          key={`${referral.id}-${destination.edId}-${destination.purpose}`}
-                          className={styles.inboxItem}
-                          data-testid={`ward-ed-inbox-row-${referral.id}`}
-                          data-purpose={destination.purpose}
-                          data-ed-id={destination.edId}
-                          data-minutes-since-referral={clocks.sinceReferral}
-                          data-since-referral-running={clocks.sinceReferralRunning ? "true" : "false"}
-                          data-minutes-in-department={clocks.inDepartment}
-                        >
-                          <header className={styles.inboxItemHeader}>
-                            <strong>{referral.id}</strong>
-                            <span style={{ fontSize: "0.85rem", color: "var(--ink)", fontWeight: 600 }}>
-                              {referralPatient.displayName}
-                            </span>
-                            <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
-                              (UMRN: <strong>{referralPatient.umrn}</strong>)
-                            </span>
-                            <span className={styles.inboxPurpose} data-testid={`ward-ed-inbox-purpose-${referral.id}`}>
-                              {referralPurposeLabel(destination.purpose)}
-                            </span>
-                          </header>
-                          <p className={styles.inboxFacts}>{referralPersonFacts(referral).join(" · ")}</p>
-                          <dl className={styles.inboxClocks} data-testid={`ward-ed-inbox-clocks-${referral.id}`}>
-                            <div
-                              className={styles.inboxClockRow}
-                              data-testid={`ward-ed-inbox-department-clock-${referral.id}`}
-                            >
-                              <dt>{lines.department.term}</dt>
-                              <dd>{lines.department.value}</dd>
-                            </div>
-                            <div
-                              className={styles.inboxClockRow}
-                              data-testid={`ward-ed-inbox-referral-clock-${referral.id}`}
-                            >
-                              <dt>{lines.referral.term}</dt>
-                              <dd>{lines.referral.value}</dd>
-                            </div>
-                          </dl>
-                          <div className={styles.inboxClearance} data-testid={`ward-ed-inbox-clearance-${referral.id}`}>
-                            <span className={styles.inboxClearanceLabel}>Medically cleared</span>
-                            <span>
-                              {referral.medicalClearance === undefined
-                                ? "Not assessed"
-                                : referral.medicalClearance.cleared
-                                  ? `Yes — recorded ${formatInstantWithDay(referral.medicalClearance.at, now)}`
-                                  : `No — recorded ${formatInstantWithDay(referral.medicalClearance.at, now)}`}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            className={styles.referralDetailsTrigger}
-                            aria-expanded={referralDetailsOpenFor === referral.id}
-                            onClick={() =>
-                              setReferralDetailsOpenFor((current) =>
-                                current === referral.id ? undefined : referral.id,
-                              )
-                            }
-                          >
-                            View referral <span aria-hidden="true">›</span>
-                          </button>
-                          <div className={styles.referralDetails} hidden={referralDetailsOpenFor !== referral.id}>
-                            <ReferralIntakeSummary intake={referral.intake} />
-                            <div className={styles.inboxActionRow}>
-                              <button
-                                type="button"
-                                className={styles.inboxBtn}
-                                data-testid={`ward-ed-inbox-clearance-yes-${referral.id}`}
-                                onClick={() =>
-                                  recordEdStep({
-                                    type: "RECORD_MEDICAL_CLEARANCE",
-                                    role: "ed",
-                                    now,
-                                    referralId: referral.id,
-                                    cleared: true,
-                                  })
-                                }
-                              >
-                                Record medically cleared
+                        <div className={styles.attentionBody}>
+                          <span className={styles.attentionWhy}>{flag.why}</span>
+                          <div className={styles.attentionFooter}>
+                            {flag.actionLabel ? (
+                              <button type="button" className={styles.attentionNext} onClick={flag.onAction}>
+                                <span>Next:</span> {flag.actionLabel}
                               </button>
+                            ) : (
+                              <span />
+                            )}
+                            {patients.some((patient) => patient.id === flag.recordId) && (
                               <button
                                 type="button"
-                                className={styles.inboxBtn}
-                                data-testid={`ward-ed-inbox-clearance-no-${referral.id}`}
-                                onClick={() =>
-                                  recordEdStep({
-                                    type: "RECORD_MEDICAL_CLEARANCE",
-                                    role: "ed",
-                                    now,
-                                    referralId: referral.id,
-                                    cleared: false,
-                                  })
-                                }
+                                className={styles.attentionRecord}
+                                onClick={() => setSelectedPatientId(flag.recordId)}
                               >
-                                Record not medically cleared
-                              </button>
-                            </div>
-                            {hasLinkedMovement ? null : (
-                              <button
-                                type="button"
-                                className={`${styles.inboxBtn} ${styles.inboxBtnPrimary}`}
-                                data-testid={`ward-ed-inbox-raise-${referral.id}`}
-                                onClick={() => {
-                                  setRaisingFromReferralId(referral.id);
-                                  setDraft((current) => ({ ...current, gender: referralWardGender(referral) }));
-                                  setReferralOpen(true);
-                                }}
-                              >
-                                Raise into a movement
+                                View record <span aria-hidden="true">›</span>
                               </button>
                             )}
-                            {addressing.state !== "queued" ? null : (
-                              <>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
+            <section
+              className={`${styles.panel} ${styles.mod}`}
+              aria-labelledby="ward-ed-lists-heading"
+              data-pane="lists"
+            >
+              <div className={styles.ph}>
+                <h2 id="ward-ed-lists-heading">Lists</h2>
+
+                <span className={styles.count}>
+                  {departmentListTab === "review"
+                    ? `${awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length} awaiting review`
+                    : departmentListTab === "cleared"
+                      ? `${clearedPatients.length === 0 ? "none" : clearedPatients.length} medical clearance`
+                      : departmentListTab === "expected"
+                        ? `${expects.length === 0 ? "none" : expects.length} expected`
+                        : departmentListTab === "forms"
+                          ? `${underFormPatients.length === 0 ? "none" : underFormPatients.length} under a form`
+                          : `${outbox.length + answeredAll.length === 0 ? "none" : outbox.length + answeredAll.length} referred`}
+                </span>
+              </div>
+              <div
+                className={`${styles.tabbar} ${styles.departmentListTabs}`}
+                role="tablist"
+                aria-label="Lists"
+                onKeyDown={onDepartmentListKeyDown}
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  id="ward-ed-review-tab"
+                  aria-label={`Awaiting Review, ${awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length} patients`}
+                  aria-selected={departmentListTab === "review"}
+                  aria-controls="ward-ed-review-panel"
+                  tabIndex={departmentListTab === "review" ? 0 : -1}
+                  className={styles.tabBtn}
+                  onClick={() => setDepartmentListTab("review")}
+                >
+                  Review{" "}
+                  <span className={styles.tabNum} data-zero={awaitingReviewPatients.length === 0 ? "true" : undefined}>
+                    {awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="ward-ed-cleared-tab"
+                  aria-label={`Medical Clearance, ${clearedPatients.length === 0 ? "none" : clearedPatients.length}`}
+                  aria-selected={departmentListTab === "cleared"}
+                  aria-controls="ward-ed-cleared-panel"
+                  tabIndex={departmentListTab === "cleared" ? 0 : -1}
+                  className={styles.tabBtn}
+                  onClick={() => setDepartmentListTab("cleared")}
+                >
+                  Med Clear{" "}
+                  <span className={styles.tabNum} data-zero={clearedPatients.length === 0 ? "true" : undefined}>
+                    {clearedPatients.length === 0 ? "none" : clearedPatients.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="ward-ed-expected-tab"
+                  aria-label={`Expects, ${expects.length === 0 ? "none" : expects.length}`}
+                  aria-selected={departmentListTab === "expected"}
+                  aria-controls="ward-ed-expected-panel"
+                  tabIndex={departmentListTab === "expected" ? 0 : -1}
+                  className={styles.tabBtn}
+                  onClick={() => setDepartmentListTab("expected")}
+                >
+                  Expects{" "}
+                  <span className={styles.tabNum} data-zero={expects.length === 0 ? "true" : undefined}>
+                    {expects.length === 0 ? "none" : expects.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="ward-ed-forms-tab"
+                  aria-label={`Forms, ${underFormPatients.length === 0 ? "none" : underFormPatients.length}`}
+                  aria-selected={departmentListTab === "forms"}
+                  aria-controls="ward-ed-forms-panel"
+                  tabIndex={departmentListTab === "forms" ? 0 : -1}
+                  className={styles.tabBtn}
+                  onClick={() => setDepartmentListTab("forms")}
+                >
+                  Forms{" "}
+                  <span className={styles.tabNum} data-zero={underFormPatients.length === 0 ? "true" : undefined}>
+                    {underFormPatients.length === 0 ? "none" : underFormPatients.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="ward-ed-referred-tab"
+                  aria-label="Referred · Still to be moved"
+                  aria-selected={departmentListTab === "referred"}
+                  aria-controls="ward-ed-outbox-panel"
+                  tabIndex={departmentListTab === "referred" ? 0 : -1}
+                  className={styles.tabBtn}
+                  onClick={() => setDepartmentListTab("referred")}
+                >
+                  Referred{" "}
+                  <span
+                    className={styles.tabNum}
+                    data-zero={outbox.length + answeredAll.length === 0 ? "true" : undefined}
+                  >
+                    {outbox.length + answeredAll.length === 0 ? "none" : outbox.length + answeredAll.length}
+                  </span>
+                </button>
+              </div>
+
+              <section
+                id="ward-ed-review-panel"
+                role="tabpanel"
+                aria-labelledby="ward-ed-review-tab"
+                aria-label="Awaiting Review"
+                hidden={departmentListTab !== "review"}
+                className={styles.lstWrap}
+                tabIndex={0}
+              >
+                <section
+                  aria-label="Referrals"
+                  className={styles.inboxSection}
+                  data-testid="ward-ed-inbox"
+                  tabIndex={0}
+                >
+                  <h3 className={styles.inboxSubheading}>
+                    Referrals &middot; {inbox.length} patient{inbox.length === 1 ? "" : "s"}
+                  </h3>
+                  <p className={styles.inboxMeta}>
+                    Oldest first · Department time is from recorded triage; referral time is separate.
+                  </p>
+                  {inbox.length === 0 ? (
+                    <p className={styles.placeholder} data-testid="ward-ed-inbox-empty">
+                      No referral for psychiatric review is addressed to {department.name}. Bed-only and medical
+                      requests are outside this list.
+                    </p>
+                  ) : (
+                    <ul className={styles.inboxList}>
+                      {inbox.map(({ referral, destination, addressing }) => {
+                        const clocks = referralClocks(referral, now);
+                        const lines = edReferralClockLines(clocks);
+                        const declineOpen = declineOpenFor === referral.id;
+                        const declineBlocked = declineReasonBlockedReason(declineDraft);
+                        const hasLinkedMovement = movements.some((movement) => movement.referralId === referral.id);
+                        const referralPatient = resolveSubjectPatient(referral, {
+                          patients: registryPatients,
+                          referrals,
+                        });
+                        return (
+                          <li
+                            key={`${referral.id}-${destination.edId}-${destination.purpose}`}
+                            className={styles.inboxItem}
+                            data-testid={`ward-ed-inbox-row-${referral.id}`}
+                            data-purpose={destination.purpose}
+                            data-ed-id={destination.edId}
+                            data-minutes-since-referral={clocks.sinceReferral}
+                            data-since-referral-running={clocks.sinceReferralRunning ? "true" : "false"}
+                            data-minutes-in-department={clocks.inDepartment}
+                          >
+                            <header className={styles.inboxItemHeader}>
+                              <strong>{referral.id}</strong>
+                              <span style={{ fontSize: "0.85rem", color: "var(--ink)", fontWeight: 600 }}>
+                                {referralPatient.displayName}
+                              </span>
+                              <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                                (UMRN: <strong>{referralPatient.umrn}</strong>)
+                              </span>
+                              <span
+                                className={styles.inboxPurpose}
+                                data-testid={`ward-ed-inbox-purpose-${referral.id}`}
+                              >
+                                {referralPurposeLabel(destination.purpose)}
+                              </span>
+                            </header>
+                            <p className={styles.inboxFacts}>{referralPersonFacts(referral).join(" · ")}</p>
+                            <dl className={styles.inboxClocks} data-testid={`ward-ed-inbox-clocks-${referral.id}`}>
+                              <div
+                                className={styles.inboxClockRow}
+                                data-testid={`ward-ed-inbox-department-clock-${referral.id}`}
+                              >
+                                <dt>{lines.department.term}</dt>
+                                <dd>{lines.department.value}</dd>
+                              </div>
+                              <div
+                                className={styles.inboxClockRow}
+                                data-testid={`ward-ed-inbox-referral-clock-${referral.id}`}
+                              >
+                                <dt>{lines.referral.term}</dt>
+                                <dd>{lines.referral.value}</dd>
+                              </div>
+                            </dl>
+                            <div
+                              className={styles.inboxClearance}
+                              data-testid={`ward-ed-inbox-clearance-${referral.id}`}
+                            >
+                              <span className={styles.inboxClearanceLabel}>Medically cleared</span>
+                              <span>
+                                {referral.medicalClearance === undefined
+                                  ? "Not assessed"
+                                  : referral.medicalClearance.cleared
+                                    ? `Yes — recorded ${formatInstantWithDay(referral.medicalClearance.at, now)}`
+                                    : `No — recorded ${formatInstantWithDay(referral.medicalClearance.at, now)}`}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.referralDetailsTrigger}
+                              aria-expanded={referralDetailsOpenFor === referral.id}
+                              onClick={() =>
+                                setReferralDetailsOpenFor((current) =>
+                                  current === referral.id ? undefined : referral.id,
+                                )
+                              }
+                            >
+                              View referral <span aria-hidden="true">›</span>
+                            </button>
+                            <div className={styles.referralDetails} hidden={referralDetailsOpenFor !== referral.id}>
+                              <ReferralIntakeSummary intake={referral.intake} />
+                              <div className={styles.inboxActionRow}>
                                 <button
                                   type="button"
                                   className={styles.inboxBtn}
-                                  data-testid={`ward-ed-inbox-decline-${referral.id}`}
-                                  aria-expanded={declineOpen}
-                                  onClick={() => toggleDecline(referral.id)}
+                                  data-testid={`ward-ed-inbox-clearance-yes-${referral.id}`}
+                                  onClick={() =>
+                                    recordEdStep({
+                                      type: "RECORD_MEDICAL_CLEARANCE",
+                                      role: "ed",
+                                      now,
+                                      referralId: referral.id,
+                                      cleared: true,
+                                    })
+                                  }
                                 >
-                                  Decline
+                                  Record medically cleared
                                 </button>
-                                {declineOpen ? (
-                                  <div
-                                    className={styles.declineForm}
-                                    data-testid={`ward-ed-inbox-decline-panel-${referral.id}`}
+                                <button
+                                  type="button"
+                                  className={styles.inboxBtn}
+                                  data-testid={`ward-ed-inbox-clearance-no-${referral.id}`}
+                                  onClick={() =>
+                                    recordEdStep({
+                                      type: "RECORD_MEDICAL_CLEARANCE",
+                                      role: "ed",
+                                      now,
+                                      referralId: referral.id,
+                                      cleared: false,
+                                    })
+                                  }
+                                >
+                                  Record not medically cleared
+                                </button>
+                              </div>
+                              {hasLinkedMovement ? null : (
+                                <button
+                                  type="button"
+                                  className={`${styles.inboxBtn} ${styles.inboxBtnPrimary}`}
+                                  data-testid={`ward-ed-inbox-raise-${referral.id}`}
+                                  onClick={() => {
+                                    setRaisingFromReferralId(referral.id);
+                                    setDraft((current) => ({ ...current, gender: referralWardGender(referral) }));
+                                    setReferralOpen(true);
+                                  }}
+                                >
+                                  Raise into a movement
+                                </button>
+                              )}
+                              {addressing.state !== "queued" ? null : (
+                                <>
+                                  <button
+                                    type="button"
+                                    className={styles.inboxBtn}
+                                    data-testid={`ward-ed-inbox-decline-${referral.id}`}
+                                    aria-expanded={declineOpen}
+                                    onClick={() => toggleDecline(referral.id)}
                                   >
-                                    <label
-                                      className={styles.referralField}
-                                      htmlFor={`ward-ed-inbox-decline-reason-${referral.id}`}
+                                    Decline
+                                  </button>
+                                  {declineOpen ? (
+                                    <div
+                                      className={styles.declineForm}
+                                      data-testid={`ward-ed-inbox-decline-panel-${referral.id}`}
                                     >
-                                      Why is {referral.id} being declined?
-                                      <select
-                                        id={`ward-ed-inbox-decline-reason-${referral.id}`}
-                                        data-testid={`ward-ed-inbox-decline-reason-${referral.id}`}
-                                        value={declineDraft ?? NO_DECLINE_REASON_VALUE}
-                                        onChange={(event) =>
-                                          setDeclineDraft(
-                                            event.target.value === NO_DECLINE_REASON_VALUE
-                                              ? undefined
-                                              : (event.target.value as ReferralDeclineReason),
-                                          )
+                                      <label
+                                        className={styles.referralField}
+                                        htmlFor={`ward-ed-inbox-decline-reason-${referral.id}`}
+                                      >
+                                        Why is {referral.id} being declined?
+                                        <select
+                                          id={`ward-ed-inbox-decline-reason-${referral.id}`}
+                                          data-testid={`ward-ed-inbox-decline-reason-${referral.id}`}
+                                          value={declineDraft ?? NO_DECLINE_REASON_VALUE}
+                                          onChange={(event) =>
+                                            setDeclineDraft(
+                                              event.target.value === NO_DECLINE_REASON_VALUE
+                                                ? undefined
+                                                : (event.target.value as ReferralDeclineReason),
+                                            )
+                                          }
+                                        >
+                                          <option value={NO_DECLINE_REASON_VALUE}>Choose a reason</option>
+                                          {ED_DECLINE_REASONS.map((reason) => (
+                                            <option key={reason} value={reason}>
+                                              {DECLINE_REASON_LABELS[reason] ?? reason}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <button
+                                        type="button"
+                                        data-testid={`ward-ed-inbox-decline-confirm-${referral.id}`}
+                                        className={styles.declineSubmit}
+                                        aria-disabled={declineBlocked ? "true" : undefined}
+                                        aria-describedby={
+                                          declineBlocked ? `ward-ed-inbox-decline-blocked-${referral.id}` : undefined
+                                        }
+                                        title={declineBlocked ?? undefined}
+                                        onClick={
+                                          declineBlocked
+                                            ? ignoreUnavailableActivation
+                                            : () => submitDecline(referral.id)
                                         }
                                       >
-                                        <option value={NO_DECLINE_REASON_VALUE}>Choose a reason</option>
-                                        {ED_DECLINE_REASONS.map((reason) => (
-                                          <option key={reason} value={reason}>
-                                            {DECLINE_REASON_LABELS[reason] ?? reason}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </label>
-                                    <button
-                                      type="button"
-                                      data-testid={`ward-ed-inbox-decline-confirm-${referral.id}`}
-                                      className={styles.declineSubmit}
-                                      aria-disabled={declineBlocked ? "true" : undefined}
-                                      aria-describedby={
-                                        declineBlocked ? `ward-ed-inbox-decline-blocked-${referral.id}` : undefined
-                                      }
-                                      title={declineBlocked ?? undefined}
-                                      onClick={
-                                        declineBlocked ? ignoreUnavailableActivation : () => submitDecline(referral.id)
-                                      }
-                                    >
-                                      Record decline
-                                    </button>
-                                    {declineBlocked ? (
-                                      <span id={`ward-ed-inbox-decline-blocked-${referral.id}`} className="sr-only">
-                                        {declineBlocked}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                ) : null}
-                              </>
-                            )}
-                          </div>
-                          {declineRejection?.referralId === referral.id ? (
-                            <p
-                              className={styles.rejection}
-                              role="alert"
-                              data-testid={`ward-ed-inbox-decline-rejection-${referral.id}`}
-                            >
-                              Decline not recorded: {declineRejection.rejection.reason}
-                            </p>
-                          ) : null}
+                                        Record decline
+                                      </button>
+                                      {declineBlocked ? (
+                                        <span id={`ward-ed-inbox-decline-blocked-${referral.id}`} className="sr-only">
+                                          {declineBlocked}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  ) : null}
+                                </>
+                              )}
+                            </div>
+                            {declineRejection?.referralId === referral.id ? (
+                              <p
+                                className={styles.rejection}
+                                role="alert"
+                                data-testid={`ward-ed-inbox-decline-rejection-${referral.id}`}
+                              >
+                                Decline not recorded: {declineRejection.rejection.reason}
+                              </p>
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
+
+                <h2 className={styles.sectionHeading} style={{ marginTop: "1rem" }}>
+                  Awaiting Review &middot; {awaitingReviewPatients.length} patient
+                  {awaitingReviewPatients.length === 1 ? "" : "s"}
+                </h2>
+                <p className={styles.unitMeta}>Patients in department without a recorded psychiatric review.</p>
+                {awaitingReviewPatients.length === 0 ? (
+                  <p className={styles.none}>
+                    Everyone on this department&rsquo;s psychiatry list has been seen. Absence here means every referral
+                    has a recorded review, not that no referral was made.
+                  </p>
+                ) : (
+                  <ul className={styles.lst}>
+                    {awaitingReviewPatients.map((m) => {
+                      const mc = movementMedicalClearance(m, referrals);
+                      const patientInfo = resolveSubjectPatient(m, {
+                        patients: registryPatients,
+                        referrals,
+                        movements,
+                      });
+                      return (
+                        <li key={m.id} className={styles.lstRow} data-tone="quiet">
+                          <span className={styles.tick} data-tone="quiet" aria-hidden="true" />
+                          <span className={styles.lstMain}>
+                            <span className={styles.lstTitle}>
+                              <button
+                                type="button"
+                                className={styles.nameBtn}
+                                onClick={() => setSelectedPatientId(m.id)}
+                              >
+                                {patientInfo.displayName}
+                              </button>
+                            </span>
+                            <span className={styles.meta}>
+                              {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
+                              <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                                UMRN: <strong>{patientInfo.umrn}</strong>
+                              </span>
+                              <span className={styles.bayNumber}>{patientBay(m.id)}</span>
+                              <span>{m.cohort}</span>
+                              <span>{m.sex}</span>
+                            </span>
+                            <span className={styles.lstWhy}>
+                              {outstandingItem(m).label}.{" "}
+                              {mc?.cleared
+                                ? `Medically cleared at ${formatInstantWithDay(mc.at, now)}.`
+                                : mc
+                                  ? "Not medically cleared."
+                                  : "Clearance pending."}
+                            </span>
+                          </span>
+                          <span className={styles.lstEnd}>
+                            <span className={styles.stamp}>{splitDuration(Math.max(now - m.openedAt, 0))} here</span>
+                          </span>
                         </li>
                       );
                     })}
@@ -5743,579 +5958,533 @@ export function EdScreen({ edId }: EdScreenProps) {
                 )}
               </section>
 
-              <h2 className={styles.sectionHeading} style={{ marginTop: "1rem" }}>
-                Awaiting Review &middot; {awaitingReviewPatients.length} patient
-                {awaitingReviewPatients.length === 1 ? "" : "s"}
-              </h2>
-              <p className={styles.unitMeta}>Patients in department without a recorded psychiatric review.</p>
-              {awaitingReviewPatients.length === 0 ? (
-                <p className={styles.none}>
-                  Everyone on this department&rsquo;s psychiatry list has been seen. Absence here means every referral
-                  has a recorded review, not that no referral was made.
-                </p>
-              ) : (
-                <ul className={styles.lst}>
-                  {awaitingReviewPatients.map((m) => {
-                    const mc = movementMedicalClearance(m, referrals);
-                    const patientInfo = resolveSubjectPatient(m, {
-                      patients: registryPatients,
-                      referrals,
-                      movements,
-                    });
-                    return (
-                      <li key={m.id} className={styles.lstRow} data-tone="quiet">
-                        <span className={styles.tick} data-tone="quiet" aria-hidden="true" />
-                        <span className={styles.lstMain}>
-                          <span className={styles.lstTitle}>
-                            <button type="button" className={styles.nameBtn} onClick={() => setSelectedPatientId(m.id)}>
-                              {patientInfo.displayName}
-                            </button>
-                          </span>
-                          <span className={styles.meta}>
-                            {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
-                            <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
-                              UMRN: <strong>{patientInfo.umrn}</strong>
-                            </span>
-                            <span className={styles.bayNumber}>{patientBay(m.id)}</span>
-                            <span>{m.cohort}</span>
-                            <span>{m.sex}</span>
-                          </span>
-                          <span className={styles.lstWhy}>
-                            {outstandingItem(m).label}.{" "}
-                            {mc?.cleared
-                              ? `Medically cleared at ${formatInstantWithDay(mc.at, now)}.`
-                              : mc
-                                ? "Not medically cleared."
-                                : "Clearance pending."}
-                          </span>
-                        </span>
-                        <span className={styles.lstEnd}>
-                          <span className={styles.stamp}>{splitDuration(Math.max(now - m.openedAt, 0))} here</span>
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-
-            <section
-              id="ward-ed-cleared-panel"
-              role="tabpanel"
-              aria-labelledby="ward-ed-cleared-tab"
-              aria-label="Medical Clearance"
-              hidden={departmentListTab !== "cleared"}
-              className={styles.lstWrap}
-              tabIndex={0}
-            >
-              <h2 className={styles.sectionHeading}>
-                Medical Clearance &middot; {clearedPatients.length} patient
-                {clearedPatients.length === 1 ? "" : "s"}
-              </h2>
-              <p className={styles.unitMeta}>Patients marked medically cleared for psychiatric assessment.</p>
-              {clearedPatients.length === 0 ? (
-                <p className={styles.none}>
-                  No medical clearance is recorded for anybody here. Absence here means nothing has been written down,
-                  not that nobody is fit to be seen.
-                </p>
-              ) : (
-                <ul className={styles.lst}>
-                  {clearedPatients.map((m) => {
-                    const reviewed = !!m.examination;
-                    const mc = movementMedicalClearance(m, referrals);
-                    const patientInfo = resolveSubjectPatient(m, {
-                      patients: registryPatients,
-                      referrals,
-                      movements,
-                    });
-                    return (
-                      <li key={m.id} className={styles.lstRow} data-tone={reviewed ? "quiet" : "warn"}>
-                        <span className={styles.tick} data-tone={reviewed ? "quiet" : "warn"} aria-hidden="true" />
-                        <span className={styles.lstMain}>
-                          <span className={styles.lstTitle}>
-                            <button type="button" className={styles.nameBtn} onClick={() => setSelectedPatientId(m.id)}>
-                              {patientInfo.displayName}
-                            </button>
-                          </span>
-                          <span className={styles.meta}>
-                            {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
-                            <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
-                              UMRN: <strong>{patientInfo.umrn}</strong>
-                            </span>
-                            <span className={styles.bayNumber}>{patientBay(m.id)}</span>
-                            <span>{m.cohort}</span>
-                            <span>{m.sex}</span>
-                          </span>
-                          <span className={styles.lstWhy}>
-                            {reviewed ? "Reviewed by psychiatry. " : "Not seen by psychiatry yet. "}
-                            {stageCopy[m.stage].label}
-                          </span>
-                        </span>
-                        <span className={styles.lstEnd}>
-                          <span className={styles.stamp}>
-                            {mc?.at ? `cleared ${formatInstantWithDay(mc.at, now)}` : "cleared"}
-                          </span>
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-
-            <section
-              id="ward-ed-expected-panel"
-              role="tabpanel"
-              aria-labelledby="ward-ed-expected-tab"
-              aria-label="Expects"
-              data-testid="ward-ed-expects"
-              hidden={departmentListTab !== "expected"}
-              className={styles.lstWrap}
-              tabIndex={0}
-            >
-              <h2 className={styles.sectionHeading}>
-                Expects &middot; {expects.length} patient{expects.length === 1 ? "" : "s"}
-              </h2>
-              <p className={styles.unitMeta}>
-                Not yet in the department; scheduled arrival time first when recorded, longest since referral first
-                otherwise. Accepted referrals stay here until arrival is marked.
-              </p>
-              {expects.length === 0 ? (
-                <p className={styles.placeholder} data-testid="ward-ed-expects-empty">
-                  No expects are recorded for psychiatry at {department.name}; this does not establish that nobody is on
-                  the way.
-                </p>
-              ) : (
-                <ul className={styles.cardList}>
-                  {expects.map(({ referral, destination }) => {
-                    const waiting = Math.max(0, now - referral.raisedAt);
-                    const reconsider = waiting >= EXPECT_RECONSIDER_AFTER_MINUTES;
-                    const eta = movements.find((m) => m.referralId === referral.id)?.transport?.estimatedAt;
-                    return (
-                      <li
-                        key={`${referral.id}-${destination.edId}`}
-                        className={styles.card}
-                        data-testid={`ward-ed-expects-row-${referral.id}`}
-                        data-minutes-waiting={waiting}
-                        data-reconsider={reconsider ? "true" : "false"}
-                      >
-                        <header className={styles.cardHeader}>
-                          <strong>{referral.id}</strong>
-                          <span className={styles.cardMeta}>{referralPurposeLabel(destination.purpose)}</span>
-                        </header>
-                        <p className={styles.cardMeta}>{referralPersonFacts(referral).join(" · ")}</p>
-                        <dl className={styles.clockGrid} data-testid={`ward-ed-expects-clock-${referral.id}`}>
-                          {eta !== undefined ? (
-                            <div className={styles.clockRow}>
-                              <dt>Estimated arrival</dt>
-                              <dd>{formatInstantWithDay(eta, now)}</dd>
-                            </div>
-                          ) : null}
-                          <div className={styles.clockRow}>
-                            <dt>Waiting since referral</dt>
-                            <dd>{formatElapsed(waiting)}</dd>
-                          </div>
-                        </dl>
-                        {reconsider ? (
-                          <p
-                            className={styles.placeholder}
-                            data-testid={`ward-ed-expects-reconsider-${referral.id}`}
-                            title={OPERATIONAL_DEFAULT_LABEL}
-                          >
-                            Referred over {EXPECT_RECONSIDER_AFTER_MINUTES / 60} hours ago and not arrived. Reconsider
-                            whether this referral still stands; no record was changed.
-                          </p>
-                        ) : null}
-                        <button
-                          type="button"
-                          className={styles.arrivedButton}
-                          data-testid={`ward-ed-expects-arrived-${referral.id}`}
-                          onClick={() =>
-                            recordEdStep({
-                              type: "RECORD_ARRIVED_IN_DEPARTMENT",
-                              role: "ed",
-                              now,
-                              referralId: referral.id,
-                            })
-                          }
-                        >
-                          Mark arrived in department
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-
-            <section
-              id="ward-ed-forms-panel"
-              role="tabpanel"
-              aria-labelledby="ward-ed-forms-tab"
-              aria-label="Forms"
-              hidden={departmentListTab !== "forms"}
-              className={styles.lstWrap}
-              tabIndex={0}
-            >
-              <h2 className={styles.sectionHeading}>
-                Forms &middot; {underFormPatients.length} patient{underFormPatients.length === 1 ? "" : "s"}
-              </h2>
-              <p className={styles.unitMeta}>Patients with a recorded involuntary form.</p>
-              {underFormPatients.length === 0 ? (
-                <p className={styles.none}>
-                  Nobody on this department&rsquo;s list is under a legal form. Absence here means no form is recorded,
-                  not that no form applies.
-                </p>
-              ) : (
-                <ul className={styles.lst}>
-                  {underFormPatients.map((m) => {
-                    const due = m.legalForm?.dueAt;
-                    const tone = due === null || due === undefined ? "quiet" : due < now ? "danger" : "good";
-                    const stamp =
-                      due === null || due === undefined
-                        ? "no deadline"
-                        : due < now
-                          ? `passed ${formatInstantWithDay(due, now)}`
-                          : `due ${formatInstantWithDay(due, now)}`;
-                    const patientInfo = resolveSubjectPatient(m, {
-                      patients: registryPatients,
-                      referrals,
-                      movements,
-                    });
-                    return (
-                      <li key={m.id} className={styles.lstRow} data-tone={tone}>
-                        <span className={styles.tick} data-tone={tone} aria-hidden="true" />
-                        <span className={styles.lstMain}>
-                          <span className={styles.lstTitle}>
-                            <button type="button" className={styles.nameBtn} onClick={() => setSelectedPatientId(m.id)}>
-                              {patientInfo.displayName}
-                            </button>
-                          </span>
-                          <span className={styles.meta}>
-                            {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
-                            <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
-                              UMRN: <strong>{patientInfo.umrn}</strong>
-                            </span>
-                            <span className={styles.bayNumber}>{patientBay(m.id)}</span>
-                            <span>{m.cohort}</span>
-                            <span>{m.sex}</span>
-                          </span>
-                          <span className={styles.lstWhy}>
-                            Form {m.legalForm ? m.legalForm.code : ""}.{" "}
-                            {due === null || due === undefined
-                              ? "No deadline is recorded against it."
-                              : due < now
-                                ? `The deadline passed ${splitDuration(Math.max(now - due, 0))} ago.`
-                                : `The deadline is ${splitDuration(Math.max(due - now, 0))} away.`}
-                          </span>
-                        </span>
-                        <span className={styles.lstEnd}>
-                          <span className={styles.stamp}>{stamp}</span>
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-            {/*
-             * RECENTLY ANSWERED — owner ruling 7, 2026-09-01. Directly beneath the inbox because it is
-             * the same clinician's own question a moment later: "what did I just decide, and why?" The
-             * row a clinician just declined has already left the inbox above — that list is a worklist
-             * — so without this section there is no undo, no record on this screen, and nothing to
-             * check a mistake against.
-             *
-             * ⚠️ **`data-testid` VALUES ARE `ward-ed-answered-*`, NEVER `ward-ed-inbox-*`.** Two tests
-             * in this suite assert an answered row DISAPPEARS from `ward-ed-inbox-row-<id>` — that is
-             * "the only success signal on screen" for a decline, per their own comments — and
-             * `getAllByTestId(/^ward-ed-inbox-row-/)` would silently grow to include this section's
-             * rows too. Reusing the inbox's prefix here would turn both green tests red BECAUSE this
-             * feature works; the distinct prefix is what keeps them passing while proving something new.
-             *
-             * Same structure and classes as the inbox section above, on purpose — a coordinator moving
-             * between the two should not have to learn a second layout.
-             */}
-            <section
-              id="ward-ed-outbox-panel"
-              role="tabpanel"
-              aria-labelledby="ward-ed-referred-tab"
-              hidden={departmentListTab !== "referred"}
-              aria-label="Referred · Still to be moved"
-              className={styles.lstWrap}
-              tabIndex={0}
-            >
-              <div className={styles.referredSubSection} data-testid="ward-ed-outbox">
+              <section
+                id="ward-ed-cleared-panel"
+                role="tabpanel"
+                aria-labelledby="ward-ed-cleared-tab"
+                aria-label="Medical Clearance"
+                hidden={departmentListTab !== "cleared"}
+                className={styles.lstWrap}
+                tabIndex={0}
+              >
                 <h2 className={styles.sectionHeading}>
-                  Still to be moved &middot; {outbox.length} patient{outbox.length === 1 ? "" : "s"}
+                  Medical Clearance &middot; {clearedPatients.length} patient
+                  {clearedPatients.length === 1 ? "" : "s"}
                 </h2>
-                <p className={styles.unitMeta}>
-                  Patients referred onward who remain in {department.name}. Bed acceptance does not remove them; elapsed
-                  movement time starts at recorded acceptance.
-                </p>
-                {outbox.length === 0 ? (
-                  <p className={styles.placeholder} data-testid="ward-ed-outbox-empty">
-                    No patient here is waiting to be moved onward.
+                <p className={styles.unitMeta}>Patients marked medically cleared for psychiatric assessment.</p>
+                {clearedPatients.length === 0 ? (
+                  <p className={styles.none}>
+                    No medical clearance is recorded for anybody here. Absence here means nothing has been written down,
+                    not that nobody is fit to be seen.
                   </p>
                 ) : (
-                  <ul className={styles.cardList}>
-                    {outbox.map((movement) => {
-                      // Resolved from the live `units`, never `unitById` — whole-branch review Critical 1,
-                      // the same correction the patients section below already carries.
-                      const acceptedUnit = units.find((unit) => unit.id === movement.acceptedUnitId);
-                      // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-                      const patientInfo = resolveSubjectPatient(movement, {
+                  <ul className={styles.lst}>
+                    {clearedPatients.map((m) => {
+                      const reviewed = !!m.examination;
+                      const mc = movementMedicalClearance(m, referrals);
+                      const patientInfo = resolveSubjectPatient(m, {
                         patients: registryPatients,
                         referrals,
                         movements,
                       });
                       return (
-                        <li
-                          key={movement.id}
-                          className={styles.card}
-                          data-testid={`ward-ed-outbox-row-${movement.id}`}
-                          data-stage={movement.stage}
-                        >
-                          <header className={styles.cardHeader}>
-                            <strong>{patientInfo.formalName}</strong>
-                            <span className={styles.cardMeta}>{stageCopy[movement.stage].label}</span>
-                            {/*
-                             * THE URGENCY TIER, BESIDE THE STAGE, ON EVERY ROW — owner ruling, 2026-08-31.
-                             *
-                             * ⚠️ **UNCONDITIONAL, TIER 3 INCLUDED.** Showing it only on tiers 1 and 2 would
-                             * make its ABSENCE the signal for tier 3, and this project has repeatedly proved
-                             * that nobody reads an absence. Same position on every card, whatever the tier.
-                             *
-                             * `urgencyTierLabel`, never a second spelling: the boards, the pickers and this
-                             * row must all say "Tier 3 · least urgent" in the same words.
-                             *
-                             * Neutral tone for all three tiers by design — see `.tierLabel` in ed.module.css.
-                             */}
-                            <span
-                              className={styles.tierLabel}
-                              data-testid={`ward-ed-outbox-tier-${movement.id}`}
-                              data-urgency={movement.urgency}
-                            >
-                              <span className={styles.urgencyGlyph} aria-hidden="true">
-                                {urgencyGlyph(movement.urgency)}
-                              </span>{" "}
-                              {urgencyTierLabel(movement.urgency)}
-                            </span>
-                          </header>
-                          <p className={styles.cardMeta}>
-                            {movement.cohort} &middot; {movement.security} &middot; {movement.sex} &middot;{" "}
-                            {movement.legalStatus}
-                          </p>
-                          <div className={styles.outstandingItem}>
-                            <span className={styles.outstandingLabel}>Going to</span>
-                            {/* The unit's own name, or an honest statement that this state cannot name
-                            one — never a substituted unit and never a bare id. */}
-                            <span>{acceptedUnit ? acceptedUnit.name : "Accepted unit not resolved"}</span>
-                          </div>
-                          {movement.transport?.diversion !== undefined && movement.admissionId !== undefined ? (
-                            <div className={styles.actionRow}>
+                        <li key={m.id} className={styles.lstRow} data-tone={reviewed ? "quiet" : "warn"}>
+                          <span className={styles.tick} data-tone={reviewed ? "quiet" : "warn"} aria-hidden="true" />
+                          <span className={styles.lstMain}>
+                            <span className={styles.lstTitle}>
                               <button
                                 type="button"
-                                data-testid={`ward-ed-release-diverted-bed-${movement.id}`}
-                                className={styles.declineButton}
-                                onClick={() =>
-                                  dispatch({
-                                    type: "RELEASE_DIVERTED_BED",
-                                    role: "ed",
-                                    now,
-                                    movementId: movement.id,
-                                  })
-                                }
+                                className={styles.nameBtn}
+                                onClick={() => setSelectedPatientId(m.id)}
                               >
-                                Release the held bed
+                                {patientInfo.displayName}
                               </button>
-                            </div>
-                          ) : null}
-                          {/*
-                           * ⚠️ **NOT A REFERRAL CLOCK, AND `referralClocks` MUST NEVER BE REACHED FOR
-                           * HERE.** This row is a `Movement`; `triagedAt` lives on a `Referral` and
-                           * nothing joins the two. What a move being owed is counted from is
-                           * `acceptedAt`, which `ACCEPT_IN_PRINCIPLE` writes (and, since v10 pass 3,
-                           * the seed's synthetic `withDemoStageTimes`); a row without one still states
-                           * the absence, and only the absence, in the same register the rest of the
-                           * board uses for a fact it does not hold. Substituting
-                           * `openedAt` here would answer a different question (how long they have been
-                           * in the department) under this label, and read as plausible while doing it.
-                           */}
-                          <div className={styles.outstandingItem}>
-                            <span className={styles.outstandingLabel}>Waiting to move</span>
-                            <span>
-                              {movement.acceptedAt === undefined
-                                ? "Acceptance time not recorded"
-                                : `${splitDuration(Math.max(now - movement.acceptedAt, 0))} since accepted`}
                             </span>
-                          </div>
-                          <div className={styles.outstandingItem}>
-                            <span className={styles.outstandingLabel}>Gender</span>
-                            <span data-testid={`ward-ed-gender-${movement.id}`}>
-                              {movement.gender ?? "Not yet recorded"}
-                            </span>
-                          </div>
-                          {movement.transportNeed?.needed === false ? (
-                            <div
-                              className={styles.outstandingItem}
-                              data-testid={`ward-ed-outbox-no-transport-${movement.id}`}
-                            >
-                              No transport needed
-                            </div>
-                          ) : null}
-                          {movement.arrivalDetails ? (
-                            <div
-                              className={styles.outstandingItem}
-                              data-testid={`ward-ed-outbox-arrival-plan-${movement.id}`}
-                            >
-                              <span className={styles.outstandingLabel}>Arrival plan</span>
-                              <span>
-                                {arrivalModeLabel(movement.arrivalDetails.mode)} · ward{" "}
-                                {arrivalEtaLabel(movement.arrivalDetails.estimatedArrivalAt, now)}
-                                {movement.arrivalDetails.trackingNumber
-                                  ? ` · ${movement.arrivalDetails.trackingNumber}`
-                                  : ""}
+                            <span className={styles.meta}>
+                              {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
+                              <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                                UMRN: <strong>{patientInfo.umrn}</strong>
                               </span>
-                            </div>
-                          ) : null}
-                          {isArrivalLate(movement, now) ? (
-                            <div
-                              className={styles.arrivalLate}
-                              role="status"
-                              data-testid={`ward-ed-outbox-arrival-late-${movement.id}`}
-                            >
-                              Arrival late — more than 60 minutes past the estimated ward time. Not marked arrived.
-                            </div>
-                          ) : null}
-                          {canSetArrivalPlan(movement) ? (
-                            <div className={styles.actionRow}>
-                              <button
-                                type="button"
-                                data-testid={`ward-ed-outbox-arrival-plan-toggle-${movement.id}`}
-                                className={styles.acceptButton}
-                                onClick={() => setArrivalPlanOpenFor(movement.id)}
-                              >
-                                {movement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
-                              </button>
-                            </div>
-                          ) : null}
-                          {movement.referralAbsence?.reason === "none_raised" ? (
-                            <div
-                              className={styles.outstandingItem}
-                              data-testid={`ward-ed-outbox-no-referral-${movement.id}`}
-                            >
-                              No referral raised
-                            </div>
-                          ) : null}
-                          {!movement.closure && (
-                            <div className={styles.tableActionGroup}>
-                              <select
-                                data-testid={`ward-ed-record-gender-${movement.id}`}
-                                aria-label={`Record gender for ${patientInfo.displayName}`}
-                                value={genderRecordDraft[movement.id] ?? ""}
-                                onChange={(event) =>
-                                  setGenderRecordDraft((current) => ({
-                                    ...current,
-                                    [movement.id]: event.target.value as ReferralGender | "",
-                                  }))
-                                }
-                              >
-                                <option value="">Choose…</option>
-                                {GENDER_OPTIONS.map((gender) => (
-                                  <option key={gender} value={gender}>
-                                    {gender}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                data-testid={`ward-ed-record-gender-submit-${movement.id}`}
-                                className={styles.acceptButton}
-                                disabled={
-                                  !genderRecordDraft[movement.id] || genderRecordDraft[movement.id] === movement.gender
-                                }
-                                onClick={() => {
-                                  const gender = genderRecordDraft[movement.id];
-                                  if (!gender) return;
-                                  dispatch({
-                                    type: "RECORD_MOVEMENT_GENDER",
-                                    role: "ed",
-                                    now,
-                                    movementId: movement.id,
-                                    gender,
-                                  });
-                                  setGenderRecordDraft((current) => ({ ...current, [movement.id]: "" }));
-                                }}
-                              >
-                                Record gender
-                              </button>
-                            </div>
-                          )}
+                              <span className={styles.bayNumber}>{patientBay(m.id)}</span>
+                              <span>{m.cohort}</span>
+                              <span>{m.sex}</span>
+                            </span>
+                            <span className={styles.lstWhy}>
+                              {reviewed ? "Reviewed by psychiatry. " : "Not seen by psychiatry yet. "}
+                              {stageCopy[m.stage].label}
+                            </span>
+                          </span>
+                          <span className={styles.lstEnd}>
+                            <span className={styles.stamp}>
+                              {mc?.at ? `cleared ${formatInstantWithDay(mc.at, now)}` : "cleared"}
+                            </span>
+                          </span>
                         </li>
                       );
                     })}
                   </ul>
                 )}
-              </div>
+              </section>
 
-              {/*
-               * RECENT DECISIONS (ANSWERED REFERRALS)
-               *
-               * ⚠️ **`data-testid` VALUES ARE `ward-ed-answered-*`, NEVER `ward-ed-inbox-*`.** Two tests
-               * look for those rows: one asserts an answered row is here, and the other asserts an
-               * answered row is NOT in the inbox. Both are `referral-row` tests; both match `WF-`
-               * rows too. Reusing the inbox's prefix here would turn both green tests red BECAUSE this
-               * feature works; the distinct prefix is what keeps them passing while proving something new.
-               */}
-              <div className={styles.referredSubSection} data-testid="ward-ed-answered">
-                <h3 className={styles.sectionHeading}>
-                  Recent &middot;{" "}
-                  {answeredAll.length > ANSWERED_VISIBLE_CAP
-                    ? `${answered.length} of ${answeredAll.length}`
-                    : answeredAll.length}{" "}
-                  referral{answeredAll.length === 1 ? "" : "s"}
-                </h3>
+              <section
+                id="ward-ed-expected-panel"
+                role="tabpanel"
+                aria-labelledby="ward-ed-expected-tab"
+                aria-label="Expects"
+                data-testid="ward-ed-expects"
+                hidden={departmentListTab !== "expected"}
+                className={styles.lstWrap}
+                tabIndex={0}
+              >
+                <h2 className={styles.sectionHeading}>
+                  Expects &middot; {expects.length} patient{expects.length === 1 ? "" : "s"}
+                </h2>
                 <p className={styles.unitMeta}>
-                  Accepted, declined or cancelled referrals, most recently decided first. Shows the latest{" "}
-                  {ANSWERED_VISIBLE_CAP}; the heading counts all.
+                  Not yet in the department; scheduled arrival time first when recorded, longest since referral first
+                  otherwise. Accepted referrals stay here until arrival is marked.
                 </p>
-                {answeredAll.length === 0 ? (
-                  <p className={styles.placeholder} data-testid="ward-ed-answered-empty">
-                    Nothing addressed to psychiatry at {department.name} has been answered yet.
+                {expects.length === 0 ? (
+                  <p className={styles.placeholder} data-testid="ward-ed-expects-empty">
+                    No expects are recorded for psychiatry at {department.name}; this does not establish that nobody is
+                    on the way.
                   </p>
                 ) : (
                   <ul className={styles.cardList}>
-                    {answered.map(({ referral, addressing, destination }) => (
-                      <li
-                        key={`${referral.id}-${destination.edId}-${destination.purpose}`}
-                        className={styles.card}
-                        data-testid={`ward-ed-answered-row-${referral.id}`}
-                        data-purpose={destination.purpose}
-                        data-ed-id={destination.edId}
-                        data-state={addressing.state}
-                      >
-                        <header className={styles.cardHeader}>
-                          <strong>{referral.id}</strong>
-                          <span className={styles.cardMeta} data-testid={`ward-ed-answered-purpose-${referral.id}`}>
-                            {referralPurposeLabel(destination.purpose)}
-                          </span>
-                        </header>
-                        <p className={styles.referralState} data-testid={`ward-ed-answered-state-${referral.id}`}>
-                          {answeredAddressingLabel(addressing)}
-                        </p>
-                        {addressing.decidedAt !== undefined ? (
-                          <p className={styles.cardMeta} data-testid={`ward-ed-answered-decided-${referral.id}`}>
-                            Decided {formatInstantWithDay(addressing.decidedAt, now)}
-                          </p>
-                        ) : null}
-                      </li>
-                    ))}
+                    {expects.map(({ referral, destination }) => {
+                      const waiting = Math.max(0, now - referral.raisedAt);
+                      const reconsider = waiting >= EXPECT_RECONSIDER_AFTER_MINUTES;
+                      const eta = movements.find((m) => m.referralId === referral.id)?.transport?.estimatedAt;
+                      return (
+                        <li
+                          key={`${referral.id}-${destination.edId}`}
+                          className={styles.card}
+                          data-testid={`ward-ed-expects-row-${referral.id}`}
+                          data-minutes-waiting={waiting}
+                          data-reconsider={reconsider ? "true" : "false"}
+                        >
+                          <header className={styles.cardHeader}>
+                            <strong>{referral.id}</strong>
+                            <span className={styles.cardMeta}>{referralPurposeLabel(destination.purpose)}</span>
+                          </header>
+                          <p className={styles.cardMeta}>{referralPersonFacts(referral).join(" · ")}</p>
+                          <dl className={styles.clockGrid} data-testid={`ward-ed-expects-clock-${referral.id}`}>
+                            {eta !== undefined ? (
+                              <div className={styles.clockRow}>
+                                <dt>Estimated arrival</dt>
+                                <dd>{formatInstantWithDay(eta, now)}</dd>
+                              </div>
+                            ) : null}
+                            <div className={styles.clockRow}>
+                              <dt>Waiting since referral</dt>
+                              <dd>{formatElapsed(waiting)}</dd>
+                            </div>
+                          </dl>
+                          {reconsider ? (
+                            <p
+                              className={styles.placeholder}
+                              data-testid={`ward-ed-expects-reconsider-${referral.id}`}
+                              title={OPERATIONAL_DEFAULT_LABEL}
+                            >
+                              Referred over {EXPECT_RECONSIDER_AFTER_MINUTES / 60} hours ago and not arrived. Reconsider
+                              whether this referral still stands; no record was changed.
+                            </p>
+                          ) : null}
+                          <button
+                            type="button"
+                            className={styles.arrivedButton}
+                            data-testid={`ward-ed-expects-arrived-${referral.id}`}
+                            onClick={() =>
+                              recordEdStep({
+                                type: "RECORD_ARRIVED_IN_DEPARTMENT",
+                                role: "ed",
+                                now,
+                                referralId: referral.id,
+                              })
+                            }
+                          >
+                            Mark arrived in department
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
-              </div>
+              </section>
+
+              <section
+                id="ward-ed-forms-panel"
+                role="tabpanel"
+                aria-labelledby="ward-ed-forms-tab"
+                aria-label="Forms"
+                hidden={departmentListTab !== "forms"}
+                className={styles.lstWrap}
+                tabIndex={0}
+              >
+                <h2 className={styles.sectionHeading}>
+                  Forms &middot; {underFormPatients.length} patient{underFormPatients.length === 1 ? "" : "s"}
+                </h2>
+                <p className={styles.unitMeta}>Patients with a recorded involuntary form.</p>
+                {underFormPatients.length === 0 ? (
+                  <p className={styles.none}>
+                    Nobody on this department&rsquo;s list is under a legal form. Absence here means no form is
+                    recorded, not that no form applies.
+                  </p>
+                ) : (
+                  <ul className={styles.lst}>
+                    {underFormPatients.map((m) => {
+                      const due = m.legalForm?.dueAt;
+                      const tone = due === null || due === undefined ? "quiet" : due < now ? "danger" : "good";
+                      const stamp =
+                        due === null || due === undefined
+                          ? "no deadline"
+                          : due < now
+                            ? `passed ${formatInstantWithDay(due, now)}`
+                            : `due ${formatInstantWithDay(due, now)}`;
+                      const patientInfo = resolveSubjectPatient(m, {
+                        patients: registryPatients,
+                        referrals,
+                        movements,
+                      });
+                      return (
+                        <li key={m.id} className={styles.lstRow} data-tone={tone}>
+                          <span className={styles.tick} data-tone={tone} aria-hidden="true" />
+                          <span className={styles.lstMain}>
+                            <span className={styles.lstTitle}>
+                              <button
+                                type="button"
+                                className={styles.nameBtn}
+                                onClick={() => setSelectedPatientId(m.id)}
+                              >
+                                {patientInfo.displayName}
+                              </button>
+                            </span>
+                            <span className={styles.meta}>
+                              {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
+                              <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                                UMRN: <strong>{patientInfo.umrn}</strong>
+                              </span>
+                              <span className={styles.bayNumber}>{patientBay(m.id)}</span>
+                              <span>{m.cohort}</span>
+                              <span>{m.sex}</span>
+                            </span>
+                            <span className={styles.lstWhy}>
+                              Form {m.legalForm ? m.legalForm.code : ""}.{" "}
+                              {due === null || due === undefined
+                                ? "No deadline is recorded against it."
+                                : due < now
+                                  ? `The deadline passed ${splitDuration(Math.max(now - due, 0))} ago.`
+                                  : `The deadline is ${splitDuration(Math.max(due - now, 0))} away.`}
+                            </span>
+                          </span>
+                          <span className={styles.lstEnd}>
+                            <span className={styles.stamp}>{stamp}</span>
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </section>
+              {/*
+               * RECENTLY ANSWERED — owner ruling 7, 2026-09-01. Directly beneath the inbox because it is
+               * the same clinician's own question a moment later: "what did I just decide, and why?" The
+               * row a clinician just declined has already left the inbox above — that list is a worklist
+               * — so without this section there is no undo, no record on this screen, and nothing to
+               * check a mistake against.
+               *
+               * ⚠️ **`data-testid` VALUES ARE `ward-ed-answered-*`, NEVER `ward-ed-inbox-*`.** Two tests
+               * in this suite assert an answered row DISAPPEARS from `ward-ed-inbox-row-<id>` — that is
+               * "the only success signal on screen" for a decline, per their own comments — and
+               * `getAllByTestId(/^ward-ed-inbox-row-/)` would silently grow to include this section's
+               * rows too. Reusing the inbox's prefix here would turn both green tests red BECAUSE this
+               * feature works; the distinct prefix is what keeps them passing while proving something new.
+               *
+               * Same structure and classes as the inbox section above, on purpose — a coordinator moving
+               * between the two should not have to learn a second layout.
+               */}
+              <section
+                id="ward-ed-outbox-panel"
+                role="tabpanel"
+                aria-labelledby="ward-ed-referred-tab"
+                hidden={departmentListTab !== "referred"}
+                aria-label="Referred · Still to be moved"
+                className={styles.lstWrap}
+                tabIndex={0}
+              >
+                <div className={styles.referredSubSection} data-testid="ward-ed-outbox">
+                  <h2 className={styles.sectionHeading}>
+                    Still to be moved &middot; {outbox.length} patient{outbox.length === 1 ? "" : "s"}
+                  </h2>
+                  <p className={styles.unitMeta}>
+                    Patients referred onward who remain in {department.name}. Bed acceptance does not remove them;
+                    elapsed movement time starts at recorded acceptance.
+                  </p>
+                  {outbox.length === 0 ? (
+                    <p className={styles.placeholder} data-testid="ward-ed-outbox-empty">
+                      No patient here is waiting to be moved onward.
+                    </p>
+                  ) : (
+                    <ul className={styles.cardList}>
+                      {outbox.map((movement) => {
+                        // Resolved from the live `units`, never `unitById` — whole-branch review Critical 1,
+                        // the same correction the patients section below already carries.
+                        const acceptedUnit = units.find((unit) => unit.id === movement.acceptedUnitId);
+                        // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
+                        const patientInfo = resolveSubjectPatient(movement, {
+                          patients: registryPatients,
+                          referrals,
+                          movements,
+                        });
+                        return (
+                          <li
+                            key={movement.id}
+                            className={styles.card}
+                            data-testid={`ward-ed-outbox-row-${movement.id}`}
+                            data-stage={movement.stage}
+                          >
+                            <header className={styles.cardHeader}>
+                              <strong>{patientInfo.formalName}</strong>
+                              <span className={styles.cardMeta}>{stageCopy[movement.stage].label}</span>
+                              {/*
+                               * THE URGENCY TIER, BESIDE THE STAGE, ON EVERY ROW — owner ruling, 2026-08-31.
+                               *
+                               * ⚠️ **UNCONDITIONAL, TIER 3 INCLUDED.** Showing it only on tiers 1 and 2 would
+                               * make its ABSENCE the signal for tier 3, and this project has repeatedly proved
+                               * that nobody reads an absence. Same position on every card, whatever the tier.
+                               *
+                               * `urgencyTierLabel`, never a second spelling: the boards, the pickers and this
+                               * row must all say "Tier 3 · least urgent" in the same words.
+                               *
+                               * Neutral tone for all three tiers by design — see `.tierLabel` in ed.module.css.
+                               */}
+                              <span
+                                className={styles.tierLabel}
+                                data-testid={`ward-ed-outbox-tier-${movement.id}`}
+                                data-urgency={movement.urgency}
+                              >
+                                <span className={styles.urgencyGlyph} aria-hidden="true">
+                                  {urgencyGlyph(movement.urgency)}
+                                </span>{" "}
+                                {urgencyTierLabel(movement.urgency)}
+                              </span>
+                            </header>
+                            <p className={styles.cardMeta}>
+                              {movement.cohort} &middot; {movement.security} &middot; {movement.sex} &middot;{" "}
+                              {movement.legalStatus}
+                            </p>
+                            <div className={styles.outstandingItem}>
+                              <span className={styles.outstandingLabel}>Going to</span>
+                              {/* The unit's own name, or an honest statement that this state cannot name
+                            one — never a substituted unit and never a bare id. */}
+                              <span>{acceptedUnit ? acceptedUnit.name : "Accepted unit not resolved"}</span>
+                            </div>
+                            {movement.transport?.diversion !== undefined && movement.admissionId !== undefined ? (
+                              <div className={styles.actionRow}>
+                                <button
+                                  type="button"
+                                  data-testid={`ward-ed-release-diverted-bed-${movement.id}`}
+                                  className={styles.declineButton}
+                                  onClick={() =>
+                                    dispatch({
+                                      type: "RELEASE_DIVERTED_BED",
+                                      role: "ed",
+                                      now,
+                                      movementId: movement.id,
+                                    })
+                                  }
+                                >
+                                  Release the held bed
+                                </button>
+                              </div>
+                            ) : null}
+                            {/*
+                             * ⚠️ **NOT A REFERRAL CLOCK, AND `referralClocks` MUST NEVER BE REACHED FOR
+                             * HERE.** This row is a `Movement`; `triagedAt` lives on a `Referral` and
+                             * nothing joins the two. What a move being owed is counted from is
+                             * `acceptedAt`, which `ACCEPT_IN_PRINCIPLE` writes (and, since v10 pass 3,
+                             * the seed's synthetic `withDemoStageTimes`); a row without one still states
+                             * the absence, and only the absence, in the same register the rest of the
+                             * board uses for a fact it does not hold. Substituting
+                             * `openedAt` here would answer a different question (how long they have been
+                             * in the department) under this label, and read as plausible while doing it.
+                             */}
+                            <div className={styles.outstandingItem}>
+                              <span className={styles.outstandingLabel}>Waiting to move</span>
+                              <span>
+                                {movement.acceptedAt === undefined
+                                  ? "Acceptance time not recorded"
+                                  : `${splitDuration(Math.max(now - movement.acceptedAt, 0))} since accepted`}
+                              </span>
+                            </div>
+                            <div className={styles.outstandingItem}>
+                              <span className={styles.outstandingLabel}>Gender</span>
+                              <span data-testid={`ward-ed-gender-${movement.id}`}>
+                                {movement.gender ?? "Not yet recorded"}
+                              </span>
+                            </div>
+                            {movement.transportNeed?.needed === false ? (
+                              <div
+                                className={styles.outstandingItem}
+                                data-testid={`ward-ed-outbox-no-transport-${movement.id}`}
+                              >
+                                No transport needed
+                              </div>
+                            ) : null}
+                            {movement.arrivalDetails ? (
+                              <div
+                                className={styles.outstandingItem}
+                                data-testid={`ward-ed-outbox-arrival-plan-${movement.id}`}
+                              >
+                                <span className={styles.outstandingLabel}>Arrival plan</span>
+                                <span>
+                                  {arrivalModeLabel(movement.arrivalDetails.mode)} · ward{" "}
+                                  {arrivalEtaLabel(movement.arrivalDetails.estimatedArrivalAt, now)}
+                                  {movement.arrivalDetails.trackingNumber
+                                    ? ` · ${movement.arrivalDetails.trackingNumber}`
+                                    : ""}
+                                </span>
+                              </div>
+                            ) : null}
+                            {isArrivalLate(movement, now) ? (
+                              <div
+                                className={styles.arrivalLate}
+                                role="status"
+                                data-testid={`ward-ed-outbox-arrival-late-${movement.id}`}
+                              >
+                                Arrival late — more than 60 minutes past the estimated ward time. Not marked arrived.
+                              </div>
+                            ) : null}
+                            {canSetArrivalPlan(movement) ? (
+                              <div className={styles.actionRow}>
+                                <button
+                                  type="button"
+                                  data-testid={`ward-ed-outbox-arrival-plan-toggle-${movement.id}`}
+                                  className={styles.acceptButton}
+                                  onClick={() => setArrivalPlanOpenFor(movement.id)}
+                                >
+                                  {movement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
+                                </button>
+                              </div>
+                            ) : null}
+                            {movement.referralAbsence?.reason === "none_raised" ? (
+                              <div
+                                className={styles.outstandingItem}
+                                data-testid={`ward-ed-outbox-no-referral-${movement.id}`}
+                              >
+                                No referral raised
+                              </div>
+                            ) : null}
+                            {!movement.closure && (
+                              <div className={styles.tableActionGroup}>
+                                <select
+                                  data-testid={`ward-ed-record-gender-${movement.id}`}
+                                  aria-label={`Record gender for ${patientInfo.displayName}`}
+                                  value={genderRecordDraft[movement.id] ?? ""}
+                                  onChange={(event) =>
+                                    setGenderRecordDraft((current) => ({
+                                      ...current,
+                                      [movement.id]: event.target.value as ReferralGender | "",
+                                    }))
+                                  }
+                                >
+                                  <option value="">Choose…</option>
+                                  {GENDER_OPTIONS.map((gender) => (
+                                    <option key={gender} value={gender}>
+                                      {gender}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  data-testid={`ward-ed-record-gender-submit-${movement.id}`}
+                                  className={styles.acceptButton}
+                                  disabled={
+                                    !genderRecordDraft[movement.id] ||
+                                    genderRecordDraft[movement.id] === movement.gender
+                                  }
+                                  onClick={() => {
+                                    const gender = genderRecordDraft[movement.id];
+                                    if (!gender) return;
+                                    dispatch({
+                                      type: "RECORD_MOVEMENT_GENDER",
+                                      role: "ed",
+                                      now,
+                                      movementId: movement.id,
+                                      gender,
+                                    });
+                                    setGenderRecordDraft((current) => ({ ...current, [movement.id]: "" }));
+                                  }}
+                                >
+                                  Record gender
+                                </button>
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+
+                {/*
+                 * RECENT DECISIONS (ANSWERED REFERRALS)
+                 *
+                 * ⚠️ **`data-testid` VALUES ARE `ward-ed-answered-*`, NEVER `ward-ed-inbox-*`.** Two tests
+                 * look for those rows: one asserts an answered row is here, and the other asserts an
+                 * answered row is NOT in the inbox. Both are `referral-row` tests; both match `WF-`
+                 * rows too. Reusing the inbox's prefix here would turn both green tests red BECAUSE this
+                 * feature works; the distinct prefix is what keeps them passing while proving something new.
+                 */}
+                <div className={styles.referredSubSection} data-testid="ward-ed-answered">
+                  <h3 className={styles.sectionHeading}>
+                    Recent &middot;{" "}
+                    {answeredAll.length > ANSWERED_VISIBLE_CAP
+                      ? `${answered.length} of ${answeredAll.length}`
+                      : answeredAll.length}{" "}
+                    referral{answeredAll.length === 1 ? "" : "s"}
+                  </h3>
+                  <p className={styles.unitMeta}>
+                    Accepted, declined or cancelled referrals, most recently decided first. Shows the latest{" "}
+                    {ANSWERED_VISIBLE_CAP}; the heading counts all.
+                  </p>
+                  {answeredAll.length === 0 ? (
+                    <p className={styles.placeholder} data-testid="ward-ed-answered-empty">
+                      Nothing addressed to psychiatry at {department.name} has been answered yet.
+                    </p>
+                  ) : (
+                    <ul className={styles.cardList}>
+                      {answered.map(({ referral, addressing, destination }) => (
+                        <li
+                          key={`${referral.id}-${destination.edId}-${destination.purpose}`}
+                          className={styles.card}
+                          data-testid={`ward-ed-answered-row-${referral.id}`}
+                          data-purpose={destination.purpose}
+                          data-ed-id={destination.edId}
+                          data-state={addressing.state}
+                        >
+                          <header className={styles.cardHeader}>
+                            <strong>{referral.id}</strong>
+                            <span className={styles.cardMeta} data-testid={`ward-ed-answered-purpose-${referral.id}`}>
+                              {referralPurposeLabel(destination.purpose)}
+                            </span>
+                          </header>
+                          <p className={styles.referralState} data-testid={`ward-ed-answered-state-${referral.id}`}>
+                            {answeredAddressingLabel(addressing)}
+                          </p>
+                          {addressing.decidedAt !== undefined ? (
+                            <p className={styles.cardMeta} data-testid={`ward-ed-answered-decided-${referral.id}`}>
+                              Decided {formatInstantWithDay(addressing.decidedAt, now)}
+                            </p>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </section>
             </section>
           </section>
-        </section>
+        )}
 
         {selectedPatient ? (
           <aside className={styles.pxDrawer} aria-labelledby="pxTitle">
@@ -6536,442 +6705,451 @@ export function EdScreen({ edId }: EdScreenProps) {
           </aside>
         ) : null}
 
-        <div className={styles.lowerPair}>
-          <section
-            aria-label="Seen in the last twenty four hours"
-            className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.seenSection}`}
-            data-testid="ward-ed-seen-24h"
-            tabIndex={0}
-          >
-            <div className={styles.seenHeaderArea}>
-              <div className={styles.seenTopRow}>
-                <div className={styles.seenHeadingGroup}>
-                  <h2>Seen in the last 24 hours</h2>
-                  <span className={styles.seenCountBadge}>
-                    {timelineEvents.length === 0
-                      ? "none"
-                      : `${timelineEvents.length} event${timelineEvents.length === 1 ? "" : "s"}`}
+        {preview !== undefined ? null : (
+          <div className={styles.lowerPair}>
+            <section
+              aria-label="Seen in the last twenty four hours"
+              className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.seenSection}`}
+              data-testid="ward-ed-seen-24h"
+              tabIndex={0}
+            >
+              <div className={styles.seenHeaderArea}>
+                <div className={styles.seenTopRow}>
+                  <div className={styles.seenHeadingGroup}>
+                    <h2>Seen in the last 24 hours</h2>
+                    <span className={styles.seenCountBadge}>
+                      {timelineEvents.length === 0
+                        ? "none"
+                        : `${timelineEvents.length} event${timelineEvents.length === 1 ? "" : "s"}`}
+                    </span>
+                  </div>
+                  <span className={styles.seenSubNote}>
+                    What was recorded, not everything that happened &middot; Chronological clinical audit
                   </span>
                 </div>
-                <span className={styles.seenSubNote}>
-                  What was recorded, not everything that happened &middot; Chronological clinical audit
-                </span>
-              </div>
 
-              <WardDynamicIsland
-                testId="ward-ed-hud-island"
-                title="ED Pressure"
-                status={isEdAlarm ? "alarm" : isEdWarn ? "warning" : "nominal"}
-                statusText={isEdAlarm ? `${breachesCount} past access target` : "Access target compliance nominal"}
-                ariaLabel="Emergency department flow indicators"
-                metrics={[
-                  {
-                    id: "kpi-presenting",
-                    label: "Presenting",
-                    value: presentingCount,
-                    tone: "accent",
-                  },
-                  {
-                    id: "kpi-awaiting-bed",
-                    label: "Awaiting Bed",
-                    value: awaitingBedCount,
-                    tone: awaitingBedCount > 0 ? "warn" : "good",
-                  },
-                  {
-                    id: "kpi-avg-wait",
-                    label: "Avg Wait",
-                    value: avgWaitLabel,
-                    tone: breachesCount > 0 ? "warn" : "normal",
-                  },
-                  {
-                    id: "kpi-breaches",
-                    label: "Past Target",
-                    value: breachesCount,
-                    tone: breachesCount > 0 ? "danger" : "good",
-                  },
-                ]}
-              />
+                <WardDynamicIsland
+                  testId="ward-ed-hud-island"
+                  title="ED Pressure"
+                  status={isEdAlarm ? "alarm" : isEdWarn ? "warning" : "nominal"}
+                  statusText={isEdAlarm ? `${breachesCount} past access target` : "Access target compliance nominal"}
+                  ariaLabel="Emergency department flow indicators"
+                  metrics={[
+                    {
+                      id: "kpi-presenting",
+                      label: "Presenting",
+                      value: presentingCount,
+                      tone: "accent",
+                    },
+                    {
+                      id: "kpi-awaiting-bed",
+                      label: "Awaiting Bed",
+                      value: awaitingBedCount,
+                      tone: awaitingBedCount > 0 ? "warn" : "good",
+                    },
+                    {
+                      id: "kpi-avg-wait",
+                      label: "Avg Wait",
+                      value: avgWaitLabel,
+                      tone: breachesCount > 0 ? "warn" : "normal",
+                    },
+                    {
+                      id: "kpi-breaches",
+                      label: "Past Target",
+                      value: breachesCount,
+                      tone: breachesCount > 0 ? "danger" : "good",
+                    },
+                  ]}
+                />
 
-              <div className={styles.seenToolbar}>
-                <div className={styles.seenFilterTabs} role="tablist" aria-label="Filter events by category">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={timelineCategoryFilter === "all"}
-                    className={`${styles.seenTabBtn} ${timelineCategoryFilter === "all" ? styles.seenTabBtnActive : ""}`}
-                    onClick={() => setTimelineCategoryFilter("all")}
-                  >
-                    All events ({timelineEvents.length})
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={timelineCategoryFilter === "bed_search"}
-                    className={`${styles.seenTabBtn} ${timelineCategoryFilter === "bed_search" ? styles.seenTabBtnActive : ""}`}
-                    onClick={() => setTimelineCategoryFilter("bed_search")}
-                  >
-                    Bed search ({bedSearchEventsCount})
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={timelineCategoryFilter === "arrivals"}
-                    className={`${styles.seenTabBtn} ${timelineCategoryFilter === "arrivals" ? styles.seenTabBtnActive : ""}`}
-                    onClick={() => setTimelineCategoryFilter("arrivals")}
-                  >
-                    Arrivals &amp; Triage ({arrivalEventsCount})
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={timelineCategoryFilter === "clinical"}
-                    className={`${styles.seenTabBtn} ${timelineCategoryFilter === "clinical" ? styles.seenTabBtnActive : ""}`}
-                    onClick={() => setTimelineCategoryFilter("clinical")}
-                  >
-                    Clinical &amp; Legal ({clinicalEventsCount})
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={timelineCategoryFilter === "transport"}
-                    className={`${styles.seenTabBtn} ${timelineCategoryFilter === "transport" ? styles.seenTabBtnActive : ""}`}
-                    onClick={() => setTimelineCategoryFilter("transport")}
-                  >
-                    Transport ({transportEventsCount})
-                  </button>
-                </div>
-
-                <div className={styles.seenSearchBox}>
-                  <input
-                    type="search"
-                    className={styles.seenSearchInput}
-                    placeholder="Search patient, unit, reason..."
-                    value={timelineSearchQuery}
-                    onChange={(e) => setTimelineSearchQuery(e.target.value)}
-                    aria-label="Filter timeline events by text"
-                  />
-                  {timelineSearchQuery ? (
-                    <button
-                      type="button"
-                      className={styles.seenClearSearch}
-                      onClick={() => setTimelineSearchQuery("")}
-                      aria-label="Clear search filter"
-                    >
-                      &times;
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-
-            {timelineEvents.length === 0 ? (
-              <p className={styles.none}>
-                Nothing has been recorded against this department in the last twenty four hours. Absence here means
-                nothing was written down, not that nothing happened.
-              </p>
-            ) : filteredTimelineEvents.length === 0 ? (
-              <div className={styles.seenEmptyBox}>
-                <p>No recorded events match the selected category or search filter.</p>
-                <button
-                  type="button"
-                  className={styles.seenResetBtn}
-                  onClick={() => {
-                    setTimelineCategoryFilter("all");
-                    setTimelineSearchQuery("");
-                  }}
-                >
-                  Reset filters
-                </button>
-              </div>
-            ) : (
-              <div className={styles.seenStreamWrap}>
-                <ol className={styles.seenStream}>
-                  {filteredTimelineEvents.map((e, index) => {
-                    const nodeClass =
-                      e.tone === "danger"
-                        ? styles.nodeDanger
-                        : e.tone === "warn"
-                          ? styles.nodeWarn
-                          : e.tone === "good"
-                            ? styles.nodeGood
-                            : e.tone === "info"
-                              ? styles.nodeInfo
-                              : styles.nodeQuiet;
-
-                    const badgeToneClass =
-                      e.badgeTone === "danger"
-                        ? styles.badgeDanger
-                        : e.badgeTone === "warn"
-                          ? styles.badgeWarn
-                          : e.badgeTone === "good"
-                            ? styles.badgeGood
-                            : e.badgeTone === "purple"
-                              ? styles.badgePurple
-                              : e.badgeTone === "info"
-                                ? styles.badgeInfo
-                                : styles.badgeQuiet;
-
-                    const nodeGlyph =
-                      e.tone === "danger"
-                        ? "▲"
-                        : e.tone === "warn"
-                          ? "✕"
-                          : e.tone === "good"
-                            ? "✓"
-                            : e.tone === "info"
-                              ? "●"
-                              : "§";
-
-                    return (
-                      <li key={e.id ?? index} className={styles.seenItemRow}>
-                        <div className={styles.seenTimeGutter}>
-                          <span className={styles.seenClock}>{formatInstantWithDay(e.min, now)}</span>
-                          <span className={styles.seenAgo}>{splitDuration(Math.max(now - e.min, 0))} ago</span>
-                        </div>
-
-                        <div className={styles.seenRail} aria-hidden="true">
-                          <span className={`${styles.seenNode} ${nodeClass}`}>{nodeGlyph}</span>
-                        </div>
-
-                        <div className={styles.seenCard}>
-                          <div className={styles.seenCardTop}>
-                            <div className={styles.seenPatientBlock}>
-                              {e.movementId && e.patientName ? (
-                                <button
-                                  type="button"
-                                  className={styles.seenPatientBtn}
-                                  onClick={() => setSelectedPatientId(e.movementId!)}
-                                  title={`Open patient details for ${e.patientName}`}
-                                >
-                                  {e.patientName}
-                                </button>
-                              ) : e.patientName ? (
-                                <span className={styles.seenPatientStatic}>{e.patientName}</span>
-                              ) : null}
-
-                              {e.referralId ? <span className={styles.seenRefPill}>Ref #{e.referralId}</span> : null}
-
-                              {e.waitMinutes && e.waitMinutes >= 1440 ? (
-                                <span className={styles.seenLongWaitPill} title={`Department stay: ${LONG_WAIT_TEXT}`}>
-                                  Waiting {LONG_WAIT_TEXT}
-                                </span>
-                              ) : null}
-                            </div>
-
-                            <div className={styles.seenMetaGroup}>
-                              {e.badgeText ? (
-                                <span className={`${styles.seenBadge} ${badgeToneClass}`}>{e.badgeText}</span>
-                              ) : null}
-
-                              {e.by ? (
-                                <span className={styles.seenAuthorTag} title={`Recorded by ${e.by}`}>
-                                  <span aria-hidden="true">👤</span>
-                                  <span>{e.by}</span>
-                                </span>
-                              ) : (
-                                <span className={styles.seenSystemTag}>Audited record</span>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className={styles.seenCardDetail}>
-                            {e.badgeText === "Bed Declined" ? (
-                              <div className={styles.seenDeclineContent}>
-                                <div className={styles.seenDeclineUnit}>
-                                  <span className={styles.seenUnitTag}>{e.unitName}</span> declined admission:
-                                </div>
-                                {e.detailText && (
-                                  <div className={styles.seenDeclineQuote}>
-                                    <span className={styles.seenQuoteLabel}>Reason:</span>
-                                    <strong className={styles.seenQuoteText}>&ldquo;{e.detailText}&rdquo;</strong>
-                                  </div>
-                                )}
-                              </div>
-                            ) : e.badgeText === "Examined" ? (
-                              <div className={styles.seenExamContent}>
-                                <span>Psychiatric examination completed</span>
-                                {e.detailText && (
-                                  <span className={styles.seenExamOutcome}>Outcome: {e.detailText}</span>
-                                )}
-                              </div>
-                            ) : e.badgeTone === "purple" ? (
-                              <div className={styles.seenLegalContent}>
-                                <span>Statutory document received:</span>
-                                <strong>{e.badgeText}</strong>
-                                {e.detailText && <span className={styles.seenLegalTitle}>({e.detailText})</span>}
-                              </div>
-                            ) : e.badgeText === "Transport Booked" ? (
-                              <div className={styles.seenTransportContent}>
-                                <span>Patient transport booked with</span>{" "}
-                                <span className={styles.seenTransportProvider}>{e.primaryText}</span>
-                                {e.detailText && (
-                                  <span className={styles.seenEscortBadge}>&middot; {e.detailText}</span>
-                                )}
-                              </div>
-                            ) : (
-                              e.what
-                            )}
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </div>
-            )}
-          </section>
-
-          {(() => {
-            const totalReadyBeds = units.reduce((acc, u) => acc + (unitCapacity(u, bedReleases).available ?? 0), 0);
-            const totalPendingPrep = units.reduce((acc, u) => acc + bedsPendingPreparation(u.id, bedReleases), 0);
-            const filteredServices =
-              capacityServiceFilter === "all"
-                ? wardServiceOrder
-                : wardServiceOrder.filter((s) => s === capacityServiceFilter);
-
-            return (
-              <section
-                aria-label="Statewide capacity"
-                className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.capacitySection}`}
-                tabIndex={0}
-              >
-                <div className={styles.ph}>
-                  <div className={styles.capacityHeaderTop}>
-                    <div>
-                      <h2>Statewide capacity &middot; {units.length} units</h2>
-                      <p className={styles.note}>
-                        Ward-confirmed capacity for context. Read-only across all health areas; no action is available
-                        here.
-                      </p>
-                    </div>
-                    <div className={styles.capacityKpiGroup}>
-                      <span className={styles.capacityKpiReady}>
-                        <i className={styles.statusDotLive} aria-hidden="true" />
-                        <strong>{totalReadyBeds}</strong> beds ready now
-                      </span>
-                      {totalPendingPrep > 0 ? (
-                        <span className={styles.capacityKpiPending}>
-                          <strong>{totalPendingPrep}</strong> being prepared
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className={styles.capacityFilterBar} role="tablist" aria-label="Filter units by Health Service">
+                <div className={styles.seenToolbar}>
+                  <div className={styles.seenFilterTabs} role="tablist" aria-label="Filter events by category">
                     <button
                       type="button"
                       role="tab"
-                      aria-selected={capacityServiceFilter === "all"}
-                      className={
-                        capacityServiceFilter === "all"
-                          ? `${styles.capacityFilterBtn} ${styles.activeFilter}`
-                          : styles.capacityFilterBtn
-                      }
-                      onClick={() => setCapacityServiceFilter("all")}
+                      aria-selected={timelineCategoryFilter === "all"}
+                      className={`${styles.seenTabBtn} ${timelineCategoryFilter === "all" ? styles.seenTabBtnActive : ""}`}
+                      onClick={() => setTimelineCategoryFilter("all")}
                     >
-                      All Services ({units.length})
+                      All events ({timelineEvents.length})
                     </button>
-                    {wardServiceOrder.map((svc) => {
-                      const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
-                      return (
-                        <button
-                          key={svc}
-                          type="button"
-                          role="tab"
-                          aria-selected={capacityServiceFilter === svc}
-                          className={
-                            capacityServiceFilter === svc
-                              ? `${styles.capacityFilterBtn} ${styles.activeFilter}`
-                              : styles.capacityFilterBtn
-                          }
-                          onClick={() => setCapacityServiceFilter(svc)}
-                        >
-                          {svc.toUpperCase()} ({count})
-                        </button>
-                      );
-                    })}
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={timelineCategoryFilter === "bed_search"}
+                      className={`${styles.seenTabBtn} ${timelineCategoryFilter === "bed_search" ? styles.seenTabBtnActive : ""}`}
+                      onClick={() => setTimelineCategoryFilter("bed_search")}
+                    >
+                      Bed search ({bedSearchEventsCount})
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={timelineCategoryFilter === "arrivals"}
+                      className={`${styles.seenTabBtn} ${timelineCategoryFilter === "arrivals" ? styles.seenTabBtnActive : ""}`}
+                      onClick={() => setTimelineCategoryFilter("arrivals")}
+                    >
+                      Arrivals &amp; Triage ({arrivalEventsCount})
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={timelineCategoryFilter === "clinical"}
+                      className={`${styles.seenTabBtn} ${timelineCategoryFilter === "clinical" ? styles.seenTabBtnActive : ""}`}
+                      onClick={() => setTimelineCategoryFilter("clinical")}
+                    >
+                      Clinical &amp; Legal ({clinicalEventsCount})
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={timelineCategoryFilter === "transport"}
+                      className={`${styles.seenTabBtn} ${timelineCategoryFilter === "transport" ? styles.seenTabBtnActive : ""}`}
+                      onClick={() => setTimelineCategoryFilter("transport")}
+                    >
+                      Transport ({transportEventsCount})
+                    </button>
+                  </div>
+
+                  <div className={styles.seenSearchBox}>
+                    <input
+                      type="search"
+                      className={styles.seenSearchInput}
+                      placeholder="Search patient, unit, reason..."
+                      value={timelineSearchQuery}
+                      onChange={(e) => setTimelineSearchQuery(e.target.value)}
+                      aria-label="Filter timeline events by text"
+                    />
+                    {timelineSearchQuery ? (
+                      <button
+                        type="button"
+                        className={styles.seenClearSearch}
+                        onClick={() => setTimelineSearchQuery("")}
+                        aria-label="Clear search filter"
+                      >
+                        &times;
+                      </button>
+                    ) : null}
                   </div>
                 </div>
-                <div className={styles.capacityTableWrap} data-testid="ward-ed-statewide-capacity">
-                  <table className={styles.capacityTable}>
-                    <thead>
-                      <tr>
-                        <th scope="col">Unit</th>
-                        <th scope="col">Cohort</th>
-                        <th scope="col">Security</th>
-                        <th scope="col" className={styles.n}>
-                          Ready
-                        </th>
-                        <th scope="col" className={styles.n}>
-                          Beds
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredServices.flatMap((service) =>
-                        units
-                          .filter((unit) => siteByCode(unit.siteCode)?.service === service)
-                          .map((unit) => {
-                            const capacity = unitCapacity(unit, bedReleases);
-                            const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
-                            return (
-                              <tr key={unit.id} className={styles.capacityRow}>
-                                <th scope="row">
-                                  <div className={styles.unitNameCol}>
-                                    <span className={styles.unitNameText}>{unit.name}</span>
-                                    <span className={styles.serviceTag} data-service={service}>
-                                      {service.toUpperCase()}
-                                    </span>
-                                  </div>
-                                </th>
-                                <td>
-                                  <span className={styles.cohortTag} data-cohort={unit.cohort}>
-                                    {unit.cohort}
-                                  </span>
-                                </td>
-                                <td>
-                                  <span className={styles.securityTag}>{designationSummary(unit)}</span>
-                                </td>
-                                <td className={styles.n} data-testid={`ward-ed-capacity-ready-${unit.id}`}>
-                                  <span className={capacity.available > 0 ? styles.readyPill : styles.zeroPill}>
-                                    {capacity.available}
-                                  </span>
-                                  {pendingPreparation > 0 ? (
-                                    <small
-                                      className={styles.beingMadeReady}
-                                      data-testid={`ward-ed-capacity-pending-${unit.id}`}
-                                    >
-                                      {pendingPreparation} still being made ready
-                                    </small>
-                                  ) : null}
-                                </td>
-                                <td className={styles.n}>
-                                  <div className={styles.bedCapacityCell}>
-                                    <span className={styles.bedTotalNum}>{unit.beds}</span>
-                                    <div
-                                      className={styles.capacityMeter}
-                                      title={`${capacity.available} ready / ${unit.beds} total beds`}
-                                      aria-hidden="true"
-                                    >
-                                      <div
-                                        className={styles.capacityMeterFill}
-                                        style={{
-                                          width: `${Math.min(100, Math.round(((unit.beds - capacity.available) / unit.beds) * 100))}%`,
-                                        }}
-                                      />
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          }),
-                      )}
-                    </tbody>
-                  </table>
+              </div>
+
+              {timelineEvents.length === 0 ? (
+                <p className={styles.none}>
+                  Nothing has been recorded against this department in the last twenty four hours. Absence here means
+                  nothing was written down, not that nothing happened.
+                </p>
+              ) : filteredTimelineEvents.length === 0 ? (
+                <div className={styles.seenEmptyBox}>
+                  <p>No recorded events match the selected category or search filter.</p>
+                  <button
+                    type="button"
+                    className={styles.seenResetBtn}
+                    onClick={() => {
+                      setTimelineCategoryFilter("all");
+                      setTimelineSearchQuery("");
+                    }}
+                  >
+                    Reset filters
+                  </button>
                 </div>
-              </section>
-            );
-          })()}
-        </div>
+              ) : (
+                <div className={styles.seenStreamWrap}>
+                  <ol className={styles.seenStream}>
+                    {filteredTimelineEvents.map((e, index) => {
+                      const nodeClass =
+                        e.tone === "danger"
+                          ? styles.nodeDanger
+                          : e.tone === "warn"
+                            ? styles.nodeWarn
+                            : e.tone === "good"
+                              ? styles.nodeGood
+                              : e.tone === "info"
+                                ? styles.nodeInfo
+                                : styles.nodeQuiet;
+
+                      const badgeToneClass =
+                        e.badgeTone === "danger"
+                          ? styles.badgeDanger
+                          : e.badgeTone === "warn"
+                            ? styles.badgeWarn
+                            : e.badgeTone === "good"
+                              ? styles.badgeGood
+                              : e.badgeTone === "purple"
+                                ? styles.badgePurple
+                                : e.badgeTone === "info"
+                                  ? styles.badgeInfo
+                                  : styles.badgeQuiet;
+
+                      const nodeGlyph =
+                        e.tone === "danger"
+                          ? "▲"
+                          : e.tone === "warn"
+                            ? "✕"
+                            : e.tone === "good"
+                              ? "✓"
+                              : e.tone === "info"
+                                ? "●"
+                                : "§";
+
+                      return (
+                        <li key={e.id ?? index} className={styles.seenItemRow}>
+                          <div className={styles.seenTimeGutter}>
+                            <span className={styles.seenClock}>{formatInstantWithDay(e.min, now)}</span>
+                            <span className={styles.seenAgo}>{splitDuration(Math.max(now - e.min, 0))} ago</span>
+                          </div>
+
+                          <div className={styles.seenRail} aria-hidden="true">
+                            <span className={`${styles.seenNode} ${nodeClass}`}>{nodeGlyph}</span>
+                          </div>
+
+                          <div className={styles.seenCard}>
+                            <div className={styles.seenCardTop}>
+                              <div className={styles.seenPatientBlock}>
+                                {e.movementId && e.patientName ? (
+                                  <button
+                                    type="button"
+                                    className={styles.seenPatientBtn}
+                                    onClick={() => setSelectedPatientId(e.movementId!)}
+                                    title={`Open patient details for ${e.patientName}`}
+                                  >
+                                    {e.patientName}
+                                  </button>
+                                ) : e.patientName ? (
+                                  <span className={styles.seenPatientStatic}>{e.patientName}</span>
+                                ) : null}
+
+                                {e.referralId ? <span className={styles.seenRefPill}>Ref #{e.referralId}</span> : null}
+
+                                {e.waitMinutes && e.waitMinutes >= 1440 ? (
+                                  <span
+                                    className={styles.seenLongWaitPill}
+                                    title={`Department stay: ${LONG_WAIT_TEXT}`}
+                                  >
+                                    Waiting {LONG_WAIT_TEXT}
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              <div className={styles.seenMetaGroup}>
+                                {e.badgeText ? (
+                                  <span className={`${styles.seenBadge} ${badgeToneClass}`}>{e.badgeText}</span>
+                                ) : null}
+
+                                {e.by ? (
+                                  <span className={styles.seenAuthorTag} title={`Recorded by ${e.by}`}>
+                                    <span aria-hidden="true">👤</span>
+                                    <span>{e.by}</span>
+                                  </span>
+                                ) : (
+                                  <span className={styles.seenSystemTag}>Audited record</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className={styles.seenCardDetail}>
+                              {e.badgeText === "Bed Declined" ? (
+                                <div className={styles.seenDeclineContent}>
+                                  <div className={styles.seenDeclineUnit}>
+                                    <span className={styles.seenUnitTag}>{e.unitName}</span> declined admission:
+                                  </div>
+                                  {e.detailText && (
+                                    <div className={styles.seenDeclineQuote}>
+                                      <span className={styles.seenQuoteLabel}>Reason:</span>
+                                      <strong className={styles.seenQuoteText}>&ldquo;{e.detailText}&rdquo;</strong>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : e.badgeText === "Examined" ? (
+                                <div className={styles.seenExamContent}>
+                                  <span>Psychiatric examination completed</span>
+                                  {e.detailText && (
+                                    <span className={styles.seenExamOutcome}>Outcome: {e.detailText}</span>
+                                  )}
+                                </div>
+                              ) : e.badgeTone === "purple" ? (
+                                <div className={styles.seenLegalContent}>
+                                  <span>Statutory document received:</span>
+                                  <strong>{e.badgeText}</strong>
+                                  {e.detailText && <span className={styles.seenLegalTitle}>({e.detailText})</span>}
+                                </div>
+                              ) : e.badgeText === "Transport Booked" ? (
+                                <div className={styles.seenTransportContent}>
+                                  <span>Patient transport booked with</span>{" "}
+                                  <span className={styles.seenTransportProvider}>{e.primaryText}</span>
+                                  {e.detailText && (
+                                    <span className={styles.seenEscortBadge}>&middot; {e.detailText}</span>
+                                  )}
+                                </div>
+                              ) : (
+                                e.what
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              )}
+            </section>
+
+            {(() => {
+              const totalReadyBeds = units.reduce((acc, u) => acc + (unitCapacity(u, bedReleases).available ?? 0), 0);
+              const totalPendingPrep = units.reduce((acc, u) => acc + bedsPendingPreparation(u.id, bedReleases), 0);
+              const filteredServices =
+                capacityServiceFilter === "all"
+                  ? wardServiceOrder
+                  : wardServiceOrder.filter((s) => s === capacityServiceFilter);
+
+              return (
+                <section
+                  aria-label="Statewide capacity"
+                  className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.capacitySection}`}
+                  tabIndex={0}
+                >
+                  <div className={styles.ph}>
+                    <div className={styles.capacityHeaderTop}>
+                      <div>
+                        <h2>Statewide capacity &middot; {units.length} units</h2>
+                        <p className={styles.note}>
+                          Ward-confirmed capacity for context. Read-only across all health areas; no action is available
+                          here.
+                        </p>
+                      </div>
+                      <div className={styles.capacityKpiGroup}>
+                        <span className={styles.capacityKpiReady}>
+                          <i className={styles.statusDotLive} aria-hidden="true" />
+                          <strong>{totalReadyBeds}</strong> beds ready now
+                        </span>
+                        {totalPendingPrep > 0 ? (
+                          <span className={styles.capacityKpiPending}>
+                            <strong>{totalPendingPrep}</strong> being prepared
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div
+                      className={styles.capacityFilterBar}
+                      role="tablist"
+                      aria-label="Filter units by Health Service"
+                    >
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={capacityServiceFilter === "all"}
+                        className={
+                          capacityServiceFilter === "all"
+                            ? `${styles.capacityFilterBtn} ${styles.activeFilter}`
+                            : styles.capacityFilterBtn
+                        }
+                        onClick={() => setCapacityServiceFilter("all")}
+                      >
+                        All Services ({units.length})
+                      </button>
+                      {wardServiceOrder.map((svc) => {
+                        const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
+                        return (
+                          <button
+                            key={svc}
+                            type="button"
+                            role="tab"
+                            aria-selected={capacityServiceFilter === svc}
+                            className={
+                              capacityServiceFilter === svc
+                                ? `${styles.capacityFilterBtn} ${styles.activeFilter}`
+                                : styles.capacityFilterBtn
+                            }
+                            onClick={() => setCapacityServiceFilter(svc)}
+                          >
+                            {svc.toUpperCase()} ({count})
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className={styles.capacityTableWrap} data-testid="ward-ed-statewide-capacity">
+                    <table className={styles.capacityTable}>
+                      <thead>
+                        <tr>
+                          <th scope="col">Unit</th>
+                          <th scope="col">Cohort</th>
+                          <th scope="col">Security</th>
+                          <th scope="col" className={styles.n}>
+                            Ready
+                          </th>
+                          <th scope="col" className={styles.n}>
+                            Beds
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredServices.flatMap((service) =>
+                          units
+                            .filter((unit) => siteByCode(unit.siteCode)?.service === service)
+                            .map((unit) => {
+                              const capacity = unitCapacity(unit, bedReleases);
+                              const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
+                              return (
+                                <tr key={unit.id} className={styles.capacityRow}>
+                                  <th scope="row">
+                                    <div className={styles.unitNameCol}>
+                                      <span className={styles.unitNameText}>{unit.name}</span>
+                                      <span className={styles.serviceTag} data-service={service}>
+                                        {service.toUpperCase()}
+                                      </span>
+                                    </div>
+                                  </th>
+                                  <td>
+                                    <span className={styles.cohortTag} data-cohort={unit.cohort}>
+                                      {unit.cohort}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <span className={styles.securityTag}>{designationSummary(unit)}</span>
+                                  </td>
+                                  <td className={styles.n} data-testid={`ward-ed-capacity-ready-${unit.id}`}>
+                                    <span className={capacity.available > 0 ? styles.readyPill : styles.zeroPill}>
+                                      {capacity.available}
+                                    </span>
+                                    {pendingPreparation > 0 ? (
+                                      <small
+                                        className={styles.beingMadeReady}
+                                        data-testid={`ward-ed-capacity-pending-${unit.id}`}
+                                      >
+                                        {pendingPreparation} still being made ready
+                                      </small>
+                                    ) : null}
+                                  </td>
+                                  <td className={styles.n}>
+                                    <div className={styles.bedCapacityCell}>
+                                      <span className={styles.bedTotalNum}>{unit.beds}</span>
+                                      <div
+                                        className={styles.capacityMeter}
+                                        title={`${capacity.available} ready / ${unit.beds} total beds`}
+                                        aria-hidden="true"
+                                      >
+                                        <div
+                                          className={styles.capacityMeterFill}
+                                          style={{
+                                            width: `${Math.min(100, Math.round(((unit.beds - capacity.available) / unit.beds) * 100))}%`,
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            }),
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              );
+            })()}
+          </div>
+        )}
         <WardPrototypeFooter testId="ward-ed-governance" note="Emergency department census · Not a medical device" />
       </main>
       {arrivalPlanMovement ? (
