@@ -866,7 +866,10 @@ button.taskLabel[aria-pressed="true"] {
 }
 
 .focusClock[data-tone="danger"] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .focusClockLine {
@@ -1514,5 +1517,28 @@ button.taskLabel[aria-pressed="true"] {
 
   .phoneFocus .focusFoot > :last-child {
     flex: 0 1 auto;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.focusClock[data-tone="danger"] {
+  position: relative;
+}
+
+.focusClock[data-tone="danger"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .focusClock[data-tone="danger"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

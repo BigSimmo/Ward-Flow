@@ -404,11 +404,13 @@ describe("Phone CSS", () => {
     expect(block(".tabLink")).toContain("min-height: 48px");
   });
 
-  it("gives the row action a 36px face, and the act now edge no fill", () => {
+  it("keeps the row action a 36px face and uses the approved inset act-now marker", () => {
     expect(block(".rowAction.rowAction")).toContain("min-height: 36px");
     const edge = block(".rowActNow::before");
-    expect(edge).toContain("inset 0 0 0 1px var(--wf-danger)");
-    expect(edge).not.toContain("background");
+    expect(edge).toContain("width: 3px");
+    expect(edge).toContain("border-radius: 999px");
+    expect(edge).toContain("pointer-events: none");
+    expect(block(".rowActNow")).toContain("background: var(--wf-act-tint)");
     expect(block(".rowName")).toContain("var(--wf-fs-14)");
     expect(block(".rowMeta")).toContain("var(--wf-fs-12)");
   });

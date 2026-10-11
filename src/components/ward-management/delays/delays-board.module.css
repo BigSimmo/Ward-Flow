@@ -2470,13 +2470,17 @@ button.gLaneL:hover {
   }
 
   .tbl .r[data-act="true"] {
+    background: var(--wf-act-tint);
     position: relative;
   }
 
   .tbl .r[data-act="true"]::before {
     position: absolute;
-    inset: 0;
-    box-shadow: inset 0 0 0 1px var(--wf-danger);
+    inset-block: 0.625rem;
+    inset-inline-start: 6px;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--wf-danger);
     content: "";
     pointer-events: none;
   }
@@ -2559,4 +2563,11 @@ button.gLaneL:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+@media (forced-colors: active) {
+  .tbl .r[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }

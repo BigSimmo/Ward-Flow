@@ -527,11 +527,10 @@
   --wf-ink-3: var(--wf-dim);
 }
 
-/* Act now (overdue): a thin full red edge and no fill. */
+/* Act now (overdue): an inset coral marker and subtle tint. */
 .row[data-overdue="true"],
 .card[data-overdue="true"] {
-  outline: 1px solid var(--wf-act-edge);
-  outline-offset: -1px;
+  background: var(--wf-act-tint);
 }
 
 .rowOn,
@@ -1776,4 +1775,36 @@
   to {
     transform: translateY(0);
   }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.row[data-overdue="true"] > td:first-child,
+.card[data-overdue="true"] {
+  position: relative;
+}
+
+.row[data-overdue="true"] > td:first-child::before,
+.card[data-overdue="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .row[data-overdue="true"] > td:first-child::before,
+  .card[data-overdue="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
+/* Selection remains distinct when an overdue row or phone card is selected. */
+.rowOn[data-overdue="true"],
+.cardOn[data-overdue="true"] {
+  background: var(--wf-selected);
 }

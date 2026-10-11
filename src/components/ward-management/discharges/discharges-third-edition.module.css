@@ -1689,8 +1689,7 @@
 }
 
 .workTable tr[data-act="true"] {
-  outline: 1px solid var(--wf-act-edge);
-  outline-offset: -1px;
+  background: var(--wf-act-tint);
 }
 
 .tabBadgeAlert {
@@ -2250,5 +2249,28 @@
   .phGroupToggle:focus-visible {
     outline: 2px solid var(--wf-focus-ring);
     outline-offset: -2px;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.workTable tr[data-act="true"] > td:first-child {
+  position: relative;
+}
+
+.workTable tr[data-act="true"] > td:first-child::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .workTable tr[data-act="true"] > td:first-child::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

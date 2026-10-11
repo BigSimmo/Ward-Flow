@@ -558,10 +558,12 @@
   color: var(--wf-ink-1);
 }
 
-/* v10: no tinted fills. Act now takes the thin full red edge; the rest a plain hairline. */
+/* v10: Act now takes an inset marker and subtle tint; the rest a plain hairline. */
 .box_act {
-  background: var(--wf-surface);
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .box_act .nextLabel,
@@ -1070,10 +1072,9 @@
   --wf-ink-3: var(--wf-dim);
 }
 
-/* Act now: a thin full red edge, no fill. */
+/* Act now: an inset coral marker and subtle tint. */
 .row[data-act="true"] {
-  outline: 1px solid var(--wf-act-edge);
-  outline-offset: -1px;
+  background: var(--wf-act-tint);
 }
 
 /* Since you looked sits under the hero as one flush card. */
@@ -1135,4 +1136,30 @@
 
 .gap {
   font-family: var(--wf-font);
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.row[data-act="true"] > td:first-child,
+.box_act {
+  position: relative;
+}
+
+.row[data-act="true"] > td:first-child::before,
+.box_act::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .row[data-act="true"] > td:first-child::before,
+  .box_act::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }
