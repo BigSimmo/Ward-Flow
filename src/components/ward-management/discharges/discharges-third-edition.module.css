@@ -1522,6 +1522,10 @@
     padding: var(--wf-s-2) var(--wf-s-3);
   }
 
+  .workTable tr[data-act="true"] > td:first-child {
+    padding-inline-start: 12px;
+  }
+
   .workTable td,
   .workTable td:first-child,
   .workTable td:nth-child(2),
