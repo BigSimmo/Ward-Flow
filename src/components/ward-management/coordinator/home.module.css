@@ -1924,6 +1924,10 @@ button.registerRow:hover {
     border-bottom: 0;
     background: var(--wf-canvas);
   }
+  :global(body:has([data-scrolled="true"])) .queueTools {
+    top: 3.25rem;
+  }
+
 
   .queueSeg.queueSeg {
     flex: 1 1 auto;

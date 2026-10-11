@@ -560,6 +560,7 @@ export function WardNetworkWorkspace() {
     setView("overview");
   }
   const [selectedEdId, setSelectedEdId] = useState<string | undefined>();
+  const [roadSheetOpen, setRoadSheetOpen] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>();
 
   const pressure = useMemo(() => edPressure(now, movements), [now, movements]);
@@ -719,7 +720,15 @@ export function WardNetworkWorkspace() {
           now={now}
           movements={movements}
           selectedEdId={selectedEdId}
-          onSelectEd={setSelectedEdId}
+          onSelectEd={(edId) => {
+            // Phone (v10): a department row picks that ED and opens its ready beds by road time.
+            if (!isPhone) {
+              setSelectedEdId(edId);
+              return;
+            }
+            if (edId !== undefined) setSelectedEdId(edId);
+            setRoadSheetOpen(true);
+          }}
           foot={<span>No common deadline scale, because these departments don&apos;t share one.</span>}
         />
         <div className={thirdEdition.overviewGrid}>
@@ -737,6 +746,7 @@ export function WardNetworkWorkspace() {
               rows={rows}
               selectedUnitId={selectedUnitId}
               onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
+              {...(isPhone ? { sheetOpen: roadSheetOpen, onSheetOpenChange: setRoadSheetOpen } : {})}
             />
             <NetworkUnitDetail row={detailRow} now={now} onClose={() => setSelectedUnitId(undefined)} />
           </div>

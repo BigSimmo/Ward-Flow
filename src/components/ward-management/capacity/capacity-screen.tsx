@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Printer } from "lucide-react";
 import { LEAVING_DESTINATIONS } from "../ward-admissions";
 
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
@@ -42,6 +43,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { wardIntakeConstraintLabels } from "@/components/ward-management/ward-change-reasons";
 import { BedMap } from "./bed-map";
 import { CapacityPhoneWards } from "./capacity-phone-wards";
+import { CapacityPhoneOverview } from "./capacity-phone-overview";
 import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
 import { bedsForecast } from "./beds-forecast";
@@ -381,35 +383,35 @@ export function CapacityScreen() {
           }
           bar={
             isPhone ? undefined : (
-            <div className={styles.heroStatGroup} role="group" aria-label="Statewide Bed Telemetry">
-              <HeroStat
-                inline
-                value={totalLockedReady}
-                label="Locked ready"
-                pressed={networkFilterId === "locked-ready"}
-                onToggle={() => highlightWards(networkFilterId === "locked-ready" ? "all" : "locked-ready")}
-              />
-              <HeroStat
-                inline
-                value={totalOpenReady}
-                label="Open ready"
-                pressed={networkFilterId === "open-ready"}
-                onToggle={() => highlightWards(networkFilterId === "open-ready" ? "all" : "open-ready")}
-              />
-              <HeroStat inline value={totalPulled} label="Pulled" tone={totalPulled > 0 ? "warning" : undefined} />
-              <HeroStat inline value={freeingTracked ? totalFreeing : "Not tracked"} label="Due out today" />
-              {oldestCount ? (
+              <div className={styles.heroStatGroup} role="group" aria-label="Statewide Bed Telemetry">
                 <HeroStat
                   inline
-                  command
-                  value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}
-                  label={`Oldest count, ${oldestCount.unit.name}`}
-                  tone={isConfirmationFresh(oldestCount.unit, now) ? undefined : "warning"}
-                  onToggle={() => selectWard(oldestCount.unit.id)}
-                  className={styles.heroJump}
+                  value={totalLockedReady}
+                  label="Locked ready"
+                  pressed={networkFilterId === "locked-ready"}
+                  onToggle={() => highlightWards(networkFilterId === "locked-ready" ? "all" : "locked-ready")}
                 />
-              ) : null}
-            </div>
+                <HeroStat
+                  inline
+                  value={totalOpenReady}
+                  label="Open ready"
+                  pressed={networkFilterId === "open-ready"}
+                  onToggle={() => highlightWards(networkFilterId === "open-ready" ? "all" : "open-ready")}
+                />
+                <HeroStat inline value={totalPulled} label="Pulled" tone={totalPulled > 0 ? "warning" : undefined} />
+                <HeroStat inline value={freeingTracked ? totalFreeing : "Not tracked"} label="Due out today" />
+                {oldestCount ? (
+                  <HeroStat
+                    inline
+                    command
+                    value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}
+                    label={`Oldest count, ${oldestCount.unit.name}`}
+                    tone={isConfirmationFresh(oldestCount.unit, now) ? undefined : "warning"}
+                    onToggle={() => selectWard(oldestCount.unit.id)}
+                    className={styles.heroJump}
+                  />
+                ) : null}
+              </div>
             )
           }
           aside={
@@ -420,6 +422,7 @@ export function CapacityScreen() {
               <BedMeetingSheetLauncher
                 now={now}
                 buttonClassName={buttonClass({ variant: "light" })}
+                icon={isPhone ? <Printer size={16} aria-hidden="true" /> : undefined}
                 buildSheet={() =>
                   bedMeetingSheet({
                     units,
@@ -471,7 +474,11 @@ export function CapacityScreen() {
               items={[
                 { id: "overview" as const, label: "Overview" },
                 { id: "wards" as const, label: "Wards", count: scopedNetworkRows.length },
-                { id: "planned" as const, label: "Planned" },
+                {
+                  id: "planned" as const,
+                  label: "Planned",
+                  count: (plannedAdmissions ?? []).filter((booking) => booking.state === "booked").length,
+                },
               ]}
               value={phoneTab}
               onChange={setPhoneTab}
@@ -562,7 +569,9 @@ export function CapacityScreen() {
                   <td data-testid="ward-capacity-gap-value">
                     <div className={styles.gapValueContainer}>
                       <GapWord gap={gapTotals.gap} />{" "}
-                      <span className={styles.gapNumber}>{isPhone ? phoneGap(gapTotals.gap) : formatGap(gapTotals.gap)}</span>
+                      <span className={styles.gapNumber}>
+                        {isPhone ? phoneGap(gapTotals.gap) : formatGap(gapTotals.gap)}
+                      </span>
                     </div>
                     <div
                       className={styles.gapMicroGauge}
@@ -594,6 +603,17 @@ export function CapacityScreen() {
             <p className={styles.serviceScopeNote} data-testid="ward-capacity-mismatch-service-note">
               Across the whole network, not only {service}.
             </p>
+          ) : null}
+          {isPhone && phoneTab === "overview" ? (
+            <CapacityPhoneOverview
+              rows={networkRows}
+              isFresh={(unit) => isConfirmationFresh(unit, now)}
+              now={now}
+              forecast={forecast}
+              freeingTracked={freeingTracked}
+              totalFreeing={totalFreeing}
+              freeingWards={freeingWards}
+            />
           ) : null}
 
           <div className={styles.capacityGrid}>
@@ -1102,7 +1122,8 @@ function GapRow({ row, phone = false }: { row: BedKindGap; phone?: boolean }) {
       <td data-testid="ward-capacity-beds-that-fit">{row.bedsThatFit}</td>
       <td data-testid="ward-capacity-gap-value">
         <div className={styles.gapValueContainer}>
-          <GapWord gap={row.gap} /> <span className={styles.gapNumber}>{phone ? phoneGap(row.gap) : formatGap(row.gap)}</span>
+          <GapWord gap={row.gap} />{" "}
+          <span className={styles.gapNumber}>{phone ? phoneGap(row.gap) : formatGap(row.gap)}</span>
         </div>
         <div
           className={styles.gapMicroGauge}

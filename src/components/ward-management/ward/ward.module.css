@@ -2445,8 +2445,8 @@
     inset 0 0 0 0.5px color-mix(in oklab, var(--ink) 5%, transparent),
     0 1px 1px color-mix(in srgb, var(--ink) 4%, transparent),
     0 22px 48px -30px color-mix(in srgb, var(--ink) 42%, transparent);
-  backdrop-filter: blur(22px) saturate(1.35);
   -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  backdrop-filter: blur(22px) saturate(1.35);
 }
 
 @media (max-width: 40rem) {
@@ -2539,8 +2539,8 @@
     inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
     inset 3px 0 0 var(--warn),
     0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
-  backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
 }
 
 .noticeRow[data-tone="warning"] {
@@ -5904,8 +5904,8 @@
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .srOnlyHeading {
@@ -6583,4 +6583,17 @@
     height: 32px;
     flex: none;
   }
+}
+
+/* Phone (v10): the views pin under the header (52px once the page scrolls) on the canvas, full
+   bleed, as on Home. The class renders only on phone. */
+.phoneTabBar {
+  position: sticky;
+  top: 3.25rem;
+  width: calc(100% + 2 * var(--wf-s-3));
+  max-width: none;
+  z-index: 6;
+  margin: calc(-1 * var(--wf-s-2)) calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-canvas);
 }

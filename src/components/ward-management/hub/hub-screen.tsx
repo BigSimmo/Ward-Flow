@@ -229,6 +229,19 @@ export function HubScreen() {
   const network = useMemo(() => networkBeds(entries), [entries]);
   const unauthorised = useMemo(() => unauthorisedWards(entries), [entries]);
   const sections = useMemo(() => groupedResults(results), [results]);
+  // Phone (v10): typed search text narrows the list to the matches (a chip or Ready beds only still
+  // highlights). Wider screens keep every row and highlight.
+  const phoneSearchFilters = isPhone && queryMatches !== undefined;
+  const shownSections = useMemo(
+    () =>
+      phoneSearchFilters && queryMatches !== undefined
+        ? groupedResults(results.filter((entry) => queryMatches.has(entry.id)))
+        : sections,
+    [phoneSearchFilters, queryMatches, results, sections],
+  );
+  const shownCount = phoneSearchFilters
+    ? results.filter((entry) => queryMatches?.has(entry.id)).length
+    : results.length;
   const staleCount = useMemo(() => entries.filter((entry) => entry.stale === true).length, [entries]);
   const oldestConfirmedAt = useMemo(() => {
     const times = entries.flatMap((entry) =>
@@ -398,17 +411,107 @@ export function HubScreen() {
         </button>
         {/* ⚠️ A sibling of the row button, not a child: a button inside a button is invalid HTML. */}
         {isPhone ? null : (
-        <button
-          type="button"
-          className={cx(styles.pinButton, isPinned(entry.id) && styles.pinButtonOn)}
-          aria-pressed={isPinned(entry.id)}
-          aria-label={`${isPinned(entry.id) ? "Unpin" : "Pin"} ${entry.name}`}
-          onClick={() => toggleHubPin(entry.id)}
-        >
-          <Star className={styles.pinIcon} size={15} aria-hidden="true" />
-        </button>
+          <button
+            type="button"
+            className={cx(styles.pinButton, isPinned(entry.id) && styles.pinButtonOn)}
+            aria-pressed={isPinned(entry.id)}
+            aria-label={`${isPinned(entry.id) ? "Unpin" : "Pin"} ${entry.name}`}
+            onClick={() => toggleHubPin(entry.id)}
+          >
+            <Star className={styles.pinIcon} size={15} aria-hidden="true" />
+          </button>
         )}
       </li>
+    );
+  }
+
+  /** Phone (v10): a ward's preview sheet body. Four ruled tiles, the bed strip, then short facts. */
+  function renderPhoneWardPreview(selected: HubEntry) {
+    const beds = selected.beds ?? 0;
+    const locked = selected.lockedBeds ?? 0;
+    return (
+      <div className={styles.phonePreviewBody} data-testid="hub-phone-ward-preview">
+        <div className={styles.phoneTiles}>
+          <h3 className={styles.srOnly}>Beds</h3>
+          <div>
+            <span>Ready to admit</span>
+            <b>
+              {(selected.ready ?? 0) > 0 ? <StatusGlyph tone="success" size={8} /> : null}
+              {selected.ready ?? 0}
+            </b>
+          </div>
+          <div>
+            <span>{BED_STATE_LABELS.pulled}</span>
+            <b>{selected.pulled ?? 0}</b>
+          </div>
+          <div>
+            <span>{BED_STATE_LABELS.closed}, not offered</span>
+            <b>{selected.closed ?? 0}</b>
+          </div>
+          <div>
+            <span>{BED_STATE_LABELS.occupied}</span>
+            <b>
+              {selected.occupied ?? 0} of {beds}
+            </b>
+          </div>
+        </div>
+        <BedStrip
+          counts={{
+            ready: selected.ready ?? 0,
+            pulled: selected.pulled ?? 0,
+            closed: selected.closed ?? 0,
+            occupied: selected.occupied ?? 0,
+            pendingPreparation: selected.pendingPreparation,
+          }}
+          wardName={selected.name}
+          className={styles.phoneStrip}
+        />
+        <dl className={styles.phoneFacts}>
+          {selected.confirmedAt === undefined ? null : (
+            <div>
+              <dt>Confirmed</dt>
+              <dd>
+                {durMinutes(now - selected.confirmedAt)} ago
+                {selected.stale === true ? ", stale" : ""}
+                {selectedRequest === undefined ? "" : `, asked ${formatInstantWithDay(selectedRequest.at, now)}`}
+              </dd>
+            </div>
+          )}
+          <div>
+            <dt>Being made ready</dt>
+            <dd>{selected.pendingPreparation ?? 0}</dd>
+          </div>
+          <div>
+            <dt>{BED_STATE_LABELS.onLeave}</dt>
+            <dd>{selected.onLeave ?? 0}</dd>
+          </div>
+          <div>
+            <dt>Locked beds</dt>
+            <dd>{locked === 0 ? "None" : locked === beds ? `All ${beds}` : `${locked} of ${beds}`}</dd>
+          </div>
+          <div>
+            <dt>Involuntary</dt>
+            <dd>{selected.authorised === false ? "Voluntary only" : "Authorised hospital"}</dd>
+          </div>
+        </dl>
+        {renderPhonePreviewLinks(selected)}
+      </div>
+    );
+  }
+
+  /** Phone: Pin and Statistics stay reachable as quiet links under the preview. */
+  function renderPhonePreviewLinks(selected: HubEntry) {
+    return (
+      <div className={styles.phonePreviewLinks}>
+        <button type="button" onClick={() => toggleHubPin(selected.id)} aria-pressed={isPinned(selected.id)}>
+          {isPinned(selected.id) ? "Unpin" : "Pin"}
+        </button>
+        {selected.kind === "ward" ? (
+          <Link href={wardStatisticsHref(selected.id)}>View statistics</Link>
+        ) : selected.kind === "ed" ? (
+          <Link href={edStatisticsHref(selected.id)}>View statistics</Link>
+        ) : null}
+      </div>
     );
   }
 
@@ -426,12 +529,8 @@ export function HubScreen() {
             <h2 className={styles.previewTitle}>{selected.name}</h2>
             {selected.site === undefined ? null : <p className={styles.previewSite}>{selected.site}</p>}
             <div className={styles.detailBadges}>
-              {selected.cohort === undefined ? null : (
-                <span className={styles.infoPill}>{selected.cohort}</span>
-              )}
-              {selected.security === undefined ? null : (
-                <span className={styles.infoPill}>{selected.security}</span>
-              )}
+              {selected.cohort === undefined ? null : <span className={styles.infoPill}>{selected.cohort}</span>}
+              {selected.security === undefined ? null : <span className={styles.infoPill}>{selected.security}</span>}
               {/* ⚠️ Mental Health Act authorisation is a SEPARATE fact from locked/open and decides
                   who may legally be admitted, so it is stated in words. */}
               {selected.authorised === false ? (
@@ -496,9 +595,7 @@ export function HubScreen() {
                   <div className={styles.factRow}>
                     <dt>Confirmed</dt>
                     <dd>
-                      <span className={styles.metaTimestamp}>
-                        {formatInstantWithDay(selected.confirmedAt, now)}
-                      </span>{" "}
+                      <span className={styles.metaTimestamp}>{formatInstantWithDay(selected.confirmedAt, now)}</span>{" "}
                       <span className={styles.factMuted}>
                         {durMinutes(now - selected.confirmedAt)} ago
                         {selected.stale === true ? ", stale, check with the ward before relying on it" : ""}
@@ -520,9 +617,7 @@ export function HubScreen() {
                         Ask to confirm
                       </button>
                     ) : (
-                      <span className={styles.factMuted}>
-                        Asked {formatInstantWithDay(selectedRequest.at, now)}
-                      </span>
+                      <span className={styles.factMuted}>Asked {formatInstantWithDay(selectedRequest.at, now)}</span>
                     )}
                   </div>
                 )}
@@ -530,8 +625,8 @@ export function HubScreen() {
                   <div className={styles.factRow}>
                     <dt>Being made ready</dt>
                     <dd>
-                      {selected.pendingPreparation} {selected.pendingPreparation === 1 ? "bed is" : "beds are"}{" "}
-                      still being cleaned, not yet admittable
+                      {selected.pendingPreparation} {selected.pendingPreparation === 1 ? "bed is" : "beds are"} still
+                      being cleaned, not yet admittable
                     </dd>
                   </div>
                 )}
@@ -539,8 +634,8 @@ export function HubScreen() {
                   <div className={styles.factRow}>
                     <dt>{BED_STATE_LABELS.onLeave}</dt>
                     <dd>
-                      {selected.onLeave} {selected.onLeave === 1 ? "bed is" : "beds are"} held for a patient on
-                      leave, already counted in Occupied
+                      {selected.onLeave} {selected.onLeave === 1 ? "bed is" : "beds are"} held for a patient on leave,
+                      already counted in Occupied
                     </dd>
                   </div>
                 )}
@@ -548,8 +643,7 @@ export function HubScreen() {
                   <div className={styles.factRow}>
                     <dt>Locked beds</dt>
                     <dd>
-                      {selected.lockedBeds} of {selected.beds ?? 0}. A voluntary patient may still be nursed on
-                      one
+                      {selected.lockedBeds} of {selected.beds ?? 0}. A voluntary patient may still be nursed on one
                     </dd>
                   </div>
                 )}
@@ -587,25 +681,18 @@ export function HubScreen() {
         <div className={styles.detailCta}>
           {selected.kind === "community" ? (
             <p className={styles.statsAbsent}>
-              Statistics are unavailable for this regional entry. Community directory; no page for this regional
-              entry.
+              Statistics are unavailable for this regional entry. Community directory; no page for this regional entry.
             </p>
           ) : null}
           <div className={styles.ctaActions}>
             {/* Ward and ED only: the statistics builders resolve against a real id this entry carries. */}
             {selected.kind === "ward" ? (
-              <Link
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                href={wardStatisticsHref(selected.id)}
-              >
+              <Link className={buttonClass({ variant: "sec", size: "sm" })} href={wardStatisticsHref(selected.id)}>
                 <BarChart2 size={14} aria-hidden="true" />
                 View statistics
               </Link>
             ) : selected.kind === "ed" ? (
-              <Link
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                href={edStatisticsHref(selected.id)}
-              >
+              <Link className={buttonClass({ variant: "sec", size: "sm" })} href={edStatisticsHref(selected.id)}>
                 <BarChart2 size={14} aria-hidden="true" />
                 View statistics
               </Link>
@@ -637,7 +724,9 @@ export function HubScreen() {
           level={1}
           className={styles.hubHero}
           eyebrow={
-            isPhone ? "Places · Statewide" : `Places · Statewide · ${totals.ward} wards, ${totals.ed} EDs, ${totals.community} teams`
+            isPhone
+              ? "Places · Statewide"
+              : `Places · Statewide · ${totals.ward} wards, ${totals.ed} EDs, ${totals.community} teams`
           }
           title={
             isPhone ? (
@@ -682,63 +771,63 @@ export function HubScreen() {
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
           bar={
             isPhone ? undefined : (
-            <div className={styles.heroChips} role="group" aria-label="Network counts">
-              <HeroStat
-                inline
-                value={network.ready}
-                label="Beds ready"
-                tone="success"
-                pressed={highlight === "ready"}
-                onToggle={() => toggleHighlight("ready")}
-              />
-              <HeroStat
-                inline
-                value={network.pulled}
-                label={BED_STATE_LABELS.pulled}
-                pressed={highlight === "pulled"}
-                onToggle={() => toggleHighlight("pulled")}
-              />
-              <HeroStat
-                inline
-                value={network.closed}
-                label={BED_STATE_LABELS.closed}
-                pressed={highlight === "closed"}
-                onToggle={() => toggleHighlight("closed")}
-              />
-              <HeroStat
-                inline
-                value={occupiedShare(network.occupied, network.beds) ?? "Not recorded"}
-                label={BED_STATE_LABELS.occupied}
-              />
-              <HeroStat
-                inline
-                value={staleCount}
-                label="Stale counts"
-                tone={staleCount > 0 ? "warning" : undefined}
-                pressed={highlight === "stale"}
-                onToggle={() => toggleHighlight("stale")}
-              />
-            </div>
+              <div className={styles.heroChips} role="group" aria-label="Network counts">
+                <HeroStat
+                  inline
+                  value={network.ready}
+                  label="Beds ready"
+                  tone="success"
+                  pressed={highlight === "ready"}
+                  onToggle={() => toggleHighlight("ready")}
+                />
+                <HeroStat
+                  inline
+                  value={network.pulled}
+                  label={BED_STATE_LABELS.pulled}
+                  pressed={highlight === "pulled"}
+                  onToggle={() => toggleHighlight("pulled")}
+                />
+                <HeroStat
+                  inline
+                  value={network.closed}
+                  label={BED_STATE_LABELS.closed}
+                  pressed={highlight === "closed"}
+                  onToggle={() => toggleHighlight("closed")}
+                />
+                <HeroStat
+                  inline
+                  value={occupiedShare(network.occupied, network.beds) ?? "Not recorded"}
+                  label={BED_STATE_LABELS.occupied}
+                />
+                <HeroStat
+                  inline
+                  value={staleCount}
+                  label="Stale counts"
+                  tone={staleCount > 0 ? "warning" : undefined}
+                  pressed={highlight === "stale"}
+                  onToggle={() => toggleHighlight("stale")}
+                />
+              </div>
             )
           }
           foot={
             isPhone ? undefined : (
-            <CheckingFoot
-              items={[
-                {
-                  id: "stale",
-                  label: "Stale bed counts",
-                  value: staleCount,
-                  tone: staleCount > 0 ? "warning" : undefined,
-                },
-                {
-                  id: "oldest",
-                  label: "Oldest bed count",
-                  value: oldestConfirmedAt === undefined ? "Not recorded" : durMinutes(now - oldestConfirmedAt),
-                },
-              ]}
-              notChecked={["ED and team capacity, no feed"]}
-            />
+              <CheckingFoot
+                items={[
+                  {
+                    id: "stale",
+                    label: "Stale bed counts",
+                    value: staleCount,
+                    tone: staleCount > 0 ? "warning" : undefined,
+                  },
+                  {
+                    id: "oldest",
+                    label: "Oldest bed count",
+                    value: oldestConfirmedAt === undefined ? "Not recorded" : durMinutes(now - oldestConfirmedAt),
+                  },
+                ]}
+                notChecked={["ED and team capacity, no feed"]}
+              />
             )
           }
         />
@@ -753,7 +842,8 @@ export function HubScreen() {
               />
             )}
             {isPhone ? (
-              <div className={styles.phoneControls}>
+              /* Phone (v10): the kind switch pins under the header while the places scroll. */
+              <div className={styles.phoneKindBar}>
                 <Segmented
                   label="Show"
                   items={kindItems.map((item) => (item.id === "community" ? { ...item, label: "Teams" } : item))}
@@ -763,6 +853,10 @@ export function HubScreen() {
                     setSelectedId(undefined);
                   }}
                 />
+              </div>
+            ) : null}
+            {isPhone ? (
+              <div className={styles.phoneControls}>
                 <div className={styles.phoneSearchRow}>
                   <TextInput
                     ref={inputRef}
@@ -791,7 +885,7 @@ export function HubScreen() {
                     {order === "ready" ? "Most ready" : "By service"}
                   </button>
                 </div>
-                {highlighting ? (
+                {highlight !== "none" ? (
                   <p className={styles.phoneListHead} data-testid="hub-highlight-note">
                     <b>
                       {highlight === "ready"
@@ -803,7 +897,7 @@ export function HubScreen() {
                             : "Matching places"}
                     </b>
                     <span>
-                      {litCount} {litCount === 1 ? "place" : "places"} ·{" "}
+                      {litCount} {litCount === 1 ? "place" : "places"}
                       <button
                         type="button"
                         className={styles.clearHighlight}
@@ -816,7 +910,7 @@ export function HubScreen() {
                       </button>
                     </span>
                   </p>
-                ) : attention[0] ? (
+                ) : queryMatches === undefined && attention[0] ? (
                   <button
                     type="button"
                     className={styles.phoneCheckFirst}
@@ -935,7 +1029,8 @@ export function HubScreen() {
                   {kind === "all"
                     ? "ward, emergency department or community team"
                     : KIND_WORD_LONG[kind].toLowerCase()}{" "}
-                  matches “{query}”. Try a hospital name or a health service such as “WACHS”. Every place stays below.{" "}
+                  matches “{query}”. Try a hospital name or a health service such as “WACHS”.
+                  {isPhone ? "" : " Every place stays below."}{" "}
                   <button
                     type="button"
                     className={styles.clearHighlight}
@@ -948,7 +1043,7 @@ export function HubScreen() {
                   </button>
                 </p>
               ) : null}
-              {sections.map((section) => {
+              {shownSections.map((section) => {
                 const sectionBeds = section.key === "ward" ? networkBeds(section.entries) : undefined;
                 const sectionShare =
                   sectionBeds === undefined ? undefined : occupiedShare(sectionBeds.occupied, sectionBeds.beds);
@@ -1003,6 +1098,11 @@ export function HubScreen() {
                 );
               })}
             </div>
+            {isPhone && phoneSearchFilters && shownCount > 0 ? (
+              <p className={styles.phoneShownCount}>
+                {shownCount} of {totals.all} places shown
+              </p>
+            ) : null}
             {isPhone ? null : (
               <div className={styles.listFoot}>
                 <BedStripLegend />
@@ -1242,13 +1342,47 @@ export function HubScreen() {
             secondary={
               selected === undefined
                 ? undefined
+                : selected.kind === "ward" && selected.confirmedAt !== undefined && selectedRequest === undefined
+                  ? {
+                      label: "Ask to confirm",
+                      onAction: () =>
+                        dispatch({
+                          type: "REQUEST_CAPACITY_REFRESH",
+                          role: "coordinator",
+                          now,
+                          unitId: selected.id,
+                        }),
+                    }
+                  : {
+                      label: isPinned(selected.id) ? "Unpin" : "Pin",
+                      onAction: () => toggleHubPin(selected.id),
+                    }
+            }
+            primary={
+              selected === undefined
+                ? undefined
                 : {
-                    label: isPinned(selected.id) ? "Unpin" : "Pin",
-                    onAction: () => toggleHubPin(selected.id),
+                    label:
+                      selected.kind === "community"
+                        ? "Open community teams"
+                        : selected.kind === "ward"
+                          ? "Open ward"
+                          : "Open department",
+                    onAction: () => {
+                      recordHubVisit(selected.id);
+                      router.push(selected.href);
+                    },
                   }
             }
           >
-            {selected === undefined ? null : renderPreview(selected)}
+            {selected === undefined ? null : selected.kind === "ward" ? (
+              renderPhoneWardPreview(selected)
+            ) : (
+              <>
+                {renderPreview(selected)}
+                {renderPhonePreviewLinks(selected)}
+              </>
+            )}
           </PhoneSheet>
         ) : null}
       </main>

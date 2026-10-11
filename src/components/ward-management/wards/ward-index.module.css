@@ -1112,3 +1112,65 @@
     padding: 0 var(--wf-s-1);
   }
 }
+
+/* Phone (v10): the statewide rail is one link row under the list; it opens as a sheet. Both the
+ * row and the sheet render only on phone. */
+.phoneRailLink {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneRailLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneRailLink > svg {
+  flex: none;
+  color: var(--wf-ink-2);
+}
+
+.phoneRailLinkText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneRailLinkText b {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.phoneRailLinkText span {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.phoneRailSheet .rail {
+  gap: var(--wf-s-4);
+}
+
+.phoneRailSheet .railCard {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.phoneRailSheet .railCard:first-child > .serviceHead {
+  display: none;
+}

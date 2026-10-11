@@ -1162,12 +1162,22 @@
   padding-bottom: var(--wf-s-3);
 }
 
-.phoneControls > div:first-child {
+/* The kind switch pins under the header (52px once the page scrolls), full bleed on the canvas. */
+.phoneKindBar {
+  position: sticky;
+  top: 3.25rem;
+  z-index: 6;
+  margin: 0 calc(-1 * var(--wf-s-3)) var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-canvas);
+}
+
+.phoneKindBar > div {
   display: flex;
   width: 100%;
 }
 
-.phoneControls > div:first-child > button {
+.phoneKindBar > div > button {
   flex: 1 1 0;
   justify-content: center;
   min-height: var(--wf-touch);
@@ -1216,6 +1226,21 @@
 .phoneListHead b {
   font-size: var(--wf-fs-14);
   color: var(--wf-ink-1);
+}
+
+.phoneListHead > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wf-s-3);
+  white-space: nowrap;
+}
+
+.phoneShownCount {
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-align: center;
 }
 
 .phoneCheckFirst {
@@ -1372,4 +1397,107 @@
     appearance: none;
     display: none;
   }
+}
+
+/* Phone (v10) preview sheet: Open sits in the sheet footer, so the card's own Open row hides. */
+.phonePreviewSheet .detailCta {
+  display: none;
+}
+
+.phonePreviewBody {
+  display: grid;
+  gap: var(--wf-s-4);
+}
+
+.phoneTiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.phoneTiles > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.phoneTiles > div:nth-of-type(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+
+.phoneTiles > div:nth-last-of-type(-n + 2) {
+  border-bottom: 0;
+}
+
+.phoneTiles span {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.phoneTiles b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-1);
+  font: 700 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+  white-space: nowrap;
+}
+
+.phoneStrip {
+  max-width: 100%;
+}
+
+.phoneFacts {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+
+.phoneFacts > div {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  align-items: baseline;
+}
+
+.phoneFacts dt {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.phoneFacts dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: var(--wf-lh-13);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phonePreviewLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+}
+
+.phonePreviewLinks > :is(a, button) {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  text-decoration: none;
+  cursor: pointer;
 }

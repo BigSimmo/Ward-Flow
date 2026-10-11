@@ -477,11 +477,16 @@ export function ReadyByRoadTime({
   rows,
   selectedUnitId,
   onSelectUnit,
+  sheetOpen: sheetOpenProp,
+  onSheetOpenChange,
 }: {
   ed: EdPressure["ed"] | undefined;
   rows: readonly NetworkUnitRow[];
   selectedUnitId: string | undefined;
   onSelectUnit: (unitId: string) => void;
+  /** Phone: lets the caller open the road-time sheet (an ED row tap). Uncontrolled when omitted. */
+  sheetOpen?: boolean;
+  onSheetOpenChange?: (open: boolean) => void;
 }) {
   const ranked = useMemo(() => {
     if (ed === undefined) return [];
@@ -497,7 +502,12 @@ export function ReadyByRoadTime({
   }, [ed, rows]);
   // Phone (v10): one link row under the departments; the ranked list opens as a bottom sheet.
   const isPhone = useIsPhone();
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetOpenLocal, setSheetOpenLocal] = useState(false);
+  const sheetOpen = sheetOpenProp ?? sheetOpenLocal;
+  const setSheetOpen = (open: boolean) => {
+    setSheetOpenLocal(open);
+    onSheetOpenChange?.(open);
+  };
 
   const list =
     ranked.length === 0 ? (
@@ -566,7 +576,11 @@ export function ReadyByRoadTime({
           open={sheetOpen}
           onClose={() => setSheetOpen(false)}
           title="Ready beds by road time"
-          description={ed === undefined ? "Indicative, not live traffic" : `From ${ed.name} · indicative, not live traffic`}
+          description={
+            ed === undefined
+              ? "Indicative, not live traffic"
+              : `From ${ed.name.replace(/\s*(Public Hospital|Hospital|Health Campus)?\s*Emergency Department$/u, " ED")} · indicative, not live traffic`
+          }
           data-testid="ward-network-roadtime-sheet"
         >
           <div className={styles.roadSheet}>
@@ -697,9 +711,7 @@ function NetworkUnitSheet({
       onClose={onClose}
       title={unit?.name ?? "Ward"}
       description={
-        row === undefined || unit === undefined
-          ? undefined
-          : [row.service, unitMeta(unit)].filter(Boolean).join(" · ")
+        row === undefined || unit === undefined ? undefined : [row.service, unitMeta(unit)].filter(Boolean).join(" · ")
       }
       secondary={
         unit === undefined
@@ -710,9 +722,7 @@ function NetworkUnitSheet({
             }
       }
       primary={
-        unit === undefined
-          ? undefined
-          : { label: "Open ward page", onAction: () => router.push(unitHref(unit.id)) }
+        unit === undefined ? undefined : { label: "Open ward page", onAction: () => router.push(unitHref(unit.id)) }
       }
       data-testid="ward-network-unit-sheet"
     >

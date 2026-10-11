@@ -184,6 +184,15 @@
 
 /* Phone (v10 Network): the two views sit under the hero on the canvas as a full-width segmented
  * control, the Placement count visible. `.phoneViewTabs` renders only on phone (`useIsPhone`). */
+.phoneViewTabs {
+  position: sticky;
+  top: 3.25rem;
+  z-index: 6;
+  margin-inline: -14px;
+  padding: var(--wf-s-2) 14px;
+  background: var(--wf-canvas);
+}
+
 .phoneViewTabs .viewTabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

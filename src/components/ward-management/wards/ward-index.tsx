@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Info, LayoutGrid, List, Lock, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronRight, Info, LayoutGrid, List, Lock, Search, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -389,6 +389,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   // Phone (v10): one list of wards; a tap opens the ward's card as a bottom sheet.
   const isPhone = useIsPhone();
   const [phoneWardId, setPhoneWardId] = useState<string | null>(null);
+  const [phoneRailOpen, setPhoneRailOpen] = useState(false);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -530,6 +531,72 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const statewidePercent = totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : null;
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // The statewide rail. Phone (v10) opens it as a sheet from one link row under the list.
+  const rail = (
+    <aside className={styles.rail} data-wf-rail="1121" aria-label="Statewide by service">
+      <Card as="section" className={styles.railCard} aria-labelledby="ward-service-occupancy">
+        <div className={styles.serviceHead}>
+          <h2 id="ward-service-occupancy" className={styles.railTitle}>
+            Occupancy by service
+          </h2>
+          <span className={styles.serviceMeta}>line {SERVICE_LINE * 100}%</span>
+        </div>
+        <WardCapacityRows label="Occupancy by service">
+          {serviceRows.map((entry) => (
+            <WardCapacityRow
+              key={entry.id}
+              name={serviceShortName(entry.name)}
+              meta={`${entry.ready} ready`}
+              segments={entry.segments}
+              percent={entry.percent}
+              alertAt={SERVICE_LINE * 100}
+              selected={service === entry.id}
+              dim={service !== "all" && service !== entry.id}
+              onSelect={() => setService(service === entry.id ? "all" : (entry.id as ServiceFilter))}
+              actionLabel={`Highlight ${entry.name} wards`}
+              className={styles.serviceCapRow}
+            />
+          ))}
+        </WardCapacityRows>
+        <p className={styles.railNote}>Press a service to highlight its wards.</p>
+      </Card>
+
+      <Card as="section" className={styles.railCard} aria-labelledby="ward-counts-to-check">
+        <div className={styles.serviceHead}>
+          <h2 id="ward-counts-to-check" className={styles.railTitle}>
+            Counts to check <Count n={staleRows.length} />
+          </h2>
+          <span className={styles.serviceMeta}>past each ward&apos;s limit</span>
+        </div>
+        {staleRows.length === 0 ? (
+          <p className={styles.railNote}>0 wards have a stale bed count.</p>
+        ) : (
+          <ul className={styles.checkList}>
+            {staleRows.map((row) => (
+              <li key={row.unit.id}>
+                <StatusGlyph tone="warning" size={9} />
+                <Link className={styles.checkName} href={`/mockups/ward-flow/ward/${row.unit.id}`}>
+                  {row.unit.name}
+                </Link>
+                <span className={styles.checkAge}>
+                  <b className={styles.num}>{durMinutes(Math.max(0, now - row.confirmedAt))}</b> stale
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card as="section" className={styles.railCard} aria-labelledby="ward-reading-key">
+        <h2 id="ward-reading-key" className={styles.railTitle}>
+          Reading a ward
+        </h2>
+        <BedStripLegend />
+        <p className={styles.railNote}>One cell a bed. Ready, pulled, closed, then occupied.</p>
+      </Card>
+    </aside>
+  );
+
   return (
     <div
       className={styles.screen}
@@ -664,7 +731,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onClear={() => setQuery("")}
-              trailing={query ? undefined : <Kbd>/</Kbd>}
+              trailing={query || isPhone ? undefined : <Kbd>/</Kbd>}
               autoComplete="off"
               spellCheck={false}
               boxClassName={styles.search}
@@ -790,68 +857,33 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             )}
           </div>
 
-          <aside className={styles.rail} data-wf-rail="1121" aria-label="Statewide by service">
-            <Card as="section" className={styles.railCard} aria-labelledby="ward-service-occupancy">
-              <div className={styles.serviceHead}>
-                <h2 id="ward-service-occupancy" className={styles.railTitle}>
-                  Occupancy by service
-                </h2>
-                <span className={styles.serviceMeta}>line {SERVICE_LINE * 100}%</span>
-              </div>
-              <WardCapacityRows label="Occupancy by service">
-                {serviceRows.map((entry) => (
-                  <WardCapacityRow
-                    key={entry.id}
-                    name={serviceShortName(entry.name)}
-                    meta={`${entry.ready} ready`}
-                    segments={entry.segments}
-                    percent={entry.percent}
-                    alertAt={SERVICE_LINE * 100}
-                    selected={service === entry.id}
-                    dim={service !== "all" && service !== entry.id}
-                    onSelect={() => setService(service === entry.id ? "all" : (entry.id as ServiceFilter))}
-                    actionLabel={`Highlight ${entry.name} wards`}
-                    className={styles.serviceCapRow}
-                  />
-                ))}
-              </WardCapacityRows>
-              <p className={styles.railNote}>Press a service to highlight its wards.</p>
-            </Card>
-
-            <Card as="section" className={styles.railCard} aria-labelledby="ward-counts-to-check">
-              <div className={styles.serviceHead}>
-                <h2 id="ward-counts-to-check" className={styles.railTitle}>
-                  Counts to check <Count n={staleRows.length} />
-                </h2>
-                <span className={styles.serviceMeta}>past each ward&apos;s limit</span>
-              </div>
-              {staleRows.length === 0 ? (
-                <p className={styles.railNote}>0 wards have a stale bed count.</p>
-              ) : (
-                <ul className={styles.checkList}>
-                  {staleRows.map((row) => (
-                    <li key={row.unit.id}>
-                      <StatusGlyph tone="warning" size={9} />
-                      <Link className={styles.checkName} href={`/mockups/ward-flow/ward/${row.unit.id}`}>
-                        {row.unit.name}
-                      </Link>
-                      <span className={styles.checkAge}>
-                        <b className={styles.num}>{durMinutes(Math.max(0, now - row.confirmedAt))}</b> stale
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card>
-
-            <Card as="section" className={styles.railCard} aria-labelledby="ward-reading-key">
-              <h2 id="ward-reading-key" className={styles.railTitle}>
-                Reading a ward
-              </h2>
-              <BedStripLegend />
-              <p className={styles.railNote}>One cell a bed. Ready, pulled, closed, then occupied.</p>
-            </Card>
-          </aside>
+          {isPhone ? (
+            <button
+              type="button"
+              className={styles.phoneRailLink}
+              aria-haspopup="dialog"
+              onClick={() => setPhoneRailOpen(true)}
+            >
+              <span className={styles.phoneRailLinkText}>
+                <b>Occupancy by service</b>
+                <span>Bars against the {SERVICE_LINE * 100}% line, with ready beds</span>
+              </span>
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+          ) : null}
+          {isPhone ? (
+            <PhoneSheet
+              open={phoneRailOpen}
+              onClose={() => setPhoneRailOpen(false)}
+              title="Occupancy by service"
+              description={`Bars against the ${SERVICE_LINE * 100}% line, with ready beds`}
+              className={styles.phoneRailSheet}
+            >
+              {rail}
+            </PhoneSheet>
+          ) : (
+            rail
+          )}
         </div>
 
         {unplaced.length > 0 ? (
@@ -1074,13 +1106,15 @@ function WardProfileBody({
             ext {meta.ext} · {meta.num}
           </span>
         </span>
-        <Link
-          className={buttonClass({ variant: "sec", size: "sm" })}
-          href={`/mockups/ward-flow/board/${unit.id}`}
-          onClick={close}
-        >
-          Bed board
-        </Link>
+        {inSheet ? null : (
+          <Link
+            className={buttonClass({ variant: "sec", size: "sm" })}
+            href={`/mockups/ward-flow/board/${unit.id}`}
+            onClick={close}
+          >
+            Bed board
+          </Link>
+        )}
         {inSheet ? null : (
           <Link
             className={buttonClass({ variant: "pri", size: "sm" })}
@@ -1215,6 +1249,7 @@ function WardPhoneSheet({ row, now, onClose }: { row: WardRow | undefined; now: 
       onClose={onClose}
       title={row.unit.name}
       description={`${row.service ?? "Not placed"} · ${row.siteShort} · ${cohortLabel(row.unit)}`}
+      secondary={{ label: "Bed board", onAction: () => router.push(`/mockups/ward-flow/board/${row.unit.id}`) }}
       primary={{ label: "Enter ward", onAction: () => router.push(`/mockups/ward-flow/ward/${row.unit.id}`) }}
       className={styles.phoneSheet}
       data-testid="ward-index-phone-sheet"

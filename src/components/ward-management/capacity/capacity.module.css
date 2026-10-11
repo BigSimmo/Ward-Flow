@@ -1206,7 +1206,6 @@
   }
 }
 
-
 /* Phone polish (8 Oct 2026): each mismatch tile drops the table's cell rules and padding, so the
  * need, the gap, its bar and the waiting and fit counts line up on one left edge inside the tile.
  * Desktop is unchanged. */
@@ -1550,4 +1549,102 @@
     flex: 0 0 9px;
     height: 9px;
   }
+}
+
+/* Phone (v10) Overview: the network aside gives way to Needs you and two rows that open sheets.
+ * `.phoneOverview` and its rows render only on phone. */
+@media (max-width: 48rem) {
+  .columns[data-phone-tab="overview"] .capacityGrid {
+    display: none;
+  }
+}
+
+.phoneOverview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.phoneOverviewHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 var(--wf-s-1) var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+}
+
+.phoneOverviewCount {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.phoneOverviewList {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  list-style: none;
+}
+
+.phoneOverviewList > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneOverviewTag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.phoneOverviewEmpty {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.phoneLinkRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneLinkRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneLinkRow > svg {
+  flex: none;
+  color: var(--wf-ink-2);
+}
+
+/* The sticky Overview / Wards / Planned switch, pinned under the header once the page scrolls. */
+.phoneTabs {
+  position: sticky;
+  top: 3.25rem;
+  z-index: 6;
+  margin-inline: calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-canvas);
 }

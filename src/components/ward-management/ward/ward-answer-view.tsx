@@ -93,6 +93,12 @@ export interface WardAnswerViewProps {
   unitId: string;
 }
 
+/** A decline reason as a sentence-case label ("no_bed" reads "No bed"). */
+function declineReasonLabel(reason: DeclineReason): string {
+  const words = reason.replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections, resolvePatientIdentity } =
     useWardFlow();
@@ -110,6 +116,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const [numConsulted, setNumConsulted] = useState(false);
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineReason, setDeclineReason] = useState<DeclineReason | undefined>(undefined);
+  const [declineNudge, setDeclineNudge] = useState(false);
   const [capacityDraft, setCapacityDraft] = useState<{ unitId: string; revision: number; value: string }>();
   const capacityRevision = unit?.allocatable.revision ?? 0;
   const capacityValue =
@@ -275,6 +282,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   function toggleDecline(movementId: string) {
     setDeclineOpenFor((current) => (current === movementId ? undefined : movementId));
     setDeclineReason(undefined);
+    setDeclineNudge(false);
   }
 
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
@@ -284,6 +292,19 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     setDeclineOpenFor(undefined);
     setDeclineReason(undefined);
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
+    triggerToast("Referral declined.");
+  }
+
+  /** Phone: the decline sheet's footer confirms without a form submit. */
+  function confirmDecline(movementId: string) {
+    if (!declineReason) {
+      setDeclineNudge(true);
+      return;
+    }
+    setDeclineNudge(false);
+    dispatch({ type: "DECLINE", role: "ward", now, movementId, unitId: currentUnit.id, reason: declineReason });
+    setDeclineOpenFor(undefined);
+    setDeclineReason(undefined);
     triggerToast("Referral declined.");
   }
 
@@ -710,30 +731,30 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             ) : null}
                           </div>
                         ) : (
-                        <div className={styles.patientDossierBanner}>
-                          <div>
-                            <div className={styles.patientNameLine}>Incoming patient</div>
-                            <div className={styles.patientMetaLine}>
-                              Cohort: {activeMovement.cohort} &bull; Security: {activeMovement.security} &bull; Sex:{" "}
-                              {activeMovement.sex} &bull; {elapsedLabel(activeMovement, now)}
+                          <div className={styles.patientDossierBanner}>
+                            <div>
+                              <div className={styles.patientNameLine}>Incoming patient</div>
+                              <div className={styles.patientMetaLine}>
+                                Cohort: {activeMovement.cohort} &bull; Security: {activeMovement.security} &bull; Sex:{" "}
+                                {activeMovement.sex} &bull; {elapsedLabel(activeMovement, now)}
+                              </div>
+                            </div>
+                            <div className={styles.patientDossierBadges}>
+                              <span className={styles.badge} data-tone="danger">
+                                {activeMovement.legalStatus}
+                              </span>
+                              {activeMovement.specialling ? (
+                                <span className={styles.badge} data-tone="warn">
+                                  1:1 Specialling
+                                </span>
+                              ) : null}
+                              {activeMovement.highAcuity ? (
+                                <span className={styles.badge} data-tone="warn">
+                                  High Acuity
+                                </span>
+                              ) : null}
                             </div>
                           </div>
-                          <div className={styles.patientDossierBadges}>
-                            <span className={styles.badge} data-tone="danger">
-                              {activeMovement.legalStatus}
-                            </span>
-                            {activeMovement.specialling ? (
-                              <span className={styles.badge} data-tone="warn">
-                                1:1 Specialling
-                              </span>
-                            ) : null}
-                            {activeMovement.highAcuity ? (
-                              <span className={styles.badge} data-tone="warn">
-                                High Acuity
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
                         )}
 
                         {/* SBAR Narrative Sections */}
@@ -971,8 +992,139 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         </form>
                       ) : null}
 
+                      {/* Phone (v10): Decline and Accept each open a bottom sheet first. */}
+                      {isPhone ? (
+                        <>
+                          <PhoneSheet
+                            open={declineOpen && !blocked}
+                            onClose={() => toggleDecline(activeMovement.id)}
+                            title="Decline this request"
+                            description="Choose a reason. The referrer sees it."
+                            height="tall"
+                            secondary={{ label: "Back", onAction: () => toggleDecline(activeMovement.id) }}
+                            primary={{
+                              label: "Confirm decline",
+                              onAction: () => confirmDecline(activeMovement.id),
+                            }}
+                            data-testid={`ward-decline-sheet-${activeMovement.id}`}
+                          >
+                            <div className={styles.phoneSheetScope}>
+                              <fieldset className={styles.phoneDeclineFieldset}>
+                                <legend className={styles.phoneSheetLabel}>Decline reason</legend>
+                                {declineNudge && !declineReason ? (
+                                  <p className={styles.phoneSheetNudge} role="alert">
+                                    Choose a reason to confirm the decline.
+                                  </p>
+                                ) : null}
+                                {DECLINE_REASONS.map((reason) => (
+                                  <label key={reason} className={styles.phoneRadioRow}>
+                                    <input
+                                      type="radio"
+                                      name={`decline-reason-${activeMovement.id}`}
+                                      value={reason}
+                                      checked={declineReason === reason}
+                                      onChange={() => setDeclineReason(reason)}
+                                    />
+                                    <span>{declineReasonLabel(reason)}</span>
+                                  </label>
+                                ))}
+                              </fieldset>
+                              <div className={styles.phoneWaitlist}>
+                                <div className={styles.phoneWaitlistHead}>
+                                  <StatusGlyph tone="info" size={10} />
+                                  <span className={styles.phoneFoldText}>
+                                    <span className={styles.phoneFoldTitle}>Accept to the waitlist instead?</span>
+                                    <span className={styles.phoneFoldLine}>
+                                      The bed request stays open and this ward is next when a bed frees.
+                                    </span>
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  className={buttonClass({ variant: "sec", size: "md" })}
+                                  onClick={() => {
+                                    toggleDecline(activeMovement.id);
+                                    setPhoneSheet("accept");
+                                  }}
+                                >
+                                  Accept in principle
+                                </button>
+                              </div>
+                            </div>
+                          </PhoneSheet>
+                          <PhoneSheet
+                            open={phoneSheet === "accept" && !blocked}
+                            onClose={() => setPhoneSheet(null)}
+                            title="Accept in principle"
+                            description={`This patient · ${activeMovement.cohort}, ${activeMovement.security.toLowerCase()}`}
+                            secondary={{ label: "Cancel", onAction: () => setPhoneSheet(null) }}
+                            primary={{
+                              label: "Accept in principle",
+                              onAction: () => {
+                                setPhoneSheet(null);
+                                handleAccept(activeMovement.id);
+                              },
+                            }}
+                            data-testid={`ward-accept-sheet-${activeMovement.id}`}
+                          >
+                            <div className={styles.phoneSheetScope}>
+                              <dl className={styles.phoneAcceptFacts}>
+                                <div>
+                                  <dt>Patient</dt>
+                                  <dd>This patient</dd>
+                                </div>
+                                <div>
+                                  <dt>Ward</dt>
+                                  <dd>{unit.name}</dd>
+                                </div>
+                                <div>
+                                  <dt>Bed</dt>
+                                  <dd>{capacity.available > 0 ? "Ready now" : "Allocatable"}</dd>
+                                </div>
+                              </dl>
+                              <div className={styles.phoneSheetField}>
+                                <span className={styles.phoneSheetFieldLabel} id={`ward-hold-${activeMovement.id}`}>
+                                  Bed hold
+                                </span>
+                                <div
+                                  className={styles.phoneSegment}
+                                  role="group"
+                                  aria-labelledby={`ward-hold-${activeMovement.id}`}
+                                >
+                                  {[
+                                    ["120", "120 minutes, standard"],
+                                    ["180", "180 minutes, extra travel"],
+                                  ].map(([value, label]) => (
+                                    <button
+                                      key={value}
+                                      type="button"
+                                      aria-pressed={holdDuration === value}
+                                      onClick={() => setHoldDuration(value ?? "120")}
+                                    >
+                                      {label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <label className={styles.phoneSheetField}>
+                                <span className={styles.phoneSheetFieldLabel}>Receiving nurse unit manager</span>
+                                <input
+                                  type="text"
+                                  className={styles.phoneSheetInput}
+                                  defaultValue={`NUM ${unit.name}`}
+                                />
+                              </label>
+                              <p className={styles.phoneSheetNote}>
+                                <StatusGlyph tone="neutral" size={8} />
+                                Acceptance in principle holds a place. Nobody is moved and no transport is booked.
+                              </p>
+                            </div>
+                          </PhoneSheet>
+                        </>
+                      ) : null}
+
                       {/* Inline Decline Form */}
-                      {declineOpen && !blocked ? (
+                      {declineOpen && !blocked && !isPhone ? (
                         <form
                           className={styles.declineForm}
                           onSubmit={(event) => submitDecline(event, activeMovement.id)}
@@ -1033,6 +1185,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           className={buttonClass({ variant: "pri", size: "sm" })}
                           onClick={() => {
                             if (blocked) return;
+                            if (isPhone) {
+                              setPhoneSheet("accept");
+                              return;
+                            }
                             handleAccept(activeMovement.id);
                           }}
                         >

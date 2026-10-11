@@ -1773,116 +1773,115 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   const wardSwitchMenu =
     switchUnits.length > 0 ? (
-        <Menu
-          label="Switch ward"
-          align="start"
-          items={switchUnits.map((candidate) => ({
-            id: candidate.id,
-            label: candidate.name,
-            meta: candidate.siteCode,
-            onSelect: () => {
-              const href = unitHref(candidate.id);
-              if (router) router.push(href);
-              else window.location.assign(href);
-            },
-          }))}
-          trigger={(props) => (
-            <button
-              type="button"
-              {...props}
-              className={styles.wardSwitch}
-              aria-label={`Switch ward, now ${unit.name}`}
-              data-testid="ward-switch-btn"
-            >
-              <ChevronDown size={16} aria-hidden="true" />
-            </button>
-          )}
-        />
-      ) : null;
-  const wardRibbon = (
-  <WardTelemetryRibbon
-        unit={unit}
-        capacity={{ available: states.ready, occupied: states.occupied }}
-        staffedSpecialling={staffedSpecialling}
-        now={now}
-        filter={activeTab === "attn" ? bedFilter : undefined}
-        onFilter={(next) => {
-          setBedFilter(next);
-          if (next === "shift-end") setFlowTab("discharges");
-          showHome("bed-capacity");
-        }}
-        actNow={actNowCount}
-        onActNow={() => {
-          setShiftView("todo");
-          if (isPhone) {
-            setActiveTab("attn");
-            setPhonePanel("shift");
-            return;
-          }
-          showHome("ward-this-shift");
-        }}
-        phone={isPhone}
+      <Menu
+        label="Switch ward"
+        align="start"
+        items={switchUnits.map((candidate) => ({
+          id: candidate.id,
+          label: candidate.name,
+          meta: candidate.siteCode,
+          onSelect: () => {
+            const href = unitHref(candidate.id);
+            if (router) router.push(href);
+            else window.location.assign(href);
+          },
+        }))}
+        trigger={(props) => (
+          <button
+            type="button"
+            {...props}
+            className={styles.wardSwitch}
+            aria-label={`Switch ward, now ${unit.name}`}
+            data-testid="ward-switch-btn"
+          >
+            <ChevronDown size={16} aria-hidden="true" />
+          </button>
+        )}
       />
+    ) : null;
+  const wardRibbon = (
+    <WardTelemetryRibbon
+      unit={unit}
+      capacity={{ available: states.ready, occupied: states.occupied }}
+      staffedSpecialling={staffedSpecialling}
+      now={now}
+      filter={activeTab === "attn" ? bedFilter : undefined}
+      onFilter={(next) => {
+        setBedFilter(next);
+        if (next === "shift-end") setFlowTab("discharges");
+        showHome("bed-capacity");
+      }}
+      actNow={actNowCount}
+      onActNow={() => {
+        setShiftView("todo");
+        if (isPhone) {
+          setActiveTab("attn");
+          setPhonePanel("shift");
+          return;
+        }
+        showHome("ward-this-shift");
+      }}
+      phone={isPhone}
+    />
   );
   const wardHeroFoot = (
-  <span className={styles.heroFootStack}>
-        <span className={styles.heroMeta}>
-          <Clock size={14} aria-hidden="true" className={styles.heroMetaIcon} />
-          <span>{shiftLine(now)}</span>
-          {" · "}
-          {unit.cohort} · {designationSummary(unit).toLowerCase()} ·{" "}
-          <Link
-            className={styles.heroBedListLink}
-            href="#bed-capacity"
-            data-testid="ward-hero-open-bed-list"
-            onClick={(event) => {
-              event.preventDefault();
-              setBedFilter("all");
-              showHome("bed-capacity");
-            }}
-          >
-            {unit.beds} beds · {capacity.available} ready
-          </Link>
-          {" · "}
-          {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
-          <span>Roster not recorded</span> · {staffedSpecialling} on 1:1 specialling ·{" "}
-          {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
-          {(unit.intakeConstraints ?? []).length > 0
-            ? ` · ${(unit.intakeConstraints ?? [])
-                .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)
-                .join(", ")}`
-            : ""}
-        </span>
-        <CheckingFoot
-          items={[
-            {
-              id: "stale",
-              label: `Bed counts older than ${durMinutes(unit.allocatable.staleAfterMinutes)}`,
-              value: bedCountsStale ? 1 : 0,
-              tone: bedCountsStale ? "warning" : undefined,
-            },
-            {
-              id: "held",
-              label: "Discharges held up",
-              value: blockedReleases.length,
-              tone: blockedReleases.length > 0 ? "danger" : undefined,
-            },
-            {
-              id: "past",
-              label: "Past expected date",
-              value: bedsList.filter((bed) => bed.pastDate).length,
-            },
-          ]}
-          notChecked={["roster, no feed"]}
-        />
+    <span className={styles.heroFootStack}>
+      <span className={styles.heroMeta}>
+        <Clock size={14} aria-hidden="true" className={styles.heroMetaIcon} />
+        <span>{shiftLine(now)}</span>
+        {" · "}
+        {unit.cohort} · {designationSummary(unit).toLowerCase()} ·{" "}
+        <Link
+          className={styles.heroBedListLink}
+          href="#bed-capacity"
+          data-testid="ward-hero-open-bed-list"
+          onClick={(event) => {
+            event.preventDefault();
+            setBedFilter("all");
+            showHome("bed-capacity");
+          }}
+        >
+          {unit.beds} beds · {capacity.available} ready
+        </Link>
+        {" · "}
+        {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
+        <span>Roster not recorded</span> · {staffedSpecialling} on 1:1 specialling ·{" "}
+        {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
+        {(unit.intakeConstraints ?? []).length > 0
+          ? ` · ${(unit.intakeConstraints ?? [])
+              .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)
+              .join(", ")}`
+          : ""}
       </span>
+      <CheckingFoot
+        items={[
+          {
+            id: "stale",
+            label: `Bed counts older than ${durMinutes(unit.allocatable.staleAfterMinutes)}`,
+            value: bedCountsStale ? 1 : 0,
+            tone: bedCountsStale ? "warning" : undefined,
+          },
+          {
+            id: "held",
+            label: "Discharges held up",
+            value: blockedReleases.length,
+            tone: blockedReleases.length > 0 ? "danger" : undefined,
+          },
+          {
+            id: "past",
+            label: "Past expected date",
+            value: bedsList.filter((bed) => bed.pastDate).length,
+          },
+        ]}
+        notChecked={["roster, no feed"]}
+      />
+    </span>
   );
   const wardHeroFootAside = (
-  <span>
-        {unit.allocatable.source === "ward" ? "Confirmed" : "Last figure"}{" "}
-        {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
-        {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
-      </span>
+    <span>
+      {unit.allocatable.source === "ward" ? "Confirmed" : "Last figure"} {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
+      {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
+    </span>
   );
 
   const tabHome = (
@@ -1950,12 +1949,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }}
       >
         <span>Decisions</span>
-        <span
-          className={styles.tabBadge}
-          id="badgeReturn"
-          title={decisionsDueLabel}
-          aria-label={decisionsDueLabel}
-        >
+        <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-label={decisionsDueLabel}>
           {decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}
         </span>
       </button>
@@ -1990,7 +1984,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             className={styles.wardHero}
             eyebrow={
               isPhone
-                ? `${site ? site.name : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
+                ? `${site ? site.name.replace(/\s+(Public Hospital|Hospital|Health Campus|Health Service)$/u, "") : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
                 : `Ward · ${site ? site.name : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
             }
             title={
@@ -2044,7 +2038,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 >
                   <ListChecks size={16} aria-hidden="true" />
                   This shift
-                  {phoneTodoCount !== undefined ? <span className={styles.phoneChipCount}>{phoneTodoCount}</span> : null}
+                  {phoneTodoCount !== undefined ? (
+                    <span className={styles.phoneChipCount}>{phoneTodoCount}</span>
+                  ) : null}
                 </button>
                 <button
                   type="button"
@@ -2135,120 +2131,133 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               ) : null}
             </>
           ) : null}
-          <nav className={styles.tabBarWrap} aria-label="Ward Operational Tabs">
-            <ul className={styles.tabList} role="tablist" id="mainTabList" aria-label="Ward views">
-              {isPhone ? (
-                <>
-                  {tabHome}
-                  {tabDecisions}
-                  {tabBoard}
-                </>
-              ) : (
-                <>
-                  {tabHome}
-                  {tabBoard}
-                  {tabDecisions}
-                </>
-              )}
-            </ul>
-            {isPhone ? null : (
-              <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
-                <TextInput
-                  type="search"
-                  icon={Search}
-                  boxClassName={styles.findBox}
-                  aria-label="Find a bed or person on this ward"
-                  placeholder="Find bed or person"
-                  value={bedQuery}
-                  onChange={(event) => {
-                    setBedQuery(event.target.value);
-                    if (activeTab !== "attn" && activeTab !== "board") setActiveTab("attn");
-                  }}
-                  onClear={() => {
-                    setBedQuery("");
-                  }}
-                  data-testid="ward-find-input"
-                />
-                <div className={styles.notificationTriggerWrap}>
+          {isPhone ? null : (
+            <nav className={styles.tabBarWrap} aria-label="Ward Operational Tabs">
+              <ul className={styles.tabList} role="tablist" id="mainTabList" aria-label="Ward views">
+                {isPhone ? (
+                  <>
+                    {tabHome}
+                    {tabDecisions}
+                    {tabBoard}
+                  </>
+                ) : (
+                  <>
+                    {tabHome}
+                    {tabBoard}
+                    {tabDecisions}
+                  </>
+                )}
+              </ul>
+              {isPhone ? null : (
+                <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
+                  <TextInput
+                    type="search"
+                    icon={Search}
+                    boxClassName={styles.findBox}
+                    aria-label="Find a bed or person on this ward"
+                    placeholder="Find bed or person"
+                    value={bedQuery}
+                    onChange={(event) => {
+                      setBedQuery(event.target.value);
+                      if (activeTab !== "attn" && activeTab !== "board") setActiveTab("attn");
+                    }}
+                    onClear={() => {
+                      setBedQuery("");
+                    }}
+                    data-testid="ward-find-input"
+                  />
+                  <div className={styles.notificationTriggerWrap}>
+                    <button
+                      ref={notificationTriggerRef}
+                      type="button"
+                      className={buttonClass({ variant: "ghost", size: "sm" })}
+                      onClick={() => {
+                        setNotificationCenterOpen((prev) => !prev);
+                      }}
+                      aria-expanded={notificationCenterOpen}
+                      data-testid="ward-notifications-toggle-btn"
+                      title="Buzzes, urgent tasks and notices"
+                    >
+                      <ListChecks size={16} aria-hidden="true" />
+                      <span>Tasks</span>
+                      {unreadAlertsCount > 0 ? (
+                        <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
+                          {unreadAlertsCount}
+                        </span>
+                      ) : null}
+                    </button>
+                    {notificationCenterOpen ? (
+                      <div
+                        ref={notificationCenterRef}
+                        className={styles.notificationCenterContainer}
+                        data-testid="ward-notification-center-wrap"
+                      >
+                        <WardNotificationCenter
+                          unitId={unit.id}
+                          unitName={unit.name}
+                          now={now}
+                          movements={movements}
+                          notices={notices}
+                          refreshRequests={refreshRequests}
+                          morningRollupConfirmed={isRollupConfirmedToday}
+                          morningRollupDeadlinePassed={morningRollupDeadlinePassed}
+                          morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
+                          onConfirmMorningRollup={handleConfirmMorningRollup}
+                          onAcknowledgeNotice={handleAcknowledgeNotice}
+                          onDismissBuzz={handleDismissBuzz}
+                          onClose={() => {
+                            setNotificationCenterOpen(false);
+                          }}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
                   <button
-                    ref={notificationTriggerRef}
                     type="button"
                     className={buttonClass({ variant: "ghost", size: "sm" })}
                     onClick={() => {
-                      setNotificationCenterOpen((prev) => !prev);
+                      setDailySheetOpen(true);
                     }}
-                    aria-expanded={notificationCenterOpen}
-                    data-testid="ward-notifications-toggle-btn"
-                    title="Buzzes, urgent tasks and notices"
+                    title="Open this shift's brief."
+                    data-testid="ward-open-daily-sheet-btn"
                   >
-                    <ListChecks size={16} aria-hidden="true" />
-                    <span>Tasks</span>
-                    {unreadAlertsCount > 0 ? (
-                      <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
-                        {unreadAlertsCount}
-                      </span>
-                    ) : null}
+                    <FileText size={16} aria-hidden="true" />
+                    Shift brief
                   </button>
-                  {notificationCenterOpen ? (
-                    <div
-                      ref={notificationCenterRef}
-                      className={styles.notificationCenterContainer}
-                      data-testid="ward-notification-center-wrap"
-                    >
-                      <WardNotificationCenter
-                        unitId={unit.id}
-                        unitName={unit.name}
-                        now={now}
-                        movements={movements}
-                        notices={notices}
-                        refreshRequests={refreshRequests}
-                        morningRollupConfirmed={isRollupConfirmedToday}
-                        morningRollupDeadlinePassed={morningRollupDeadlinePassed}
-                        morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
-                        onConfirmMorningRollup={handleConfirmMorningRollup}
-                        onAcknowledgeNotice={handleAcknowledgeNotice}
-                        onDismissBuzz={handleDismissBuzz}
-                        onClose={() => {
-                          setNotificationCenterOpen(false);
-                        }}
-                      />
-                    </div>
-                  ) : null}
+                  <Link
+                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
+                    href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
+                  >
+                    <Printer size={16} aria-hidden="true" />
+                    Handover
+                  </Link>
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "sec", size: "sm" })}
+                    onClick={handleRaiseWardReferral}
+                    title="Record a ward-to-ward referral with this ward as the sending ward."
+                    {...raiseReferralGate.buttonProps}
+                  >
+                    <Send size={16} aria-hidden="true" />
+                    Raise referral
+                  </button>
+                  {raiseReferralGate.note}
                 </div>
-                <button
-                  type="button"
-                  className={buttonClass({ variant: "ghost", size: "sm" })}
-                  onClick={() => {
-                    setDailySheetOpen(true);
-                  }}
-                  title="Open this shift's brief."
-                  data-testid="ward-open-daily-sheet-btn"
-                >
-                  <FileText size={16} aria-hidden="true" />
-                  Shift brief
-                </button>
-                <Link
-                  className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
-                  href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
-                >
-                  <Printer size={16} aria-hidden="true" />
-                  Handover
-                </Link>
-                <button
-                  type="button"
-                  className={buttonClass({ variant: "sec", size: "sm" })}
-                  onClick={handleRaiseWardReferral}
-                  title="Record a ward-to-ward referral with this ward as the sending ward."
-                  {...raiseReferralGate.buttonProps}
-                >
-                  <Send size={16} aria-hidden="true" />
-                  Raise referral
-                </button>
-                {raiseReferralGate.note}
-              </div>
-            )}
-          </nav>
+              )}
+            </nav>
+          )}
         </section>
+        {isPhone ? (
+          /* Phone (v10): the three views pin under the header as one segmented control, outside the
+             ward card so they stay in place while the page scrolls. */
+          <nav className={`${styles.tabBarWrap} ${styles.phoneTabBar}`} aria-label="Ward Operational Tabs">
+            <ul className={styles.tabList} role="tablist" id="mainTabList" aria-label="Ward views">
+              {tabHome}
+              {tabDecisions}
+              {tabBoard}
+            </ul>
+          </nav>
+        ) : null}
 
         {/* ───────── TAB 1: WORTH YOUR ATTENTION ───────── */}
         <section

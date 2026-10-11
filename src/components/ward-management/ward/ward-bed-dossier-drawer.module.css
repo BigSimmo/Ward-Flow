@@ -24,8 +24,8 @@
   flex-direction: column;
   overflow: hidden;
   background: var(--wf-glass);
-  backdrop-filter: blur(28px) saturate(1.8);
   -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  backdrop-filter: blur(28px) saturate(1.8);
   border-left: 1px solid var(--wf-line-2);
   box-shadow: var(--wf-e3);
   color: var(--wf-ink-1);
