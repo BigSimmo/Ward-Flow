@@ -2695,9 +2695,17 @@
   .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg,
   .bar.bar[data-band="ink"]
     .searchWrap
-    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"])::placeholder {
+    :global([data-testid="ward-global-search"][data-open])
+    > div:first-of-type
+    > svg {
     width: 16px;
     height: 16px;
+    color: var(--wf-ink-3);
+  }
+
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"])::placeholder {
     color: var(--wf-ink-3);
   }
 
