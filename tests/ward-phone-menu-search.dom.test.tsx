@@ -75,6 +75,13 @@ describe("phone menu search", () => {
     expect(screen.getByRole("region", { name: "Pages" })).toHaveTextContent("Referrals");
   });
 
+  it("lists Delays once, not again as its Escalation alias", () => {
+    const input = openMenu();
+    fireEvent.change(input, { target: { value: "delays" } });
+    const delays = screen.getAllByRole("link").filter((row) => row.textContent?.startsWith("Delays"));
+    expect(delays).toHaveLength(1);
+  });
+
   it("says so plainly when nothing matches", () => {
     const input = openMenu();
     fireEvent.change(input, { target: { value: "zzqqxx" } });
