@@ -755,7 +755,7 @@ export function WardPhoneMenu({
     [],
   );
 
-  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(role, counts);
+  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
   const flow = useWardFlow();
   const actNowCount = useMemo(
