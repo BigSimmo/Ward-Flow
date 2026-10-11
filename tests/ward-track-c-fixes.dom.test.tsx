@@ -196,9 +196,9 @@ describe("Track C ED screen fixes", () => {
     expect(within(row).getByText("UMRN")).toBeInTheDocument();
     fireEvent.click(name!);
 
-    // Check detail drawer bay value in "Where they are up to" section
-    const whereSection = screen.getByText("Where they are up to").closest("section")!;
-    const bayDt = within(whereSection).getByText("Bay");
+    // ED A2 (11 Oct 2026): the name opens the person sheet, whose Facts section carries the bay.
+    const factsSection = screen.getByText("Facts").closest("section")!;
+    const bayDt = within(factsSection).getByText("Bay");
     const bayDd = bayDt.nextElementSibling;
     expect(bayDd?.textContent).not.toBe("not recorded");
     expect(bayDd?.textContent).toMatch(/^Bay \d{2}$/u);
