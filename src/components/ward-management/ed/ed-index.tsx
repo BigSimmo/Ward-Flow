@@ -26,6 +26,7 @@ import {
   Hero,
   HeroStat,
   Icon,
+  LiveChip,
   Kbd,
   PhoneListRow,
   PhoneSheet,
@@ -86,6 +87,8 @@ type WaitClock = "past" | "severe" | "in";
 type EdPerson = {
   movement: Movement;
   name: string;
+  /** UMRN, or "UMRN not recorded" (D-39: never the movement id). */
+  umrn: string;
   href: string;
   wait: number;
   clock: WaitClock;
@@ -209,10 +212,12 @@ export function EdIndex() {
           const destination = movement.acceptedUnitId
             ? units.find((unit) => unit.id === movement.acceptedUnitId)?.name
             : undefined;
-          const person = resolve(movement).patient;
+          const resolved = resolve(movement);
+          const person = resolved.patient;
           return {
             movement,
             name: person ? `${person.familyName}, ${person.givenName}` : movement.id,
+            umrn: resolved.umrn,
             href: patientHref(person?.id ?? movement.id),
             wait,
             clock: wait >= accessTarget ? "past" : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? "severe" : "in",
@@ -358,11 +363,29 @@ export function EdIndex() {
     <ServicePicker services={services} rows={rows} value={service} onPick={pickService} accessTarget={accessTarget} />
   );
 
+  const searchField = (
+    <TextInput
+      ref={searchRef}
+      type="search"
+      id="edSearchInput"
+      icon={Search}
+      placeholder="ED, hospital or service"
+      aria-label="Highlight emergency departments by keyword"
+      value={query}
+      onChange={(event) => setQuery(event.target.value)}
+      onClear={() => setQuery("")}
+      trailing={query || isPhone ? undefined : <Kbd>/</Kbd>}
+      autoComplete="off"
+      spellCheck={false}
+      boxClassName={styles.search}
+    />
+  );
+
   return (
     <div className={styles.screen} data-testid="ward-ed-index" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
         <Hero
-          eyebrow={`Emergency · Statewide · ${rows.length} departments`}
+          eyebrow={isPhone ? "Emergency · Statewide" : `Emergency · Statewide · ${rows.length} departments`}
           level={1}
           title={
             <>
@@ -370,21 +393,54 @@ export function EdIndex() {
               {waiting} waiting in {withWaiting.length} EDs
             </>
           }
-          aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
+          titleMeta={
+            // v10 phone: one quiet line under the title in place of the checking foot.
+            isPhone
+              ? waiting > 0 && longestRow
+                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "live"}`
+                : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "live"}`
+              : undefined
+          }
+          aside={
+            isPhone ? (
+              <LiveChip state={paused ? "paused" : "live"} age={null} onHero onTogglePause={togglePause} />
+            ) : (
+              <PageLiveChip paused={paused} onTogglePause={togglePause} />
+            )
+          }
+          stats={
+            // v10 phone: the first three highlight figures sit on hairlines, value over label.
+            isPhone
+              ? chips
+                  .slice(0, 3)
+                  .map((chip) => (
+                    <HeroStat
+                      key={chip.id}
+                      value={chip.value}
+                      label={chip.label}
+                      tone={chip.tone && chip.value > 0 ? chip.tone : undefined}
+                      pressed={highlight === chip.id}
+                      onToggle={() => setHighlight((value) => (value === chip.id ? null : chip.id))}
+                    />
+                  ))
+              : undefined
+          }
           bar={
-            <div className={styles.heroChips} role="group" aria-label="Highlight people waiting">
-              {chips.map((chip) => (
-                <HeroStat
-                  key={chip.id}
-                  inline
-                  value={chip.value}
-                  label={chip.label}
-                  tone={chip.tone && chip.value > 0 ? chip.tone : undefined}
-                  pressed={highlight === chip.id}
-                  onToggle={() => setHighlight((value) => (value === chip.id ? null : chip.id))}
-                />
-              ))}
-            </div>
+            isPhone ? undefined : (
+              <div className={styles.heroChips} role="group" aria-label="Highlight people waiting">
+                {chips.map((chip) => (
+                  <HeroStat
+                    key={chip.id}
+                    inline
+                    value={chip.value}
+                    label={chip.label}
+                    tone={chip.tone && chip.value > 0 ? chip.tone : undefined}
+                    pressed={highlight === chip.id}
+                    onToggle={() => setHighlight((value) => (value === chip.id ? null : chip.id))}
+                  />
+                ))}
+              </div>
+            )
           }
           barAside={
             activeChip ? (
@@ -400,20 +456,22 @@ export function EdIndex() {
             ) : null
           }
           foot={
-            <CheckingFoot
-              items={[
-                {
-                  id: "longest",
-                  label: waiting > 0 && longestRow ? `Longest, ${longestRow.short}` : "Longest",
-                  value: waiting > 0 ? splitDuration(longest) : 0,
-                },
-                { id: "target", label: "Access target", value: waitLine(accessTarget) },
-                { id: "severe", label: "Severe line", value: waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES) },
-              ]}
-              notChecked={["referrals, open movements only"]}
-            />
+            isPhone ? undefined : (
+              <CheckingFoot
+                items={[
+                  {
+                    id: "longest",
+                    label: waiting > 0 && longestRow ? `Longest, ${longestRow.short}` : "Longest",
+                    value: waiting > 0 ? splitDuration(longest) : 0,
+                  },
+                  { id: "target", label: "Access target", value: waitLine(accessTarget) },
+                  { id: "severe", label: "Severe line", value: waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES) },
+                ]}
+                notChecked={["referrals, open movements only"]}
+              />
+            )
           }
-          footAside={<span>Lists update once a minute</span>}
+          footAside={isPhone ? undefined : <span>Lists update once a minute</span>}
         />
 
         <section className={styles.filters} aria-label="Emergency department filters">
@@ -421,45 +479,11 @@ export function EdIndex() {
             {isPhone ? null : (
               <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
             )}
-            <TextInput
-              ref={searchRef}
-              type="search"
-              id="edSearchInput"
-              icon={Search}
-              placeholder="ED, hospital or service"
-              aria-label="Highlight emergency departments by keyword"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onClear={() => setQuery("")}
-              trailing={query || isPhone ? undefined : <Kbd>/</Kbd>}
-              autoComplete="off"
-              spellCheck={false}
-              boxClassName={styles.search}
-            />
             {isPhone ? (
-              <ScrollRow className={styles.phoneServices}>
-                <Segmented
-                  label="Health service"
-                  items={serviceItems}
-                  value={service}
-                  onChange={setService}
-                  size="md"
-                />
-              </ScrollRow>
-            ) : null}
-            {isPhone ? (
-              <div className={styles.phoneViewRow}>
-                <Segmented
-                  label="Show"
-                  items={[
-                    { id: "list" as PhoneView, label: "EDs" },
-                    { id: "lanes" as PhoneView, label: "Wait lanes" },
-                    { id: "service" as PhoneView, label: "By service" },
-                  ]}
-                  value={phoneView}
-                  onChange={setPhoneView}
-                  size="md"
-                />
+              // v10 phone: the status and order button sits beside the search, so the view switch
+              // below runs the full width.
+              <div className={styles.phoneSearchRow}>
+                {searchField}
                 <Button
                   variant="sec"
                   iconOnly
@@ -471,6 +495,20 @@ export function EdIndex() {
                 />
               </div>
             ) : (
+              searchField
+            )}
+            {isPhone ? (
+              <ScrollRow className={styles.phoneServices}>
+                <Segmented
+                  label="Health service"
+                  items={serviceItems}
+                  value={service}
+                  onChange={setService}
+                  size="md"
+                />
+              </ScrollRow>
+            ) : null}
+            {isPhone ? null : (
               <Segmented
                 label="View"
                 items={[
@@ -504,6 +542,24 @@ export function EdIndex() {
             </span>
           </div>
         </section>
+
+        {/* v10 phone: EDs, Wait lanes and By service stay pinned under the bar while the list
+            scrolls, so the switch sits outside the filters block. */}
+        {isPhone ? (
+          <div className={styles.phoneViewRow}>
+            <Segmented
+              label="Show"
+              items={[
+                { id: "list" as PhoneView, label: "EDs" },
+                { id: "lanes" as PhoneView, label: "Wait lanes" },
+                { id: "service" as PhoneView, label: "By service" },
+              ]}
+              value={phoneView}
+              onChange={setPhoneView}
+              size="md"
+            />
+          </div>
+        ) : null}
 
         {matching.length === 0 ? (
           <Card className={styles.emptyCard}>
@@ -937,30 +993,58 @@ function EdLanes({
           open
           onClose={() => setSelected(null)}
           title={picked.person.name}
-          description={`${picked.row.short} · ${picked.person.stage}`}
+          description={
+            <>
+              <span className={styles.previewUmrn}>{picked.person.umrn}</span> · {picked.row.short}
+            </>
+          }
           primary={{
-            label: `Enter ${picked.row.short}`,
+            label: `Open ${picked.row.short}`,
             onAction: () => router.push(edHref(picked.row.summary.ed.id)),
           }}
           secondary={{ label: "Open patient", onAction: () => router.push(picked.person.href) }}
           data-testid="ed-index-lane-sheet"
         >
           <FactGrid
+            className={styles.previewFacts}
             facts={[
               {
                 id: "wait",
-                label: "Waiting",
-                value: <b className={styles.num}>{splitDuration(picked.person.wait)}</b>,
+                label: "In ED",
+                value: (
+                  <span className={styles.longest}>
+                    {picked.person.clock !== "in" ? (
+                      <StatusGlyph tone={CLOCK_TONE[picked.person.clock]} size={9} />
+                    ) : null}
+                    <b className={styles.num}>{splitDuration(picked.person.wait)}</b>
+                  </span>
+                ),
               },
-              { id: "tier", label: "Tier", value: `T${picked.person.movement.urgency}` },
+              { id: "stage", label: "Stage", value: picked.person.stage },
               {
                 id: "form",
                 label: "Form",
-                value: picked.person.movement.legalForm ? picked.person.movement.legalForm.code : "None recorded",
+                value: picked.person.movement.legalForm ? picked.person.movement.legalForm.code : "None",
               },
-              { id: "dest", label: "Bed", value: picked.person.destination ?? "No bed yet" },
+              {
+                id: "tier",
+                label: "Tier",
+                value: <span className={styles.tierChip}>T{picked.person.movement.urgency}</span>,
+              },
             ]}
           />
+          <dl className={styles.laneFacts}>
+            <div>
+              <dt>Cohort</dt>
+              <dd>
+                {picked.person.movement.cohort} · {picked.person.movement.sex}
+              </dd>
+            </div>
+            <div>
+              <dt>Destination</dt>
+              <dd>{picked.person.destination ?? "Not yet found"}</dd>
+            </div>
+          </dl>
         </PhoneSheet>
       ) : picked ? (
         <div className={styles.picked} aria-live="polite">
@@ -1068,7 +1152,12 @@ function PhoneEdList({
     return (
       <div key={item.summary.ed.id} data-dim={isDim(item) ? "true" : undefined}>
         <PhoneListRow
-          name={item.short}
+          name={
+            <span className={styles.phoneName}>
+              <span className={styles.svcDot} data-service={item.summary.service} aria-hidden="true" />
+              {item.short}
+            </span>
+          }
           meta={
             item.summary.waiting > 0 ? (
               <span className={styles.phoneMeta}>
@@ -1101,11 +1190,11 @@ function PhoneEdList({
   };
   return (
     <Card className={styles.phoneList} as="section" aria-label="Emergency departments">
-      <GroupHead title="Waiting, longest first" count={waitingRows.length} />
+      <GroupHead title="Waiting, longest first" />
       {waitingRows.map(row)}
       {clearRows.length > 0 ? (
         <>
-          <GroupHead title="Clear" count={clearRows.length} />
+          <GroupHead title="No one waiting" tone="success" count={clearRows.length} />
           {clearRows.map(row)}
         </>
       ) : null}
@@ -1123,9 +1212,11 @@ function EdPreview({
   highlight: Highlight | null;
   accessTarget: number;
 }) {
+  const isPhone = useIsPhone();
   return (
     <div className={styles.preview} data-testid="ed-index-preview-body">
       <FactGrid
+        className={styles.previewFacts}
         facts={[
           { id: "waiting", label: "Waiting", value: <b className={styles.num}>{row.summary.waiting}</b> },
           {
@@ -1155,7 +1246,7 @@ function EdPreview({
             <StatusGlyph tone="success" size={9} /> No one waiting at {row.short}
           </p>
         ) : (
-          <ul className={styles.previewList}>
+          <ul className={styles.previewList} data-phone={isPhone ? "true" : undefined}>
             {row.people.map((person) => (
               <li
                 key={person.movement.id}
@@ -1169,6 +1260,11 @@ function EdPreview({
                     {person.name}
                   </Link>
                   <span className={styles.meta}>
+                    {isPhone ? (
+                      <>
+                        <span className={styles.previewUmrn}>{person.umrn}</span> ·{" "}
+                      </>
+                    ) : null}
                     {person.stage}
                     {person.movement.legalForm ? ` · Form ${person.movement.legalForm.code}` : ""}
                     {person.destination ? ` · ${person.destination}` : ""}

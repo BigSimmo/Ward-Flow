@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { Hero, buttonClass } from "@/components/wf";
+import { Hero, buttonClass, useIsPhone } from "@/components/wf";
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import styles from "./patient-now.module.css";
 
@@ -24,6 +24,9 @@ export function PatientFlightHeader({
   isLiveBedflow,
   quiet = false,
   statePill,
+  phoneEyebrow,
+  phoneFoot,
+  phoneFootKind = "line",
   statusDetail,
   location,
   facts,
@@ -41,6 +44,12 @@ export function PatientFlightHeader({
   quiet?: boolean;
   /** The mode, as a glyph and words beside the name. */
   statePill?: ReactNode;
+  /** v10 phone: the mode as the eyebrow ("ON WARD"), in place of the place name. */
+  phoneEyebrow?: ReactNode;
+  /** v10 phone: the band's foot (Movements back and Copy handover on a live movement). */
+  phoneFoot?: ReactNode;
+  /** `"actions"` when `phoneFoot` holds buttons, so the hero drops the hairline and lets them wrap. */
+  phoneFootKind?: "line" | "actions";
   statusDetail: string;
   /** Where the person is now, when a movement records it. */
   location?: string;
@@ -74,15 +83,33 @@ export function PatientFlightHeader({
       ) : null}
     </span>
   );
+  const isPhone = useIsPhone();
+  /* v10 phone: one identity line under the name, "UM100062 · 35 y, F · known as Kit · place". */
+  const phoneSub = (
+    <span className={styles.phIdSub}>
+      {patient ? (
+        <>
+          <strong className={styles.v6Mono}>{patient.umrn}</strong>
+          {` · ${patientAgeYears(patient, displayToday)} y, ${patient.sex === "Female" ? "F" : patient.sex === "Male" ? "M" : (patient.sex ?? "sex not recorded")}`}
+        </>
+      ) : (
+        "Demographics not recorded"
+      )}
+      {preferredName ? ` · known as ${preferredName}` : null}
+      {location ? ` · ${location}` : null}
+    </span>
+  );
   return (
     <div className={styles.v6HeroWrap} data-testid="ward-person-identity" data-quiet={quiet}>
       <Hero
         level={1}
         className={quiet ? `${styles.v6Hero} ${styles.v6HeroQuiet}` : styles.v6Hero}
-        eyebrow={location ? `Patient · ${location}` : "Patient"}
+        eyebrow={isPhone && phoneEyebrow ? phoneEyebrow : location ? `Patient · ${location}` : "Patient"}
         title={displayName}
         titleMeta={
-          preferredName || statePill ? (
+          isPhone ? (
+            phoneSub
+          ) : preferredName || statePill ? (
             <>
               {preferredName ? `known as ${preferredName}` : null}
               {statePill}
@@ -104,9 +131,11 @@ export function PatientFlightHeader({
             </div>
           </>
         }
+        foot={isPhone && phoneFoot ? phoneFoot : undefined}
+        footKind={isPhone && phoneFoot ? phoneFootKind : "line"}
         bar={
           <div className={styles.v6HeroBar}>
-            {idLine}
+            {isPhone ? null : idLine}
             {facts}
             {steps}
             {journey}

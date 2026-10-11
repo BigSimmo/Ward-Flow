@@ -111,3 +111,135 @@
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface-2);
 }
+
+/* v10 Patient, phone (11 Oct 2026): Legal now and Who to call as a page heading over a plain list,
+ * the bold line over its quiet line. These classes render only on phone. */
+.phSection {
+  display: grid;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.phHeadRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.phHead {
+  margin: var(--wf-s-1) 0 0;
+  padding: 0 var(--wf-s-1);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+.phLink {
+  min-height: 48px;
+  margin: calc(-1 * var(--wf-s-2)) 0;
+  padding: 0 var(--wf-s-1);
+  border: 0;
+  background: none;
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.phLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  list-style: none;
+}
+
+.phItem {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 56px;
+  padding: 10px var(--wf-s-3);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.phItem:last-child {
+  border-bottom: 0;
+}
+
+.phItemText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phItemText strong {
+  overflow: hidden;
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phItemText span {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phFramed {
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phFramedHead {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-14) / 1 var(--wf-font);
+}
+
+.phFramedList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phItemIcon {
+  flex: none;
+  color: var(--wf-ink-2);
+}
+
+.phStep {
+  flex: none;
+  width: 16px;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  text-align: center;
+}
+
+.phAction.phAction {
+  flex: none;
+  height: 44px;
+  min-height: 44px;
+  border-radius: var(--wf-r-pill);
+}

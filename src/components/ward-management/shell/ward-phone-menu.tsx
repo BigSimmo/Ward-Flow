@@ -4,17 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import {
-  BedDouble,
+  Activity,
+  BedSingle,
+  House,
+  Inbox,
   ChevronRight,
   Clock3,
   ListChecks,
   Plus,
-  RotateCcwClock,
   Search,
-  Send,
   Settings,
   Truck,
-  UserRound,
   Wrench,
 } from "lucide-react";
 
@@ -25,6 +25,7 @@ import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-manag
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 
+import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
@@ -82,9 +83,9 @@ const NEEDS_LIMIT = 4;
 
 /** What the + starts. New referral is real; the rest open the page where that work is done. */
 const CREATE_LINKS = [
-  { id: "officer", label: "Book transport", meta: "Opens Transport", icon: Truck },
-  { id: "delays", label: "Log a delay", meta: "Opens Delays", icon: Clock3 },
-  { id: "wards", label: "Update a bed", meta: "Opens Wards", icon: BedDouble },
+  { id: "officer", label: "Book transport", meta: "For an accepted patient", icon: Truck },
+  { id: "delays", label: "Log a delay", meta: "Reason and who it waits on", icon: Clock3 },
+  { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
 ] as const;
 
 export type WardPhoneMenuProps = {
@@ -268,7 +269,12 @@ function PhoneDock({
           data-testid="ward-rail-link"
           onClick={() => onGo(entry)}
         >
-          <DockFace icon={entry.icon} label={label} count={countIn(counts, entry.id)?.value} />
+          {/* Home is the house in the dock (v10 phone mockup); the rail keeps its own icon. */}
+          <DockFace
+            icon={entry.id === "command" ? House : entry.icon}
+            label={label}
+            count={countIn(counts, entry.id)?.value}
+          />
         </Link>
       ))}
       <span className={styles.riseSlot}>
@@ -301,7 +307,7 @@ function PhoneDock({
         data-testid="ward-phone-menu-activity"
         onClick={() => onDrawer("activity")}
       >
-        <DockFace icon={RotateCcwClock} label="Activity" count={activityUnread} />
+        <DockFace icon={Activity} label="Activity" count={activityUnread} />
       </button>
     </nav>
   );
@@ -338,12 +344,42 @@ function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; 
             <Chevron />
           </Link>
         </li>
+        <DataModeRow onClose={onClose} />
       </ul>
       <p className={styles.note}>
         <Dot tone="neutral" />
         Synthetic prototype, not a medical device
       </p>
     </section>
+  );
+}
+
+/**
+ * The data mode, still reachable on a phone now the header's Prototype pill is desktop only: a
+ * quiet row saying which data this is, and the (unavailable) hospital records door. Nothing when
+ * the page sits outside `WardSharedAccess`.
+ */
+function DataModeRow({ onClose }: { onClose: () => void }) {
+  const dataMode = useWardDataMode();
+  if (!dataMode) return null;
+  return (
+    <li className={styles.dataMode} data-testid="ward-phone-menu-data-mode">
+      <span className={styles.rowText}>
+        <span className={styles.rowLabel}>Data mode: Prototype</span>
+        <span className={styles.dataModeDetail}>{dataMode.detail}</span>
+      </span>
+      <button
+        type="button"
+        className={styles.dataModeButton}
+        data-testid="ward-phone-menu-hospital-records"
+        onClick={() => {
+          onClose();
+          dataMode.openHospitalRecords();
+        }}
+      >
+        Hospital records (unavailable)
+      </button>
+    </li>
   );
 }
 
@@ -355,8 +391,14 @@ function WhoLink({ role, onClose }: { role: WardChromeRole; onClose: () => void 
       onClick={onClose}
       aria-label={`${CHROME_ROLE_LABELS[role]}. Switch workstation in Settings`}
     >
-      <span className={styles.avatar} aria-hidden="true">
-        <UserRound aria-hidden="true" strokeWidth={1.75} />
+      {/* v10 Menu sheet: an initials avatar. The prototype has no signed-in person, so the
+          initials are the workstation's ("BC" for Bed coordinator), never an invented name. */}
+      <span className={`${styles.avatar} ${styles.avatarInitials}`} aria-hidden="true">
+        {CHROME_ROLE_LABELS[role]
+          .split(/\s+/u)
+          .slice(0, 2)
+          .map((word) => word[0]?.toUpperCase() ?? "")
+          .join("")}
       </span>
       <span className={styles.whoText}>
         <span className={styles.whoName}>{CHROME_ROLE_LABELS[role]}</span>
@@ -392,7 +434,7 @@ function CreateSheet({
       contentClassName={styles.sheet}
       headerClassName={styles.createHead}
       closeButtonClassName={styles.close}
-      bodyClassName={styles.body}
+      bodyClassName={`${styles.body} ${styles.createBody}`}
     >
       <button
         type="button"
@@ -403,7 +445,7 @@ function CreateSheet({
           onNewReferral();
         }}
       >
-        <Send aria-hidden="true" strokeWidth={1.75} />
+        <Inbox aria-hidden="true" strokeWidth={1.75} />
         New referral
       </button>
       <ul className={`${styles.list} ${styles.rich}`}>

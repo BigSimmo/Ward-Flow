@@ -12,7 +12,7 @@ import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { Button, Icon, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
+import { Button, Icon, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -122,6 +122,7 @@ export function WardBedDossierDrawer({
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
   const [shownBed, setShownBed] = useState(selectedBed);
   const tabRefs = useRef<TabButtons>(new Map());
+  const isPhone = useIsPhone();
   const blockerSelectRef = useRef<HTMLSelectElement | null>(null);
 
   // Stepping to another bed keeps the open tab but drops anything half-done on the last bed.
@@ -249,6 +250,43 @@ export function WardBedDossierDrawer({
   // unknown, and an unknown person gets no link.
   const person = admission ? resolvePatientIdentity(admission).patient : undefined;
   const personHref = person ? patientHref(person.id) : null;
+
+  if (isPhone) {
+    return (
+      <PhoneBedSheet
+        bedLabel={bedLabel}
+        bedItem={bedItem}
+        isReady={isReady}
+        occupantAlias={occupantAlias}
+        isOccupied={isOccupied}
+        isAwayAtEd={isAwayAtEd}
+        tone={tone}
+        stayDays={stayDays}
+        observation={observation}
+        expectedPlan={expectedPlan}
+        timeline={timeline}
+        now={now}
+        personHref={personHref}
+        selectedBed={selectedBed}
+        quickBlockerOpen={quickBlockerOpen}
+        setQuickBlockerOpen={setQuickBlockerOpen}
+        selectedBlocker={selectedBlocker}
+        setSelectedBlocker={setSelectedBlocker}
+        blockerSelectRef={blockerSelectRef}
+        drawerLeavingDestination={drawerLeavingDestination}
+        setDrawerLeavingDestination={setDrawerLeavingDestination}
+        onClose={onClose}
+        onRecordLeft={onRecordLeft}
+        onUpdateBlocker={onUpdateBlocker}
+        onMarkAtEd={onMarkAtEd}
+        onMarkBack={onMarkBack}
+        onMove={onMove}
+        onOpenBoard={onOpenBoard}
+        bedDrawerRef={bedDrawerRef}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
 
   return (
     <>
@@ -609,6 +647,315 @@ export function WardBedDossierDrawer({
             </Link>
           ) : null}
         </footer>
+      </aside>
+    </>
+  );
+}
+
+/** What the bed is doing now, in the words the Every bed list uses. */
+function nowLabel(bedItem: BedItem | undefined, isReady: boolean): string {
+  if (isReady) return "Ready";
+  if (!bedItem) return "Not recorded";
+  if (bedItem.status === "closed") return "Closed";
+  if (bedItem.blockReason) return "Held up";
+  if (bedItem.awayAtEdHours != null) return "Away at an ED";
+  if (bedItem.status === "leave") return "On leave";
+  if (bedItem.status === "incoming") return "Arriving";
+  if (bedItem.pastDate) return "Past date";
+  if (bedItem.dischargeConfirmed === true || (bedItem.expectedDays != null && bedItem.expectedDays <= 0))
+    return "Leaving";
+  return "On the ward";
+}
+
+const CHIP_LABEL = new Map<WfTone, string>([
+  ["danger", "Act now"],
+  ["warning", "Needs a look"],
+  ["success", "Ready"],
+]);
+
+interface PhoneBedSheetProps {
+  bedLabel: string;
+  bedItem: BedItem | undefined;
+  isReady: boolean;
+  occupantAlias: string;
+  isOccupied: boolean;
+  isAwayAtEd: boolean;
+  tone: WfTone | null;
+  stayDays: number | null;
+  observation: string;
+  expectedPlan: string;
+  timeline: { at: number; tone: WfTone; label: string }[];
+  now: number;
+  personHref: string | null;
+  selectedBed: number;
+  quickBlockerOpen: boolean;
+  setQuickBlockerOpen: (open: boolean) => void;
+  selectedBlocker: BedReleaseBlocker;
+  setSelectedBlocker: (blocker: BedReleaseBlocker) => void;
+  blockerSelectRef: React.RefObject<HTMLSelectElement | null>;
+  drawerLeavingDestination: LeavingDestination;
+  setDrawerLeavingDestination: (dest: LeavingDestination) => void;
+  onClose: () => void;
+  onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
+  onUpdateBlocker?: (admissionId: string, blocker: string) => void;
+  onMarkAtEd?: (bedNumber: number) => void;
+  onMarkBack?: (bedNumber: number) => void;
+  onMove?: () => void;
+  onOpenBoard?: () => void;
+  bedDrawerRef: React.RefObject<HTMLElement | null>;
+  onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
+}
+
+/**
+ * Phone (v10 bed sheet): one scrolling sheet, no tabs. Bed and name lead, then four facts, then
+ * This person, Plan to leave and Timeline as plain label rows. Move bed and the blocker sit in the
+ * footer; every other action the desktop drawer offers stays in the sheet body.
+ */
+function PhoneBedSheet({
+  bedLabel,
+  bedItem,
+  isReady,
+  occupantAlias,
+  isOccupied,
+  isAwayAtEd,
+  tone,
+  stayDays,
+  observation,
+  expectedPlan,
+  timeline,
+  now,
+  personHref,
+  selectedBed,
+  quickBlockerOpen,
+  setQuickBlockerOpen,
+  selectedBlocker,
+  setSelectedBlocker,
+  blockerSelectRef,
+  drawerLeavingDestination,
+  setDrawerLeavingDestination,
+  onClose,
+  onRecordLeft,
+  onUpdateBlocker,
+  onMarkAtEd,
+  onMarkBack,
+  onMove,
+  onOpenBoard,
+  bedDrawerRef,
+  onKeyDown,
+}: PhoneBedSheetProps) {
+  const chip = tone ? CHIP_LABEL.get(tone) : undefined;
+  const sub = [bedItem?.umrn, bedItem?.podLabel ?? bedItem?.designation].filter(Boolean).join(" · ");
+  const admissionId = bedItem?.admissionId;
+  const canMove = Boolean(onMove && bedItem?.stayAdmissionId);
+  const toggleBlocker = () => {
+    const opening = !quickBlockerOpen;
+    setQuickBlockerOpen(opening);
+    if (opening) setTimeout(() => blockerSelectRef.current?.focus(), 0);
+  };
+
+  return (
+    <>
+      <div className={`${styles.drawerScrim} ${styles.show}`} onClick={onClose} aria-hidden="true" />
+      <aside
+        ref={bedDrawerRef}
+        className={cx(styles.drawer, styles.show, styles.phoneSheet)}
+        data-testid="bed-telemetry-drawer"
+        aria-labelledby="drawer-bed-title"
+        role="dialog"
+        aria-modal="true"
+        onKeyDown={onKeyDown}
+      >
+        <div className={styles.grab} aria-hidden="true" />
+        <header className={styles.phoneHead}>
+          <div className={styles.drawerHeading}>
+            <h2 id="drawer-bed-title" className={styles.phoneTitle}>
+              {bedLabel} · {isReady ? "Ready bed" : occupantAlias}
+            </h2>
+            {sub ? <p className={styles.drawerKicker}>{sub}</p> : null}
+            {chip && tone ? (
+              <span className={styles.phoneChip}>
+                <StatusGlyph tone={tone} />
+                {chip}
+              </span>
+            ) : null}
+          </div>
+          <Button
+            variant="ghost"
+            iconOnly
+            icon={X}
+            aria-label="Close bed drawer"
+            className={styles.pill}
+            onClick={onClose}
+          />
+        </header>
+
+        <div className={styles.phoneBody}>
+          {isReady ? (
+            <>
+              <div className={styles.phoneFacts}>
+                <FactTile label="Now" value="Ready" tone="success" />
+                <FactTile label="Held for" value={bedItem?.heldFor ?? "No one"} />
+              </div>
+              <h3 className={styles.phoneSec}>Placement</h3>
+              <dl className={styles.phoneKv}>
+                <Row label="Candidate">No patient match is recorded for this bed.</Row>
+                {bedItem?.designation ? <Row label="Bed">{bedItem.designation}</Row> : null}
+              </dl>
+            </>
+          ) : (
+            <>
+              <div className={styles.phoneFacts}>
+                <FactTile label="Now" value={nowLabel(bedItem, isReady)} />
+                <FactTile label="Stay" value={stayDays === null ? "Not recorded" : `${stayDays}d`} />
+                <FactTile label="Legal" value={shortLegal(bedItem?.legalStatusLabel)} />
+                <FactTile label="Sex" value={bedItem?.sex ?? "Not recorded"} />
+              </div>
+              <h3 className={styles.phoneSec}>This person</h3>
+              <dl className={styles.phoneKv}>
+                {bedItem?.preferredName ? <Row label="Known as">{bedItem.preferredName}</Row> : null}
+                <Row label="Observation">{observation}</Row>
+                <Row label="Community team">{bedItem?.catchmentCommunityTeam ?? "No community team yet"}</Row>
+              </dl>
+              <h3 className={styles.phoneSec}>Plan to leave</h3>
+              <dl className={styles.phoneKv}>
+                <Row label="Expected">{expectedPlan}</Row>
+                <Row label="Blocker">{bedItem?.blockReason ?? "None recorded"}</Row>
+                {isOccupied && admissionId ? (
+                  <Row label="Going to">
+                    <select
+                      id="drawer-leaving-dest"
+                      aria-label="Where are they going?"
+                      className={styles.select}
+                      value={drawerLeavingDestination}
+                      onChange={(e) => {
+                        setDrawerLeavingDestination(e.target.value as LeavingDestination);
+                      }}
+                    >
+                      {LEAVING_DESTINATIONS.map((destination) => (
+                        <option key={destination.id} value={destination.id}>
+                          {destination.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Row>
+                ) : null}
+              </dl>
+              {quickBlockerOpen ? (
+                <div className={styles.editor}>
+                  <select
+                    ref={blockerSelectRef}
+                    className={styles.select}
+                    value={selectedBlocker}
+                    aria-label="Discharge blocker"
+                    onChange={(e) => {
+                      setSelectedBlocker(e.target.value as BedReleaseBlocker);
+                    }}
+                  >
+                    {BED_RELEASE_BLOCKERS.map((blocker) => (
+                      <option key={blocker} value={blocker}>
+                        {blocker}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="sec"
+                    className={styles.pill}
+                    onClick={() => {
+                      if (admissionId && onUpdateBlocker) onUpdateBlocker(admissionId, selectedBlocker);
+                      setQuickBlockerOpen(false);
+                    }}
+                  >
+                    Save blocker
+                  </Button>
+                </div>
+              ) : null}
+              <h3 className={styles.phoneSec}>Timeline</h3>
+              {timeline.length > 0 ? (
+                <ul className={styles.timeline}>
+                  {timeline.map((event) => (
+                    <li key={`${event.label}-${event.at}`}>
+                      <StatusGlyph tone={event.tone} />
+                      <span className={styles.timelineAt}>{formatInstantWithDay(event.at, now)}</span>
+                      <span className={styles.ell}>{event.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles.phoneEmpty}>Nothing recorded for this stay yet.</p>
+              )}
+            </>
+          )}
+
+          <div className={styles.phoneMore}>
+            {isOccupied && admissionId ? (
+              <Button
+                variant="sec"
+                className={styles.pill}
+                onClick={() => {
+                  onRecordLeft(admissionId, occupantAlias, drawerLeavingDestination);
+                }}
+              >
+                Record that they have left
+              </Button>
+            ) : null}
+            {admissionId ? (
+              <Button
+                variant="sec"
+                className={styles.pill}
+                onClick={() => {
+                  if (isAwayAtEd) onMarkBack?.(selectedBed);
+                  else onMarkAtEd?.(selectedBed);
+                }}
+              >
+                {isAwayAtEd ? "Mark them back" : "Mark at an ED"}
+              </Button>
+            ) : null}
+            {isReady ? (
+              <Link
+                className={buttonClass({ variant: "sec", className: styles.pill })}
+                href="/mockups/ward-flow/referrals"
+              >
+                Review current referrals
+              </Link>
+            ) : null}
+            {personHref ? (
+              <Link
+                className={buttonClass({ variant: "ghost", className: styles.pill })}
+                href={personHref}
+                onClick={onClose}
+              >
+                Patient page
+                <Icon icon={ChevronRight} size={14} />
+              </Link>
+            ) : null}
+          </div>
+        </div>
+
+        {(isReady && onOpenBoard) || canMove || admissionId ? (
+          <footer className={styles.phoneFoot}>
+            {isReady && onOpenBoard ? (
+              <Button variant="pri" size="lg" className={styles.pill} onClick={onOpenBoard}>
+                Place someone here
+              </Button>
+            ) : null}
+            {canMove ? (
+              <Button variant="sec" size="lg" className={styles.pill} onClick={onMove}>
+                Move bed
+              </Button>
+            ) : null}
+            {admissionId ? (
+              <Button
+                variant="pri"
+                size="lg"
+                className={styles.pill}
+                aria-expanded={quickBlockerOpen}
+                onClick={toggleBlocker}
+              >
+                {bedItem?.blockReason ? "Update blocker" : "Record blocker"}
+              </Button>
+            ) : null}
+          </footer>
+        ) : null}
       </aside>
     </>
   );

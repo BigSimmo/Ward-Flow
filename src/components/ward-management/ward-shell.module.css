@@ -156,6 +156,14 @@
   flex: 0 0 auto;
 }
 
+/* Phone (v10): every page sits on the canvas, the same grey the hero's lip and pinned switches
+   paint, so cards read as white on grey as in the phone mockup. Phone only. */
+@media (max-width: 48rem) {
+  .shell {
+    background: var(--wf-canvas);
+  }
+}
+
 /* Rebuilt screens carry and paint their own canonical ground. The legacy host
    yields only for that explicit opt-in, keeping one visible ground surface. */
 .shell:has([data-ward-design="third-edition"]) {

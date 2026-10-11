@@ -3,7 +3,7 @@
 import { Activity, FileText } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import { Card, CardHead, Segmented, StatusGlyph, type WfTone } from "@/components/wf";
+import { Card, CardHead, Segmented, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
@@ -49,6 +49,12 @@ const TONE_GLYPH: Record<string, WfTone> = {
   quiet: "neutral",
 };
 
+/** "Armadale" from "Armadale Health Service": the phone row's short site name after the code. */
+function phoneSiteName(siteCode: string): string {
+  const name = siteByCode(siteCode)?.name ?? "";
+  return name.replace(/ (General |Public )?(Hospital|Health Service)$/, "");
+}
+
 /**
  * ED pressure (v6 Network mockup). One tile per emergency department: code and service, how many
  * wait, a bar for the longest wait against the worst department, the longest wait with its glyph,
@@ -57,6 +63,9 @@ const TONE_GLYPH: Record<string, WfTone> = {
  */
 export function PressureStrip({ now, selectedEdId, onSelectEd, movements, service = null, foot }: PressureStripProps) {
   const [order, setOrder] = useState<Order>("worst");
+  // Phone (v10 Network): a worst-first list of departments, three shown until asked for more.
+  const isPhone = useIsPhone();
+  const [showAll, setShowAll] = useState(false);
   const pressure = edPressure(now, movements);
   const summaries = edOpenSummaries(movements, now);
 
@@ -78,20 +87,35 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
             : b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting,
         );
 
+  const phoneLimit = 3;
+  const visibleRows = isPhone && !showAll ? rows.slice(0, phoneLimit) : rows;
+  const hiddenOnPhone = rows.length - visibleRows.length;
+
   return (
-    <Card as="section" className={styles.strip} aria-label="Emergency department pressure">
-      <CardHead
-        icon={Activity}
-        title="Emergency department pressure"
-        meta={
-          <>
-            <span className={styles.countTag}>{scopedPressure.length} departments</span> Waiting and longest wait
-          </>
-        }
-        action={<Segmented label="Order departments by" items={ORDER_ITEMS} value={order} onChange={setOrder} />}
-      />
-      <ul className={styles.list}>
-        {rows.map((row) => {
+    <Card
+      as="section"
+      className={isPhone ? styles.phoneStrip : styles.strip}
+      aria-label="Emergency department pressure"
+    >
+      {isPhone ? (
+        <header className={styles.phoneHead}>
+          <h2 className={styles.phoneTitle}>Emergency departments</h2>
+          <span className={styles.phoneMeta}>worst first</span>
+        </header>
+      ) : (
+        <CardHead
+          icon={Activity}
+          title="Emergency department pressure"
+          meta={
+            <>
+              <span className={styles.countTag}>{scopedPressure.length} departments</span> Waiting and longest wait
+            </>
+          }
+          action={<Segmented label="Order departments by" items={ORDER_ITEMS} value={order} onChange={setOrder} />}
+        />
+      )}
+      <ul className={isPhone ? styles.phoneList : styles.list}>
+        {visibleRows.map((row) => {
           const selected = row.ed.id === selectedEdId;
           const shortName = edShortName(row.ed);
           const rawService = siteByCode(row.ed.siteCode)?.service ?? edHealthService(row.ed.id);
@@ -164,34 +188,65 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
                 title={`${row.ed.name}${rawService ? ` (${rawService})` : ""}`}
                 onClick={() => onSelectEd(selected ? undefined : row.ed.id)}
               >
-                <span className={styles.identity} aria-hidden="true">
-                  <strong className={styles.code}>{row.ed.siteCode}</strong>
-                  {serviceAcronym ? <span className={styles.service}>{serviceAcronym}</span> : null}
-                </span>
-                {row.waiting === 0 ? (
-                  <span className={styles.quiet} aria-hidden="true">
-                    No patients waiting
-                  </span>
+                {isPhone ? (
+                  <>
+                    <span className={styles.phoneRowMain} aria-hidden="true">
+                      <span className={styles.phoneRowName}>
+                        {row.ed.siteCode}
+                        {phoneSiteName(row.ed.siteCode) ? ` · ${phoneSiteName(row.ed.siteCode)}` : ""}
+                      </span>
+                      <span className={styles.phoneRowMeta}>
+                        {row.waiting === 0 ? (
+                          "No patients waiting"
+                        ) : (
+                          <>
+                            Longest <b>{splitDuration(row.longestWaitMinutes)}</b> · {deadlineLabel}
+                          </>
+                        )}
+                      </span>
+                    </span>
+                    <span className={styles.phoneRowSide} aria-hidden="true">
+                      <span className={styles.phoneRowCount}>
+                        {pressureTone === "danger" || pressureTone === "warn" ? (
+                          <StatusGlyph tone={TONE_GLYPH[pressureTone] ?? "neutral"} size={9} />
+                        ) : null}
+                        {row.waiting}
+                      </span>
+                      <span className={styles.phoneRowUnit}>waiting</span>
+                    </span>
+                  </>
                 ) : (
                   <>
-                    <span className={styles.waiting} aria-hidden="true">
-                      <strong>{row.waiting}</strong> waiting
+                    <span className={styles.identity} aria-hidden="true">
+                      <strong className={styles.code}>{row.ed.siteCode}</strong>
+                      {serviceAcronym ? <span className={styles.service}>{serviceAcronym}</span> : null}
                     </span>
-                    <span className={styles.track} aria-hidden="true">
-                      <span
-                        className={styles.fill}
-                        style={{ width: `${(row.longestWaitMinutes / longestWait) * 100}%` }}
-                      />
-                    </span>
-                    <span className={styles.longest} aria-hidden="true">
-                      <StatusGlyph tone={TONE_GLYPH[pressureTone] ?? "neutral"} size={8} />
-                      <span className={styles.longestLabel}>Longest</span>
-                      {splitDuration(row.longestWaitMinutes)}
-                    </span>
-                    <span className={styles.deadline} aria-hidden="true">
-                      <FileText size={12} aria-hidden="true" />
-                      {deadlineLabel}
-                    </span>
+                    {row.waiting === 0 ? (
+                      <span className={styles.quiet} aria-hidden="true">
+                        No patients waiting
+                      </span>
+                    ) : (
+                      <>
+                        <span className={styles.waiting} aria-hidden="true">
+                          <strong>{row.waiting}</strong> waiting
+                        </span>
+                        <span className={styles.track} aria-hidden="true">
+                          <span
+                            className={styles.fill}
+                            style={{ width: `${(row.longestWaitMinutes / longestWait) * 100}%` }}
+                          />
+                        </span>
+                        <span className={styles.longest} aria-hidden="true">
+                          <StatusGlyph tone={TONE_GLYPH[pressureTone] ?? "neutral"} size={8} />
+                          <span className={styles.longestLabel}>Longest</span>
+                          {splitDuration(row.longestWaitMinutes)}
+                        </span>
+                        <span className={styles.deadline} aria-hidden="true">
+                          <FileText size={12} aria-hidden="true" />
+                          {deadlineLabel}
+                        </span>
+                      </>
+                    )}
                   </>
                 )}
               </button>
@@ -199,13 +254,25 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
           );
         })}
       </ul>
+      {isPhone && rows.length > phoneLimit ? (
+        <button
+          type="button"
+          className={styles.phoneMore}
+          aria-expanded={showAll}
+          onClick={() => setShowAll((current) => !current)}
+        >
+          {showAll
+            ? "Show fewer departments"
+            : `Show ${hiddenOnPhone} more ${hiddenOnPhone === 1 ? "department" : "departments"}`}
+        </button>
+      ) : null}
       {service ? (
         <p className={styles.foot} data-testid="ward-pressure-strip-service-foot">
           {/* §3's own exact wording, fixed plural regardless of the count. */}
           {`${hiddenByService} departments outside ${service} are not shown.`}
         </p>
       ) : null}
-      {foot ? <div className={styles.foot}>{foot}</div> : null}
+      {foot && !isPhone ? <div className={styles.foot}>{foot}</div> : null}
     </Card>
   );
 }

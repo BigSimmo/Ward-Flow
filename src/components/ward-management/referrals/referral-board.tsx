@@ -69,6 +69,7 @@ import {
   EmptyState,
   FilterChip,
   Hero,
+  JourneyStrip,
   Kbd,
   LiveChip,
   Sheet,
@@ -81,6 +82,7 @@ import {
   buttonClass,
   cx,
   durMinutes,
+  type JourneyStage,
 } from "@/components/wf";
 
 import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
@@ -118,6 +120,8 @@ import a from "./referral-board.module.css";
 import p from "./referral-board-phone.module.css";
 import { ReferralPhoneCard, ReferralPhoneChips, ReferralPhoneHero, ReferralPhoneTop } from "./referral-board-phone";
 import { createBrowserStore } from "@/lib/client-store-factory";
+import { useIsPhone } from "@/components/wf";
+import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 /**
@@ -502,6 +506,10 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   // The board's decisions are dispatched as the coordinator (CO-D2), so Undo is too.
   const watchDecision = useReferralDecisionUndo("coordinator");
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("place");
+  /* v10 phone: the sheet has no tabs; the timeline and the patient details open in place. */
+  const isPhone = useIsPhone();
+  const [phoneTimelineOpen, setPhoneTimelineOpen] = useState(false);
+  const [phonePatientOpen, setPhonePatientOpen] = useState(false);
   const [sheet, setSheet] = useState<BoardSheet>(null);
   const [umrnCopied, setUmrnCopied] = useState(false);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -694,6 +702,48 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
 
   const selectedUmrn = selectedPatientInfo.umrn;
   const umrnCopyable = /^UM\d{6}$/.test(selectedUmrn);
+
+  /* The wait clock and the facts grid: in the fixed panel top on desktop, inside the scrolling
+   sheet on a phone (v10), so the decision list gets the height. */
+  const renderDetailFacts = (r: Referral) => (
+    <>
+      {referralState(r) === "queued" ? <DecisionClock referral={r} now={now} /> : null}
+
+      <dl className={a.strip}>
+        <div>
+          <dt>From</dt>
+          <dd>{siteByCode(r.originSiteCode)?.name ?? r.originSiteCode}</dd>
+          <dd className={a.stripSub}>{REFERRAL_SOURCE_WORDS[r.source]}</dd>
+        </div>
+        <div>
+          <dt>Asking for</dt>
+          <dd>{askingForShort(r)}</dd>
+          <dd className={a.stripSub}>{needWords(r).join(", ") || "No bed needs"}</dd>
+        </div>
+        <div data-testid="ward-referral-detail-legal-status">
+          <dt>Legal status</dt>
+          <dd>{r.intake?.legalStatus?.trim() || "Not recorded"}</dd>
+        </div>
+        {/* v10 phone: the facts read as a two by two grid, so the needs get their own cell. */}
+        {/* Hidden above the phone by CSS, so screen readers meet it only where it shows. */}
+        <div className={a.stripPhone}>
+          <dt>Needs</dt>
+          <dd>
+            {(() => {
+              const ward = wardArm(r)?.destination;
+              const words = [
+                ward?.secureBedNeeded ? "Secure bed" : undefined,
+                ward?.involuntaryBedNeeded ? "Involuntary" : undefined,
+                ward?.highAcuityNursingNeeded ? "High acuity" : undefined,
+                r.transportNeeded ? "Transport" : undefined,
+              ].filter(Boolean);
+              return words.length > 0 ? words.join(", ") : "None";
+            })()}
+          </dd>
+        </div>
+      </dl>
+    </>
+  );
 
   return (
     <div
@@ -969,6 +1019,12 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 <span className={a.footNote}>
                   Highlights dim rows and keep every referral. Search narrows the list.
                 </span>
+                {/* v10 phone: the order note sits under the queue instead of in the toolbar. */}
+                {view === "queue" ? (
+                  <span className={a.phoneFootNote} aria-hidden="true">
+                    Longest wait first · tier breaks ties
+                  </span>
+                ) : null}
               </div>
             </Card>
           </div>
@@ -1049,16 +1105,18 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         </Link>
                       );
                     })()}
-                    <Button
-                      variant="sec"
-                      size="sm"
-                      icon={Hand}
-                      disabledReason={NOT_WIRED}
-                      reasonDisplay="tooltip"
-                      className={a.preview}
-                    >
-                      Claim
-                    </Button>
+                    {!isPhone ? (
+                      <Button
+                        variant="sec"
+                        size="sm"
+                        icon={Hand}
+                        disabledReason={NOT_WIRED}
+                        reasonDisplay="tooltip"
+                        className={a.preview}
+                      >
+                        Claim
+                      </Button>
+                    ) : null}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1076,52 +1134,46 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       selectedReadmission ? <ReadmissionFlag flag={selectedReadmission} expandable={false} /> : null
                     }
                   />
-                  {referralState(selectedReferral) === "queued" ? (
-                    <DecisionClock referral={selectedReferral} now={now} />
+                  {!isPhone ? renderDetailFacts(selectedReferral) : null}
+
+                  {!isPhone ? (
+                    <Tabs
+                      label="Referral detail"
+                      idPrefix="ward-referral-inspector"
+                      className={a.panelTabs}
+                      value={inspectorTab}
+                      onChange={setInspectorTab}
+                      items={[
+                        {
+                          id: "place",
+                          label: wardArm(selectedReferral) ? "Place" : "Decide",
+                          count: selectedReadyUnits,
+                        },
+                        { id: "patient", label: "Patient" },
+                        {
+                          id: "timeline",
+                          label: "Timeline",
+                          count: referralTimeline(selectedReferral, units).length,
+                        },
+                      ]}
+                    />
                   ) : null}
-
-                  <dl className={a.strip}>
-                    <div>
-                      <dt>From</dt>
-                      <dd>{siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode}</dd>
-                      <dd className={a.stripSub}>{REFERRAL_SOURCE_WORDS[selectedReferral.source]}</dd>
-                    </div>
-                    <div>
-                      <dt>Asking for</dt>
-                      <dd>{askingForShort(selectedReferral)}</dd>
-                      <dd className={a.stripSub}>{needWords(selectedReferral).join(", ") || "No bed needs"}</dd>
-                    </div>
-                    <div data-testid="ward-referral-detail-legal-status">
-                      <dt>Legal status</dt>
-                      <dd>{selectedReferral.intake?.legalStatus?.trim() || "Not recorded"}</dd>
-                    </div>
-                  </dl>
-
-                  <Tabs
-                    label="Referral detail"
-                    idPrefix="ward-referral-inspector"
-                    className={a.panelTabs}
-                    value={inspectorTab}
-                    onChange={setInspectorTab}
-                    items={[
-                      { id: "place", label: wardArm(selectedReferral) ? "Place" : "Decide", count: selectedReadyUnits },
-                      { id: "patient", label: "Patient" },
-                      {
-                        id: "timeline",
-                        label: "Timeline",
-                        count: referralTimeline(selectedReferral, units).length,
-                      },
-                    ]}
-                  />
                 </div>
 
-                <TabPanel
-                  key={`${selectedReferral.id}-${inspectorTab}`}
-                  idPrefix="ward-referral-inspector"
-                  id={inspectorTab}
-                  className={cx(styles.registerDetailBody, a.panelBody)}
-                >
-                  {inspectorTab === "place" ? (
+                {isPhone ? (
+                  <div className={cx(styles.registerDetailBody, a.panelBody, mph.body)}>
+                    {renderDetailFacts(selectedReferral)}
+                    {(() => {
+                      const stages = referralJourneyStages(selectedReferral, now);
+                      return stages ? (
+                        <section className={mph.journey} aria-labelledby="ward-referral-phone-journey">
+                          <p className={mph.ch} id="ward-referral-phone-journey">
+                            Journey
+                          </p>
+                          <JourneyStrip label="Referral journey" stages={stages} formatDuration={durMinutes} />
+                        </section>
+                      ) : null;
+                    })()}
                     <ReferralMatchView
                       key={selectedReferral.id}
                       referral={selectedReferral}
@@ -1132,41 +1184,129 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       patientInfo={selectedPatientInfo}
                       hideDossierHeader
                       onDecision={(title) => watchDecision(selectedReferral.id, title)}
+                      phone={
+                        <>
+                          <Button
+                            variant="sec"
+                            icon={Hand}
+                            disabledReason={NOT_WIRED}
+                            reasonDisplay="tooltip"
+                            className={mph.tall}
+                          >
+                            Claim this referral
+                          </Button>
+                          <button
+                            type="button"
+                            className={mph.more}
+                            aria-expanded={phoneTimelineOpen}
+                            onClick={() => setPhoneTimelineOpen((open) => !open)}
+                          >
+                            {phoneTimelineOpen
+                              ? "Hide timeline"
+                              : `Show timeline, ${referralTimeline(selectedReferral, units).length} ${referralTimeline(selectedReferral, units).length === 1 ? "event" : "events"}`}
+                          </button>
+                          {phoneTimelineOpen ? (
+                            <ReferralTimeline referral={selectedReferral} units={units} now={now}>
+                              <ReferralHistoryAndCorrections
+                                referral={selectedReferral}
+                                now={now}
+                                dispatch={dispatch}
+                              />
+                            </ReferralTimeline>
+                          ) : null}
+                          <button
+                            type="button"
+                            className={mph.more}
+                            aria-expanded={phonePatientOpen}
+                            onClick={() => setPhonePatientOpen((open) => !open)}
+                          >
+                            {phonePatientOpen ? "Hide patient details" : "Show patient details"}
+                          </button>
+                          {phonePatientOpen ? (
+                            <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
+                          ) : null}
+                          <div className={mph.acts}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={Megaphone}
+                              disabledReason={NOT_WIRED}
+                              reasonDisplay="tooltip"
+                            >
+                              Escalate
+                            </Button>
+                            <span className={a.spacer} />
+                            <SummaryButton onClick={() => setSheet("summary")} />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={ChevronRight}
+                              onClick={() => selectAt(1)}
+                              title="Next referral (J)"
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        </>
+                      }
                     />
-                  ) : null}
-                  {inspectorTab === "patient" ? (
-                    <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
-                  ) : null}
-                  {inspectorTab === "timeline" ? (
-                    <ReferralTimeline referral={selectedReferral} units={units} now={now}>
-                      <ReferralHistoryAndCorrections referral={selectedReferral} now={now} dispatch={dispatch} />
-                    </ReferralTimeline>
-                  ) : null}
-                </TabPanel>
+                  </div>
+                ) : (
+                  <TabPanel
+                    key={`${selectedReferral.id}-${inspectorTab}`}
+                    idPrefix="ward-referral-inspector"
+                    id={inspectorTab}
+                    className={cx(styles.registerDetailBody, a.panelBody)}
+                  >
+                    {inspectorTab === "place" ? (
+                      <ReferralMatchView
+                        key={selectedReferral.id}
+                        referral={selectedReferral}
+                        units={units}
+                        now={now}
+                        dispatch={dispatch}
+                        rejections={rejections}
+                        patientInfo={selectedPatientInfo}
+                        hideDossierHeader
+                        onDecision={(title) => watchDecision(selectedReferral.id, title)}
+                      />
+                    ) : null}
+                    {inspectorTab === "patient" ? (
+                      <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
+                    ) : null}
+                    {inspectorTab === "timeline" ? (
+                      <ReferralTimeline referral={selectedReferral} units={units} now={now}>
+                        <ReferralHistoryAndCorrections referral={selectedReferral} now={now} dispatch={dispatch} />
+                      </ReferralTimeline>
+                    ) : null}
+                  </TabPanel>
+                )}
 
-                <div className={a.panelFoot}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={Megaphone}
-                    disabledReason={NOT_WIRED}
-                    reasonDisplay="tooltip"
-                    className={a.preview}
-                  >
-                    Escalate
-                  </Button>
-                  <span className={a.spacer} />
-                  <SummaryButton onClick={() => setSheet("summary")} />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={ChevronRight}
-                    onClick={() => selectAt(1)}
-                    title="Next referral (J)"
-                  >
-                    Next
-                  </Button>
-                </div>
+                {!isPhone ? (
+                  <div className={a.panelFoot}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Megaphone}
+                      disabledReason={NOT_WIRED}
+                      reasonDisplay="tooltip"
+                      className={a.preview}
+                    >
+                      Escalate
+                    </Button>
+                    <span className={a.spacer} />
+                    <SummaryButton onClick={() => setSheet("summary")} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={ChevronRight}
+                      onClick={() => selectAt(1)}
+                      title="Next referral (J)"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                ) : null}
                 <IsbarSheet
                   open={sheet === "summary"}
                   onClose={() => setSheet(null)}
@@ -1436,6 +1576,14 @@ function QueuedSection({
               const assignedUnit = unitId ? units.find((u) => u.id === unitId) : undefined;
               const selected = referral.id === selectedId;
               const dueAt = referralDueAt(referral, now);
+              const cardWait = referralWaitLine(referral, now);
+              const cardWard = wardArm(referral)?.destination;
+              const cardNeeds = [
+                cardWard?.secureBedNeeded,
+                cardWard?.involuntaryBedNeeded,
+                cardWard?.highAcuityNursingNeeded,
+                referral.transportNeeded,
+              ].filter(Boolean).length;
 
               return (
                 <li
@@ -1470,16 +1618,27 @@ function QueuedSection({
                         />
                       </span>
                       <span className={a.cardRoute}>
-                        {referral.originSiteCode} to {askingForShort(referral)}
+                        <b>{referral.originSiteCode}</b> to {askingForShort(referral)}
                       </span>
+                      {/* v10 phone row: age band and sex, then how many bed needs, never the region. */}
                       <span className={a.cardFacts} data-testid={`ward-referral-board-card-service-${referral.id}`}>
-                        {referralPersonFactsStatingSex(referral).join(" · ")}
+                        {[
+                          ...referralPersonFactsStatingSex(referral).slice(0, 2),
+                          ...(cardNeeds > 0 ? [`${cardNeeds} ${cardNeeds === 1 ? "need" : "needs"}`] : []),
+                        ].join(" · ")}
                         {assignedUnit ? ` · Bed at ${assignedUnit.name}` : ""}
                       </span>
                     </span>
                     <span className={a.cardClock}>
                       <span className={a.cardWait} data-testid={`ward-referral-board-card-wait-${referral.id}`}>
-                        {referralWaitLine(referral, now)}
+                        {cardWait.endsWith(" waiting") ? (
+                          <>
+                            {cardWait.slice(0, -" waiting".length)}
+                            <span className="sr-only"> waiting</span>
+                          </>
+                        ) : (
+                          cardWait
+                        )}
                       </span>
                       {dueAt !== undefined ? <DueTimer dueAt={dueAt} now={now} /> : null}
                     </span>
@@ -1688,4 +1847,43 @@ function DecidedSection({
       )}
     </section>
   );
+}
+
+/**
+ * v10 phone referral sheet: the referral's own recorded steps as a journey strip (Referred,
+ * Triaged, Bed offered), sized by real time. Undefined while there is only one step to show.
+ */
+function referralJourneyStages(referral: Referral, now: Instant): JourneyStage[] | undefined {
+  // Only a ward's acceptance offers a bed; an ED or community team accepting offers none.
+  const offeredAt = referral.destinations
+    .filter(
+      (arm) => arm.destination.kind === "psychiatric_ward" && arm.state === "accepted" && arm.decidedAt !== undefined,
+    )
+    .map((arm) => arm.decidedAt as number)
+    .sort((x, y) => x - y)[0];
+  // A triage time recorded before the referral was raised (or after the offer) cannot size the
+  // strip without counting time outside its own stage, so the strip leaves it out.
+  const triagedAt =
+    referral.triagedAt !== undefined &&
+    referral.triagedAt >= referral.raisedAt &&
+    (offeredAt === undefined || referral.triagedAt <= offeredAt)
+      ? referral.triagedAt
+      : undefined;
+  if (triagedAt === undefined && offeredAt === undefined) return undefined;
+  const stages: JourneyStage[] = [];
+  const referredEnd = triagedAt ?? offeredAt ?? now;
+  stages.push({ id: "referred", label: "Referred", minutes: Math.max(0, referredEnd - referral.raisedAt) });
+  if (triagedAt !== undefined) {
+    const end = offeredAt ?? now;
+    stages.push({
+      id: "triaged",
+      label: "Triaged",
+      minutes: Math.max(0, end - triagedAt),
+      now: offeredAt === undefined,
+    });
+  }
+  if (offeredAt !== undefined) {
+    stages.push({ id: "offered", label: "Bed offered", minutes: Math.max(0, now - offeredAt), now: true });
+  }
+  return stages;
 }

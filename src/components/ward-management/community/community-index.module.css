@@ -876,3 +876,454 @@
     border-bottom: 1px solid var(--wf-line);
   }
 }
+
+/* v10 phone A to Z (11 Oct 2026): search and filters sit on the sheet; the list is one card of
+ * two-line rows (name, then the service dot, service and suburbs) with the reads-alike dot and a
+ * chevron at the end. No letter rail and no column head on phone; the letter rows carry the count.
+ * Phone only. */
+@media (max-width: 48rem) {
+  .directoryCard {
+    gap: var(--wf-s-3);
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* The result line stays for screen readers (it is a live region); the heading leaves the view. */
+  .directoryCard > [data-ward-primitive="panel-header"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .toolbar > .searchBox {
+    flex: 1 1 100%;
+    order: -2;
+  }
+
+  .toolbar > :nth-child(2) {
+    flex: 1 1 0;
+    order: 0;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .toolbar > :nth-child(n + 3) {
+    flex: none;
+    order: 1;
+  }
+
+  .directoryBody {
+    display: block;
+  }
+
+  .azRail,
+  .columnHead {
+    display: none;
+  }
+
+  .listWrap {
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .letterSection {
+    border-bottom: 0;
+  }
+
+  .letterHeading .letterRow {
+    min-height: 36px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border-top: 1px solid var(--wf-line);
+    border-bottom: 1px solid var(--wf-line);
+    background: var(--wf-surface-2);
+  }
+
+  .letterSection:first-of-type .letterHeading .letterRow {
+    border-top: 0;
+  }
+
+  .letterHeading .letterRow :global(*)::after {
+    display: none;
+  }
+
+  .letterHeading .letterRow :global(*) {
+    font-family: var(--wf-font);
+  }
+
+  .letterSection .teamRow {
+    grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto auto;
+    column-gap: 0;
+    row-gap: 2px;
+    align-items: center;
+    min-height: 56px;
+    padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .letterSection .teamRow:has(.readsAlike) {
+    padding-top: var(--wf-s-2);
+  }
+
+  .letterSection .teamRow > .teamRowLink {
+    grid-column: 1 / 4;
+    grid-row: 1;
+    font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+  }
+
+  .letterSection .teamRow > .service,
+  .letterSection .teamRow > .suburbs {
+    grid-row: 2;
+    color: var(--wf-ink-2);
+    font: 400 var(--wf-fs-12) / 1.4 var(--wf-font);
+    text-align: left;
+  }
+
+  .letterSection .teamRow > .service {
+    grid-column: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .letterSection .teamRow > .service::before {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: var(--wf-r-pill);
+    background: var(--svc, var(--wf-ink-3));
+    content: "";
+  }
+
+  .letterSection .teamRow > .service[data-service="NMHS"] {
+    --svc: var(--wf-svc-north);
+  }
+
+  .letterSection .teamRow > .service[data-service="SMHS"] {
+    --svc: var(--wf-svc-south);
+  }
+
+  .letterSection .teamRow > .service[data-service="EMHS"] {
+    --svc: var(--wf-svc-east);
+  }
+
+  .letterSection .teamRow > .service[data-service="WACHS"] {
+    --svc: var(--wf-svc-wachs);
+  }
+
+  .letterSection .teamRow > .service[data-service="CAHS"] {
+    --svc: var(--wf-svc-cahs);
+  }
+
+  .letterSection .teamRow > .suburbs {
+    grid-column: 2;
+  }
+
+  .letterSection .teamRow > .suburbs::before {
+    content: "\00a0·\00a0";
+  }
+
+  .letterSection .teamRow > .suburbs::after {
+    content: "\00a0suburbs";
+  }
+
+  .letterSection .teamRow > .suburbs[data-one="true"]::after {
+    content: "\00a0suburb";
+  }
+
+  .letterSection .teamRow > .check {
+    grid-column: 4;
+    grid-row: 1 / 3;
+    padding: 0;
+  }
+
+  /* The reads-alike marker keeps its button and its words for screen readers; on phone only its
+   * amber dot shows at the row end, inside a 48px press area. */
+  .letterSection .teamRow .readsAlike {
+    position: relative;
+    z-index: 1;
+    justify-content: center;
+    width: var(--spacing-tap, 3rem);
+    min-height: var(--spacing-tap, 3rem);
+    margin-block: calc((var(--spacing-tap, 3rem) - 1.5rem) / -2);
+    padding: 0;
+    font-size: 0;
+  }
+
+  .letterSection .teamRow > .teamRowGo {
+    display: block;
+    grid-column: 5;
+    grid-row: 1 / 3;
+    color: var(--wf-ink-3);
+  }
+}
+
+/* v10 phone second pass (11 Oct 2026): the hero's Guide and Raise referral share a row with
+ * Raise referral taking the rest; the view switch spans the width; the search is a 44px pill; the
+ * health services and Reads alike are separate pill chips, the picked one edged in the accent. */
+@media (max-width: 48rem) {
+  .heroActions {
+    width: 100%;
+    gap: var(--wf-s-2);
+  }
+
+  .heroActions > [data-testid="community-action-raise-referral"] {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .phonePanes :global([role="radiogroup"]) {
+    width: 100%;
+  }
+
+  .toolbar > .searchBox {
+    height: 44px;
+    min-height: 44px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .toolbar {
+    column-gap: var(--wf-s-2);
+  }
+
+  .toolbar > :global([role="radiogroup"]) {
+    gap: var(--wf-s-2);
+    padding: 2px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"]),
+  .toolbar > button[aria-pressed] {
+    flex: 0 0 auto;
+    min-height: 44px;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+    box-shadow: none;
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"][aria-checked="true"]),
+  .toolbar > button[aria-pressed="true"] {
+    border-color: var(--wf-accent);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"]) > span:last-child {
+    min-width: 0;
+    padding: 0;
+    background: none;
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .toolbar > button[aria-pressed] {
+    align-self: center;
+  }
+}
+
+/* v10 phone: the view switch stays under the bar while the list scrolls, as on Home. */
+@media (max-width: 48rem) {
+  .phonePanes {
+    position: sticky;
+    top: 3.5rem;
+    z-index: 6;
+    margin: 0 calc(-1 * var(--wf-s-3));
+    padding: var(--wf-s-2) var(--wf-s-3);
+    background: var(--wf-canvas);
+  }
+}
+
+/* v10 phone Suburb pane: no card chrome around the lookup; a pill search; the suburbs as one
+ * sideways row of pill chips; the contested note above the teams, which sit in one card. */
+@media (max-width: 48rem) {
+  .phonePanes > div,
+  .phonePanes :global([role="radiogroup"]) {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  [data-pane="suburb"] > .sideCard {
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  [data-pane="suburb"] > .sideCard > :first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  [data-pane="suburb"] .lookupBody {
+    padding: 0;
+  }
+
+  [data-pane="suburb"] .lookupBody > :first-child {
+    min-height: 44px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .picks {
+    flex-wrap: nowrap;
+    margin: 0 calc(-1 * var(--wf-s-3));
+    padding: 2px var(--wf-s-3);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .picks::-webkit-scrollbar {
+    display: none;
+  }
+
+  .picks > button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+    box-shadow: none;
+  }
+
+  .picks > button[aria-pressed="true"] {
+    border-color: var(--wf-accent);
+    background: var(--wf-surface);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  .lookupResult {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    border: 0;
+    border-radius: 0;
+  }
+
+  .lookupResult > .lookupNote {
+    order: -1;
+    padding: 0;
+    font-weight: 400;
+  }
+
+  .lookupList {
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .lookupRow {
+    min-height: 60px;
+    border-bottom-color: var(--wf-line);
+  }
+
+  .lookupList .lookupRow:last-child {
+    border-bottom: 0;
+  }
+
+  .lookupAside {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+/* The 44px chips reach a 48px hit area. */
+@media (max-width: 48rem) {
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"]),
+  .toolbar > button[aria-pressed],
+  .picks > button {
+    position: relative;
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"])::after,
+  .toolbar > button[aria-pressed]::after,
+  .picks > button::after {
+    content: "";
+    position: absolute;
+    inset: -2px 0;
+  }
+}
+
+/* ─── v10 phone fidelity (11 Oct 2026) ───
+ * The view switch band runs the full width and, once the page has scrolled, sits flush under the
+ * condensed 52px bar (56px at rest). The pinned "Reads alike" chip leaves the phone: the hero's
+ * Read alike figure is that filter there. A name that reads like others says so at the end of its
+ * meta line, as the mockup ("EMHS · 1 suburb · reads like 3 others"). Phone only. */
+@media (max-width: 48rem) {
+  .phonePanes {
+    max-width: none;
+  }
+
+  :global(body:has([data-scrolled="true"])) .phonePanes {
+    top: 3.25rem;
+  }
+
+  .phonePanes > div {
+    padding-inline: 0;
+  }
+
+  .phonePanes :global([role="radiogroup"]) > * {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .toolbar > button[aria-pressed] {
+    display: none;
+  }
+
+  .letterSection .teamRow > .suburbs[data-alike]::after {
+    content: "\00a0suburbs\00a0·\00a0" attr(data-alike) / "";
+  }
+
+  .letterSection .teamRow > .suburbs[data-one="true"][data-alike]::after {
+    content: "\00a0suburb\00a0·\00a0" attr(data-alike) / "";
+  }
+
+  .letterSection .teamRow > .suburbs[data-alike] {
+    grid-column: 2 / 4;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* v10 phone catchment guide: the pinned "Look up a suburb" runs the width of the sheet foot. */
+.guideFootAction {
+  width: 100%;
+  justify-content: center;
+}

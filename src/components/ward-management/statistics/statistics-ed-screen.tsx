@@ -13,6 +13,7 @@ import {
   Icon,
   Menu,
   Meter,
+  PhoneListRow,
   Segmented,
   SrOnly,
   StatusGlyph,
@@ -20,6 +21,7 @@ import {
   cx,
   durMinutes,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
 import { ED_WAIT_BANDS, edWaitBands, edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
@@ -42,6 +44,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
+import { PhoneBody, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 import ed from "./statistics-ed-third-edition.module.css";
@@ -80,7 +83,8 @@ export function StatisticsEdScreen({
   movements?: Movement[];
 }) {
   const live = useStatisticsLive();
-  const { movements: liveMovements, patients, referrals } = live.state;
+  const { movements: liveMovements, patients, referrals, units } = live.state;
+  const isPhone = useIsPhone();
   const now = live.now;
   const movements = movementsOverride ?? liveMovements;
   const department = edById(edId);
@@ -230,6 +234,28 @@ export function StatisticsEdScreen({
           ["No ward yet", unplaced],
         ],
       }}
+      phone={{
+        eyebrow: site ? `${department.siteCode} · ${site.service}` : department.siteCode,
+        title: `${shortName(department.name)} ED`,
+        sub: `Median ${median === null ? "none" : splitDuration(Math.round(median))} · ${urgent} urgent`,
+        stats: (
+          <>
+            <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{onTheList}</span>} label="Waiting" />
+            <HeroStat
+              value={longestWait ? splitDuration(longestWait.waitMinutes) : "none"}
+              label="Longest"
+              tone={
+                longestWait && longestWait.waitMinutes >= VERY_LONG_WAIT_MINUTES
+                  ? "danger"
+                  : longestWait && longestWait.waitMinutes >= LONG_WAIT_MINUTES
+                    ? "warning"
+                    : undefined
+              }
+            />
+            <HeroStat value={unplaced} label="No ward yet" />
+          </>
+        ),
+      }}
       stats={
         <>
           <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{onTheList}</span>} label="Waiting" />
@@ -254,238 +280,367 @@ export function StatisticsEdScreen({
         </>
       }
     >
-      {/* Direction A: the cards on the right set the row's height; the wait list follows it and
+      {isPhone ? (
+        <EdPhone
+          waiting={waitingMovements}
+          nameOf={nameOf}
+          umrnOf={umrnOf}
+          wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Ward accepted"}
+          next={nextToCross[0] ?? null}
+        />
+      ) : (
+        <>
+          {/* Direction A: the cards on the right set the row's height; the wait list follows it and
           scrolls inside, so both columns end on the same line however many people are waiting. */}
-      <FlushRow layout="lead2">
-        <Follow>
-          <Waits
-            waiting={waitingMovements}
-            nameOf={nameOf}
-            over24h={over24h}
-            over48h={over48h}
-            onTheList={onTheList}
-            longestName={longestWait ? nameOf(longestWait.movement) : ""}
-            longestText={longestWait ? splitDuration(longestWait.waitMinutes) : ""}
-            umrnOf={umrnOf}
-          />
-        </Follow>
-        <FlushStack>
-          <StatCard icon={AlertTriangle} title={`Next to cross ${longHours}h`} aside="Count down" id="ed-next">
-            <CardBody className={styles.bodyStack}>
-              {nextToCross.length === 0 ? (
-                <p className={styles.muted}>Nobody is waiting under {longHours}h</p>
-              ) : (
-                <ul className={detail.crossList}>
-                  {nextToCross.map(({ movement, waitMinutes }) => (
-                    <li key={movement.id} className={detail.crossRow}>
-                      <span>
-                        <Link href={movementHref(movement.id)} className={detail.crossName}>
-                          {nameOf(movement)}
-                        </Link>
-                        <span className={detail.secondary}>{durMinutes(waitMinutes)} waiting</span>
-                      </span>
-                      <span className={detail.crossDue}>
-                        <b>in {durMinutes(LONG_WAIT_MINUTES - waitMinutes)}</b>
-                        <span className={detail.secondary}>to {longHours}h</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardBody>
-          </StatCard>
+          <FlushRow layout="lead2">
+            <Follow>
+              <Waits
+                waiting={waitingMovements}
+                nameOf={nameOf}
+                over24h={over24h}
+                over48h={over48h}
+                onTheList={onTheList}
+                longestName={longestWait ? nameOf(longestWait.movement) : ""}
+                longestText={longestWait ? splitDuration(longestWait.waitMinutes) : ""}
+                umrnOf={umrnOf}
+              />
+            </Follow>
+            <FlushStack>
+              <StatCard icon={AlertTriangle} title={`Next to cross ${longHours}h`} aside="Count down" id="ed-next">
+                <CardBody className={styles.bodyStack}>
+                  {nextToCross.length === 0 ? (
+                    <p className={styles.muted}>Nobody is waiting under {longHours}h</p>
+                  ) : (
+                    <ul className={detail.crossList}>
+                      {nextToCross.map(({ movement, waitMinutes }) => (
+                        <li key={movement.id} className={detail.crossRow}>
+                          <span>
+                            <Link href={movementHref(movement.id)} className={detail.crossName}>
+                              {nameOf(movement)}
+                            </Link>
+                            <span className={detail.secondary}>{durMinutes(waitMinutes)} waiting</span>
+                          </span>
+                          <span className={detail.crossDue}>
+                            <b>in {durMinutes(LONG_WAIT_MINUTES - waitMinutes)}</b>
+                            <span className={detail.secondary}>to {longHours}h</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardBody>
+              </StatCard>
+              <StatCard
+                icon={Activity}
+                title="Wait bands"
+                aside="People waiting now"
+                id="ed-bands"
+                data-testid="ward-statistics-ed-bands"
+              >
+                <CardBody className={styles.bodyStack}>
+                  <ColumnChart
+                    label="People waiting by wait band"
+                    height={96}
+                    columns={bands.map((band, index) => ({
+                      id: band.label,
+                      label: bandShortLabel(index),
+                      value: band.count,
+                    }))}
+                  />
+                  <ul className={styles.srOnly}>
+                    {bands.map((band) => (
+                      <li key={band.label} data-testid={`ward-statistics-ed-band-${slug(band.label)}`}>
+                        {band.label},{" "}
+                        <span data-testid={`ward-statistics-ed-band-count-${slug(band.label)}`}>
+                          {band.count === 0 ? "none" : band.count}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardBody>
+              </StatCard>
+
+              <StatCard icon={Users} title="Declines" aside="Referrals from here" id="ed-declines">
+                <CardBody className={styles.bodyStack}>
+                  <div data-testid="ward-statistics-ed-declines">
+                    <div className={styles.tiles} aria-hidden="true">
+                      <div className={styles.tile}>
+                        <span className={styles.tileLabel}>
+                          <StatusGlyph tone="closed" size={9} /> Declined, no bed
+                        </span>
+                        <span className={styles.tileValue}>{noFreeBedDeclineCount}</span>
+                      </div>
+                      <div className={styles.tile}>
+                        <span className={styles.tileLabel}>
+                          <StatusGlyph tone="closed" size={9} /> Declined, other
+                        </span>
+                        <span className={styles.tileValue}>{notSuitableDeclineCount ?? "none"}</span>
+                      </div>
+                    </div>
+                    <SrOnly>
+                      <p data-testid="ward-stat-ed-declined-no-free-bed">
+                        {noFreeBedDeclineCount} {noFreeBedDeclineCount === 1 ? "decline names" : "declines name"} a ward
+                        that had no free bed.
+                      </p>
+                      {declinesReadout.ok ? (
+                        <p data-testid="ward-stat-ed-declined-not-suitable">
+                          {notSuitableDeclineCount} {notSuitableDeclineCount === 1 ? "decline gave" : "declines gave"} a
+                          reason other than having no free bed.
+                        </p>
+                      ) : null}
+                    </SrOnly>
+                    {declinesReadout.ok ? null : (
+                      <p className={detail.note} data-testid="ward-stat-ed-declined-not-suitable-unavailable">
+                        {declinesReadout.statement}
+                      </p>
+                    )}
+                  </div>
+                </CardBody>
+              </StatCard>
+            </FlushStack>
+          </FlushRow>
+
           <StatCard
             icon={Activity}
-            title="Wait bands"
-            aside="People waiting now"
-            id="ed-bands"
-            data-testid="ward-statistics-ed-bands"
+            title="Everyone waiting, by ED"
+            aside="One mark per person"
+            id="ed-everyone"
+            data-testid="ward-statistics-ed-everyone"
           >
             <CardBody className={styles.bodyStack}>
-              <ColumnChart
-                label="People waiting by wait band"
-                height={96}
-                columns={bands.map((band, index) => ({
-                  id: band.label,
-                  label: bandShortLabel(index),
-                  value: band.count,
-                }))}
+              <StatisticsEdSwarm
+                rows={swarmRows}
+                labelWidth={176}
+                label={`Each person waiting in ED, by how long they have waited, ${department.name} first`}
               />
-              <ul className={styles.srOnly}>
-                {bands.map((band) => (
-                  <li key={band.label} data-testid={`ward-statistics-ed-band-${slug(band.label)}`}>
-                    {band.label},{" "}
-                    <span data-testid={`ward-statistics-ed-band-count-${slug(band.label)}`}>
-                      {band.count === 0 ? "none" : band.count}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <p className={detail.note}>
+                {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h lines
+                are your defaults, not legal limits.
+              </p>
             </CardBody>
           </StatCard>
 
-          <StatCard icon={Users} title="Declines" aside="Referrals from here" id="ed-declines">
-            <CardBody className={styles.bodyStack}>
-              <div data-testid="ward-statistics-ed-declines">
-                <div className={styles.tiles} aria-hidden="true">
-                  <div className={styles.tile}>
-                    <span className={styles.tileLabel}>
-                      <StatusGlyph tone="closed" size={9} /> Declined, no bed
-                    </span>
-                    <span className={styles.tileValue}>{noFreeBedDeclineCount}</span>
-                  </div>
-                  <div className={styles.tile}>
-                    <span className={styles.tileLabel}>
-                      <StatusGlyph tone="closed" size={9} /> Declined, other
-                    </span>
-                    <span className={styles.tileValue}>{notSuitableDeclineCount ?? "none"}</span>
-                  </div>
-                </div>
-                <SrOnly>
-                  <p data-testid="ward-stat-ed-declined-no-free-bed">
-                    {noFreeBedDeclineCount} {noFreeBedDeclineCount === 1 ? "decline names" : "declines name"} a ward
-                    that had no free bed.
-                  </p>
-                  {declinesReadout.ok ? (
-                    <p data-testid="ward-stat-ed-declined-not-suitable">
-                      {notSuitableDeclineCount} {notSuitableDeclineCount === 1 ? "decline gave" : "declines gave"} a
-                      reason other than having no free bed.
-                    </p>
-                  ) : null}
-                </SrOnly>
-                {declinesReadout.ok ? null : (
-                  <p className={detail.note} data-testid="ward-stat-ed-declined-not-suitable-unavailable">
-                    {declinesReadout.statement}
-                  </p>
-                )}
-              </div>
-            </CardBody>
-          </StatCard>
-        </FlushStack>
-      </FlushRow>
-
-      <StatCard
-        icon={Activity}
-        title="Everyone waiting, by ED"
-        aside="One mark per person"
-        id="ed-everyone"
-        data-testid="ward-statistics-ed-everyone"
-      >
-        <CardBody className={styles.bodyStack}>
-          <StatisticsEdSwarm
-            rows={swarmRows}
-            labelWidth={176}
-            label={`Each person waiting in ED, by how long they have waited, ${department.name} first`}
-          />
-          <p className={detail.note}>
-            {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h lines are
-            your defaults, not legal limits.
-          </p>
-        </CardBody>
-      </StatCard>
-
-      <StatCard
-        icon={Scale}
-        title="Across departments"
-        id="ed-departments"
-        aside={<LegalLimitsNotChecked variant="tag" />}
-        data-testid="ward-stat-ed-comparison"
-      >
-        <div className={styles.tableWrap}>
-          <table className={`${tableClasses.table} ${styles.table}`}>
-            <caption className={styles.srOnly}>Open placement waits in every emergency department</caption>
-            <thead>
-              <tr>
-                <th scope="col">Department</th>
-                <th scope="col" className={styles.num}>
-                  Waiting
-                </th>
-                <th scope="col" className={styles.num}>
-                  Longest
-                </th>
-                <th scope="col" className={styles.num}>
-                  Due passed
-                </th>
-                <th scope="col" className={styles.num}>
-                  {`${longHours}h+`}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {comparison.map(({ department: each, figures, breached }) => {
-                const here = each.id === department.id;
-                return (
-                  <tr
-                    key={each.id}
-                    data-testid={`ward-stat-ed-comparison-row-${each.id}`}
-                    aria-current={here ? "page" : undefined}
-                    className={here ? detail.currentRow : undefined}
-                  >
-                    <th scope="row">
-                      <span className={styles.codeLead}>{each.siteCode}</span>
-                      {here ? (
-                        each.name
-                      ) : (
-                        <Link href={edStatisticsHref(each.id)} className={styles.rowLink}>
-                          {each.name}
-                        </Link>
-                      )}
-                      {here ? <span className={styles.code}>this page</span> : null}
-                    </th>
-                    <td
-                      className={figures.onTheList === 0 ? `${styles.num} ${styles.muted}` : styles.num}
-                      data-testid={`ward-stat-ed-comparison-waiting-${each.id}`}
-                    >
-                      {figures.onTheList}
-                    </td>
-                    <td
-                      className={figures.longestWait ? styles.num : `${styles.num} ${styles.muted}`}
-                      data-testid={`ward-stat-ed-comparison-longest-${each.id}`}
-                    >
-                      {figures.longestWait ? splitDuration(figures.longestWait.waitMinutes) : "none waiting"}
-                    </td>
-                    <td
-                      className={breached === 0 ? `${styles.num} ${styles.muted}` : styles.num}
-                      data-testid={`ward-stat-ed-comparison-breached-${each.id}`}
-                    >
-                      {breached}
-                    </td>
-                    <td
-                      className={figures.over24h === 0 ? `${styles.num} ${styles.muted}` : styles.num}
-                      data-testid={`ward-stat-ed-comparison-over24h-${each.id}`}
-                    >
-                      {figures.over24h}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </StatCard>
-      {/* The page's own provenance note: each sentence says the figures are invented by itself. */}
-      <Card as="div">
-        <CardBody>
-          <section
-            className={detail.provenance}
-            aria-labelledby="ward-statistics-ed-invented-heading"
-            data-testid="ward-statistics-ed-invented"
+          <StatCard
+            icon={Scale}
+            title="Across departments"
+            id="ed-departments"
+            aside={<LegalLimitsNotChecked variant="tag" />}
+            data-testid="ward-stat-ed-comparison"
           >
-            <h2 id="ward-statistics-ed-invented-heading" className={detail.subHead}>
-              Every figure here is invented
-            </h2>
-            <p className={detail.note}>
-              Every count and every wait above is invented. These invented figures are derived from this
-              prototype&apos;s own invented movement records and have never been measured against a real department or a
-              real patient. Nothing on this screen is a real clinical record.
-            </p>
-          </section>
-        </CardBody>
-      </Card>
+            <div className={styles.tableWrap}>
+              <table className={`${tableClasses.table} ${styles.table}`}>
+                <caption className={styles.srOnly}>Open placement waits in every emergency department</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Department</th>
+                    <th scope="col" className={styles.num}>
+                      Waiting
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      Longest
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      Due passed
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      {`${longHours}h+`}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparison.map(({ department: each, figures, breached }) => {
+                    const here = each.id === department.id;
+                    return (
+                      <tr
+                        key={each.id}
+                        data-testid={`ward-stat-ed-comparison-row-${each.id}`}
+                        aria-current={here ? "page" : undefined}
+                        className={here ? detail.currentRow : undefined}
+                      >
+                        <th scope="row">
+                          <span className={styles.codeLead}>{each.siteCode}</span>
+                          {here ? (
+                            each.name
+                          ) : (
+                            <Link href={edStatisticsHref(each.id)} className={styles.rowLink}>
+                              {each.name}
+                            </Link>
+                          )}
+                          {here ? <span className={styles.code}>this page</span> : null}
+                        </th>
+                        <td
+                          className={figures.onTheList === 0 ? `${styles.num} ${styles.muted}` : styles.num}
+                          data-testid={`ward-stat-ed-comparison-waiting-${each.id}`}
+                        >
+                          {figures.onTheList}
+                        </td>
+                        <td
+                          className={figures.longestWait ? styles.num : `${styles.num} ${styles.muted}`}
+                          data-testid={`ward-stat-ed-comparison-longest-${each.id}`}
+                        >
+                          {figures.longestWait ? splitDuration(figures.longestWait.waitMinutes) : "none waiting"}
+                        </td>
+                        <td
+                          className={breached === 0 ? `${styles.num} ${styles.muted}` : styles.num}
+                          data-testid={`ward-stat-ed-comparison-breached-${each.id}`}
+                        >
+                          {breached}
+                        </td>
+                        <td
+                          className={figures.over24h === 0 ? `${styles.num} ${styles.muted}` : styles.num}
+                          data-testid={`ward-stat-ed-comparison-over24h-${each.id}`}
+                        >
+                          {figures.over24h}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </StatCard>
+          {/* The page's own provenance note: each sentence says the figures are invented by itself. */}
+          <Card as="div">
+            <CardBody>
+              <section
+                className={detail.provenance}
+                aria-labelledby="ward-statistics-ed-invented-heading"
+                data-testid="ward-statistics-ed-invented"
+              >
+                <h2 id="ward-statistics-ed-invented-heading" className={detail.subHead}>
+                  Every figure here is invented
+                </h2>
+                <p className={detail.note}>
+                  Every count and every wait above is invented. These invented figures are derived from this
+                  prototype&apos;s own invented movement records and have never been measured against a real department
+                  or a real patient. Nothing on this screen is a real clinical record.
+                </p>
+              </section>
+            </CardBody>
+          </Card>
+        </>
+      )}
       <SrOnly>
         Over {longHours}h and over {veryLongHours}h are operational defaults, not legal limits.
       </SrOnly>
     </StatisticsPage>
+  );
+}
+
+type EdPhoneFilter = "all" | "unplaced" | "long";
+
+/**
+ * One ED on a phone (v10 phone): the next person to cross the long-wait line, then everyone
+ * waiting, longest first, behind All, No ward and Past 24h. A wait past the very long line is act
+ * now: a thin red edge, never a fill.
+ */
+function EdPhone({
+  waiting,
+  nameOf,
+  umrnOf,
+  wardName,
+  next,
+}: {
+  waiting: readonly { movement: Movement; waitMinutes: number }[];
+  nameOf: (movement: Movement) => string;
+  umrnOf: (movement: Movement) => string;
+  wardName: (unitId: string) => string;
+  next: { movement: Movement; waitMinutes: number } | null;
+}) {
+  const [filter, setFilter] = useState<EdPhoneFilter>("all");
+  const longHours = LONG_WAIT_MINUTES / 60;
+  const counts: Record<EdPhoneFilter, number> = {
+    all: waiting.length,
+    unplaced: waiting.filter(({ movement }) => movement.acceptedUnitId === undefined).length,
+    long: waiting.filter(({ waitMinutes }) => waitMinutes >= LONG_WAIT_MINUTES).length,
+  };
+  const shown = waiting
+    .filter(({ movement, waitMinutes }) =>
+      filter === "unplaced"
+        ? movement.acceptedUnitId === undefined
+        : filter === "long"
+          ? waitMinutes >= LONG_WAIT_MINUTES
+          : true,
+    )
+    .slice()
+    .sort((a, b) => b.waitMinutes - a.waitMinutes);
+
+  return (
+    <PhoneBody testId="ward-statistics-ed-phone">
+      {next ? (
+        <div className={phone.next} data-testid="ward-statistics-ed-phone-next">
+          <span className={phone.ring0} aria-hidden="true" />
+          <span className={phone.nextText}>
+            <b>{`Next to cross ${longHours}h: ${nameOf(next.movement)}`}</b>
+            <span>
+              <b>{splitDuration(LONG_WAIT_MINUTES - next.waitMinutes)}</b> left · {umrnOf(next.movement)}
+            </span>
+          </span>
+        </div>
+      ) : null}
+      {waiting.length === 0 ? (
+        <p className={phone.note}>Nobody from this department has an open placement</p>
+      ) : (
+        <>
+          <Segmented<EdPhoneFilter>
+            className={phone.seg}
+            size="md"
+            label="Waits shown"
+            value={filter}
+            onChange={setFilter}
+            items={[
+              { id: "all", label: "All", count: counts.all },
+              { id: "unplaced", label: "No ward", count: counts.unplaced },
+              { id: "long", label: `Past ${longHours}h`, count: counts.long },
+            ]}
+          />
+          {shown.length === 0 ? (
+            <p className={phone.note}>Nobody matches this filter</p>
+          ) : (
+            <PhoneList label="Open placement waits, longest first">
+              {shown.map(({ movement, waitMinutes }) => {
+                const tone =
+                  waitMinutes >= VERY_LONG_WAIT_MINUTES
+                    ? "danger"
+                    : waitMinutes >= LONG_WAIT_MINUTES
+                      ? "warning"
+                      : undefined;
+                return (
+                  <PhoneListRow
+                    key={movement.id}
+                    as="li"
+                    actNow={tone === "danger"}
+                    leading={
+                      movement.atsCategory === undefined ? undefined : (
+                        <span className={phone.tier}>{`T${movement.atsCategory}`}</span>
+                      )
+                    }
+                    name={nameOf(movement)}
+                    meta={
+                      <span className={phone.dotName}>
+                        <span className={phone.mono}>{umrnOf(movement)}</span>
+                        {" · "}
+                        <StatusGlyph tone={movement.acceptedUnitId === undefined ? "neutral" : "success"} size={9} />
+                        {movement.acceptedUnitId === undefined ? "No ward yet" : wardName(movement.acceptedUnitId)}
+                      </span>
+                    }
+                    value={
+                      <span className={phone.flagged}>
+                        {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+                        {splitDuration(waitMinutes)}
+                      </span>
+                    }
+                    time="waited"
+                    href={movementHref(movement.id)}
+                    data-testid={`ward-stat-ed-phone-row-${movement.id}`}
+                  />
+                );
+              })}
+            </PhoneList>
+          )}
+        </>
+      )}
+    </PhoneBody>
   );
 }
 

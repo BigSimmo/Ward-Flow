@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { useId } from "react";
 
-import { Frac, ToastView } from "@/components/wf";
+import { Frac, StatusGlyph, ToastView, cx, useIsPhone } from "@/components/wf";
 
 import styles from "./discharge-ready-to-leave.module.css";
 
@@ -46,6 +46,8 @@ export function ReadyToLeave({
   onDismiss: () => void;
 }) {
   const headingId = useId();
+  // v10 phone: a glyph list (green tick or open circle), not checkbox squares.
+  const isPhone = useIsPhone();
   const done = READY_TO_LEAVE_ITEMS.filter((item) => ticked.includes(item.id)).length;
   const changedLabel = lastChange
     ? READY_TO_LEAVE_ITEMS.find((item) => item.id === lastChange.itemId)?.label
@@ -53,7 +55,7 @@ export function ReadyToLeave({
   return (
     <section className={styles.readyPanel} aria-labelledby={headingId} data-testid="ward-discharge-ready-to-leave">
       <header className={styles.head}>
-        <h3 id={headingId} className={styles.title}>
+        <h3 id={headingId} className={cx(styles.title, isPhone && styles.phTitle)}>
           Ready to leave
         </h3>
         <Frac
@@ -75,9 +77,15 @@ export function ReadyToLeave({
                 onClick={() => onToggle(item.id)}
                 data-testid={`ward-discharge-ready-${item.id}`}
               >
-                <span className={styles.box} aria-hidden="true">
-                  {on ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : null}
-                </span>
+                {isPhone ? (
+                  <span className={styles.glyph} aria-hidden="true">
+                    <StatusGlyph tone={on ? "success" : "neutral"} size={12} />
+                  </span>
+                ) : (
+                  <span className={styles.box} aria-hidden="true">
+                    {on ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : null}
+                  </span>
+                )}
                 <span className={styles.label}>{item.label}</span>
               </button>
             </li>

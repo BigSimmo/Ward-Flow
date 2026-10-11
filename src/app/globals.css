@@ -346,6 +346,11 @@
   /* Height of Ward Flow's Data mode bar above the shell. ward-shared-access.tsx overwrites it on
      the html element with the measured height; 0px wherever that bar is absent. */
   --wf-data-bar-height: 0px;
+  /* The hero band's bleed (src/components/wf/band.ts writes the measured values on the hero
+     itself); 0px wherever a hero has no band. */
+  --wf-band-top: 0px;
+  --wf-band-left: 0px;
+  --wf-band-right: 0px;
 
   /* The Figures feature keeps its navy surface in either theme. */
   --surface-feature-start: #203b55;

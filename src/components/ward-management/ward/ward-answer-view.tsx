@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronRight as RowChevron, ShieldCheck, UserRound } from "lucide-react";
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
@@ -34,7 +34,18 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 
-import { Hero, HeroStat, OccupancyRing, Stepper, buttonClass } from "@/components/wf";
+import {
+  Hero,
+  HeroStat,
+  LiveChip,
+  OccupancyRing,
+  Stepper,
+  StatusGlyph,
+  buttonClass,
+  durMinutes,
+  useIsPhone,
+  PhoneSheet,
+} from "@/components/wf";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -82,6 +93,12 @@ export interface WardAnswerViewProps {
   unitId: string;
 }
 
+/** A decline reason as a sentence-case label ("no_bed" reads "No bed"). */
+function declineReasonLabel(reason: DeclineReason): string {
+  const words = reason.replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections, resolvePatientIdentity } =
     useWardFlow();
@@ -89,10 +106,17 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const unit = units.find((candidate) => candidate.id === unitId);
 
   const [answerIndex, setAnswerIndex] = useState(0);
+  // Phone (v10): its own layout. The facts show four until asked, the ISBAR summary and the
+  // ward's gates fold, and the beds, census and answers are rows that open in place.
+  const isPhone = useIsPhone();
+  const [showAllFacts, setShowAllFacts] = useState(false);
+  // Phone (v10): the gates, beds, census and answers rows each open their panel as a bottom sheet.
+  const [phoneSheet, setPhoneSheet] = useState<string | null>(null);
   const [overrideReason, setOverrideReason] = useState<OverrideReason | undefined>(undefined);
   const [numConsulted, setNumConsulted] = useState(false);
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineReason, setDeclineReason] = useState<DeclineReason | undefined>(undefined);
+  const [declineNudge, setDeclineNudge] = useState(false);
   const [capacityDraft, setCapacityDraft] = useState<{ unitId: string; revision: number; value: string }>();
   const capacityRevision = unit?.allocatable.revision ?? 0;
   const capacityValue =
@@ -258,6 +282,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   function toggleDecline(movementId: string) {
     setDeclineOpenFor((current) => (current === movementId ? undefined : movementId));
     setDeclineReason(undefined);
+    setDeclineNudge(false);
   }
 
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
@@ -267,6 +292,19 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     setDeclineOpenFor(undefined);
     setDeclineReason(undefined);
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
+    triggerToast("Referral declined.");
+  }
+
+  /** Phone: the decline sheet's footer confirms without a form submit. */
+  function confirmDecline(movementId: string) {
+    if (!declineReason) {
+      setDeclineNudge(true);
+      return;
+    }
+    setDeclineNudge(false);
+    dispatch({ type: "DECLINE", role: "ward", now, movementId, unitId: currentUnit.id, reason: declineReason });
+    setDeclineOpenFor(undefined);
+    setDeclineReason(undefined);
     triggerToast("Referral declined.");
   }
 
@@ -345,6 +383,98 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   // The request waiting longest, for the hero's sub line.
   const oldestWaiting = [...incoming].sort((left, right) => left.openedAt - right.openedAt)[0];
 
+  const phoneGatesVerdict = activeMovement ? eligibility(activeMovement, unit, now) : undefined;
+  const phoneGates = phoneGatesVerdict
+    ? {
+        pass: phoneGatesVerdict.gates.filter((gate) => gate.pass).length,
+        total: phoneGatesVerdict.gates.length,
+      }
+    : undefined;
+
+  /** Phone: the ward's own gates sit under one row saying whether this patient fits; it opens them as a sheet. */
+  function phoneGatesSection(section: ReactNode, pass: number, total: number) {
+    if (!isPhone) return section;
+    return (
+      <>
+        <button
+          type="button"
+          className={styles.phoneGates}
+          aria-haspopup="dialog"
+          data-testid="ward-answer-fold-gates"
+          onClick={() => {
+            setPhoneSheet("gates");
+          }}
+        >
+          <StatusGlyph tone={pass === total ? "success" : "warning"} size={10} />
+          <span className={styles.phoneFoldText}>
+            <span className={styles.phoneFoldTitle}>{pass === total ? "Fits this ward" : "Check the gates"}</span>
+            <span className={styles.phoneFoldLine}>
+              <span className={styles.phoneGatesCount}>
+                {pass}/{total}
+              </span>{" "}
+              of this ward&rsquo;s own gates pass
+            </span>
+          </span>
+          <RowChevron size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
+        </button>
+        <PhoneSheet
+          open={phoneSheet === "gates"}
+          onClose={() => {
+            setPhoneSheet(null);
+          }}
+          title="This ward's own gates"
+          description={`Checked against ${currentUnit.name} now`}
+          height="tall"
+        >
+          <div className={`${styles.phoneSheetScope} ${styles.phoneSheetGates}`}>{section}</div>
+        </PhoneSheet>
+      </>
+    );
+  }
+
+  /** Phone: a panel is one row (title, one line, a count) that opens it as a bottom sheet. */
+  function phoneFold(id: string, title: string, line: ReactNode, count: ReactNode, panel: ReactNode) {
+    if (!isPhone) return panel;
+    const description =
+      id === "capacity"
+        ? `Writes to ${currentUnit.name} only`
+        : id === "history"
+          ? "Recorded acceptances and declines for this ward"
+          : id === "census"
+            ? `${currentUnit.beds} beds · ${states.ready} ready`
+            : undefined;
+    return (
+      <>
+        <button
+          type="button"
+          className={styles.phoneFold}
+          aria-haspopup="dialog"
+          data-testid={`ward-answer-fold-${id}`}
+          onClick={() => {
+            setPhoneSheet(id);
+          }}
+        >
+          <span className={styles.phoneFoldText}>
+            <span className={styles.phoneFoldTitle}>{title}</span>
+            <span className={styles.phoneFoldLine}>{line}</span>
+          </span>
+          <span className={styles.phoneFoldCount}>{count}</span>
+          <RowChevron size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
+        </button>
+        <PhoneSheet
+          open={phoneSheet === id}
+          onClose={() => {
+            setPhoneSheet(null);
+          }}
+          title={title}
+          description={description}
+        >
+          <div className={`${styles.phoneSheetScope} ${styles.phoneFoldBody}`}>{panel}</div>
+        </PhoneSheet>
+      </>
+    );
+  }
+
   const activeSpeciallingCount = movements.filter((m) => m.specialling && m.acceptedUnitId === unit.id).length;
 
   return (
@@ -352,77 +482,123 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       <div className={styles.answerTop}>
         <Hero
           level={1}
-          eyebrow={`Ward answer · ${site?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`}
+          eyebrow={
+            isPhone
+              ? `Ward answer · ${unit.name}`
+              : `Ward answer · ${site?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
+          }
           title={
-            incoming.length === 0
-              ? "Nothing to answer"
-              : `${incoming.length} ${incoming.length === 1 ? "request" : "requests"} to answer`
+            isPhone
+              ? incoming.length === 0
+                ? "Nothing waiting"
+                : `Request ${activeAnswerIndex + 1} of ${incoming.length}`
+              : incoming.length === 0
+                ? "Nothing to answer"
+                : `${incoming.length} ${incoming.length === 1 ? "request" : "requests"} to answer`
+          }
+          titleMeta={
+            isPhone
+              ? activeMovement
+                ? `${activeMovement.urgency} · waiting ${elapsedLabel(activeMovement, now).replace(/ waiting$/, "")} · from an ED`
+                : `${recentAnswers[0]?.at !== undefined ? `Last answer at ${formatInstantWithDay(recentAnswers[0].at, now)} · ` : ""}${states.ready} ${states.ready === 1 ? "bed" : "beds"} ready`
+              : undefined
+          }
+          stats={
+            isPhone ? (
+              <>
+                <HeroStat value={states.ready} label="Ready" tone="success" />
+                <HeroStat
+                  value={unit.beds > 0 ? `${((states.occupied / unit.beds) * 100).toFixed(1)}%` : "Not recorded"}
+                  label="In use"
+                />
+                {phoneGates ? (
+                  <HeroStat
+                    value={`${phoneGates.pass}/${phoneGates.total}`}
+                    label="Gates pass"
+                    tone={phoneGates.pass === phoneGates.total ? "success" : "warning"}
+                  />
+                ) : (
+                  <HeroStat value={recentAnswers.length} label="Answers" />
+                )}
+              </>
+            ) : undefined
           }
           lead={
-            <OccupancyRing
-              percent={unit.beds > 0 ? (states.occupied / unit.beds) * 100 : null}
-              alertAt={ANSWER_ALERT_LINE}
-              scope={unit.name}
-              status={
-                unit.beds > 0 && (states.occupied / unit.beds) * 100 >= ANSWER_ALERT_LINE
-                  ? { tone: "warning", word: `At risk, over ${ANSWER_ALERT_LINE}%` }
-                  : { tone: "success", word: `In use, under ${ANSWER_ALERT_LINE}%` }
-              }
-            />
+            isPhone ? undefined : (
+              <OccupancyRing
+                percent={unit.beds > 0 ? (states.occupied / unit.beds) * 100 : null}
+                alertAt={ANSWER_ALERT_LINE}
+                scope={unit.name}
+                status={
+                  unit.beds > 0 && (states.occupied / unit.beds) * 100 >= ANSWER_ALERT_LINE
+                    ? { tone: "warning", word: `At risk, over ${ANSWER_ALERT_LINE}%` }
+                    : { tone: "success", word: `In use, under ${ANSWER_ALERT_LINE}%` }
+                }
+              />
+            )
           }
           aside={
             incoming.length > 0 ? (
-              <span className={styles.heroNav} role="group" aria-label="Bed request position">
-                <button
-                  type="button"
-                  className={buttonClass({ variant: "onHero", size: "sm" })}
-                  disabled={activeAnswerIndex === 0}
-                  onClick={() => setAnswerIndex((current) => Math.max(0, current - 1))}
-                >
-                  <ChevronLeft size={14} aria-hidden="true" />
-                  Previous
-                </button>
-                <span className={styles.heroNavPos}>
-                  Request <b>{activeAnswerIndex + 1}</b> of <b>{incoming.length}</b>
+              <>
+                {isPhone ? <LiveChip state="live" onHero /> : null}
+                <span className={styles.heroNav} role="group" aria-label="Bed request position">
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "onHero", size: "sm" })}
+                    disabled={activeAnswerIndex === 0}
+                    onClick={() => setAnswerIndex((current) => Math.max(0, current - 1))}
+                  >
+                    <ChevronLeft size={14} aria-hidden="true" />
+                    Previous
+                  </button>
+                  <span className={styles.heroNavPos}>
+                    Request <b>{activeAnswerIndex + 1}</b> of <b>{incoming.length}</b>
+                  </span>
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "onHero", size: "sm" })}
+                    disabled={activeAnswerIndex >= incoming.length - 1}
+                    onClick={() => setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1))}
+                  >
+                    Next
+                    <ChevronRight size={14} aria-hidden="true" />
+                  </button>
                 </span>
-                <button
-                  type="button"
-                  className={buttonClass({ variant: "onHero", size: "sm" })}
-                  disabled={activeAnswerIndex >= incoming.length - 1}
-                  onClick={() => setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1))}
-                >
-                  Next
-                  <ChevronRight size={14} aria-hidden="true" />
-                </button>
-              </span>
+              </>
+            ) : isPhone ? (
+              <LiveChip state="live" onHero />
             ) : null
           }
           bar={
-            <div className={styles.heroChips} role="group" aria-label={`${unit.name} beds`}>
-              {/* Facts, not filters: the same ruled four as the Census below, plus being made ready. */}
-              <HeroStat inline value={states.occupied} label={BED_STATE_LABELS.occupied} />
-              <HeroStat inline value={states.ready} label={BED_STATE_LABELS.ready} tone="success" />
-              <HeroStat inline value={pendingPreparation} label={BED_STATE_LABELS.beingMadeReady} />
-              <HeroStat inline value={states.pulled} label={BED_STATE_LABELS.pulled} />
-              <HeroStat inline value={states.closed} label={BED_STATE_LABELS.closed} />
-            </div>
+            isPhone ? undefined : (
+              <div className={styles.heroChips} role="group" aria-label={`${unit.name} beds`}>
+                {/* Facts, not filters: the same ruled four as the Census below, plus being made ready. */}
+                <HeroStat inline value={states.occupied} label={BED_STATE_LABELS.occupied} />
+                <HeroStat inline value={states.ready} label={BED_STATE_LABELS.ready} tone="success" />
+                <HeroStat inline value={pendingPreparation} label={BED_STATE_LABELS.beingMadeReady} />
+                <HeroStat inline value={states.pulled} label={BED_STATE_LABELS.pulled} />
+                <HeroStat inline value={states.closed} label={BED_STATE_LABELS.closed} />
+              </div>
+            )
           }
           foot={
-            <span className={styles.heroFoot}>
-              <ContextualBackLink fallbackHref={`/mockups/ward-flow/ward/${unit.id}`} className={styles.backLink}>
-                <ArrowLeft size={14} aria-hidden="true" />
-                <span>Ward overview</span>
-              </ContextualBackLink>
-              <span className={styles.heroFootMeta}>
-                {unit.name}
-                {oldestWaiting ? (
-                  <>
-                    {" "}
-                    · oldest <b>{elapsedLabel(oldestWaiting, now)}</b>
-                  </>
-                ) : null}
+            isPhone ? undefined : (
+              <span className={styles.heroFoot}>
+                <ContextualBackLink fallbackHref={`/mockups/ward-flow/ward/${unit.id}`} className={styles.backLink}>
+                  <ArrowLeft size={14} aria-hidden="true" />
+                  <span>Ward overview</span>
+                </ContextualBackLink>
+                <span className={styles.heroFootMeta}>
+                  {unit.name}
+                  {oldestWaiting ? (
+                    <>
+                      {" "}
+                      · oldest <b>{elapsedLabel(oldestWaiting, now)}</b>
+                    </>
+                  ) : null}
+                </span>
               </span>
-            </span>
+            )
           }
         />
       </div>
@@ -437,7 +613,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             data-empty={incoming.length === 0}
             tabIndex={0}
           >
-            {activeMovement ? null : (
+            {activeMovement || isPhone ? null : (
               <div className={styles.panelHeader}>
                 <div className={styles.panelHeaderLeft}>
                   <h2 className={styles.panelTitle}>Bed request</h2>
@@ -446,7 +622,17 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               </div>
             )}
 
-            {incoming.length === 0 ? (
+            {incoming.length === 0 && isPhone ? (
+              <div className={styles.phoneClear}>
+                <p className={styles.phoneClearTitle}>
+                  <StatusGlyph tone="success" size={12} />
+                  All answered
+                </p>
+                <p className={styles.phoneClearText}>
+                  No referral is currently awaiting an answer from {unit.name}. Requests land here as they are sent.
+                </p>
+              </div>
+            ) : incoming.length === 0 ? (
               <div className={styles.sbarCard}>
                 <p>No referral is currently awaiting an answer from {unit.name}.</p>
               </div>
@@ -460,6 +646,44 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 const eligibilityVerdict = eligibility(activeMovement, unit, now);
                 const failedGateCount = eligibilityVerdict.gates.filter((gate) => !gate.pass).length;
                 const declineOpen = declineOpenFor === activeMovement.id;
+                const sbarSections = (
+                  <>
+                    <div className={styles.sbarSection}>
+                      <span className={styles.sbarTag}>Situation</span>
+                      <div className={styles.sbarContent}>
+                        {activeMovement.cohort} presentation requiring{" "}
+                        {activeMovement.security === "Secure" ? "locked high-dependency" : "open acute"} inpatient
+                        admission under {activeMovement.legalStatus}. Acute clinical escalation in emergency department.
+                      </div>
+                    </div>
+
+                    <div className={styles.sbarSection}>
+                      <span className={styles.sbarTag}>Background</span>
+                      <div className={styles.sbarContent}>
+                        Known clinical history. Previous psychiatric admissions. Ceased regular maintenance medications
+                        prior to presentation.
+                      </div>
+                    </div>
+
+                    <div className={styles.sbarSection}>
+                      <span className={styles.sbarTag}>Assessment</span>
+                      <div className={styles.sbarContent}>
+                        High clinical risk profile with active psychomotor agitation. Medically stabilised for inpatient
+                        admission.{" "}
+                        {failedGateCount > 0
+                          ? "Potential admission gate incompatibilities identified below."
+                          : "All clinical admission gates satisfied."}
+                      </div>
+                    </div>
+
+                    <div className={styles.sbarSection}>
+                      <span className={styles.sbarTag}>Recommendation</span>
+                      <div className={styles.sbarContent}>
+                        Admit to {unit.name}. High-dependency observations indicated.
+                      </div>
+                    </div>
+                  </>
+                );
 
                 return (
                   <div className={styles.splitGrid} data-testid={`ward-incoming-${activeMovement.id}`}>
@@ -481,71 +705,69 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       </div>
                       <div className={styles.sbarCard}>
                         {/* Patient Dossier Header */}
-                        <div className={styles.patientDossierBanner}>
-                          <div>
-                            <div className={styles.patientNameLine}>Incoming patient</div>
-                            <div className={styles.patientMetaLine}>
-                              Cohort: {activeMovement.cohort} &bull; Security: {activeMovement.security} &bull; Sex:{" "}
-                              {activeMovement.sex} &bull; {elapsedLabel(activeMovement, now)}
-                            </div>
+                        {isPhone ? (
+                          /* Phone (v10): "This patient" with the person tile; the facts below carry cohort and sex. */
+                          <div className={styles.phonePatientHead}>
+                            <span className={styles.phonePatientTile} aria-hidden="true">
+                              <UserRound size={18} aria-hidden="true" />
+                            </span>
+                            <span className={styles.phoneFoldText}>
+                              <span className={styles.phoneFoldTitle}>This patient</span>
+                              <span className={styles.phonePatientLine}>Name and UMRN shared on acceptance</span>
+                            </span>
                           </div>
-                          <div className={styles.patientDossierBadges}>
-                            <span className={styles.badge} data-tone="danger">
+                        ) : null}
+                        {isPhone ? (
+                          <div className={styles.phonePatientChips}>
+                            <span className={styles.phonePatientChip}>
+                              <ShieldCheck size={14} aria-hidden="true" />
                               {activeMovement.legalStatus}
                             </span>
                             {activeMovement.specialling ? (
-                              <span className={styles.badge} data-tone="warn">
-                                1:1 Specialling
-                              </span>
+                              <span className={styles.phonePatientChip}>1:1 specialling</span>
                             ) : null}
                             {activeMovement.highAcuity ? (
-                              <span className={styles.badge} data-tone="warn">
-                                High Acuity
-                              </span>
+                              <span className={styles.phonePatientChip}>High acuity</span>
                             ) : null}
                           </div>
-                        </div>
+                        ) : (
+                          <div className={styles.patientDossierBanner}>
+                            <div>
+                              <div className={styles.patientNameLine}>Incoming patient</div>
+                              <div className={styles.patientMetaLine}>
+                                Cohort: {activeMovement.cohort} &bull; Security: {activeMovement.security} &bull; Sex:{" "}
+                                {activeMovement.sex} &bull; {elapsedLabel(activeMovement, now)}
+                              </div>
+                            </div>
+                            <div className={styles.patientDossierBadges}>
+                              <span className={styles.badge} data-tone="danger">
+                                {activeMovement.legalStatus}
+                              </span>
+                              {activeMovement.specialling ? (
+                                <span className={styles.badge} data-tone="warn">
+                                  1:1 Specialling
+                                </span>
+                              ) : null}
+                              {activeMovement.highAcuity ? (
+                                <span className={styles.badge} data-tone="warn">
+                                  High Acuity
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        )}
 
                         {/* SBAR Narrative Sections */}
-                        <div className={styles.sbarSection}>
-                          <span className={styles.sbarTag}>Situation</span>
-                          <div className={styles.sbarContent}>
-                            {activeMovement.cohort} presentation requiring{" "}
-                            {activeMovement.security === "Secure" ? "locked high-dependency" : "open acute"} inpatient
-                            admission under {activeMovement.legalStatus}. Acute clinical escalation in emergency
-                            department.
-                          </div>
-                        </div>
-
-                        <div className={styles.sbarSection}>
-                          <span className={styles.sbarTag}>Background</span>
-                          <div className={styles.sbarContent}>
-                            Known clinical history. Previous psychiatric admissions. Ceased regular maintenance
-                            medications prior to presentation.
-                          </div>
-                        </div>
-
-                        <div className={styles.sbarSection}>
-                          <span className={styles.sbarTag}>Assessment</span>
-                          <div className={styles.sbarContent}>
-                            High clinical risk profile with active psychomotor agitation. Medically stabilised for
-                            inpatient admission.{" "}
-                            {failedGateCount > 0
-                              ? "Potential admission gate incompatibilities identified below."
-                              : "All clinical admission gates satisfied."}
-                          </div>
-                        </div>
-
-                        <div className={styles.sbarSection}>
-                          <span className={styles.sbarTag}>Recommendation</span>
-                          <div className={styles.sbarContent}>
-                            Admit to {unit.name}. High-dependency observations indicated.
-                          </div>
-                        </div>
+                        {isPhone ? null : sbarSections}
 
                         {/* 8 Current Facts */}
                         {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                        <dl className={styles.answerFacts} aria-label="Current facts for this patient">
+                        <dl
+                          className={styles.answerFacts}
+                          aria-label="Current facts for this patient"
+                          data-folded={isPhone && !showAllFacts ? "true" : undefined}
+                          id="ward-answer-facts"
+                        >
                           <div>
                             <dt>Cohort</dt>
                             <dd>{activeMovement.cohort}</dd>
@@ -589,6 +811,24 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           </div>
                         </dl>
 
+                        {isPhone ? (
+                          <button
+                            type="button"
+                            className={styles.phoneLinkRow}
+                            aria-expanded={showAllFacts}
+                            aria-controls="ward-answer-facts"
+                            onClick={() => setShowAllFacts((open) => !open)}
+                          >
+                            {showAllFacts ? "Show fewer facts" : "Show all 9 facts"}
+                          </button>
+                        ) : null}
+                        {isPhone ? (
+                          <details className={styles.phoneIsbar}>
+                            <summary className={styles.phoneLinkRow}>Show ISBAR summary</summary>
+                            {sbarSections}
+                          </details>
+                        ) : null}
+
                         <p className={styles.answerIdentityAbsence}>
                           Patient name and age are not recorded for this movement.
                         </p>
@@ -597,62 +837,66 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
                     <div className={styles.gatesCard}>
                       {/* 11 Clinical Gates Region */}
-                      <section
-                        className={styles.answerGates}
-                        // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-                        aria-label="This ward's own gates for this patient"
-                      >
-                        <div className={styles.answerGatesHeading}>
-                          <h3>This ward&rsquo;s own gates</h3>
-                          <span>
-                            {eligibilityVerdict.gates.length - failedGateCount} of {eligibilityVerdict.gates.length}{" "}
-                            pass
-                          </span>
-                        </div>
-                        <ul>
-                          {eligibilityVerdict.gates.map((gate) => (
-                            <li key={gate.gate} data-pass={gate.pass}>
-                              <span className={styles.answerGateMark} aria-hidden="true">
-                                {gate.pass ? (
-                                  <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <polyline points="20 6 9 17 4 12" />
-                                  </svg>
-                                ) : (
-                                  <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <line x1="12" y1="8" x2="12" y2="12" />
-                                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                                  </svg>
-                                )}
-                              </span>
-                              <span className={styles.answerGateCopy}>
-                                <strong>{WARD_GATE_LABELS[gate.gate] ?? gate.gate}</strong>
-                                <span>{wardFacingGateDetail(gate)}</span>
-                              </span>
-                              <strong className={styles.answerGateVerdict}>
-                                {gate.pass ? "Pass" : "Does not pass"}
-                              </strong>
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
+                      {phoneGatesSection(
+                        <section
+                          className={styles.answerGates}
+                          // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
+                          aria-label="This ward's own gates for this patient"
+                        >
+                          <div className={styles.answerGatesHeading}>
+                            <h3>This ward&rsquo;s own gates</h3>
+                            <span>
+                              {eligibilityVerdict.gates.length - failedGateCount} of {eligibilityVerdict.gates.length}{" "}
+                              pass
+                            </span>
+                          </div>
+                          <ul>
+                            {eligibilityVerdict.gates.map((gate) => (
+                              <li key={gate.gate} data-pass={gate.pass}>
+                                <span className={styles.answerGateMark} aria-hidden="true">
+                                  {gate.pass ? (
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2.5"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                  ) : (
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2.5"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <line x1="12" y1="8" x2="12" y2="12" />
+                                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                                    </svg>
+                                  )}
+                                </span>
+                                <span className={styles.answerGateCopy}>
+                                  <strong>{WARD_GATE_LABELS[gate.gate] ?? gate.gate}</strong>
+                                  <span>{wardFacingGateDetail(gate)}</span>
+                                </span>
+                                <strong className={styles.answerGateVerdict}>
+                                  {gate.pass ? "Pass" : "Does not pass"}
+                                </strong>
+                              </li>
+                            ))}
+                          </ul>
+                        </section>,
+                        eligibilityVerdict.gates.length - failedGateCount,
+                        eligibilityVerdict.gates.length,
+                      )}
 
                       {notice ? (
                         <span
@@ -748,8 +992,142 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         </form>
                       ) : null}
 
+                      {/* Phone (v10): Decline and Accept each open a bottom sheet first. */}
+                      {isPhone ? (
+                        <>
+                          <PhoneSheet
+                            open={declineOpen && !blocked}
+                            onClose={() => toggleDecline(activeMovement.id)}
+                            title="Decline this request"
+                            description="Choose a reason. The referrer sees it."
+                            height="tall"
+                            secondary={{ label: "Back", onAction: () => toggleDecline(activeMovement.id) }}
+                            primary={{
+                              label: "Confirm decline",
+                              onAction: () => confirmDecline(activeMovement.id),
+                            }}
+                            data-testid={`ward-decline-sheet-${activeMovement.id}`}
+                          >
+                            <div className={styles.phoneSheetScope}>
+                              <fieldset className={styles.phoneDeclineFieldset}>
+                                <legend className={styles.phoneSheetLabel}>Decline reason</legend>
+                                {declineNudge && !declineReason ? (
+                                  <p className={styles.phoneSheetNudge} role="alert">
+                                    Choose a reason to confirm the decline.
+                                  </p>
+                                ) : null}
+                                {DECLINE_REASONS.map((reason) => (
+                                  <label key={reason} className={styles.phoneRadioRow}>
+                                    <input
+                                      type="radio"
+                                      name={`decline-reason-${activeMovement.id}`}
+                                      value={reason}
+                                      checked={declineReason === reason}
+                                      onChange={() => setDeclineReason(reason)}
+                                    />
+                                    <span>{declineReasonLabel(reason)}</span>
+                                  </label>
+                                ))}
+                              </fieldset>
+                              <div className={styles.phoneWaitlist}>
+                                <div className={styles.phoneWaitlistHead}>
+                                  <StatusGlyph tone="info" size={10} />
+                                  <span className={styles.phoneFoldText}>
+                                    <span className={styles.phoneFoldTitle}>Accept to the waitlist instead?</span>
+                                    <span className={styles.phoneFoldLine}>
+                                      The bed request stays open and this ward is next when a bed frees.
+                                    </span>
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  className={buttonClass({ variant: "sec", size: "md" })}
+                                  onClick={() => {
+                                    toggleDecline(activeMovement.id);
+                                    setPhoneSheet("accept");
+                                  }}
+                                >
+                                  Accept in principle
+                                </button>
+                              </div>
+                            </div>
+                          </PhoneSheet>
+                          <PhoneSheet
+                            open={phoneSheet === "accept" && !blocked}
+                            onClose={() => setPhoneSheet(null)}
+                            title="Accept in principle"
+                            description={`This patient · ${activeMovement.cohort}, ${activeMovement.security.toLowerCase()}`}
+                            secondary={{ label: "Cancel", onAction: () => setPhoneSheet(null) }}
+                            primary={{
+                              label: "Accept in principle",
+                              onAction: () => {
+                                setPhoneSheet(null);
+                                handleAccept(activeMovement.id);
+                              },
+                            }}
+                            data-testid={`ward-accept-sheet-${activeMovement.id}`}
+                          >
+                            <div className={styles.phoneSheetScope}>
+                              <dl className={styles.phoneAcceptFacts}>
+                                <div>
+                                  <dt>Patient</dt>
+                                  <dd>This patient</dd>
+                                </div>
+                                <div>
+                                  <dt>Ward</dt>
+                                  <dd>{unit.name}</dd>
+                                </div>
+                                <div>
+                                  <dt>Bed</dt>
+                                  <dd>{capacity.available > 0 ? "Ready now" : "Allocatable"}</dd>
+                                </div>
+                              </dl>
+                              <div className={styles.phoneSheetField}>
+                                <span className={styles.phoneSheetFieldLabel} id={`ward-hold-${activeMovement.id}`}>
+                                  Bed hold
+                                </span>
+                                <div
+                                  className={styles.phoneSegment}
+                                  role="group"
+                                  aria-labelledby={`ward-hold-${activeMovement.id}`}
+                                >
+                                  {[
+                                    ["120", "120 minutes, standard"],
+                                    ["180", "180 minutes, extra travel"],
+                                  ].map(([value, label]) => (
+                                    <button
+                                      key={value}
+                                      type="button"
+                                      aria-pressed={holdDuration === value}
+                                      onClick={() => setHoldDuration(value ?? "120")}
+                                    >
+                                      {label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <label className={styles.phoneSheetField}>
+                                <span className={styles.phoneSheetFieldLabel}>Receiving nurse unit manager</span>
+                                <input
+                                  type="text"
+                                  className={styles.phoneSheetInput}
+                                  defaultValue={`NUM ${unit.name}`}
+                                />
+                              </label>
+                              <p className={styles.phoneSheetNote}>
+                                Bed hold and nurse unit manager are not saved. Not wired in this prototype.
+                              </p>
+                              <p className={styles.phoneSheetNote}>
+                                <StatusGlyph tone="neutral" size={8} />
+                                Acceptance in principle holds a place. Nobody is moved and no transport is booked.
+                              </p>
+                            </div>
+                          </PhoneSheet>
+                        </>
+                      ) : null}
+
                       {/* Inline Decline Form */}
-                      {declineOpen && !blocked ? (
+                      {declineOpen && !blocked && !isPhone ? (
                         <form
                           className={styles.declineForm}
                           onSubmit={(event) => submitDecline(event, activeMovement.id)}
@@ -810,6 +1188,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           className={buttonClass({ variant: "pri", size: "sm" })}
                           onClick={() => {
                             if (blocked) return;
+                            if (isPhone) {
+                              setPhoneSheet("accept");
+                              return;
+                            }
                             handleAccept(activeMovement.id);
                           }}
                         >
@@ -826,201 +1208,228 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           {/* Right Column: Bed Map Census & Operations */}
           <div className={styles.lowerRow}>
             {/* Confirm Your Beds (Capacity Form) */}
-            <section className={styles.panel} data-answer-panel="capacity" aria-label="Confirm your beds" tabIndex={0}>
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>Confirm your beds</h2>
-              </div>
-              <div className={styles.capacityPanelBody}>
-                <dl className={styles.capacityFacts} aria-label={`Current bed facts for ${unit.name}`}>
-                  <div>
-                    <dt>Ready now</dt>
-                    <dd>{states.ready}</dd>
-                  </div>
-                  <div>
-                    <dt>Physically empty</dt>
-                    <dd>{unit.empty.value}</dd>
-                  </div>
-                  <div>
-                    <dt>Allocatable</dt>
-                    <dd>{unit.allocatable.value}</dd>
-                  </div>
-                  <div>
-                    <dt>Confirmed discharges</dt>
-                    <dd>{breakdown.confirmedToday}</dd>
-                  </div>
-                  <div>
-                    <dt>Expected discharges</dt>
-                    <dd>{breakdown.expectedToday}</dd>
-                  </div>
-                </dl>
-                {pendingPreparation > 0 ? (
-                  <p className={styles.bedsPendingPreparation} data-testid="ward-answer-beds-pending">
-                    <strong>
-                      {pendingPreparation} of the {states.ready} ready {states.ready === 1 ? "bed" : "beds"} at{" "}
-                      {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
-                    </strong>{" "}
-                    The bed stays offered and stays counted — pulling the next patient takes hours anyway — but the ward
-                    cannot admit into it yet.
-                  </p>
-                ) : null}
-                <div className={styles.freshnessRow}>
-                  <div className={styles.freshnessCard}>
-                    <strong>Physically empty beds</strong>
-                    <WardFreshness
-                      confirmedAt={unit.empty.confirmedAt}
-                      confirmedByRole={unit.empty.source === "ward" ? `NUM ${unit.name}` : undefined}
-                      now={now}
-                      derived={unit.empty.source !== "ward"}
-                    />
-                  </div>
-                  <div className={styles.freshnessCard}>
-                    <strong>Allocatable beds</strong>
-                    <WardFreshness
-                      confirmedAt={unit.allocatable.confirmedAt}
-                      confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
-                      now={now}
-                      derived={unit.allocatable.source !== "ward"}
-                    />
-                  </div>
+            {phoneFold(
+              "capacity",
+              "Confirm your beds",
+              `Allocatable ${unit.allocatable.value} · ${durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} since confirmed`,
+              unit.allocatable.value,
+              <section
+                className={styles.panel}
+                data-answer-panel="capacity"
+                aria-label="Confirm your beds"
+                tabIndex={0}
+              >
+                <div className={styles.panelHeader}>
+                  <h2 className={styles.panelTitle}>Confirm your beds</h2>
                 </div>
-
-                <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
-                  <span className={styles.capacityLabel} id="ward-capacity-label">
-                    Allocatable now, for {unit.name}
-                  </span>
-                  <div className={styles.capacityRow}>
-                    {/* v10: one control only, a stepper; no slider and no free number box. */}
-                    <Stepper
-                      value={Number(capacityValue) || 0}
-                      min={0}
-                      max={unit.beds}
-                      noun="allocatable beds"
-                      valueTestId="ward-capacity-input"
-                      onChange={(next) => setCapacityDraft({ unitId, revision: capacityRevision, value: String(next) })}
-                    />
-                    <button
-                      type="submit"
-                      data-testid="ward-capacity-submit"
-                      className={`${styles.btn} ${styles.btnPrimary}`}
-                    >
-                      Confirm
-                    </button>
+                <div className={styles.capacityPanelBody}>
+                  <dl className={styles.capacityFacts} aria-label={`Current bed facts for ${unit.name}`}>
+                    <div>
+                      <dt>Ready now</dt>
+                      <dd>{states.ready}</dd>
+                    </div>
+                    <div>
+                      <dt>Physically empty</dt>
+                      <dd>{unit.empty.value}</dd>
+                    </div>
+                    <div>
+                      <dt>Allocatable</dt>
+                      <dd>{unit.allocatable.value}</dd>
+                    </div>
+                    <div>
+                      <dt>Confirmed discharges</dt>
+                      <dd>{breakdown.confirmedToday}</dd>
+                    </div>
+                    <div>
+                      <dt>Expected discharges</dt>
+                      <dd>{breakdown.expectedToday}</dd>
+                    </div>
+                  </dl>
+                  {pendingPreparation > 0 ? (
+                    <p className={styles.bedsPendingPreparation} data-testid="ward-answer-beds-pending">
+                      <strong>
+                        {pendingPreparation} of the {states.ready} ready {states.ready === 1 ? "bed" : "beds"} at{" "}
+                        {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
+                      </strong>{" "}
+                      The bed stays offered and stays counted — pulling the next patient takes hours anyway — but the
+                      ward cannot admit into it yet.
+                    </p>
+                  ) : null}
+                  <div className={styles.freshnessRow}>
+                    <div className={styles.freshnessCard}>
+                      <strong>Physically empty beds</strong>
+                      <WardFreshness
+                        confirmedAt={unit.empty.confirmedAt}
+                        confirmedByRole={unit.empty.source === "ward" ? `NUM ${unit.name}` : undefined}
+                        now={now}
+                        derived={unit.empty.source !== "ward"}
+                      />
+                    </div>
+                    <div className={styles.freshnessCard}>
+                      <strong>Allocatable beds</strong>
+                      <WardFreshness
+                        confirmedAt={unit.allocatable.confirmedAt}
+                        confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
+                        now={now}
+                        derived={unit.allocatable.source !== "ward"}
+                      />
+                    </div>
                   </div>
-                  <p className={styles.capacityConfirmed}>
-                    Currently confirmed {unit.allocatable.value} at {formatInstant(unit.allocatable.confirmedAt)}.
-                    Writes to {unit.name} only &mdash; never any other ward.
-                  </p>
-                </form>
-              </div>
-            </section>
+
+                  <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
+                    <span className={styles.capacityLabel} id="ward-capacity-label">
+                      Allocatable now, for {unit.name}
+                    </span>
+                    <div className={styles.capacityRow}>
+                      {/* v10: one control only, a stepper; no slider and no free number box. */}
+                      <Stepper
+                        value={Number(capacityValue) || 0}
+                        min={0}
+                        max={unit.beds}
+                        noun="allocatable beds"
+                        valueTestId="ward-capacity-input"
+                        onChange={(next) =>
+                          setCapacityDraft({ unitId, revision: capacityRevision, value: String(next) })
+                        }
+                      />
+                      <button
+                        type="submit"
+                        data-testid="ward-capacity-submit"
+                        className={`${styles.btn} ${styles.btnPrimary}`}
+                      >
+                        Confirm
+                      </button>
+                    </div>
+                    <p className={styles.capacityConfirmed}>
+                      Currently confirmed {unit.allocatable.value} at {formatInstant(unit.allocatable.confirmedAt)}.
+                      Writes to {unit.name} only &mdash; never any other ward.
+                    </p>
+                  </form>
+                </div>
+              </section>,
+            )}
 
             {/* Unit Bed Map Census */}
-            <section className={styles.panel} aria-label={`${unit.name} Census`}>
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>Census</h2>
-                <span className={styles.panelSub}>
-                  {unit.beds} beds · {states.ready} ready
-                </span>
-              </div>
-              {pendingPreparation > 0 ? (
-                <p className={styles.notice}>
-                  {pendingPreparation} of the {states.ready} ready {states.ready === 1 ? "bed" : "beds"} at{" "}
-                  {currentUnit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
-                </p>
-              ) : null}
-              <div className={styles.bedGrid}>
-                {Array.from({ length: unit.beds }, (_, i) => {
-                  const bedNum = String(i + 1).padStart(2, "0");
-                  // Counts drawn in the ruled order — Ready, Pulled, Closed, then Occupied — never
-                  // particular beds: no admission records a bed number.
-                  const isVacant = i < states.ready;
-                  const isPulled = !isVacant && i < states.ready + states.pulled;
-                  const isClosed = !isVacant && !isPulled && i < states.ready + states.pulled + states.closed;
-                  const statusLabel = isVacant
-                    ? "READY"
-                    : isPulled
-                      ? BED_STATE_LABELS.pulled
-                      : isClosed
-                        ? BED_STATE_LABELS.closed
-                        : "Inpatient";
-                  const cellClass = `${styles.bedCell} ${
-                    isVacant ? styles.vacant : isPulled ? styles.pulled : isClosed ? styles.closed : styles.occupied
-                  }`;
-                  return (
-                    <button
-                      type="button"
-                      key={bedNum}
-                      className={cellClass}
-                      onClick={(e) => {
-                        if (isVacant && activeMovement) {
-                          openerRef.current = e.currentTarget;
-                          setAcceptModalOpen(true);
-                        }
-                      }}
-                      aria-label={`Bed ${bedNum} ${statusLabel}`}
-                      disabled={!isVacant}
-                    >
-                      <span className={styles.bedNum}>{bedNum}</span>
-                      <span>{statusLabel}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {/* Shift milieu and staffing balance. The ratio ("1 : 3 (Compliant)"), the shift name and a
-                65/35 male-to-female split of the occupied count were typed in here (25 September
-                2026 review). Ward Flow holds no staffing figures and this screen counts no one's
-                sex, so both rows say so rather than show a number. */}
-              <div className={styles.milieuList}>
-                <div className={styles.milieuRow}>
-                  <span className={styles.milieuLabel}>Nurse ratio</span>
-                  <span className={styles.milieuValue}>not recorded</span>
+            {phoneFold(
+              "census",
+              "Census",
+              `${states.occupied} occupied · ${states.ready} ready · ${states.pulled} pulled · ${states.closed} closed`,
+              unit.beds,
+              <section className={styles.panel} aria-label={`${unit.name} Census`}>
+                <div className={styles.panelHeader}>
+                  <h2 className={styles.panelTitle}>Census</h2>
+                  <span className={styles.panelSub}>
+                    {unit.beds} beds · {states.ready} ready
+                  </span>
                 </div>
-                <div className={styles.milieuRow}>
-                  <span className={styles.milieuLabel}>Sex mix</span>
-                  <span className={styles.milieuValue}>not counted here</span>
+                {pendingPreparation > 0 ? (
+                  <p className={styles.notice}>
+                    {pendingPreparation} of the {states.ready} ready {states.ready === 1 ? "bed" : "beds"} at{" "}
+                    {currentUnit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
+                  </p>
+                ) : null}
+                <div className={styles.bedGrid}>
+                  {Array.from({ length: unit.beds }, (_, i) => {
+                    const bedNum = String(i + 1).padStart(2, "0");
+                    // Counts drawn in the ruled order — Ready, Pulled, Closed, then Occupied — never
+                    // particular beds: no admission records a bed number.
+                    const isVacant = i < states.ready;
+                    const isPulled = !isVacant && i < states.ready + states.pulled;
+                    const isClosed = !isVacant && !isPulled && i < states.ready + states.pulled + states.closed;
+                    const statusLabel = isVacant
+                      ? "READY"
+                      : isPulled
+                        ? BED_STATE_LABELS.pulled
+                        : isClosed
+                          ? BED_STATE_LABELS.closed
+                          : "Inpatient";
+                    const cellClass = `${styles.bedCell} ${
+                      isVacant ? styles.vacant : isPulled ? styles.pulled : isClosed ? styles.closed : styles.occupied
+                    }`;
+                    return (
+                      <button
+                        type="button"
+                        key={bedNum}
+                        className={cellClass}
+                        onClick={(e) => {
+                          if (isVacant && activeMovement) {
+                            openerRef.current = e.currentTarget;
+                            setAcceptModalOpen(true);
+                          }
+                        }}
+                        aria-label={`Bed ${bedNum} ${statusLabel}`}
+                        disabled={!isVacant}
+                      >
+                        <span className={styles.bedNum}>{bedNum}</span>
+                        <span>{statusLabel}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className={styles.milieuRow}>
-                  <span className={styles.milieuLabel}>1:1 specialling</span>
-                  <span className={styles.milieuValue}>{activeSpeciallingCount} active</span>
+                {/* Shift milieu and staffing balance. The ratio ("1 : 3 (Compliant)"), the shift name and a
+                  65/35 male-to-female split of the occupied count were typed in here (25 September
+                  2026 review). Ward Flow holds no staffing figures and this screen counts no one's
+                  sex, so both rows say so rather than show a number. */}
+                <div className={styles.milieuList}>
+                  <div className={styles.milieuRow}>
+                    <span className={styles.milieuLabel}>Nurse ratio</span>
+                    <span className={styles.milieuValue}>not recorded</span>
+                  </div>
+                  <div className={styles.milieuRow}>
+                    <span className={styles.milieuLabel}>Sex mix</span>
+                    <span className={styles.milieuValue}>not counted here</span>
+                  </div>
+                  <div className={styles.milieuRow}>
+                    <span className={styles.milieuLabel}>1:1 specialling</span>
+                    <span className={styles.milieuValue}>{activeSpeciallingCount} active</span>
+                  </div>
+                  <div className={styles.milieuRow}>
+                    <span className={styles.milieuLabel}>Expected out today</span>
+                    <span className={styles.milieuValue}>{breakdown.expectedToday}</span>
+                  </div>
                 </div>
-                <div className={styles.milieuRow}>
-                  <span className={styles.milieuLabel}>Expected out today</span>
-                  <span className={styles.milieuValue}>{breakdown.expectedToday}</span>
-                </div>
-              </div>
-            </section>
+              </section>,
+            )}
 
             {/* Recent Answers (History Ledger) */}
-            <section className={styles.panel} data-answer-panel="history" aria-label="Recent answers" tabIndex={0}>
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>Recent answers</h2>
-              </div>
-              <div className={styles.historyPanelBody}>
-                <p className={styles.historyScopeNote}>
-                  Recorded acceptances and declines for this ward. The prototype does not hold a shift boundary or the
-                  name of the person who answered.
-                </p>
-                {recentAnswers.length === 0 ? (
-                  <p>No accepted or declined answers are recorded for {unit.name}.</p>
-                ) : (
-                  <ul className={styles.historyList} data-testid="ward-answer-history">
-                    {recentAnswers.map((answer) => (
-                      <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
-                        {/* D-39 through the provider's identity projection, so a referral-linked journey keeps its UMRN. */}
-                        <strong>{resolvePatientIdentity({ movementId: answer.movementId }).umrn}</strong>
-                        <span>{answer.outcome}</span>
-                        <span>{answer.reason ? answer.reason.replace(/_/g, " ") : "Accepted by this ward"}</span>
-                        {answer.at === undefined ? (
-                          <span>Time not recorded</span>
-                        ) : (
-                          <time>{formatInstantWithDay(answer.at, now)}</time>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </section>
+            {phoneFold(
+              "history",
+              "Recent answers",
+              recentAnswers[0]
+                ? `${recentAnswers[0].outcome}${recentAnswers[0].at !== undefined ? ` at ${formatInstantWithDay(recentAnswers[0].at, now)}` : ""}`
+                : "None recorded yet",
+              recentAnswers.length,
+              <section className={styles.panel} data-answer-panel="history" aria-label="Recent answers" tabIndex={0}>
+                <div className={styles.panelHeader}>
+                  <h2 className={styles.panelTitle}>Recent answers</h2>
+                </div>
+                <div className={styles.historyPanelBody}>
+                  <p className={styles.historyScopeNote}>
+                    Recorded acceptances and declines for this ward. The prototype does not hold a shift boundary or the
+                    name of the person who answered.
+                  </p>
+                  {recentAnswers.length === 0 ? (
+                    <p>No accepted or declined answers are recorded for {unit.name}.</p>
+                  ) : (
+                    <ul className={styles.historyList} data-testid="ward-answer-history">
+                      {recentAnswers.map((answer) => (
+                        <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
+                          {/* D-39 through the provider's identity projection, so a referral-linked journey keeps its UMRN. */}
+                          <strong>{resolvePatientIdentity({ movementId: answer.movementId }).umrn}</strong>
+                          <span>{answer.outcome}</span>
+                          <span>{answer.reason ? answer.reason.replace(/_/g, " ") : "Accepted by this ward"}</span>
+                          {answer.at === undefined ? (
+                            <span>Time not recorded</span>
+                          ) : (
+                            <time>{formatInstantWithDay(answer.at, now)}</time>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </section>,
+            )}
           </div>
         </div>
       </main>
@@ -1100,6 +1509,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   defaultValue={`NUM ${unit.name}`}
                 />
               </div>
+              <p className={styles.formNote}>
+                Bed hold and nurse unit manager are not saved. Not wired in this prototype.
+              </p>
             </div>
             <div className={styles.modalFoot}>
               <button

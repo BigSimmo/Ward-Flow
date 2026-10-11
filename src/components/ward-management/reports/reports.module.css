@@ -788,3 +788,66 @@
     display: none !important;
   }
 }
+
+/* v10 phone downtime pack (11 Oct 2026): each service head reads as a plain caps label with its
+   ready count at the right, and a ward with a ready bed shows the green tick. Phone tree only. */
+.phoneGroupHead :global(*)::after {
+  display: none;
+}
+
+.phoneGroupHead > span:first-child :global(*) {
+  font-family: var(--wf-font);
+  letter-spacing: 0.04em;
+}
+
+.phoneGroupFigure {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.phoneReady {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* v10 phone downtime pack (11 Oct 2026, pass 2): the hero's two actions share the row equally, and
+   each service head is bare text on the canvas with its list card below. Phone tree only. */
+.phonePage .main > section:first-child > div:last-child > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.phonePage .main > section:first-child > div:last-child > * > button,
+.phonePage .main > section:first-child > div:last-child > button {
+  justify-content: center;
+  width: 100%;
+}
+
+.phonePage .gated {
+  display: flex;
+}
+
+.phoneGroupHead,
+.phoneGroupHead:is(div, button) {
+  min-height: 28px;
+  padding: var(--wf-s-2) var(--wf-s-1) 0;
+  border: 0;
+  background: transparent;
+}
+
+/* v10 phone downtime pack: Beds, ED, Moves and Forms stay pinned under the bar while the list
+ * scrolls, with an 8px canvas collar so no row shows round the switch. The bar is 56px at rest and
+ * 52px once scrolled; the switch only sticks after a scroll. Phone-only element. */
+.phoneSegPinned {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 6;
+  box-shadow:
+    0 0 0 var(--wf-s-2) var(--wf-canvas),
+    inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+}
+
+:global(body:has([data-scrolled="true"])) .phoneSegPinned {
+  top: calc(3.25rem + var(--wf-s-2));
+}

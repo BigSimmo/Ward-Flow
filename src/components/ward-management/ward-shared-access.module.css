@@ -6,6 +6,10 @@
   composes: wardShellTokens from "../../app/ward-flow-shell-tokens.module.css";
 }
 
+.pop {
+  composes: wardShellTokens from "../../app/ward-flow-shell-tokens.module.css";
+}
+
 .toolbar,
 .notice {
   color: var(--ink);
@@ -66,4 +70,90 @@
 .notice p {
   max-width: 65ch;
   margin-block: 0.75rem;
+}
+
+/* v10 header pill. It takes the header's own ink, so it reads on the band at rest and on the light
+ * header once the page scrolls. */
+.pillWrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
+  border-radius: var(--wf-r-pill);
+  color: inherit;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  font: 600 12px / 1 var(--wf-font, inherit);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pill:hover {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.pill:focus-visible {
+  outline: 2px solid var(--wf-focus-ring, currentColor);
+  outline-offset: 2px;
+}
+
+.pillRing {
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+.pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: max-content;
+  max-width: 18rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: 0 12px 28px -16px color-mix(in srgb, var(--ink) 40%, transparent);
+  font-family: var(--body);
+  font-size: 0.8125rem;
+}
+
+.pop .detail {
+  margin-top: 0;
+}
+
+.pop button {
+  min-height: var(--ward-tap);
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.75rem;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pop button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (forced-colors: active) {
+  .pill {
+    border-color: ButtonText;
+  }
 }

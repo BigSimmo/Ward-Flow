@@ -22,6 +22,7 @@ import {
   EmptyState,
   FilterChip,
   Hero,
+  LiveChip,
   HeroStat,
   Icon,
   Kbd,
@@ -60,7 +61,8 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
-import { edById } from "@/components/ward-management/ward-sites";
+import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   DIVERSION_REASONS,
@@ -366,12 +368,22 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  */
 export function OfficerScreen() {
   const { movements, units, dispatch, rejections, patients, referrals, dayZero } = useWardFlow();
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 48rem)");
+    const sync = () => setIsPhone(query.matches);
+    sync();
+    query.addEventListener?.("change", sync);
+    return () => query.removeEventListener?.("change", sync);
+  }, []);
   const officerPatientName = useCallback(
     (movement: Movement) => {
       const info = resolveSubjectPatient(movement, { patients, referrals, movements });
-      return info.patient ? info.displayName : "Not recorded";
+      // Phone (v10) lists people surname first.
+      return info.patient ? (isPhone ? info.formalName : info.displayName) : "Not recorded";
     },
-    [patients, referrals, movements],
+    [patients, referrals, movements, isPhone],
   );
   // Owner, 26 Sept 2026: undefined (not "Not recorded") lets the blocked-reason helpers below
   // fall back to their own "This patient" wording instead of printing a placeholder mid-sentence.
@@ -536,15 +548,7 @@ export function OfficerScreen() {
   }, [selectedId]);
   // On a phone the panel is a modal bottom sheet, so it takes focus, traps Tab, isolates the page
   // behind it and hands focus back on close. Wider screens keep the side panel non-modal.
-  const [isPhone, setIsPhone] = useState(false);
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(max-width: 48rem)");
-    const sync = () => setIsPhone(query.matches);
-    sync();
-    query.addEventListener?.("change", sync);
-    return () => query.removeEventListener?.("change", sync);
-  }, []);
+  // isPhone is declared above officerPatientName, which reads it.
 
   const formModalSheetId = useId();
   useEffect(() => {
@@ -853,6 +857,105 @@ export function OfficerScreen() {
 
   const topJob = sortedJobs[0];
 
+  /** Inspect form and Divert: the panel foot on desktop, the end of the sheet body on phone. */
+  function detailExtraActions(job: Movement) {
+    if (!job.transport) return null;
+    return (
+      <>
+        <Button
+          variant="sec"
+          size="sm"
+          icon={ShieldCheck}
+          data-testid={`ward-officer-inspect-form-${job.id}`}
+          onClick={(e) => openFormModal(job, e)}
+        >
+          Inspect form
+        </Button>
+        {!job.closure &&
+        job.transport.collectedAt !== undefined &&
+        job.transport.arrivedAt === undefined &&
+        job.transport.diversion === undefined ? (
+          <Button
+            variant="sec"
+            size="sm"
+            icon={MapPin}
+            aria-expanded={diversionOpen}
+            data-testid={`ward-officer-divert-${job.id}`}
+            onClick={() => setDiversionOpen((open) => !open)}
+          >
+            Divert
+          </Button>
+        ) : null}
+      </>
+    );
+  }
+
+  /** v10 phone: the job sheet's four stage buttons, pinned to its foot; the next one is primary and
+   * an unavailable one is greyed with its reason (build guide: "the four stage buttons pinned"). */
+  function renderPhoneNextStep(movement: Movement) {
+    const transport = movement.transport;
+    if (!transport || movement.closure) return null;
+    const leg = officerLeg(transport);
+    const index = leg ? OFFICER_LEG_STEPS.indexOf(leg) : -1;
+    if (index < 0) return null;
+    const patientName = resolvedPatientName(movement);
+    const steps = [
+      {
+        label: "Accepted",
+        testId: "ward-officer-accept",
+        run: () => runAccepted(movement),
+        blocked: () => acceptedBlockedReason(movement, patientName),
+      },
+      {
+        label: "En route",
+        testId: "ward-officer-enroute",
+        run: () => runEnRoute(movement),
+        blocked: () => enRouteBlockedReason(movement, patientName),
+      },
+      {
+        label: "Collected",
+        testId: "ward-officer-collect",
+        run: () => runCollected(movement),
+        blocked: () => collectedBlockedReason(movement, patientName),
+      },
+      {
+        label: "Delivered",
+        testId: "ward-officer-arrive",
+        run: () => runDelivered(movement),
+        blocked: () => arrivedBlockedReason(movement, unitFor(movement), patientName),
+      },
+    ];
+    return (
+      <div className={styles.phStageRow}>
+        {steps.map((step, stepIndex) => {
+          // Same rules as the desktop row: action `stepIndex` is done once the leg has moved past it.
+          // No tick icon here: four buttons share 390px and the Steps list above carries the ticks.
+          const done = index >= stepIndex + 1;
+          const isNext = stepIndex === index;
+          const blocked = step.blocked();
+          return (
+            <Button
+              key={step.testId}
+              variant={isNext && !blocked ? "pri" : "sec"}
+              className={
+                done
+                  ? `${styles.actionButton} ${styles.phStage} ${styles.actionDone}`
+                  : `${styles.actionButton} ${styles.phStage}`
+              }
+              data-testid={`${step.testId}-${movement.id}`}
+              aria-disabled={blocked ? "true" : undefined}
+              aria-describedby={blocked ? `${step.testId}-unavailable-${movement.id}` : undefined}
+              title={blocked ?? undefined}
+              onClick={blocked ? ignoreUnavailableActivation : step.run}
+            >
+              {step.label}
+            </Button>
+          );
+        })}
+      </div>
+    );
+  }
+
   function renderDetail(movement: Movement) {
     const transport = movement.transport;
     if (!transport) return null;
@@ -874,7 +977,8 @@ export function OfficerScreen() {
             : leg === "Collected"
               ? arrivedBlocked
               : undefined;
-    const eta = expectedArrival(movement)?.at;
+    const arrival = expectedArrival(movement);
+    const eta = arrival?.at;
     const canDivert =
       !movement.closure &&
       transport.collectedAt !== undefined &&
@@ -944,38 +1048,97 @@ export function OfficerScreen() {
       );
     };
 
+    // v10 phone: the four facts as a 2x2 grid and the leg as a Steps list; the four stage buttons
+    // are pinned to the sheet's foot (see the panel foot).
+    const roadRoute = referenceDistance(
+      edById(movement.originEdId)?.referenceEdId,
+      destinationUnit ? siteByCode(destinationUnit.siteCode)?.referenceSiteId : undefined,
+    );
+    const stepLabels = ["Accepted", "En route", "Collected", "Delivered"] as const;
+    const phoneTop = (
+      <>
+        <dl className={styles.phGrid}>
+          <div>
+            {/* A booking estimate is the transport provider's, not a time the ward recorded. */}
+            <dt>{arrival?.booked ? "Transport ETA" : "Ward ETA"}</dt>
+            <dd className={styles.mono}>{eta !== undefined ? formatInstantWithDay(eta, now) : "Not recorded"}</dd>
+          </div>
+          <div>
+            <dt>By road</dt>
+            <dd className={styles.mono}>{roadRoute ? `${roadRoute.min} min` : "Not recorded"}</dd>
+          </div>
+          <div>
+            <dt>Provider</dt>
+            <dd>{transport.provider}</dd>
+          </div>
+          <div>
+            <dt>CAD</dt>
+            <dd className={styles.mono}>{transport.cadNumber ?? "Not recorded"}</dd>
+          </div>
+        </dl>
+        <section className={styles.phCard} aria-label="Steps">
+          <h3 className={styles.phCardHead}>
+            Steps <span className={styles.mono}>{Math.max(0, legIndex)} of 4</span>
+          </h3>
+          <ol className={styles.phSteps}>
+            {stepLabels.map((label, index) => {
+              const done = legIndex >= index + 1;
+              const current = index === legIndex;
+              return (
+                <li key={label} className={styles.phStep} data-state={done ? "done" : current ? "now" : undefined}>
+                  <StatusGlyph tone={done ? "success" : current ? "info" : "neutral"} size={10} />
+                  <span className={styles.phStepText}>
+                    <span className={styles.phStepTitle}>{label}</span>
+                    {current && nextBlocked ? <span className={styles.phStepSub}>{nextBlocked}</span> : null}
+                  </span>
+                  {done ? <span className={styles.phStepDone}>Done</span> : null}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      </>
+    );
+
     return (
       <>
-        <div className={styles.route}>
-          <div className={styles.routeLeg}>
-            <StatusGlyph tone="neutral" size={9} />
-            <span className={styles.routePlace}>{originLabelFor(movement)}</span>
-            <span className={styles.routeTime}>
-              {transport.collectedAt !== undefined ? `Left ${formatInstantWithDay(transport.collectedAt, now)}` : null}
-            </span>
+        {isPhone ? phoneTop : null}
+        {isPhone ? null : (
+          <div className={styles.route}>
+            <div className={styles.routeLeg}>
+              <StatusGlyph tone="neutral" size={9} />
+              <span className={styles.routePlace}>{originLabelFor(movement)}</span>
+              <span className={styles.routeTime}>
+                {transport.collectedAt !== undefined
+                  ? `Left ${formatInstantWithDay(transport.collectedAt, now)}`
+                  : null}
+              </span>
+            </div>
+            <div className={styles.routeLeg}>
+              <StatusGlyph tone="info" size={9} />
+              <span className={styles.routePlace}>{destinationLabelFor(movement)}</span>
+              <span className={styles.routeTime}>
+                {eta !== undefined ? (
+                  <>
+                    {formatInstantWithDay(eta, now)} <span>{transportEtaRemainingLabel(eta, now)}</span>
+                  </>
+                ) : (
+                  "No ETA recorded"
+                )}
+              </span>
+            </div>
           </div>
-          <div className={styles.routeLeg}>
-            <StatusGlyph tone="info" size={9} />
-            <span className={styles.routePlace}>{destinationLabelFor(movement)}</span>
-            <span className={styles.routeTime}>
-              {eta !== undefined ? (
-                <>
-                  {formatInstantWithDay(eta, now)} <span>{transportEtaRemainingLabel(eta, now)}</span>
-                </>
-              ) : (
-                "No ETA recorded"
-              )}
-            </span>
-          </div>
-        </div>
+        )}
 
-        <div className={styles.actionRow}>
-          {step(0, "Accepted", "ward-officer-accept", acceptedBlocked, () => runAccepted(movement))}
-          {step(1, "En route", "ward-officer-enroute", enRouteBlocked, () => runEnRoute(movement))}
-          {step(2, "Collected", "ward-officer-collect", collectedBlocked, () => runCollected(movement))}
-          {step(3, "Delivered", "ward-officer-arrive", arrivedBlocked, () => runDelivered(movement))}
-        </div>
-        {nextBlocked ? (
+        {isPhone ? null : (
+          <div className={styles.actionRow}>
+            {step(0, "Accepted", "ward-officer-accept", acceptedBlocked, () => runAccepted(movement))}
+            {step(1, "En route", "ward-officer-enroute", enRouteBlocked, () => runEnRoute(movement))}
+            {step(2, "Collected", "ward-officer-collect", collectedBlocked, () => runCollected(movement))}
+            {step(3, "Delivered", "ward-officer-arrive", arrivedBlocked, () => runDelivered(movement))}
+          </div>
+        )}
+        {nextBlocked && !isPhone ? (
           <p className={styles.nextNote}>
             <Icon icon={Lock} size={14} />
             {nextBlocked}
@@ -1030,14 +1193,18 @@ export function OfficerScreen() {
         <section className={styles.section} aria-label="Booking">
           <h3 className={styles.sectionTitle}>Booking</h3>
           <dl className={styles.facts}>
-            <div>
-              <dt>Provider</dt>
-              <dd>{transport.provider}</dd>
-            </div>
-            <div data-testid={`ward-officer-cad-number-${movement.id}`}>
-              <dt>CAD (dispatch) number</dt>
-              <dd>{cadNumberLabel(transport)}</dd>
-            </div>
+            {isPhone ? null : (
+              <>
+                <div>
+                  <dt>Provider</dt>
+                  <dd>{transport.provider}</dd>
+                </div>
+                <div data-testid={`ward-officer-cad-number-${movement.id}`}>
+                  <dt>CAD (dispatch) number</dt>
+                  <dd>{cadNumberLabel(transport)}</dd>
+                </div>
+              </>
+            )}
             <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
               <dt>Transport logged as</dt>
               <dd>{transportLegalStatusLabel(transport)}</dd>
@@ -1199,6 +1366,58 @@ export function OfficerScreen() {
     />
   );
 
+  // Hero tools: beside the title on the larger screen, under the figures on phone (v10).
+  const heroTools = (
+    <div className={styles.heroTools}>
+      {nextArrival ? (
+        <span className={styles.nextArrival} title="Next expected arrival">
+          <Icon icon={Clock} size={14} />
+          Next <b>{formatInstantWithDay(nextArrival.at, now)}</b>
+          <span className={styles.nextArrivalPlace}>{destinationLabelFor(nextArrival.movement)}</span>
+        </span>
+      ) : null}
+      <Button
+        variant="onHero"
+        size="sm"
+        icon={Copy}
+        className={styles.copyButton}
+        onClick={copyHandover}
+        aria-label="Copy handover"
+        title="Copy a plain text summary of open jobs"
+      >
+        <span className={styles.longLabel}>Copy handover</span>
+      </Button>
+      {/* Phone (v10): Arrivals jumps to the arrivals list below the jobs. */}
+      {isPhone ? (
+        <Button
+          variant="onHero"
+          size="sm"
+          icon={Clock}
+          className={styles.phArrivalsButton}
+          onClick={() =>
+            document
+              .getElementById("ward-officer-arrivals-heading")
+              ?.scrollIntoView({ block: "start", behavior: "smooth" })
+          }
+        >
+          Arrivals <span className={styles.phArrivalsCount}>{upcoming}</span>
+        </Button>
+      ) : null}
+      <span className={cx(styles.preview, styles.onHeroPreview, styles.deskOnly)}>Preview</span>
+      <Button
+        variant="onHero"
+        size="sm"
+        icon={Truck}
+        className={cx(styles.previewButton, styles.deskOnly)}
+        aria-disabled="true"
+        title="Not wired in this prototype."
+        onClick={(event) => event.preventDefault()}
+      >
+        Log booking
+      </Button>
+    </div>
+  );
+
   const panelOpen = selectedJob !== undefined && selectedJob.transport !== undefined;
   useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
 
@@ -1211,40 +1430,8 @@ export function OfficerScreen() {
           eyebrow="Transport dispatch"
           title={`${inCustody} on board`}
           titleMeta={`${crewEnRoute} ${crewEnRoute === 1 ? "crew" : "crews"} en route`}
-          aside={
-            <div className={styles.heroTools}>
-              {nextArrival ? (
-                <span className={styles.nextArrival} title="Next expected arrival">
-                  <Icon icon={Clock} size={14} />
-                  Next <b>{formatInstantWithDay(nextArrival.at, now)}</b>
-                  <span className={styles.nextArrivalPlace}>{destinationLabelFor(nextArrival.movement)}</span>
-                </span>
-              ) : null}
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={Copy}
-                className={styles.copyButton}
-                onClick={copyHandover}
-                aria-label="Copy handover"
-                title="Copy a plain text summary of open jobs"
-              >
-                <span className={styles.longLabel}>Copy handover</span>
-              </Button>
-              <span className={cx(styles.preview, styles.onHeroPreview, styles.deskOnly)}>Preview</span>
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={Truck}
-                className={cx(styles.previewButton, styles.deskOnly)}
-                aria-disabled="true"
-                title="Not wired in this prototype."
-                onClick={(event) => event.preventDefault()}
-              >
-                Log booking
-              </Button>
-            </div>
-          }
+          aside={isPhone ? <LiveChip state="live" onHero /> : heroTools}
+          barAside={isPhone ? heroTools : undefined}
           bar={
             <div className={styles.heroPills} role="group" aria-label="Highlight jobs">
               {pillStat("requested", awaitingDeparture, "Not accepted", "To accept", "neutral")}
@@ -1319,6 +1506,29 @@ export function OfficerScreen() {
               {nextButton(topJob, "ward-officer-nextcard", "pri", "lg")}
             </div>
           </Card>
+        ) : null}
+
+        {isPhone ? (
+          <div className={styles.phProviders} role="group" aria-label="Highlight jobs by provider">
+            {TRANSPORT_PROVIDERS.map((provider) => {
+              const isSelected = providerHighlight === provider;
+              return (
+                <button
+                  key={provider}
+                  type="button"
+                  className={styles.phProvider}
+                  onClick={() => setProviderHighlight((prev) => (prev === provider ? null : provider))}
+                  title={isSelected ? "Stop highlighting this provider" : `Highlight ${provider} jobs`}
+                  aria-pressed={isSelected}
+                >
+                  <span className={styles.phProviderCount}>
+                    {jobs.filter((movement) => movement.transport?.provider === provider).length}
+                  </span>
+                  {provider.replace(/ service$/, "")}
+                </button>
+              );
+            })}
+          </div>
         ) : null}
 
         <div className={styles.layout} data-open={panelOpen ? "true" : undefined}>
@@ -1466,14 +1676,24 @@ export function OfficerScreen() {
                                   >
                                     {officerPatientName(movement)}
                                   </strong>
+                                  {isPhone && transport.escortRequired ? (
+                                    <ShieldCheck size={14} className={styles.phEscort} aria-label="Escort required" />
+                                  ) : null}
                                   <span className={styles.jobUmrn}>{umrnFor(movement)}</span>
                                 </button>
                               </td>
                               <td>
-                                <span className={styles.jobRoute}>
-                                  <span className={styles.jobRouteTo}>{destinationLabelFor(movement)}</span>
-                                  <span className={styles.jobRouteFrom}> from {originShortFor(movement)}</span>
-                                </span>
+                                {isPhone ? (
+                                  // Phone (v10): from first, as the mockup's "ARM to ward" line reads.
+                                  <span className={styles.jobRoute}>
+                                    <b>{originShortFor(movement)}</b> to {destinationLabelFor(movement)}
+                                  </span>
+                                ) : (
+                                  <span className={styles.jobRoute}>
+                                    <span className={styles.jobRouteTo}>{destinationLabelFor(movement)}</span>
+                                    <span className={styles.jobRouteFrom}> from {originShortFor(movement)}</span>
+                                  </span>
+                                )}
                                 <span className={styles.jobMeta}>
                                   {transport.provider.replace(/ service$/, "")}
                                   {transport.escortRequired ? " · escort" : ""}
@@ -1757,9 +1977,19 @@ export function OfficerScreen() {
                     meta={
                       <>
                         <span className={styles.mono}>{umrnFor(selectedJob)}</span>
-                        {" · "}
-                        {transportLegalStatusLabel(selectedJob.transport)}
-                        {selectedJob.transport.escortRequired ? " · Escort" : ""}
+                        {isPhone ? (
+                          <>
+                            {"\u00a0· "}
+                            {originShortFor(selectedJob)} to {destinationLabelFor(selectedJob)}
+                            {selectedJob.transport.escortRequired ? "\u00a0· Escort" : ""}
+                          </>
+                        ) : (
+                          <>
+                            {" · "}
+                            {transportLegalStatusLabel(selectedJob.transport)}
+                            {selectedJob.transport.escortRequired ? " · Escort" : ""}
+                          </>
+                        )}
                       </>
                     }
                     aside={
@@ -1783,33 +2013,17 @@ export function OfficerScreen() {
                       </>
                     }
                   />
-                  <CardBody className={styles.detailBody}>{renderDetail(selectedJob)}</CardBody>
-                  <CardFoot className={styles.inactiveRow}>
-                    <Button
-                      variant="sec"
-                      size="sm"
-                      icon={ShieldCheck}
-                      data-testid={`ward-officer-inspect-form-${selectedJob.id}`}
-                      onClick={(e) => openFormModal(selectedJob, e)}
-                    >
-                      Inspect form
-                    </Button>
-                    {!selectedJob.closure &&
-                    selectedJob.transport.collectedAt !== undefined &&
-                    selectedJob.transport.arrivedAt === undefined &&
-                    selectedJob.transport.diversion === undefined ? (
-                      <Button
-                        variant="sec"
-                        size="sm"
-                        icon={MapPin}
-                        aria-expanded={diversionOpen}
-                        data-testid={`ward-officer-divert-${selectedJob.id}`}
-                        onClick={() => setDiversionOpen((open) => !open)}
-                      >
-                        Divert
-                      </Button>
-                    ) : null}
-                  </CardFoot>
+                  <CardBody className={styles.detailBody}>
+                    {renderDetail(selectedJob)}
+                    {isPhone ? <div className={styles.phMoreActions}>{detailExtraActions(selectedJob)}</div> : null}
+                  </CardBody>
+                  {isPhone ? (
+                    renderPhoneNextStep(selectedJob) ? (
+                      <CardFoot className={styles.detailFooter}>{renderPhoneNextStep(selectedJob)}</CardFoot>
+                    ) : null
+                  ) : (
+                    <CardFoot className={styles.inactiveRow}>{detailExtraActions(selectedJob)}</CardFoot>
+                  )}
                 </Card>
               </div>
             </>

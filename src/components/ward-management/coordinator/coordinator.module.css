@@ -3951,8 +3951,8 @@
     position: fixed;
     inset: 0;
     background: var(--scrim);
-    backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
     z-index: 940;
     animation: coordinatorShortlistFadeIn 0.2s ease-out forwards;
   }

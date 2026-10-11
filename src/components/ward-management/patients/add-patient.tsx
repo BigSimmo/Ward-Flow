@@ -47,6 +47,7 @@ import {
   type ChoiceItem,
 } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   duplicateCandidates,
   GENDERS,
@@ -103,6 +104,17 @@ function answeredDraft(draft: PatientDraft): PatientDraft | undefined {
 
 const UNAVAILABLE_REASON_ID = "ward-add-patient-unavailable-reason";
 const NOT_WIRED = "Not wired in this prototype.";
+/** When a record was added, as the phone list reads it: "Today 09:12", "Yesterday 16:20". */
+function addedWhen(addedAt: number | undefined, now: number): string | undefined {
+  // Seeded records carry no added time; the row then shows the name and UMRN only.
+  if (addedAt === undefined || !Number.isFinite(addedAt)) return undefined;
+  const said = formatInstantWithDay(addedAt, now);
+  const clock = formatInstant(addedAt);
+  if (said === clock) return `Today ${clock}`;
+  if (said === `${clock} yesterday`) return `Yesterday ${clock}`;
+  return said;
+}
+
 /** The phone's "On a larger screen" sheet: what the short phone form leaves out. */
 const LARGER_SCREEN_ROWS: readonly (readonly [string, string])[] = [
   ["Gender, Aboriginal or Torres Strait Islander", "Optional · bed matching"],
@@ -433,6 +445,7 @@ export function AddPatientForm() {
         {isPhone ? (
           <PhoneHero
             level={1}
+            eyebrow="Patients · larger-screen task"
             title="Add a patient"
             sub={phoneForm ? "Identity only · same duplicate check" : "Synthetic records only · search before adding"}
             data-testid="ward-add-patient-phone-hero"
@@ -486,17 +499,24 @@ export function AddPatientForm() {
                   as="li"
                   key={p.id}
                   name={`${p.familyName}, ${p.givenName}`}
-                  meta={p.suburb}
-                  value={<span className={styles.mono}>{p.umrn}</span>}
+                  meta={addedWhen(p.addedAt, now)}
+                  value={
+                    <span className={styles.phUmrn}>
+                      {p.umrn}
+                      <Icon icon={ChevronRight} size={16} />
+                    </span>
+                  }
                   href={`/mockups/ward-flow/people/${p.id}`}
                 />
               ))}
+              {recentRecords.length > 4 ? (
+                <li className={styles.phMore}>
+                  <button type="button" onClick={() => setPhoneSheet("recent")}>
+                    Show all {recentRecords.length} recently added
+                  </button>
+                </li>
+              ) : null}
             </ul>
-            {recentRecords.length > 4 ? (
-              <Button variant="ghost" className={styles.phBtn} onClick={() => setPhoneSheet("recent")}>
-                Show all {recentRecords.length} recently added
-              </Button>
-            ) : null}
             <p className={styles.phNote}>
               <StatusGlyph tone="neutral" size={9} />
               Synthetic prototype · invented records only

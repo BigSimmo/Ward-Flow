@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { asAtStamp } from "@/components/ward-management/board/ward-daily-sheet";
@@ -236,10 +236,13 @@ export function BedMeetingSheetLauncher({
   buildSheet,
   now,
   buttonClassName,
+  icon,
 }: {
   buildSheet: () => BedMeetingSheet;
   now: Instant;
   buttonClassName?: string;
+  /** An optional leading icon (phone shows a printer). */
+  icon?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
@@ -261,6 +264,7 @@ export function BedMeetingSheetLauncher({
         aria-haspopup="dialog"
         data-testid="bed-meeting-sheet-open"
       >
+        {icon}
         Bed meeting sheet
       </button>
       {open &&

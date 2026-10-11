@@ -35,7 +35,11 @@ import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/wa
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
-import { resolveSubjectPatient, type PatientLookup } from "@/components/ward-management/ward-patient-resolver";
+import {
+  resolveSubjectPatient,
+  withUmrnInPlaceOfMovementIds,
+  type PatientLookup,
+} from "@/components/ward-management/ward-patient-resolver";
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -321,6 +325,18 @@ function headerBottom(root: HTMLElement | null): number {
   return Math.max(0, Math.round(bar.getBoundingClientRect().bottom));
 }
 
+/**
+ * The header's own top edge and height. The compact bar lays the open field over the bar itself,
+ * so it needs the bar's height, not its bottom edge: anything above the bar (a banner, a scrolled
+ * offset) once made the field as tall as the bar's bottom edge, a giant pill (Josh, 11 Oct 2026).
+ */
+function headerBox(root: HTMLElement | null): { top: number; height: number } {
+  if (!root) return { top: 0, height: 0 };
+  const bar = root.closest("header") ?? root;
+  const rect = bar.getBoundingClientRect();
+  return { top: Math.max(0, Math.round(rect.top)), height: Math.max(0, Math.round(rect.height)) };
+}
+
 export function WardGlobalSearch({
   movements,
   patients,
@@ -349,6 +365,7 @@ export function WardGlobalSearch({
   const [hoverIndex, setHoverIndex] = useState(-1);
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [top, setTop] = useState(0);
+  const [barBox, setBarBox] = useState<{ top: number; height: number }>({ top: 0, height: 0 });
   const [recentsVersion, setRecentsVersion] = useState(0);
 
   const trimmed = deferredQuery.trim();
@@ -501,7 +518,7 @@ export function WardGlobalSearch({
           kindLabel: "Task",
           id: t.task.id,
           title: t.task.title,
-          meta: t.task.detail,
+          meta: withUmrnInPlaceOfMovementIds(t.task.detail, lookup),
           href: t.href,
           movementId: t.task.movementId,
           tone: t.task.tone,
@@ -542,7 +559,8 @@ export function WardGlobalSearch({
           kindLabel: "Task",
           id: task.id,
           title: task.title,
-          meta: task.detail,
+          // D-39: a person is named by UMRN, never by a WF journey number, in every shape of id.
+          meta: withUmrnInPlaceOfMovementIds(task.detail, lookup),
           href: task.href ?? movementHref(task.movementId),
           movementId: task.movementId,
           tone: task.tone,
@@ -573,7 +591,7 @@ export function WardGlobalSearch({
     });
     g.push({ key: "do", heading: "Do", items: [...START_ACTIONS] });
     return g;
-  }, [tasks, recentsVersion]);
+  }, [tasks, recentsVersion, lookup]);
 
   // A chosen kind with nothing for the current query falls back to All, so a new query never shows
   // a false "No matches" while the chips beside it count real results.
@@ -628,7 +646,11 @@ export function WardGlobalSearch({
    */
   useEffect(() => {
     if (!showPopup) return;
-    const measure = () => setTop(headerBottom(rootRef.current));
+    const measure = () => {
+      setTop(headerBottom(rootRef.current));
+      const box = headerBox(rootRef.current);
+      setBarBox((current) => (current.top === box.top && current.height === box.height ? current : box));
+    };
     measure();
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, { passive: true });
@@ -981,7 +1003,11 @@ export function WardGlobalSearch({
       data-testid="ward-global-search"
       data-open={showPopup || undefined}
       // The compact bar lays the open field over itself at the bar's measured height.
-      style={top > 0 ? ({ "--wgs-bar-h": `${top}px` } as CSSProperties) : undefined}
+      style={
+        barBox.height > 0
+          ? ({ "--wgs-bar-h": `${barBox.height}px`, "--wgs-bar-top": `${barBox.top}px` } as CSSProperties)
+          : undefined
+      }
     >
       {scope !== undefined ? (
         <span className={styles.scopeChip} data-testid="ward-global-search-scope">

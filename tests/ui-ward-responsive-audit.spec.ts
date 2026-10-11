@@ -38,6 +38,9 @@ test.describe("@mockup Ward responsive containment", () => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto(`/mockups/ward-flow${route}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+      // The server renders the wide layout and the phone layout replaces it on hydration (v10), so
+      // measure after the page has settled rather than a table that is about to be swapped out.
+      await page.waitForLoadState("networkidle");
 
       const geometry: { viewport: number; document: number }[] = [];
       for (const width of [320, 390, 768]) {

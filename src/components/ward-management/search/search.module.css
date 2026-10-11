@@ -2106,8 +2106,8 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 .glassDock {
   background: var(--surface-chrome);
-  backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--line-strong);
   border-radius: 14px;
   box-shadow: 0 4px 20px -2px rgb(var(--ward-shadow-rgb) / 0.08);

@@ -4,8 +4,20 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Phone, Route, Search } from "lucide-react";
 
-import { Button, Icon, Sheet, SrOnly, Segmented, StatusGlyph, TextInput, cx, type WfTone } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  Button,
+  Icon,
+  LiveChip,
+  PhoneHero,
+  Sheet,
+  SrOnly,
+  Segmented,
+  StatusGlyph,
+  TextInput,
+  cx,
+  type WfTone,
+} from "@/components/wf";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
@@ -50,6 +62,12 @@ const STATUS_TONE: Record<ReturnStatus, WfTone> = {
   agreed: "neutral",
 };
 
+/** v10 phone: the discharge date leads the card ("Due 4 days ago", "Due in 2 days", "Due today"). */
+function dueWords(offset: number | null): string {
+  const short = dischargeShort(offset);
+  return offset === null ? short : `Due ${short.charAt(0).toLowerCase()}${short.slice(1)}`;
+}
+
 function PersonCard({
   person,
   withReason = false,
@@ -88,8 +106,10 @@ function PersonCard({
         {overdue ? (
           <span className={styles.pcDue}>
             <StatusGlyph tone="warning" size={9} />
-            {dischargeShort(person.offset)}
+            {dueWords(person.offset)}
           </span>
+        ) : person.offset !== null ? (
+          <span className={styles.pcDue}>{dueWords(person.offset)}</span>
         ) : (
           <span className={styles.pcDays}>
             {person.daysLabel}
@@ -128,11 +148,7 @@ function PersonCard({
         <StatusGlyph tone={STATUS_TONE[person.status]} size={9} />
         <span>{RETURN_STATUS_SHORT[person.status]}</span>
         <span className={styles.pcEnd}>
-          {overdue
-            ? `${person.daysLabel} away`
-            : person.offset === null
-              ? "No discharge date"
-              : `Discharge ${dischargeShort(person.offset).toLowerCase()}`}
+          {person.offset === null ? "No discharge date" : `${person.daysLabel} away`}
         </span>
         <Icon icon={ChevronRight} size={14} />
       </span>
@@ -249,40 +265,40 @@ export function OutOfAreaPhone({
 
   return (
     <div className={styles.phone}>
-      <section className={styles.phoneHero} aria-labelledby="ward-out-of-area-phone-title">
-        <h1 id="ward-out-of-area-phone-title" className="sr-only">
-          Out of area, {totalAway} away from home
-        </h1>
-        <button type="button" className={styles.phoneTile} onClick={() => setTab("all")}>
-          <span className={styles.phoneTileValue}>{totalAway}</span>
-          <span className={styles.phoneTileLabel}>Away from home</span>
-        </button>
-        <button
-          type="button"
-          className={styles.phoneTile}
-          aria-pressed={highlight === "due"}
-          onClick={() => onHighlight("due")}
-        >
-          <span className={styles.phoneTileValue}>{dueCount}</span>
-          <span className={styles.phoneTileLabel}>
-            <StatusGlyph tone="warning" size={9} />
-            Date passed
-          </span>
-        </button>
-        <button
-          type="button"
-          className={styles.phoneTile}
-          aria-pressed={highlight === "noplan"}
-          onClick={() => onHighlight("noplan")}
-        >
-          <span className={styles.phoneTileValue}>{noPlanCount}</span>
-          <span className={styles.phoneTileLabel}>
-            <StatusGlyph tone="closed" size={9} />
-            No plan
-          </span>
-        </button>
-        {since ? <p className={styles.phoneSince}>{since}</p> : null}
-      </section>
+      {/* v10 phone: the standard dark hero, its figures jump or highlight as the tiles did. */}
+      <PhoneHero
+        level={1}
+        eyebrow="Out of area · Statewide"
+        chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
+        title={`${totalAway} away from home`}
+        sub={since}
+        figures={[
+          {
+            id: "home-today",
+            value: leaving.length,
+            label: "Home today",
+            tone: "success",
+            onPress: () => setTab("needs"),
+            actionLabel: `${leaving.length} going home today, show Needs you`,
+          },
+          {
+            id: "date-passed",
+            value: dueCount,
+            label: "Date passed",
+            tone: "warning",
+            onPress: () => onHighlight("due"),
+            pressed: highlight === "due",
+          },
+          {
+            id: "no-plan",
+            value: noPlanCount,
+            label: "No plan",
+            tone: "closed",
+            onPress: () => onHighlight("noplan"),
+            pressed: highlight === "noplan",
+          },
+        ]}
+      />
 
       {/* Phone (v10): Needs you, Everyone and Beds as one 44px segmented control. */}
       <Segmented<PhoneTab>

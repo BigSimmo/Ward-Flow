@@ -9,9 +9,12 @@ import {
   CheckingFoot,
   Hero,
   HeroStat,
+  LiveChip,
+  PhoneHero,
   StatusGlyph,
   buttonClass,
   cx,
+  useIsPhone,
   type CheckingItem,
   type WfTone,
 } from "@/components/wf";
@@ -73,8 +76,24 @@ export function EdOverview({
   onRaiseReferral,
   referralOpen = false,
 }: Props) {
+  const isPhone = useIsPhone();
   const current = departments.find((department) => department.id === departmentId);
   if (!current) return null;
+
+  const checkValue = (id: string) => checks.find((check) => check.id === id)?.value;
+  const raiseButton = (
+    <button
+      type="button"
+      className={buttonClass({ variant: "light", size: "sm" })}
+      data-testid="ward-ed-raise-referral-toggle"
+      aria-expanded={referralOpen}
+      aria-controls="ward-ed-referral-intake"
+      onClick={onRaiseReferral}
+    >
+      <Plus size={14} aria-hidden="true" />
+      Raise referral
+    </button>
+  );
 
   return (
     <section
@@ -82,58 +101,91 @@ export function EdOverview({
       aria-label="Emergency department overview"
       data-testid={`ward-ed-card-${departmentId}`}
     >
-      <Hero
-        level={1}
-        eyebrow={`Emergency department · ${current.service}`}
-        title={
-          <>
-            {shortName(current.name)}{" "}
-            <span className={styles.answer}>
-              <b className={styles.answerNum}>{onBoard}</b> on the board
-            </span>
-          </>
-        }
-        bar={
-          <div className={styles.chips} role="group" aria-label="Highlight people on the board">
-            {chips.map((chip) => (
-              <HeroStat
-                key={chip.id}
-                inline
-                value={chip.value}
-                label={chip.label}
-                tone={chip.value > 0 ? chip.tone : undefined}
-                pressed={highlight === chip.id}
-                onToggle={() => onHighlight(highlight === chip.id ? null : chip.id)}
-              />
-            ))}
-          </div>
-        }
-        barAside={
-          highlight && highlightNote ? (
-            <span className={styles.note} aria-live="polite" data-testid="ward-ed-highlight-note">
-              <span>{highlightNote}</span>
-              <Button variant="onHero" size="sm" onClick={() => onHighlight(null)}>
-                Clear
-              </Button>
-            </span>
-          ) : null
-        }
-        foot={<CheckingFoot items={checks} />}
-        footAside={<span>Board updates once a minute</span>}
-        aside={
-          <button
-            type="button"
-            className={buttonClass({ variant: "light", size: "sm" })}
-            data-testid="ward-ed-raise-referral-toggle"
-            aria-expanded={referralOpen}
-            aria-controls="ward-ed-referral-intake"
-            onClick={onRaiseReferral}
-          >
-            <Plus size={14} aria-hidden="true" />
-            Raise referral
-          </button>
-        }
-      />
+      {isPhone ? (
+        // v10 phone: a compact hero. Eyebrow with the Live chip, the answer, one sub line (longest
+        // wait and the access target), three divided figures that toggle a highlight, and the one
+        // light action. The checking foot stays on desktop and tablet.
+        <PhoneHero
+          level={1}
+          className={styles.phoneHero}
+          eyebrow={`Emergency · ${current.service}`}
+          chip={<LiveChip state="live" age={null} onHero />}
+          title={
+            <>
+              <b className={styles.answerNum}>{onBoard}</b> on the psychiatry board
+            </>
+          }
+          sub={
+            <>
+              Longest {checkValue("longest") ?? "—"} · target {checkValue("target") ?? "—"} · live
+            </>
+          }
+          figures={chips
+            .filter((chip) => chip.id !== "severe")
+            .map((chip) => ({
+              id: chip.id,
+              value: chip.value,
+              label: chip.label,
+              tone: chip.value > 0 ? chip.tone : undefined,
+              pressed: highlight === chip.id,
+              onPress: () => onHighlight(highlight === chip.id ? null : chip.id),
+            }))}
+          actions={
+            <>
+              {highlight && highlightNote ? (
+                <span className={styles.note} aria-live="polite" data-testid="ward-ed-highlight-note">
+                  <span>{highlightNote}</span>
+                  <Button variant="onHero" size="sm" onClick={() => onHighlight(null)}>
+                    Clear
+                  </Button>
+                </span>
+              ) : null}
+              {raiseButton}
+            </>
+          }
+        />
+      ) : (
+        <Hero
+          level={1}
+          eyebrow={`Emergency department · ${current.service}`}
+          title={
+            <>
+              <span className={styles.titleName}>{shortName(current.name)} </span>
+              <span className={styles.answer}>
+                <b className={styles.answerNum}>{onBoard}</b> on the board
+              </span>
+            </>
+          }
+          bar={
+            <div className={styles.chips} role="group" aria-label="Highlight people on the board">
+              {chips.map((chip) => (
+                <HeroStat
+                  key={chip.id}
+                  inline
+                  value={chip.value}
+                  label={chip.label}
+                  tone={chip.value > 0 ? chip.tone : undefined}
+                  pressed={highlight === chip.id}
+                  onToggle={() => onHighlight(highlight === chip.id ? null : chip.id)}
+                />
+              ))}
+            </div>
+          }
+          barAside={
+            highlight && highlightNote ? (
+              <span className={styles.note} aria-live="polite" data-testid="ward-ed-highlight-note">
+                <span>{highlightNote}</span>
+                <Button variant="onHero" size="sm" onClick={() => onHighlight(null)}>
+                  Clear
+                </Button>
+              </span>
+            ) : null
+          }
+          foot={<CheckingFoot items={checks} />}
+          footAside={<span>Board updates once a minute</span>}
+          aside={raiseButton}
+        />
+      )}
       <nav className={styles.strip} aria-label="Emergency departments">
         <ul className={styles.list}>
           {departments.map((department) => {
@@ -144,6 +196,7 @@ export function EdOverview({
                   href={`/mockups/ward-flow/ed/${department.id}`}
                   className={cx(styles.tile, isCurrent && styles.current)}
                   data-ed={department.id}
+                  data-service={department.service}
                   aria-current={isCurrent ? "page" : undefined}
                   title={`${department.name} (${department.service})`}
                 >

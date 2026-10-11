@@ -2501,3 +2501,776 @@ details.refCard > summary {
     min-height: var(--wf-touch, 44px);
   }
 }
+
+/*
+ * v10 phone (New referral > Phone). `data-ph-mode` is set only on a phone, so none of this reaches
+ * the tablet or desktop sheet. The head becomes the compact hero band, Refer to a segmented control,
+ * the four steps a list, and the chosen step a tall sheet with Back and Next pinned. The pinned bar
+ * always holds one primary: Continue to the next step that still needs answers, then Send.
+ */
+.phHero,
+.phChecklist,
+.phFootNote,
+.phScrim,
+.phSheetHead {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .drawerWide[data-ph-mode] {
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--wf-canvas);
+  }
+
+  .drawerWide[data-ph-mode] .drawerHead {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .drawerWide[data-ph-mode] .drawerHeadTop,
+  .drawerWide[data-ph-mode] .phReady,
+  .drawerWide[data-ph-mode] .dragHandle,
+  .drawerWide[data-ph-mode] .destLabel,
+  .drawerWide[data-ph-mode] .fromText,
+  .drawerWide[data-ph-mode] .summaryToggle {
+    display: none;
+  }
+
+  /* The hero band: square, edge to edge, rising into the page with the 22px lip. */
+  .drawerWide[data-ph-mode] .phHero {
+    --wf-danger: var(--wf-hero-danger);
+    --wf-warning: var(--wf-hero-warning);
+    --wf-success: var(--wf-hero-success);
+    --wf-neutral: var(--wf-hero-neutral);
+    --wf-focus-ring: var(--wf-hero-ink);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + var(--wf-band-lip, 22px));
+    background:
+      radial-gradient(
+        720px 200px at 88% -40%,
+        color-mix(in srgb, var(--wf-hero-info) 16%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+    color: var(--wf-hero-ink);
+  }
+
+  .drawerWide[data-ph-mode] .phHero::after {
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: var(--wf-band-lip, 22px);
+    border-radius: var(--wf-band-lip, 22px) var(--wf-band-lip, 22px) 0 0;
+    background: var(--wf-canvas);
+    box-shadow: 0 -1px 0 var(--wf-hero-edge);
+    content: "";
+    pointer-events: none;
+  }
+
+  .phHeroTop {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .phEyebrow {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--wf-hero-ink-2);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+    letter-spacing: var(--wf-tr-caps, 0.06em);
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .phHeroChip,
+  .phHeroClose,
+  .phHeroAction {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--wf-on-hero-line);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-on-hero-fill);
+    color: var(--wf-hero-ink);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  /* 44px hit areas around the 32px chips. */
+  .phHeroChip,
+  .phHeroClose {
+    position: relative;
+  }
+
+  .phHeroChip::after,
+  .phHeroClose::after {
+    position: absolute;
+    inset: -6px;
+    content: "";
+  }
+
+  .phHeroClose {
+    width: 32px;
+    padding: 0;
+  }
+
+  .phHeroChip svg,
+  .phHeroClose svg,
+  .phHeroAction svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .phHeroAction {
+    min-height: 44px;
+    font-size: var(--wf-fs-14);
+  }
+
+  .phHeroTitle {
+    margin: 0;
+    overflow: hidden;
+    font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+    letter-spacing: var(--wf-tr-20);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phHeroSub {
+    margin: calc(var(--wf-s-2) * -1) 0 0;
+    overflow: hidden;
+    color: var(--wf-hero-ink-2);
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phFigures {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0 calc(var(--wf-s-1) * -1);
+  }
+
+  .phFigure {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: var(--wf-r-md);
+    background: transparent;
+    color: var(--wf-hero-ink);
+    font: inherit;
+    text-align: left;
+  }
+
+  button.phFigure {
+    cursor: pointer;
+  }
+
+  .phFigure + .phFigure::before {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 0;
+    width: 1px;
+    background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    content: "";
+  }
+
+  .phFigure > b {
+    overflow: hidden;
+    font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phFigure > span {
+    overflow: hidden;
+    color: var(--wf-hero-ink-2);
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phFigure > svg {
+    width: 15px;
+    height: 15px;
+    margin: 2px 0;
+  }
+
+  button.phFigure[aria-pressed="true"] {
+    background: var(--wf-on-hero-fill);
+  }
+
+  /* Refer to: a full-width segmented control of three 44px buttons. */
+  .drawerWide[data-ph-mode] .destRow {
+    margin: 0 var(--wf-s-4);
+  }
+
+  .drawerWide[data-ph-mode] .destRow .categoryTrack {
+    display: grid;
+    flex: 1 1 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-radius: var(--wf-r-pill);
+  }
+
+  .drawerWide[data-ph-mode] .categoryTrack > button {
+    min-height: 44px;
+    border-radius: var(--wf-r-pill);
+    font-size: var(--wf-fs-13);
+  }
+
+  /* The four steps as one list card. */
+  .drawerWide[data-ph-mode] .stepper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0 var(--wf-s-4);
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .drawerWide[data-ph-mode] .stepper .stepItem {
+    flex: none;
+    justify-content: flex-start;
+    gap: var(--wf-s-3);
+    min-width: 0;
+    min-height: 60px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border-radius: 0;
+  }
+
+  .drawerWide[data-ph-mode] .stepper .stepItem + .stepItem {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .drawerWide[data-ph-mode] .stepper .stepItem::after {
+    display: none;
+  }
+
+  .drawerWide[data-ph-mode] .stepper .stepItem .stepText {
+    position: static;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 2px;
+    width: auto;
+    height: auto;
+    overflow: hidden;
+    clip-path: none;
+  }
+
+  .drawerWide[data-ph-mode] .stepper .stepMark {
+    width: 28px;
+    height: 28px;
+    border-color: var(--wf-line-3);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font-size: var(--wf-fs-13);
+  }
+
+  .drawerWide[data-ph-mode] .stepper .stepItem[data-done="true"] .stepMark {
+    border-color: var(--wf-line-2);
+  }
+
+  .drawerWide[data-ph-mode] .stepper .stepState {
+    display: none;
+  }
+
+  .drawerWide[data-ph-mode] .stepLabel {
+    font-size: var(--wf-fs-14);
+    line-height: var(--wf-lh-14);
+  }
+
+  .phStepHint {
+    overflow: hidden;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phStepState {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+  }
+
+  .phStepState b {
+    color: var(--wf-ink-1);
+    font-weight: 600;
+  }
+
+  .phStepChevron {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    color: var(--wf-ink-3);
+  }
+
+  /* Sent and Inbox show their own content: no steps, no Refer to. */
+  .drawerWide:is([data-ph-mode="sent"], [data-ph-mode="inbox"]) .stepper,
+  .drawerWide:is([data-ph-mode="sent"], [data-ph-mode="inbox"]) .destRow {
+    display: none;
+  }
+
+  .drawerWide[data-ph-mode] .inboxPicker {
+    margin: 0 var(--wf-s-4);
+  }
+
+  .drawerWide[data-ph-mode] .inboxPickerLabel {
+    display: none;
+  }
+
+  .drawerWide[data-ph-mode] .sheetMain {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3) 0 var(--wf-s-4);
+  }
+
+  .drawerWide[data-ph-mode] .drawerBody {
+    overflow: visible;
+    padding: 0 var(--wf-s-4);
+  }
+
+  /* The list shows only the steps: each step's answers live in its sheet. */
+  .drawerWide[data-ph-mode="list"] .drawerBody {
+    display: none;
+  }
+
+  .drawerWide[data-ph-mode]:not([data-ph-mode="list"]) .rail {
+    display: none;
+  }
+
+  .drawerWide[data-ph-mode="list"] .rail {
+    display: none;
+  }
+
+  .drawerWide[data-ph-mode="list"] .rail[data-open="true"] {
+    position: static;
+    display: grid;
+    max-height: none;
+    margin: 0 var(--wf-s-4);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    overflow: visible;
+  }
+
+  .drawerWide[data-ph-mode="list"] .phChecklist {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 56px;
+    margin: 0 var(--wf-s-4);
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    color: var(--wf-ink-1);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .phChecklist > svg {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    color: var(--wf-ink-3);
+  }
+
+  .phChecklist > svg[data-open="true"] {
+    transform: rotate(180deg);
+  }
+
+  .phChecklistText {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .phChecklistTitle {
+    font-weight: 600;
+  }
+
+  .phChecklistMeta {
+    overflow: hidden;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phChecklistMeta b {
+    color: var(--wf-ink-1);
+    font-family: var(--wf-mono);
+  }
+
+  /* One step, the letter or the contact check: a tall sheet over the list. */
+  .drawerWide[data-ph-mode="sheet"] .phScrim {
+    position: fixed;
+    z-index: 4;
+    inset: 0;
+    display: block;
+    background: var(--wf-scrim);
+  }
+
+  /* The carrier sheet already starts under the 56px bar and is this sheet's containing block,
+     so top 0 puts the step sheet's top edge just under the bar. */
+  .drawerWide[data-ph-mode="sheet"] .drawerBody {
+    position: fixed;
+    z-index: 5;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0 var(--wf-s-4) calc(6rem + env(safe-area-inset-bottom, 0px));
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+    background: var(--wf-canvas);
+    box-shadow: var(--wf-e3);
+  }
+
+  .drawerWide[data-ph-mode="sheet"] .phSheetHead {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    display: block;
+    margin: 0 calc(var(--wf-s-4) * -1);
+    padding: 20px var(--wf-s-4) var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+  }
+
+  .phSheetGrip {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 36px;
+    height: 4px;
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-line-3);
+    transform: translateX(-50%);
+  }
+
+  .phSheetTitleRow {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--wf-s-2);
+  }
+
+  .phSheetTitleBlock {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .phSheetTitle {
+    margin: 0;
+    overflow: hidden;
+    font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phSheetMeta {
+    margin: 0;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+  }
+
+  .phSheetDots {
+    display: flex;
+    gap: 6px;
+    margin-top: var(--wf-s-1);
+  }
+
+  .phSheetDots > i {
+    width: 8px;
+    height: 8px;
+    border: 1.5px solid var(--wf-line-3);
+    border-radius: var(--wf-r-pill);
+  }
+
+  .phSheetDots > i[data-done="true"] {
+    border-color: var(--wf-success);
+    background: var(--wf-success);
+  }
+
+  .phSheetDots > i[data-on="true"] {
+    border-color: var(--wf-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--wf-accent) 25%, transparent);
+  }
+
+  .phSheetClose {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: transparent;
+    color: var(--wf-ink-2);
+    cursor: pointer;
+  }
+
+  .phSheetClose::after {
+    position: absolute;
+    inset: -4px;
+    content: "";
+  }
+
+  .phSheetClose svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .drawerWide[data-ph-mode="sheet"] .sectionPanel,
+  .drawerWide[data-ph-mode="sheet"] .confirmationPanel,
+  .drawerWide[data-ph-mode="sheet"] .drawerBody > section {
+    padding-top: var(--wf-s-3);
+  }
+
+  /* The pinned bar: one primary, and Back in a step sheet. */
+  .drawerWide[data-ph-mode] .sendReferralFoot {
+    position: sticky;
+    z-index: 6;
+    bottom: 0;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: var(--wf-s-2);
+    margin-top: auto;
+    padding: var(--wf-s-2) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+  }
+
+  .drawerWide[data-ph-mode="sheet"] .sendReferralFoot {
+    position: fixed;
+    right: 0;
+    left: 0;
+  }
+
+  .drawerWide:is([data-ph-mode="list"], [data-ph-mode="sheet"]) .sendTargetSummary:not([role="alert"]) {
+    display: none;
+  }
+
+  .drawerWide[data-ph-mode] .sendActionCluster {
+    width: 100%;
+    gap: var(--wf-s-2);
+  }
+
+  .drawerWide[data-ph-mode] .sendActionCluster > .btnSendReferral {
+    flex: 1 1 auto;
+  }
+
+  .drawerWide[data-ph-mode] .btnSendReferral,
+  .drawerWide[data-ph-mode] .btnCancelReferral {
+    height: 48px;
+    border-radius: var(--wf-r-pill);
+    font-size: var(--wf-fs-14);
+  }
+
+  .drawerWide[data-ph-mode] .btnSendReferral svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .drawerWide[data-ph-mode="list"] .phFootNote {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+  }
+
+  .phFootNote > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phFootNote > svg {
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Ward choice: names its own figure only on a phone card (below). */
+.wardFigureName {
+  display: none;
+}
+
+/* v10 phone: the step 4 ward list reads as cards (name, hospital, fit line, ready and waitlist
+   figures), not a table. */
+@media (max-width: 48rem) {
+  .wardTable {
+    border-top: 0;
+  }
+
+  .wardTable .wardTableHead {
+    display: none;
+  }
+
+  .wardTable [role="list"] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--wf-s-1) var(--wf-s-3) var(--wf-s-3);
+  }
+
+  .wardTable .wardRow {
+    grid-template-columns: 18px minmax(0, 1fr) 52px 52px;
+    min-height: 68px;
+    padding: 6px var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .wardTable .wardRow[data-selected="true"] {
+    border-color: var(--wf-accent);
+    background: var(--wf-surface);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  .wardTable .wardIdentity {
+    gap: 2px;
+  }
+
+  .wardTable .wardTitle {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+  }
+
+  .wardTable .wardTitle strong {
+    overflow: hidden;
+    font-size: var(--wf-fs-14);
+    text-overflow: ellipsis;
+  }
+
+  .wardTable .wardMeta {
+    color: var(--wf-ink-2);
+  }
+
+  /* Off the card face, but still part of the row's name (service and unit id). */
+  .wardTable .wardMetaMore {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .wardTable .wardFigure {
+    gap: 2px;
+  }
+
+  .wardTable .wardFigure strong {
+    font-size: var(--wf-fs-15, var(--wf-fs-16));
+  }
+
+  .wardFigureName.wardFigureName {
+    display: block;
+  }
+}
+
+/* v10 phone: each clearance item is a row of its own — a status ring and the name, then a compact
+   Done / To follow / Not done track under it, not a full-width bar. */
+@media (max-width: 48rem) {
+  .checkList.checkList {
+    gap: 0;
+  }
+
+  .checkList > .radioField {
+    padding: var(--wf-s-3) 0;
+  }
+
+  .checkList > .radioField + .radioField {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .checkList > .radioField > legend.checkList,
+  .checkList > .radioField > legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 0 0 var(--wf-s-2);
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+  }
+
+  .checkList > .radioField > legend::before {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border: 1.5px solid var(--wf-ink-3);
+    border-radius: 50%;
+    content: "";
+  }
+
+  .checkList > .radioField > .segmented.segmented {
+    display: inline-grid;
+    float: none;
+    width: auto;
+    margin-left: 20px;
+  }
+
+  .checkList > .radioField > .segmented > label {
+    padding: 0 var(--wf-s-3);
+  }
+}

@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 
 import { HeroTrack, Switch } from "@/components/wf";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
@@ -24,14 +26,20 @@ export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | 
 interface StatisticsNavProps {
   currentSection?: StatisticsNavSection;
   /**
-   * The unit, service or team the page shows. No longer read: since the four index pages
-   * (9 Oct 2026) each unit tab opens its index, from a detail page as from anywhere else.
+   * The unit, service or team the page shows. Since the four index pages (9 Oct 2026) each unit
+   * tab opens its index, from a detail page as from anywhere else. The phone `chips` row reads it:
+   * on one unit's page the row leads with a back chip to that kind's index ("All Wards").
    */
   activeSlug?: string;
   /** Leave the Samples switch out, when the hero places it on its own. */
   withSamples?: boolean;
   /** How many wards the network has, from the page's own state. Left off, Wards shows no count. */
   wardCount?: number;
+  /**
+   * `chips`: the phone Summary's row of section chips on the sheet under the hero (v10 phone), in
+   * place of the hero track and its phone select. Defaults to `hero`.
+   */
+  variant?: "hero" | "chips";
 }
 
 /** Each unit kind's tab is current on its index page and on any one unit's page of that kind. */
@@ -84,7 +92,13 @@ export function StatisticsSamplesSwitch() {
  * The statistics section track. It sits on each page's hero band: Summary, Overview and Compare,
  * then the four unit kinds with their counts. On a phone it becomes one native select.
  */
-export function StatisticsNav({ currentSection, withSamples = true, wardCount }: StatisticsNavProps) {
+export function StatisticsNav({
+  currentSection,
+  activeSlug,
+  withSamples = true,
+  wardCount,
+  variant = "hero",
+}: StatisticsNavProps) {
   const pathname = useOptionalPathname();
   const router = useOptionalRouter();
 
@@ -102,6 +116,37 @@ export function StatisticsNav({ currentSection, withSamples = true, wardCount }:
     { id: "community", label: "Teams", count: COMMUNITY_TEAM_PAGES.length, href: STATISTICS_TEAMS_HREF },
     { id: "weekly", label: "Weekly", href: WEEKLY_REPORT_HREF },
   ] satisfies Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }>;
+
+  if (variant === "chips") {
+    // v10 phone: one unit's page leads with "< All Services" (its kind's index) in place of that
+    // kind's own chip; the other sections follow.
+    const unitKinds: StatisticsNavSection[] = ["service", "ward", "ed", "community"];
+    const backTo =
+      activeSlug && unitKinds.includes(activeSection) ? items.find((item) => item.id === activeSection) : undefined;
+    return (
+      <nav className={styles.chipNav} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
+        {backTo ? (
+          <Link href={backTo.href} className={styles.chip} data-testid="ward-statistics-nav-back">
+            <ChevronLeft size={14} aria-hidden="true" />
+            All {backTo.label}
+          </Link>
+        ) : null}
+        {items
+          .filter((item) => item !== backTo)
+          .map((item) => (
+            <Link
+              key={item.id}
+              href={item.href}
+              className={styles.chip}
+              aria-current={item.id === activeSection ? "page" : undefined}
+            >
+              {item.label}
+              {item.count !== undefined ? <span className={styles.chipCount}>{item.count}</span> : null}
+            </Link>
+          ))}
+      </nav>
+    );
+  }
 
   return (
     // The landmark wraps both forms of the section list, so it is there at every width: the track
