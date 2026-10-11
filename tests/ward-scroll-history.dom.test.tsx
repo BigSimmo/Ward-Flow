@@ -23,6 +23,9 @@ describe("Ward desktop scroll history", () => {
     const { container, rerender } = render(view());
     const column = container.firstElementChild as HTMLElement;
     column.scrollTop = 420;
+    fireEvent.scroll(column);
+    // A shorter destination can clamp the old column during the route commit.
+    column.scrollTop = 0;
     pathname = "/mockups/ward-flow/wards";
     window.history.pushState(null, "", pathname);
     rerender(view());

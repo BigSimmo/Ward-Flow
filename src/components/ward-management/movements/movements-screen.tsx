@@ -1266,7 +1266,12 @@ export function MovementsScreen() {
                       />
                     </div>
 
-                    <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs">
+                    <div
+                      className={styles.transportRunsFeed}
+                      role="feed"
+                      aria-label="Active transport legs"
+                      tabIndex={0}
+                    >
                       {legs.map((leg) => {
                         const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
                         const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);

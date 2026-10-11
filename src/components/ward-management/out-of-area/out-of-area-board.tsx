@@ -262,9 +262,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   useEffect(() => {
     if (selectedId === null || isPhone || isTabletPortrait) return;
     if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1000px)").matches) return;
-    window.requestAnimationFrame(() => {
+    const frame = window.requestAnimationFrame(() => {
       detailColumnRef.current?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
     });
+    return () => window.cancelAnimationFrame(frame);
   }, [selectedId, isPhone, isTabletPortrait]);
 
   useEffect(() => {

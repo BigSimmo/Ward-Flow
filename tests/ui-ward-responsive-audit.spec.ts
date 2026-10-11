@@ -83,6 +83,96 @@ test.describe("@mockup Ward responsive containment", () => {
 test.describe("@mockup Ward scroll geometry", () => {
   test.use({ colorScheme: "light", contextOptions: { reducedMotion: "no-preference" } });
 
+  test("the Movements transport panel stays below the header at the end of the page", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto("/mockups/ward-flow/movements", { waitUntil: "networkidle" });
+    await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
+    const panel = page.getByRole("complementary", { name: "Movement details" });
+    for (const width of [1361, 1440]) {
+      await page.setViewportSize({ width, height: 844 });
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const column = document.querySelector<HTMLElement>("[data-wf-scroller]")!;
+            column.scrollTop = column.scrollHeight;
+            return column.scrollTop;
+          }),
+        )
+        .toBeGreaterThan(0);
+      await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", "light");
+      await expect
+        .poll(() =>
+          panel.evaluate((element) => {
+            const header = document.querySelector('[data-testid="ward-bar"]')!.getBoundingClientRect();
+            return element.getBoundingClientRect().top - header.bottom;
+          }),
+        )
+        .toBeGreaterThanOrEqual(11);
+      const box = await panel.boundingBox();
+      expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+      const body = panel.getByRole("feed", { name: "Active transport legs" });
+      await expect
+        .poll(() => body.evaluate((element) => element.scrollHeight - element.clientHeight))
+        .toBeGreaterThan(0);
+      const before = await page.locator("[data-wf-scroller]").evaluate((element) => element.scrollTop);
+      await body.evaluate((element) => {
+        element.scrollTop = 0;
+      });
+      await body.focus();
+      await body.press("ArrowDown");
+      await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+      await body.evaluate((element) => {
+        element.scrollTop = 0;
+      });
+      await body.hover();
+      await page.mouse.wheel(0, 300);
+      await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+      expect(await page.locator("[data-wf-scroller]").evaluate((element) => element.scrollTop)).toBe(before);
+    }
+  });
+
+  test("statistics deep links reserve the header once, with a small section gap", async ({ page }) => {
+    test.setTimeout(120_000);
+    for (const width of [820, 1440]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto("/mockups/ward-flow/statistics#journey-stages", { waitUntil: "networkidle" });
+      await expect(page.getByTestId("ward-statistics-journey-view")).toBeVisible();
+      await expect
+        .poll(() =>
+          page.locator("#journey-stages").evaluate((element) => {
+            const header = document.querySelector('[data-testid="ward-bar"]')!.getBoundingClientRect();
+            return Math.round(element.getBoundingClientRect().top - header.bottom);
+          }),
+        )
+        .toBe(16);
+    }
+  });
+
+  test("Handover presentation selection leaves the background scroll positions unchanged", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 844 });
+    await page.goto("/mockups/ward-flow/handover", { waitUntil: "networkidle" });
+    await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
+    await page.getByRole("button", { name: "Present", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Exit present", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    const position = () =>
+      page.evaluate(() => ({
+        page: document.querySelector<HTMLElement>("[data-wf-scroller]")!.scrollTop,
+        table: document.querySelector<HTMLElement>('[aria-label="Handover patients"]')!.scrollTop,
+      }));
+    await page.evaluate(() => {
+      document.querySelector<HTMLElement>("[data-wf-scroller]")!.scrollTop = 320;
+      document.querySelector<HTMLElement>('[aria-label="Handover patients"]')!.scrollTop = 400;
+    });
+    const before = await position();
+    await page.keyboard.press("j");
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByTestId("ward-handover-flow-panel")).toBeVisible();
+    expect(await position()).toEqual(before);
+  });
+
   test("the shared header stays pinned with stable height on phone, tablet and desktop", async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto("/mockups/ward-flow/search", { waitUntil: "domcontentloaded" });
@@ -152,7 +242,7 @@ test.describe("@mockup Ward scroll geometry", () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(before);
   });
 
-  test("a desktop sheet holds the work column and restores its scroll position", async ({ page }) => {
+  test("a sheet follows responsive scroll owners and restores the desktop position", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/mockups/ward-flow/search", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
@@ -170,6 +260,13 @@ test.describe("@mockup Ward scroll geometry", () => {
     expect(trigger).not.toBeNull();
     await page.mouse.click(trigger!.x + trigger!.width / 2, trigger!.y + trigger!.height / 2);
     await expect(page.getByTestId("ward-bar-tasks-sheet")).toBeVisible();
+    await expect(column).toHaveCSS("overflow-y", "hidden");
+    for (const width of [390, 820]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(column).toHaveCSS("overflow-y", "visible");
+      await expect.poll(() => column.evaluate((element) => element.style.overflowY)).toBe("");
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
     await expect(column).toHaveCSS("overflow-y", "hidden");
     expect(await column.evaluate((element) => element.scrollTop)).toBe(420);
     await page.keyboard.press("Escape");

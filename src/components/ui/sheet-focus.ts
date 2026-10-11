@@ -77,7 +77,37 @@ let bodyScrollLockPreviousOverflow = "";
 // offset (an element made `overflow: hidden` retains its scrollTop), so nothing
 // jumps when the sheet closes.
 let rootScrollLockPreviousOverflowY = "";
-const pageScrollLocks = new Map<HTMLElement, string>();
+const pageScrollLocks = new Map<HTMLElement, { overflowY: string; scrollTop: number; locked: boolean }>();
+let pageScrollLockFrame = 0;
+
+function syncPageScrollLocks() {
+  for (const scroller of document.querySelectorAll<HTMLElement>("[data-wf-scroller]")) {
+    if (!pageScrollLocks.has(scroller))
+      pageScrollLocks.set(scroller, {
+        overflowY: scroller.style.overflowY,
+        scrollTop: scroller.scrollTop,
+        locked: false,
+      });
+    const previous = pageScrollLocks.get(scroller)!;
+    // Read the CSS for the current width without our lock overriding it. A phone
+    // column must stay visible/clip; a desktop column must remain locked.
+    scroller.style.overflowY = previous.overflowY;
+    if (/^(auto|scroll)$/.test(window.getComputedStyle(scroller).overflowY)) {
+      scroller.style.overflowY = "hidden";
+      if (previous.locked) previous.scrollTop = scroller.scrollTop;
+      else scroller.scrollTop = previous.scrollTop;
+      previous.locked = true;
+    } else previous.locked = false;
+  }
+}
+
+function schedulePageScrollLocks() {
+  if (!pageScrollLockFrame)
+    pageScrollLockFrame = window.requestAnimationFrame(() => {
+      pageScrollLockFrame = 0;
+      syncPageScrollLocks();
+    });
+}
 
 export function isTopmostSheet(id: string) {
   return openSheets[openSheets.length - 1]?.id === id;
@@ -126,13 +156,8 @@ export function pushSheet(id: string, root: HTMLElement | null = null) {
     document.documentElement.style.overflowY = "hidden";
     // Desktop Ward Flow scrolls inside the work column. Locking html/body alone
     // left that column movable behind a sheet. Keep its offset and exact inline style.
-    for (const scroller of document.querySelectorAll<HTMLElement>("[data-wf-scroller]")) {
-      // On phone this is a visible/clip column in the document flow. Making it hidden
-      // would create a new scroll ancestor and change the sticky header's position.
-      if (!/^(auto|scroll)$/.test(window.getComputedStyle(scroller).overflowY)) continue;
-      pageScrollLocks.set(scroller, scroller.style.overflowY);
-      scroller.style.overflowY = "hidden";
-    }
+    syncPageScrollLocks();
+    window.addEventListener("resize", schedulePageScrollLocks, { passive: true });
   }
   openSheets.push({ id, root });
   syncBackgroundInert();
@@ -162,9 +187,12 @@ export function popSheet(id: string) {
     }
   }
   if (openSheets.length === 0) {
+    window.removeEventListener("resize", schedulePageScrollLocks);
+    if (pageScrollLockFrame) window.cancelAnimationFrame(pageScrollLockFrame);
+    pageScrollLockFrame = 0;
     document.body.style.overflow = bodyScrollLockPreviousOverflow;
     document.documentElement.style.overflowY = rootScrollLockPreviousOverflowY;
-    for (const [scroller, overflowY] of pageScrollLocks) scroller.style.overflowY = overflowY;
+    for (const [scroller, previous] of pageScrollLocks) scroller.style.overflowY = previous.overflowY;
     pageScrollLocks.clear();
   }
   syncBackgroundInert();
