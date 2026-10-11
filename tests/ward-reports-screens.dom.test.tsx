@@ -319,7 +319,7 @@ describe("read-only report screens", () => {
   it("offers Clear filters when nothing matches", () => {
     route.pathname = "/mockups/ward-flow/reports/chronology";
     inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Find an action, person or reason" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find in events" }), {
       target: { value: "zzzz no such words" },
     });
     expect(screen.queryByTestId("ward-chronology-table")).toBeNull();

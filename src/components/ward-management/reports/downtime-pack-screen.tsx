@@ -284,6 +284,7 @@ export function DowntimePackScreen() {
         <main id="main-content" className={styles.main}>
           <PhoneHero
             level={1}
+            className={styles.downtimePhoneHero}
             eyebrow="Downtime pack"
             title={`Frozen at ${frozenAt}`}
             sub={`${reportDay(pack.generatedAt, dayZero)} · does not update while open`}

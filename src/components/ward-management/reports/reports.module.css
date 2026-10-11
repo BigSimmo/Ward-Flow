@@ -465,7 +465,11 @@
 }
 
 .roleSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
   margin-left: auto;
+  white-space: nowrap;
 }
 
 /* Table about two thirds, the side panel beside it; flush at equal heights. */
@@ -476,10 +480,10 @@
   align-items: start;
 }
 
-/* The table card runs the full row height, so it ends level with the side panel beside it. */
+/* The table card grows with its rows; stretched to the rail it left 240px blank under two events. */
 .chronoCard {
   min-width: 0;
-  align-self: stretch;
+  align-self: start;
 }
 
 .countPill {
@@ -882,13 +886,15 @@
 
 /* v10 phone downtime pack (11 Oct 2026, pass 2): the hero's two actions share the row equally, and
    each service head is bare text on the canvas with its list card below. Phone tree only. */
-.phonePage .main > section:first-child > div:last-child > * {
+/* Scoped to the downtime hero: unscoped, it reached the chronology hero, whose last block is the
+   title when no patient is chosen, and collapsed its "Choose a patient" title to 0px. */
+.downtimePhoneHero > div:last-child > * {
   flex: 1 1 0;
   min-width: 0;
 }
 
-.phonePage .main > section:first-child > div:last-child > * > button,
-.phonePage .main > section:first-child > div:last-child > button {
+.downtimePhoneHero > div:last-child > * > button,
+.downtimePhoneHero > div:last-child > button {
   justify-content: center;
   width: 100%;
 }
