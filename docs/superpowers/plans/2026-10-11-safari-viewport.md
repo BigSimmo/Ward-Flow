@@ -25,9 +25,10 @@ The first development WebKit attempt reached the app but scrolled before hydrati
 A second attempt was blocked by a local project-identity request timeout before tests ran.
 Neither result establishes a Safari product pass. Use the production runner for stable proof.
 
-Current state: implementation and verification in progress. Evidence is retained in
-`.local/safari-viewport/` (ignored, local). Next action: run current-source static/unit gates and
-the production Ward journeys, plus all ten WebKit responsive/phone checks; repair actual failures.
+Current state: local implementation committed in `e19ead0e`; PR publication requested by Josh
+in this chat on 11 October 2026. Evidence is retained in `.local/safari-viewport/` (ignored,
+local). Josh requested prompt publication and no excessive local testing already covered by
+GitHub. The remaining local suite was stopped; production browser checks were not started.
 
 The first current-source readiness run passed its first ten checks, then stopped at six unused
 import warnings in the existing v10 handover, patient census and statistics phone components.
@@ -40,6 +41,23 @@ The full unit gate refused to run on uncommitted source: `FULL evidence requires
 clean tree; commit the batch before this gate.` Preserve a local candidate commit, then run the
 remaining full unit gate and the complete Chromium Ward lane plus WebKit responsive lane.
 The preceding static evidence is in `verify-current-cross-browser.log`.
+
+The committed full unit run completed five batches before being stopped for the publication
+request. It found failures in `ward-ci-main-reuse.test.ts`, `ward-flow-data-boundary.test.ts`,
+`ward-flow-remote-boundary.test.ts` and `ward-fold-queue-current.test.ts`. The run is incomplete
+and does not establish a full unit pass; see `unit-current.log`. No hosted verdict was observed.
+
+Josh approved exact reuse of the retained two-line correction from `aa57e42c` in
+`tests/ward-ci-main-reuse.test.ts`: use Node's `join` for the expected blob path, retaining the
+exact filename while supporting Windows separators. Preserve both earlier owners' branches.
+The correction has not been rerun locally. Other unit failures remain unresolved.
+
+Publication uses the repository's explicit bare-PR route: preserve the push hook's destination
+and auto-merge guards, with scoped format/static overrides. The follow-up local commit skips
+the readiness-only commit hook. No new tests, formatting, build or CI monitoring are requested
+for this publication step. Next action: push the task branch and open a PR against Ward Flow
+`main`, reporting local proof and remaining validation accurately. Merge and deployment are
+separate and are not authorised by the PR request.
 
 Real iPhone Safari toolbar, keyboard, safe-area and installed-PWA behaviour requires separate
 device evidence. Automated WebKit does not emulate Safari's physical browser controls.
