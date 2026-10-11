@@ -1174,3 +1174,62 @@
 .phoneRailSheet .railCard:first-child > .serviceHead {
   display: none;
 }
+
+/* Audit 11 Oct 2026: a filter label stays with its pills when the row wraps. */
+.filterGroup {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+/* Audit 11 Oct 2026: the bed strip key as one line under the filters. */
+.legendLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Audit 11 Oct 2026: the whole card opens the ward. The link stretches over the card; the profile
+ * button sits above it so it stays its own target. */
+.wardCard {
+  position: relative;
+}
+
+.wardCard:hover {
+  border-color: var(--wf-line-ctl);
+}
+
+.cardLink {
+  display: inline-grid;
+  place-items: center;
+  width: var(--wf-h-sm);
+  height: var(--wf-h-sm);
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-3);
+}
+
+.cardLink::after {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--wf-r-lg);
+  content: "";
+}
+
+.cardLink:focus-visible {
+  outline: none;
+}
+
+.cardLink:focus-visible::after {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.wardCard .iconButton {
+  position: relative;
+  z-index: 1;
+}
