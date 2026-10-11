@@ -369,10 +369,10 @@ export function PriorityQueue({
                     at={movement.openedAt * MS_PER_MINUTE}
                     now={now * MS_PER_MINUTE}
                     direction="waiting"
-                    hideDirection
                     className={styles.queueTimer}
                   />
                   <span
+                    aria-hidden={level === null ? true : undefined}
                     className={cx(
                       styles.queueWord,
                       level === "over" ? styles.queueWordOverdue : level && styles.queueWordStrong,
