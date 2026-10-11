@@ -1002,9 +1002,10 @@
  * One bar on every page (locked lean bar, Josh 10 Oct 2026): Menu, title with scope under it,
  * Search and Tasks. New referral, Activity and Tools live in the phone menu (`ward-phone-menu.tsx`),
  * New referral behind its raised +. At the top of the page the bar has no fill or edge and
- * sits on the page (56px). Once the page scrolls (`data-scrolled`) it condenses to 52px, turns solid
+ * sits on the page (56px). Once the page scrolls (`data-scrolled`) its faces condense, it turns solid
  * with a hairline, and the scope line becomes a live count. It never hides. Controls keep a 48px
- * hit area; their faces are 40px at rest and 36px condensed, painted by `::before`. */
+ * hit area; their faces are 40px at rest and 36px condensed, painted by `::before`. The bar keeps
+ * its 56px layout height in both states, avoiding reflow and scroll anchoring during touch scroll. */
 .phoneOnly {
   display: none;
 }
@@ -1022,8 +1023,6 @@
     backdrop-filter: none;
     box-shadow: none;
     transition:
-      height var(--wf-m-base) var(--wf-ease),
-      min-height var(--wf-m-base) var(--wf-ease),
       background-color var(--wf-m-base) var(--wf-ease),
       border-color var(--wf-m-base) var(--wf-ease),
       box-shadow var(--wf-m-base) var(--wf-ease);
@@ -1036,8 +1035,6 @@
 
   .bar[data-scrolled="true"],
   :global(html.dark) .bar[data-scrolled="true"] {
-    height: 3.25rem;
-    min-height: 3.25rem;
     border-bottom-color: var(--wf-line-2);
     background: var(--wf-surface-2);
     box-shadow: 0 6px 16px -12px color-mix(in srgb, var(--wf-ink-1) 28%, transparent);
@@ -1189,11 +1186,6 @@
     line-height: 20px;
     letter-spacing: -0.015em;
     max-width: 100%;
-    transition: font-size var(--wf-m-base) var(--wf-ease);
-  }
-
-  .bar[data-scrolled="true"] .place {
-    font-size: var(--t-3);
   }
 
   .scopeBadgeContainer {
