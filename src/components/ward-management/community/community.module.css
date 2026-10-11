@@ -3986,3 +3986,34 @@ button.searchBox:hover {
     box-sizing: border-box;
   }
 }
+
+/* v10 phone team page (11 Oct 2026): Worth attention reads as one divided list inside its card, with
+   no tinted boxes. Phone only. */
+@media (max-width: 48rem) {
+  [data-testid="ward-community-attention-list"].attentionList {
+    gap: 0;
+  }
+
+  [data-testid="ward-community-attention-list"] > .attentionItem {
+    padding: var(--wf-s-3) 0;
+    border: 0;
+    border-bottom: 1px solid var(--wf-line);
+    border-radius: 0;
+    background: none;
+  }
+
+  [data-testid="ward-community-attention-list"] > .attentionItem:last-child {
+    border-bottom: 0;
+  }
+}
+
+/* Phone (v10, 11 Oct 2026): the intake form's UMRN field reads as a field, 48px like its selects. */
+@media (max-width: 48rem) {
+  .intakeField .searchInput {
+    min-height: 48px;
+    padding: 0 var(--wf-s-3);
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+}
