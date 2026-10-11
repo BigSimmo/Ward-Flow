@@ -205,12 +205,13 @@
   --wf-dim: light-dark(rgba(22, 26, 32, 0.45), rgba(233, 238, 243, 0.42));
   --wf-glyph-dim: light-dark(rgba(110, 122, 135, 0.45), rgba(150, 164, 178, 0.45));
 
-  /* The only tinted fills: a free or fit place (fit), and a fit with no bed now (hold). */
+  /* Fit and hold fills stay independent from overdue attention. */
   --wf-fit-tint: light-dark(rgba(47, 138, 95, 0.07), rgba(76, 179, 131, 0.09));
   --wf-fit-edge: light-dark(rgba(47, 138, 95, 0.32), rgba(76, 179, 131, 0.36));
   --wf-hold-tint: light-dark(rgba(172, 114, 10, 0.07), rgba(217, 164, 65, 0.09));
   --wf-hold-edge: light-dark(rgba(172, 114, 10, 0.34), rgba(217, 164, 65, 0.36));
-  /* Act now: a thin 1px edge all the way round (.edge-act), never a fill or a side stripe. */
+  /* Approved attention: inset rounded coral marker and a quiet theme-aware tint. */
+  --wf-act-tint: light-dark(rgba(196, 81, 63, 0.06), rgba(226, 122, 104, 0.07));
   --wf-act-edge: light-dark(rgba(196, 81, 63, 0.6), rgba(226, 122, 104, 0.62));
   --wf-neutral-ink: light-dark(#414953, #bcc8d4);
   /* A remainder that is never the only mark of a value (the old light data step). */
@@ -230,6 +231,7 @@
    --wf-dim and its status glyphs take --wf-glyph-dim. Rows stay in place and stay focusable.
    A child that sets its own ink colour must also follow data-dim in its own stylesheet. */
 [data-dim="true"] {
+  --wf-act-tint: var(--wf-surface);
   color: var(--wf-dim);
   --wf-danger: var(--wf-glyph-dim);
   --wf-warning: var(--wf-glyph-dim);

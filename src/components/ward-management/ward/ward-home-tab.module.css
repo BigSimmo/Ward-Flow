@@ -155,15 +155,21 @@
   outline-offset: 2px;
 }
 
-/* v10: a free bed is the one tinted tile (a fit place); an act now bed gets the thin red edge and
-   no fill; a highlight dims the beds it does not match by colour, never by opacity. */
+/* v10: free beds retain their fit tint; act-now beds get a rounded coral marker and quiet tint; a highlight dims the beds it does not match by colour, never by opacity. */
 .bedTile[data-status="ready"] {
   border-color: var(--wf-fit-edge);
   background: var(--wf-fit-tint);
 }
 
 .bedTile[data-act="true"] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
+}
+
+.bedTile[data-act="true"]:hover {
+  background: var(--wf-hover);
 }
 
 .bedTile[data-lit="true"] {
@@ -1122,7 +1128,10 @@ label.todoMain:has(.todoTick:focus-visible) {
 }
 
 .phoneRow[data-act="true"] {
-  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: none;
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .phoneRowNo,
@@ -1518,4 +1527,30 @@ label.todoMain:has(.todoTick:focus-visible) {
 .phoneSheetBody .flowSwitch > div > button {
   flex: 1 1 0;
   min-height: var(--wf-touch);
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.phoneRow[data-act="true"],
+.bedTile[data-act="true"] {
+  position: relative;
+}
+
+.phoneRow[data-act="true"]::before,
+.bedTile[data-act="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .phoneRow[data-act="true"]::before,
+  .bedTile[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }

@@ -2095,12 +2095,15 @@
   gap: 10px;
   padding: 10px 14px;
   border-radius: var(--r2, 6px);
-  background: var(--wf-surface);
-  border: 1px solid var(--wf-act-edge);
+
+  border: 1px solid var(--wf-line);
   color: var(--wf-ink-1);
   font-size: var(--t-1, 0.8125rem);
   font-weight: 500;
   line-height: 1.4;
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .pulledDetailsGrid {
@@ -4126,7 +4129,16 @@
 }
 
 .v6Hero {
+  position: relative;
   gap: var(--wf-s-2);
+}
+
+/* Anchor the spoken live status inside the hero so its long stage text cannot
+   extend the document beyond a tablet viewport. */
+.v6Hero [data-live="true"] {
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  overflow: hidden;
 }
 
 /* The identity line rides in the hero eyebrow slot but reads under the name, in sentence case. */
@@ -5495,5 +5507,28 @@
 @media (max-width: 48rem) {
   .pnFoot {
     display: none;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.pulledOverdueAlert {
+  position: relative;
+}
+
+.pulledOverdueAlert::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .pulledOverdueAlert::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

@@ -397,7 +397,7 @@ button.check[aria-pressed="true"] {
   background: var(--wf-hover);
 }
 
-/* v10: a highlight keeps matching rows solid and dims the rest by colour; no tinted fill. */
+/* v10: highlights dim non-matching rows by colour and retain status treatments. */
 .row[data-dim="true"],
 .row[data-dim="true"] *,
 .card[data-dim="true"],
@@ -405,19 +405,28 @@ button.check[aria-pressed="true"] {
   color: var(--wf-dim);
 }
 
-/* Act now: a thin red full edge, never a fill or stripe. */
+/* Act now: an inset coral marker and subtle tint. */
 .row[data-act] {
-  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: none;
+
+  background: var(--wf-act-tint);
+}
+
+.row[data-act]:hover {
+  background: var(--wf-hover);
 }
 
 .row[data-act][data-selected] {
-  box-shadow:
-    inset 3px 0 0 var(--wf-accent-strong),
-    inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+
+  background: var(--wf-selected);
 }
 
 .card[data-act] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .highlightNote {
@@ -1542,9 +1551,12 @@ button.check[aria-pressed="true"] {
   cursor: pointer;
 }
 
-/* Act now: a thin red edge, no fill. */
+/* Act now: an inset coral marker and subtle tint. */
 .phoneRow[data-act="true"] {
-  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: none;
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .phoneRow[data-dim="true"],
@@ -1827,5 +1839,34 @@ button.check[aria-pressed="true"] {
     box-shadow: none;
     padding-inline: var(--wf-s-1);
     color: var(--wf-ink-3);
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.row[data-act],
+.card[data-act],
+.phoneRow[data-act="true"] {
+  position: relative;
+}
+
+.row[data-act]::before,
+.card[data-act]::before,
+.phoneRow[data-act="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .row[data-act]::before,
+  .card[data-act]::before,
+  .phoneRow[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

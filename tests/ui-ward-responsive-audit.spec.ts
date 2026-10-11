@@ -192,6 +192,83 @@ test.describe("@mockup Ward responsive containment", () => {
   }
 });
 
+test("@mockup approved overdue queue treatment fits phone, tablet and desktop", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await page.goto("/mockups/ward-flow", { waitUntil: "domcontentloaded" });
+  const overdueRows = page.locator('[data-testid^="ward-queue-row-"][data-overdue="true"]:visible');
+  await expect(overdueRows.first()).toBeVisible();
+
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const width of [320, 820, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth))
+        .toBeLessThanOrEqual(1);
+      const row = overdueRows.first();
+      await row.scrollIntoViewIfNeeded();
+      const treatment = await row.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const marker = getComputedStyle(element, "::before");
+        const wait = element.querySelector('[role="timer"]')!.parentElement!.parentElement!;
+        const bounds = element.getBoundingClientRect();
+        const waitBounds = wait.getBoundingClientRect();
+        return {
+          markerWidth: marker.width,
+          markerRadius: marker.borderRadius,
+          markerHeight: parseFloat(marker.height),
+          height: bounds.height,
+          shadow: style.boxShadow,
+          outline: style.outlineStyle,
+          waitFits: waitBounds.right <= bounds.right && waitBounds.left >= bounds.left,
+          label: wait.textContent,
+          glyphs: wait.querySelectorAll("svg").length,
+        };
+      });
+      expect(treatment.markerWidth).toBe("3px");
+      expect(treatment.markerRadius).toBe("9999px");
+      expect(treatment.markerHeight).toBeGreaterThan(0);
+      expect(treatment.markerHeight).toBeLessThan(treatment.height);
+      expect(treatment.shadow).not.toMatch(/0px 0px 0px 1px/);
+      expect(treatment.waitFits).toBe(true);
+      expect(treatment.label).toContain("overdue");
+      expect(treatment.glyphs).toBe(1);
+      if (colorScheme === "dark") {
+        await testInfo.attach(`overdue-${width}-${colorScheme}`, {
+          body: await page.screenshot(),
+          contentType: "image/png",
+        });
+      }
+    }
+  }
+
+  const row = overdueRows.first();
+  await row.click();
+  await expect(row).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Tab");
+  await row.focus();
+  await expect(row).toBeFocused();
+  await expect
+    .poll(() => row.evaluate((element) => parseFloat(getComputedStyle(element).outlineWidth)))
+    .toBeGreaterThanOrEqual(2);
+  await page.emulateMedia({ forcedColors: "active" });
+  await expect
+    .poll(() => row.evaluate((element) => getComputedStyle(element, "::before").forcedColorAdjust))
+    .toBe("none");
+});
+
+test("@mockup movement status stays inside phone, tablet and desktop viewports", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/mockups/ward-flow/movements/WF-001", { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("ward-patient-live-status")).toContainText("Stage");
+  for (const width of [320, 820, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth))
+      .toBeLessThanOrEqual(1);
+  }
+});
+
 test.describe("@mockup Ward scroll geometry", () => {
   test.use({ colorScheme: "light", contextOptions: { reducedMotion: "no-preference" } });
 

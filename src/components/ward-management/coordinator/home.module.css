@@ -423,27 +423,56 @@
   background: var(--wf-hover);
 }
 
-/* The selected row is the one stripe allowed (3px slate). */
+/* Selection remains distinct from the inset overdue marker. */
 .queueRowSelected {
   background: var(--wf-selected);
   box-shadow: inset 3px 0 0 var(--wf-pri-1);
 }
 
-/* Desktop: overdue is act now, so a thin red edge all round and no fill. The phone is unchanged. */
-@media (min-width: 48.0625rem) {
-  .queueRow[data-overdue="true"] {
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 55%, transparent);
+/* Approved overdue treatment, shared by phone, tablet and desktop. Selection retains
+   its slate stripe; the inset coral marker is a separate status cue. */
+.queueRow[data-overdue="true"] {
+  background: var(--wf-act-tint);
+}
+
+.queueRow[data-overdue="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+.queueRow[data-overdue="true"]:hover {
+  background: var(--wf-hover);
+}
+
+.queueRowSelected[data-overdue="true"] {
+  background: var(--wf-selected);
+}
+
+.queueRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+@media (forced-colors: active) {
+  .queueRow[data-overdue="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 
-  .queueRowSelected[data-overdue="true"] {
-    box-shadow:
-      inset 3px 0 0 var(--wf-pri-1),
-      inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 55%, transparent);
+  .queueRowSelected {
+    outline: 2px solid Highlight;
+    outline-offset: -4px;
   }
 }
 
 /* Highlight from the hero: the other rows dim, never hide (v10 dim convention). Words take
-   --wf-dim and the global data-dim rule turns every glyph, the T pill edge and the act-now edge to
+   --wf-dim and the global data-dim rule turns every glyph, the T pill edge and the overdue marker to
    --wf-glyph-dim. Colour only: no opacity, no filter. Hover or focus brings the name back. */
 .queueRow[data-dim="true"] :where(*) {
   color: var(--wf-dim);
@@ -571,9 +600,16 @@
 }
 
 .queueWord {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
+}
+
+.queueWordOverdue {
+  color: var(--wf-danger-ink);
 }
 
 .queueWordStrong {
@@ -1205,8 +1241,8 @@ button.registerRow:hover {
 }
 
 .refusalMarker[data-alert="true"] {
-  border-color: var(--wf-act-edge);
-  color: var(--wf-ink-1);
+  border-color: var(--wf-line);
+  color: var(--wf-danger-ink);
 }
 
 /* ---------- phone ---------- */
@@ -1813,7 +1849,7 @@ button.registerRow:hover {
 
 /* ---------- phone, v10 Home direction A (11 Oct 2026) ----------
    Matches the Home mockup's phone: 16px sides, ED chips with a service dot, the ED/Referrals switch
-   pinned under the header, and the queue as one list card with red-edged overdue rows. Phone only. */
+   pinned under the header, and the queue as one list card with inset overdue markers. Phone only. */
 @media (max-width: 48rem) {
   .body {
     padding: var(--wf-s-3) var(--wf-s-4);
@@ -1983,21 +2019,6 @@ button.registerRow:hover {
 
   .queueTimer {
     font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
-  }
-
-  /* Overdue is act now: a thin red edge all round, no fill (v10 phone row `.act`). */
-  .queueRow[data-overdue="true"] {
-    box-shadow: inset 0 0 0 1px var(--wf-danger);
-  }
-
-  .queueRowSelected[data-overdue="true"] {
-    box-shadow:
-      inset 3px 0 0 var(--wf-pri-1),
-      inset 0 0 0 1px var(--wf-danger);
-  }
-
-  .queueRow[data-dim="true"][data-overdue="true"] {
-    box-shadow: inset 0 0 0 1px var(--wf-glyph-dim);
   }
 
   .queueMore {
