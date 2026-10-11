@@ -168,6 +168,10 @@
   position: relative;
 }
 
+.bedTile[data-act="true"]:hover {
+  background: var(--wf-hover);
+}
+
 .bedTile[data-lit="true"] {
   border-color: var(--wf-ink-2);
 }

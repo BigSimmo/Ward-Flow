@@ -412,6 +412,10 @@ button.check[aria-pressed="true"] {
   background: var(--wf-act-tint);
 }
 
+.row[data-act]:hover {
+  background: var(--wf-hover);
+}
+
 .row[data-act][data-selected] {
   box-shadow: inset 3px 0 0 var(--wf-accent-strong);
 
