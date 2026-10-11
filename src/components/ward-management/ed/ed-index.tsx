@@ -1068,7 +1068,12 @@ function PhoneEdList({
     return (
       <div key={item.summary.ed.id} data-dim={isDim(item) ? "true" : undefined}>
         <PhoneListRow
-          name={item.short}
+          name={
+            <span className={styles.phoneName}>
+              <span className={styles.svcDot} data-service={item.summary.service} aria-hidden="true" />
+              {item.short}
+            </span>
+          }
           meta={
             item.summary.waiting > 0 ? (
               <span className={styles.phoneMeta}>
@@ -1101,11 +1106,11 @@ function PhoneEdList({
   };
   return (
     <Card className={styles.phoneList} as="section" aria-label="Emergency departments">
-      <GroupHead title="Waiting, longest first" count={waitingRows.length} />
+      <GroupHead title="Waiting, longest first" />
       {waitingRows.map(row)}
       {clearRows.length > 0 ? (
         <>
-          <GroupHead title="Clear" count={clearRows.length} />
+          <GroupHead title="No one waiting" tone="success" count={clearRows.length} />
           {clearRows.map(row)}
         </>
       ) : null}

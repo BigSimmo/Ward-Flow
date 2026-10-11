@@ -57,3 +57,47 @@
     display: none;
   }
 }
+
+/* v10 phone Summary: the sections as a sideways row of chips on the sheet under the hero. Only the
+   phone Summary renders this variant. */
+.chipNav {
+  display: flex;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin-inline: calc(var(--wf-s-3) * -1);
+  padding: 2px var(--wf-s-3);
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.chip[aria-current="page"] {
+  border: 2px solid var(--wf-accent);
+  padding: 0 calc(var(--wf-s-4) - 1px);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.chipCount {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+}

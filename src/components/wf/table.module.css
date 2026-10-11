@@ -124,6 +124,21 @@
   border-color: var(--wf-line-3);
 }
 
+/* Phone (v10 phone rows): the T-digit pill, 20px high on the surface, T1 with a firmer ink edge. */
+@media (max-width: 48rem) {
+  .sq {
+    height: 20px;
+    min-width: 28px;
+    padding: 0 6px;
+    border-color: var(--wf-line-3);
+    background: var(--wf-surface);
+    letter-spacing: 0.02em;
+  }
+  .sq.t1 {
+    border: 1.5px solid var(--wf-ink-2);
+  }
+}
+
 /* Bulk bar under a table. */
 .bulk {
   display: flex;

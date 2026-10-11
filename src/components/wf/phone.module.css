@@ -432,6 +432,14 @@
   white-space: nowrap;
 }
 
+/* Phone (v10 phone row): the time word under the value is sans, ink-2. */
+@media (max-width: 48rem) {
+  .rowTime {
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-2);
+  }
+}
+
 /* The action sits above the stretched target, beside it, never inside it. */
 .rowActionSlot {
   position: relative;
@@ -505,6 +513,27 @@
   white-space: nowrap;
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-hero-ink-2);
+}
+
+/* The eyebrow line with a chip at its right end (Live, Frozen, Demo profile). */
+.heroEyebrowRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  min-height: 28px;
+}
+
+.heroEyebrowRow > .heroEyebrow,
+.heroEyebrowSpacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.heroChip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
 }
 
 .heroEyebrow {

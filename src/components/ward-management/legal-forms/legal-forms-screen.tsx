@@ -640,6 +640,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           <>
             <PhoneHero
               data-testid="ward-legal-hud-island"
+              eyebrow="Mental Health Act forms"
               title={`${rows.length} forms on open moves`}
               sub={`${voluntary} voluntary, no form · warnings at ${reminders.soonHours}h and ${reminders.urgentHours}h`}
               figures={[
@@ -1192,8 +1193,11 @@ function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onS
       name={name}
       meta={
         <>
-          {formTitle(legalForm.code)} · {where}
-          {missing > 0 ? ` · ${missing} to record` : ""}
+          <span className={styles.phoneMetaLine}>{formTitle(legalForm.code)}</span>
+          <span className={styles.phoneMetaLine}>
+            {where}
+            {missing > 0 ? ` · ${missing} to record` : ""}
+          </span>
         </>
       }
       value={
@@ -1203,13 +1207,10 @@ function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onS
             {leftText(movement, now)}
           </span>
         ) : (
-          <span className={styles.leftLine}>
-            <StatusGlyph tone="closed" size={9} />
-            None
-          </span>
+          <span className={styles.leftLine}>{durText(now - movement.openedAt)}</span>
         )
       }
-      time={legalForm.dueAt !== undefined ? (standing === "passed" ? "passed" : "left") : "typed"}
+      time={legalForm.dueAt !== undefined ? (standing === "passed" ? "passed" : "left") : "in ED"}
       aria-label={`${name}, ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}`}
       onSelect={() => onSelect(movement)}
     />

@@ -1318,16 +1318,7 @@ button.registerRow:hover {
     overscroll-behavior: auto;
   }
 
-  /* Compact hero: same figures and actions, tighter spacing. The hero is the first child of the
-     body; these structural selectors reach the shared Hero's row without editing it. */
-  .body > section:first-child {
-    gap: var(--wf-s-2);
-    padding: var(--wf-s-3) var(--wf-s-4);
-  }
-
-  .body > section:first-child > div {
-    row-gap: var(--wf-s-2);
-  }
+  /* The hero keeps the shared phone hero's own spacing (v10 phone hero, 11 Oct 2026). */
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1395,6 +1386,39 @@ button.registerRow:hover {
   gap: var(--wf-s-2);
   width: 100%;
   min-width: 0;
+}
+
+/* Phone only (rendered under 48rem): the v10 "N since you looked at HH:MM" pill and round pause. */
+.phoneSince {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  height: 44px;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.phoneSince > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.phoneSinceMono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.phonePause {
+  flex: 0 0 44px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border-radius: 50%;
 }
 
 .heroToggles {
@@ -1785,4 +1809,209 @@ button.registerRow:hover {
   align-items: center;
   gap: var(--wf-s-1);
   font-size: var(--wf-fs-12);
+}
+
+/* ---------- phone, v10 Home direction A (11 Oct 2026) ----------
+   Matches the Home mockup's phone: 16px sides, ED chips with a service dot, the ED/Referrals switch
+   pinned under the header, and the queue as one list card with red-edged overdue rows. Phone only. */
+@media (max-width: 48rem) {
+  .body {
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  /* ED chips: dot, code, count, glyph and the longest wait. The word "waiting" stays in the
+     button's spoken name. The row runs to the screen edge and fades out there. */
+  .edGrid {
+    margin-right: calc(-1 * var(--wf-s-4));
+    padding: 2px var(--wf-s-3) 2px 2px;
+    margin-left: -2px;
+    -webkit-mask-image: linear-gradient(to right, var(--wf-ink-1) calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, var(--wf-ink-1) calc(100% - 28px), transparent);
+  }
+
+  .edButton {
+    gap: 6px;
+    min-height: 44px;
+    height: 44px;
+    padding: 0 12px;
+  }
+
+  .edTop {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .edCode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+    color: var(--wf-ink-1);
+  }
+
+  .edCode::before {
+    content: "";
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ed-svc, var(--wf-svc-private));
+  }
+
+  .edButton[data-service="EMHS"] {
+    --ed-svc: var(--wf-svc-east);
+  }
+  .edButton[data-service="NMHS"] {
+    --ed-svc: var(--wf-svc-north);
+  }
+  .edButton[data-service="SMHS"] {
+    --ed-svc: var(--wf-svc-south);
+  }
+  .edButton[data-service="WACHS"] {
+    --ed-svc: var(--wf-svc-wachs);
+  }
+  .edButton[data-service="CAHS"] {
+    --ed-svc: var(--wf-svc-cahs);
+  }
+
+  .edWaiting {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0;
+    line-height: 1;
+  }
+
+  .edWaitingValue {
+    font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+    color: var(--wf-ink-1);
+  }
+
+  .edLine {
+    gap: 6px;
+  }
+
+  .edLine .edMono {
+    font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+    color: var(--wf-ink-2);
+  }
+
+  /* The queue: no card around the switch, the switch pinned under the header, the rows one card. */
+  .queueCard.queueCard {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .queueHead.queueHead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .queueTools {
+    position: sticky;
+    top: 3.5rem;
+    z-index: 6;
+    margin: 0 calc(-1 * var(--wf-s-4));
+    padding: var(--wf-s-2) var(--wf-s-4);
+    border-bottom: 0;
+    background: var(--wf-canvas);
+  }
+
+  .queueSeg.queueSeg {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .queueSeg .queueSegItem,
+  .queueSeg > * {
+    flex: 1 0 auto;
+    justify-content: center;
+  }
+
+  .queueFilter {
+    padding: 0 0 var(--wf-s-2);
+    border-bottom: 0;
+  }
+
+  .queueList:not([hidden]) {
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .queueRow {
+    gap: 10px;
+    min-height: 60px;
+    padding: 8px 12px;
+  }
+
+  .queueList > .queueRow:last-child {
+    border-bottom: 0;
+  }
+
+  .queueName strong {
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  }
+
+  .queueSub {
+    gap: 5px;
+    font-weight: 500;
+  }
+
+  .queueFlag {
+    font-weight: 600;
+  }
+
+  /* The operational score stays in the row's spoken text; the phone row shows the mockup's facts. */
+  .queueScore {
+    display: none;
+  }
+
+  .queueTimer {
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  }
+
+  /* Overdue is act now: a thin red edge all round, no fill (v10 phone row `.act`). */
+  .queueRow[data-overdue="true"] {
+    box-shadow: inset 0 0 0 1px var(--wf-danger);
+  }
+
+  .queueRowSelected[data-overdue="true"] {
+    box-shadow:
+      inset 3px 0 0 var(--wf-pri-1),
+      inset 0 0 0 1px var(--wf-danger);
+  }
+
+  .queueRow[data-dim="true"][data-overdue="true"] {
+    box-shadow: inset 0 0 0 1px var(--wf-glyph-dim);
+  }
+
+  .queueMore {
+    min-height: 48px;
+    color: var(--wf-accent);
+  }
+
+  .queueCard .cardFoot {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0 var(--wf-s-3);
+    padding: var(--wf-s-2) var(--wf-s-1) 0;
+    border-top: 0;
+    text-align: center;
+  }
+
+  .queueCard .cardFoot .footMeta {
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+  }
 }

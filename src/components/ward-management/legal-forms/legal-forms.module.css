@@ -1444,3 +1444,20 @@ button.taskLabel[aria-pressed="true"] {
 .phoneRow[data-dim="true"] * {
   color: var(--wf-dim);
 }
+
+/* v10 phone row (11 Oct 2026): the form's name, then where and what is left to record, each on its
+   own line. Only the phone row renders these spans. */
+.phoneMetaLine {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 48rem) {
+  /* v10 phone: the group head names its order at the right ("least time left"). */
+  .groupHead > .groupOrder {
+    display: inline;
+    font-size: var(--wf-fs-12);
+  }
+}

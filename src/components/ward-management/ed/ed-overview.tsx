@@ -87,7 +87,7 @@ export function EdOverview({
         eyebrow={`Emergency department · ${current.service}`}
         title={
           <>
-            {shortName(current.name)}{" "}
+            <span className={styles.titleName}>{shortName(current.name)} </span>
             <span className={styles.answer}>
               <b className={styles.answerNum}>{onBoard}</b> on the board
             </span>
@@ -144,6 +144,7 @@ export function EdOverview({
                   href={`/mockups/ward-flow/ed/${department.id}`}
                   className={cx(styles.tile, isCurrent && styles.current)}
                   data-ed={department.id}
+                  data-service={department.service}
                   aria-current={isCurrent ? "page" : undefined}
                   title={`${department.name} (${department.service})`}
                 >

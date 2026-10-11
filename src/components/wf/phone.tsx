@@ -566,6 +566,8 @@ export type PhoneHeroFigure = {
 export type PhoneHeroProps = {
   /** One quiet line above the title ("Statewide · Day shift"). */
   eyebrow?: ReactNode;
+  /** A chip at the right end of the eyebrow line: a LiveChip, "Frozen" or "Demo profile". */
+  chip?: ReactNode;
   /** The answer, five words at most ("2 need you now"). */
   title: ReactNode;
   /** One quiet line under the title. */
@@ -590,6 +592,7 @@ export const PHONE_HERO_FIGURE_LIMIT = 3;
  */
 export function PhoneHero({
   eyebrow,
+  chip,
   title,
   sub,
   figures,
@@ -604,7 +607,18 @@ export function PhoneHero({
   return (
     <section className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
       <div className={styles.heroTitleBlock}>
-        {present(eyebrow) ? (
+        {present(chip) ? (
+          <div className={styles.heroEyebrowRow}>
+            {present(eyebrow) ? (
+              <p className={styles.heroEyebrow} title={textOf(eyebrow)}>
+                {eyebrow}
+              </p>
+            ) : (
+              <span className={styles.heroEyebrowSpacer} />
+            )}
+            <span className={styles.heroChip}>{chip}</span>
+          </div>
+        ) : present(eyebrow) ? (
           <p className={styles.heroEyebrow} title={textOf(eyebrow)}>
             {eyebrow}
           </p>

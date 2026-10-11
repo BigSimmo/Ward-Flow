@@ -1708,3 +1708,44 @@ fieldset.formRow {
 .phoneSince [data-wf-twin] {
   font-size: var(--wf-fs-12);
 }
+
+/* v10 phone card (11 Oct 2026): the UMRN reads as plain mono (still a link to the profile), and the
+   return status is the card's bold fact. Phone layout only. */
+.phoneCard .pcLine2 .umrnLink {
+  font-size: var(--wf-fs-12);
+  text-decoration: none;
+}
+
+.phoneCard .pcLine4 > span:not(.pcEnd) {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.phoneCard .pcEnd {
+  font-size: var(--wf-fs-12);
+}
+
+/* v10 phone action bar: the two buttons sit on a fade at the foot of the screen, not in a glass
+   capsule; the main button is a full pill and copy a round button. */
+.phoneBar {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  align-items: center;
+  padding: var(--wf-s-4) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, transparent, var(--wf-canvas) 45%);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.phoneBar > button {
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneBar > button:last-child:not(.phoneBarMain) {
+  flex: none;
+  width: var(--ward-tap, 3rem);
+}

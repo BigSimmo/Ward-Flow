@@ -703,7 +703,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                         <GroupHead
                           variant="letter"
                           title={letter}
-                          count={isPhone ? (grouped.get(letter) ?? []).length : undefined}
+                          aside={isPhone ? (grouped.get(letter) ?? []).length : undefined}
                           className={styles.letterRow}
                         />
                       </div>
@@ -1089,10 +1089,10 @@ function TeamRow({
       >
         <HighlightedName name={team.name} query={query} />
       </Link>
-      <span className={styles.service} data-row-detail="service">
+      <span className={styles.service} data-row-detail="service" data-service={facts?.service}>
         {facts?.service}
       </span>
-      <span className={styles.suburbs} data-row-detail="suburbs">
+      <span className={styles.suburbs} data-row-detail="suburbs" data-one={facts?.suburbs === 1 ? "true" : undefined}>
         {facts?.suburbs ?? 0}
       </span>
       <span className={styles.check}>

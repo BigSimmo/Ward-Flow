@@ -42,7 +42,7 @@ export function LiveChip({ state, age, asAt, onHero = false, onTogglePause, clas
   const asAtText = state === "stale" && asAt != null ? `as at ${clk(asAt)}` : null;
   const paused = state === "paused";
   return (
-    <span className={cx(styles.group, className)}>
+    <span className={cx(styles.group, className)} data-wf-live="">
       <span className={cx(styles.lv, onHero && styles.onHero)} aria-hidden="true">
         {state === "live" ? <span className={styles.pulse} /> : null}
         {state === "paused" ? <span className={styles.ring} /> : null}

@@ -522,3 +522,43 @@
     display: none;
   }
 }
+
+/* Data mode (11 Oct 2026): a quiet row under More, the phone's way to the hospital records door. */
+.dataMode {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px 10px 10px 14px;
+}
+
+.dataModeDetail {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.dataModeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 14px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.dataModeButton:hover {
+  background: var(--wf-hover);
+}
+
+.dataModeButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}

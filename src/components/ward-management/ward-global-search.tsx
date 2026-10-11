@@ -314,11 +314,37 @@ export function clearGlobalSearchRecents() {
   sessionRecents = [];
 }
 
+/**
+ * D-39: a person is named by UMRN (or "UMRN not recorded"), never by a WF journey number. Task
+ * details are written as "WF-004 · 10m overdue"; each journey number becomes that journey's UMRN.
+ */
+export function withUmrnForJourneyIds(
+  text: string,
+  lookup: Parameters<typeof resolveSubjectPatient>[1] & { movements?: readonly Movement[] },
+): string {
+  return text.replace(/\bWF-\d+\b/gu, (journeyId) => {
+    const movement = lookup.movements?.find((candidate) => candidate.id === journeyId);
+    return movement ? resolveSubjectPatient(movement, lookup).umrn : "UMRN not recorded";
+  });
+}
+
 /** The header's bottom edge, so the scrim and palette start under the bar rather than covering it. */
 function headerBottom(root: HTMLElement | null): number {
   if (!root) return 0;
   const bar = root.closest("header") ?? root;
   return Math.max(0, Math.round(bar.getBoundingClientRect().bottom));
+}
+
+/**
+ * The header's own top edge and height. The compact bar lays the open field over the bar itself,
+ * so it needs the bar's height, not its bottom edge: anything above the bar (a banner, a scrolled
+ * offset) once made the field as tall as the bar's bottom edge, a giant pill (Josh, 11 Oct 2026).
+ */
+function headerBox(root: HTMLElement | null): { top: number; height: number } {
+  if (!root) return { top: 0, height: 0 };
+  const bar = root.closest("header") ?? root;
+  const rect = bar.getBoundingClientRect();
+  return { top: Math.max(0, Math.round(rect.top)), height: Math.max(0, Math.round(rect.height)) };
 }
 
 export function WardGlobalSearch({
@@ -349,6 +375,7 @@ export function WardGlobalSearch({
   const [hoverIndex, setHoverIndex] = useState(-1);
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [top, setTop] = useState(0);
+  const [barBox, setBarBox] = useState<{ top: number; height: number }>({ top: 0, height: 0 });
   const [recentsVersion, setRecentsVersion] = useState(0);
 
   const trimmed = deferredQuery.trim();
@@ -542,7 +569,7 @@ export function WardGlobalSearch({
           kindLabel: "Task",
           id: task.id,
           title: task.title,
-          meta: task.detail,
+          meta: withUmrnForJourneyIds(task.detail, lookup),
           href: task.href ?? movementHref(task.movementId),
           movementId: task.movementId,
           tone: task.tone,
@@ -573,7 +600,7 @@ export function WardGlobalSearch({
     });
     g.push({ key: "do", heading: "Do", items: [...START_ACTIONS] });
     return g;
-  }, [tasks, recentsVersion]);
+  }, [tasks, recentsVersion, lookup]);
 
   // A chosen kind with nothing for the current query falls back to All, so a new query never shows
   // a false "No matches" while the chips beside it count real results.
@@ -628,7 +655,11 @@ export function WardGlobalSearch({
    */
   useEffect(() => {
     if (!showPopup) return;
-    const measure = () => setTop(headerBottom(rootRef.current));
+    const measure = () => {
+      setTop(headerBottom(rootRef.current));
+      const box = headerBox(rootRef.current);
+      setBarBox((current) => (current.top === box.top && current.height === box.height ? current : box));
+    };
     measure();
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, { passive: true });
@@ -981,7 +1012,11 @@ export function WardGlobalSearch({
       data-testid="ward-global-search"
       data-open={showPopup || undefined}
       // The compact bar lays the open field over itself at the bar's measured height.
-      style={top > 0 ? ({ "--wgs-bar-h": `${top}px` } as CSSProperties) : undefined}
+      style={
+        barBox.height > 0
+          ? ({ "--wgs-bar-h": `${barBox.height}px`, "--wgs-bar-top": `${barBox.top}px` } as CSSProperties)
+          : undefined
+      }
     >
       {scope !== undefined ? (
         <span className={styles.scopeChip} data-testid="ward-global-search-scope">

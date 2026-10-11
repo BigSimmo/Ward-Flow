@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { HeroTrack, Switch } from "@/components/wf";
@@ -32,6 +33,11 @@ interface StatisticsNavProps {
   withSamples?: boolean;
   /** How many wards the network has, from the page's own state. Left off, Wards shows no count. */
   wardCount?: number;
+  /**
+   * `chips`: the phone Summary's row of section chips on the sheet under the hero (v10 phone), in
+   * place of the hero track and its phone select. Defaults to `hero`.
+   */
+  variant?: "hero" | "chips";
 }
 
 /** Each unit kind's tab is current on its index page and on any one unit's page of that kind. */
@@ -84,7 +90,12 @@ export function StatisticsSamplesSwitch() {
  * The statistics section track. It sits on each page's hero band: Summary, Overview and Compare,
  * then the four unit kinds with their counts. On a phone it becomes one native select.
  */
-export function StatisticsNav({ currentSection, withSamples = true, wardCount }: StatisticsNavProps) {
+export function StatisticsNav({
+  currentSection,
+  withSamples = true,
+  wardCount,
+  variant = "hero",
+}: StatisticsNavProps) {
   const pathname = useOptionalPathname();
   const router = useOptionalRouter();
 
@@ -102,6 +113,24 @@ export function StatisticsNav({ currentSection, withSamples = true, wardCount }:
     { id: "community", label: "Teams", count: COMMUNITY_TEAM_PAGES.length, href: STATISTICS_TEAMS_HREF },
     { id: "weekly", label: "Weekly", href: WEEKLY_REPORT_HREF },
   ] satisfies Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }>;
+
+  if (variant === "chips") {
+    return (
+      <nav className={styles.chipNav} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
+        {items.map((item) => (
+          <Link
+            key={item.id}
+            href={item.href}
+            className={styles.chip}
+            aria-current={item.id === activeSection ? "page" : undefined}
+          >
+            {item.label}
+            {item.count !== undefined ? <span className={styles.chipCount}>{item.count}</span> : null}
+          </Link>
+        ))}
+      </nav>
+    );
+  }
 
   return (
     // The landmark wraps both forms of the section list, so it is there at every width: the track

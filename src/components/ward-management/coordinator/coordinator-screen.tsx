@@ -5,7 +5,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 
+import { Pause, Play } from "lucide-react";
 import {
+  Button,
   CheckingFoot,
   Hero,
   HeroStat,
@@ -19,7 +21,7 @@ import {
 import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
 import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
-import { clockState, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
@@ -573,7 +575,11 @@ export function CoordinatorScreen() {
             eyebrow={isPhone ? `Statewide · ${shiftWord}` : `Statewide · mental health beds · ${shiftWord}`}
             title={heroTitle}
             titleMeta={
-              isPhone && statewideOccupancy !== null ? `${statewideOccupancy.toFixed(0)}% of open beds full` : undefined
+              isPhone
+                ? `Prototype data, invented records${
+                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(0)}% of open beds full` : ""
+                  }`
+                : undefined
             }
             stats={
               isPhone ? (
@@ -588,13 +594,14 @@ export function CoordinatorScreen() {
                   <HeroStat
                     value={tierOneInQueue}
                     label="Tier 1"
+                    tone="neutral"
                     pressed={highlight === "tier1"}
                     onToggle={() => toggleHighlight("tier1")}
                   />
                   <HeroStat
                     value={actionInbox.length}
                     label="Exceptions"
-                    tone={actionInbox.length > 0 ? "warning" : undefined}
+                    tone={actionInbox.length > 0 ? "danger" : undefined}
                     command
                     expanded={phoneSheet?.kind === "exceptions"}
                     onToggle={() => {
@@ -613,16 +620,29 @@ export function CoordinatorScreen() {
             }
             bar={
               isPhone ? (
+                // v10 phone hero: the full-width "N since you looked at HH:MM" pill and a round
+                // pause. The Live chip itself sits on the eyebrow line (`aside` below).
                 <div className={styles.phoneHeroActs}>
-                  <HeroStat
-                    inline
-                    value={newEvents}
-                    label={sinceLabel}
-                    command
-                    expanded={phoneSheet?.kind === "since"}
-                    onToggle={() => setPhoneSheet({ kind: "since" })}
+                  <Button
+                    variant="onHero"
+                    className={styles.phoneSince}
+                    aria-haspopup="dialog"
+                    aria-expanded={phoneSheet?.kind === "since"}
+                    onClick={() => setPhoneSheet({ kind: "since" })}
+                  >
+                    <b className={styles.phoneSinceMono}>{newEvents}</b> since you looked at{" "}
+                    <span className={styles.phoneSinceMono}>{sinceClock}</span>
+                  </Button>
+                  <Button
+                    variant="onHero"
+                    iconOnly
+                    icon={paused ? Play : Pause}
+                    // One name with aria-pressed: swapping the name too reads as "Resume, pressed".
+                    aria-label="Pause live updates"
+                    aria-pressed={paused}
+                    className={styles.phonePause}
+                    onClick={togglePause}
                   />
-                  <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
                 </div>
               ) : (
                 <div className={styles.heroToggles}>
@@ -683,7 +703,9 @@ export function CoordinatorScreen() {
               )
             }
             aside={
-              isPhone ? undefined : (
+              isPhone ? (
+                <LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} />
+              ) : (
                 <>
                   <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
                   <Link href={HANDOVER_HREF} className={buttonClass({ variant: "light" })}>
@@ -787,6 +809,7 @@ export function CoordinatorScreen() {
                   highlight={highlight}
                   onClearHighlight={() => setHighlight(undefined)}
                   rowCap={isPhone ? PHONE_QUEUE_ROWS : undefined}
+                  phone={isPhone}
                 />
                 {isPhone ? (
                   <HomeBedsReadyCard

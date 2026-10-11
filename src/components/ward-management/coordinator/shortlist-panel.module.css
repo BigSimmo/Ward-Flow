@@ -1143,3 +1143,25 @@
     animation: none;
   }
 }
+
+/* Phone (v10 Home "Patient open", 11 Oct 2026): Override and Refer share the foot as 48px pills,
+   Refer taking the rest of the row. */
+@media (max-width: 48rem) {
+  .actionToolbar > div:not([data-testid]) {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  .actionToolbar > div:not([data-testid]) button {
+    min-height: 48px;
+    padding-inline: 1rem;
+  }
+
+  .actionToolbar > div:not([data-testid]) button:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

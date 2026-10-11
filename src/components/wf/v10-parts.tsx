@@ -6,6 +6,7 @@ import { cx } from "./cx";
 import { SrOnly } from "./primitives";
 import { StackBar, type StackSegment } from "./stat";
 import { StatusGlyph, type WfTone } from "./status-glyph";
+import { SinceYouLookedFold } from "./since-you-looked-fold";
 import styles from "./v10-parts.module.css";
 
 /*
@@ -405,7 +406,21 @@ export function SinceYouLooked({
   id?: string;
   className?: string;
 }) {
-  return (
+  // Phone (v10): one summary row that opens the digest, not a grid of tiles.
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const lead = items
+    .slice(0, 2)
+    .map((item) => `${item.value} ${item.word}`)
+    .join(" · ");
+  const summary =
+    items.length > 0 ? (
+      <>
+        <b className={styles.sinceRowCount}>{total}</b> {total === 1 ? "change" : "changes"} since{" "}
+        {isClockLike(since) ? <b className={styles.sinceClock}>{since}</b> : since}
+        {lead ? ` · ${lead}` : ""}
+      </>
+    ) : null;
+  const full = (
     <section id={id} className={cx(styles.since, className)} aria-label={`Since you looked at ${since}`}>
       <CardHead
         title="Since you looked"
@@ -436,5 +451,15 @@ export function SinceYouLooked({
         </ul>
       )}
     </section>
+  );
+  return (
+    <SinceYouLookedFold
+      summary={summary}
+      label={`Since you looked at ${since}`}
+      id={id}
+      className={cx(styles.since, className)}
+    >
+      {full}
+    </SinceYouLookedFold>
   );
 }

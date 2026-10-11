@@ -121,8 +121,14 @@
     text-align: center;
     gap: 0.5rem;
     padding: 0.625rem 0.875rem;
+    /* v10 phone foot: quiet centred lines, no card. */
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
   .leftGroup {
+    /* The 75rem rule's 20rem basis is a HEIGHT in this column: it made a 370px empty box. */
+    flex: 0 0 auto;
     flex-direction: column;
     align-items: center;
     justify-content: center;

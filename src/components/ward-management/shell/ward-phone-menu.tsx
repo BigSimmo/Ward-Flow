@@ -25,6 +25,7 @@ import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-manag
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 
+import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
@@ -338,12 +339,42 @@ function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; 
             <Chevron />
           </Link>
         </li>
+        <DataModeRow onClose={onClose} />
       </ul>
       <p className={styles.note}>
         <Dot tone="neutral" />
         Synthetic prototype, not a medical device
       </p>
     </section>
+  );
+}
+
+/**
+ * The data mode, still reachable on a phone now the header's Prototype pill is desktop only: a
+ * quiet row saying which data this is, and the (unavailable) hospital records door. Nothing when
+ * the page sits outside `WardSharedAccess`.
+ */
+function DataModeRow({ onClose }: { onClose: () => void }) {
+  const dataMode = useWardDataMode();
+  if (!dataMode) return null;
+  return (
+    <li className={styles.dataMode} data-testid="ward-phone-menu-data-mode">
+      <span className={styles.rowText}>
+        <span className={styles.rowLabel}>Data mode: Prototype</span>
+        <span className={styles.dataModeDetail}>{dataMode.detail}</span>
+      </span>
+      <button
+        type="button"
+        className={styles.dataModeButton}
+        data-testid="ward-phone-menu-hospital-records"
+        onClick={() => {
+          onClose();
+          dataMode.openHospitalRecords();
+        }}
+      >
+        Hospital records (unavailable)
+      </button>
+    </li>
   );
 }
 
