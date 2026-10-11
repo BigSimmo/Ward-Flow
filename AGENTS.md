@@ -267,7 +267,34 @@ authority before acting.
 
 # Process hardening phases
 
+<!-- BEGIN:process-hardening -->
+
+# Process hardening phases
+
 ## Bare PR publication is not readiness work
+
+When the user says `open PR`, `create PR`, or `publish PR` without also requesting review, validation, readiness, or CI observation, treat it as a request to publish the prepared change promptly. GitHub is the requested verification surface.
+
+- Inspect only what is necessary to avoid publishing the wrong change: the branch, base, staged/unstaged scope, and PR title/body. Reuse an existing dedicated branch or worktree rather than recreating it. Do not fetch, pull, rebase, review the ledger, inventory history, load a release/handover skill, or create a worktree unless it is necessary to keep unrelated work out of the PR.
+- Do **not** run or wait for `npm run format`, dependency installation or linking, `npm run verify:pr-local`, tests, lint, typecheck, builds, browser checks, audits, generated-document synchronization, or CI. Do not invoke a release/readiness workflow for this request.
+- If a local commit hook or a readiness-only push guard (format or static) is the only blocker, publish with `git commit --no-verify` and that guard's own scoped override (`SKIP_FORMAT_GUARD=1` or `SKIP_STATIC_GUARD=1`, as applicable) instead of `git push --no-verify`; do not spend time preparing dependencies or formatting solely to satisfy the hook. Never skip the push hook wholesale — the auto-merge ownership guard has no override and must never be bypassed, even for a bare-publication request. This exception is limited to the explicit bare-publication request and does not weaken normal-push safeguards.
+- Create the PR immediately after the push, using the repository PR template where its policy fields apply. Report the URL and identify all local and hosted checks as unrun by request. Do not babysit CI, amend, or perform follow-up readiness work unless the user asks. This route overrides generic branch-bundling, handover, review, and babysit instructions.
+
+- **For normal engineering pushes, run `npm run format -- --files <exact-owned-paths>` for every owned candidate/pushed file, including docs/config, and commit the result before push.** This rule does not apply to the explicit bare PR publication route above. Formatting is in neither `npm run test`, `npm run typecheck`, nor `npm run lint`, so the ordinary loop can report green while the changed-file CI check or exact-commit pre-push guard fails. Three CI failures on 2026-07-30 came from exactly this (two of them on `ci/circleci: verify`, since removed from the repo by PR #1412). Two traps beyond simply running it:
+  - **Formatting without committing does nothing for the push.** A push sends commits, not your working tree, so formatting after committing leaves the unformatted blob on the branch. Amend or add a follow-up commit.
+  - **Cover every owned candidate file.** A source-only check misses docs/config in the same push. Use the maintained literal-file formatter contract; `npm run format:all` is a separate whole-tree write requiring explicit scope and ownership. Policy changes also need the applicable explicit tree check. Never format or stage another owner's files to satisfy a gate.
+
+  `.githooks/pre-push` contains the local push guard. Before relying on it, verify that
+  `core.hooksPath` points to `.githooks` in this checkout and that the guard checks the actual
+  remote URL. A missing hook or a command that bypasses it grants no permission to push to a
+  different repository. Keep format and static checks scoped to the pushed commit.
+
+For the verification principle, the tier table, and the rest of the gate-selection rules, see [`docs/agents/verification-gates.md`](docs/agents/verification-gates.md).
+
+## Do not pay twice for the verdict GitHub is about to reach
+
+For current Ward Flow gate selection, selector limits and evidence reuse, see [`docs/agents/task-efficiency.md`](docs/agents/task-efficiency.md). Unknown CI coverage requires running the selected gate or reporting it blocked; a declared workflow is not an observed verdict. The copied gate-claim examples in [`docs/agents/verification-gates.md`](docs/agents/verification-gates.md) require Ward-specific revalidation before use.
+<!-- END:process-hardening -->
 
 ## Do not pay twice for the verdict GitHub is about to reach
 
@@ -300,3 +327,9 @@ authority before acting.
 ## Why this matters more here than in an ordinary repository
 
 ## When you genuinely cannot commit
+
+## Always-loaded publication safeguards
+
+- For normal Ward Flow readiness pushes — never an explicit bare PR publication — run the
+  selected gate for the actual changed files, then verify the exact pushed commit.
+- If a PR has auto-merge armed, its auto-merge state is user-owned and automation must not disable or re-enable it. Ordinary fast-forward pushes, `update-branch`/merge-main-in syncs, and bundled additions may proceed — GitHub re-validates required checks against the new head before merging, so an additive push cannot slip past that. A force-push, history rewrite, or base/target change while armed still hard-blocks with no override; wait for the user to change that state first.
