@@ -3,7 +3,7 @@
 import { ChevronRight, Phone, PhoneCall } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { useOptionalToast } from "@/components/ui/toast";
+import { useOptionalToast } from "@/components/wf";
 import { Card, CardHead, useIsPhone, useIsTabletPortrait } from "@/components/wf";
 
 import type { CallRow } from "./patient-call-list";

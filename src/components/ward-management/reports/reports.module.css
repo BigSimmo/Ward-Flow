@@ -285,7 +285,7 @@
   min-height: 36px;
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);

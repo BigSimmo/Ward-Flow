@@ -265,9 +265,7 @@ export function DowntimePackScreen() {
   const formsReceived = pack.legalForms.some((line) => line.receivedAt !== null);
   // The ED queue counts people still in the department; All EDs counts every open journey.
   const edPopulation =
-    pack.leftEd > 0
-      ? `${pack.leftEd} more left their ED and are moving to a ward, listed under Pending moves.`
-      : null;
+    pack.leftEd > 0 ? `${pack.leftEd} more left their ED and are moving to a ward, listed under Pending moves.` : null;
   const takenLine = (
     <span data-testid="ward-downtime-generated">Taken {at(pack.generatedAt)} · does not update while open</span>
   );
@@ -594,9 +592,7 @@ export function DowntimePackScreen() {
               </tbody>
               <tfoot>
                 <tr className={styles.total}>
-                  <th scope="row">
-                    All wards
-                  </th>
+                  <th scope="row">All wards</th>
                   <td className={styles.num}>{pack.totals.beds}</td>
                   <td className={styles.num} data-testid="ward-downtime-total-ready">
                     {pack.totals.ready}
@@ -666,9 +662,7 @@ export function DowntimePackScreen() {
                       <td className={styles.num}>{line.urgency}</td>
                       <td>{line.legalStatus}</td>
                       <td>{line.stage}</td>
-                      {edAccepted ? (
-                        <td className={styles.packAccepted}>{line.acceptedWard || NOT_RECORDED}</td>
-                      ) : null}
+                      {edAccepted ? <td className={styles.packAccepted}>{line.acceptedWard || NOT_RECORDED}</td> : null}
                     </tr>
                   ))}
                 </tbody>

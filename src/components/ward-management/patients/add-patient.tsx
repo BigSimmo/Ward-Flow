@@ -437,105 +437,99 @@ export function AddPatientForm() {
   ];
 
   const duplicateCheck = (
-            <Card aria-label="Possible existing records" data-testid="ward-add-patient-duplicate-check">
-              <CardHead
-                icon={UsersRound}
-                title="Duplicate check"
-                aside={
-                  foundSomething ? (
-                    <Badge size="sm" tone="warning">
-                      {matches.length} to check
-                    </Badge>
-                  ) : null
-                }
-              />
-              <CardBody flush>
-                {!hasCheckedAnything ? (
-                  <p className={styles.dupState} data-testid="ward-add-patient-duplicate-unchecked">
-                    Enter a record number or a name of at least {NEAR_MATCH_MINIMUM_TERM_LENGTH} letters to check for
-                    duplicates.
-                  </p>
-                ) : !foundSomething ? (
-                  <p className={styles.dupState} data-testid="ward-add-patient-duplicate-none">
-                    <StatusGlyph tone="success" size={9} />
-                    No existing record matches this record number or name.
-                  </p>
-                ) : (
-                  <>
-                    <div className={styles.dupLeads}>
-                      {candidates.recordNumberCollision.length > 0 ? (
-                        <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-umrn">
-                          {draft.umrn.trim()} already belongs to{" "}
-                          {candidates.recordNumberCollision
-                            .map(
-                              (patient) => `${patient.givenName} ${patient.familyName} (born ${patient.dateOfBirth})`,
-                            )
-                            .join(", ")}
-                          .
-                        </p>
-                      ) : null}
-                      {candidates.sameNameSameBirthDate.length > 0 ? (
-                        <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-same-name-same-dob">
-                          Already in this system with the same name AND the same date of birth — almost certainly the
-                          same person.
-                        </p>
-                      ) : null}
-                      {candidates.sameNameBirthDateNotMatched.length > 0 ? (
-                        <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-same-name">
-                          Already in this system with the same name. The date of birth does not confirm it either way —
-                          open the record and check.
-                        </p>
-                      ) : null}
-                      {nearMatches.length > 0 ? (
-                        <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-lead">
-                          {nearMatches.length === 1
-                            ? "A person already in this system has"
-                            : "People already in this system have"}{" "}
-                          {nearMatches.length === 1 ? "a name" : "names"} one keystroke from this one. Check whether
-                          this is the same person before adding a second record.
-                        </p>
-                      ) : null}
-                    </div>
-                    <ul className={styles.dupList}>
-                      {matches.map(({ patient, kind }) => (
-                        <li
-                          key={patient.id}
-                          className={styles.dupRow}
-                          data-testid={`ward-add-patient-duplicate-${patient.id}`}
-                        >
-                          <Avatar name={`${patient.givenName} ${patient.familyName}`} decorative />
-                          <div className={styles.dupMain}>
-                            <span className={styles.dupNameRow}>
-                              <strong className={styles.dupName}>
-                                {patient.givenName} {patient.familyName}
-                              </strong>
-                              <span className={styles.dupKind}>
-                                <StatusGlyph tone={kind === "near" ? "neutral" : "warning"} size={9} />
-                                {MATCH_LABEL[kind]}
-                              </span>
-                            </span>
-                            <span className={styles.dupMeta}>
-                              <span className={styles.mono}>{patient.umrn}</span>
-                              <span> · born </span>
-                              <span className={styles.mono}>{patient.dateOfBirth}</span>
-                              {patient.gender ? <span> · {patient.gender}</span> : null}
-                              {patient.suburb ? <span> · {patient.suburb}</span> : null}
-                            </span>
-                            <Link
-                              className={buttonClass({ size: "sm", className: styles.dupOpen })}
-                              href={`/mockups/ward-flow/people/${patient.id}`}
-                            >
-                              Use this record
-                            </Link>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </CardBody>
-              <CardFoot meta={`Duplicate check covers all ${patients.length} patient records.`} />
-            </Card>
+    <Card aria-label="Possible existing records" data-testid="ward-add-patient-duplicate-check">
+      <CardHead
+        icon={UsersRound}
+        title="Duplicate check"
+        aside={
+          foundSomething ? (
+            <Badge size="sm" tone="warning">
+              {matches.length} to check
+            </Badge>
+          ) : null
+        }
+      />
+      <CardBody flush>
+        {!hasCheckedAnything ? (
+          <p className={styles.dupState} data-testid="ward-add-patient-duplicate-unchecked">
+            Enter a record number or a name of at least {NEAR_MATCH_MINIMUM_TERM_LENGTH} letters to check for
+            duplicates.
+          </p>
+        ) : !foundSomething ? (
+          <p className={styles.dupState} data-testid="ward-add-patient-duplicate-none">
+            <StatusGlyph tone="success" size={9} />
+            No existing record matches this record number or name.
+          </p>
+        ) : (
+          <>
+            <div className={styles.dupLeads}>
+              {candidates.recordNumberCollision.length > 0 ? (
+                <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-umrn">
+                  {draft.umrn.trim()} already belongs to{" "}
+                  {candidates.recordNumberCollision
+                    .map((patient) => `${patient.givenName} ${patient.familyName} (born ${patient.dateOfBirth})`)
+                    .join(", ")}
+                  .
+                </p>
+              ) : null}
+              {candidates.sameNameSameBirthDate.length > 0 ? (
+                <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-same-name-same-dob">
+                  Already in this system with the same name AND the same date of birth — almost certainly the same
+                  person.
+                </p>
+              ) : null}
+              {candidates.sameNameBirthDateNotMatched.length > 0 ? (
+                <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-same-name">
+                  Already in this system with the same name. The date of birth does not confirm it either way — open the
+                  record and check.
+                </p>
+              ) : null}
+              {nearMatches.length > 0 ? (
+                <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-lead">
+                  {nearMatches.length === 1
+                    ? "A person already in this system has"
+                    : "People already in this system have"}{" "}
+                  {nearMatches.length === 1 ? "a name" : "names"} one keystroke from this one. Check whether this is the
+                  same person before adding a second record.
+                </p>
+              ) : null}
+            </div>
+            <ul className={styles.dupList}>
+              {matches.map(({ patient, kind }) => (
+                <li key={patient.id} className={styles.dupRow} data-testid={`ward-add-patient-duplicate-${patient.id}`}>
+                  <Avatar name={`${patient.givenName} ${patient.familyName}`} decorative />
+                  <div className={styles.dupMain}>
+                    <span className={styles.dupNameRow}>
+                      <strong className={styles.dupName}>
+                        {patient.givenName} {patient.familyName}
+                      </strong>
+                      <span className={styles.dupKind}>
+                        <StatusGlyph tone={kind === "near" ? "neutral" : "warning"} size={9} />
+                        {MATCH_LABEL[kind]}
+                      </span>
+                    </span>
+                    <span className={styles.dupMeta}>
+                      <span className={styles.mono}>{patient.umrn}</span>
+                      <span> · born </span>
+                      <span className={styles.mono}>{patient.dateOfBirth}</span>
+                      {patient.gender ? <span> · {patient.gender}</span> : null}
+                      {patient.suburb ? <span> · {patient.suburb}</span> : null}
+                    </span>
+                    <Link
+                      className={buttonClass({ size: "sm", className: styles.dupOpen })}
+                      href={`/mockups/ward-flow/people/${patient.id}`}
+                    >
+                      Use this record
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </CardBody>
+      <CardFoot meta={`Duplicate check covers all ${patients.length} patient records.`} />
+    </Card>
   );
 
   return (
@@ -571,8 +565,8 @@ export function AddPatientForm() {
                 </span>
                 <b>Add a patient needs a larger screen</b>
                 <span className={styles.muted}>
-                  Most people are already on record. Search first, then add from a tablet or computer, which also
-                  takes the address, facility, clinical intake and a side-by-side duplicate check.
+                  Most people are already on record. Search first, then add from a tablet or computer, which also takes
+                  the address, facility, clinical intake and a side-by-side duplicate check.
                 </span>
               </div>
               <div className={styles.phBigFoot}>

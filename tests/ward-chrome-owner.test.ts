@@ -267,6 +267,13 @@ const KNOWN_BACKLOG_TOP_ANCHORED = [".modeHeader"];
  * file), which added the Ward, Hub, Network, Capacity, Governance, Out of area, On call, Census,
  * Legal forms, Reports, Handover, Chronology and Statistics switches.
  */
+/*
+ * Device audit (11 Oct 2026): Community's A to Z letter headings stick under the pinned view
+ * switch (8.125rem, below bar plus switch) while 64 names scroll. In-content index headings, not
+ * chrome, and stacked under a switch rather than under the bar, so they are named here apart.
+ */
+const STACKED_INDEX_HEADINGS = [".letterHeading"];
+
 const V10_PINNED_VIEW_SWITCHES = [
   ".phoneKindBar",
   ".phonePanes",
@@ -360,7 +367,10 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
 
   it("has exactly one mounted top-anchored phone element outside the documented backlog — .bar", () => {
     const withoutBacklog = allTopAnchored.filter(
-      (selector) => !KNOWN_BACKLOG_TOP_ANCHORED.includes(selector) && !V10_PINNED_VIEW_SWITCHES.includes(selector),
+      (selector) =>
+        !KNOWN_BACKLOG_TOP_ANCHORED.includes(selector) &&
+        !V10_PINNED_VIEW_SWITCHES.includes(selector) &&
+        !STACKED_INDEX_HEADINGS.includes(selector),
     );
     expect(
       withoutBacklog,
@@ -422,7 +432,9 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
           ".detailFooter",
         ].includes(selector),
     );
-    expect(actionRows).toEqual([".actionRow", ".decisionArea"]);
+    // Device audit (11 Oct 2026): the Patient page's pinned primary (.phBar) is the v10 "one
+    // pinned primary" bar, and now rests above the phone dock on var(--wf-dock-clear).
+    expect(actionRows).toEqual([".actionRow", ".decisionArea", ".phBar"]);
     const command = stripComments(readModule(path.join(WARD_ROOT, "coordinator/coordinator.module.css")));
     const phone = splitMediaBlocks(command).narrowBlocks.join("\n");
     expect(phone).toMatch(/\.shortlistActionRow\s*\{\s*position:\s*static;/u);

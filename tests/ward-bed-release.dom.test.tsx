@@ -22,6 +22,7 @@ import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ensureWardTable } from "./helpers/capacity-ward-table";
 
 function wardBedFigure(state: string, label: string): number {
   const beds = screen.getByTestId("ward-unit-beds");
@@ -36,6 +37,7 @@ function wardBedFigure(state: string, label: string): number {
 
 /** The Freeing cell of one ward's row on the live Capacity board. */
 function freeingCell(unitId: string): HTMLElement {
+  ensureWardTable();
   const table = screen.getByTestId("ward-capacity-network-table");
   const row = within(table).getByTestId(`ward-capacity-network-row-${unitId}`);
   return within(row).getByTestId("ward-capacity-network-freeing");
@@ -49,6 +51,7 @@ function freeingCell(unitId: string): HTMLElement {
  * number did not move" would go red the moment that note legitimately appeared or disappeared.
  */
 function readyFigure(unitId: string): string {
+  ensureWardTable();
   const table = screen.getByTestId("ward-capacity-network-table");
   const row = within(table).getByTestId(`ward-capacity-network-row-${unitId}`);
   const cell = within(row).getByTestId("ward-capacity-network-ready");

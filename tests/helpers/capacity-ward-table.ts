@@ -7,3 +7,8 @@ export function showWardTable(): void {
   const layouts = screen.getByRole("group", { name: "Bed map layout" });
   fireEvent.click(within(layouts).getByRole("button", { name: "Table" }));
 }
+
+/** Opens the Table layout only when the ward table is not already showing. */
+export function ensureWardTable(): void {
+  if (!screen.queryByTestId("ward-capacity-network-table")) showWardTable();
+}

@@ -687,19 +687,19 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               {coordinator ? (
                 <span className={styles.roleSwitch}>
                   <span className={styles.fieldWord}>View as</span>
-                <Segmented<ViewRole>
-                  label="View as"
-                  value={viewRole}
-                  onChange={(next) => {
-                    setViewRole(next);
-                    if (next === "nurse" && tab === "audit") setTab("all");
-                    setOpenKey(null);
-                  }}
-                  items={[
-                    { id: "coordinator", label: "Bed coordinator" },
-                    { id: "nurse", label: "Ward nurse" },
-                  ]}
-                />
+                  <Segmented<ViewRole>
+                    label="View as"
+                    value={viewRole}
+                    onChange={(next) => {
+                      setViewRole(next);
+                      if (next === "nurse" && tab === "audit") setTab("all");
+                      setOpenKey(null);
+                    }}
+                    items={[
+                      { id: "coordinator", label: "Bed coordinator" },
+                      { id: "nurse", label: "Ward nurse" },
+                    ]}
+                  />
                 </span>
               ) : null}
             </>

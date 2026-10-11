@@ -1030,20 +1030,24 @@ function EdLanes({
                       );
                     })
                   : null}
-                {phone ? null : row.people.map((person) => (
-                  <button
-                    key={person.movement.id}
-                    type="button"
-                    className={styles.mark}
-                    style={{ left: `${lanePosition(person.wait)}%` }}
-                    data-dim={personDim(person, highlight) ? "true" : undefined}
-                    aria-pressed={selected === person.movement.id}
-                    aria-label={`${person.name}, ${splitDuration(person.wait)}, ${person.stage}`}
-                    onClick={() => setSelected((value) => (value === person.movement.id ? null : person.movement.id))}
-                  >
-                    <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} />
-                  </button>
-                ))}
+                {phone
+                  ? null
+                  : row.people.map((person) => (
+                      <button
+                        key={person.movement.id}
+                        type="button"
+                        className={styles.mark}
+                        style={{ left: `${lanePosition(person.wait)}%` }}
+                        data-dim={personDim(person, highlight) ? "true" : undefined}
+                        aria-pressed={selected === person.movement.id}
+                        aria-label={`${person.name}, ${splitDuration(person.wait)}, ${person.stage}`}
+                        onClick={() =>
+                          setSelected((value) => (value === person.movement.id ? null : person.movement.id))
+                        }
+                      >
+                        <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} />
+                      </button>
+                    ))}
               </span>
               <span className={styles.end}>
                 <Longest row={row} />

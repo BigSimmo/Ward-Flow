@@ -142,9 +142,7 @@ export function StatisticsNav({
           // Device audit 11 Oct 2026: eight sections is a desktop model. A phone keeps Summary,
           // Compare and Weekly, plus the section it is on so the current chip is always there.
           .filter(
-            (item) =>
-              item !== backTo &&
-              (PHONE_SECTIONS.includes(item.id) || (item.id === activeSection && !backTo)),
+            (item) => item !== backTo && (PHONE_SECTIONS.includes(item.id) || (item.id === activeSection && !backTo)),
           )
           .map((item) => (
             <Link

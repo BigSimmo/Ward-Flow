@@ -1311,11 +1311,7 @@ function ServiceBars({ serviceCounts }: { serviceCounts: ReadonlyMap<string, { t
   });
   return (
     <>
-      <BarList
-        rows={rows}
-        label="Community teams by health service"
-        labelWidth="9.5rem"
-      />
+      <BarList rows={rows} label="Community teams by health service" labelWidth="9.5rem" />
       <SrOnly>
         <ul>
           {present.map((code) => (

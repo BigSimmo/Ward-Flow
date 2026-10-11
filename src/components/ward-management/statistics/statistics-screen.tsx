@@ -419,7 +419,6 @@ export function StatisticsScreen({
   const { view, choose: chooseView } = useStatisticsView();
   const isPhone = useIsPhone();
 
-
   if (isPhone) {
     return (
       <StatisticsSummaryPhone
