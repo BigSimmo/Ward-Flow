@@ -101,6 +101,24 @@
   flex: none;
 }
 
+/* Header taps (Josh, 11 Oct 2026): the Prototype pill lands in this slot once the app loads. Until
+ * then an invisible copy of its box holds the same room, so the search and the buttons after it do
+ * not slide right under a finger. It matches `ward-shared-access.module.css`'s .pill: 10px sides,
+ * an 8px ring and a 6px gap before the word, 1px border, 12px semibold. */
+.dataMode:empty::before {
+  content: "Prototype";
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 28px;
+  min-height: var(--wf-tablet-tap, 0px);
+  padding: 0 10px 0 24px;
+  border: 1px solid transparent;
+  font: 600 12px / 1 var(--wf-font, inherit);
+  white-space: nowrap;
+  visibility: hidden;
+}
+
 @media (max-width: 48rem) {
   .dataMode {
     display: none;

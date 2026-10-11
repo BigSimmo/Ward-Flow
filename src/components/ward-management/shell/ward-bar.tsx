@@ -571,9 +571,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, [liveClockFace]);
   useEffect(() => () => publishLiveClock(undefined), []);
   // The header is ready: press the panel button a reader tapped while it was still loading.
-  useEffect(() => {
-    replayEarlyHeaderTap();
-  }, []);
+  useEffect(() => replayEarlyHeaderTap(), []);
 
   const { role, shellRole, placeId } = useWardNavCounts();
   const roleCategory = roleReferralCategory(role);
