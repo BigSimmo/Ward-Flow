@@ -1307,6 +1307,9 @@ export function EdScreen({ edId }: EdScreenProps) {
    * automatically rather than silently escaping the trap the next person forgets to update.
    */
   function handleTransportDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    // The patient's sheet beneath this dialog listens on window for Tab and Escape; this dialog
+    // owns both while it is open.
+    if (event.key === "Escape" || event.key === "Tab") event.stopPropagation();
     if (event.key === "Escape") {
       event.preventDefault();
       closeTransportDialog();
@@ -4328,7 +4331,15 @@ export function EdScreen({ edId }: EdScreenProps) {
                      */}
                     {transportOpen && !transportBlocked
                       ? createPortal(
-                          <div className={styles.modalBackdrop} onClick={closeTransportDialog}>
+                          // Since ED page A2 this dialog opens over the patient's sheet, which
+                          // inerts everything outside itself; these markers keep the dialog live
+                          // and stop the sheet taking its focus back.
+                          <div
+                            className={styles.modalBackdrop}
+                            onClick={closeTransportDialog}
+                            data-sheet-inert-skip=""
+                            data-sheet-portal=""
+                          >
                             <div
                               ref={transportDialogRef}
                               className={styles.declineForm}
