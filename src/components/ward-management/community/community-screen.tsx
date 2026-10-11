@@ -1861,10 +1861,16 @@ export function CommunityScreen({
    * bed, Back and CTOs as person rows. Every coordinator action on desktop stays reachable here.
    */
   const tabCounts: [ActiveTabType, number][] = [
-    ["tab-triage", isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length],
-    ["tab-inpatients", isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length],
-    ["tab-egress", isDemoMode ? teamConfig.egress : lists.expectedBack.length],
-    ["tab-caseload", isDemoMode ? teamConfig.caseload : caseloadRows.length],
+    ["tab-triage", isDemoMode && !hasAnyReferralsForTeam ? demoTeamReferrals.length : waitingReferrals.length],
+    ["tab-inpatients", lists.currentlyAdmitted.length],
+    ["tab-egress", lists.expectedBack.length],
+    [
+      "tab-caseload",
+      caseloadRows.filter((row) => {
+        const code = caseloadStatutoryFormCode(row);
+        return code === "5A" || code === "5B";
+      }).length,
+    ],
   ];
   const firstListWithSomeone = tabCounts.find(([, count]) => count > 0)?.[0] ?? "tab-triage";
   // Held from the first render (React's "adjust state while rendering" pattern), so the list never
