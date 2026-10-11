@@ -533,7 +533,7 @@
   background: var(--wf-act-tint);
 }
 
-.row[data-overdue="true"]:hover {
+.row[data-overdue="true"]:not(.rowOn):hover {
   background: var(--wf-hover);
 }
 
