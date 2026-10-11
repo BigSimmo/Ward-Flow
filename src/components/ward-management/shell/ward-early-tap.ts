@@ -10,7 +10,8 @@
  * - a button that opens a dialog is pressed only if no dialog is open;
  * - any other button is pressed only if React had not yet attached when it was tapped (no
  *   `__reactContainer$` key on the document), because React never saw that tap.
- * Two or more early taps on the same button are never replayed.
+ * Two or more early taps on a button that opens or toggles something are not replayed, because a
+ * second press could undo the first. Any other button is pressed at most once.
  */
 export const WARD_HEADER_READY_ATTRIBUTE = "data-wf-bar-ready";
 
@@ -28,6 +29,10 @@ function dialogIsOpen(): boolean {
   return Array.from(document.querySelectorAll('[role="dialog"]')).some((dialog) => dialog.getClientRects().length > 0);
 }
 
+function isToggle(button: HTMLButtonElement): boolean {
+  return button.getAttribute("aria-expanded") !== null || button.getAttribute("aria-haspopup") === "dialog";
+}
+
 function tapTookEffect(button: HTMLButtonElement, tap: EarlyTap): boolean {
   const expanded = button.getAttribute("aria-expanded");
   if (expanded !== null) return expanded !== tap.expanded;
@@ -39,9 +44,7 @@ export function replayEarlyHeaderTap(): () => void {
   document.documentElement.setAttribute(WARD_HEADER_READY_ATTRIBUTE, "");
   const holder = window as Window & { __wfEarlyTap?: EarlyTap };
   const tap = holder.__wfEarlyTap;
-  // Repeated taps on one button cannot be told apart from taps React already replayed, so a
-  // second press might undo the first. Only a single early tap is replayed.
-  if (!tap || tap.count > 1 || Date.now() - tap.at > EARLY_TAP_MAX_AGE_MS) {
+  if (!tap || Date.now() - tap.at > EARLY_TAP_MAX_AGE_MS) {
     holder.__wfEarlyTap = undefined;
     return () => {};
   }
@@ -50,7 +53,10 @@ export function replayEarlyHeaderTap(): () => void {
   const timer = window.setTimeout(() => {
     holder.__wfEarlyTap = undefined;
     const button = document.querySelector(`[data-testid="ward-bar"] button[data-testid="${CSS.escape(tap.id)}"]`);
-    if (button instanceof HTMLButtonElement && !button.disabled && !tapTookEffect(button, tap)) button.click();
+    if (!(button instanceof HTMLButtonElement) || button.disabled) return;
+    // Repeated taps on a toggle cannot be told apart from taps React already replayed.
+    if (tap.count > 1 && isToggle(button)) return;
+    if (!tapTookEffect(button, tap)) button.click();
   }, SETTLE_MS);
   return () => window.clearTimeout(timer);
 }
