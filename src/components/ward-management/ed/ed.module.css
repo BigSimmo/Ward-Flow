@@ -7997,6 +7997,27 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   min-width: 0;
 }
 
+/* The row's own facts (form expiry, transit, readmission): one quiet line each, never wrapping. */
+.a2Facts {
+  display: block;
+  min-width: 0;
+}
+
+.a2Facts > *,
+.a2Facts [class] {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.a2Facts .sr-only,
+.a2Facts [class*="sr-only"] {
+  display: revert;
+}
+
 .a2Mono {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;

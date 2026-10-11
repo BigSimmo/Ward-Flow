@@ -2692,8 +2692,11 @@ export function EdScreen({ edId }: EdScreenProps) {
       value: patients.filter(heroHighlightMatch.under_form).length,
     },
   ];
-  /* Mockups: Needs you holds only items needing action (good news stays on the row). */
-  const needsYouFlags = priorityFlags.filter((flag) => flag.tone === "danger" || flag.tone === "warn");
+  /* Needs you holds only items needing action (good news stays on the row). A wait past the long-wait
+     default is listed too, neutrally, never as a breach (owner ruling D-24, 26 Sept 2026). */
+  const needsYouFlags = priorityFlags.filter(
+    (flag) => flag.tone === "danger" || flag.tone === "warn" || flag.kind === `Waiting ${LONG_WAIT_TEXT}`,
+  );
   const needsYouItems: EdNeedsItem[] = needsYouFlags.map((flag, index) => ({
     key: `${flag.recordId}-${index}`,
     actNow: flag.tone === "danger",
@@ -3667,19 +3670,18 @@ export function EdScreen({ edId }: EdScreenProps) {
                     </button>
                   </>
                 );
-                const patientExtras = (
+                /* Facts every board row carries. On the board table they sit in the row (the
+                   person sheet then leaves them out, so each appears once); on phone, in the sheet. */
+                const readmissionFact = (
                   <>
                     <ReadmissionFlag
                       flag={movementReadmissionFlag(movement, readmissionIndex)}
                       testId={`ward-ed-readmission-${movement.id}`}
                     />
-                    <EdPresentation
-                      testId={`ward-ed-outstanding-${movement.id}`}
-                      kind={item.kind}
-                      patientName={patientInfo.displayName}
-                      value={presentationDrafts[movement.id] ?? item.detail}
-                      onChange={(value) => setPresentationDrafts((current) => ({ ...current, [movement.id]: value }))}
-                    />
+                  </>
+                );
+                const patientFactsTail = (
+                  <>
                     {/*
                      * Opus review round 2, 17 September 2026 (P2): the `gender_designation`
                      * gate's own refusal says "Record gender first" and, until this
@@ -3749,6 +3751,167 @@ export function EdScreen({ edId }: EdScreenProps) {
                     ) : null}
                   </>
                 );
+                const formExpiryFacts = (
+                  <>
+                    {formExpiryText !== undefined && (
+                      <span
+                        className={movement.legalForm?.dueAt === undefined ? "sr-only" : styles.compactExpiry}
+                        title={formExpiryText}
+                      >
+                        {movement.legalForm?.dueAt === undefined ? (
+                          <span data-testid={`ward-ed-form-expiry-${movement.id}`}>{formExpiryText}</span>
+                        ) : (
+                          <>
+                            <span aria-hidden="true">{formatInstantWithDay(movement.legalForm.dueAt, now)}</span>
+                            <span className="sr-only" data-testid={`ward-ed-form-expiry-${movement.id}`}>
+                              {formExpiryText}
+                            </span>
+                          </>
+                        )}
+                      </span>
+                    )}
+                    {formExpiryWarningText !== undefined && (
+                      <span
+                        className={styles.accessWarning}
+                        data-testid={`ward-ed-form-expiry-warning-${movement.id}`}
+                        data-level="warning"
+                      >
+                        {formExpiryWarningText}
+                      </span>
+                    )}
+                  </>
+                );
+                const clearanceFact = (
+                  <>
+                    {medicalClearance && (
+                      <span className="sr-only" data-testid={`ward-ed-medical-clearance-${movement.id}`}>
+                        Medical clearance: {medicalClearance.cleared ? "Yes" : "No"} — recorded{" "}
+                        {formatInstantWithDay(medicalClearance.at, now)}
+                      </span>
+                    )}
+                  </>
+                );
+                const reviewFacts = (
+                  <>
+                    {movement.supersededExaminations && movement.supersededExaminations.length > 0 ? (
+                      <ul className={styles.sub} data-testid={`ward-ed-examination-history-${movement.id}`}>
+                        {movement.supersededExaminations.map((record, index) => (
+                          <li key={index}>
+                            {`Earlier examination · ${record.outcome.replace(/_/g, " ")} — ${formatInstantWithDay(record.at, now)}`}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {examinationRevokedWhileBedHeld(movement) ? (
+                      <div
+                        className={styles.sub}
+                        data-testid={`ward-ed-examination-revoked-flag-${movement.id}`}
+                        data-level="warning"
+                      >
+                        {EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE}
+                      </div>
+                    ) : null}
+                  </>
+                );
+                const transportNoticeFact = (
+                  <>
+                    {transportLegalFormWarning ? (
+                      <p className="sr-only" data-testid={`ward-ed-transport-legal-form-notice-${movement.id}`}>
+                        {transportLegalFormWarning}
+                      </p>
+                    ) : null}
+                  </>
+                );
+                const extensionHistoryFacts = (
+                  <>
+                    {/*
+                     * §2's exact line: `Extension recorded {time}: new expiry {time}`. Reads
+                     * `movement.legalFormExpiryHistory` (T2), one line per entry whose `basis`
+                     * is `"extension"` — never the first typed expiry, which has no "new" to
+                     * report against. `RECORD_LEGAL_FORM_EXPIRY` appends one entry per
+                     * successful dispatch and never removes one, so this can only grow.
+                     */}
+                    {movement.legalFormExpiryHistory
+                      ?.filter((entry) => entry.basis === "extension")
+                      .map((entry) => (
+                        <p
+                          key={`${entry.at}-${entry.dueAt}`}
+                          className={styles.cardMeta}
+                          data-testid={`ward-ed-legal-form-expiry-history-${movement.id}`}
+                        >
+                          {`Extension recorded ${formatInstantWithDay(entry.at, now)}: new expiry ${formatInstantWithDay(entry.dueAt, now)}`}
+                        </p>
+                      ))}
+                  </>
+                );
+                const cmhtNoticeFact = (
+                  <>
+                    {cmhtBlocked ? (
+                      <p
+                        id={`ward-ed-cmht-unavailable-${movement.id}`}
+                        data-testid={`ward-ed-cmht-unavailable-${movement.id}`}
+                        className="sr-only"
+                      >
+                        {cmhtBlocked}
+                      </p>
+                    ) : null}
+                  </>
+                );
+                const referredFact = (
+                  <>
+                    {!acceptedUnit && movement.referredUnitIds.length > 0 ? (
+                      <div className={styles.sub} data-testid={`ward-ed-referred-${movement.id}`}>
+                        {movement.referredUnitIds
+                          .map((unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Unit not recorded")
+                          .join(" · ")}
+                        {movement.referredAt === undefined && (
+                          <span className="sr-only"> · referral time not recorded</span>
+                        )}
+                      </div>
+                    ) : null}
+                  </>
+                );
+                const unavailableFacts = (
+                  <>
+                    {examBlocked ? (
+                      <span id={`ward-ed-examine-unavailable-${movement.id}`} className="sr-only">
+                        {examBlocked}
+                      </span>
+                    ) : null}
+                    {handoverBlocked ? (
+                      <span id={`ward-ed-handover-unavailable-${movement.id}`} className="sr-only">
+                        {handoverBlocked}
+                      </span>
+                    ) : null}
+                    {transportBlocked ? (
+                      <span id={`ward-ed-book-transport-unavailable-${movement.id}`} className="sr-only">
+                        {transportBlocked}
+                      </span>
+                    ) : null}
+                  </>
+                );
+                const withdrawUnavailableFact = (
+                  <>
+                    {withdrawBlocked ? (
+                      <span id={`ward-ed-withdraw-referral-unavailable-${movement.id}`} className="sr-only">
+                        {withdrawBlocked}
+                      </span>
+                    ) : null}
+                  </>
+                );
+                const patientExtras = (
+                  <>
+                    {boardTable ? null : readmissionFact}
+                    <EdPresentation
+                      testId={`ward-ed-outstanding-${movement.id}`}
+                      kind={item.kind}
+                      patientName={patientInfo.displayName}
+                      value={presentationDrafts[movement.id] ?? item.detail}
+                      onChange={(value) => setPresentationDrafts((current) => ({ ...current, [movement.id]: value }))}
+                    />
+                    {boardTable ? null : patientFactsTail}
+                  </>
+                );
                 const formControl = (
                   <>
                     <select
@@ -3779,32 +3942,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                         <option key={form}>{form}</option>
                       ))}
                     </select>
-                    {formExpiryText !== undefined && (
-                      <span
-                        className={movement.legalForm?.dueAt === undefined ? "sr-only" : styles.compactExpiry}
-                        title={formExpiryText}
-                      >
-                        {movement.legalForm?.dueAt === undefined ? (
-                          <span data-testid={`ward-ed-form-expiry-${movement.id}`}>{formExpiryText}</span>
-                        ) : (
-                          <>
-                            <span aria-hidden="true">{formatInstantWithDay(movement.legalForm.dueAt, now)}</span>
-                            <span className="sr-only" data-testid={`ward-ed-form-expiry-${movement.id}`}>
-                              {formExpiryText}
-                            </span>
-                          </>
-                        )}
-                      </span>
-                    )}
-                    {formExpiryWarningText !== undefined && (
-                      <span
-                        className={styles.accessWarning}
-                        data-testid={`ward-ed-form-expiry-warning-${movement.id}`}
-                        data-level="warning"
-                      >
-                        {formExpiryWarningText}
-                      </span>
-                    )}
+                    {boardTable ? null : formExpiryFacts}
                   </>
                 );
                 const clearedControl = (
@@ -3845,12 +3983,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                       <option value="yes">Yes</option>
                       <option value="no">No</option>
                     </select>
-                    {medicalClearance && (
-                      <span className="sr-only" data-testid={`ward-ed-medical-clearance-${movement.id}`}>
-                        Medical clearance: {medicalClearance.cleared ? "Yes" : "No"} — recorded{" "}
-                        {formatInstantWithDay(medicalClearance.at, now)}
-                      </span>
-                    )}
+                    {boardTable ? null : clearanceFact}
                   </>
                 );
                 const reviewControl = (
@@ -3885,24 +4018,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                         </div>
                       );
                     })()}
-                    {movement.supersededExaminations && movement.supersededExaminations.length > 0 ? (
-                      <ul className={styles.sub} data-testid={`ward-ed-examination-history-${movement.id}`}>
-                        {movement.supersededExaminations.map((record, index) => (
-                          <li key={index}>
-                            {`Earlier examination · ${record.outcome.replace(/_/g, " ")} — ${formatInstantWithDay(record.at, now)}`}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                    {examinationRevokedWhileBedHeld(movement) ? (
-                      <div
-                        className={styles.sub}
-                        data-testid={`ward-ed-examination-revoked-flag-${movement.id}`}
-                        data-level="warning"
-                      >
-                        {EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE}
-                      </div>
-                    ) : null}
+                    {boardTable ? null : reviewFacts}
                   </>
                 );
                 const destinationLabel = isEdInitiatedWithdrawal(movement)
@@ -3927,16 +4043,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                   <>
                     <span className={styles.dest}>{destinationLabel}</span>
                     {acceptedUnit && !movement.closure && <span className={styles.acceptedLabel}>Accepted</span>}
-                    {!acceptedUnit && movement.referredUnitIds.length > 0 ? (
-                      <div className={styles.sub} data-testid={`ward-ed-referred-${movement.id}`}>
-                        {movement.referredUnitIds
-                          .map((unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Unit not recorded")
-                          .join(" · ")}
-                        {movement.referredAt === undefined && (
-                          <span className="sr-only"> · referral time not recorded</span>
-                        )}
-                      </div>
-                    ) : null}
+                    {boardTable ? null : referredFact}
                   </>
                 );
                 const nextGroupBody = (
@@ -4009,58 +4116,11 @@ export function EdScreen({ edId }: EdScreenProps) {
                             {phoneSheetReason}
                           </p>
                         ) : null}
-                        {examBlocked ? (
-                          <span id={`ward-ed-examine-unavailable-${movement.id}`} className="sr-only">
-                            {examBlocked}
-                          </span>
-                        ) : null}
-                        {handoverBlocked ? (
-                          <span id={`ward-ed-handover-unavailable-${movement.id}`} className="sr-only">
-                            {handoverBlocked}
-                          </span>
-                        ) : null}
-                        {transportBlocked ? (
-                          <span id={`ward-ed-book-transport-unavailable-${movement.id}`} className="sr-only">
-                            {transportBlocked}
-                          </span>
-                        ) : null}
-                        {transportLegalFormWarning ? (
-                          <p className="sr-only" data-testid={`ward-ed-transport-legal-form-notice-${movement.id}`}>
-                            {transportLegalFormWarning}
-                          </p>
-                        ) : null}
-                        {/*
-                         * §2's exact line: `Extension recorded {time}: new expiry {time}`. Reads
-                         * `movement.legalFormExpiryHistory` (T2), one line per entry whose `basis`
-                         * is `"extension"` — never the first typed expiry, which has no "new" to
-                         * report against. `RECORD_LEGAL_FORM_EXPIRY` appends one entry per
-                         * successful dispatch and never removes one, so this can only grow.
-                         */}
-                        {movement.legalFormExpiryHistory
-                          ?.filter((entry) => entry.basis === "extension")
-                          .map((entry) => (
-                            <p
-                              key={`${entry.at}-${entry.dueAt}`}
-                              className={styles.cardMeta}
-                              data-testid={`ward-ed-legal-form-expiry-history-${movement.id}`}
-                            >
-                              {`Extension recorded ${formatInstantWithDay(entry.at, now)}: new expiry ${formatInstantWithDay(entry.dueAt, now)}`}
-                            </p>
-                          ))}
-                        {withdrawBlocked ? (
-                          <span id={`ward-ed-withdraw-referral-unavailable-${movement.id}`} className="sr-only">
-                            {withdrawBlocked}
-                          </span>
-                        ) : null}
-                        {cmhtBlocked ? (
-                          <p
-                            id={`ward-ed-cmht-unavailable-${movement.id}`}
-                            data-testid={`ward-ed-cmht-unavailable-${movement.id}`}
-                            className="sr-only"
-                          >
-                            {cmhtBlocked}
-                          </p>
-                        ) : null}
+                        {boardTable ? null : unavailableFacts}
+                        {boardTable ? null : transportNoticeFact}
+                        {boardTable ? null : extensionHistoryFacts}
+                        {boardTable ? null : withdrawUnavailableFact}
+                        {boardTable ? null : cmhtNoticeFact}
                       </>
                     )}
                   </>
@@ -4908,7 +4968,11 @@ export function EdScreen({ edId }: EdScreenProps) {
                     </dl>
                     {/* v10 phone person sheet: where the time in the department went, then the
                           few facts a coordinator checks, above the actions. */}
-                    <section className={styles.phoneSheetSection} aria-label="Time in the department">
+                    <section
+                      className={styles.phoneSheetSection}
+                      aria-label="Time in the department"
+                      data-testid="ward-ed-person-journey"
+                    >
                       <h3 className={styles.phoneSheetHeading}>Time in the department</h3>
                       <JourneyStrip
                         stages={edJourneyStages(
@@ -5025,18 +5089,21 @@ export function EdScreen({ edId }: EdScreenProps) {
                       </span>
                     </span>
                   );
+                  const formFacts = <span className={styles.a2Facts}>{formExpiryFacts}</span>;
                   const clearedCell = (
                     <span className={styles.a2Value}>
                       <StatusGlyph tone={clearedTone} size={8} />
                       <span className={medicalClearance === undefined ? styles.a2Quiet : undefined}>
                         {clearedWords}
                       </span>
+                      {clearanceFact}
                     </span>
                   );
                   const reviewCell = (
                     <span className={styles.a2Value}>
                       <StatusGlyph tone={movement.examination ? "success" : "neutral"} size={8} />
                       <span className={movement.examination ? undefined : styles.a2Quiet}>{reviewWords}</span>
+                      {examinationRevokedWhileBedHeld(movement) ? <StatusGlyph tone="warning" size={8} /> : null}
                     </span>
                   );
                   const destinationCell = destinationName ? (
@@ -5046,59 +5113,71 @@ export function EdScreen({ edId }: EdScreenProps) {
                       <span className="sr-only">, accepted</span>
                     </span>
                   ) : (
-                    <span className={`${styles.a2Value} ${styles.a2Quiet}`}>
-                      <span className={styles.a2Truncate}>{destinationLabel}</span>
-                    </span>
+                    <>
+                      <span className={`${styles.a2Value} ${styles.a2Quiet}`}>
+                        <span className={styles.a2Truncate}>{destinationLabel}</span>
+                      </span>
+                      <span className={styles.a2Facts}>{referredFact}</span>
+                    </>
                   );
-                  const nextCell = (
-                    <span className={styles.a2Next}>
-                      {nextAction && !movement.closure ? (
-                        <button
-                          type="button"
-                          data-testid={`ward-ed-next-${movement.id}`}
-                          className={buttonClass({ variant: "sec", size: "sm" })}
-                          aria-disabled={nextAction.blocked ? "true" : undefined}
-                          title={nextAction.blocked ?? undefined}
-                          aria-expanded={nextAction.expanded}
-                          onClick={nextAction.blocked ? ignoreUnavailableActivation : nextAction.run}
-                        >
-                          {nextAction.label}
-                        </button>
-                      ) : (
-                        <span className={styles.a2Quiet}>
-                          {movement.edOutcome !== undefined && !movement.leftDepartmentAt
-                            ? "Left the department"
-                            : movement.closure
-                              ? "Withdrawn"
-                              : "Nothing due"}
-                        </span>
-                      )}
-                      {movement.closure ? null : (
-                        <EdActionsMenu
-                          patientName={patientInfo.displayName}
-                          testId={`ward-ed-actions-menu-${movement.id}`}
-                          triggerTestId={`ward-ed-unfold-${movement.id}`}
-                          onViewRecord={openSheet}
-                          onEditPresentation={openSheet}
-                          onEditPlan={openSheet}
-                          compact
-                        >
-                          {menuItems}
-                        </EdActionsMenu>
-                      )}
-                    </span>
-                  );
+                  const nextCell =
+                    (movement.edOutcome !== undefined && !movement.leftDepartmentAt) || movement.closure ? (
+                      <div className={styles.a2Next}>{nextGroupBody}</div>
+                    ) : (
+                      <span className={styles.a2Next}>
+                        {nextAction && !movement.closure ? (
+                          <button
+                            type="button"
+                            data-testid={`ward-ed-next-${movement.id}`}
+                            className={buttonClass({ variant: "sec", size: "sm" })}
+                            aria-disabled={nextAction.blocked ? "true" : undefined}
+                            title={nextAction.blocked ?? undefined}
+                            aria-expanded={nextAction.expanded}
+                            onClick={nextAction.blocked ? ignoreUnavailableActivation : nextAction.run}
+                          >
+                            {nextAction.label}
+                          </button>
+                        ) : (
+                          <span className={styles.a2Quiet}>
+                            {movement.edOutcome !== undefined && !movement.leftDepartmentAt
+                              ? "Left the department"
+                              : movement.closure
+                                ? "Withdrawn"
+                                : "Nothing due"}
+                          </span>
+                        )}
+                        {movement.closure ? null : (
+                          <EdActionsMenu
+                            patientName={patientInfo.displayName}
+                            testId={`ward-ed-actions-menu-${movement.id}`}
+                            triggerTestId={`ward-ed-unfold-${movement.id}`}
+                            onViewRecord={openSheet}
+                            onEditPresentation={openSheet}
+                            onEditPlan={openSheet}
+                            compact
+                          >
+                            {menuItems}
+                          </EdActionsMenu>
+                        )}
+                      </span>
+                    );
                   return (
                     <tr
                       key={movement.id}
                       className={styles.a2Row}
                       data-testid={`ward-ed-patient-${movement.id}`}
+                      data-origin-ed={movement.originEdId}
+                      data-minutes-in-department={minutesInDepartment}
                       data-act-now={overTarget ? "true" : undefined}
                       data-dim={isBoardRowDim(movement) ? "true" : undefined}
                       data-selected={sheetOpen ? "true" : undefined}
                     >
                       <td className={styles.a2Tier}>
-                        <span className={styles.phoneTier} data-urgency={movement.urgency}>
+                        <span
+                          className={styles.phoneTier}
+                          data-urgency={movement.urgency}
+                          data-testid={`ward-ed-tier-${movement.id}`}
+                        >
                           <span aria-hidden="true">T{movement.urgency}</span>
                           <span className="sr-only">{urgencyTierLabel(movement.urgency)}</span>
                         </span>
@@ -5108,20 +5187,36 @@ export function EdScreen({ edId }: EdScreenProps) {
                           type="button"
                           className={styles.a2Name}
                           onClick={openSheet}
-                          title={`Open ${patientInfo.displayName}`}
+                          title={`View patient details for ${patientInfo.displayName}`}
                           data-testid={`ward-ed-row-name-${movement.id}`}
                         >
                           {patientInfo.formalName}
                         </button>
                         <span className={styles.a2Sub}>
-                          {isTabletPortrait
-                            ? [
-                                phoneBay,
-                                formWords,
-                                medicalClearance === undefined ? "Clearance due" : clearedWords,
-                                movement.examination ? "Reviewed" : "Review due",
-                              ].join(" · ")
-                            : `${patientInfo.umrn} · ${movement.cohort} · ${movement.security}`}
+                          {isTabletPortrait ? (
+                            [
+                              phoneBay,
+                              formWords,
+                              medicalClearance === undefined ? "Clearance due" : clearedWords,
+                              movement.examination ? "Reviewed" : "Review due",
+                            ].join(" · ")
+                          ) : (
+                            <>
+                              <span className="sr-only">UMRN </span>
+                              {`${patientInfo.umrn} · ${movement.cohort} · ${movement.security}`}
+                            </>
+                          )}
+                        </span>
+                        <span className={styles.a2Facts}>
+                          {readmissionFact}
+                          {patientFactsTail}
+                          {isTabletPortrait ? (
+                            <>
+                              {formExpiryFacts}
+                              {clearanceFact}
+                              {reviewFacts}
+                            </>
+                          ) : null}
                         </span>
                       </td>
                       <td className={styles.a2Wait}>
@@ -5129,18 +5224,46 @@ export function EdScreen({ edId }: EdScreenProps) {
                           {waitTone ? <StatusGlyph tone={waitTone} size={8} /> : null}
                           <b className={styles.a2Mono}>{splitDuration(minutesInDepartment)}</b>
                         </span>
-                        {overTarget ? <span className={styles.a2Sub}>over target</span> : null}
+                        <span
+                          className={overTarget ? styles.a2Sub : "sr-only"}
+                          data-testid={`ward-ed-access-target-${movement.id}`}
+                          data-state={overTarget ? "over" : "under"}
+                          title={`Access target ${splitDuration(accessTarget)}`}
+                        >
+                          {overTarget ? <span aria-hidden="true">over target</span> : null}
+                          <span className="sr-only">
+                            Access target {splitDuration(accessTarget)}.
+                            {overTarget
+                              ? ` ${splitDuration(minutesInDepartment - accessTarget)} over target (${splitDuration(accessTarget)})`
+                              : ""}
+                          </span>
+                        </span>
                       </td>
                       {isTabletPortrait ? null : (
                         <>
                           <td className={styles.a2Mono}>{phoneBay.replace(/^Bay /, "")}</td>
-                          <td>{formCell}</td>
+                          <td>
+                            {formCell}
+                            {formFacts}
+                          </td>
                           <td>{clearedCell}</td>
-                          <td>{reviewCell}</td>
+                          <td>
+                            {reviewCell}
+                            <span className={styles.a2Facts}>{reviewFacts}</span>
+                          </td>
                         </>
                       )}
                       <td>{destinationCell}</td>
-                      <td>{nextCell}</td>
+                      <td>
+                        {nextCell}
+                        <div className="sr-only">
+                          {unavailableFacts}
+                          {withdrawUnavailableFact}
+                          {transportNoticeFact}
+                          {extensionHistoryFacts}
+                          {cmhtNoticeFact}
+                        </div>
+                      </td>
                     </tr>
                   );
                 }

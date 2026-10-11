@@ -1040,7 +1040,7 @@ export function DelaysBoard({
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
   /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the registers as a slide-over. */
-  const portrait = isTabletPortrait;
+  const portrait = isTabletPortrait && !isPhone;
   const [railOpen, setRailOpen] = useState(false);
   const [phoneSheet, setPhoneSheet] = useState<"registers" | "quiet" | "spread" | null>(null);
 

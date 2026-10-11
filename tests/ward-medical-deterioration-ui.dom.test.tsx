@@ -46,7 +46,8 @@ function openControls() {
       <Probe />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByTestId(`ward-ed-expand-${held.id}`));
+  // Device audit 11 Oct 2026 (owner pick A2): the row's details open in the person sheet.
+  fireEvent.click(screen.getByTestId(`ward-ed-row-name-${held.id}`));
   return screen.getByTestId(`ward-ed-medical-placement-${held.id}`);
 }
 function state() {

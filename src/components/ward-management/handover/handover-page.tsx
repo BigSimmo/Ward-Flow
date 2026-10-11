@@ -384,7 +384,7 @@ export function HandoverPage() {
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
   const isTabletPortrait = useIsTabletPortrait();
   /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the rail as a slide-over. */
-  const portrait = isTabletPortrait;
+  const portrait = isTabletPortrait && !isPhoneWidth;
 
   /* scope, read once from the URL */
   const searchParams = useSearchParams();
@@ -577,7 +577,8 @@ export function HandoverPage() {
   // audit 11 Oct 2026). Full and custom columns keep their own set.
   const railBeside = useMediaQuery("(min-width: 75.0625rem)");
   const fitted = railBeside && !present && customColumns === null && density === "std";
-  const columnIds = customColumns ?? (fitted ? DENSITY_COLUMNS.std.filter((id) => id !== "lo") : DENSITY_COLUMNS[density]);
+  const columnIds =
+    customColumns ?? (fitted ? DENSITY_COLUMNS.std.filter((id) => id !== "lo") : DENSITY_COLUMNS[density]);
   const columns = columnsFor(columnIds);
   const wide = present || columnIds.length > 8;
   const compact = customColumns === null && density === "min";

@@ -287,6 +287,8 @@ describe("emergency department intake picker", () => {
     // the deleted inference ever applied to.
     expect(screen.getByTestId("probe")).toHaveTextContent(`${FIRST_RAISED_ID}|1A|`);
 
+    // Device audit 11 Oct 2026 (owner pick A2): board edits live in the person sheet; the row name opens it.
+    fireEvent.click(screen.getByTestId(`ward-ed-row-name-${FIRST_RAISED_ID}`));
     const outstanding = screen.getByTestId(`ward-ed-outstanding-${FIRST_RAISED_ID}`);
     expect(outstanding).toHaveAttribute("data-kind", "examination");
     /*
@@ -346,6 +348,8 @@ describe("emergency department intake picker", () => {
     // Still a 3B. The examination no longer replaces the clinician's chosen form.
     expect(screen.getByTestId("probe")).toHaveTextContent(`${FIRST_RAISED_ID}|3B|`);
     // And the outstanding item now reports the recorded outcome rather than the missing one.
+    // The presentation lives in the person sheet (device audit 11 Oct 2026, owner pick A2).
+    fireEvent.click(screen.getByTestId(`ward-ed-row-name-${FIRST_RAISED_ID}`));
     const outstanding = screen.getByTestId(`ward-ed-outstanding-${FIRST_RAISED_ID}`);
     expect(outstanding).toHaveAttribute("data-kind", "form");
     expect(outstanding).toHaveTextContent("examination recorded (inpatient order)");
@@ -1246,6 +1250,9 @@ describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, ne
       </WardFlowProvider>,
     );
 
+    // Needs you opens as a slide-over where the full board table leaves no room beside it
+    // (device audit 11 Oct 2026, owner pick A2).
+    fireEvent.click(screen.getByTestId("wf-portrait-rail-trigger"));
     const title = screen.getByText("Waiting over 24 hours");
     const row = title.closest("li");
     expect(row).not.toBeNull();
