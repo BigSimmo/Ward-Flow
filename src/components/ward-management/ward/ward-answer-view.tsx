@@ -1115,6 +1115,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                 />
                               </label>
                               <p className={styles.phoneSheetNote}>
+                                Bed hold and nurse unit manager are not saved. Not wired in this prototype.
+                              </p>
+                              <p className={styles.phoneSheetNote}>
                                 <StatusGlyph tone="neutral" size={8} />
                                 Acceptance in principle holds a place. Nobody is moved and no transport is booked.
                               </p>
@@ -1506,6 +1509,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   defaultValue={`NUM ${unit.name}`}
                 />
               </div>
+              <p className={styles.formNote}>
+                Bed hold and nurse unit manager are not saved. Not wired in this prototype.
+              </p>
             </div>
             <div className={styles.modalFoot}>
               <button

@@ -1007,6 +1007,12 @@
   gap: 0.25rem;
 }
 
+.formNote {
+  margin: 0;
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
 .formLabel {
   font-size: var(--t-0);
   font-weight: 600;
