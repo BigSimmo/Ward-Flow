@@ -603,7 +603,8 @@
 
 .sticky {
   position: sticky;
-  bottom: 0;
+  /* Rests above the phone dock when it is drawn (device audit, 11 Oct 2026). */
+  bottom: var(--wf-dock-clear, 0px);
   z-index: 15;
   display: flex;
   gap: 8px;

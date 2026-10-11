@@ -343,8 +343,8 @@
 /* Device audit (11 Oct 2026): the phone dock now sits on every phone page, so the pinned action bar
    rests above it (the same 96px the dock keeps clear under the page) rather than behind it. */
 @media (max-width: 48rem) {
-  :global(body:has([data-wf-page-dock="rise"])) .phBar {
-    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  .phBar {
+    bottom: var(--wf-dock-clear, 0px);
     padding-bottom: var(--wf-s-2);
   }
 }

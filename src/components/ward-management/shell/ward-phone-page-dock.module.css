@@ -19,9 +19,15 @@
     display: block;
   }
 
-  /* The page keeps its last rows clear of the dock. */
-  :global(body:has([data-wf-page-dock="rise"])) :global([data-wf-scroller]) {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  /* The page keeps its last rows clear of the dock, and any pinned phone bar rests on
+     var(--wf-dock-clear) instead of bottom: 0. The local class keeps the selector pure for the
+     webpack CSS Modules build. */
+  :global(body):has(.pageDock) {
+    --wf-dock-clear: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  :global(body):has(.pageDock) :global([data-wf-scroller]) {
+    padding-bottom: var(--wf-dock-clear);
   }
 }
 
