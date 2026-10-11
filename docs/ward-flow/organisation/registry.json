@@ -66,8 +66,7 @@
     "src/lib/local-server-utils.mjs",
     "src/lib/theme.ts",
     "src/components/developer-area/ward-flow-access-gate.tsx",
-    "src/lib/ward-output.ts",
-    "src/lib/ward-scroll.ts"
+    "src/lib/ward-output.ts"
   ],
   "sourceClasses": [
     {
@@ -675,7 +674,7 @@
     },
     {
       "id": "ward-scroll-interactions",
-      "path": "src/lib/ward-scroll.ts",
+      "path": "src/components/ward-management/ward-scroll.ts",
       "owner": "ward-flow",
       "module": "shell",
       "system": "behaviour",

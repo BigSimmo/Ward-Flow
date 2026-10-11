@@ -1,6 +1,6 @@
 "use client";
 
-import { wardScrollBehavior } from "@/lib/ward-scroll";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Clock, Copy, Mail, MapPin, Printer, Search, Star, Users, X } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";

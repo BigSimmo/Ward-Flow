@@ -573,7 +573,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const [openPanel, setOpenPanel] = useState<WardBarPopoverId | null>(null);
   // A history Back is asynchronous. Keep the drawer identity here so repeated closes are
   // ignored and a delayed popstate cannot close a drawer opened in the meantime.
-  const closingViaHistoryRef = useRef<WardBarPopoverId | null>(null);
+  const closingViaHistoryRef = useRef<{ id: WardBarPopoverId; announce: boolean } | null>(null);
   const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
   // The slide-out fills this with its guarded close, which asks before discarding a draft.
   const referralCloseRef = useRef<(() => void) | null>(null);
@@ -864,7 +864,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     });
     if (step === "back") {
       // Keep the sheet and its background lock until popstate completes the close.
-      closingViaHistoryRef.current = id;
+      closingViaHistoryRef.current = { id, announce };
       window.history.back();
     } else {
       setOpenPanel((current) => (current === id ? null : current));
@@ -987,13 +987,14 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   useEffect(() => {
     function onPopState() {
-      const closingPanel = closingViaHistoryRef.current;
-      if (closingPanel !== null) {
-        // Only the drawer that initiated Back may be closed by its delayed event.
+      const closing = closingViaHistoryRef.current;
+      if (closing !== null) {
+        // Only the drawer that initiated Back may be closed by its delayed event, and it keeps
+        // the caller's choice not to announce (a service pick announces its own confirmation).
         closingViaHistoryRef.current = null;
-        if (openPanel !== closingPanel) return;
+        if (openPanel !== closing.id) return;
         setOpenPanel(null);
-        announceToWardShell("Closed.");
+        if (closing.announce) announceToWardShell("Closed.");
         return;
       }
       if (openPanel === null) return;

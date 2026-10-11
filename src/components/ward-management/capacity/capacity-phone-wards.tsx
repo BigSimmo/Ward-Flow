@@ -1,6 +1,6 @@
 "use client";
 
-import { wardScrollBehavior } from "@/lib/ward-scroll";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Instant } from "@/components/ward-management/ward-clock";
