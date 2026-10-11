@@ -254,6 +254,20 @@ export function DowntimePackScreen() {
       Print
     </Button>
   );
+  const printButtonOnHero = (
+    <Button variant="onHero" icon={Printer} onClick={() => window.print()} data-testid="ward-downtime-print">
+      Print
+    </Button>
+  );
+  // Device audit 11 Oct 2026: a column where every row reads "Not recorded" only pads the print.
+  const edAccepted = pack.edQueue.some((line) => line.acceptedWard !== "");
+  const movesEta = pack.pendingMoves.some((line) => line.transportEta !== null);
+  const formsReceived = pack.legalForms.some((line) => line.receivedAt !== null);
+  // The ED queue counts people still in the department; All EDs counts every open journey.
+  const edPopulation =
+    pack.leftEd > 0
+      ? `${pack.leftEd} more left their ED and are moving to a ward, listed under Pending moves.`
+      : null;
   const takenLine = (
     <span data-testid="ward-downtime-generated">Taken {at(pack.generatedAt)} · does not update while open</span>
   );
@@ -271,23 +285,18 @@ export function DowntimePackScreen() {
           <PhoneHero
             level={1}
             eyebrow="Downtime pack"
-            chip={
-              <span className={styles.frozen} data-testid="ward-downtime-frozen">
-                <span className={styles.frozenDot} aria-hidden="true" />
-                Frozen <b>{frozenAt}</b>
-              </span>
-            }
             title={`Frozen at ${frozenAt}`}
             sub={`${reportDay(pack.generatedAt, dayZero)} · does not update while open`}
             figures={[
               { id: "ready", value: totals.ready, label: "Beds ready" },
-              { id: "ed", value: totals.ed, label: "In ED" },
+              { id: "ed", value: totals.ed, label: "Still in ED" },
               { id: "moves", value: totals.moves, label: "Moves" },
             ]}
             actions={
               <>
                 {snapshotButton("onHero")}
-                {printButton}
+                {/* Phone printing is rare: Print is a secondary here, never the area's primary. */}
+                {printButtonOnHero}
               </>
             }
           />
@@ -299,10 +308,10 @@ export function DowntimePackScreen() {
             value={section}
             onChange={setSection}
             items={[
-              { id: "beds", label: "Beds" },
-              { id: "ed", label: "ED" },
-              { id: "moves", label: "Moves" },
-              { id: "forms", label: "Forms", count: pack.legalForms.length },
+              { id: "beds", label: "Beds", count: totals.ready },
+              { id: "ed", label: "ED", count: totals.ed },
+              { id: "moves", label: "Moves", count: totals.moves },
+              { id: "forms", label: "Forms", count: totals.forms },
             ]}
           />
           {section === "beds" ? (
@@ -376,7 +385,9 @@ export function DowntimePackScreen() {
                 />
               ))}
             </PhoneSection>
-          ) : section === "moves" ? (
+          ) : null}
+          {section === "ed" && edPopulation ? <p className={styles.phoneNote}>{edPopulation}</p> : null}
+          {section === "beds" || section === "ed" ? null : section === "moves" ? (
             <PhoneSection empty="No moves pending" count={pack.pendingMoves.length}>
               {pack.pendingMoves.map((line) => (
                 <PhoneListRow
@@ -465,7 +476,7 @@ export function DowntimePackScreen() {
                 onPress={() => jumpTo("beds")}
                 {...twin("ready")}
               />
-              <HeroChip value={totals.ed} label="In ED" onPress={() => jumpTo("ed")} {...twin("ed")} />
+              <HeroChip value={totals.ed} label="Still in ED" onPress={() => jumpTo("ed")} {...twin("ed")} />
               <HeroChip value={totals.moves} label="Moves pending" onPress={() => jumpTo("moves")} {...twin("moves")} />
               <HeroChip value={totals.forms} label="Legal forms" onPress={() => jumpTo("forms")} {...twin("forms")} />
             </HeroChips>
@@ -477,6 +488,23 @@ export function DowntimePackScreen() {
             </span>
           }
         />
+
+        {/* Tablet and desktop: the pack runs to thousands of pixels, so a sticky jump row keeps each
+            table one press away once the hero chips have scrolled off (device audit 11 Oct 2026). */}
+        <nav className={styles.jumpRow} aria-label="Jump to a table" data-print-hide>
+          {(
+            [
+              ["beds", "Beds", totals.ready],
+              ["ed", "ED queue", totals.ed],
+              ["moves", "Pending moves", totals.moves],
+              ["forms", "Legal forms", totals.forms],
+            ] as const
+          ).map(([id, label, count]) => (
+            <button key={id} type="button" className={styles.jumpItem} onClick={() => jumpTo(id)}>
+              {label} <b>{count}</b>
+            </button>
+          ))}
+        </nav>
 
         <Card aria-labelledby="downtime-beds-title" id={SECTION_IDS.beds} className={styles.packCard}>
           <CardHead
@@ -505,7 +533,6 @@ export function DowntimePackScreen() {
               <thead>
                 <tr>
                   <th scope="col">Ward</th>
-                  <th scope="col">Service</th>
                   <th scope="col" className={styles.num}>
                     Beds
                   </th>
@@ -533,7 +560,7 @@ export function DowntimePackScreen() {
                 {groups.map((group) => (
                   <Fragment key={group.service}>
                     <tr className={styles.subtotal} data-testid="ward-downtime-subtotal">
-                      <th scope="rowgroup" colSpan={2}>
+                      <th scope="rowgroup">
                         {group.service}
                         <span className={styles.subtotalCount}>
                           {group.wards.length} {group.wards.length === 1 ? "ward" : "wards"}
@@ -550,7 +577,6 @@ export function DowntimePackScreen() {
                     {group.wards.map((ward) => (
                       <tr key={ward.unitId}>
                         <th scope="row">{ward.name}</th>
-                        <td className={styles.muted}>{ward.service}</td>
                         <td className={styles.num}>{ward.beds}</td>
                         <td className={styles.num}>
                           {ward.counts.ready > 0 ? <span className={styles.fit}>{ward.counts.ready}</span> : 0}
@@ -567,7 +593,7 @@ export function DowntimePackScreen() {
               </tbody>
               <tfoot>
                 <tr className={styles.total}>
-                  <th scope="row" colSpan={2}>
+                  <th scope="row">
                     All wards
                   </th>
                   <td className={styles.num}>{pack.totals.beds}</td>
@@ -596,7 +622,7 @@ export function DowntimePackScreen() {
             title="ED queue"
             aside={
               <span className={styles.headMeta}>
-                <b>{pack.edQueue.length}</b> waiting
+                <b>{pack.edQueue.length}</b> still in ED
               </span>
             }
           />
@@ -622,26 +648,33 @@ export function DowntimePackScreen() {
                     </th>
                     <th scope="col">Legal status</th>
                     <th scope="col">Stage</th>
-                    <th scope="col">Accepted by</th>
+                    {edAccepted ? (
+                      <th scope="col" className={styles.packAccepted}>
+                        Accepted by
+                      </th>
+                    ) : null}
                   </tr>
                 </thead>
                 <tbody>
                   {pack.edQueue.map((line) => (
                     <tr key={line.movementId}>
                       <th scope="row">{line.person}</th>
-                      <td>{line.ed}</td>
+                      <td className={styles.edCell}>{line.ed}</td>
                       <td className={styles.time}>{at(line.openedAt)}</td>
                       <td className={styles.num}>{splitDuration(line.waitedMinutes)}</td>
                       <td className={styles.num}>{line.urgency}</td>
                       <td>{line.legalStatus}</td>
                       <td>{line.stage}</td>
-                      <td>{line.acceptedWard || NOT_RECORDED}</td>
+                      {edAccepted ? (
+                        <td className={styles.packAccepted}>{line.acceptedWard || NOT_RECORDED}</td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+          {edPopulation ? <p className={styles.cardNote}>{edPopulation}</p> : null}
         </Card>
 
         <Card aria-labelledby="downtime-moves-title" id={SECTION_IDS.moves} className={styles.packCard}>
@@ -671,18 +704,18 @@ export function DowntimePackScreen() {
                     <th scope="col">To</th>
                     <th scope="col">Stage</th>
                     <th scope="col">Planned move</th>
-                    <th scope="col">Transport ETA</th>
+                    {movesEta ? <th scope="col">Transport ETA</th> : null}
                   </tr>
                 </thead>
                 <tbody>
                   {pack.pendingMoves.map((line) => (
                     <tr key={line.movementId}>
                       <th scope="row">{line.person}</th>
-                      <td>{line.from}</td>
+                      <td className={styles.edCell}>{line.from}</td>
                       <td>{line.to}</td>
                       <td>{line.stage}</td>
                       <td className={styles.time}>{at(line.plannedAt)}</td>
-                      <td className={styles.time}>{at(line.transportEta)}</td>
+                      {movesEta ? <td className={styles.time}>{at(line.transportEta)}</td> : null}
                     </tr>
                   ))}
                 </tbody>
@@ -718,7 +751,7 @@ export function DowntimePackScreen() {
                     <th scope="col">Form</th>
                     <th scope="col">Legal status</th>
                     <th scope="col">Made</th>
-                    <th scope="col">Received</th>
+                    {formsReceived ? <th scope="col">Received</th> : null}
                     <th scope="col">Typed expiry</th>
                   </tr>
                 </thead>
@@ -729,7 +762,7 @@ export function DowntimePackScreen() {
                       <td>{line.form || NOT_RECORDED}</td>
                       <td>{line.legalStatus}</td>
                       <td className={styles.time}>{at(line.madeAt)}</td>
-                      <td className={styles.time}>{at(line.receivedAt)}</td>
+                      {formsReceived ? <td className={styles.time}>{at(line.receivedAt)}</td> : null}
                       <td className={styles.time}>{at(line.typedExpiryAt)}</td>
                     </tr>
                   ))}
