@@ -149,7 +149,9 @@ describe("tablet portrait (769px to 1000px)", () => {
     const bar = css("src/components/ward-management/shell/ward-bar.module.css");
     const barPortrait = bar.lastIndexOf("@media (min-width: 48.0625rem) and (max-width: 1000px)");
     expect(barPortrait).toBeGreaterThan(bar.indexOf(".phoneOnly {\n  display: none;"));
-    expect(bar.slice(barPortrait)).toMatch(/\.phoneOnly \{\s*display: inline-flex;[^}]*width: var\(--wf-touch\);/u);
+    expect(bar.slice(barPortrait)).toMatch(
+      /\.phoneOnly \{\s*display: inline-flex;[^}]*width: var\(--ward-tap, var\(--spacing-tap, 3rem\)\);/u,
+    );
   });
 
   it("opens the rail's full sidebar from the left, 280px wide, when the bar's Menu is pressed above the phone", async () => {

@@ -75,12 +75,8 @@ const DESTINATIONS = [
     marker: "ward-statistics-services-index",
     navValue: "service",
     navLabel: "Services",
-    /**
-     * Device audit (11 Oct 2026): the phone chips no longer carry Services and the phone Summary
-     * has no row for it, so a phone has no link to it from the hub. The screen is still opened by
-     * its URL so its phone rendering stays covered.
-     */
-    phoneEntry: undefined,
+    /** Device audit follow-up (11 Oct 2026): the phone Summary's "Services" row under More figures. */
+    phoneEntry: { nav: "More figures", link: /^Services/u },
     href: "/mockups/ward-flow/statistics/services",
     figure: undefined,
   },

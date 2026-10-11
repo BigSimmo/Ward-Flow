@@ -46,6 +46,15 @@
   height: var(--wf-h-chip);
 }
 
+/* Header touch (11 Oct 2026): the pill stays small, but presses up to 48px tall land on it. */
+.toggle::after {
+  content: "";
+  position: absolute;
+  inset: 50% -4px auto;
+  height: var(--ward-tap, var(--spacing-tap, 3rem));
+  transform: translateY(-50%);
+}
+
 .toggle:hover > .lv {
   border-color: var(--wf-line-2);
 }

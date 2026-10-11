@@ -101,6 +101,27 @@
   flex: none;
 }
 
+/* Header taps (Josh, 11 Oct 2026): the Prototype pill lands in this slot once the app loads. Until
+ * then a server-drawn copy of the pill holds the same room, so the Prototype notice shows from the
+ * first frame and the search and buttons after it do not slide right under a finger. It matches
+ * `ward-shared-access.module.css`'s .pill: 10px sides, 1px border, 12px semibold, and 24px before
+ * the word where the 8px ring and its 6px gap sit. */
+.dataMode:empty::before {
+  content: "Prototype";
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 28px;
+  min-height: var(--wf-tablet-tap, 0px);
+  padding: 0 10px 0 24px;
+  border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
+  border-radius: var(--wf-r-pill);
+  color: inherit;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  font: 600 12px / 1 var(--wf-font, inherit);
+  white-space: nowrap;
+}
+
 @media (max-width: 48rem) {
   .dataMode {
     display: none;
@@ -1293,7 +1314,7 @@
 
   /* The visible line is small; the hit area still reaches 48px tall. */
   .scopeBadgeBtn::before {
-    inset: -14px -8px;
+    inset: -15px -8px;
     border: 0;
     background: transparent;
     box-shadow: none;
@@ -2695,9 +2716,17 @@
   .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg,
   .bar.bar[data-band="ink"]
     .searchWrap
-    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"])::placeholder {
+    :global([data-testid="ward-global-search"][data-open])
+    > div:first-of-type
+    > svg {
     width: 16px;
     height: 16px;
+    color: var(--wf-ink-3);
+  }
+
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"])::placeholder {
     color: var(--wf-ink-3);
   }
 
@@ -2949,15 +2978,15 @@
 
 /* Tablet portrait (v10 shell, 10 Oct 2026, 769px to 1000px): no sidebar, so the Menu button shows
  * at the left of the header and opens the full sidebar as a 280px sheet over a scrim (the rail's
- * own sheet answers above 48rem). 44px target. Desktop above 1000px and the phone are unchanged. */
+ * own sheet answers above 48rem). 48px target. Desktop above 1000px and the phone are unchanged. */
 @media (min-width: 48.0625rem) and (max-width: 1000px) {
   .phoneOnly {
     display: inline-flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--wf-touch);
-    height: var(--wf-touch);
+    width: var(--ward-tap, var(--spacing-tap, 3rem));
+    height: var(--ward-tap, var(--spacing-tap, 3rem));
     margin-right: var(--wf-s-1);
     border: 0;
     border-radius: var(--wf-r-md);
@@ -3099,9 +3128,11 @@
  * count), an 8px service dot and a 16px caret. Controls keep their 48px hit area.
  */
 @media (max-width: 48rem) {
+  /* Edge to edge: the band runs to both sides, and on a phone turned on its side the controls
+     keep clear of the notch. */
   .bar,
   :global(html.dark) .bar {
-    padding: 0 6px 0 2px;
+    padding: 0 max(6px, env(safe-area-inset-right, 0px)) 0 max(2px, env(safe-area-inset-left, 0px));
   }
 
   .phoneOnly svg,
