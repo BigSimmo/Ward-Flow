@@ -108,7 +108,8 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
           title="Emergency department pressure"
           meta={
             <>
-              <span className={styles.countTag}>{scopedPressure.length} departments</span> Waiting and longest wait
+              <span className={styles.countTag}>{scopedPressure.length} departments</span>{" "}
+              <span className={styles.metaHint}>Waiting and longest wait</span>
             </>
           }
           action={<Segmented label="Order departments by" items={ORDER_ITEMS} value={order} onChange={setOrder} />}

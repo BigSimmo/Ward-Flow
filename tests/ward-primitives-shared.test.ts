@@ -443,6 +443,7 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/ward/ward-home-tab.module.css: 48.0625",
     "src/components/ward-management/ward/ward-home-tab.module.css: 70.0625",
     "src/components/ward-management/ward/ward.module.css: 48.0625",
+    "src/components/ward-management/coordinator/pressure-strip.module.css: 64",
   ];
 
   it("introduces no breakpoint outside the known set", () => {
