@@ -94,7 +94,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       .filter((name) => name.endsWith(".json"))
       .map((name) => path.join(directory, name));
     const root = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
-    console.log(JSON.stringify({ seconds: durationsFromBlobs(blobs, root) }));
+    console.log(JSON.stringify({ seconds: durationsFromBlobs(blobs, root) }, null, 2));
   } catch (error) {
     console.log(`Could not read the unit test costs: ${error instanceof Error ? error.message : error}`);
   }
