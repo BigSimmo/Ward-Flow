@@ -4349,8 +4349,8 @@ tr.qRow:focus-visible {
   position: fixed;
   inset: 0;
   background: var(--scrim);
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   z-index: 39;
   pointer-events: auto;
 }
@@ -4632,8 +4632,8 @@ tr.qRow:focus-visible {
   align-items: center;
   justify-content: center;
   background: var(--scrim);
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   padding: 1rem;
 }
 
@@ -7726,4 +7726,83 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
     flex-direction: column;
     gap: var(--wf-s-3);
   }
+}
+
+/* ─── v10 phone fidelity (11 Oct 2026) ───
+ * Board, Needs you and Lists run the full width and stay pinned under the bar while the board
+ * scrolls (as Home's queue switch). The bar is 56px at rest and 52px once the page scrolls; the
+ * switch only sticks once the page has scrolled, so it then sits flush under the condensed bar.
+ * The desktop "Seen in the last 24 hours" and ward capacity panels stay off the phone (this rule
+ * outranks the board's `.listSection.panel` display above). The board search, order and the
+ * "Filters highlight" line are desktop tools; the phone board is the chips and the rows. Phone only. */
+@media (max-width: 48rem) {
+  .phonePanes {
+    position: sticky;
+    top: 3.5rem;
+    z-index: 6;
+    max-width: none;
+    margin: 0 calc(var(--wf-s-3) * -1);
+    padding: var(--wf-s-2) var(--wf-s-3);
+    background: var(--wf-canvas);
+  }
+
+  :global(body:has([data-scrolled="true"])) .phonePanes {
+    top: 3.25rem;
+  }
+
+  .phonePanes > div,
+  .phonePanes :global([role="radiogroup"]) {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .phonePanes > div {
+    padding-inline: 0;
+  }
+
+  .phonePanes :global([role="radiogroup"]) > * {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .main .lowerPair > :is(.seenSection, .capacitySection) {
+    display: none;
+  }
+
+  .main .listSection .boardTools {
+    display: none;
+  }
+}
+
+/* v10 phone person sheet: the coordinator's facts as label and value pairs, no card. Only the phone
+ * sheet renders .phoneSheetPairs. */
+.phoneSheetPairs {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) minmax(0, 1fr);
+  column-gap: var(--wf-s-4);
+  row-gap: 6px;
+  margin: 0 0 var(--wf-s-4);
+}
+
+.phoneSheetPairs > div {
+  display: contents;
+}
+
+.phoneSheetPairs dt {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.phoneSheetPairs dd {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneSheetPairs dd.phoneSheetMono {
+  font-family: var(--wf-mono);
 }

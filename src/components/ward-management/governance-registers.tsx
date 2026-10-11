@@ -54,6 +54,7 @@ import {
   Count,
   Drawer,
   EmptyState,
+  FactGrid,
   Field,
   Frac,
   GroupHead,
@@ -1405,25 +1406,46 @@ function GovernanceSession({
       >
         {selected ? (
           <div className={thirdEdition.stackGap}>
-            <FactList
+            {/* v10 phone: the event's facts two by two, the outcome glyph carrying its tone. */}
+            <FactGrid
               facts={[
-                ["Recorded", when(selected.at, now)],
-                ["Role recorded", selected.actor.role ? WARD_FLOW_ROLE_LABELS[selected.actor.role] : "Not recorded"],
-                ["Outcome", outcomeLabels[selected.outcome]],
-                ...(selected.reasonCode !== "none" ? [["Reason", reasonLabels[selected.reasonCode]] as const] : []),
+                {
+                  id: "outcome",
+                  label: "Outcome",
+                  value: (
+                    <span className={thirdEdition.statusText}>
+                      <StatusGlyph tone={OUTCOME_TONE[selected.outcome]} size={9} />
+                      {outcomeLabels[selected.outcome]}
+                    </span>
+                  ),
+                },
+                {
+                  id: "role",
+                  label: "Role recorded",
+                  value: selected.actor.role ? WARD_FLOW_ROLE_LABELS[selected.actor.role] : "Not recorded",
+                },
+                { id: "when", label: "Recorded", value: when(selected.at, now) },
+                {
+                  id: "reason",
+                  label: "Reason",
+                  value: selected.reasonCode !== "none" ? reasonLabels[selected.reasonCode] : "None recorded",
+                },
               ]}
             />
             {selected.category !== "review" ? (
-              <Segmented<AuditReview["decision"]>
-                className={thirdEdition.phoneTabs}
-                label="Review decision"
-                value={phoneDecision}
-                onChange={setPhoneDecision}
-                items={[
-                  { id: "reviewed", label: "Reviewed" },
-                  { id: "follow-up-required", label: "Follow-up" },
-                ]}
-              />
+              <div className={thirdEdition.stackGap}>
+                <h3 className={thirdEdition.phoneDecisionHead}>Your review</h3>
+                <Segmented<AuditReview["decision"]>
+                  className={thirdEdition.phoneDecision}
+                  label="Review decision"
+                  value={phoneDecision}
+                  onChange={setPhoneDecision}
+                  items={[
+                    { id: "reviewed", label: "Reviewed" },
+                    { id: "follow-up-required", label: "Follow-up" },
+                  ]}
+                />
+              </div>
             ) : (
               <p className={thirdEdition.quiet}>Review attempts cannot be reviewed.</p>
             )}

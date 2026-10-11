@@ -399,6 +399,16 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
       <p className={styles.absent}>No closed move carries a form yet.</p>
     );
 
+  const copySelectedSummary = () => {
+    if (!selected) return;
+    copyText(
+      "summary",
+      `${nameOf(selected)} (${umrnOf(selected)})\n${
+        selected.legalForm ? legalFormName(selected.legalForm) : "Voluntary"
+      }\n${legalDeadlineText(selected, now)}`,
+    );
+  };
+
   const focusPanel = selected ? (
     <FocusPanel
       key={selected.id}
@@ -441,14 +451,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
       onExtend={() => setExtendId(selected.id)}
       onRecordNext={() => openRecord(selected.id)}
       onRequirements={(code) => setRequirementsCode(code)}
-      onCopy={() =>
-        copyText(
-          "summary",
-          `${nameOf(selected)} (${umrnOf(selected)})\n${
-            selected.legalForm ? legalFormName(selected.legalForm) : "Voluntary"
-          }\n${legalDeadlineText(selected, now)}`,
-        )
-      }
+      onCopy={copySelectedSummary}
       copied={copied === "summary"}
     />
   ) : null;
@@ -477,6 +480,13 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           },
         }
       : undefined;
+  // v10 phone: the sheet foot always pins the next step. With no gap left to record it is the
+  // panel's own "Record next form", and Copy sits beside it, so neither floats mid-sheet.
+  const phoneSheetPrimary =
+    phonePrimary ?? (selected ? { label: "Record next form", onAction: () => openRecord(selected.id) } : undefined);
+  const phoneSheetSecondary = selected
+    ? { label: copied === "summary" ? "Copied" : "Copy", onAction: copySelectedSummary }
+    : undefined;
 
   const taskStrip = (
     <div className={styles.strip}>
@@ -795,7 +805,8 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                 ) : undefined
               }
               height="tall"
-              primary={phonePrimary}
+              primary={phoneSheetPrimary}
+              secondary={phoneSheetSecondary}
             >
               {/* v10 phone: the sheet's own header names the person, so the panel drops its head. */}
               <div className={styles.phoneFocus}>{focusPanel}</div>

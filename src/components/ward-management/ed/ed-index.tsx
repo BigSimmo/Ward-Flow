@@ -363,6 +363,24 @@ export function EdIndex() {
     <ServicePicker services={services} rows={rows} value={service} onPick={pickService} accessTarget={accessTarget} />
   );
 
+  const searchField = (
+    <TextInput
+      ref={searchRef}
+      type="search"
+      id="edSearchInput"
+      icon={Search}
+      placeholder="ED, hospital or service"
+      aria-label="Highlight emergency departments by keyword"
+      value={query}
+      onChange={(event) => setQuery(event.target.value)}
+      onClear={() => setQuery("")}
+      trailing={query || isPhone ? undefined : <Kbd>/</Kbd>}
+      autoComplete="off"
+      spellCheck={false}
+      boxClassName={styles.search}
+    />
+  );
+
   return (
     <div className={styles.screen} data-testid="ward-ed-index" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
@@ -461,45 +479,11 @@ export function EdIndex() {
             {isPhone ? null : (
               <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
             )}
-            <TextInput
-              ref={searchRef}
-              type="search"
-              id="edSearchInput"
-              icon={Search}
-              placeholder="ED, hospital or service"
-              aria-label="Highlight emergency departments by keyword"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onClear={() => setQuery("")}
-              trailing={query || isPhone ? undefined : <Kbd>/</Kbd>}
-              autoComplete="off"
-              spellCheck={false}
-              boxClassName={styles.search}
-            />
             {isPhone ? (
-              <ScrollRow className={styles.phoneServices}>
-                <Segmented
-                  label="Health service"
-                  items={serviceItems}
-                  value={service}
-                  onChange={setService}
-                  size="md"
-                />
-              </ScrollRow>
-            ) : null}
-            {isPhone ? (
-              <div className={styles.phoneViewRow}>
-                <Segmented
-                  label="Show"
-                  items={[
-                    { id: "list" as PhoneView, label: "EDs" },
-                    { id: "lanes" as PhoneView, label: "Wait lanes" },
-                    { id: "service" as PhoneView, label: "By service" },
-                  ]}
-                  value={phoneView}
-                  onChange={setPhoneView}
-                  size="md"
-                />
+              // v10 phone: the status and order button sits beside the search, so the view switch
+              // below runs the full width.
+              <div className={styles.phoneSearchRow}>
+                {searchField}
                 <Button
                   variant="sec"
                   iconOnly
@@ -511,6 +495,20 @@ export function EdIndex() {
                 />
               </div>
             ) : (
+              searchField
+            )}
+            {isPhone ? (
+              <ScrollRow className={styles.phoneServices}>
+                <Segmented
+                  label="Health service"
+                  items={serviceItems}
+                  value={service}
+                  onChange={setService}
+                  size="md"
+                />
+              </ScrollRow>
+            ) : null}
+            {isPhone ? null : (
               <Segmented
                 label="View"
                 items={[
@@ -544,6 +542,24 @@ export function EdIndex() {
             </span>
           </div>
         </section>
+
+        {/* v10 phone: EDs, Wait lanes and By service stay pinned under the bar while the list
+            scrolls, so the switch sits outside the filters block. */}
+        {isPhone ? (
+          <div className={styles.phoneViewRow}>
+            <Segmented
+              label="Show"
+              items={[
+                { id: "list" as PhoneView, label: "EDs" },
+                { id: "lanes" as PhoneView, label: "Wait lanes" },
+                { id: "service" as PhoneView, label: "By service" },
+              ]}
+              value={phoneView}
+              onChange={setPhoneView}
+              size="md"
+            />
+          </div>
+        ) : null}
 
         {matching.length === 0 ? (
           <Card className={styles.emptyCard}>

@@ -1277,3 +1277,53 @@
     inset: -2px 0;
   }
 }
+
+/* ─── v10 phone fidelity (11 Oct 2026) ───
+ * The view switch band runs the full width and, once the page has scrolled, sits flush under the
+ * condensed 52px bar (56px at rest). The pinned "Reads alike" chip leaves the phone: the hero's
+ * Read alike figure is that filter there. A name that reads like others says so at the end of its
+ * meta line, as the mockup ("EMHS · 1 suburb · reads like 3 others"). Phone only. */
+@media (max-width: 48rem) {
+  .phonePanes {
+    max-width: none;
+  }
+
+  :global(body:has([data-scrolled="true"])) .phonePanes {
+    top: 3.25rem;
+  }
+
+  .phonePanes > div {
+    padding-inline: 0;
+  }
+
+  .phonePanes :global([role="radiogroup"]) > * {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .toolbar > button[aria-pressed] {
+    display: none;
+  }
+
+  .letterSection .teamRow > .suburbs[data-alike]::after {
+    content: "\00a0suburbs\00a0·\00a0" attr(data-alike) / "";
+  }
+
+  .letterSection .teamRow > .suburbs[data-one="true"][data-alike]::after {
+    content: "\00a0suburb\00a0·\00a0" attr(data-alike) / "";
+  }
+
+  .letterSection .teamRow > .suburbs[data-alike] {
+    grid-column: 2 / 4;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* v10 phone catchment guide: the pinned "Look up a suburb" runs the width of the sheet foot. */
+.guideFootAction {
+  width: 100%;
+  justify-content: center;
+}

@@ -173,7 +173,7 @@ export function StatisticsHero({
       <>
         <Hero
           level={1}
-          className={styles.phoneStatsHero}
+          className={cx(styles.phoneStatsHero, phone?.lead ? styles.phoneLeadBeside : undefined)}
           eyebrow={eyebrow}
           title={phone?.title ?? title}
           titleMeta={phone?.sub}

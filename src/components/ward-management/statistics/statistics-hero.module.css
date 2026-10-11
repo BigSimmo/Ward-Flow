@@ -187,3 +187,32 @@
 .phoneTitleAction [data-testid="ward-statistics-unit-stepper"] > a:last-child {
   order: 1;
 }
+
+/* v10 phone Overview: the occupancy gauge sits beside the title, under the eyebrow line, as the
+ * mockup draws it. The shared hero puts a lead under the title on phone, so this hero lets its
+ * title block flow into the first row and reorders it. Only a phone stats hero with a lead. */
+@media (max-width: 48rem) {
+  .phoneLeadBeside > div:first-child {
+    align-items: center;
+  }
+
+  .phoneLeadBeside > div:first-child > div:has(> div > h1) {
+    display: contents;
+  }
+
+  .phoneLeadBeside > div:first-child > div:has(> div > h1) > span {
+    order: 0;
+    flex: 1 1 100%;
+  }
+
+  .phoneLeadBeside > div:first-child > [data-wf-hero-lead] {
+    order: 1;
+    flex: 0 0 auto;
+  }
+
+  .phoneLeadBeside > div:first-child > div:has(> div > h1) > div:has(> h1) {
+    order: 1;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

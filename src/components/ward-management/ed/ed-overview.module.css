@@ -296,3 +296,17 @@
     font-weight: 500;
   }
 }
+
+/* v10 phone hero (PhoneHero only renders on phone): the one light action runs the full width, and
+ * a pressed figure's note sits on its own line above it. */
+@media (max-width: 48rem) {
+  .phoneHero [data-testid="ward-ed-raise-referral-toggle"] {
+    flex: 1 1 100%;
+    justify-content: center;
+    min-height: var(--wf-touch);
+  }
+
+  .phoneHero .note {
+    flex: 1 1 100%;
+  }
+}

@@ -1646,8 +1646,8 @@
   align-items: center;
   justify-content: center;
   background: var(--scrim);
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   padding: var(--ward-space-16);
 }
 

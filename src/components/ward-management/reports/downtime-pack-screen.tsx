@@ -293,7 +293,7 @@ export function DowntimePackScreen() {
           />
           {staleLine ? <p className={styles.phoneNote}>{staleLine}</p> : null}
           <Segmented<Section>
-            className={styles.phoneSeg}
+            className={cx(styles.phoneSeg, styles.phoneSegPinned)}
             size="md"
             label="Downtime pack section"
             value={section}

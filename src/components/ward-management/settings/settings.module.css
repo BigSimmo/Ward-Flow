@@ -1152,3 +1152,52 @@
 .phoneSheetBody [role="switch"] > span:last-child {
   display: none;
 }
+
+/* v10 phone Rules sheet (11 Oct 2026): each rule's words on the left with the 44px stepper inline
+ * at the right, then its effect, with reset at the right end of that line. Only the phone sheet
+ * renders .phoneSheetBody. */
+.phoneSheetBody .ruleRow {
+  grid-template-columns: minmax(0, 1fr) 10rem;
+  column-gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.phoneSheetBody .ruleRow > .rowText {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.phoneSheetBody .ruleRow > .ruleValue {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.phoneSheetBody .ruleRow > .effectCell {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: center;
+  justify-content: flex-start;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.phoneSheetBody .ruleRow > .resetCell {
+  grid-column: 2;
+  grid-row: 2;
+  justify-content: flex-end;
+  align-self: center;
+}
+
+.phoneSheetBody .ruleRow:not(:has(.resetButton)) > .effectCell {
+  grid-column: 1 / -1;
+}
+
+/* A changed rule is edged all round in the accent, never a side stripe. */
+.phoneSheetBody .ruleChanged {
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.phoneSheetBody .ruleStepper > span:first-child > [role="spinbutton"] {
+  min-width: 0;
+  white-space: nowrap;
+}

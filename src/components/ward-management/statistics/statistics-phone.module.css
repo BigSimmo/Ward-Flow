@@ -298,3 +298,26 @@
   min-height: var(--spacing-tap, 3rem);
   border-radius: var(--wf-r-pill);
 }
+
+/* v10: Hospitals and Wards stay pinned under the bar while their list scrolls, with an 8px canvas
+   collar so no row shows round the switch, and let go after the list. The bar is 56px at rest and
+   52px once scrolled; the switch only sticks after a scroll. */
+.segGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.segPinned {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 6;
+  box-shadow:
+    0 0 0 var(--wf-s-2) var(--wf-canvas),
+    inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+}
+
+:global(body:has([data-scrolled="true"])) .segPinned {
+  top: calc(3.25rem + var(--wf-s-2));
+}

@@ -4995,8 +4995,8 @@ export function EdScreen({ edId }: EdScreenProps) {
                           title={patientInfo.displayName}
                           description={
                             <>
-                              <span className={styles.phoneSheetUmrn}>{patientInfo.umrn}</span> · {department.siteCode} ED ·{" "}
-                              {phoneBay.toLowerCase()}
+                              <span className={styles.phoneSheetUmrn}>{patientInfo.umrn}</span> · {department.siteCode}{" "}
+                              ED · {phoneBay.toLowerCase()}
                             </>
                           }
                           height="tall"
@@ -5040,6 +5040,61 @@ export function EdScreen({ edId }: EdScreenProps) {
                               <dt>Form</dt>
                               <dd>{movement.legalForm ? `Form ${movement.legalForm.code}` : "None"}</dd>
                             </div>
+                          </dl>
+                          {/* v10 phone person sheet: where the time in the department went, then the
+                              few facts a coordinator checks, above the actions. */}
+                          <section className={styles.phoneSheetSection} aria-label="Time in the department">
+                            <h3 className={styles.phoneSheetHeading}>Time in the department</h3>
+                            <JourneyStrip
+                              stages={edJourneyStages(
+                                movement,
+                                movementMedicalClearance(movement, referrals),
+                                stageCopy[movement.stage].label,
+                                now,
+                              )}
+                              formatDuration={splitDuration}
+                              label="Time in the department"
+                            />
+                          </section>
+                          <dl className={styles.phoneSheetPairs}>
+                            <div>
+                              <dt>Cohort</dt>
+                              <dd>
+                                {movement.cohort} · {movement.sex}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt>Destination</dt>
+                              <dd>{destinationLabel}</dd>
+                            </div>
+                            <div>
+                              <dt>Psychiatric review</dt>
+                              <dd>{movement.examination ? "Recorded" : "Not recorded"}</dd>
+                            </div>
+                            <div>
+                              <dt>Medically cleared</dt>
+                              <dd>
+                                {movementMedicalClearance(movement, referrals) === undefined
+                                  ? "Not recorded"
+                                  : movementMedicalClearance(movement, referrals)?.cleared
+                                    ? "Yes"
+                                    : "No"}
+                              </dd>
+                            </div>
+                            {movement.legalForm ? (
+                              <div>
+                                <dt>Form ends</dt>
+                                <dd
+                                  className={movement.legalForm.dueAt === undefined ? undefined : styles.phoneSheetMono}
+                                >
+                                  {movement.legalForm.dueAt === undefined
+                                    ? "Not written"
+                                    : minutesUntil(movement.legalForm.dueAt, now) >= 0
+                                      ? `in ${splitDuration(minutesUntil(movement.legalForm.dueAt, now))}`
+                                      : `passed ${splitDuration(Math.abs(minutesUntil(movement.legalForm.dueAt, now)))} ago`}
+                                </dd>
+                              </div>
+                            ) : null}
                           </dl>
                           {subFormOpen ? <div className={styles.phoneSheetForm}>{subFormContent}</div> : null}
                           <section className={styles.phoneSheetSection} aria-label="Actions">
@@ -6747,7 +6802,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                               </div>
                             ) : e.badgeText === "Transport Booked" ? (
                               <div className={styles.seenTransportContent}>
-                                <span>Patient transport booked with</span>
+                                <span>Patient transport booked with</span>{" "}
                                 <span className={styles.seenTransportProvider}>{e.primaryText}</span>
                                 {e.detailText && (
                                   <span className={styles.seenEscortBadge}>&middot; {e.detailText}</span>

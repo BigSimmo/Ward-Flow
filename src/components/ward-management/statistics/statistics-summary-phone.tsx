@@ -16,6 +16,7 @@ import {
   Segmented,
   SrOnly,
   StatusGlyph,
+  cx,
   durMinutes,
 } from "@/components/wf";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
@@ -186,56 +187,64 @@ export function StatisticsSummaryPhone({
 
         <StatisticsNav currentSection="hub" withSamples={false} wardCount={wardCount} variant="chips" />
 
-        <Segmented<"hospital" | "ward">
-          className={styles.seg}
-          size="md"
-          label="List beds by"
-          value={group}
-          onChange={setGroup}
-          items={[
-            { id: "hospital", label: "Hospitals", count: hospitals.length },
-            { id: "ward", label: "Wards", count: wards.length },
-          ]}
-        />
+        {/* v10: the switch stays pinned under the bar while its list scrolls, and lets go after it. */}
+        <div className={styles.segGroup}>
+          <Segmented<"hospital" | "ward">
+            className={cx(styles.seg, styles.segPinned)}
+            size="md"
+            label="List beds by"
+            value={group}
+            onChange={setGroup}
+            items={[
+              { id: "hospital", label: "Hospitals", count: hospitals.length },
+              { id: "ward", label: "Wards", count: wards.length },
+            ]}
+          />
 
-        <ul
-          className={styles.list}
-          aria-label={group === "hospital" ? "Hospitals by beds ready" : "Wards by beds ready"}
-        >
-          {group === "hospital"
-            ? hospitals.slice(0, showAll ? undefined : LIST_SHOWN).map((hospital) => (
-                <PhoneListRow
-                  key={hospital.name}
-                  as="li"
-                  name={hospital.name}
-                  meta={<InUse percent={hospital.percent} where={shortService(hospital.service)} />}
-                  value={hospital.ready}
-                  time="ready"
-                  onSelect={() =>
-                    setSheet({
-                      title: hospital.name,
-                      body: <ul className={styles.list}>{hospital.wards.map(wardRow)}</ul>,
-                    })
-                  }
-                />
-              ))
-            : byReady.slice(0, showAll ? undefined : LIST_SHOWN).map(wardRow)}
-          {listLength > LIST_SHOWN ? (
-            <li className={styles.showAllItem}>
-              <button
-                type="button"
-                className={styles.showAll}
-                aria-expanded={showAll}
-                onClick={() => setShowAll((value) => !value)}
-              >
-                {showAll ? "Show fewer" : `Show all ${listLength}`}
-              </button>
-            </li>
-          ) : null}
-        </ul>
+          <ul
+            className={styles.list}
+            aria-label={group === "hospital" ? "Hospitals by beds ready" : "Wards by beds ready"}
+          >
+            {group === "hospital"
+              ? hospitals.slice(0, showAll ? undefined : LIST_SHOWN).map((hospital) => (
+                  <PhoneListRow
+                    key={hospital.name}
+                    as="li"
+                    name={hospital.name}
+                    meta={<InUse percent={hospital.percent} where={shortService(hospital.service)} />}
+                    value={hospital.ready}
+                    time="ready"
+                    onSelect={() =>
+                      setSheet({
+                        title: hospital.name,
+                        body: <ul className={styles.list}>{hospital.wards.map(wardRow)}</ul>,
+                      })
+                    }
+                  />
+                ))
+              : byReady.slice(0, showAll ? undefined : LIST_SHOWN).map(wardRow)}
+            {listLength > LIST_SHOWN ? (
+              <li className={styles.showAllItem}>
+                <button
+                  type="button"
+                  className={styles.showAll}
+                  aria-expanded={showAll}
+                  onClick={() => setShowAll((value) => !value)}
+                >
+                  {showAll ? "Show fewer" : `Show all ${listLength}`}
+                </button>
+              </li>
+            ) : null}
+          </ul>
+        </div>
 
         <section className={styles.group} aria-label="Referrals today">
-          <GroupHead title="Referrals today" variant="letter" aside={`${referrals.raised} raised`} className={styles.groupHead} />
+          <GroupHead
+            title="Referrals today"
+            variant="letter"
+            aside={`${referrals.raised} raised`}
+            className={styles.groupHead}
+          />
           <dl className={styles.tiles}>
             <div className={styles.tile}>
               <dt>

@@ -1111,3 +1111,54 @@
 .phoneMoreCard .quietText {
   font-size: var(--wf-fs-12);
 }
+
+/* v10 phone: the safety-incidents line is a quiet note above the shared footer, not a bold badge.
+ * Rendered on the phone alone. */
+.phoneNotice :global(*) {
+  border-color: transparent;
+  background: none;
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+/* v10 phone: once the page has scrolled the bar condenses to 52px; the pinned switch keeps its 8px
+ * canvas collar right under it. */
+:global(body:has([data-scrolled="true"])) .phoneTabs {
+  top: calc(3.25rem + var(--wf-s-2));
+}
+
+/* v10 phone review sheet: "Your review" over two outlined choices, the picked one edged in the
+ * accent. Rendered in the phone sheet alone. */
+.phoneDecisionHead {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+
+.phoneDecision {
+  width: 100%;
+  gap: var(--wf-s-2);
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.phoneDecision [role="radio"] {
+  flex: 1 1 0;
+  min-width: 0;
+  box-sizing: border-box;
+  justify-content: center;
+  min-height: var(--wf-touch);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: none;
+}
+
+.phoneDecision [role="radio"][aria-checked="true"] {
+  border: 2px solid var(--wf-accent);
+}
