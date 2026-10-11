@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -147,7 +148,7 @@ describe("unit shard coverage blobs", () => {
     expect(args).toContain("--outputFile.json=/r.json");
     expect(args).toContain("--reporter=blob");
     expect(args).toContain("--coverage.enabled=true");
-    expect(gateBatchBlobPath(args)).toBe("/blobs/blob-shard-2-of-5-batch-001.json");
+    expect(gateBatchBlobPath(args)).toBe(join("/blobs", "blob-shard-2-of-5-batch-001.json"));
     expect(args.slice(-2)).toEqual(files);
   });
 
