@@ -3235,8 +3235,10 @@ function WardReferralDrawerContent({
                                       : inCatchment
                                         ? "In catchment"
                                         : "Outside catchment"}
-                                    {unit.healthService ? ` · ${unit.healthService}` : ""} ·{" "}
-                                    <span className={styles.mono}>{unit.unitId}</span>
+                                    <span className={styles.wardMetaMore}>
+                                      {unit.healthService ? ` · ${unit.healthService}` : ""} ·{" "}
+                                      <span className={styles.mono}>{unit.unitId}</span>
+                                    </span>
                                   </span>
                                 </span>
                                 <span className={styles.wardFigure}>
@@ -3249,6 +3251,8 @@ function WardReferralDrawerContent({
                                 </span>
                                 <span className={styles.wardFigure}>
                                   <strong className={styles.mono}>{waiting}</strong>
+                                  {/* v10 phone: the card has no column head, so the figure names itself. */}
+                                  <small className={styles.wardFigureName}>waitlist</small>
                                 </span>
                               </label>
                             );

@@ -2053,3 +2053,68 @@
     content: "· ";
   }
 }
+
+/* v10 phone: a long group ends in a "Show N more" row; the release sheet pins Open ward and Clear
+   blocker; transport and dossier open under the sheet on request. */
+.phMoreRow,
+.phMore,
+.phFootPri {
+  display: none;
+}
+
+@media screen and (max-width: 48rem) {
+  .phMoreRow {
+    display: table-row;
+  }
+
+  .phMoreRow > td {
+    padding: 0;
+  }
+
+  .phMore {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
+    border: 0;
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+    color: var(--wf-accent);
+    font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
+    cursor: pointer;
+  }
+
+  .tabPane + .phMore {
+    margin-top: var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+  }
+
+  .detailFooter {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    justify-content: stretch;
+    padding: 12px var(--wf-s-4) calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--wf-surface-2);
+  }
+
+  .detailFooter > a,
+  .detailFooter > button {
+    min-height: 48px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .detailFooter > a:only-child {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .phFootPri.phFootPri {
+    display: inline-flex;
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+}

@@ -2454,3 +2454,30 @@ button.gLaneL:hover {
     text-overflow: ellipsis;
   }
 }
+
+/* v10 phone: the second line's lead (legal time left, or escalated), and a red edge on the rows
+   that are yours to act on now. */
+@media (max-width: 48rem) {
+  .r .whoBtn > span > svg {
+    margin-right: 4px;
+    vertical-align: -1px;
+  }
+
+  .r .whoBtn .phPre {
+    color: var(--wf-ink-1);
+    font-size: inherit;
+    font-weight: 600;
+  }
+
+  .tbl .r[data-act="true"] {
+    position: relative;
+  }
+
+  .tbl .r[data-act="true"]::before {
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px var(--wf-danger);
+    content: "";
+    pointer-events: none;
+  }
+}

@@ -102,6 +102,9 @@ const GROUP_LABELS = {
 
 type GroupKey = keyof typeof GROUP_LABELS;
 
+/** v10 phone: rows a group shows before its "Show N more" row. */
+const PHONE_GROUP_CAP = 6;
+
 /**
  * Every group, in the fixed scan order spec D9 names — blocked first because those are the rows
  * somebody must act on. Never reorder this array; `tests/ward-discharge-board.dom.test.tsx` pins
@@ -399,6 +402,10 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const [phoneChart, setPhoneChart] = useState<"days" | "barriers" | null>(null);
   // v10 phone: the filters sit one tap away behind the filter button beside Now and History.
   const [phoneFiltersOpen, setPhoneFiltersOpen] = useState(false);
+  // v10 phone: a long group shows its first rows and a "Show N more" row, not every row.
+  // v10 phone: the release sheet scrolls as one; transport and dossier open under it on request.
+  const [phoneReleaseMore, setPhoneReleaseMore] = useState(false);
+  const [phoneGroupsOpen, setPhoneGroupsOpen] = useState<Partial<Record<GroupKey, boolean>>>({});
   const [drawerTab, setDrawerTab] = useState<"milestones" | "barriers" | "transport" | "dossier">("milestones");
   const [view, setView] = useState<TableView>("list");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
@@ -751,6 +758,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           ? "Departed"
           : WORK_STATUS_LABELS[detailRelease.state]
       : "";
+  /* v10 phone: no tabs in the release sheet — milestones and the barrier always show, transport
+     and dossier on request. Desktop and tablet keep the tabs. */
+  const releasePaneClass = (tab: "milestones" | "barriers" | "transport" | "dossier") =>
+    (isPhone ? tab === "milestones" || tab === "barriers" || phoneReleaseMore : drawerTab === tab)
+      ? pageStyles.tabPane
+      : pageStyles.tabPaneHidden;
+
   const tabList = (hasBlocker: boolean) => (
     <div className={pageStyles.drawerTabs} role="tablist" aria-label="Discharge inspection sections">
       {(
@@ -1572,7 +1586,10 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             </td>
                           </tr>
                         ) : (
-                          litFirst(releaseGroups[key], releaseLit).map((release) => {
+                          (isPhone && !phoneGroupsOpen[key]
+                            ? litFirst(releaseGroups[key], releaseLit).slice(0, PHONE_GROUP_CAP)
+                            : litFirst(releaseGroups[key], releaseLit)
+                          ).map((release) => {
                             const unit = units.find((candidate) => candidate.id === release.unitId);
                             const linked = records.find((candidate) => candidate.admissionId === release.admissionId);
                             const overdue = release.state !== "discharged" && release.expectedAt < now;
@@ -1649,6 +1666,21 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             );
                           })
                         )}
+                        {isPhone && !phoneGroupsOpen[key] && releaseGroups[key].length > PHONE_GROUP_CAP ? (
+                          <tr className={pageStyles.phMoreRow}>
+                            <td colSpan={3}>
+                              <button
+                                type="button"
+                                className={pageStyles.phMore}
+                                data-testid={`ward-discharge-group-more-${key}`}
+                                onClick={() => setPhoneGroupsOpen((open) => ({ ...open, [key]: true }))}
+                              >
+                                Show {releaseGroups[key].length - PHONE_GROUP_CAP} more{" "}
+                                {(key === "discharged-today" ? "discharged" : GROUP_LABELS[key]).toLowerCase()}
+                              </button>
+                            </td>
+                          </tr>
+                        ) : null}
                       </tbody>
                     ))
                   )}
@@ -2058,9 +2090,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       </Button>
                     ) : null}
 
-                    {tabList(Boolean(detailRelease.blocker))}
+                    {isPhone ? null : tabList(Boolean(detailRelease.blocker))}
 
-                    <div className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <div className={releasePaneClass("milestones")}>
                       <RecordedDischargeMilestones
                         milestones={[
                           {
@@ -2112,7 +2144,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       />
                     </div>
 
-                    <div className={drawerTab === "barriers" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <div className={releasePaneClass("barriers")}>
                       {detailRelease.blocker ? (
                         <div className={pageStyles.barrierBox}>
                           <div className={pageStyles.barrierText}>
@@ -2142,7 +2174,17 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       )}
                     </div>
 
-                    <div className={drawerTab === "transport" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    {isPhone ? (
+                      <button
+                        type="button"
+                        className={pageStyles.phMore}
+                        aria-expanded={phoneReleaseMore}
+                        onClick={() => setPhoneReleaseMore((open) => !open)}
+                      >
+                        {phoneReleaseMore ? "Hide transport and dossier" : "Show transport and dossier"}
+                      </button>
+                    ) : null}
+                    <div className={releasePaneClass("transport")}>
                       <dl className={pageStyles.factList}>
                         <dt>Booking reference</dt>
                         <dd>Not recorded</dd>
@@ -2159,7 +2201,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       </div>
                     </div>
 
-                    <div className={drawerTab === "dossier" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <div className={releasePaneClass("dossier")}>
                       <dl className={pageStyles.factList}>
                         <dt>{detailRelease.state === "discharged" ? "Recorded release" : "Expected release"}</dt>
                         <dd>
@@ -2258,6 +2300,24 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   >
                     Open ward
                   </Link>
+                  {isPhone && detailRelease?.blocker && detailRelease.state !== "discharged" ? (
+                    <Button
+                      variant="pri"
+                      className={pageStyles.phFootPri}
+                      data-testid="ward-discharge-clear-blocker"
+                      onClick={() =>
+                        dispatch({
+                          type: "CLEAR_BED_RELEASE_BLOCK",
+                          role: "coordinator",
+                          now,
+                          releaseId: detailRelease.id,
+                          actingUnitId: detailRelease.unitId,
+                        })
+                      }
+                    >
+                      Clear blocker
+                    </Button>
+                  ) : null}
                 </footer>
               )}
             </aside>

@@ -172,6 +172,35 @@ function updateCell(row: BoardRow, now: Instant): ReactNode {
   );
 }
 
+/** v10 phone: the second line leads with the recorded legal time left, or that it was escalated. */
+function phonePrefix(row: BoardRow): ReactNode {
+  const form = row.movement.legalForm;
+  if (form !== undefined && row.dueIn !== undefined) {
+    const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
+    return (
+      <>
+        <Glyph tone={row.dueIn < 0 ? "danger" : dueTone(row.dueIn)} />
+        <b className={styles.phPre}>{`Form ${form.code} ${left}`}</b>
+        {" · "}
+      </>
+    );
+  }
+  if (row.movement.escalation !== undefined)
+    return (
+      <>
+        <Glyph tone="info" />
+        <b className={styles.phPre}>Escalated</b>
+        {" · "}
+      </>
+    );
+  return null;
+}
+
+/** v10 phone: the right column's second line is how long nothing has been recorded. */
+function phoneUpdate(row: BoardRow): ReactNode {
+  return row.activity === undefined ? "no update" : `quiet ${splitDuration(row.quiet)}`;
+}
+
 /** Active time solid, quiet time hatched (amber once quiet 2h or more), on a 24 hour scale. */
 function WaitBar({ row }: { row: BoardRow }) {
   const total = Math.min(row.waited, OVER_24H);
@@ -1152,6 +1181,13 @@ export function DelaysBoard({
         key={movement.id}
         className={styles.r}
         aria-selected={isSelected}
+        data-act={
+          isPhone &&
+          row.owner === "yours" &&
+          (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H)
+            ? "true"
+            : undefined
+        }
         data-testid={`delays-row-${movement.id}`}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest("button, a") === null) select(movement.id);
@@ -1169,6 +1205,7 @@ export function DelaysBoard({
           >
             <b className={styles.ellBlock}>{patient.formalName}</b>
             <span className={styles.ellBlock} data-ward-type-floor="delays-profile">
+              {isPhone ? phonePrefix(row) : null}
               {[patient.umrn, originLabel(movement)].filter(Boolean).join(" · ")}
             </span>
           </button>
@@ -1201,7 +1238,7 @@ export function DelaysBoard({
           {legalCell(row)}
         </td>
         <td role="cell" className={styles.cUpd} data-ward-type-floor="delays-since">
-          {updateCell(row, now)}
+          {isPhone ? phoneUpdate(row) : updateCell(row, now)}
         </td>
       </tr>,
       isSelected ? (
@@ -1735,7 +1772,7 @@ export function DelaysBoard({
               <button type="button" className={styles.phCard} onClick={() => setPhoneSheet("spread")}>
                 <Activity size={16} aria-hidden="true" className={styles.phCardIcon} />
                 <span className={styles.phCardText}>
-                  <span className={styles.phCardTitle}>Wait spread and the next 4 hours</span>
+                  <span className={styles.phCardTitle}>Wait spread and the hours ahead</span>
                   <span className={styles.phCardMeta}>Where the waits sit, and who crosses {H8} next</span>
                 </span>
                 <ChevronRight size={16} aria-hidden="true" className={styles.phCardIcon} />
@@ -1792,7 +1829,7 @@ export function DelaysBoard({
               <PhoneSheet
                 open={phoneSheet === "spread"}
                 onClose={() => setPhoneSheet(null)}
-                title="Wait spread and the next 4 hours"
+                title="Wait spread and the hours ahead"
                 description="Dots and columns follow the same filters as the list"
                 height="tall"
               >

@@ -82,6 +82,8 @@ import { isCoordinatorStep, movementNextStep, nextStepTarget } from "./movement-
 import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { ArrivalsAheadList } from "./arrivals-ahead-list";
+import arrivalsStyles from "./arrivals-ahead-list.module.css";
 
 const MS_PER_MINUTE = 60_000;
 
@@ -315,6 +317,10 @@ export function MovementsScreen() {
   // Phone (v10): the timeline, corridors and transport panels open as sheets from nav cards.
   const isPhone = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<"arrivals" | "corridors" | "transport" | null>(null);
+  // v10 phone: Arrivals ahead reads as a list; the timeline opens under it on request.
+  const [phoneArrivalsTimeline, setPhoneArrivalsTimeline] = useState(false);
+  // v10 phone: each worklist group opens on its own "Show N more" row.
+  const [phoneOpenGroups, setPhoneOpenGroups] = useState<ReadonlySet<string>>(new Set());
   // v6 worklist: a search over name, UMRN or ED, and a short list per group until Show all.
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(false);
@@ -617,6 +623,20 @@ export function MovementsScreen() {
     capping
       ? rows.filter((movement, index) => index < cap || pinnedRowIds.has(movement.id) || isMarked(movement))
       : rows;
+  /* v10 phone: a group shows its first three rows and a "Show N more in <group>" row under them. */
+  const groupRows = (id: string, rows: Movement[]) =>
+    isPhone ? (phoneOpenGroups.has(id) ? rows : capRows(rows, PHONE_GROUP_CAP)) : capRows(rows, GROUP_CAP);
+  const phoneGroupMore = (id: string, title: string, total: number, shown: number) =>
+    isPhone && total > shown ? (
+      <button
+        type="button"
+        className={arrivalsStyles.groupMore}
+        data-testid={`movements-group-more-${id}`}
+        onClick={() => setPhoneOpenGroups((open) => new Set(open).add(id))}
+      >
+        Show {total - shown} more in {title.toLowerCase()}
+      </button>
+    ) : null;
   const hiddenIn = (groups: Movement[][], cap: number) =>
     groups.reduce((sum, rows) => sum + rows.length - capRows(rows, cap).length, 0);
   const hiddenRowCount =
@@ -1050,22 +1070,33 @@ export function MovementsScreen() {
               open={phoneSheet === "arrivals"}
               onClose={() => setPhoneSheet(null)}
               title="Arrivals ahead"
-              description="The next 48 hours of moves into wards"
+              description="Inbound by receiving ward, soonest first"
               height="tall"
             >
-              <MovementHorizonGantt
-                lanes={horizonLanes}
-                corridors={corridors}
-                refusedCorridors={refusedCorridors}
-                units={units}
-                now={now}
-                selectedMovementId={detailId}
-                onSelectMovement={(id) => {
-                  setPhoneSheet(null);
-                  openDetail(id);
-                  revealMovement(id);
-                }}
-              />
+              <ArrivalsAheadList lanes={horizonLanes} now={now} />
+              <button
+                type="button"
+                className={arrivalsStyles.arrivalsMore}
+                aria-expanded={phoneArrivalsTimeline}
+                onClick={() => setPhoneArrivalsTimeline((open) => !open)}
+              >
+                {phoneArrivalsTimeline ? "Hide the timeline" : "Show the timeline"}
+              </button>
+              {phoneArrivalsTimeline ? (
+                <MovementHorizonGantt
+                  lanes={horizonLanes}
+                  corridors={corridors}
+                  refusedCorridors={refusedCorridors}
+                  units={units}
+                  now={now}
+                  selectedMovementId={detailId}
+                  onSelectMovement={(id) => {
+                    setPhoneSheet(null);
+                    openDetail(id);
+                    revealMovement(id);
+                  }}
+                />
+              ) : null}
             </PhoneSheet>
             <PhoneSheet
               open={phoneSheet === "corridors"}
@@ -1277,15 +1308,16 @@ export function MovementsScreen() {
                               </div>
                             );
                           }
-                          const rows = capRows(stage.movements, GROUP_CAP);
+                          const rows = groupRows(stage.id, stage.movements);
                           return (
                             <div key={stage.id} className={styles.stageBlock}>
                               <WardGroupHeading
                                 title={stage.label}
                                 people={stage.movements.length}
-                                note={moreNote(stage.movements.length - rows.length)}
+                                note={isPhone ? undefined : moreNote(stage.movements.length - rows.length)}
                               />
                               <WardRecordList>{rows.map(renderRow)}</WardRecordList>
+                              {phoneGroupMore(stage.id, stage.label, stage.movements.length, rows.length)}
                             </div>
                           );
                         })
@@ -1306,15 +1338,16 @@ export function MovementsScreen() {
                               </div>
                             );
                           }
-                          const rows = capRows(group.rows, GROUP_CAP);
+                          const rows = groupRows(group.id, group.rows);
                           return (
                             <div key={group.id} className={styles.stageBlock}>
                               <WardGroupHeading
                                 title={group.title}
                                 people={group.rows.length}
-                                note={moreNote(group.rows.length - rows.length)}
+                                note={isPhone ? undefined : moreNote(group.rows.length - rows.length)}
                               />
                               <WardRecordList>{rows.map(renderRow)}</WardRecordList>
+                              {phoneGroupMore(group.id, group.title, group.rows.length, rows.length)}
                             </div>
                           );
                         })
@@ -2149,6 +2182,7 @@ function StageRow({
  */
 /** Rows shown per group in the worklist before Show all, and in a single ungrouped list. */
 const GROUP_CAP = 4;
+const PHONE_GROUP_CAP = 3;
 const LIST_CAP = 12;
 
 function moreNote(hidden: number): string | undefined {

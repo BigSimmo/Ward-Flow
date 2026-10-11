@@ -3142,3 +3142,127 @@ details.refCard > summary {
     height: 12px;
   }
 }
+
+/* Ward choice: names its own figure only on a phone card (below). */
+.wardFigureName {
+  display: none;
+}
+
+/* v10 phone: the step 4 ward list reads as cards (name, hospital, fit line, ready and waitlist
+   figures), not a table. */
+@media (max-width: 48rem) {
+  .wardTable {
+    border-top: 0;
+  }
+
+  .wardTable .wardTableHead {
+    display: none;
+  }
+
+  .wardTable [role="list"] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--wf-s-1) var(--wf-s-3) var(--wf-s-3);
+  }
+
+  .wardTable .wardRow {
+    grid-template-columns: 18px minmax(0, 1fr) 52px 52px;
+    min-height: 68px;
+    padding: 6px var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .wardTable .wardRow[data-selected="true"] {
+    border-color: var(--wf-accent);
+    background: var(--wf-surface);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  .wardTable .wardIdentity {
+    gap: 2px;
+  }
+
+  .wardTable .wardTitle {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+  }
+
+  .wardTable .wardTitle strong {
+    overflow: hidden;
+    font-size: var(--wf-fs-14);
+    text-overflow: ellipsis;
+  }
+
+  .wardTable .wardMeta {
+    color: var(--wf-ink-2);
+  }
+
+  .wardTable .wardMetaMore {
+    display: none;
+  }
+
+  .wardTable .wardFigure {
+    gap: 2px;
+  }
+
+  .wardTable .wardFigure strong {
+    font-size: var(--wf-fs-15, var(--wf-fs-16));
+  }
+
+  .wardFigureName.wardFigureName {
+    display: block;
+  }
+}
+
+/* v10 phone: each clearance item is a row of its own — a status ring and the name, then a compact
+   Done / To follow / Not done track under it, not a full-width bar. */
+@media (max-width: 48rem) {
+  .checkList.checkList {
+    gap: 0;
+  }
+
+  .checkList > .radioField {
+    padding: var(--wf-s-3) 0;
+  }
+
+  .checkList > .radioField + .radioField {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .checkList > .radioField > legend.checkList,
+  .checkList > .radioField > legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 0 0 var(--wf-s-2);
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+  }
+
+  .checkList > .radioField > legend::before {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border: 1.5px solid var(--wf-ink-3);
+    border-radius: 50%;
+    content: "";
+  }
+
+  .checkList > .radioField > .segmented.segmented {
+    display: inline-grid;
+    float: none;
+    width: auto;
+    margin-left: 20px;
+  }
+
+  .checkList > .radioField > .segmented > label {
+    padding: 0 var(--wf-s-3);
+  }
+}
