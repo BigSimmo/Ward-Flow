@@ -56,6 +56,40 @@
   height: 100%;
 }
 
+/* Tablet slide-over: the same sheet docked full height to the right edge. */
+.sheetScrim[data-placement="right"] {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0 env(safe-area-inset-right) 0 0;
+}
+
+.sheet[data-placement="right"] {
+  width: min(440px, 92vw);
+  max-width: 440px;
+  height: 100%;
+  border-bottom: 1px solid var(--wf-line-2);
+  border-right: 0;
+  border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
+  animation-name: wfPhoneSheetInRight;
+}
+
+.sheet[data-placement="right"] .handle {
+  display: none;
+}
+
+.sheet[data-placement="right"] .sheetHeader {
+  padding-top: var(--wf-s-4);
+}
+
+@keyframes wfPhoneSheetInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
 .sheet:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -4px;
@@ -193,6 +227,9 @@
   .sheet {
     animation-name: wfPhoneSheetFade;
     transition: none;
+  }
+  .sheet[data-placement="right"] {
+    animation-name: wfPhoneSheetFade;
   }
 }
 
@@ -683,8 +720,10 @@
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  /* Room for the children's focus rings, which would otherwise be clipped by the scroller. */
-  padding: 4px 2px;
+  /* Room for the children's focus rings, which would otherwise be clipped by the scroller. The end
+     padding is the fade's width, so the last chip clears the fade once the row is scrolled to its
+     end (device audit, 11 Oct 2026: clipped chips should read as scrollable). */
+  padding: 4px var(--phone-fade) 4px 2px;
   -webkit-mask-image: linear-gradient(
     to right,
     transparent 0,

@@ -405,6 +405,10 @@
   white-space: nowrap;
 }
 
+.bedKey > .keyLink {
+  margin-left: auto;
+}
+
 .keyLink {
   display: inline-flex;
   align-items: center;
@@ -1527,6 +1531,31 @@ label.todoMain:has(.todoTick:focus-visible) {
 .phoneSheetBody .flowSwitch > div > button {
   flex: 1 1 0;
   min-height: var(--wf-touch);
+}
+
+/* Audit 11 Oct 2026, iPad landscape: four tiles a row so the occupant's name, the thing a NUM
+ * reads first, is not cut short. Desktop keeps five. */
+@media (min-width: 70.0625rem) and (max-width: 85rem) {
+  .bedTiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Audit 11 Oct 2026, iPad portrait: Act now takes the full width so its time and button do not
+ * collide; Later today and Done sit side by side under it. */
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .todoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .todoGrid > .todoCol:first-child {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .todoGrid > .todoCol:nth-child(2) {
+    border-left: 0;
+  }
 }
 
 /* Rounded attention markers apply at every responsive breakpoint. */

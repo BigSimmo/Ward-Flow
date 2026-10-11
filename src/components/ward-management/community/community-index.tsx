@@ -259,7 +259,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const [drawerOpen, setDrawerOpen] = useState(false);
   /** Phone (v10): A to Z, Suburb, Alike and Services are one tap apart. */
   const isPhone = useIsPhone();
-  const [phonePane, setPhonePane] = useState<"az" | "suburb" | "alike" | "services">("az");
+  const [phonePane, setPhonePane] = useState<"az" | "suburb" | "alike" | "services">("suburb");
 
   // `useSyncExternalStore` through `createBrowserStore`: the recent list lives in localStorage, and
   // a server render (and `renderToStaticMarkup` in tests) sees the empty server snapshot.
@@ -454,35 +454,30 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
         <Hero
           level={1}
           eyebrow={isPhone ? "Community · Statewide" : "Community · Team directory"}
+          // Device audit 11 Oct 2026: one title on every device; Read alike is its own figure below.
           title={
-            isPhone ? (
-              <>
-                <SrOnly>Community: </SrOnly>
-                {allTeams.length} team names
-              </>
-            ) : (
-              <>
-                <SrOnly>Community: </SrOnly>
-                <b className={styles.heroFigure}>{allTeams.length}</b> names,{" "}
-                <b className={styles.heroFigure}>{alikeTeamCount}</b> read alike
-              </>
-            )
+            <>
+              <SrOnly>Community: </SrOnly>
+              <b className={styles.heroFigure}>{allTeams.length}</b> names
+            </>
           }
           titleMeta={isPhone ? "Recorded names, not verified services" : undefined}
           stats={
             isPhone ? (
               // v10 phone: three figures on hairlines, value over label.
               <>
+                {/* On a phone, dimming the list showed only dimmed names on the first screen, so the
+                    figure opens the Alike tab instead (device audit 11 Oct 2026). */}
                 <HeroStat
                   value={alikeTeamCount}
                   label="Read alike"
                   tone={alikeTeamCount > 0 ? "warning" : undefined}
-                  pressed={alikeOnly}
-                  onToggle={() => setAlikeOnly((value) => !value)}
+                  pressed={phonePane === "alike"}
+                  onToggle={() => setPhonePane((pane) => (pane === "alike" ? "suburb" : "alike"))}
                 />
                 <HeroStat
                   value={sharedSuburbs.suburbs}
-                  label="Two teams"
+                  label="Suburbs with two names"
                   pressed={sharedSuburbOnly}
                   onToggle={() => setSharedSuburbOnly((value) => !value)}
                 />
@@ -588,8 +583,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               value={phonePane}
               onChange={setPhonePane}
               items={[
-                { id: "az" as const, label: "A to Z" },
+                // Suburb leads: "which team covers this suburb" is the phone job.
                 { id: "suburb" as const, label: "Suburb" },
+                { id: "az" as const, label: "A to Z" },
                 { id: "alike" as const, label: "Alike" },
                 { id: "services" as const, label: "Services" },
               ]}
@@ -828,7 +824,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 id="community-gateway-service-title"
                 title="Teams by service"
                 eyebrow
-                aside={<span className={styles.headNote}>Line is the mean</span>}
+                aside={<span className={styles.headNote}>Teams, and how many read alike</span>}
               />
               <CardBody>
                 <ServiceBars serviceCounts={serviceCounts} />
@@ -1165,8 +1161,9 @@ function TeamRow({
         {collision ? (
           <ReadsAlikeMarker collision={collision} onOpen={() => onOpenFamily(collision)} />
         ) : (
+          // Blank when there is nothing to say (device audit 11 Oct 2026: "No marker" on 42 rows).
           <span className={styles.noMarker} data-row-detail="no-marker">
-            No marker
+            <SrOnly>No marker</SrOnly>
           </span>
         )}
       </span>
@@ -1293,7 +1290,6 @@ function ServiceBars({ serviceCounts }: { serviceCounts: ReadonlyMap<string, { t
   );
   const present = codes.filter((code) => (serviceCounts.get(code)?.teams ?? 0) > 0);
   if (present.length === 0) return <p className={styles.muted}>No team on this page maps to a health service.</p>;
-  const total = present.reduce((sum, code) => sum + (serviceCounts.get(code)?.teams ?? 0), 0);
   const rows: BarListRow[] = present.map((code) => {
     const entry = serviceCounts.get(code) ?? { teams: 0, alike: 0 };
     return {
@@ -1305,7 +1301,7 @@ function ServiceBars({ serviceCounts }: { serviceCounts: ReadonlyMap<string, { t
           {entry.teams}
           <span className={styles.alikeFigure}>
             <StatusGlyph tone={entry.alike > 0 ? "warning" : "neutral"} size={9} />
-            {entry.alike}
+            {entry.alike} alike
           </span>
         </span>
       ),
@@ -1313,13 +1309,7 @@ function ServiceBars({ serviceCounts }: { serviceCounts: ReadonlyMap<string, { t
   });
   return (
     <>
-      <BarList
-        rows={rows}
-        mean={total / present.length}
-        meanLabel="Mean"
-        label="Community teams by health service"
-        labelWidth="9.5rem"
-      />
+      <BarList rows={rows} label="Community teams by health service" labelWidth="9.5rem" />
       <SrOnly>
         <ul>
           {present.map((code) => (

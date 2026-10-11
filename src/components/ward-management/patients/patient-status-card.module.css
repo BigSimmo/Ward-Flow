@@ -343,6 +343,15 @@
   font-size: var(--wf-fs-14);
 }
 
+/* Device audit (11 Oct 2026): the phone dock now sits on every phone page, so the pinned action bar
+   rests above it (the same 96px the dock keeps clear under the page) rather than behind it. */
+@media (max-width: 48rem) {
+  .phBar {
+    bottom: var(--wf-dock-clear, 0px);
+    padding-bottom: var(--wf-s-2);
+  }
+}
+
 /* Rounded attention markers apply at every responsive breakpoint. */
 .card[data-act="true"] {
   position: relative;

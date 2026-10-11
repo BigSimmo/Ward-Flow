@@ -180,3 +180,4 @@ export {
   type PhoneHeroFigure,
   type ScrollRowProps,
 } from "./phone";
+export { PortraitList, PortraitRail, type PortraitGroup, type PortraitRowData } from "./portrait";

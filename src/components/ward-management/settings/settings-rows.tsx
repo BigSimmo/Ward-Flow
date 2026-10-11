@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Check, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 import { SrOnly, StatusGlyph, Stepper, cx } from "@/components/wf";
 
@@ -25,10 +25,8 @@ export function ScopeLine({ kind }: { kind: "save" | "live" }) {
   return (
     <p className={styles.scopeLine}>
       {kind === "save" ? (
-        <span className={styles.scopeTag}>
-          <Check size={13} strokeWidth={2.5} aria-hidden="true" />
-          Needs Save
-        </span>
+        // Not a checked chip: nothing is unsaved until a rule changes (device audit 11 Oct 2026).
+        <span className={styles.scopeTag}>Needs Save</span>
       ) : (
         <span className={styles.scopeTag}>
           <StatusGlyph tone="success" size={8} />

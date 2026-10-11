@@ -52,7 +52,9 @@ describe("unified Patient Now clinical flight deck", () => {
     expect(screen.getAllByRole("tab")).toHaveLength(5);
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "true");
     expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("In placement");
-    expect(screen.getByRole("heading", { name: "Transit operations" })).toBeInTheDocument();
+    // Device audit 11 Oct 2026 (owner pick A): the placement work left Now; its row opens it as a sheet.
+    fireEvent.click(screen.getByTestId("ward-patient-destination-row"));
+    expect(screen.getByRole("dialog", { name: "Destination and placement" })).toBeInTheDocument();
     // The clinical context sits beside the placement work on Now, not behind a second switch.
     expect(screen.getByRole("heading", { name: "Why they're here" })).toBeInTheDocument();
     expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Cannot move");
@@ -131,7 +133,8 @@ describe("unified Patient Now clinical flight deck", () => {
     const page = await Page({ params: Promise.resolve({ movementId: "WF-012" }) });
     render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
     fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
-    expect(screen.getByRole("heading", { name: "Transit operations" })).toBeInTheDocument();
+    // The bed gate's action opens the placement work as the Destination sheet (device audit 11 Oct 2026).
+    expect(screen.getByRole("dialog", { name: "Destination and placement" })).toBeInTheDocument();
   });
   it("opens the ward shortlist directly from a task referral action", async () => {
     const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");

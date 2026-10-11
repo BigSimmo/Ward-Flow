@@ -38,6 +38,7 @@ import {
   tableClasses,
   cx,
   type WfTone,
+  useMediaQuery,
 } from "@/components/wf";
 import {
   formatInstant,
@@ -301,6 +302,8 @@ export type CensusTableProps = {
 };
 
 const WARD_CAP = 40;
+/** Waiting, Bed found and Moving fold after this many rows on the desktop table, like phone. */
+const GROUP_CAP = 10;
 
 export function rowTestId(row: CensusRow): string {
   return row.kind === "movement" || row.kind === "referral"
@@ -313,6 +316,13 @@ export function CensusTable(props: CensusTableProps) {
   const lifting = highlight !== null;
   const groups = CENSUS_GROUPS.map((group) => ({ group, rows: rows.filter((row) => row.group === group.id) }));
   const groupsFound = groups.filter((entry) => entry.rows.length > 0).length;
+  // Device audit 11 Oct 2026: 51 Waiting and 41 Bed found fully open made the page 4,630px; each
+  // open group shows its first ten with "Show all N" (On a ward keeps its own wider cap).
+  const [shownAll, setShownAll] = useState<ReadonlySet<CensusGroup>>(() => new Set());
+  // Tablets: "Heading to" reads "No ward yet" on every waiting row and took the width Next step
+  // needs, so it goes below 75rem; the side card still shows where the person is heading.
+  const showTo = !useMediaQuery("(max-width: 75rem)");
+  const cols = showTo ? 7 : 6;
 
   return (
     <section
@@ -393,7 +403,7 @@ export function CensusTable(props: CensusTableProps) {
               <col className={styles.colTier} />
               <col className={styles.colWho} />
               <col className={styles.colWhere} />
-              <col className={styles.colTo} />
+              {showTo ? <col className={styles.colTo} /> : null}
               <col className={styles.colNext} />
               <col className={styles.colLegal} />
               <col className={styles.colTime} />
@@ -403,7 +413,7 @@ export function CensusTable(props: CensusTableProps) {
                 <th scope="col">Tier</th>
                 <th scope="col">Patient</th>
                 <th scope="col">Where now</th>
-                <th scope="col">Heading to</th>
+                {showTo ? <th scope="col">Heading to</th> : null}
                 <th scope="col">Next step</th>
                 <th scope="col">Legal</th>
                 <th scope="col" className={styles.num}>
@@ -416,11 +426,19 @@ export function CensusTable(props: CensusTableProps) {
               const litCount = lifting ? groupRows.filter(lifted).length : 0;
               const open = searching || openGroups[group.id] || litCount > 0;
               const cap =
-                group.id === "ward" && !searching && !lifting && !props.showAllWard ? WARD_CAP : groupRows.length;
+                searching || lifting
+                  ? groupRows.length
+                  : group.id === "ward"
+                    ? props.showAllWard
+                      ? groupRows.length
+                      : WARD_CAP
+                    : group.id === "off" || shownAll.has(group.id)
+                      ? groupRows.length
+                      : GROUP_CAP;
               return (
                 <tbody key={group.id} id={`ward-patient-search-group-${group.id}`} className={styles.group}>
                   <tr className={cx(styles.groupRow, group.id === "off" && styles.groupQuiet)}>
-                    <th colSpan={7} scope="rowgroup">
+                    <th colSpan={cols} scope="rowgroup">
                       <button
                         type="button"
                         className={styles.groupButton}
@@ -453,13 +471,22 @@ export function CensusTable(props: CensusTableProps) {
                             lifted={lifting && lifted(row)}
                             flash={row.key === props.flashKey}
                             onSelect={props.onSelect}
+                            showTo={showTo}
                           />
                         ))
                     : null}
                   {open && cap < groupRows.length ? (
                     <tr className={styles.moreRow}>
-                      <td colSpan={7}>
-                        <Button variant="ghost" size="sm" onClick={props.onShowAllWard}>
+                      <td colSpan={cols}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={
+                            group.id === "ward"
+                              ? props.onShowAllWard
+                              : () => setShownAll((current) => new Set(current).add(group.id))
+                          }
+                        >
                           Show all {groupRows.length}
                         </Button>
                       </td>
@@ -491,7 +518,9 @@ function CensusTableRow({
   lifted,
   flash,
   onSelect,
+  showTo = true,
 }: {
+  showTo?: boolean;
   row: CensusRow;
   needle: string;
   selected: boolean;
@@ -558,12 +587,14 @@ function CensusTableRow({
           <span>{row.whereSub}</span>
         </span>
       </td>
-      <td>
-        <span className={styles.two}>
-          <b>{row.to}</b>
-          <span>{row.toSub}</span>
-        </span>
-      </td>
+      {showTo ? (
+        <td>
+          <span className={styles.two}>
+            <b>{row.to}</b>
+            <span>{row.toSub}</span>
+          </span>
+        </td>
+      ) : null}
       <td>
         <span className={styles.next}>
           <CensusGlyphMark glyph={row.glyph} />

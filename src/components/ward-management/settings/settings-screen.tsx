@@ -65,7 +65,6 @@ import {
   DUE_SOON_RANGE_MINUTES,
   DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
-  OCCUPANCY_ALERT_PERCENT,
   OVERDUE_AFTER_MINUTES_BY_TIER,
   WARD_ANSWER_TARGET_MINUTES,
   SILENT_WARD_FIRST_REMINDER_MINUTES,
@@ -73,6 +72,7 @@ import {
   TRANSPORT_BOOKED_TARGET_MINUTES,
   UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { DECISION_TARGET_STEPS } from "@/components/ward-management/ward-decision-targets";
 import {
   enableActNowNotifications,
@@ -348,7 +348,6 @@ export function SettingsScreen() {
   const unsavedCount = diffs.length;
   const hasUnsavedRules = unsavedCount > 0;
   const isSurge = isSurgePreset(draft);
-  const savedSurge = isSurgePreset(configuration);
 
   // The ED row's effect: who waits past the target now, at the draft value and at the saved one.
   const savedEdOver = thresholds.find((threshold) => threshold.id === "ed-access-target")?.reached ?? 0;
@@ -906,9 +905,9 @@ export function SettingsScreen() {
               setting="occupancy"
               title="Occupancy alert"
               sub="Bed alerts dot from"
-              value={OCCUPANCY_ALERT_PERCENT}
-              saved={OCCUPANCY_ALERT_PERCENT}
-              display={`${OCCUPANCY_ALERT_PERCENT}%`}
+              value={BED_ALERT_THRESHOLD_PERCENT}
+              saved={BED_ALERT_THRESHOLD_PERCENT}
+              display={`${BED_ALERT_THRESHOLD_PERCENT}%`}
               noun="occupancy alert"
               range={{
                 min: 80,
@@ -1240,22 +1239,8 @@ export function SettingsScreen() {
             eyebrow={SETTINGS_DEMO_PROFILE.location}
             chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
             sub={`${SETTINGS_DEMO_PROFILE.role} · nothing here changes care`}
-            figures={[
-              { id: "rules", value: savedSurge ? "Surge" : "Standard", label: "Rules" },
-              {
-                id: "unsaved",
-                value: hasUnsavedRules ? unsavedCount : "None",
-                label: "Unsaved",
-                tone: hasUnsavedRules ? "info" : undefined,
-                onPress: hasUnsavedRules ? () => setPhoneSheet("rules") : undefined,
-                actionLabel: hasUnsavedRules ? `Open Rules, ${unsavedCount} unsaved` : undefined,
-              },
-              {
-                id: "last",
-                value: lastAccepted?.at != null ? formatInstantWithDay(lastAccepted.at, now) : "None",
-                label: "Last rule save",
-              },
-            ]}
+            // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
+            // are what this hero is for. The save strip still appears when a rule is unsaved.
             actions={
               <Button
                 variant="onHero"
@@ -1471,13 +1456,9 @@ export function SettingsScreen() {
             />
           }
           barAside={
+            // Device audit 11 Oct 2026: the other chips repeated the tabs, the save strip and the
+            // Buzz switch; Last save is the one fact only the hero gives.
             <HeroChips label="Settings at a glance">
-              <HeroChip value={savedSurge ? "Surge" : "Standard"} label="Rules" />
-              <HeroChip
-                value={hasUnsavedRules ? unsavedCount : "None"}
-                label={hasUnsavedRules ? (unsavedCount === 1 ? "Unsaved rule" : "Unsaved rules") : "Unsaved"}
-              />
-              <HeroChip value={audioBuzz ? "On" : "Off"} label="Buzz sound" />
               <HeroChip
                 value={lastAccepted?.at != null ? formatInstantWithDay(lastAccepted.at, now) : "None"}
                 label="Last save"

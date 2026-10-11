@@ -1378,7 +1378,11 @@ describe("confirming a community decline dispatches a real DECLINE_REFERRAL (eng
 describe("v10 pass 3: Since you looked and Switch team", () => {
   it("shows the digest from the record and a Switch team drawer listing every team", () => {
     renderTeam(COMMUNITY_TEAM_PAGES[0].id, [], []);
-    expect(screen.getByRole("region", { name: "Since you looked at the start of this shift" })).toBeTruthy();
+    // Device audit option A (11 Oct 2026): with nothing in the record, the digest folds to one
+    // quiet line rather than a card of zeros.
+    expect(screen.getByTestId("ward-community-since-quiet")).toHaveTextContent(
+      "No changes since the start of this shift.",
+    );
     fireEvent.click(screen.getByTestId("ward-community-switch-team"));
     const drawer = screen.getByTestId("ward-community-switch-drawer");
     expect(within(drawer).getAllByRole("link")).toHaveLength(COMMUNITY_TEAM_PAGES.length);

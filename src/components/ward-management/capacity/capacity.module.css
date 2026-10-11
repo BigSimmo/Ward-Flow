@@ -1644,3 +1644,11 @@
   padding: var(--wf-s-2) var(--wf-s-3);
   background: var(--wf-canvas);
 }
+
+/* ── Device audit option A (11 Oct 2026): the rail column, planned bookings at its foot ── */
+.railColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}

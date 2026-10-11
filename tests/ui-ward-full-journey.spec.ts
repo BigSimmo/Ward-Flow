@@ -404,14 +404,20 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     const edScreen = page.getByTestId("ward-ed-screen");
     // The board's compact clearance picker is an unsaved layout draft. Record the
     // clinician's synthetic clearance through the originating ED's real controls.
-    const expandEd = edScreen.getByTestId(`ward-ed-expand-${movementId}`);
-    if ((await expandEd.getAttribute("aria-expanded")) !== "true") await expandEd.click();
-    const medicalPlacement = edScreen.getByTestId(`ward-ed-medical-placement-${movementId}`);
+    // ED page A2 (device audit, 11 Oct 2026): the row no longer unfolds in place; the patient's
+    // name opens their person sheet, which carries the same clearance card.
+    await edScreen.getByTestId(`ward-ed-row-name-${movementId}`).click();
+    const personSheet = page.getByTestId(`ward-ed-phone-sheet-${movementId}`);
+    await expect(personSheet).toBeVisible();
+    const medicalPlacement = personSheet.getByTestId(`ward-ed-medical-placement-${movementId}`);
     await expect(medicalPlacement).toBeVisible();
     await medicalPlacement.getByRole("button", { name: "Record medically cleared", exact: true }).click();
     await medicalPlacement.getByRole("button", { name: "Confirm medically cleared", exact: true }).click();
     await expect(medicalPlacement.getByRole("status")).toContainText("Recorded medically cleared.");
     await expectNoReloadSince(page, "recording clinician clearance before transport");
+    // The sheet makes the board behind it inert; close it to reach the row's actions again.
+    await page.keyboard.press("Escape");
+    await expect(personSheet).toHaveCount(0);
     const unfoldEd = edScreen.getByTestId(`ward-ed-unfold-${movementId}`);
     if (await unfoldEd.isVisible()) await unfoldEd.click();
     const bookTransport = edScreen.getByTestId(`ward-ed-book-transport-toggle-${movementId}`);

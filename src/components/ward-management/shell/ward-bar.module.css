@@ -107,29 +107,76 @@
   }
 }
 
-/* Tablet portrait: the bar is tight, so the pill keeps only its ring and the page title keeps its
- * room. The button's aria-label still names the data mode; its panel is unchanged. */
+/* Tablet portrait (device audit, 11 Oct 2026): the Prototype pill keeps its word (the safety
+ * notice must stay legible) and New referral keeps its label. The room comes from the search field,
+ * which folds to its magnifier here and still opens the full smart search; Activity and Tools stay,
+ * because the portrait Menu sheet does not hold them. */
 @media (min-width: 48.0625rem) and (max-width: 1000px) {
-  /* The ring sits centred; the word is pushed past the clipped edge (no 0px text). */
-  .dataMode > div > button:first-child {
-    justify-content: flex-start;
-    gap: 40px;
-    width: 36px;
-    min-width: 36px;
-    padding: 0 0 0 14px;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-  .dataMode > div > button:first-child > span {
-    flex-shrink: 0;
-  }
-  /* The title keeps its full width; the search field gives up the room instead. */
+  /* The title keeps its full width. */
   .title {
     flex-shrink: 0;
   }
   /* A long ward name still ends in an ellipsis rather than pushing the bar off the screen. */
   .titleGroup .place {
     max-width: 13rem;
+  }
+
+  .bar .primaryPrefix,
+  .bar .primaryMain {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+
+  .bar .primaryPrefix {
+    margin: 0;
+    white-space: pre;
+  }
+
+  .bar .primaryPrefix + .primaryMain {
+    margin: 0 0 0 -7px;
+  }
+
+  .bar .centerGroup,
+  .bar .searchWrap {
+    flex: 0 0 auto;
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    margin-left: auto;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"]) {
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"] > div) {
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    padding: 0;
+    justify-content: center;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    max-width: none;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .bar .searchWrap :global([data-ward-search-shortcut]),
+  .bar .searchWrap :global([data-testid="ward-global-search-clear"]) {
+    display: none;
   }
 }
 
@@ -1280,9 +1327,11 @@
 
   .drawerTrigger[data-bar-mode="activity"],
   .drawerTrigger[data-bar-mode="tools"],
+  .drawerTrigger[data-bar-mode="tasks"],
   .vsep,
   .primaryWrap {
-    /* .primaryWrap: the server render does not know it is a phone, so CSS hides it before hydration. */
+    /* .primaryWrap: the server render does not know it is a phone, so CSS hides it before hydration.
+       Tasks: the page dock carries it on the phone (device audit option A, 11 Oct 2026). */
     display: none;
   }
 
@@ -2608,6 +2657,87 @@
   }
 }
 
+/* Tablet portrait folds search to its magnifier (device audit, 11 Oct 2026), so the open field
+ * takes over the bar there too, as in the 42rem container rule above (an 820px bar is wider than
+ * that rule). Touch sizes here: Cancel keeps the 48px target. The band rules below still apply over
+ * a Hero, so the open field restores the light face explicitly (doubled `.bar` outranks the band's
+ * later focus-within rule), as the phone block does. */
+@media (min-width: 48.0625rem) and (max-width: 1000px) {
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type,
+  .bar.bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+    --wf-focus-ring: var(--wf-accent);
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 5;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: var(--wgs-bar-h, 3.5rem);
+    gap: 10px;
+    padding: 0 8px 0 24px;
+    justify-content: flex-start;
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-1);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type::before,
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open])
+    > div:first-of-type::before {
+    inset: 8px 80px 8px 12px;
+    border: 1px solid var(--wf-focus-ring);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-focus-ring) 18%, transparent);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg,
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"])::placeholder {
+    width: 16px;
+    height: 16px;
+    color: var(--wf-ink-3);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]),
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]) {
+    position: static;
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    margin-right: 16px;
+    opacity: 1;
+    color: var(--wf-ink-1);
+    cursor: text;
+    font-size: var(--wf-fs-16);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-cancel"]) {
+    display: inline-flex;
+    flex: 0 0 64px;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--ward-tap, 48px);
+    padding: 0;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: transparent;
+    color: var(--wf-accent-ink);
+    font: 600 var(--wf-fs-14) / 1 var(--wf-font);
+    cursor: pointer;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-cancel"]):focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
 /* Phone: the phone bar has no backdrop filter, so the open field is fixed to the viewport. It sits
  * where the bar is (its measured top), so nothing above the bar can stretch or misplace it. */
 @media (max-width: 48rem) {
@@ -3001,6 +3131,16 @@
   /* The 18px line keeps a 48px tall hit area: 15px above and below. */
   .scopeBadgeBtn::before {
     inset: -15px -8px;
+  }
+
+  /* Device audit (11 Oct 2026): the whole title block — the page title and the service line under
+   * it — is the service control's tap target, not just the 91 x 18 line. On the phone the block is
+   * a <label> round the service button (ward-bar.tsx), so a tap anywhere in it activates the
+   * button; stretching it to the bar's full height makes the target the whole block. */
+  .title {
+    align-self: stretch;
+    justify-content: center;
+    cursor: pointer;
   }
 
   .bar[data-scrolled="true"] .scopeBadgeBtn > * {

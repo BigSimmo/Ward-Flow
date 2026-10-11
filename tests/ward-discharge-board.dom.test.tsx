@@ -602,7 +602,7 @@ describe("DischargeBoard", () => {
    * here they are `discharged-today` and `expected`. The first is not cosmetic: "released" was
    * renamed on 2026-08-30 because it reads as release from detention.
    */
-  it("moves a confirmed release from By midday to Now once the clock passes its expected instant", () => {
+  it("moves a confirmed release from By midday to past its date once the clock passes its expected instant", () => {
     // CHANGED 25 September 2026: WR-001/WR-004, the fixture's only confirmed-and-unblocked
     // releases sitting in the by-midday band at NOW_ANCHOR, no longer exist. The real derived
     // seed's one confirmed-and-unblocked release already sits in the "now" band and never crosses
@@ -639,7 +639,9 @@ describe("DischargeBoard", () => {
     // ONLY thing that differs is the clock: same release, same mount.
     fireEvent.click(screen.getByRole("button", { name: "advance the clock" }));
 
-    expect(within(row()).getAllByRole("cell")[timingIndex]).toHaveTextContent(/^Now/);
+    // Device audit, 11 Oct 2026: a release past its date reads how far past, not "Now".
+    expect(within(row()).getAllByRole("cell")[timingIndex]).toHaveTextContent(/^\S.* past\b/u);
+    expect(within(row()).getAllByRole("cell")[timingIndex]).not.toHaveTextContent(/^By midday/);
   });
 
   it("drops a discharged row from the last-24-hours group once it is more than 24 hours old", () => {

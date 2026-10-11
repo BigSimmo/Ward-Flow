@@ -287,6 +287,11 @@
   table-layout: fixed;
 }
 
+/* Desktop with the rail beside: the columns share the card's width instead of scrolling. */
+.sheetTable.fitted {
+  min-width: 0;
+}
+
 /* Cell padding and dividers come from the wf table primitive; this adds the sticky head and the
    12px floor for the header label. */
 .sheetTable th {
@@ -1136,6 +1141,30 @@
 
 .gap {
   font-family: var(--wf-font);
+}
+
+/* iPad portrait: one tools line above the list rows. */
+.portraitTools {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 44px;
+  margin-bottom: var(--wf-s-3);
+}
+
+.portraitNote {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+/* A time in the Due column never truncates. */
+.nowrap {
+  white-space: nowrap;
 }
 
 /* Rounded attention markers apply at every responsive breakpoint. */

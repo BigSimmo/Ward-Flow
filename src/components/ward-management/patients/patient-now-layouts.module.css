@@ -1,0 +1,173 @@
+/* Patient Now layout (device audit 11 Oct 2026, owner pick A). Tokens only. */
+
+.stack {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.col {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  align-content: start;
+}
+
+.twoUp {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .cols,
+  .twoUp {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---------- Who to call ---------- */
+
+.calls {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.callRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  min-height: 64px;
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.callText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.callName,
+.callRole {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.callName {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.callRole {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.callNumber {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: var(--wf-fs-13);
+}
+
+/* The On-call round call button: 48px, a visible edge, the glyph in accent ink. */
+.call {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--ward-tap, 3rem);
+  height: var(--ward-tap, 3rem);
+  padding: 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 50%;
+  background: var(--wf-surface);
+  color: var(--wf-accent-ink);
+  cursor: pointer;
+}
+
+.call:hover {
+  background: var(--wf-hover);
+}
+
+.call:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-2);
+}
+
+/* ---------- sheet rows ---------- */
+
+.sheetRows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.sheetRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-ink-1);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sheetRow:first-child {
+  border-top: 0;
+}
+
+.sheetRow:hover {
+  background: var(--wf-hover);
+}
+
+.sheetRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.sheetRow .callText {
+  flex: 1 1 auto;
+}
+
+.sheetIcon {
+  display: inline-flex;
+  color: var(--wf-ink-2);
+}
+
+.chevron {
+  flex: none;
+  color: var(--wf-ink-3);
+}

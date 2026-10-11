@@ -43,13 +43,10 @@
   border-radius: var(--wf-r-pill);
 }
 
-.heroActions > :first-child {
-  flex: 1 1 auto;
-}
-
-.heroActions > :last-child {
-  flex: 0 0 var(--ph-tap);
-  width: var(--ph-tap);
+/* Change handover and Start meeting share the row equally, both labelled. */
+.heroActions > * {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 /* ---------------------------------------------------------------- main */
@@ -609,7 +606,8 @@
 
 .sticky {
   position: sticky;
-  bottom: 0;
+  /* Rests above the phone dock when it is drawn (device audit, 11 Oct 2026). */
+  bottom: var(--wf-dock-clear, 0px);
   z-index: 15;
   display: flex;
   gap: 8px;

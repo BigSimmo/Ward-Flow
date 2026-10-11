@@ -317,3 +317,17 @@
     0 0 0 var(--wf-s-2) var(--wf-canvas),
     inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
 }
+
+:global(body:has([data-scrolled="true"])) .segPinned {
+  top: calc(3.25rem + var(--wf-s-2));
+}
+
+/* Device audit 11 Oct 2026: the range is a small "Now" pill; Shift, 7 and 30 days stay Preview
+ * inside its sheet rather than filling a full-width hero button. */
+.rangeButton {
+  flex: 0 0 auto;
+}
+
+.rangeMore {
+  display: none;
+}

@@ -974,3 +974,11 @@
     font-weight: 600;
   }
 }
+
+.phoneVersusStatic {
+  cursor: default;
+}
+
+.versusTop {
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+}

@@ -1516,6 +1516,13 @@ button.taskLabel[aria-pressed="true"] {
   }
 }
 
+/* "Show all N" under a folded group (device audit 11 Oct 2026). */
+.showAll {
+  display: flex;
+  justify-content: center;
+  padding: var(--wf-s-2) 0;
+}
+
 /* Rounded attention markers apply at every responsive breakpoint. */
 .focusClock[data-tone="danger"] {
   position: relative;

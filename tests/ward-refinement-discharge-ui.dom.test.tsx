@@ -8,6 +8,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ensureWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * Flags one bed as freeing later today, for a real occupant with no live release. Since 25 September
@@ -120,6 +121,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
 
   it("opens a ward's explicit linked discharge record through the guarded Capacity journey", () => {
     renderCapacity();
+    ensureWardTable();
     const rphRow = screen.getByTestId("ward-capacity-network-row-rph-adult-secure");
     fireEvent.click(within(rphRow).getByRole("button", { name: "Dabakarn" }));
     fireEvent.click(screen.getByRole("tab", { name: "Discharges" }));

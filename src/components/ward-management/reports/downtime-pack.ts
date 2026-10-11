@@ -5,7 +5,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { edById } from "@/components/ward-management/ward-sites";
+import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 
@@ -68,6 +68,11 @@ export type DowntimePack = {
   edQueue: DowntimeEdLine[];
   pendingMoves: DowntimeMoveLine[];
   legalForms: DowntimeLegalLine[];
+  /**
+   * Open movements that have left their ED (moving to a ward). The ED queue counts only people still
+   * in the department, so All EDs' open count is `edQueue.length + leftEd`; the pack says so.
+   */
+  leftEd: number;
 };
 
 export type DowntimePackInput = {
@@ -79,6 +84,12 @@ export type DowntimePackInput = {
   now: Instant;
   identify: (movement: Movement) => string;
 };
+
+/** "Armadale ED", one line in a printed row; the full name only when no short name exists. */
+function edLabel(id: string): string {
+  const ed = edById(id);
+  return edShortName(ed) || ed?.name || id;
+}
 
 function finiteOrNull(value: Instant | undefined): Instant | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -123,7 +134,7 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     .map((movement) => ({
       movementId: movement.id,
       person: identify(movement),
-      ed: edById(movement.originEdId)?.name ?? movement.originEdId,
+      ed: edLabel(movement.originEdId),
       openedAt: movement.openedAt,
       waitedMinutes: Math.max(0, now - movement.openedAt),
       urgency: movement.urgency,
@@ -138,7 +149,7 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     .map((movement) => ({
       movementId: movement.id,
       person: identify(movement),
-      from: edById(movement.originEdId)?.name ?? movement.originEdId,
+      from: edLabel(movement.originEdId),
       to: unitName(movement.acceptedUnitId),
       stage: stageCopy[movement.stage]?.label ?? movement.stage,
       plannedAt: finiteOrNull(movement.plannedMoveAt),
@@ -156,7 +167,15 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     typedExpiryAt: finiteOrNull(movement.legalForm?.dueAt),
   }));
 
-  return { generatedAt: now, wards, totals, edQueue, pendingMoves, legalForms };
+  return {
+    generatedAt: now,
+    wards,
+    totals,
+    edQueue,
+    pendingMoves,
+    legalForms,
+    leftEd: open.length - stillInEd.length,
+  };
 }
 
 /**

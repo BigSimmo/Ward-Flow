@@ -7813,6 +7813,474 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   font-family: var(--wf-mono);
 }
 
+/* ---------- ED page (device audit 11 Oct 2026, owner pick A2) ---------- */
+
+/* Wide screens: the board and one sticky Needs you rail side by side. */
+.main[data-layout="rail"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+  align-items: start;
+}
+
+.main[data-layout="rail"] > * {
+  grid-column: 1 / -1;
+}
+
+.main[data-layout="rail"] > [data-pane="board"] {
+  grid-column: 1;
+}
+
+.main[data-layout="rail"] > [data-rail] {
+  grid-column: 2;
+  position: sticky;
+  top: calc(3.75rem + var(--wf-s-3));
+}
+
+/* ─── The board table (owner pick A2, 11 Oct 2026): today's columns, refined ───
+ * Values read as text with glyphs; every edit happens in the person sheet. Each row has one Next
+ * button and a small overflow menu. In ED is mono and never truncates; the name truncates first.
+ * The header sticks while the page scrolls, so the section clips without becoming a scroller. */
+.listSection:has(> .a2Table),
+.listSection:has(.a2Table) {
+  overflow: clip;
+}
+
+/* Handover view: the board alone, full width, for reading down the table at a meeting. The rail,
+ * the hero and the ED strip return on the same toggle. */
+.main[data-handover-view="true"] > :not([data-pane="board"]) {
+  display: none;
+}
+
+.a2Table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.a2Table col[data-col="T"] {
+  width: 44px;
+}
+.a2Table col[data-col="In ED"] {
+  width: 96px;
+}
+.a2Table col[data-col="Bay"] {
+  width: 52px;
+}
+.a2Table col[data-col="Form"] {
+  width: 76px;
+}
+.a2Table col[data-col="Cleared"] {
+  width: 112px;
+}
+.a2Table col[data-col="Review"] {
+  width: 124px;
+}
+.a2Table col[data-col="Destination"] {
+  width: 17%;
+}
+.a2Table col[data-col="Next"] {
+  width: 204px;
+}
+.a2Table[data-columns="priority"] col[data-col="Destination"] {
+  width: 22%;
+}
+
+.a2Table th {
+  position: sticky;
+  /* Under the sticky Ward bar (shell/ward-bar.module.css, 3.75rem tall). */
+  top: 3.75rem;
+  z-index: 2;
+  padding: var(--wf-s-2) var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line-2);
+  background: var(--wf-surface-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.a2Table th:first-child,
+.a2Table td:first-child {
+  padding-left: var(--wf-s-4);
+}
+
+.a2Table th abbr {
+  text-decoration: none;
+}
+
+.a2Table td {
+  height: 56px;
+  padding: var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line);
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.a2Row {
+  background: var(--wf-surface);
+}
+
+.a2Row:hover > td {
+  background: var(--wf-hover);
+}
+
+.a2Row[data-selected="true"] > td {
+  background: var(--wf-selected);
+}
+
+/* Act now: the approved inset rounded marker and subtle tint (#249), never a box. */
+.a2Row[data-act-now="true"] > td {
+  background: var(--wf-act-tint);
+}
+
+.a2Row[data-act-now="true"]:hover > td {
+  background: var(--wf-hover);
+}
+
+.a2Row[data-act-now="true"][data-selected="true"] > td {
+  background: var(--wf-selected);
+}
+
+.a2Row[data-act-now="true"] > td:first-child {
+  position: relative;
+}
+
+.a2Row[data-act-now="true"] > td:first-child::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .a2Row[data-act-now="true"] > td:first-child::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
+.a2Row[data-dim="true"] > td {
+  opacity: 0.45;
+}
+
+.a2Tier .phoneTier {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.a2Tier .phoneTier[data-urgency="1"] {
+  border-color: var(--wf-danger);
+}
+
+.a2Patient {
+  min-width: 0;
+}
+
+.a2Name {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.a2Name:hover {
+  text-decoration: underline;
+}
+
+.a2Name:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.a2Sub {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.a2Value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* The row's own facts (form expiry, transit, readmission): one quiet line each, never wrapping. */
+.a2Facts {
+  display: block;
+  min-width: 0;
+}
+
+.a2Facts > *,
+.a2Facts [class] {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.a2Facts .sr-only,
+.a2Facts [class*="sr-only"] {
+  display: revert;
+}
+
+.a2Mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.a2Wait .a2Mono {
+  font-weight: 600;
+  font-size: var(--wf-fs-14);
+}
+
+.a2Quiet {
+  color: var(--wf-ink-2);
+}
+
+.a2Truncate {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.a2Tick {
+  flex: none;
+  color: var(--wf-success);
+}
+
+.a2Next {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-1);
+}
+
+.a2Next > button:first-child {
+  flex: none;
+  padding-inline: var(--wf-s-3);
+  white-space: nowrap;
+}
+
+.a2Next button[data-compact="true"] {
+  flex: none;
+  justify-content: center;
+  align-self: stretch;
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+}
+
+.a2Next button[data-compact="true"] svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* The ED person sheet opens from the right on iPad and desktop; it keeps the phone
+ * sheet's layout there. Scoped to the right placement, so the live phone sheet is unchanged. */
+.phoneSheet[data-placement="right"] [data-phone-sheet-body] > * {
+  flex: none;
+}
+
+[data-placement="right"] .phoneSheetUmrn,
+[data-placement="right"] .phoneSheetMono {
+  font-family: var(--wf-mono);
+}
+
+[data-placement="right"] .phoneSheetFacts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0 0 var(--wf-s-4);
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+[data-placement="right"] .phoneSheetFacts > div {
+  min-width: 0;
+  padding: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+[data-placement="right"] .phoneSheetFacts > div:nth-child(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+
+[data-placement="right"] .phoneSheetFacts > div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+[data-placement="right"] .phoneSheetFacts dt {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+[data-placement="right"] .phoneSheetFacts dd {
+  margin: 4px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+[data-placement="right"] .phoneSheetFacts dd.phoneSheetMono {
+  font-family: var(--wf-mono);
+}
+
+[data-placement="right"] .phoneSheetForm {
+  margin: 0 0 var(--wf-s-4);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+[data-placement="right"]
+  .phoneSheetForm
+  :is(input, [data-placement="right"] select, [data-placement="right"] textarea) {
+  max-width: 100%;
+}
+
+[data-placement="right"] .phoneSheetSection {
+  margin: 0 0 var(--wf-s-4);
+}
+
+[data-placement="right"] .phoneSheetHeading {
+  margin: 0 0 var(--wf-s-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+[data-placement="right"] .phoneSheetSection .nextGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--wf-s-2);
+}
+
+[data-placement="right"] .phoneSheetActions {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+[data-placement="right"] .phoneSheetSection .phoneSheetActions > button,
+[data-placement="right"] .phoneSheetSection .phoneSheetActions > button[aria-disabled="true"],
+[data-placement="right"] .phoneSheetSection .tableActionGroup > button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  margin: 0;
+  padding: 0 var(--wf-s-3);
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: var(--wf-surface);
+  box-shadow: none;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  text-align: left;
+  justify-content: flex-start;
+}
+
+[data-placement="right"] .phoneSheetSection .phoneSheetActions > button:last-child {
+  border-bottom: 0;
+}
+
+[data-placement="right"] .phoneSheetSection .phoneSheetActions > button[aria-disabled="true"] {
+  color: var(--wf-ink-3);
+}
+
+[data-placement="right"] .phoneSheetSection .phoneSheetActions > button[aria-expanded="true"] {
+  font-weight: 600;
+}
+
+[data-placement="right"] .phoneSheetSection .tableActionGroup > button {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+[data-placement="right"] .phoneSheetReason {
+  margin: 0;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+[data-placement="right"] .phoneSheetField {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  align-items: start;
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+[data-placement="right"] .phoneSheetField > span {
+  padding-top: 2px;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13, 1.4) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+[data-placement="right"] .phoneSheetField > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13, 1.4) var(--wf-font);
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+[data-placement="right"] .phoneSheetField .sub {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+[data-placement="right"] .phoneSheetCards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
 /* Rounded attention markers apply at every responsive breakpoint. */
 .arrivalLate,
 .attentionRow[data-tone="danger"],

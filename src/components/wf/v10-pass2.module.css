@@ -453,3 +453,33 @@
     grid-column: 1 / -1;
   }
 }
+
+/* ── Edge fade for chip rows (device audit, 11 Oct 2026) ─────────────────────────────────────────
+ * A row that is clipped at its end fades there, so the cut chip reads as "scroll for more", and the
+ * end padding lets the last chip clear the fade once scrolled. Scroll-driven: the fade runs from
+ * full at the start to none at the end, and a row that does not overflow has an inactive timeline,
+ * so it never fades. Browsers without scroll timelines draw no fade (the padding still helps). */
+@property --wf-row-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes wfRowFade {
+  from {
+    --wf-row-fade: 24px;
+  }
+  to {
+    --wf-row-fade: 0px;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .chips {
+    padding-inline-end: 24px;
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    animation: wfRowFade linear both;
+    animation-timeline: scroll(self inline);
+  }
+}

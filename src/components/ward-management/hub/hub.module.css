@@ -1501,3 +1501,18 @@
   text-decoration: none;
   cursor: pointer;
 }
+
+/* Audit 11 Oct 2026: on a desk the rail stays in view while the long list scrolls. */
+@media (min-width: 73.8125rem) {
+  .hubRight {
+    position: sticky;
+    top: var(--wf-s-3);
+  }
+}
+
+/* Audit 11 Oct 2026, iPad: pinning moves to the preview, so the rows lose their column of stars. */
+@media (min-width: 48.0625rem) and (max-width: 73.75rem) {
+  .pinButton {
+    display: none;
+  }
+}

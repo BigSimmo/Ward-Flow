@@ -460,7 +460,7 @@
 .eventHeader,
 .eventRow {
   display: grid;
-  grid-template-columns: 5.5rem minmax(7rem, 1.3fr) minmax(7rem, 1.3fr) minmax(6rem, 1fr) 6.5rem 8rem;
+  grid-template-columns: minmax(4.5rem, 4.5rem) minmax(9rem, 1.6fr) minmax(7rem, 1.2fr) minmax(6rem, 0.8fr) 8rem 7rem;
   align-items: center;
   gap: var(--wf-s-3);
   min-width: 44rem;
@@ -1155,4 +1155,11 @@
 
 .phoneDecision [role="radio"][aria-checked="true"] {
   border: 2px solid var(--wf-accent);
+}
+
+/* Device audit 11 Oct 2026: the safety-incident line is a notice, so plain quiet text on the hero. */
+.heroNotice {
+  color: var(--wf-hero-ink-2);
+  font-size: 0.75rem;
+  white-space: nowrap;
 }

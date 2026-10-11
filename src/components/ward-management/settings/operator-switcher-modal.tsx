@@ -264,7 +264,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
       contentClassName={styles.drawer}
       bodyClassName={styles.body}
       footer={
-        <p className={styles.keys} aria-hidden="true">
+        <p className={styles.keys} aria-hidden="true" data-kbd-hint="">
           <Kbd>Enter</Kbd> Preview <Kbd>Double click</Kbd> Open <Kbd>Esc</Kbd> Close
         </p>
       }

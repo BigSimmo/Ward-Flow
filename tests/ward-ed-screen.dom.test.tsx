@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { showWardTable } from "./helpers/capacity-ward-table";
 import { expectSays } from "./helpers/ward-caption";
 
 // Same reason as the sibling dom suites (ward-screen.dom.test.tsx,
@@ -16,6 +17,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
@@ -56,6 +58,16 @@ function LastMovementProbe() {
 
 /** The id `RAISE_REFERRAL` gives the first referral raised against a freshly seeded state. */
 const FIRST_RAISED_ID = "WF-901";
+
+function renderCapacity() {
+  const view = render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <CapacityScreen />
+    </WardFlowProvider>,
+  );
+  showWardTable();
+  return view;
+}
 
 function renderEd() {
   return render(
@@ -287,6 +299,8 @@ describe("emergency department intake picker", () => {
     // the deleted inference ever applied to.
     expect(screen.getByTestId("probe")).toHaveTextContent(`${FIRST_RAISED_ID}|1A|`);
 
+    // Device audit 11 Oct 2026 (owner pick A2): board edits live in the person sheet; the row name opens it.
+    fireEvent.click(screen.getByTestId(`ward-ed-row-name-${FIRST_RAISED_ID}`));
     const outstanding = screen.getByTestId(`ward-ed-outstanding-${FIRST_RAISED_ID}`);
     expect(outstanding).toHaveAttribute("data-kind", "examination");
     /*
@@ -346,6 +360,8 @@ describe("emergency department intake picker", () => {
     // Still a 3B. The examination no longer replaces the clinician's chosen form.
     expect(screen.getByTestId("probe")).toHaveTextContent(`${FIRST_RAISED_ID}|3B|`);
     // And the outstanding item now reports the recorded outcome rather than the missing one.
+    // The presentation lives in the person sheet (device audit 11 Oct 2026, owner pick A2).
+    fireEvent.click(screen.getByTestId(`ward-ed-row-name-${FIRST_RAISED_ID}`));
     const outstanding = screen.getByTestId(`ward-ed-outstanding-${FIRST_RAISED_ID}`);
     expect(outstanding).toHaveAttribute("data-kind", "form");
     expect(outstanding).toHaveTextContent("examination recorded (inpatient order)");
@@ -764,7 +780,12 @@ describe("one-to-one nursing must be stated, not assumed", () => {
   });
 });
 
-describe("the ED screen's statewide capacity table says which ready beds are not yet usable", () => {
+describe("the statewide capacity table the ED page links to says which ready beds are not yet usable", () => {
+  /*
+   * ED A2 (owner pick, 11 Oct 2026): the ED page no longer repeats the statewide capacity table; it
+   * links to the Capacity screen, which owns it. The ruling below travels with the table, so these
+   * assertions now read that screen's network table and also pin the ED page's link to it.
+   */
   /*
    * 🔴 **OWNER RULING 2026-09-05, CARRIED TO THIS SCREEN 2026-09-06.** "Ready" counts beds the
    * application itself refuses to admit a patient into — `ward-flow-reducer.ts` rejects
@@ -791,8 +812,15 @@ describe("the ED screen's statewide capacity table says which ready beds are not
 
   it("shows the cleaning count beside that ward's Ready figure, and the figure itself is untouched", () => {
     renderEd();
-    const cell = screen.getByTestId(`ward-ed-capacity-ready-${PREPARING_UNIT}`);
-    const note = within(cell).getByTestId(`ward-ed-capacity-pending-${PREPARING_UNIT}`);
+    expect(within(screen.getByTestId("ward-ed-elsewhere")).getByRole("link", { name: /capacity/iu })).toHaveAttribute(
+      "href",
+      "/mockups/ward-flow/capacity",
+    );
+    cleanup();
+    renderCapacity();
+    const row = screen.getByTestId(`ward-capacity-network-row-${PREPARING_UNIT}`);
+    const cell = within(row).getByTestId("ward-capacity-network-ready");
+    const note = within(cell).getByTestId("ward-capacity-network-pending");
 
     expect(note).toHaveTextContent(/still being made ready/u);
 
@@ -817,9 +845,10 @@ describe("the ED screen's statewide capacity table says which ready beds are not
     const quiet = allUnits().find(
       (unit) => !bedReleases.some((r) => r.unitId === unit.id && r.state === "discharged" && r.preparing),
     )!;
-    renderEd();
+    renderCapacity();
+    const quietRow = screen.getByTestId(`ward-capacity-network-row-${quiet.id}`);
     expect(
-      screen.queryByTestId(`ward-ed-capacity-pending-${quiet.id}`),
+      within(quietRow).queryByTestId("ward-capacity-network-pending"),
       `${quiet.id} has nothing being made ready and must not claim it does`,
     ).toBeNull();
   });
@@ -1246,6 +1275,9 @@ describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, ne
       </WardFlowProvider>,
     );
 
+    // Needs you opens as a slide-over where the full board table leaves no room beside it
+    // (device audit 11 Oct 2026, owner pick A2).
+    fireEvent.click(screen.getByTestId("wf-portrait-rail-trigger"));
     const title = screen.getByText("Waiting over 24 hours");
     const row = title.closest("li");
     expect(row).not.toBeNull();

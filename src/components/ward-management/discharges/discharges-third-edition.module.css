@@ -357,11 +357,11 @@
   }
 }
 
-/* Above phone width the list scrolls inside its card, so the charts sit near the fold. */
+/* The list grows with the page on every device (device audit, 11 Oct 2026: a fixed-height inner
+   scroll showed about 8 of 57 rows at 1440; the build guide says tables grow with the page). */
 .listBody {
-  max-height: min(34rem, 62vh);
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
+  max-height: none;
+  overflow-y: visible;
 }
 
 .listBody .workTable thead th {
@@ -577,8 +577,12 @@
 }
 
 .band {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
   color: var(--wf-ink-1);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .due {

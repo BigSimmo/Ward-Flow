@@ -1,7 +1,7 @@
 // tests/ward-planned-admissions-panel.dom.test.tsx
 //
-// The planned admissions panel on the Capacity screen (stream D): the fourteen-day strip, the
-// agenda, and booking, cancelling and recording an arrival through the real provider.
+// The planned admissions panel on the Capacity screen (stream D): the short list of bookings,
+// the agenda, and booking, cancelling and recording an arrival through the real provider.
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -53,12 +53,11 @@ function renderPanel() {
 }
 
 describe("planned admissions panel", () => {
-  it("counts the seeded bookings per day and lists them, flagging the overdue one", () => {
+  it("lists the seeded bookings as a short list, flagging the overdue one", () => {
     renderPanel();
-    expect(screen.getByTestId("ward-planned-day-0")).toHaveTextContent("1");
-    expect(screen.getByTestId("ward-planned-day-1")).toHaveTextContent("1");
-    expect(screen.getByTestId("ward-planned-day-2")).toHaveTextContent("·");
-    expect(screen.getByTestId("ward-planned-day-3")).toHaveTextContent("1");
+    // Device audit option A (11 Oct 2026): a short list with its count, and no 14-day strip.
+    expect(screen.queryByTestId("ward-planned-strip")).toBeNull();
+    expect(screen.getByTestId("ward-capacity-planned-admissions")).toHaveTextContent("3 booked");
     const list = screen.getByRole("list", { name: "Booked planned admissions" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(3);
     expect(screen.getByTestId("ward-planned-PA-SEED-03")).toHaveTextContent(/arrival not recorded/);

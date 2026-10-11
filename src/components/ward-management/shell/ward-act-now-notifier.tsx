@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
-import { wardChromeRole, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
+import { WARD_SHELL_ROLE, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -19,9 +19,8 @@ import { newActNowItems, showActNowNotification, useActNowNotificationPreference
  */
 export function WardActNowNotifier() {
   const router = useRouter();
-  // Same gate as the Tasks drawer (shell/ward-bar.tsx): only the coordinator's routes carry this
-  // list, so a ward, ED, officer or community view is never notified of rows it cannot see.
-  const actionable = wardTasksAreActionableForRole(wardChromeRole(usePathname()));
+  // Same gate as the Tasks drawer (shell/ward-bar.tsx): the signed-in person's list, on every page.
+  const actionable = wardTasksAreActionableForRole(WARD_SHELL_ROLE);
   const { movements, units, configuration, inboxSnoozes, sessionAdopted, worldGeneration } = useWardFlow();
   const now = useWardFlowClock();
   const [enabled] = useActNowNotificationPreference();

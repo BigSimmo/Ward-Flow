@@ -82,11 +82,13 @@ describe("F8 — the Tasks drawer's empty state names why the list is empty", ()
     expect(items.length).toBeGreaterThan(0);
   });
 
-  it("tells a ward reader the list is the coordinator's, never the coordinator's own empty state", async () => {
+  // Device audit, 11 Oct 2026 (stable shell): Tasks follows the signed-in person (the bed
+  // coordinator), not the route, so a ward page now shows the coordinator's own list.
+  it("shows the signed-in coordinator's own list on a ward route, not the ward reader message", async () => {
     route.pathname = "/mockups/ward-flow/ward/rph-adult-secure";
-    mockContext = freshContext(); // full seeded movements — real work exists, just gated off this role
+    mockContext = freshContext(); // full seeded movements — real coordinator work exists
     const sheet = await openTasksDrawer();
-    expect(within(sheet).getByText("Tasks is the bed coordinator's list.")).toBeInTheDocument();
+    expect(within(sheet).queryByText("Tasks is the bed coordinator's list.")).toBeNull();
     expect(within(sheet).queryByText("No outstanding work")).toBeNull();
   });
 

@@ -1118,7 +1118,7 @@ button.check[aria-pressed="true"] {
 
 .actionRow {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-2);
 }
 
@@ -1423,7 +1423,7 @@ button.check[aria-pressed="true"] {
 }
 
 .phoneHeroActions > * {
-  min-height: 44px;
+  min-height: 48px;
   border-radius: var(--wf-r-pill);
 }
 
@@ -1431,9 +1431,9 @@ button.check[aria-pressed="true"] {
   flex: 1 1 0;
 }
 
+/* Device audit (11 Oct 2026): the pause control carries its word, not an icon alone. */
 .phoneHeroActions > :last-child {
-  flex: 0 0 44px;
-  width: 44px;
+  flex: 0 0 auto;
 }
 
 /* The directive line and the one-tap cards: a light row with a chevron. */
@@ -1757,7 +1757,7 @@ button.check[aria-pressed="true"] {
 
 .phActions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-2);
 }
 
@@ -1839,6 +1839,64 @@ button.check[aria-pressed="true"] {
     box-shadow: none;
     padding-inline: var(--wf-s-1);
     color: var(--wf-ink-3);
+  }
+}
+
+/* Device audit (11 Oct 2026): the actions beyond the primary and Take, behind one disclosure. */
+.moreActions {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.moreActions > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.moreGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+}
+
+.moreGrid > * {
+  min-width: 0;
+}
+
+.moreGrid button {
+  justify-content: center;
+  width: 100%;
+}
+
+@media (max-width: 48rem) {
+  .moreActions > summary {
+    min-height: 48px;
+  }
+
+  .moreGrid button {
+    min-height: 48px;
+  }
+}
+
+/* Device audit (11 Oct 2026): iPad portrait swaps the wrapped Checking strip for a one-tap card. */
+.checkingCardPortrait {
+  display: none;
+}
+
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .checkingFootWide {
+    display: none;
+  }
+
+  .checkingCardPortrait {
+    display: flex;
   }
 }
 

@@ -903,3 +903,19 @@
     transition: none;
   }
 }
+
+/* Scroll edge (device audit, 11 Oct 2026): the timeline and the Corridors list keep a fixed
+   height, so a soft edge at the foot says more rows sit below instead of a row cut in half. */
+.diagWrap::after,
+.corridorRanks::after {
+  content: "";
+  display: block;
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  z-index: 35;
+  height: var(--wf-s-4, 16px);
+  margin-top: calc(-1 * var(--wf-s-4, 16px));
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--wf-ink-1) 12%, transparent));
+  pointer-events: none;
+}

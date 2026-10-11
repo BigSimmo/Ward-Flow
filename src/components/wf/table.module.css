@@ -217,7 +217,13 @@
   background: var(--wf-act-tint);
 }
 
-/* Focus wins over the act now edge: the ring replaces the edge's outline while focused. */
+.table tr.selected.actNow > td:first-child {
+  box-shadow:
+    inset 3px 0 0 var(--wf-accent-strong),
+    inset 5px 0 0 var(--wf-act-edge);
+}
+
+/* Focus paints its ring inside the row, clear of the act now edge. */
 .table tr.actNow:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -4px;

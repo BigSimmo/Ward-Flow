@@ -52,6 +52,8 @@
   align-items: center;
   gap: var(--wf-s-2);
   height: var(--wf-h-md);
+  /* Touch tablets: the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
+  min-height: var(--wf-tablet-tap, 0px);
   min-width: 0;
   padding: 0 var(--wf-s-3);
   box-sizing: border-box;

@@ -196,7 +196,8 @@ export function PriorityQueue({
             count={soonCount}
             className={styles.noShrink}
           >
-            Soon
+            {/* Names its noun: recorded legal forms due soon or past (device audit, 11 Oct 2026). */}
+            Form due
           </FilterChip>
         ) : null}
       </div>
@@ -245,7 +246,13 @@ export function PriorityQueue({
               waitedMinutes >= thresholds.overdue ? "over" : waitedMinutes >= thresholds.dueSoon ? "soon" : null;
             // Keep the duration neutral; the overdue label and glyph carry the status.
             const toTarget = thresholds.overdue - waitedMinutes;
-            const word = level === "over" ? "overdue" : toTarget <= 60 ? `due in ${durMinutes(toTarget)}` : "waiting";
+            // Whole minutes (device audit, 11 Oct 2026: "8m 00s" is false precision).
+            const word =
+              level === "over"
+                ? "overdue"
+                : toTarget <= 60
+                  ? `due in ${toTarget < 60 ? `${Math.max(1, Math.ceil(toTarget))}m` : durMinutes(toTarget)}`
+                  : "waiting";
             const arrival = movement.arrivalDetails;
             const arrivalMode = arrival
               ? (arrival.modeOfArrival ??
@@ -297,16 +304,8 @@ export function PriorityQueue({
                       {movement.cohort} {movement.security.toLowerCase()} ·{" "}
                       {originEd ? originEd.siteCode : "unknown ED"} · {who.umrn}
                     </span>
-                    {/* The operational score, painted small and labelled "Op" so it never reads as
-                        clinical severity; the screen-reader line below says "Operational" in full. */}
-                    <span
-                      className={styles.queueScore}
-                      data-ward-type-floor="command-score"
-                      title="Operational score: how the movement is going operationally, not clinical severity"
-                      aria-hidden="true"
-                    >
-                      Op {score}
-                    </span>
+                    {/* Device audit, 11 Oct 2026: the visible "Op" score token is gone from the row;
+                        the screen-reader line still says the operational score in full. */}
                   </span>
                   {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}
                   <span className={styles.queueMarks}>

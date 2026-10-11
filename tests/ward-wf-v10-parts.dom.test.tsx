@@ -82,7 +82,7 @@ describe("OccupancyRing", () => {
   it("says at risk at or over the alert line, with the figure to one decimal", () => {
     render(<OccupancyRing percent={90.34} alertAt={90} scope="Statewide" />);
     const ring = screen.getByTestId("wf-occupancy-ring");
-    expect(ring).toHaveAccessibleName("Statewide 90.3% of open beds occupied. Alert line 90%. At risk, over 90%.");
+    expect(ring).toHaveAccessibleName("Statewide 90.3% of beds occupied. Alert line 90%. At risk, over 90%.");
   });
 
   it("says Not recorded rather than drawing a value it does not hold", () => {

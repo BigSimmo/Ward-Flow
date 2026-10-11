@@ -13,6 +13,7 @@ import { dayOf } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
+import { ensureWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * Bed board answers, Josh, 26 September 2026: "go ahead with all recommendations" (decisions 1A to
@@ -76,8 +77,7 @@ describe("8A: discharges due today and transfers today on Capacity", () => {
   it("shows both columns, raises the ward's figure when a stay's discharge date moves to today, and never numbers transfers", () => {
     const state = seedWardFlowState();
     const person = state.admissions.find(
-      (a) =>
-        bedIsOccupied(a) && (a.expectedDischargeAt === null || dayOf(a.expectedDischargeAt) !== dayOf(NOW_ANCHOR)),
+      (a) => bedIsOccupied(a) && (a.expectedDischargeAt === null || dayOf(a.expectedDischargeAt) !== dayOf(NOW_ANCHOR)),
     );
     if (!person) throw new Error("the seed has nobody in a bed who is not already due today");
     render(
@@ -87,6 +87,7 @@ describe("8A: discharges due today and transfers today on Capacity", () => {
       </WardFlowProvider>,
     );
 
+    ensureWardTable();
     const table = screen.getByTestId("ward-capacity-network-table");
     expect(within(table).getByRole("columnheader", { name: "Discharges due today" })).toBeInTheDocument();
     expect(within(table).getByRole("columnheader", { name: "Transfers today" })).toBeInTheDocument();

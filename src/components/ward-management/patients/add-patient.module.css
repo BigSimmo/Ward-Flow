@@ -144,7 +144,8 @@
   gap: var(--wf-s-3) var(--wf-s-4);
 }
 
-.span2 {
+.span2,
+.spanAll {
   grid-column: 1 / -1;
 }
 
