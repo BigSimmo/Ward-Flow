@@ -26,7 +26,7 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { type ColumnContext } from "./handover-columns";
+import type { ColumnContext } from "./handover-columns";
 import {
   HANDOVER_SHIFTS,
   STAGE_LABEL,
