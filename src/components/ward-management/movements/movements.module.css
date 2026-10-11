@@ -2600,10 +2600,8 @@
   }
 }
 
-/* The worklist and the combined transport / shape panel share one bottom edge, only while they sit
-   side by side (above 85rem, movement-flow `.layout`). Below that they stack, and a fixed shared
-   height collapsed the worklist to its headers at 1180 (device audit 11 Oct 2026). */
-@media screen and (min-width: 85.0625rem) {
+/* Match movement-flow's two-column boundary. A stacked transport card stays in normal flow. */
+@media screen and (width > 85rem) {
   .columns {
     min-height: 54rem;
     height: var(--ward-workspace-height, clamp(54rem, calc(100dvh - 5rem), 68rem));
@@ -2620,11 +2618,12 @@
     display: grid;
     grid-template-rows: minmax(0, 1fr);
     position: sticky;
-    top: 1rem;
+    top: var(--ward-sticky-top);
     align-self: start;
-    height: 100%;
+    /* The footer also has its own 12px margin inside this page's flex gap. */
+    height: min(100%, calc(var(--ward-rail-height) - var(--wf-s-3)));
     min-height: 0;
-    max-height: none;
+    max-height: calc(var(--ward-rail-height) - var(--wf-s-3));
     overflow: hidden;
   }
 
@@ -2644,12 +2643,17 @@
   }
 
   .movementListBody,
+  .transportRunsFeed,
   .shapeBody {
     flex: 1 1 0;
     min-height: 0;
     max-height: none;
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+
+  .transportRunsFeed > * {
+    flex-shrink: 0;
   }
 
   .boardTabs,
@@ -2947,6 +2951,7 @@
 }
 
 .movementListBody:focus-visible,
+.transportRunsFeed:focus-visible,
 .shapeBody:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -3px;

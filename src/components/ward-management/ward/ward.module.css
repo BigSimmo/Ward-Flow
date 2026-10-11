@@ -6601,11 +6601,11 @@
   }
 }
 
-/* Phone (v10): the views pin under the header (52px once the page scrolls) on the canvas, full
+/* Phone (v10): the views pin under the stable header on the canvas, full
    bleed, as on Home. The class renders only on phone. */
 .phoneTabBar {
   position: sticky;
-  top: 3.25rem;
+  top: var(--wf-header-height, 3.5rem);
   width: calc(100% + 2 * var(--wf-s-3));
   max-width: none;
   z-index: 6;

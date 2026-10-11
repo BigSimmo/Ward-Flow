@@ -183,7 +183,7 @@
 /* The views stay under the header while the list scrolls. */
 .seg {
   position: sticky;
-  top: 3.5rem;
+  top: var(--wf-header-height, 3.5rem);
   z-index: 3;
   margin: 0 -16px;
   padding: 8px 16px;
@@ -356,7 +356,10 @@
 }
 
 .prow[data-act="true"] {
-  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: none;
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .prow:focus-visible {
@@ -710,5 +713,28 @@
 @media (max-width: 48rem) {
   .phPageNote {
     display: none;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.prow[data-act="true"] {
+  position: relative;
+}
+
+.prow[data-act="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .prow[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

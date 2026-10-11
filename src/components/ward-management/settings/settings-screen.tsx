@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
   useCallback,
@@ -537,7 +538,7 @@ export function SettingsScreen() {
     const frame = window.requestAnimationFrame(() => {
       const element = document.querySelector<HTMLElement>(`[data-setting="${highlight}"]`);
       element?.classList.add(styles.hit);
-      element?.scrollIntoView?.({ block: "center", behavior: reducedMotion ? "auto" : "smooth" });
+      element?.scrollIntoView?.({ block: "center", behavior: wardScrollBehavior() });
       const control = element?.matches("button, a, input")
         ? element
         : element?.querySelector<HTMLElement>("button, a[href], input");

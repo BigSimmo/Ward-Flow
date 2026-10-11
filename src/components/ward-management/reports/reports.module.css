@@ -912,17 +912,13 @@
 }
 
 /* v10 phone downtime pack: Beds, ED, Moves and Forms stay pinned under the bar while the list
- * scrolls, with an 8px canvas collar so no row shows round the switch. The bar is 56px at rest and
- * 52px once scrolled; the switch only sticks after a scroll. Phone-only element. */
+ * scrolls, with an 8px canvas collar so no row shows round the switch. The shared bar keeps the same height
+ * throughout the scroll; the canvas collar fills the join beneath it. Phone-only element. */
 .phoneSegPinned {
   position: sticky;
-  top: 3.5rem;
+  top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
   z-index: 6;
   box-shadow:
     0 0 0 var(--wf-s-2) var(--wf-canvas),
     inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
-}
-
-:global(body:has([data-scrolled="true"])) .phoneSegPinned {
-  top: calc(3.25rem + var(--wf-s-2));
 }

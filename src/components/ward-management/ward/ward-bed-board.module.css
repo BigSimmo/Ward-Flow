@@ -273,7 +273,11 @@
 
 /* Act now: the thin 1px red edge, no fill. */
 .cell[data-act="true"] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
+  padding-inline-start: 13px;
 }
 
 .cell[data-dim="true"] {
@@ -525,5 +529,28 @@
 
   .boardPhone .say {
     background: var(--wf-surface);
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.cell[data-act="true"] {
+  position: relative;
+}
+
+.cell[data-act="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .cell[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

@@ -730,9 +730,18 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
   useEffect(() => {
     const row = rowRef.current;
     if (!row) return;
+    let frame = 0;
+    const schedule = () => {
+      if (!frame) {
+        frame = window.requestAnimationFrame(() => {
+          frame = 0;
+          measure();
+        });
+      }
+    };
     measure();
-    row.addEventListener("scroll", measure, { passive: true });
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    row.addEventListener("scroll", schedule, { passive: true });
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
     observer?.observe(row);
     // Chips arriving or leaving change the content width without resizing the row itself, so each
     // chip is watched too, and the list is refreshed only when chips actually change.
@@ -749,11 +758,12 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
                 if (node instanceof Element) observer?.observe(node);
               });
             }
-            measure();
+            schedule();
           });
     chips?.observe(row, { childList: true });
     return () => {
-      row.removeEventListener("scroll", measure);
+      row.removeEventListener("scroll", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
       observer?.disconnect();
       chips?.disconnect();
     };

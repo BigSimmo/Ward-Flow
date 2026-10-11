@@ -597,7 +597,9 @@ export function HandoverPage() {
       const id = visibleOrder[next]!.id;
       setSelectedId(id);
       if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
-      if (typeof document !== "undefined") {
+      // A sheet owns the selection on phone and in presentation mode. Revealing
+      // its table row would move the locked background behind that sheet.
+      else if (typeof document !== "undefined") {
         document.querySelector(`[data-row-id="${CSS.escape(id)}"]`)?.scrollIntoView?.({ block: "nearest" });
       }
     },

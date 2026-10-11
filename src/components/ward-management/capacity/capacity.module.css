@@ -1638,7 +1638,7 @@
 /* The sticky Overview / Wards / Planned switch, pinned under the header once the page scrolls. */
 .phoneTabs {
   position: sticky;
-  top: 3.25rem;
+  top: var(--wf-header-height, 3.5rem);
   z-index: 6;
   margin-inline: calc(-1 * var(--wf-s-3));
   padding: var(--wf-s-2) var(--wf-s-3);

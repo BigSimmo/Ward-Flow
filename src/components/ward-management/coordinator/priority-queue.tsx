@@ -244,7 +244,7 @@ export function PriorityQueue({
             const thresholds = queueWaitThresholds(movement.urgency);
             const level =
               waitedMinutes >= thresholds.overdue ? "over" : waitedMinutes >= thresholds.dueSoon ? "soon" : null;
-            // Neutral words (v10): the glyph on the timer carries the tone.
+            // Keep the duration neutral; the overdue label and glyph carry the status.
             const toTarget = thresholds.overdue - waitedMinutes;
             // Whole minutes (device audit, 11 Oct 2026: "8m 00s" is false precision).
             const word =
@@ -368,15 +368,16 @@ export function PriorityQueue({
                     at={movement.openedAt * MS_PER_MINUTE}
                     now={now * MS_PER_MINUTE}
                     direction="waiting"
-                    thresholds={{
-                      dueSoon: thresholds.dueSoon * MS_PER_MINUTE,
-                      overdue: thresholds.overdue * MS_PER_MINUTE,
-                    }}
-                    hideFlagWord
-                    hideDirection
                     className={styles.queueTimer}
                   />
-                  <span className={cx(styles.queueWord, level && styles.queueWordStrong)} aria-hidden="true">
+                  <span
+                    aria-hidden={level === null ? true : undefined}
+                    className={cx(
+                      styles.queueWord,
+                      level === "over" ? styles.queueWordOverdue : level && styles.queueWordStrong,
+                    )}
+                  >
+                    {level ? <StatusGlyph tone={level === "over" ? "danger" : "warning"} size={9} /> : null}
                     {word}
                   </span>
                 </span>

@@ -1526,6 +1526,10 @@
     padding: var(--wf-s-2) var(--wf-s-3);
   }
 
+  .workTable tr[data-act="true"] > td:first-child {
+    padding-inline-start: 12px;
+  }
+
   .workTable td,
   .workTable td:first-child,
   .workTable td:nth-child(2),
@@ -1692,9 +1696,8 @@
   --wf-ink-3: var(--wf-dim);
 }
 
-/* Act now: a thin red left edge, never a box (device audit, 11 Oct 2026). */
-.workTable tr[data-act="true"] > :first-child {
-  box-shadow: inset 2px 0 0 var(--wf-act-edge);
+.workTable tr[data-act="true"] {
+  background: var(--wf-act-tint);
 }
 
 .tabBadgeAlert {
@@ -2254,5 +2257,28 @@
   .phGroupToggle:focus-visible {
     outline: 2px solid var(--wf-focus-ring);
     outline-offset: -2px;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.workTable tr[data-act="true"] > td:first-child {
+  position: relative;
+}
+
+.workTable tr[data-act="true"] > td:first-child::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .workTable tr[data-act="true"] > td:first-child::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

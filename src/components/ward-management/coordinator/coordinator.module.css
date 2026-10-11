@@ -500,7 +500,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
   scroll-padding-inline: 0.75rem;
   /* Hide scrollbar completely — navigate using arrow buttons or touch/trackpad */
   scrollbar-width: none;
@@ -3750,7 +3750,7 @@
 
   .governanceBanner {
     position: sticky;
-    top: 3.5rem;
+    top: var(--wf-header-height, 3.75rem);
     z-index: var(--co-z-banner);
   }
 

@@ -365,6 +365,7 @@
   position: relative;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 6px;
   scrollbar-width: thin;
   scrollbar-color: var(--wf-line-2) transparent;
@@ -373,6 +374,7 @@
 .previewPane {
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   border-left: 1px solid var(--wf-line);
   background: color-mix(in srgb, var(--wf-surface) 55%, transparent);
 }

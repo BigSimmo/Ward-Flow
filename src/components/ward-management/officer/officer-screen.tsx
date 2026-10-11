@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob } from "./officer-jobs";
 import {
   useCallback,
@@ -544,7 +545,7 @@ export function OfficerScreen() {
   useEffect(() => {
     if (selectedId === undefined || typeof window.matchMedia !== "function") return;
     if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
-    sideRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    sideRef.current?.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
   }, [selectedId]);
   // On a phone the panel is a modal bottom sheet, so it takes focus, traps Tab, isolates the page
   // behind it and hands focus back on close. Wider screens keep the side panel non-modal.
@@ -1389,7 +1390,7 @@ export function OfficerScreen() {
           onClick={() =>
             document
               .getElementById("ward-officer-arrivals-heading")
-              ?.scrollIntoView({ block: "start", behavior: "smooth" })
+              ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() })
           }
         >
           Arrivals <span className={styles.phArrivalsCount}>{upcoming}</span>

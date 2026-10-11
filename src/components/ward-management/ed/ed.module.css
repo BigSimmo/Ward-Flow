@@ -7263,8 +7263,8 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 }
 
 /* ─── v10 pass (10 Oct 2026): words neutral, glyphs carry tone ───
- * No red, amber or green words and no tinted fills on rows, pills or badges. An act-now item keeps a
- * thin red edge all the way round (--wf-act-edge), never a fill or a side stripe. Placed last so it
+ * Status glyphs carry tone on neutral badges. Act-now rows use inset rounded coral markers
+ * and a subtle tint, while small overdue badges retain their explicit status. Placed last so it
  * wins over the older tone rules above without touching them. */
 .reviewPill[data-tone],
 .presentationCell .reviewPill[data-tone] {
@@ -7282,7 +7282,9 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 }
 
 .transitBadgeOverdue {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  color: var(--wf-danger-ink);
 }
 
 .acceptedLabel {
@@ -7298,8 +7300,11 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 
 .attentionRow[data-tone="danger"],
 .lstRow[data-tone="danger"] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
   filter: none;
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .attentionRow[data-tone="danger"]:hover,
@@ -7323,7 +7328,9 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 }
 
 .attentionStamp[data-tone="danger"] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  color: var(--wf-danger-ink);
 }
 
 /* v10 pass 3, phone: Board, Needs you and Lists are one tap apart. Phone only; desktop never sets
@@ -7376,9 +7383,12 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 }
 
 .arrivalLate {
-  border-color: var(--wf-act-edge);
-  background: none;
+  border-color: var(--wf-line);
+
   color: var(--wf-ink-1);
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 /* ─── v10 phone board (11 Oct 2026) ───
@@ -7730,24 +7740,20 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 
 /* ─── v10 phone fidelity (11 Oct 2026) ───
  * Board, Needs you and Lists run the full width and stay pinned under the bar while the board
- * scrolls (as Home's queue switch). The bar is 56px at rest and 52px once the page scrolls; the
- * switch only sticks once the page has scrolled, so it then sits flush under the condensed bar.
+ * scrolls (as Home's queue switch). The switch follows the stable shared bar height
+ * once it reaches the header, keeping the join covered throughout the scroll.
  * The desktop "Seen in the last 24 hours" and ward capacity panels stay off the phone (this rule
  * outranks the board's `.listSection.panel` display above). The board search, order and the
  * "Filters highlight" line are desktop tools; the phone board is the chips and the rows. Phone only. */
 @media (max-width: 48rem) {
   .phonePanes {
     position: sticky;
-    top: 3.5rem;
+    top: var(--wf-header-height, 3.5rem);
     z-index: 6;
     max-width: none;
     margin: 0 calc(var(--wf-s-3) * -1);
     padding: var(--wf-s-2) var(--wf-s-3);
     background: var(--wf-canvas);
-  }
-
-  :global(body:has([data-scrolled="true"])) .phonePanes {
-    top: 3.25rem;
   }
 
   .phonePanes > div,
@@ -7926,10 +7932,39 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   background: var(--wf-selected);
 }
 
-/* Act now: a thin red edge all round the row, never a fill or a side stripe. */
-.a2Row[data-act-now="true"] {
-  outline: 1px solid var(--wf-act-edge);
-  outline-offset: -1px;
+/* Act now: the approved inset rounded marker and subtle tint (#249), never a box. */
+.a2Row[data-act-now="true"] > td {
+  background: var(--wf-act-tint);
+}
+
+.a2Row[data-act-now="true"]:hover > td {
+  background: var(--wf-hover);
+}
+
+.a2Row[data-act-now="true"][data-selected="true"] > td {
+  background: var(--wf-selected);
+}
+
+.a2Row[data-act-now="true"] > td:first-child {
+  position: relative;
+}
+
+.a2Row[data-act-now="true"] > td:first-child::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .a2Row[data-act-now="true"] > td:first-child::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }
 
 .a2Row[data-dim="true"] > td {
@@ -8244,4 +8279,33 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.arrivalLate,
+.attentionRow[data-tone="danger"],
+.lstRow[data-tone="danger"] {
+  position: relative;
+}
+
+.arrivalLate::before,
+.attentionRow[data-tone="danger"]::before,
+.lstRow[data-tone="danger"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .arrivalLate::before,
+  .attentionRow[data-tone="danger"]::before,
+  .lstRow[data-tone="danger"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }

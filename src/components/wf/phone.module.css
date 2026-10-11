@@ -348,16 +348,28 @@
   list-style: none;
 }
 
-/* Act now: a thin red left edge on that row only, never a fill and never a box round the row
-   (device audit, 11 Oct 2026; as the table's actNow). Drawn on its own layer above the hover fill,
-   so hover and press never hide it. */
+/* Approved attention is inset so adjacent phone rows never form a red box. */
+.rowActNow {
+  background: var(--wf-act-tint);
+}
+
 .rowActNow::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: 999px;
   z-index: 3;
-  box-shadow: inset 2px 0 0 var(--wf-danger);
+  background: var(--wf-danger);
   pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .rowActNow::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }
 
 /* The row target fills the row. Its ::after stretches over the whole row (behind the action), so a

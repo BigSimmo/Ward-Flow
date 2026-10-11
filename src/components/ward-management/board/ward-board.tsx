@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { Field, Select, TextInput } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
@@ -1103,6 +1104,14 @@ export function WardBoard({
   const [sheetOpen, setSheetOpen] = useState(false);
   // Phone: Needs you opens on its first three items (device audit, 11 Oct 2026).
   const [shiftExpanded, setShiftExpanded] = useState(false);
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById("ward-board-daily-sheet") || document.getElementById("ward-daily-sheet");
+      target?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [sheetOpen]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   /*
@@ -1890,20 +1899,7 @@ export function WardBoard({
             <button
               type="button"
               className={`${styles.topDailySheetButton}${sheetOpen ? ` ${styles.topDailySheetButtonOpen}` : ""}`}
-              onClick={() => {
-                setSheetOpen((prev) => {
-                  const next = !prev;
-                  if (next) {
-                    setTimeout(() => {
-                      const el =
-                        document.getElementById("ward-board-daily-sheet") ||
-                        document.getElementById("ward-daily-sheet");
-                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }, 60);
-                  }
-                  return next;
-                });
-              }}
+              onClick={() => setSheetOpen((open) => !open)}
               aria-expanded={sheetOpen}
               aria-controls="ward-board-sheet-body"
               data-testid="ward-board-top-sheet-toggle"

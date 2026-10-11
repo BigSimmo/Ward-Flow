@@ -919,14 +919,8 @@ function WardReferralDrawerContent({
   const [openingDraft] = useState(() => (kept ? "" : JSON.stringify(draftNow)));
   const draftJson = JSON.stringify(draftNow);
 
-  // Body scroll locking on mobile/desktop while drawer is open
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, []);
+  // The enclosing Sheet or standalone useWardModalFocus owns the shared scroll lock.
+  // A second per-drawer save/restore raced with stacked sheets and could leave body locked.
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;

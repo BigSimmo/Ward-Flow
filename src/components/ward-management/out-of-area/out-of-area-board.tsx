@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Printer, Route, Search, X } from "lucide-react";
@@ -264,9 +265,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   useEffect(() => {
     if (selectedId === null || isPhone || isTabletPortrait) return;
     if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1000px)").matches) return;
-    window.requestAnimationFrame(() => {
-      detailColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const frame = window.requestAnimationFrame(() => {
+      detailColumnRef.current?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
     });
+    return () => window.cancelAnimationFrame(frame);
   }, [selectedId, isPhone, isTabletPortrait]);
 
   useEffect(() => {

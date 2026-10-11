@@ -127,6 +127,19 @@ describe("Handover page", () => {
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
   });
 
+  it("opens the patient drawer in presentation mode without revealing the background table row", () => {
+    renderHandover();
+    fireEvent.click(screen.getByRole("button", { name: /^Present$/ }));
+    const scroll = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
+    scroll.mockClear();
+    fireEvent.keyDown(window, { key: "j" });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-handover-flow-panel")).toBeInTheDocument();
+    expect(firstPatientRow()).toHaveAttribute("aria-selected", "true");
+    expect(scroll).not.toHaveBeenCalled();
+    scroll.mockRestore();
+  });
+
   it("records the sign-off with role and time and lists it in History", async () => {
     const user = userEvent.setup();
     renderHandover();

@@ -178,7 +178,9 @@
 
 .railBay[data-on="true"] {
   border-style: solid;
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  color: var(--wf-danger-ink);
 }
 
 .railBayValue {

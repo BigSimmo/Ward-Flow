@@ -259,6 +259,9 @@ test.describe("@mockup Ward shell bar", () => {
   test("opening a person keeps the shared navigation and page design", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto("/mockups/ward-flow/delays", { waitUntil: "networkidle" });
+    // The hero registers its band after hydration. Reading the unhydrated glass
+    // colour compared initial loading with a ready page, rather than the panel swap.
+    await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
     const readChrome = async () => {
       const elements = ["ward-rail", "ward-bar", "ward-delays-page"];
       return Promise.all(

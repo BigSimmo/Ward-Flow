@@ -337,7 +337,7 @@ describe("ScrollRow", () => {
     Object.defineProperty(element, "scrollLeft", { configurable: true, writable: true, value: scrollLeft });
   }
 
-  it("keeps its chips on one row and fades only the edge with more content", () => {
+  it("keeps its chips on one row and fades only the edge with more content", async () => {
     render(
       <ScrollRow role="group" aria-label="Services" data-testid="track">
         <FilterChip pressed={false} onPressedChange={() => {}}>
@@ -360,16 +360,19 @@ describe("ScrollRow", () => {
 
     setScroll(track, { scrollWidth: 600, clientWidth: 300, scrollLeft: 0 });
     fireEvent.scroll(track);
+    await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
     expect(wrapper).not.toHaveAttribute("data-fade-start");
     expect(wrapper).toHaveAttribute("data-fade-end", "true");
 
     setScroll(track, { scrollWidth: 600, clientWidth: 300, scrollLeft: 150 });
     fireEvent.scroll(track);
+    await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
     expect(wrapper).toHaveAttribute("data-fade-start", "true");
     expect(wrapper).toHaveAttribute("data-fade-end", "true");
 
     setScroll(track, { scrollWidth: 600, clientWidth: 300, scrollLeft: 300 });
     fireEvent.scroll(track);
+    await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
     expect(wrapper).toHaveAttribute("data-fade-start", "true");
     expect(wrapper).not.toHaveAttribute("data-fade-end");
   });
@@ -404,13 +407,13 @@ describe("Phone CSS", () => {
     expect(block(".tabLink")).toContain("min-height: 48px");
   });
 
-  it("gives the row action a 36px face, and the act now edge no fill", () => {
+  it("keeps the row action a 36px face and uses the approved inset act-now marker", () => {
     expect(block(".rowAction.rowAction")).toContain("min-height: 36px");
     const edge = block(".rowActNow::before");
-    // Device audit (11 Oct 2026): a thin left edge on the row, never a box round it.
-    expect(edge).toContain("inset 2px 0 0 var(--wf-danger)");
-    expect(edge).not.toContain("inset 0 0 0 1px");
-    expect(edge).not.toContain("background");
+    expect(edge).toContain("width: 3px");
+    expect(edge).toContain("border-radius: 999px");
+    expect(edge).toContain("pointer-events: none");
+    expect(block(".rowActNow")).toContain("background: var(--wf-act-tint)");
     expect(block(".rowName")).toContain("var(--wf-fs-14)");
     expect(block(".rowMeta")).toContain("var(--wf-fs-12)");
   });

@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -732,7 +733,7 @@ export function PatientNowScreen({
     onDischargeDate: () => {
       setWardForm("discharge");
       requestAnimationFrame(() =>
-        document.getElementById("pn-ward-change")?.scrollIntoView({ block: "center", behavior: "smooth" }),
+        document.getElementById("pn-ward-change")?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() }),
       );
     },
     onReturnFromEd: returnFromEd,

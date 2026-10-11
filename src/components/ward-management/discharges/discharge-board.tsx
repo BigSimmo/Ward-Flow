@@ -1,4 +1,5 @@
 "use client";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { DischargeCareJourney } from "./discharge-care-journey";
 
 import Link from "next/link";
@@ -739,7 +740,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     if (list) {
       list.scrollTop = 0;
       if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 40rem)").matches) {
-        list.scrollIntoView?.({ block: "start", behavior: "smooth" });
+        list.scrollIntoView?.({ block: "start", behavior: wardScrollBehavior() });
       }
     }
   };

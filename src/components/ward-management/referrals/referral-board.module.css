@@ -527,10 +527,14 @@
   --wf-ink-3: var(--wf-dim);
 }
 
-/* Act now (overdue): a thin red left edge, no fill, never a box (device audit, 11 Oct 2026). */
+/* Act now (overdue): an inset coral marker and subtle tint. */
 .row[data-overdue="true"],
 .card[data-overdue="true"] {
-  box-shadow: inset 2px 0 0 var(--wf-act-edge);
+  background: var(--wf-act-tint);
+}
+
+.row[data-overdue="true"]:not(.rowOn):hover {
+  background: var(--wf-hover);
 }
 
 .rowOn,
@@ -1688,7 +1692,7 @@
    rather than a full-screen slide-over. The facts read as a two by two grid. */
 @media (max-width: 48rem) {
   [data-referral-layout="queue-panel"] .layout .detail.detail.detail[data-has-selection="true"] {
-    top: 3.5rem;
+    top: var(--wf-header-height, 3.5rem);
     width: 100vw;
     height: auto;
     max-height: none;
@@ -1804,4 +1808,36 @@
     align-self: start;
     min-height: 0;
   }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.row[data-overdue="true"] > td:first-child,
+.card[data-overdue="true"] {
+  position: relative;
+}
+
+.row[data-overdue="true"] > td:first-child::before,
+.card[data-overdue="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .row[data-overdue="true"] > td:first-child::before,
+  .card[data-overdue="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
+/* Selection remains distinct when an overdue row or phone card is selected. */
+.rowOn[data-overdue="true"],
+.cardOn[data-overdue="true"] {
+  background: var(--wf-selected);
 }

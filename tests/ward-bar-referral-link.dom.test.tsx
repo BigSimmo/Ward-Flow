@@ -28,6 +28,7 @@ import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { resetServiceScopeForTests } from "@/components/ward-management/shell/ward-service-store";
 
 function renderBarWith(children?: ReactNode) {
   return render(
@@ -45,9 +46,50 @@ afterEach(() => {
   route.pathname = "/mockups/ward-flow";
   replace.mockReset();
   window.history.replaceState(null, "", "/");
+  resetServiceScopeForTests();
 });
 
 describe("a link to the referral route opens the slide-out in place", () => {
+  it("keeps the chosen-service announcement after the pending history close", async () => {
+    renderBarWith();
+    fireEvent.click(screen.getByTestId("ward-bar-service-trigger"));
+    const panel = await screen.findByTestId("ward-bar-service-panel");
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => {});
+    try {
+      fireEvent.click(within(panel).getByRole("button", { name: /^East Metro\b/ }));
+      expect(back).toHaveBeenCalledOnce();
+      expect(screen.getByTestId("ward-live-region")).toHaveTextContent("Service set to East Metro.");
+      window.history.replaceState(null, "");
+      fireEvent.popState(window);
+      await waitFor(() => expect(screen.queryByTestId("ward-bar-service-panel")).toBeNull());
+      expect(screen.getByTestId("ward-live-region")).toHaveTextContent("Service set to East Metro.");
+    } finally {
+      back.mockRestore();
+    }
+  });
+
+  it("keeps the sheet locked until its history step closes, before allowing another drawer", async () => {
+    renderBarWith();
+    fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
+    const tools = await screen.findByRole("dialog", { name: "Tools" });
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => {});
+    try {
+      fireEvent.click(within(tools).getByRole("button", { name: /^Close$/ }));
+      expect(back).toHaveBeenCalledOnce();
+      expect(tools).toBeInTheDocument();
+      expect(document.documentElement.style.overflowY).toBe("hidden");
+
+      window.history.replaceState(null, "");
+      fireEvent.popState(window);
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Tools" })).toBeNull());
+      fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
+      await screen.findByRole("dialog", { name: "Tools" });
+      expect(window.history.state.wardDrawer).toBe("tools");
+    } finally {
+      back.mockRestore();
+    }
+  });
+
   it("opens the referral sheet and does not navigate", async () => {
     renderBarWith(
       <a href="/mockups/ward-flow/referrals/new?patientId=PT-001&source=community&refer=community">Refer</a>,

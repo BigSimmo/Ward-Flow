@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -230,6 +230,19 @@ describe("WardBar's Service selector, wired to the store", () => {
     await user.click(screen.getByRole("button", { name: "South Metro" }));
     expect(window.sessionStorage.getItem(SERVICE_SCOPE_STORAGE_KEY)).toBe("South Metro");
     expect(screen.getByTestId("ward-bar-service-trigger")).toHaveTextContent("South Metro");
+  });
+
+  it("keeps the service confirmation after the drawer's history Back completes", async () => {
+    const user = userEvent.setup();
+    renderBar();
+    await user.click(screen.getByTestId("ward-bar-service-trigger"));
+    await user.click(screen.getByRole("button", { name: "South Metro" }));
+    // The selector closes through history; its delayed popstate must not announce "Closed." over the choice.
+    await waitFor(() => expect(screen.queryByRole("button", { name: "North Metro" })).toBeNull());
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+    const live = screen.getByTestId("ward-live-region").textContent ?? "";
+    expect(live).toContain("Service set to South Metro.");
+    expect(live).not.toContain("Closed.");
   });
 });
 

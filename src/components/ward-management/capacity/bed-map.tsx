@@ -23,6 +23,7 @@
 // GUARANTEED to sum to `unit.beds` — which this map depends on, because every bed must land in
 // exactly one square. A map built on `NetworkWardRow.ready` could one day draw more squares than a
 // ward has beds, or fewer, the moment a future feed lets `allocatable` exceed `empty`.
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { StatusGlyph, WardCapacityRow, WardCapacityRows } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
@@ -678,9 +679,21 @@ function ServiceGroup({
     };
   }, [checkScrollState]);
 
+  const scrollFrame = useRef(0);
   const handleScroll = () => {
-    checkScrollState();
+    if (!scrollFrame.current) {
+      scrollFrame.current = window.requestAnimationFrame(() => {
+        scrollFrame.current = 0;
+        checkScrollState();
+      });
+    }
   };
+  useEffect(
+    () => () => {
+      if (scrollFrame.current) window.cancelAnimationFrame(scrollFrame.current);
+    },
+    [],
+  );
 
   const handlePrev = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -689,13 +702,13 @@ function ServiceGroup({
     const step = cardStep(el);
     if (el.scrollLeft <= step * 1.2) {
       if (typeof el.scrollTo === "function") {
-        el.scrollTo({ left: 0, behavior: "smooth" });
+        el.scrollTo({ left: 0, behavior: wardScrollBehavior() });
       } else {
         el.scrollLeft = 0;
       }
     } else {
       if (typeof el.scrollBy === "function") {
-        el.scrollBy({ left: -step, behavior: "smooth" });
+        el.scrollBy({ left: -step, behavior: wardScrollBehavior() });
       } else {
         el.scrollLeft = Math.max(0, el.scrollLeft - step);
       }
@@ -715,13 +728,13 @@ function ServiceGroup({
     const maxScroll = el.scrollWidth - el.clientWidth;
     if (el.scrollLeft + step * 1.5 >= maxScroll) {
       if (typeof el.scrollTo === "function") {
-        el.scrollTo({ left: maxScroll, behavior: "smooth" });
+        el.scrollTo({ left: maxScroll, behavior: wardScrollBehavior() });
       } else {
         el.scrollLeft = maxScroll;
       }
     } else {
       if (typeof el.scrollBy === "function") {
-        el.scrollBy({ left: step, behavior: "smooth" });
+        el.scrollBy({ left: step, behavior: wardScrollBehavior() });
       } else {
         el.scrollLeft = Math.min(maxScroll, el.scrollLeft + step);
       }
