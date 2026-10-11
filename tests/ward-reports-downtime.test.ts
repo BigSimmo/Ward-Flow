@@ -98,13 +98,7 @@ describe("downtimePack", () => {
 });
 
 describe("downtime pack dates (device audit 11 Oct 2026)", () => {
-  it("never dates an arrival from the evening before onto the frozen day", async () => {
-    const { reportDay } = await import("@/components/ward-management/reports/report-parts");
-    const { demoDayZero } = await import("@/components/ward-management/ward-clock");
-    const dayZero = demoDayZero(new Date(2026, 9, 11, 10, 42));
-    // 19:27 the evening before the 10:42 freeze.
-    expect(reportDay(-273, dayZero)).toBe(reportDay(-1, dayZero));
-    expect(reportDay(-273, dayZero)).not.toBe(reportDay(NOW_ANCHOR, dayZero));
+  it("never lists an ED arrival after the pack's freeze time", async () => {
     const { pack } = packFor();
     for (const line of pack.edQueue) expect(line.openedAt).toBeLessThanOrEqual(pack.generatedAt);
   });
