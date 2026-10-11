@@ -150,7 +150,8 @@ export function GovernanceView() {
     <div className={governance.governanceRoute} data-testid="ward-governance-view">
       <GovernanceWorkbench movements={movements} units={units} now={now} api={flow} />
       <details className={governance.srOnly} data-testid="ward-governance-medical-device-notice">
-        <summary>Synthetic prototype · not a medical device</summary>
+        {/* Read by assistive tech, kept out of the Tab order: the notice is visually hidden. */}
+        <summary tabIndex={-1}>Synthetic prototype · not a medical device</summary>
         <NotAMedicalDeviceStatement />
         <p data-testid="ward-governance-data-scope">
           Patient identity and operational facts are recorded, including patient-linked discharge records. No diagnosis,

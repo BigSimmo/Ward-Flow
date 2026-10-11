@@ -1024,7 +1024,8 @@ export function PatientSearchPage() {
             }
           />
 
-          {/* The counts and filters below the bar that tests and assistive tech read directly. */}
+          {/* The counts and filters below the bar that tests and assistive tech read directly. Out of the
+              Tab order (11 Oct 2026), so keyboard focus never lands on a control nobody can see. */}
           <div className="sr-only" data-testid="ward-patient-search-yield-strip">
             <span data-testid="ward-patient-search-yield-total">{yieldMetrics.total}</span>
             <span data-testid="ward-patient-search-yield-holds">{yieldMetrics.live}</span>
@@ -1041,6 +1042,7 @@ export function PatientSearchPage() {
                 const isActive = text === chip.query;
                 return (
                   <button
+                    tabIndex={-1}
                     key={chip.label}
                     type="button"
                     data-chip={chip.query}
@@ -1054,6 +1056,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-wait">Wait Band</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-wait"
               value={waitFilter}
               onChange={(e) => setWaitFilter(e.target.value)}
@@ -1076,6 +1079,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-presence">Presence</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-presence"
               value={presenceFilter}
               onChange={(e) => setPresenceFilter(e.target.value as PresenceFilter)}
@@ -1090,6 +1094,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-stage">Stage</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-stage"
               value={stage}
               aria-label="Stage"
@@ -1105,6 +1110,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-department">Department</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-department"
               value={edId}
               aria-label="Department"
@@ -1120,6 +1126,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-setting">Setting</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-setting"
               value={settingFilter}
               onChange={(e) => setSettingFilter(e.target.value)}
@@ -1136,6 +1143,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-service">Service</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-service"
               value={serviceFilter}
               onChange={(e) => setServiceFilter(e.target.value)}
@@ -1150,6 +1158,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-legal">Legal Status</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-legal"
               value={legalFilter}
               onChange={(e) => setLegalFilter(e.target.value)}
@@ -1165,6 +1174,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-tier">Acuity Tier</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-tier"
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
@@ -1177,6 +1187,7 @@ export function PatientSearchPage() {
             </select>
 
             <button
+              tabIndex={-1}
               type="button"
               onClick={resetAllFilters}
               data-testid="ward-patient-search-reset-filters"
