@@ -211,7 +211,7 @@
   --wf-hold-tint: light-dark(rgba(172, 114, 10, 0.07), rgba(217, 164, 65, 0.09));
   --wf-hold-edge: light-dark(rgba(172, 114, 10, 0.34), rgba(217, 164, 65, 0.36));
   /* Approved attention: inset rounded coral marker and a quiet theme-aware tint. */
-  --wf-act-tint: color-mix(in srgb, var(--wf-danger) 6%, var(--wf-surface));
+  --wf-act-tint: light-dark(rgba(196, 81, 63, 0.06), rgba(226, 122, 104, 0.07));
   --wf-act-edge: light-dark(rgba(196, 81, 63, 0.6), rgba(226, 122, 104, 0.62));
   --wf-neutral-ink: light-dark(#414953, #bcc8d4);
   /* A remainder that is never the only mark of a value (the old light data step). */
