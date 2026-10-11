@@ -187,11 +187,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.375rem;
+  min-width: 1.375rem;
   height: 1.375rem;
-  padding: 0;
+  padding: 0 3px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 45%, transparent);
-  border-radius: 50%;
+  border-radius: var(--wf-r-pill);
   background: var(--wf-hero-2);
   color: var(--wf-hero-ink);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
@@ -480,7 +480,7 @@
 }
 
 .colFrom {
-  width: 16%;
+  width: 12%;
 }
 
 .colAsk {
@@ -527,11 +527,14 @@
   --wf-ink-3: var(--wf-dim);
 }
 
-/* Act now (overdue): a thin full red edge and no fill. */
+/* Act now (overdue): an inset coral marker and subtle tint. */
 .row[data-overdue="true"],
 .card[data-overdue="true"] {
-  outline: 1px solid var(--wf-act-edge);
-  outline-offset: -1px;
+  background: var(--wf-act-tint);
+}
+
+.row[data-overdue="true"]:not(.rowOn):hover {
+  background: var(--wf-hover);
 }
 
 .rowOn,
@@ -1427,7 +1430,7 @@
   }
 
   .runwayMarker {
-    width: 1.25rem;
+    min-width: 1.25rem;
     height: 1.25rem;
   }
 
@@ -1734,9 +1737,9 @@
     flex-basis: calc(100% - 9rem);
   }
 
+  /* Audit 11 Oct 2026: the tier sits beside the name, not on a line of its own. */
   .panelTier {
-    order: 10;
-    flex-basis: 100%;
+    align-self: flex-start;
   }
 
   .strip {
@@ -1776,4 +1779,65 @@
   to {
     transform: translateY(0);
   }
+}
+
+/* Audit 11 Oct 2026: the tie rule lives in the note's title, so the toolbar is not cut short. */
+.orderTie {
+  display: none;
+}
+
+/* Audit 11 Oct 2026: no keyboard shortcut hints on a touch station. */
+@media (pointer: coarse) {
+  .keyHint,
+  .keyLink {
+    display: none;
+  }
+}
+
+/* Audit 11 Oct 2026: beside the open panel the From column keeps the site code only; the
+ * referral source is in the cell's title and in the panel. */
+@media (min-width: 48.0625rem) {
+  .fromSource {
+    display: none;
+  }
+}
+
+/* Audit 11 Oct 2026: the queue card fits its rows instead of padding to the panel's height. */
+@media (min-width: 64rem) {
+  [data-referral-layout="queue-panel"] .queueCard.queueCard {
+    align-self: start;
+    min-height: 0;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.row[data-overdue="true"] > td:first-child,
+.card[data-overdue="true"] {
+  position: relative;
+}
+
+.row[data-overdue="true"] > td:first-child::before,
+.card[data-overdue="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .row[data-overdue="true"] > td:first-child::before,
+  .card[data-overdue="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
+/* Selection remains distinct when an overdue row or phone card is selected. */
+.rowOn[data-overdue="true"],
+.cardOn[data-overdue="true"] {
+  background: var(--wf-selected);
 }

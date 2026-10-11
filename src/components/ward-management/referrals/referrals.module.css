@@ -7227,3 +7227,19 @@
   width: 100%;
   margin: 0;
 }
+
+/* Audit 11 Oct 2026: withdrawing a referral sits behind a disclosure so Decide holds the decision. */
+.moreActions {
+  margin-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+
+.moreActionsSummary {
+  display: flex;
+  align-items: center;
+  min-height: var(--wf-h-md);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  cursor: pointer;
+}

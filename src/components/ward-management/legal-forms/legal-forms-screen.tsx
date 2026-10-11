@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus, UserRound } from "lucide-react";
+import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
 import {
   Button,
   Card,
@@ -44,7 +44,6 @@ import {
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { WardBarPageTools, wardBarToolStyles } from "@/components/ward-management/shell/ward-bar-page-tools";
 
 import {
   legalDeadlineText,
@@ -118,7 +117,8 @@ const CODE_CHIPS_SHOWN = 3;
 
 const GAP_ACTION: Record<RecordGap, string> = {
   written: "Add time",
-  received: "Mark received",
+  // "Mark received" truncated in the task strip (device audit 11 Oct 2026).
+  received: "Received",
   examination: "Record exam",
 };
 
@@ -165,10 +165,27 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const isTabletPortrait = useIsTabletPortrait();
   // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
   const [allCodes, setAllCodes] = useState(false);
+  // Device audit 11 Oct 2026: "No expiry typed" folds after 5 on a phone and 10 elsewhere.
+  const [allNoDeadline, setAllNoDeadline] = useState(false);
 
   const openMovements = movements.filter(isOpen);
   const withDeadline = legalFormGroupRows(movements, now, "with-deadline");
   const noDeadline = legalFormGroupRows(movements, now, "no-deadline");
+  const noDeadlineCap = isPhone ? 5 : 10;
+  // A highlight or a chosen row past the fold opens the whole group, so nothing marked is hidden.
+  const noDeadlineOpen =
+    allNoDeadline ||
+    highlight !== null ||
+    noDeadline.findIndex((movement) => movement.id === selectedId) >= noDeadlineCap;
+  const noDeadlineShown = noDeadlineOpen ? noDeadline : noDeadline.slice(0, noDeadlineCap);
+  const showAllNoDeadline =
+    noDeadline.length > noDeadlineShown.length ? (
+      <div className={styles.showAll}>
+        <Button variant="ghost" size="sm" onClick={() => setAllNoDeadline(true)}>
+          Show all {noDeadline.length}
+        </Button>
+      </div>
+    ) : null;
   const rows = [...withDeadline, ...noDeadline];
   const voluntary = openMovements.length - rows.length;
   const breakdown = legalFormBreakdown(rows, now);
@@ -649,38 +666,8 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           </div>
         </dl>
 
-        <WardBarPageTools label="Forms tools">
-          <button
-            type="button"
-            className={wardBarToolStyles.tool}
-            onClick={() => setRequirementsCode(CATALOGUE[0]!.code)}
-          >
-            <BookOpen size={14} aria-hidden="true" />
-            <span className={wardBarToolStyles.label}>Requirements</span>
-          </button>
-          <button
-            type="button"
-            className={wardBarToolStyles.tool}
-            onClick={() => setTell({ party: "personal_support_person", key: null })}
-          >
-            <UserRound size={14} aria-hidden="true" />
-            <span className={wardBarToolStyles.label}>Tell PSP</span>
-            <span className={wardBarToolStyles.count}>{partyCount("personal_support_person")}</span>
-          </button>
-          <button
-            type="button"
-            className={wardBarToolStyles.tool}
-            aria-disabled={handover.length === 0 ? "true" : undefined}
-            title={handover.length === 0 ? "No typed expiry is coming up" : "Copy upcoming expiries for handover"}
-            onClick={() => {
-              if (handover.length > 0) copyText("handover", handover.join("\n"));
-            }}
-          >
-            <ClipboardCopy size={14} aria-hidden="true" />
-            <span className={wardBarToolStyles.label}>{copied === "handover" ? "Copied" : "Handover"}</span>
-            <span className={wardBarToolStyles.count}>{handover.length}</span>
-          </button>
-        </WardBarPageTools>
+        {/* The three unlabelled top-bar tools (Requirements, Tell PSP, Handover) only repeated the
+            Requirements link, the Tell task card and Copy for handover (device audit 11 Oct 2026). */}
 
         {isPhone ? (
           <>
@@ -715,7 +702,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                     reasonDisplay="tooltip"
                     onClick={() => copyText("handover", handover.join("\n"))}
                   >
-                    {copied === "handover" ? "Copied" : `Handover ${handover.length}`}
+                    {copied === "handover" ? "Copied" : `Copy for handover ${handover.length}`}
                   </Button>
                 </>
               }
@@ -770,10 +757,11 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                         <span className={styles.groupOrder}>longest in ED</span>
                       </div>
                       <ul className={styles.phoneList}>
-                        {noDeadline.map((movement) => (
+                        {noDeadlineShown.map((movement) => (
                           <PhoneFormRow key={movement.id} {...rowProps(movement)} />
                         ))}
                       </ul>
+                      {showAllNoDeadline}
                     </>
                   )}
                 </section>
@@ -977,11 +965,14 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                             <span className={styles.srOnly}>Forms with no deadline recorded</span>
                           </div>
                           {noDeadline.length > 0 ? (
-                            <ul className={styles.rowList}>
-                              {noDeadline.map((movement) => (
-                                <FormRow key={movement.id} {...rowProps(movement)} />
-                              ))}
-                            </ul>
+                            <>
+                              <ul className={styles.rowList}>
+                                {noDeadlineShown.map((movement) => (
+                                  <FormRow key={movement.id} {...rowProps(movement)} />
+                                ))}
+                              </ul>
+                              {showAllNoDeadline}
+                            </>
                           ) : (
                             <p className={styles.absent} data-testid="ward-legal-forms-none-without-deadline">
                               Every open movement carrying a form has a deadline recorded on it.
@@ -1019,9 +1010,6 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                     dayZero={dayZero}
                     soonHours={reminders.soonHours}
                     urgentHours={reminders.urgentHours}
-                    nameOf={nameOf}
-                    umrnOf={umrnOf}
-                    edNameOf={edNameOf}
                     onSelect={select}
                   />
                 )}
@@ -1161,7 +1149,9 @@ function FormRow({
       </span>
       <span className={styles.formCell}>
         <span className={styles.code}>{legalForm.code}</span>
-        <span className={styles.formTitle}>{formTitle(legalForm.code)}</span>
+        <span className={styles.formTitle} title={formTitle(legalForm.code)}>
+          {formTitle(legalForm.code)}
+        </span>
       </span>
       <span className={styles.cellStack}>
         <span className={styles.truncate}>{edName}</span>
@@ -1214,8 +1204,9 @@ function FormRow({
         ) : (
           <>
             <StatusGlyph tone="neutral" size={9} />
+            {/* One fact names itself; more show as a count so the cell never cuts a word. */}
             <span className={styles.recordedText} title={missing.join(", ")}>
-              {missing.join(", ")}
+              {missing.length === 1 ? missing[0] : `${missing.length} to record`}
             </span>
           </>
         )}

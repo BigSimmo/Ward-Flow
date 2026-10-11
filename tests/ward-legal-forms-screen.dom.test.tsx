@@ -108,6 +108,8 @@ describe("the Forms screen", () => {
     expect(noDeadline.length, "no rows without a deadline - the screen's whole subject is untested").toBeGreaterThan(0);
 
     renderScreen();
+    // Device audit 11 Oct 2026: "No expiry typed" folds after 10; open it to see the population.
+    openFoldedGroup();
     const lists = screen.getAllByRole("list");
     // Owner, 26 Sept 2026: the visible id slot now carries the patient's name, never the WF journey
     // number, so a row is found here by its hidden `data-record-key` (the movement id) instead.
@@ -139,6 +141,7 @@ describe("the Forms screen", () => {
   // Owner, 26 Sept 2026: the patient's name, never the WF journey number.
   it("identifies a row by the hidden movement id, and names it by the resolved patient, never the WF number", () => {
     renderScreen();
+    openFoldedGroup();
     const expectedIds = rows.map((movement) => movement.id);
     const listRegion = screen.getByRole("region", { name: "Legal forms list" });
     const rowEls = Array.from(listRegion.querySelectorAll("[data-ward-primitive='record-row']"));
@@ -245,8 +248,18 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     }
   });
 
+  it("folds No expiry typed after ten rows behind Show all, which opens every row", () => {
+    renderScreen();
+    const region = screen.getByRole("region", { name: "Legal forms list" });
+    const before = region.querySelectorAll("[data-record-key]").length;
+    expect(before).toBe(withDeadline.length + Math.min(10, noDeadline.length));
+    openFoldedGroup();
+    expect(region.querySelectorAll("[data-record-key]").length).toBe(rows.length);
+  });
+
   it("highlights by dimming the other rows by colour, keeps every row and counts the highlighted rows", () => {
     renderScreen();
+    openFoldedGroup();
     const before = document.querySelectorAll("[data-record-key]").length;
     fireEvent.click(screen.getByRole("button", { name: /No expiry typed/ }));
     expect(document.querySelectorAll("[data-record-key]").length).toBe(before);
@@ -255,3 +268,8 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     expect(screen.getByText(`${noDeadline.length} of ${rows.length} highlighted, all rows stay`)).toBeInTheDocument();
   });
 });
+
+function openFoldedGroup() {
+  const showAll = screen.queryByRole("button", { name: /^Show all \d+$/ });
+  if (showAll) fireEvent.click(showAll);
+}

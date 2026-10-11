@@ -56,6 +56,40 @@
   height: 100%;
 }
 
+/* Tablet slide-over: the same sheet docked full height to the right edge. */
+.sheetScrim[data-placement="right"] {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0 env(safe-area-inset-right) 0 0;
+}
+
+.sheet[data-placement="right"] {
+  width: min(440px, 92vw);
+  max-width: 440px;
+  height: 100%;
+  border-bottom: 1px solid var(--wf-line-2);
+  border-right: 0;
+  border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
+  animation-name: wfPhoneSheetInRight;
+}
+
+.sheet[data-placement="right"] .handle {
+  display: none;
+}
+
+.sheet[data-placement="right"] .sheetHeader {
+  padding-top: var(--wf-s-4);
+}
+
+@keyframes wfPhoneSheetInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
 .sheet:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -4px;
@@ -194,6 +228,9 @@
     animation-name: wfPhoneSheetFade;
     transition: none;
   }
+  .sheet[data-placement="right"] {
+    animation-name: wfPhoneSheetFade;
+  }
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -311,15 +348,28 @@
   list-style: none;
 }
 
-/* Act now: a thin red edge all round, never a fill (v9 sections 3 and 5, as the table's actNow).
-   Drawn on its own layer above the hover fill, so hover and press never hide it. */
+/* Approved attention is inset so adjacent phone rows never form a red box. */
+.rowActNow {
+  background: var(--wf-act-tint);
+}
+
 .rowActNow::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: 999px;
   z-index: 3;
-  box-shadow: inset 0 0 0 1px var(--wf-danger);
+  background: var(--wf-danger);
   pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .rowActNow::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }
 
 /* The row target fills the row. Its ::after stretches over the whole row (behind the action), so a
@@ -670,8 +720,10 @@
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  /* Room for the children's focus rings, which would otherwise be clipped by the scroller. */
-  padding: 4px 2px;
+  /* Room for the children's focus rings, which would otherwise be clipped by the scroller. The end
+     padding is the fade's width, so the last chip clears the fade once the row is scrolled to its
+     end (device audit, 11 Oct 2026: clipped chips should read as scrollable). */
+  padding: 4px var(--phone-fade) 4px 2px;
   -webkit-mask-image: linear-gradient(
     to right,
     transparent 0,

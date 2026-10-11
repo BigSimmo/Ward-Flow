@@ -40,6 +40,8 @@ describe("Builder 2 - ED statutory form dropdown (ED-FORM-DROPDOWN)", () => {
         <EdScreen edId="arm-ed" />
       </WardFlowProvider>,
     );
+    // Device audit 11 Oct 2026 (owner pick A2): board edits live in the person sheet; the row name opens it.
+    fireEvent.click(screen.getByTestId("ward-ed-row-name-WF-001"));
     const selector = screen.getByTestId("ward-ed-form-pill-WF-001");
     expect(selector).toHaveRole("combobox");
     expect(

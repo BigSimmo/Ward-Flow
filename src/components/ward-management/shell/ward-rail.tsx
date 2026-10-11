@@ -284,12 +284,21 @@ function WardFlowMark({ className }: { className?: string }) {
 
 export function WardRail() {
   const pathname = usePathname() ?? "";
-  const { units, bedReleases, movements, configuration } = useWardFlow();
+  const { units, bedReleases, movements, configuration, admissions } = useWardFlow();
   const now = useWardFlowClock();
   const accessTargetMinutes = configuration.edAccessTargetMinutes;
-  const bedAlerts = deriveServiceBedAlerts(units, bedReleases, undefined, movements, now, accessTargetMinutes);
+  const bedAlerts = deriveServiceBedAlerts(
+    units,
+    bedReleases,
+    undefined,
+    movements,
+    now,
+    accessTargetMinutes,
+    admissions,
+  );
   const open = useRailOpenStore();
-  const { counts, role } = useWardNavCounts();
+  // Nav order follows the signed-in person, not the route (device audit item 6).
+  const { counts, shellRole: role } = useWardNavCounts();
   const appearance = useAppearanceStore();
   const glare = useGlareStore();
   const service = useServiceScope();
@@ -715,27 +724,37 @@ export function WardRail() {
 
       {hottest ? (
         <div className={styles.alertsContainer} ref={alertsRef}>
-          {/* Closed-rail capacity control: the Metro figure in a small tile; click opens the list. */}
-          <button
-            type="button"
-            className={styles.compactAlertPip}
-            data-alert={alertCount > 0 ? "true" : undefined}
-            data-testid="ward-rail-compact-alert-pip"
-            title={`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}`}
-            aria-label={`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}`}
-            aria-expanded={alertsOpen}
-            aria-haspopup="dialog"
-            onClick={() => {
-              const nextOpen = !alertsOpen;
-              setAlertsOpen(nextOpen);
-              if (nextOpen) announceToWardShell(`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`);
-            }}
+          {/* Closed-rail capacity control: the Metro figure in a small tile; click opens the list.
+              Device audit (11 Oct 2026): the bare "86%" was cryptic, so the accessible name and the
+              tooltip both lead with what it counts — "Metro occupancy 85.9%". */}
+          <Tooltip
+            content={`${metroLabel} occupied\nBed alerts: ${alertCountLabel}${hottestLabel ? `. Fullest ${hottestLabel}` : ""}`}
+            placement="right"
+            presentationOnly
+            disabled={shownOpen}
+            wrapperClassName={styles.railTooltipTrigger}
+            className={styles.railFlyCard}
           >
-            {alertCount > 0 ? <Dot tone="warning" /> : null}
-            <span className={styles.compactAlertVal}>
-              {metroPercent === null ? "—" : `${Math.round(metroPercent)}%`}
-            </span>
-          </button>
+            <button
+              type="button"
+              className={styles.compactAlertPip}
+              data-alert={alertCount > 0 ? "true" : undefined}
+              data-testid="ward-rail-compact-alert-pip"
+              aria-label={`${metroLabel} occupied. Bed alerts: ${alertCountLabel}. ${hottestLabel}`}
+              aria-expanded={alertsOpen}
+              aria-haspopup="dialog"
+              onClick={() => {
+                const nextOpen = !alertsOpen;
+                setAlertsOpen(nextOpen);
+                if (nextOpen) announceToWardShell(`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`);
+              }}
+            >
+              {alertCount > 0 ? <Dot tone="warning" /> : null}
+              <span className={styles.compactAlertVal}>
+                {metroPercent === null ? "—" : `${Math.round(metroPercent)}%`}
+              </span>
+            </button>
+          </Tooltip>
 
           {/* One line (Josh, 8 October 2026): the Metro figure and the fullest service by its short
               name ("East"), with the dot only when a service is at or over the threshold. The full
@@ -1021,8 +1040,7 @@ export function WardRail() {
         testId="ward-rail-more-pages"
         open={moreOpen}
         onClose={() => setMoreOpen(false)}
-        title="Ward Flow navigation"
-        description="Every workspace and your shift"
+        title="Menu"
         placement="left"
         contentStyle={{ maxWidth: "min(17.5rem, calc(100vw - 1rem))" }}
         initialFocusRef={firstMoreLinkRef}
@@ -1037,11 +1055,54 @@ export function WardRail() {
         bodyClassName={styles.moreSheetBody}
         footerClassName={styles.moreSheetFoot}
         footer={
+          // Device audit (11 Oct 2026): the list scrolls above a pinned foot that keeps the person,
+          // Settings and Appearance in reach on iPad, where the sheet used to cut off at Governance.
           <>
-            <span>Synthetic prototype</span>
-            <Link href={GOVERNANCE_HREF} className={styles.moreSheetPolicy} onClick={() => setMoreOpen(false)}>
-              Policy 2026.3
-            </Link>
+            <div className={styles.moreFootPerson} title={`${currentPersona.name} · ${currentPersona.role}`}>
+              <span className={styles.userAvatar} aria-hidden="true">
+                {currentPersona.initials}
+              </span>
+              <span className={styles.userMeta}>
+                <span className={styles.userName}>{currentPersona.name}</span>
+                <span className={styles.userRole}>{currentPersona.role}</span>
+              </span>
+            </div>
+            <div className={styles.moreFootActions}>
+              <Link
+                href={settingsHref()}
+                className={styles.sheetUtilityLink}
+                data-testid="ward-rail-sheet-settings-link"
+                onClick={() => setMoreOpen(false)}
+              >
+                <Settings aria-hidden="true" strokeWidth={1.75} />
+                <span>Settings</span>
+              </Link>
+              <button
+                type="button"
+                className={styles.sheetUtilityLink}
+                data-testid="ward-rail-sheet-appearance"
+                onClick={() => {
+                  const order = APPEARANCE_CHOICES.map((choice) => choice.id);
+                  const next = order[(order.indexOf(appearance) + 1) % order.length] ?? "auto";
+                  applyAppearance(next);
+                  announceToWardShell(`Appearance set to ${next}.`);
+                }}
+              >
+                <SunMoon aria-hidden="true" strokeWidth={1.75} />
+                <span>
+                  Appearance{" "}
+                  <span className={styles.moreFootValue}>
+                    {APPEARANCE_CHOICES.find((choice) => choice.id === appearance)?.label ?? "Auto"}
+                  </span>
+                </span>
+              </button>
+            </div>
+            <div className={styles.moreFootLine}>
+              <span>Synthetic prototype</span>
+              <Link href={GOVERNANCE_HREF} className={styles.moreSheetPolicy} onClick={() => setMoreOpen(false)}>
+                Policy 2026.3
+              </Link>
+            </div>
           </>
         }
       >
@@ -1095,13 +1156,6 @@ export function WardRail() {
             </section>
           ) : null;
         })}
-        <div className={styles.sheetUtility}>
-          <Link href={settingsHref()} className={styles.sheetUtilityLink} onClick={() => setMoreOpen(false)}>
-            <Settings aria-hidden="true" strokeWidth={1.75} />
-            <span>Settings</span>
-            <ChevronRight aria-hidden="true" className={styles.sheetChevron} />
-          </Link>
-        </div>
       </Sheet>
     </nav>
   );

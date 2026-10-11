@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
 
@@ -32,12 +32,19 @@ import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
  * they are on. See `wardPlaceIdFor` in `ward-place.ts`: it is a bare id, `undefined` on any route
  * that does not name one, never a resolved or validated place.
  */
-export function useWardNavCounts(): { role: WardChromeRole; counts: WardNavCounts; placeId: string | undefined } {
+export function useWardNavCounts(): {
+  role: WardChromeRole;
+  /** The signed-in person's role (`WARD_SHELL_ROLE`): nav order and Tasks follow this, never the route. */
+  shellRole: WardChromeRole;
+  counts: WardNavCounts;
+  placeId: string | undefined;
+} {
   const pathname = usePathname() ?? "";
   const { movements, units, referrals, bedReleases, leaveBeds } = useWardFlow();
   const now = useWardFlowClock();
   return {
     role: wardChromeRole(pathname),
+    shellRole: WARD_SHELL_ROLE,
     counts: wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now }),
     placeId: wardPlaceIdFor(pathname),
   };

@@ -60,7 +60,7 @@ export function WardSidebarNav({
    * The role and the figures come from the same hook the collapsed icon rail uses — see
    * `use-ward-nav-counts.ts` for why neither is a prop, and why both trees must read one source.
    */
-  const { role, counts, placeId } = useWardNavCounts();
+  const { role, shellRole, counts, placeId } = useWardNavCounts();
   const { movements, units, plannedAdmissions = [] } = useWardFlow();
   const now = useWardFlowClock();
   /*
@@ -113,7 +113,7 @@ export function WardSidebarNav({
 
       <nav className={styles.group} aria-label="Ward Flow views">
         <span className={styles.groupLabel}>Views</span>
-        {orderViewsForRole(WARD_VIEWS, role).map((view) => {
+        {orderViewsForRole(WARD_VIEWS, shellRole).map((view) => {
           const Icon = WARD_VIEW_ICONS[view.id];
           const active = activeMode === view.id;
           const count = counts[view.id];
@@ -138,7 +138,7 @@ export function WardSidebarNav({
         label="Role screens"
         items={orderRoleScreensForRole(
           WARD_NAV.filter((item) => item.group === "role"),
-          role,
+          shellRole,
         )}
         counts={counts}
         onNavigate={onNavigate}
@@ -148,7 +148,7 @@ export function WardSidebarNav({
         label="Boards"
         items={orderBoardsForRole(
           WARD_NAV.filter((item) => item.group === "board"),
-          role,
+          shellRole,
         )}
         counts={counts}
         onNavigate={onNavigate}

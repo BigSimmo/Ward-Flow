@@ -24,18 +24,53 @@
   border: 1px solid var(--wf-line);
 }
 
-/* The pause control matches the chip's height, so the pair reads as one control. */
-.group > button.pause {
-  width: var(--wf-h-chip);
-  height: var(--wf-h-chip);
+/* Device audit (11 Oct 2026): the pause is folded into the pill. The whole pill is one button, at
+ * the chip's control height, with a pause or play glyph after a hairline at its end. */
+.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  /* Touch tablets: a 44px tall hit area round the pill (`--wf-tablet-tap`, 0 elsewhere). */
+  min-height: var(--wf-tablet-tap, 0px);
+  padding: 0;
+  border: 0;
   border-radius: var(--wf-r-xs);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
-.group:has(> button.pause) > .lv {
+.toggle > .lv {
   height: var(--wf-h-chip);
 }
 
-.group > button.pause svg {
+.toggle:hover > .lv {
+  border-color: var(--wf-line-2);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.toggleGlyph {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  margin-left: 2px;
+  padding-left: 7px;
+  border-left: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+}
+
+.onHero .toggleGlyph {
+  border-left-color: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
+  color: var(--wf-hero-ink-3);
+}
+
+.toggleGlyph svg {
   width: 12px;
   height: 12px;
 }

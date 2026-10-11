@@ -112,6 +112,15 @@ async function goToCapacityBoard(page: Page) {
   // finds a live-looking hit that renders nothing; the render is at `capacity-screen.tsx:87`.
   await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
   await page.waitForLoadState("networkidle");
+  // Device audit option A (Capacity, 11 Oct 2026): the per-ward network table is the bed map's
+  // Table layout, so open it through the map's own control, as a coordinator would. A press before
+  // hydration does nothing, so press until the layout reports Table.
+  const table = page.getByRole("group", { name: "Bed map layout" }).getByRole("button", { name: "Table", exact: true });
+  await expect(async () => {
+    if ((await table.getAttribute("aria-pressed")) !== "true") await table.click();
+    await expect(table).toHaveAttribute("aria-pressed", "true", { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  await expect(page.getByTestId(`ward-capacity-network-row-${UNIT_ID}`)).toBeVisible();
 }
 
 async function goBackToWard(page: Page) {

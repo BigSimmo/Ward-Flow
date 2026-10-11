@@ -12,6 +12,7 @@ import { bedReleases, wardMovements } from "@/components/ward-management/ward-mo
 import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task C1 (item 44 — the
@@ -84,8 +85,12 @@ describe("with All services chosen, the screen renders byte-identical to before 
   it("renders every ward's row in the table and its block on the map — nothing pre-filtered", () => {
     renderScreen();
     for (const row of networkRows) {
-      expect(screen.getByTestId(`ward-capacity-network-row-${row.unit.id}`)).toBeInTheDocument();
       expect(screen.getByTestId(`ward-bed-map-ward-${row.unit.id}`)).toBeInTheDocument();
+    }
+    // Device audit option A: the ward table is the bed map's Table layout.
+    showWardTable();
+    for (const row of networkRows) {
+      expect(screen.getByTestId(`ward-capacity-network-row-${row.unit.id}`)).toBeInTheDocument();
     }
   });
 
@@ -110,6 +115,7 @@ describe("with South Metro chosen, the map and ward table are scoped", () => {
   it("renders only South Metro's rows in the network table, and marks every other ward absent", () => {
     setServiceScope(SCOPED_SERVICE);
     renderScreen();
+    showWardTable();
     for (const row of scopedRows) {
       expect(
         screen.getByTestId(`ward-capacity-network-row-${row.unit.id}`),

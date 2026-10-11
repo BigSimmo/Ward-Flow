@@ -25,7 +25,6 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
-import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { DECLINE_REASONS, type DeclineReason, type Movement, type Unit } from "@/components/ward-management/ward-model";
 import {
   GENDER_NO_LONGER_SUITS_REFUSAL,
@@ -487,19 +486,16 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               ? `Ward answer · ${unit.name}`
               : `Ward answer · ${site?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
           }
+          // One title on every device (device audit, 11 Oct 2026; the build guide's "Nothing to answer").
           title={
-            isPhone
-              ? incoming.length === 0
-                ? "Nothing waiting"
-                : `Request ${activeAnswerIndex + 1} of ${incoming.length}`
-              : incoming.length === 0
-                ? "Nothing to answer"
-                : `${incoming.length} ${incoming.length === 1 ? "request" : "requests"} to answer`
+            incoming.length === 0
+              ? "Nothing to answer"
+              : `${incoming.length} ${incoming.length === 1 ? "request" : "requests"} to answer`
           }
           titleMeta={
             isPhone
               ? activeMovement
-                ? `${activeMovement.urgency} · waiting ${elapsedLabel(activeMovement, now).replace(/ waiting$/, "")} · from an ED`
+                ? `Tier ${activeMovement.urgency} · waiting ${elapsedLabel(activeMovement, now).replace(/ waiting$/, "")} · from an ED`
                 : `${recentAnswers[0]?.at !== undefined ? `Last answer at ${formatInstantWithDay(recentAnswers[0].at, now)} · ` : ""}${states.ready} ${states.ready === 1 ? "bed" : "beds"} ready`
               : undefined
           }
@@ -538,9 +534,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             )
           }
           aside={
-            incoming.length > 0 ? (
+            incoming.length > 1 ? (
               <>
                 {isPhone ? <LiveChip state="live" onHero /> : null}
+                {/* Previous and Next show only when there is more than one request to step through. */}
                 <span className={styles.heroNav} role="group" aria-label="Bed request position">
                   <button
                     type="button"
@@ -780,11 +777,14 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             <dt>Sex</dt>
                             <dd>{activeMovement.sex}</dd>
                           </div>
-                          {/* Owner answer 2026-09-25 (R7, Q2): gender identity beside sex, same style. */}
-                          <div>
-                            <dt>Gender</dt>
-                            <dd>{activeMovement.gender ?? "Not recorded"}</dd>
-                          </div>
+                          {/* Owner answer 2026-09-25 (R7, Q2): gender identity beside sex, same style.
+                              Phone (device audit, 11 Oct 2026) shows it only when it differs from sex. */}
+                          {isPhone && activeMovement.gender === activeMovement.sex ? null : (
+                            <div>
+                              <dt>Gender</dt>
+                              <dd>{activeMovement.gender ?? "Not recorded"}</dd>
+                            </div>
+                          )}
                           <div>
                             <dt>Specialling</dt>
                             <dd>{activeMovement.specialling ? "Requested" : "Not requested"}</dd>
@@ -819,7 +819,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             aria-controls="ward-answer-facts"
                             onClick={() => setShowAllFacts((open) => !open)}
                           >
-                            {showAllFacts ? "Show fewer facts" : "Show all 9 facts"}
+                            {showAllFacts
+                              ? "Show fewer facts"
+                              : `Show all ${activeMovement.gender === activeMovement.sex ? 8 : 9} facts`}
                           </button>
                         ) : null}
                         {isPhone ? (
@@ -1255,27 +1257,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       ward cannot admit into it yet.
                     </p>
                   ) : null}
-                  <div className={styles.freshnessRow}>
-                    <div className={styles.freshnessCard}>
-                      <strong>Physically empty beds</strong>
-                      <WardFreshness
-                        confirmedAt={unit.empty.confirmedAt}
-                        confirmedByRole={unit.empty.source === "ward" ? `NUM ${unit.name}` : undefined}
-                        now={now}
-                        derived={unit.empty.source !== "ward"}
-                      />
-                    </div>
-                    <div className={styles.freshnessCard}>
-                      <strong>Allocatable beds</strong>
-                      <WardFreshness
-                        confirmedAt={unit.allocatable.confirmedAt}
-                        confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
-                        now={now}
-                        derived={unit.allocatable.source !== "ward"}
-                      />
-                    </div>
-                  </div>
-
                   <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
                     <span className={styles.capacityLabel} id="ward-capacity-label">
                       Allocatable now, for {unit.name}
@@ -1295,7 +1276,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       <button
                         type="submit"
                         data-testid="ward-capacity-submit"
-                        className={`${styles.btn} ${styles.btnPrimary}`}
+                        // Secondary: Accept in principle is the page's one primary (device audit).
+                        className={styles.btn}
                       >
                         Confirm
                       </button>
@@ -1372,12 +1354,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   sex, so both rows say so rather than show a number. */}
                 <div className={styles.milieuList}>
                   <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Nurse ratio</span>
-                    <span className={styles.milieuValue}>not recorded</span>
-                  </div>
-                  <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Sex mix</span>
-                    <span className={styles.milieuValue}>not counted here</span>
+                    <span className={styles.milieuLabel}>Not recorded</span>
+                    <span className={styles.milieuValue}>nurse ratio, sex mix</span>
                   </div>
                   <div className={styles.milieuRow}>
                     <span className={styles.milieuLabel}>1:1 specialling</span>
@@ -1404,10 +1382,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   <h2 className={styles.panelTitle}>Recent answers</h2>
                 </div>
                 <div className={styles.historyPanelBody}>
-                  <p className={styles.historyScopeNote}>
-                    Recorded acceptances and declines for this ward. The prototype does not hold a shift boundary or the
-                    name of the person who answered.
-                  </p>
                   {recentAnswers.length === 0 ? (
                     <p>No accepted or declined answers are recorded for {unit.name}.</p>
                   ) : (

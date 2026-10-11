@@ -6249,3 +6249,89 @@
     bottom: 136px;
   }
 }
+
+/* Device audit, 11 Oct 2026: the hero's "Show shift brief" is the one way to open the brief, so
+   on screen the foot bar shows only while the brief is open (to hide it again). Print is untouched:
+   the print rules still force the sheet out. */
+@media screen {
+  .sheetFold:has(> .sheetFoldSummary[aria-expanded="false"]) {
+    display: none;
+  }
+}
+
+/* iPad portrait (device audit, 11 Oct 2026): Ready sits beside the four band figures on one row,
+   not stacked above them. */
+@media screen and (min-width: 48.0625rem) and (max-width: 70rem) {
+  .screen .header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .screen .header > .headline {
+    grid-column: 1;
+    align-self: center;
+    padding-right: var(--wf-s-4);
+  }
+
+  .screen .header > .bandStats {
+    grid-column: 2;
+  }
+}
+
+/* Device audit, 11 Oct 2026: "SHOWN IN GOING OUT" was cut in the iPad tile; sentence case fits. */
+.screen .triageLedNote {
+  max-width: 100%;
+  overflow: hidden;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+/* Phone (device audit, 11 Oct 2026). The band bleeds to the screen edges like every other page's
+   hero instead of sitting as a rounded card; the region list stays on tablet and desktop; the
+   repeated "1h ago" under each Needs-you row is dropped (the tag already says how long); and
+   Needs you opens on its first three items. */
+@media screen and (max-width: 48rem) {
+  .screen .header {
+    margin: -12px -12px 0;
+    border-radius: 0;
+  }
+
+  .screen .wardTools {
+    margin-inline: -12px;
+    border-radius: 0;
+  }
+
+  .destinations {
+    display: none;
+  }
+
+  .shiftWhen {
+    display: none;
+  }
+
+  .shiftGrid:not([data-expanded="true"]) > .shiftTile:nth-child(n + 4) {
+    display: none;
+  }
+}
+
+.shiftMore {
+  display: none;
+}
+
+@media screen and (max-width: 48rem) {
+  .shiftMore {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: var(--ward-tap, 48px);
+    border: 0;
+    border-top: 1px solid var(--wf-line, var(--line));
+    background: none;
+    color: var(--wf-accent, var(--accent));
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}

@@ -112,7 +112,8 @@ export function CapacityPhoneWards({
         {shown.map((group) => {
           const totals = networkServiceGroupTotals(group.wards);
           const beds = group.wards.reduce((sum, row) => sum + row.unit.beds, 0);
-          const occupancy = beds > 0 ? ((totals.occupied / beds) * 100).toFixed(1) : "0.0";
+          // Occupied or Pulled: the one occupancy count (`ward-occupancy.ts`).
+          const occupancy = beds > 0 ? (((totals.occupied + totals.pulled) / beds) * 100).toFixed(1) : "0.0";
           return (
             <div key={group.service} id={`capacity-phone-region-${group.service}`} className={styles.phoneRegion}>
               <h3 className={styles.phoneRegionHead}>

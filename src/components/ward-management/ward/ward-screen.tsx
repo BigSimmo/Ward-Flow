@@ -7,11 +7,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftRight,
+  Bell,
   ChevronDown,
   ChevronLeft,
   Clock,
   FileText,
   ListChecks,
+  MoreHorizontal,
   Printer,
   Search,
   Send,
@@ -151,6 +153,11 @@ function boardUndoEvent(undo: NonNullable<BoardCheck["undo"]>, now: Instant): Wa
 }
 
 /** The router, or null where the screen renders outside the app router (a test or preview). */
+/** This ward's Handover page, scoped to the ward. */
+function wardHandoverHref(unitId: string): string {
+  return `/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unitId }))}`;
+}
+
 function useOptionalRouter(): ReturnType<typeof useRouter> | null {
   try {
     return useRouter();
@@ -547,8 +554,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       if (
         notificationCenterRef.current &&
         !notificationCenterRef.current.contains(target) &&
-        notificationTriggerRef.current &&
-        !notificationTriggerRef.current.contains(target)
+        // Phone and iPad portrait open it from the More menu, which has no trigger here.
+        !notificationTriggerRef.current?.contains(target)
       ) {
         setNotificationCenterOpen(false);
       }
@@ -1888,6 +1895,67 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     </span>
   );
 
+  // Audit 11 Oct 2026: the phone chip row and the iPad portrait toolbar keep their main views and
+  // put the less used actions in one More menu, so nothing clips at the edge.
+  const handoverHref = wardHandoverHref(unit.id);
+  const wardMoreMenu = (triggerClassName: string, tablet: boolean) => (
+    <Menu
+      label="More ward actions"
+      align="end"
+      items={[
+        {
+          id: "notices",
+          label: "Notices",
+          icon: Bell,
+          meta: unreadAlertsCount > 0 ? String(unreadAlertsCount) : undefined,
+          onSelect: () => {
+            setNotificationCenterOpen(true);
+          },
+        },
+        {
+          id: "brief",
+          label: "Shift brief",
+          icon: FileText,
+          onSelect: () => {
+            setDailySheetOpen(true);
+          },
+        },
+        {
+          id: "handover",
+          label: "Handover",
+          icon: Printer,
+          onSelect: () => {
+            if (router) router.push(handoverHref);
+            else window.location.assign(handoverHref);
+          },
+        },
+        ...(tablet
+          ? []
+          : [
+              {
+                id: "referral",
+                label: "Raise referral",
+                icon: Send,
+                disabled: !raiseReferralGate.allowed,
+                meta: raiseReferralGate.allowed ? undefined : raiseReferralGate.reason,
+                onSelect: handleRaiseWardReferral,
+              },
+            ]),
+      ]}
+      trigger={(props) => (
+        <button
+          type="button"
+          {...props}
+          className={triggerClassName}
+          data-testid={tablet ? "ward-tools-more" : "ward-phone-chip-more"}
+        >
+          <MoreHorizontal size={16} aria-hidden="true" />
+          More
+        </button>
+      )}
+    />
+  );
+
   const tabHome = (
     <li role="presentation">
       <button
@@ -2059,53 +2127,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   <ArrowLeftRight size={16} aria-hidden="true" />
                   Ward flow
                 </button>
-                <button
-                  type="button"
-                  className={styles.phoneChip}
-                  onClick={() => {
-                    setDailySheetOpen(true);
-                  }}
-                  data-testid="ward-open-daily-sheet-btn"
-                >
-                  <FileText size={16} aria-hidden="true" />
-                  Shift brief
-                </button>
-                <Link
-                  className={styles.phoneChip}
-                  href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
-                >
-                  <Printer size={16} aria-hidden="true" />
-                  Handover
-                </Link>
-                <button
-                  type="button"
-                  className={styles.phoneChip}
-                  onClick={handleRaiseWardReferral}
-                  title="Record a ward-to-ward referral with this ward as the sending ward."
-                  {...raiseReferralGate.buttonProps}
-                >
-                  <Send size={16} aria-hidden="true" />
-                  Raise referral
-                </button>
-                <button
-                  ref={notificationTriggerRef}
-                  type="button"
-                  className={styles.phoneChip}
-                  onClick={() => {
-                    setNotificationCenterOpen((prev) => !prev);
-                  }}
-                  aria-expanded={notificationCenterOpen}
-                  data-testid="ward-notifications-toggle-btn"
-                  title="Buzzes, urgent tasks and notices"
-                >
-                  <ListChecks size={16} aria-hidden="true" />
-                  Tasks
-                  {unreadAlertsCount > 0 ? (
-                    <span className={styles.phoneChipCount} data-testid="ward-notification-count-badge">
-                      {unreadAlertsCount}
-                    </span>
-                  ) : null}
-                </button>
+                {wardMoreMenu(styles.phoneChip, false)}
               </ScrollRow>
               {raiseReferralGate.note}
               {notificationCenterOpen ? (
@@ -2174,7 +2196,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     <button
                       ref={notificationTriggerRef}
                       type="button"
-                      className={buttonClass({ variant: "ghost", size: "sm" })}
+                      className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
                       onClick={() => {
                         setNotificationCenterOpen((prev) => !prev);
                       }}
@@ -2182,8 +2204,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       data-testid="ward-notifications-toggle-btn"
                       title="Buzzes, urgent tasks and notices"
                     >
-                      <ListChecks size={16} aria-hidden="true" />
-                      <span>Tasks</span>
+                      <Bell size={16} aria-hidden="true" />
+                      <span>Notices</span>
                       {unreadAlertsCount > 0 ? (
                         <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
                           {unreadAlertsCount}
@@ -2218,7 +2240,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   </div>
                   <button
                     type="button"
-                    className={buttonClass({ variant: "ghost", size: "sm" })}
+                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
                     onClick={() => {
                       setDailySheetOpen(true);
                     }}
@@ -2229,12 +2251,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     Shift brief
                   </button>
                   <Link
-                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
-                    href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
+                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide} ${styles.toolSolo}`}
+                    href={handoverHref}
                   >
                     <Printer size={16} aria-hidden="true" />
                     Handover
                   </Link>
+                  <span className={styles.toolMore}>
+                    {wardMoreMenu(buttonClass({ variant: "ghost", size: "sm" }), true)}
+                  </span>
                   <button
                     type="button"
                     className={buttonClass({ variant: "sec", size: "sm" })}
@@ -2284,7 +2309,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </>
               ) : undefined
             }
-            phoneFiguresSummary={`Closed ${states.closed} · Pulled ${states.pulled} · Expected out ${breakdown.expectedToday} · Held up ${blockedReleases.length}`}
+            phoneFiguresSummary="Shift, roster, legal status and feeds"
             phoneFind={
               isPhone ? (
                 <TextInput

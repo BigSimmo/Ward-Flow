@@ -81,6 +81,7 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * Raises a real `FLAG_BED_RELEASE` with no `blocker` — Phase 5 spec D3: a flag with no blocker
@@ -173,6 +174,7 @@ describe("ward capacity board", () => {
         <CapacityScreen />
       </WardFlowProvider>,
     );
+    showWardTable();
 
     const unauthorised = screen.getByTestId("ward-capacity-authorised-sjgs-adult-secure");
     expect(unauthorised).toHaveTextContent("No");
@@ -288,6 +290,7 @@ describe("ward capacity headline (Task 7)", () => {
         <RefreshRequestsProbe />
       </WardFlowProvider>,
     );
+    showWardTable();
 
     expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("0");
     const table = screen.getByTestId("ward-capacity-network-table");
@@ -331,6 +334,7 @@ describe("ward capacity headline (Task 7)", () => {
         <ExpectedReleaseFlagger unitId="fre-adult-open" expectedAt={NOW_ANCHOR + 2 * MINUTES_PER_DAY} />
       </WardFlowProvider>,
     );
+    showWardTable();
 
     // CHANGED 25 September 2026: the derived seed already carries releases beyond today, so the
     // count starts above zero; the property survives as the change: one more far-future release
@@ -457,6 +461,7 @@ describe("a discharge held up for days keeps counting, and shows since when (WLQ
         <StaleBlockedReleaseSetup unitId={unitId} daysAgo={2} />
       </WardFlowProvider>,
     );
+    showWardTable();
 
     const row = () => screen.getByTestId(`ward-capacity-network-row-${unitId}`);
     expect(within(row()).getByTestId("ward-capacity-network-blocked")).toHaveTextContent("none");
@@ -494,6 +499,7 @@ describe("a discharge held up for days keeps counting, and shows since when (WLQ
         <StaleBlockedReleaseSetup unitId={unitId} daysAgo={2} />
       </WardFlowProvider>,
     );
+    showWardTable();
 
     fireEvent.click(screen.getByTestId("test-flag-stale-release"));
     // Deliberately NOT clicking "block stale release" — a release that was never held up must

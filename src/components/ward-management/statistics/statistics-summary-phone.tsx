@@ -2,10 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, CalendarRange, Check, ChevronRight, Clock, Layers, Pause, Play } from "lucide-react";
+import { Activity, CalendarRange, Check, ChevronRight, Clock, Layers } from "lucide-react";
 
 import {
-  Button,
   GroupHead,
   IconTile,
   LiveChip,
@@ -156,7 +155,14 @@ export function StatisticsSummaryPhone({
             { id: "ended", value: endedToday, label: "Ended today" },
           ]}
           eyebrow="Statistics · Whole network"
-          chip={<LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} />}
+          chip={
+            <LiveChip
+              state={paused ? "paused" : "live"}
+              onHero
+              age={formatInstant(now)}
+              onTogglePause={onTogglePause}
+            />
+          }
           actions={
             <span className={styles.heroActions}>
               <button
@@ -171,15 +177,6 @@ export function StatisticsSummaryPhone({
                 <b>Now</b>
                 <span className={styles.rangeMore}>· Shift, 7 and 30 days Preview</span>
               </button>
-              <Button
-                variant="onHero"
-                iconOnly
-                icon={paused ? Play : Pause}
-                aria-label="Pause live updates"
-                aria-pressed={paused}
-                className={styles.pauseButton}
-                onClick={onTogglePause}
-              />
             </span>
           }
         />

@@ -154,7 +154,11 @@ export function DischargeBarrierBars({
           <OctagonAlert size={16} aria-hidden="true" />
           Blocked by barrier
         </h2>
-        <span className={styles.count}>{total}</span>
+        {/* The figure names its noun (device audit, 11 Oct 2026): it counts people whose open
+            record carries a barrier, which is not the hero's count of blocked releases. */}
+        <span className={styles.count}>
+          {total} {total === 1 ? "person" : "people"}
+        </span>
       </header>
       {shown.length === 0 ? (
         <p className={styles.empty}>No discharge is blocked.</p>

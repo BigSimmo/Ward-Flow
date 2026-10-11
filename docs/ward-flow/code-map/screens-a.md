@@ -1,5 +1,18 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+## Approved overdue design — 11 October 2026
+
+Home's shared `PriorityQueue` uses an inset rounded coral marker, a subtle theme-aware
+attention tint and a glyph beside the readable overdue label on phone, tablet and desktop.
+The duration stays neutral; selection retains its slate stripe and keyboard focus ring.
+The shared DataRow, native table and PhoneRow styles carry the same treatment into
+Referrals, Alerts, ED, Handover, Discharges, Delays, Movements, ward beds and patient
+status cards. Native table markers anchor to the first cell. Forced colours retain the
+marker as CanvasText; highlights still dim by colour. Queue order, targets and engine
+behaviour are unchanged. This owner-approved alternative supersedes the older full red
+act-now box rule for these surfaces. The patient/movement hero also anchors its spoken
+live status inside the hero, preventing long stage text from overflowing tablets.
+
 ## Current remediation seams — 8 October 2026
 
 Current routed components, not historical drawings, govern appearance. Latest canonical

@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { durMinutes, StatusGlyph, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
+  dueParts,
   destinationText,
   dueShort,
   groupOf,
@@ -152,18 +153,25 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "due",
     header: "Due",
-    width: 128,
+    width: 100,
     mono: true,
     cell: (row, ctx) => {
-      const due = dueShort(row, ctx.now);
-      return due ? <span className={`${styles.mono} ${styles.trunc}`}>{due}</span> : off;
+      const due = dueParts(row, ctx.now);
+      return due ? (
+        <span className={styles.two}>
+          <b className={`${styles.mono} ${styles.nowrap}`}>{due.when}</b>
+          <span className={`${styles.sub} ${styles.trunc}`}>{due.what}</span>
+        </span>
+      ) : (
+        off
+      );
     },
     paper: (row, ctx) => dueShort(row, ctx.now) ?? "",
   },
   {
     id: "next",
     header: "Next step",
-    width: 168,
+    width: 196,
     cell: (row, ctx) => {
       const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
       return (

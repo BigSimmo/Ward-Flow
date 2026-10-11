@@ -27,6 +27,7 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 const DROPPED_SERVICE = "Private";
 
@@ -77,6 +78,7 @@ describe("a health service with no reporting unit renders a sentence, never a he
 
   it(`renders "${DROPPED_SERVICE}" as a sentence with no fold button and no row header`, () => {
     render(<CapacityScreen />);
+    showWardTable();
     const table = screen.getByTestId("ward-capacity-network-table");
     const emptyGroup = within(table).getByTestId(`ward-capacity-network-group-${slugOf(DROPPED_SERVICE)}`);
 
@@ -90,6 +92,7 @@ describe("a health service with no reporting unit renders a sentence, never a he
 
   it("still folds every other, populated service normally", () => {
     render(<CapacityScreen />);
+    showWardTable();
     const table = screen.getByTestId("ward-capacity-network-table");
     // CAHS has no unit in the real fixture (Perth Children's, owner ruling 2026-09-25), so it was
     // never a populated service to keep folding.

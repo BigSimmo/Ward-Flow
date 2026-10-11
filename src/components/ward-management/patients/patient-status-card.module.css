@@ -204,9 +204,12 @@
   display: none;
 }
 
-/* v10: act now is the thin red full edge, no fill. */
+/* v10: act now is an inset coral marker and subtle tint. */
 .card[data-act="true"] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 /* v10 phone: the gate board's one primary, pinned at the bottom of the screen with Copy beside it.
@@ -338,4 +341,36 @@
   height: 48px;
   min-height: 48px;
   font-size: var(--wf-fs-14);
+}
+
+/* Device audit (11 Oct 2026): the phone dock now sits on every phone page, so the pinned action bar
+   rests above it (the same 96px the dock keeps clear under the page) rather than behind it. */
+@media (max-width: 48rem) {
+  .phBar {
+    bottom: var(--wf-dock-clear, 0px);
+    padding-bottom: var(--wf-s-2);
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.card[data-act="true"] {
+  position: relative;
+}
+
+.card[data-act="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .card[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }

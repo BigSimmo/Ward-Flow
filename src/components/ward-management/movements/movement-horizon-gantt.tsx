@@ -507,9 +507,12 @@ export function MovementHorizonGantt({
                                   className={`${styles.ganttBar} ${swatchClass}${isSelected ? ` ${styles.activeSelect}` : ""}${isScrubMatch ? ` ${styles.scrubActive}` : ""}`}
                                   style={
                                     {
-                                      // A bar near the far edge keeps its short name inside the track.
-                                      left: `min(${leftPct.toFixed(2)}%, calc(100% - 104px))`,
-                                      width: `${actualW.toFixed(2)}%`,
+                                      // A bar is never narrower than its "Surname, I" label
+                                      // (device audit, 11 Oct 2026: many patients share a
+                                      // surname, so a cut one is ambiguous), and a bar near the
+                                      // far edge keeps that width inside the track.
+                                      left: `min(${leftPct.toFixed(2)}%, calc(100% - max(${actualW.toFixed(2)}%, ${BAR_MIN_WIDTH})))`,
+                                      width: `max(${actualW.toFixed(2)}%, ${BAR_MIN_WIDTH})`,
                                       top: `${cfg.barTop + row * rowStep}px`,
                                       height: `${cfg.barHeight}px`,
                                     } as CSSProperties
@@ -667,6 +670,9 @@ function formatGanttBarLabel(ev: MovementHorizonEvent, zoom: number): string {
   if (pct < 22) return `${name} · ${sub}`;
   return `${name} · ${ev.title}`;
 }
+
+/** The narrowest a bar draws: wide enough for "Pallowmere, O" at the bar's type size. */
+const BAR_MIN_WIDTH = "7.5rem";
 
 /** The patient's name for a bar, or the resolver's own "Unknown Patient" when none is linked. */
 function barPatientName(ev: MovementHorizonEvent): string {

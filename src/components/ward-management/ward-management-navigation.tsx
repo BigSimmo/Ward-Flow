@@ -162,7 +162,7 @@ function WardIconRail({
   hiddenOnDesktop: boolean;
   onExpand: () => void;
 }) {
-  const { role } = useWardNavCounts();
+  const { shellRole: role } = useWardNavCounts();
   return (
     <aside
       className={`${shellStyles.clinicalRail}${hiddenOnDesktop ? ` ${shellStyles.railHiddenOnDesktop}` : ""}`}
@@ -296,7 +296,7 @@ export function WardModeNavigation({ active }: { active?: WardMode }) {
    * on its own face; the rail is a way to get somewhere, and the numbers belong in the expanded
    * panel beside the words that say what they count.
    */
-  const { role } = useWardNavCounts();
+  const { shellRole: role } = useWardNavCounts();
   return (
     <nav className={shellStyles.railNav} aria-label="Ward Flow views">
       {orderViewsForRole(WARD_VIEWS, role).map((view) => {

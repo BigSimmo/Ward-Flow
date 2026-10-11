@@ -39,10 +39,8 @@ export function StrandedPrompts({
         <span id="ward-board-stranded-heading">Worth a look: long stays and people waiting to leave</span>
         <span className={styles.count}>({flags.length})</span>
       </summary>
-      <p className={styles.lead}>
-        A gentle prompt, read from what the ward has recorded: stays of a week or more with no expected discharge date,
-        and people ready to go who are waiting on something outside the ward.
-      </p>
+      {/* Device audit, 11 Oct 2026: the four-line explanation is gone; the heading says what
+          the list is. */}
       <ul className={styles.list} aria-labelledby="ward-board-stranded-heading">
         {flags.map((flag) => (
           <li key={flag.admissionId} className={styles.row} data-testid={`ward-board-stranded-${flag.admissionId}`}>

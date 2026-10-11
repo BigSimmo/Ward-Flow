@@ -370,6 +370,19 @@
   }
 }
 
+/* Tablet portrait: five pills beside the search ran off the right edge ("20 No..."), so they take
+   their own row under it (device audit 11 Oct 2026). */
+@container patient-search (max-width: 56rem) {
+  .heroBar {
+    flex-wrap: wrap;
+  }
+
+  .mapPills {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+}
+
 @container patient-search (min-width: 56rem) {
   .layout {
     grid-template-columns: minmax(0, 1fr) 300px;
@@ -463,11 +476,21 @@ table.censusTable {
 }
 
 .colWho {
-  width: 24%;
+  width: 21%;
 }
 
 .colTime {
   width: 100px;
+}
+
+/* Device audit 11 Oct 2026: Next step is the column a nurse reads, so it takes the spare width
+   that Where now had; Heading to stays narrower. */
+.colWhere {
+  width: 12%;
+}
+
+.colNext {
+  width: 18%;
 }
 
 .censusTable thead th {

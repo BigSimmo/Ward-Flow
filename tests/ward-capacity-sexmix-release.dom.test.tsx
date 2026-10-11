@@ -7,6 +7,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * 🔴 **RE-POINTED AT `CapacityScreen` ON 2026-09-06, AFTER THE SIGNAL IT ASKS FOR WAS BUILT.**
@@ -79,6 +80,7 @@ function renderBoard() {
       <RecordLeaving />
     </WardFlowProvider>,
   );
+  showWardTable();
 }
 
 describe("the Capacity screen says when a ward's bed records are mid-update", () => {

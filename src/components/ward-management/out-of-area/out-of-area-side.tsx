@@ -92,7 +92,8 @@ export function HomeBedsCard({
   rows: HomeRegionBeds[];
   region: string | null;
   onRegion: (region: string) => void;
-  notBanded: number;
+  /** Phone only: the desktop states the unbanded records once, in the hero's Checking line. */
+  notBanded?: number;
 }) {
   const max = Math.max(1, ...rows.map((row) => row.away));
   return (
@@ -167,19 +168,21 @@ export function HomeBedsCard({
           </div>
         ))
       )}
-      <p className={styles.gapRow}>
-        <StatusGlyph tone="closed" size={9} />
-        <b className={styles.mono}>{notBanded}</b> records with no travel band
-        <Button
-          variant="sec"
-          size="sm"
-          className={styles.gapButton}
-          disabledReason="Not wired in this prototype."
-          reasonDisplay="tooltip"
-        >
-          List
-        </Button>
-      </p>
+      {notBanded === undefined ? null : (
+        <p className={styles.gapRow}>
+          <StatusGlyph tone="closed" size={9} />
+          <b className={styles.mono}>{notBanded}</b> records with no travel band
+          <Button
+            variant="sec"
+            size="sm"
+            className={styles.gapButton}
+            disabledReason="Not wired in this prototype."
+            reasonDisplay="tooltip"
+          >
+            List
+          </Button>
+        </p>
+      )}
     </Card>
   );
 }

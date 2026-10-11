@@ -50,6 +50,12 @@ function RecordTransportFixture() {
   );
 }
 
+// Device audit 11 Oct 2026 (owner pick A): transport dispatch and the arrival plan left the Now tab
+// and open as the Transport sheet from the Transport row, so each case opens that sheet first.
+function openTransportSheet() {
+  fireEvent.click(screen.getByTestId("ward-patient-transport-row"));
+}
+
 describe("Patient Transport & Transfer Coordination section", () => {
   it("shows absence without placement or booking claims for a patient-only record", () => {
     render(
@@ -72,6 +78,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
         <PatientNowScreen movementId="WF-004" />
       </WardFlowProvider>,
     );
+    openTransportSheet();
     fireEvent.click(screen.getByTestId("ward-patient-book-transport-btn"));
     expect(screen.getByTestId("ward-patient-transport-form")).toBeInTheDocument();
     rerender(
@@ -94,6 +101,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Record synthetic transport booking" }));
+    openTransportSheet();
     const section = screen.getByTestId("ward-patient-transport-section");
     expect(section).toBeInTheDocument();
 
@@ -117,6 +125,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
         <PatientNowScreen initialExampleId="WF-004" />
       </WardFlowProvider>,
     );
+    openTransportSheet();
     const section = screen.getByTestId("ward-patient-transport-section");
     expect(within(section).getByTestId("ward-patient-transport-badge")).toHaveAttribute("data-booked", "false");
     expect(within(section).queryByTestId("ward-patient-cad-number")).not.toBeInTheDocument();
@@ -132,6 +141,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
       </WardFlowProvider>,
     );
 
+    openTransportSheet();
     const section = screen.getByTestId("ward-patient-transport-section");
     expect(section).toBeInTheDocument();
 
@@ -161,6 +171,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Record synthetic transport booking" }));
+    openTransportSheet();
     const section = screen.getByTestId("ward-patient-transport-section");
     fireEvent.click(within(section).getByTestId("ward-patient-book-transport-btn"));
     const form = within(section).getByTestId("ward-patient-transport-form");

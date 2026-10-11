@@ -106,7 +106,7 @@ const bedStateCopy: Record<BedStateKey, { label: string; detail: string }> = {
   pulled: { label: BED_STATE_LABELS.pulled, detail: BED_STATE_DETAILS.pulled },
   closed: { label: BED_STATE_LABELS.closed, detail: BED_STATE_DETAILS.closed },
   confirmed: { label: "Confirmed", detail: "Confirmed today" },
-  expected: { label: "Expected", detail: "Expected today" },
+  expected: { label: "Expected", detail: "Expected discharges" },
 };
 
 /**
@@ -552,7 +552,6 @@ export function WardNetworkWorkspace() {
   // Phone (v10 Network): the view tabs sit under the hero and a "Ready against waiting" row scopes
   // the bed flow, so the scope is held here on phone only.
   const isPhone = useIsPhone();
-  const [phoneScope, setPhoneScope] = useState<HealthService | "all">("all");
   // v10 Network: a pressed hero figure highlights the bed flow; pressing it again clears it.
   const [heroHighlight, setHeroHighlight] = useState<NetworkHighlight | undefined>(undefined);
   function toggleHighlight(next: NetworkHighlight) {
@@ -676,7 +675,7 @@ export function WardNetworkWorkspace() {
             />
             <HeroStat
               value={expectedToday}
-              label="Expected today"
+              label="Expected discharges"
               pressed={heroHighlight === "expected"}
               onToggle={() => toggleHighlight("expected")}
             />
@@ -715,7 +714,7 @@ export function WardNetworkWorkspace() {
         hidden={view !== "overview"}
         data-testid="ward-network-overview"
       >
-        {isPhone ? <ReadyAgainstWaitingPhone groups={groups} scope={phoneScope} onScope={setPhoneScope} /> : null}
+        {isPhone ? <ReadyAgainstWaitingPhone groups={groups} wardsHref="/mockups/ward-flow/wards" /> : null}
         <PressureStrip
           now={now}
           movements={movements}
@@ -729,17 +728,18 @@ export function WardNetworkWorkspace() {
             if (edId !== undefined) setSelectedEdId(edId);
             setRoadSheetOpen(true);
           }}
-          foot={<span>No common deadline scale, because these departments don&apos;t share one.</span>}
         />
         <div className={thirdEdition.overviewGrid}>
-          <NetworkBedflow
-            groups={groups}
-            selectedUnitId={selectedUnitId}
-            onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
-            highlight={heroHighlight}
-            onClearHighlight={() => setHeroHighlight(undefined)}
-            {...(isPhone ? { scope: phoneScope, onScopeChange: setPhoneScope } : {})}
-          />
+          {/* Audit 11 Oct 2026: phone links to All wards rather than a fourth copy of every ward. */}
+          {isPhone ? null : (
+            <NetworkBedflow
+              groups={groups}
+              selectedUnitId={selectedUnitId}
+              onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
+              highlight={heroHighlight}
+              onClearHighlight={() => setHeroHighlight(undefined)}
+            />
+          )}
           <div className={thirdEdition.overviewSide} data-wf-rail="1281">
             <ReadyByRoadTime
               ed={fromEd}

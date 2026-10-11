@@ -419,8 +419,6 @@ export function StatisticsScreen({
   const { view, choose: chooseView } = useStatisticsView();
   const isPhone = useIsPhone();
 
-  const blockedMean = blocked.vocabularySize > 0 ? blocked.totalCount / blocked.vocabularySize : 0;
-
   if (isPhone) {
     return (
       <StatisticsSummaryPhone
@@ -586,7 +584,8 @@ export function StatisticsScreen({
                         { id: "open", label: "Still open", value: refOpen, fill: "data-3" },
                       ]}
                     />
-                    <div className={styles.tiles} data-testid="ward-statistics-refused-so-far">
+                    {/* Two across so no label is cut (device audit 11 Oct 2026: "Refused so fa..."). */}
+                    <div className={`${styles.tiles} ${styles.tilesTwo}`} data-testid="ward-statistics-refused-so-far">
                       <div className={styles.tile}>
                         <h3 className={styles.srOnly}>Referrals where every ward asked so far has refused</h3>
                         <p className={styles.tileLabel} aria-hidden="true">
@@ -913,7 +912,6 @@ export function StatisticsScreen({
                     labelWidth="10.5rem"
                     axis
                     max={axisMax(blocked.tallies.map((tally) => tally.count))}
-                    mean={blockedMean}
                     rows={blocked.tallies.map((tally) => ({
                       id: tally.reason,
                       label: (
@@ -976,11 +974,6 @@ export function StatisticsScreen({
                         labelWidth="10.5rem"
                         axis
                         max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}
-                        mean={
-                          declinesReadout.value.vocabularySize > 0
-                            ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize
-                            : 0
-                        }
                         rows={declinesReadout.value.tallies.map((tally) => ({
                           id: tally.reason,
                           label: (
@@ -1040,7 +1033,15 @@ export function StatisticsScreen({
                       <dt className={styles.figureLabel}>Longest</dt>
                     </div>
                   </dl>
-                  <ColumnChart label="Pull to arrival, admissions by band" height={110} columns={arrivalBands} />
+                  {/* Device audit 11 Oct 2026: when every measured arrival took the same time the chart is
+                      one bar and looked broken, so it says so instead. */}
+                  {arrivals.shortestMinutes !== null && arrivals.shortestMinutes === arrivals.longestMinutes ? (
+                    <p className={styles.muted} data-testid="ward-statistics-arrival-no-spread">
+                      Every measured arrival took the same time in this synthetic data, so there is no spread to chart.
+                    </p>
+                  ) : (
+                    <ColumnChart label="Pull to arrival, admissions by band" height={110} columns={arrivalBands} />
+                  )}
                   <dl className={styles.tiles}>
                     <div className={styles.tile}>
                       <dt className={styles.tileLabel}>Awaiting</dt>

@@ -46,6 +46,7 @@ import {
   durMinutes,
 } from "@/components/wf";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import {
   groupedResults,
@@ -130,10 +131,22 @@ function barWidth(part: number, total: number): string {
   return `${Math.max(0, Math.min(100, (part / total) * 100))}%`;
 }
 
-/** Occupied share of a group of wards, one decimal place. Undefined for a group with no beds. */
-function occupiedShare(occupied: number, beds: number): string | undefined {
+/**
+ * Occupancy of a group of wards, one decimal place. Undefined for a group with no beds. Occupied or
+ * Pulled, the one occupancy count every page and the rail print (`ward-occupancy.ts`, device audit
+ * 11 Oct 2026); it used to count the Occupied box alone, so Places read 79.6% against the rail's 85%.
+ */
+function occupancyShare({
+  occupied,
+  pulled,
+  beds,
+}: {
+  occupied: number;
+  pulled: number;
+  beds: number;
+}): string | undefined {
   if (beds <= 0) return undefined;
-  return `${((occupied / beds) * 100).toFixed(1)}%`;
+  return `${(((occupied + pulled) / beds) * 100).toFixed(1)}%`;
 }
 
 const KIND_WORD_LONG: Record<HubKind, string> = {
@@ -144,7 +157,7 @@ const KIND_WORD_LONG: Record<HubKind, string> = {
 
 export function HubScreen() {
   usePrintableDisclosures();
-  const { units, bedReleases, admissions, leaveBeds, refreshRequests, dispatch } = useWardFlow();
+  const { units, bedReleases, admissions, leaveBeds, refreshRequests, dispatch, movements } = useWardFlow();
   const { now, paused, togglePause } = usePageLive();
   const router = useRouter();
   const isPhone = useIsPhone();
@@ -185,6 +198,15 @@ export function HubScreen() {
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [selectedId, query, highlight]);
 
+  // Audit 11 Oct 2026: an ED row answers the page question with its waiting count and longest
+  // wait, read from the same summaries the Home ED strip uses.
+  const edWaits = useMemo(
+    () => new Map(edOpenSummaries(movements, now).map((summary) => [summary.ed.id, summary])),
+    [movements, now],
+  );
+  // Audit 11 Oct 2026: community teams carry no figures here, so in the All view their section
+  // starts folded; the Teams switch still lists them in full.
+  const [teamsFoldOpen, setTeamsOpen] = useState(false);
   const entries = useMemo(
     () => hubEntries({ units, bedReleases, admissions, leaveBeds, now }),
     [units, bedReleases, admissions, leaveBeds, now],
@@ -201,6 +223,8 @@ export function HubScreen() {
     [entries, query],
   );
   const highlighting = queryMatches !== undefined || highlight !== "none";
+  // A typed search opens the teams so a team it matches is never folded away.
+  const teamsOpen = teamsFoldOpen || queryMatches !== undefined;
   // Category counts are the rows pressing that category shows, so they do not follow the search.
   const counts = useMemo(() => hubCounts(entries, ""), [entries]);
   const isLit = (entry: HubEntry) =>
@@ -378,8 +402,17 @@ export function HubScreen() {
             {wardFigures === undefined ? null : (
               <>
                 <BedStrip bar counts={wardFigures} wardName={entry.name} />
-                <span className={styles.resultFigures}>
-                  {wardFigures.ready}/{wardFigures.pulled}/{wardFigures.closed} of {entry.beds ?? 0}
+                <span
+                  className={styles.resultFigures}
+                  title={`${wardFigures.ready} ready, ${wardFigures.pulled} pulled, ${wardFigures.closed} closed, of ${entry.beds ?? 0} beds`}
+                >
+                  <span aria-hidden="true">
+                    {wardFigures.ready}/{wardFigures.pulled}/{wardFigures.closed} of {entry.beds ?? 0}
+                  </span>
+                  <SrOnly>
+                    {wardFigures.ready} ready, {wardFigures.pulled} pulled, {wardFigures.closed} closed, of{" "}
+                    {entry.beds ?? 0} beds
+                  </SrOnly>
                 </span>
                 {entry.pendingPreparation === undefined || entry.pendingPreparation === 0 ? null : (
                   <span className={styles.resultPrep}>{entry.pendingPreparation} being made ready</span>
@@ -388,7 +421,14 @@ export function HubScreen() {
             )}
           </span>
           <span className={styles.resultConfirmed}>
-            {entry.kind !== "ward" || entry.confirmedAt === undefined ? null : entry.stale === true ? (
+            {entry.kind === "ed" ? (
+              (edWaits.get(entry.id)?.waiting ?? 0) > 0 ? (
+                <>
+                  {durMinutes(edWaits.get(entry.id)?.longestWaitMinutes ?? 0)}{" "}
+                  <span className={styles.resultAgo}>longest</span>
+                </>
+              ) : null
+            ) : entry.kind !== "ward" || entry.confirmedAt === undefined ? null : entry.stale === true ? (
               <>
                 {/* The word, not only the colour — a stale reading must survive a reader who cannot see it. */}
                 <StatusGlyph tone="warning" size={8} />
@@ -401,7 +441,12 @@ export function HubScreen() {
             )}
           </span>
           <span className={styles.resultReady}>
-            {entry.kind !== "ward" ? null : entry.ready === undefined ? (
+            {entry.kind === "ed" ? (
+              <>
+                <span className={styles.resultReadyNum}>{edWaits.get(entry.id)?.waiting ?? 0}</span>
+                <span className={styles.resultReadyWord}>waiting</span>
+              </>
+            ) : entry.kind !== "ward" ? null : entry.ready === undefined ? (
               <span className={styles.resultReadyWord}>Not reported</span>
             ) : (
               <>
@@ -731,17 +776,10 @@ export function HubScreen() {
               : `Places · Statewide · ${totals.ward} wards, ${totals.ed} EDs, ${totals.community} teams`
           }
           title={
-            isPhone ? (
-              <>
-                <SrOnly>Places, </SrOnly>
-                {totals.ward} wards, {totals.ed} EDs, {totals.community} teams
-              </>
-            ) : (
-              <>
-                <SrOnly>Places, </SrOnly>
-                {totals.all} places
-              </>
-            )
+            <>
+              <SrOnly>Places, </SrOnly>
+              {totals.all} places
+            </>
           }
           stats={
             isPhone ? (
@@ -796,11 +834,7 @@ export function HubScreen() {
                   pressed={highlight === "closed"}
                   onToggle={() => toggleHighlight("closed")}
                 />
-                <HeroStat
-                  inline
-                  value={occupiedShare(network.occupied, network.beds) ?? "Not recorded"}
-                  label={BED_STATE_LABELS.occupied}
-                />
+                <HeroStat inline value={occupancyShare(network) ?? "Not recorded"} label="Occupancy" />
                 <HeroStat
                   inline
                   value={staleCount}
@@ -958,7 +992,7 @@ export function HubScreen() {
                     boxClassName={styles.searchBox}
                     aria-label="Search wards, EDs and community teams"
                     aria-describedby="hub-search-hint"
-                    placeholder="Search wards, EDs, teams, services"
+                    placeholder="Search places"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     onKeyDown={onSearchKeyDown}
@@ -1047,8 +1081,7 @@ export function HubScreen() {
               ) : null}
               {shownSections.map((section) => {
                 const sectionBeds = section.key === "ward" ? networkBeds(section.entries) : undefined;
-                const sectionShare =
-                  sectionBeds === undefined ? undefined : occupiedShare(sectionBeds.occupied, sectionBeds.beds);
+                const sectionShare = sectionBeds === undefined ? undefined : occupancyShare(sectionBeds);
                 return (
                   <section key={section.key} aria-label={section.label} className={styles.group}>
                     <div className={styles.groupHeadRow}>
@@ -1057,18 +1090,40 @@ export function HubScreen() {
                       </h2>
                       {sectionBeds === undefined ? null : (
                         <span className={styles.groupMeta}>
-                          {sectionBeds.ready} ready{sectionShare === undefined ? "" : ` · ${sectionShare} occupied`}
+                          {sectionBeds.ready} ready{sectionShare === undefined ? "" : ` · ${sectionShare} occupancy`}
                         </span>
                       )}
                     </div>
-                    {section.subgroups.length === 0 ? (
+                    {section.subgroups.length === 0 && section.key === "community" && kind === "all" ? (
+                      <>
+                        <h3 className={styles.subGroupHead}>
+                          <button
+                            type="button"
+                            className={styles.foldButton}
+                            aria-expanded={teamsOpen}
+                            aria-controls="hub-teams-list"
+                            onClick={() => setTeamsOpen((open) => !open)}
+                            data-testid="hub-teams-fold"
+                          >
+                            <ChevronDown className={styles.foldIcon} size={14} aria-hidden="true" />
+                            <span className={styles.subGroupName}>
+                              {teamsOpen ? "Hide teams" : `Show ${section.entries.length} teams`}
+                            </span>
+                            <span className={styles.subGroupMeta}>No bed figures</span>
+                          </button>
+                        </h3>
+                        <ul className={styles.groupList} id="hub-teams-list" hidden={!teamsOpen}>
+                          {section.entries.map(renderRow)}
+                        </ul>
+                      </>
+                    ) : section.subgroups.length === 0 ? (
                       <ul className={styles.groupList}>{section.entries.map(renderRow)}</ul>
                     ) : (
                       section.subgroups.map((group) => {
                         const key = `${section.key}-${group.label}`;
                         const open = !folded.has(key);
                         const groupBeds = networkBeds(group.entries);
-                        const groupShare = occupiedShare(groupBeds.occupied, groupBeds.beds);
+                        const groupShare = occupancyShare(groupBeds);
                         return (
                           <div key={key}>
                             <h3 className={styles.subGroupHead}>
@@ -1086,7 +1141,7 @@ export function HubScreen() {
                                 <span className={styles.subGroupMeta}>
                                   {groupBeds.ready} ready
                                   {groupShare === undefined ? null : (
-                                    <span className={styles.subGroupShare}>{groupShare} occupied</span>
+                                    <span className={styles.subGroupShare}>{groupShare} occupancy</span>
                                   )}
                                 </span>
                               </button>
@@ -1190,10 +1245,8 @@ export function HubScreen() {
                     <span className={styles.legendItem}>
                       <b>{network.occupied}</b> {BED_STATE_LABELS.occupied.toLowerCase()}
                     </span>
-                    {occupiedShare(network.occupied, network.beds) === undefined ? null : (
-                      <span className={styles.legendShare}>
-                        {occupiedShare(network.occupied, network.beds)} occupied
-                      </span>
+                    {occupancyShare(network) === undefined ? null : (
+                      <span className={styles.legendShare}>{occupancyShare(network)} occupancy</span>
                     )}
                   </p>
                 </div>

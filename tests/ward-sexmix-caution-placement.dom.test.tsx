@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ensureWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * The mid-update caution's PLACEMENT and SCOPE, moved here on 25 September 2026 from
@@ -42,6 +43,7 @@ describe("the mid-update caution sits in the sex-mix cell of the ward whose reco
         <CapacityScreen />
       </WardFlowProvider>,
     );
+    ensureWardTable();
 
     const caution = screen.getByTestId(`ward-capacity-mid-update-${SUBJECT}`);
     expect(caution, "the ward's figures disagree and nothing says they may not have settled").toHaveTextContent(

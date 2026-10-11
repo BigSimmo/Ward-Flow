@@ -179,6 +179,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const offsetOf = (entry: OutOfAreaEntry) => dischargeOffsetDays(entry, now);
   const returnMovementOf = (id: string) => movements.find((movement) => movement.sourceAdmissionId === id)?.id;
 
+  // Device audit 11 Oct 2026: a Return column where every row reads the same says nothing the
+  // Checking line has not; it shows only when the plan state differs between people.
+  const planVaries = new Set(entries.map(statusOf)).size > 1;
   const sorted = [...entries];
   if (sortOrder === "days") sorted.sort((a, b) => daysAway(b, now) - daysAway(a, now));
   if (sortOrder === "patient") {
@@ -804,7 +807,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       Clear
                     </Button>
                   ) : null}
-                  <span className={styles.keys} aria-hidden="true">
+                  <span className={styles.keys} aria-hidden="true" data-kbd-hint="">
                     Press <kbd>/</kbd> to search, <kbd>J</kbd> <kbd>K</kbd> to move
                   </span>
                 </div>
@@ -824,7 +827,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       <col className={styles.colRegion} />
                       <col className={styles.colPlace} />
                       <col className={styles.colDischarge} />
-                      <col className={styles.colReturn} />
+                      {planVaries ? <col className={styles.colReturn} /> : null}
                       <col className={styles.colDays} />
                     </colgroup>
                     <thead>
@@ -833,7 +836,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                         <th scope="col">Home region</th>
                         <th scope="col">Placement</th>
                         <th scope="col">Discharge</th>
-                        <th scope="col">Return</th>
+                        {planVaries ? <th scope="col">Return</th> : null}
                         <th scope="col" className={tableClasses.num}>
                           Days away
                         </th>
@@ -923,13 +926,15 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 </span>
                               </span>
                             </td>
-                            <td>
-                              <ReturnCell
-                                status={status}
-                                record={record}
-                                left={missingAnswers(draftFor(entry.admission.id), now).length}
-                              />
-                            </td>
+                            {planVaries ? (
+                              <td>
+                                <ReturnCell
+                                  status={status}
+                                  record={record}
+                                  left={missingAnswers(draftFor(entry.admission.id), now).length}
+                                />
+                              </td>
+                            ) : null}
                             <td className={cx(tableClasses.num, styles.away)}>{sinceArrivalLabel(entry, now)}</td>
                           </tr>
                         );
@@ -942,8 +947,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     <span className={styles.footNote}>
                       <StatusGlyph tone="closed" size={9} />
                       <span>
-                        <b>{bedDays}</b> bed days across {entries.length} people · <b>{notBanded}</b> records lack a
-                        home area or travel time
+                        <b>{bedDays}</b> bed days across {entries.length} people
                       </span>
                     </span>
                   }
@@ -971,21 +975,18 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   dueSoon={dueSoon}
                   onPick={(id) => selectPlacement(id)}
                 />
-                <HomeBedsCard
-                  idPrefix="ward-out-of-area"
-                  rows={regionRows}
-                  region={region}
-                  onRegion={toggleRegion}
-                  notBanded={notBanded}
-                />
-                <ReadyCard
-                  idPrefix="ward-out-of-area"
-                  testId="ward-out-of-area-subject"
-                  bodyTestId="ward-out-of-area-subject-empty"
-                  rows={readyRows}
-                  started={startedRows}
-                  onPick={(id) => selectPlacement(id)}
-                />
+                <HomeBedsCard idPrefix="ward-out-of-area" rows={regionRows} region={region} onRegion={toggleRegion} />
+                {/* Pressing Date passed lights the same people in the register, so the list steps aside. */}
+                {highlight === "due" ? null : (
+                  <ReadyCard
+                    idPrefix="ward-out-of-area"
+                    testId="ward-out-of-area-subject"
+                    bodyTestId="ward-out-of-area-subject-empty"
+                    rows={readyRows}
+                    started={startedRows}
+                    onPick={(id) => selectPlacement(id)}
+                  />
+                )}
               </>
             )}
           </div>
@@ -1069,17 +1070,6 @@ function DaysAwayStrip({
   return (
     <div className={styles.ageStrip} role="group" aria-label="Days away, highlights rows">
       <span className={styles.ageEyebrow}>Days away</span>
-      <span className={styles.ageBar} aria-hidden="true">
-        {groups.map((group) =>
-          group.n ? (
-            <span
-              key={group.id}
-              className={cx(styles.ageSeg, styles[`age_${group.id}`], highlight === group.key && styles.ageSegOn)}
-              style={{ flexGrow: group.n }}
-            />
-          ) : null,
-        )}
-      </span>
       <span className={styles.ageLabels}>
         {groups.map((group) => (
           <button

@@ -357,11 +357,11 @@
   }
 }
 
-/* Above phone width the list scrolls inside its card, so the charts sit near the fold. */
+/* The list grows with the page on every device (device audit, 11 Oct 2026: a fixed-height inner
+   scroll showed about 8 of 57 rows at 1440; the build guide says tables grow with the page). */
 .listBody {
-  max-height: min(34rem, 62vh);
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
+  max-height: none;
+  overflow-y: visible;
 }
 
 .listBody .workTable thead th {
@@ -577,8 +577,12 @@
 }
 
 .band {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
   color: var(--wf-ink-1);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .due {
@@ -1522,6 +1526,10 @@
     padding: var(--wf-s-2) var(--wf-s-3);
   }
 
+  .workTable tr[data-act="true"] > td:first-child {
+    padding-inline-start: 12px;
+  }
+
   .workTable td,
   .workTable td:first-child,
   .workTable td:nth-child(2),
@@ -1689,8 +1697,7 @@
 }
 
 .workTable tr[data-act="true"] {
-  outline: 1px solid var(--wf-act-edge);
-  outline-offset: -1px;
+  background: var(--wf-act-tint);
 }
 
 .tabBadgeAlert {
@@ -2250,5 +2257,28 @@
   .phGroupToggle:focus-visible {
     outline: 2px solid var(--wf-focus-ring);
     outline-offset: -2px;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.workTable tr[data-act="true"] > td:first-child {
+  position: relative;
+}
+
+.workTable tr[data-act="true"] > td:first-child::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .workTable tr[data-act="true"] > td:first-child::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

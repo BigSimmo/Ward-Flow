@@ -1323,3 +1323,52 @@
   width: 100%;
   justify-content: center;
 }
+
+/* Device audit 11 Oct 2026, phone: the letter heads stick under the view switch while 64 names
+ * scroll. `clip` rather than `hidden` on the card, so the card is not the sticky container. */
+@media (max-width: 48rem) {
+  .directoryCard,
+  .directoryCard .listWrap {
+    overflow: clip;
+  }
+
+  .letterHeading {
+    position: sticky;
+    top: 8.125rem;
+    z-index: 2;
+    background: var(--wf-surface);
+  }
+}
+
+/* Tablet portrait: the suburb lookup, the faster job, leads above the A to Z. */
+@media (min-width: 48.0625rem) and (max-width: 62.5625rem) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .side {
+    display: contents;
+  }
+
+  .side > [data-pane="suburb"] {
+    order: -1;
+  }
+}
+
+/* Device audit 11 Oct 2026, phone: the compared spellings are the point of the Alike tab, so they
+ * wrap in their columns rather than being cut or hidden off the side; the note wraps too. */
+@media (max-width: 48rem) {
+  .sideTable {
+    white-space: normal;
+  }
+
+  .sideTable thead th:not(:first-child) {
+    overflow-wrap: anywhere;
+  }
+
+  .note span {
+    white-space: normal;
+  }
+}

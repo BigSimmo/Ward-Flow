@@ -59,6 +59,7 @@ const OLD_PACK: DowntimePack = {
   edQueue: [],
   pendingMoves: [],
   legalForms: [],
+  leftEd: 0,
 };
 
 describe("read-only report screens", () => {
@@ -257,8 +258,9 @@ describe("read-only report screens", () => {
     const cells = within(row)
       .getAllByRole("cell")
       .map((cell) => cell.textContent);
-    // Ward, service, beds, ready, being made ready, ...
-    expect(cells.slice(1, 4)).toEqual(["4", "2", "1"]);
+    // Beds, ready, being made ready, ... (the ward is the row header; the Service column was dropped
+    // because it repeated the group head, device audit 11 Oct 2026).
+    expect(cells.slice(0, 3)).toEqual(["4", "2", "1"]);
   });
 
   it("groups beds by service with subtotals that add up to the hero's ready count", () => {
@@ -317,7 +319,7 @@ describe("read-only report screens", () => {
   it("offers Clear filters when nothing matches", () => {
     route.pathname = "/mockups/ward-flow/reports/chronology";
     inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Find an action, person or reason" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find in events" }), {
       target: { value: "zzzz no such words" },
     });
     expect(screen.queryByTestId("ward-chronology-table")).toBeNull();

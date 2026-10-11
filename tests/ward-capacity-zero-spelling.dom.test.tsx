@@ -8,6 +8,7 @@ import { networkWardRows } from "@/components/ward-management/capacity/capacity-
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * 🔴 ZERO SPELLED TWO WAYS ON ONE LINE — owner ruling 2026-09-06, census §8.
@@ -51,11 +52,13 @@ const ZERO_WORD = /^\s*none\s*$/iu;
 const BARE_ZERO = /^\s*0\s*$/u;
 
 function renderScreen() {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <CapacityScreen />
     </WardFlowProvider>,
   );
+  showWardTable();
+  return view;
 }
 
 /**

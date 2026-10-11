@@ -173,3 +173,24 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Device audit option A (11 Oct 2026): the short list stacks each booking so it fits a rail. When
+   and who on one line, the facts truncated on the next, the actions under them. */
+.body .item {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "when who"
+    "facts facts"
+    "actions actions";
+  row-gap: 4px;
+}
+
+.body .facts {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.body .actions {
+  justify-content: flex-start;
+}

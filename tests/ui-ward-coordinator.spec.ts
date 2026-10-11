@@ -26,6 +26,13 @@ async function gotoCoordinator(page: Page) {
   // before the first interaction. Mirrors `gotoWardFlow` in ui-ward-management.spec.ts (Task 4
   // review Important 6: a retry loop around the click was masking this instead of fixing it).
   await page.waitForLoadState("networkidle");
+  // Network idle does not prove the shell has settled. The server renders the "Data mode" bar above
+  // the app; once hydrated, the header's Prototype pill takes its place and the whole screen moves
+  // up by the bar's height. A queue click issued across that re-render takes the pointerdown on one
+  // row and the pointerup on the grid, so no row is selected (seen 11 Oct 2026, intermittently).
+  // Wait until the pill is in the header and the bar is gone before the first interaction.
+  await expect(page.locator("[data-wf-data-mode-slot]")).not.toBeEmpty({ timeout: 15_000 });
+  await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
 }
 
 /**
@@ -575,7 +582,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // (Was: one route connector per shortlisted unit, each marked `data-eligible="false"`.)
 
     // The hub states the true eligible count — zero — never the shortlist size framed as routes.
-    await expect(diagram).toContainText(`no eligible destination; ${shortlist.length} candidates, all excluded`);
+    // Home's bedflow drops the repeated name and sentence-cases the hub line (device audit, 11 Oct 2026).
+    await expect(diagram).toContainText(`No eligible destination; ${shortlist.length} candidates, all excluded`);
   });
 
   test("distinguishes an accepted destination from an outstanding referral, and shows every parallel referral", async ({
@@ -671,7 +679,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // The hub leads with the recorded destination, and never claims the movement is looking for
     // three of them.
-    await expect(diagram).toContainText("accepted destination:");
+    // Home's bedflow drops the repeated name and sentence-cases the hub line (device audit, 11 Oct 2026).
+    await expect(diagram).toContainText("Accepted destination:");
     await expect(diagram).not.toContainText("WF-005 — 3 eligible destinations");
 
     // An outstanding referral is a different recorded fact and gets its own connector too —

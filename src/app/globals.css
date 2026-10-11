@@ -5433,3 +5433,18 @@ html.theme-transitioning *:after {
 [data-print-stamp] {
   display: none;
 }
+
+/*
+ * Keyboard hints are for keyboards (Ward Flow device audit, 11 Oct 2026). On a touch screen — a
+ * phone or a touch iPad, where the primary pointer is coarse — the "/" key in search, the J/K/Esc/?
+ * footers and the palette's "↑ ↓ Navigate" line do not apply, so they are hidden. A container that
+ * holds a whole hint sentence carries `data-kbd-hint`, so no orphaned words are left. A key inside a
+ * shortcuts list (`dt > kbd`) stays: that list is opened on purpose. `!important` because this
+ * input-mode override must win over each hint's own display rule.
+ */
+@media (pointer: coarse) {
+  kbd:not(dt > kbd),
+  [data-kbd-hint] {
+    display: none !important;
+  }
+}

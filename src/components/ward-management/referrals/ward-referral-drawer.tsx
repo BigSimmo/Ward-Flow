@@ -1531,7 +1531,11 @@ function WardReferralDrawerContent({
     }
     return {
       tone: (totalNeeded ? "neutral" : "success") as WfTone,
-      first: totalNeeded ? `${totalNeeded} ${totalNeeded === 1 ? "answer" : "answers"} still needed` : "All answers in",
+      // Audit 11 Oct 2026: the same unit as Ready to send, so "4 of 9" and this line agree.
+      first:
+        readyDone < readyRows.length
+          ? `${readyRows.length - readyDone} of ${readyRows.length} items still needed`
+          : "All items in",
       second: recipientSummary(recipientLabels),
     };
   })();
@@ -1679,13 +1683,15 @@ function WardReferralDrawerContent({
                     </>
                   ) : (
                     <>
+                      {/* Audit 11 Oct 2026: one unit (items, as "N of M ready to send" counts), and no
+                          decision time before anything is sent. */}
                       <span className={styles.phFigure}>
-                        <b className={styles.mono}>{totalNeeded}</b>
-                        <span>Answers left</span>
+                        <b className={styles.mono}>{readyRows.length - readyDone}</b>
+                        <span>Items left</span>
                       </span>
-                      <span className={styles.phFigure} title={OPERATIONAL_DEFAULT_LABEL}>
-                        <b className={styles.mono}>{decisionDueAt(now) ?? "–"}</b>
-                        <span>Decision due</span>
+                      <span className={styles.phFigure}>
+                        <b className={styles.mono}>{tier === undefined ? "–" : `T${tier}`}</b>
+                        <span>Urgency</span>
                       </span>
                       <button
                         type="button"
@@ -2332,7 +2338,7 @@ function WardReferralDrawerContent({
                             <X aria-hidden="true" />
                           </button>
                         ) : null}
-                        <kbd className={styles.kbd}>/</kbd>
+                        {isPhone ? null : <kbd className={styles.kbd}>/</kbd>}
 
                         {isSearchOpen && filteredPatients.length > 0 ? (
                           <div className={styles.patientSearchResults} role="listbox" aria-label="Matching patients">
@@ -2374,7 +2380,8 @@ function WardReferralDrawerContent({
                             {currentPatient.name} ({ageSexLabel(currentPatient)})
                           </p>
                           <p className={styles.patientSub}>
-                            UMRN <span className={styles.mono}>{currentPatient.umrn}</span> · DOB{" "}
+                            {isPhone ? null : "UMRN "}
+                            <span className={styles.mono}>{currentPatient.umrn}</span> · DOB{" "}
                             {formatDob(currentPatient.dob)} · Medicare {currentPatient.medicare}
                           </p>
                           <ReadmissionFlag flag={readmissionFlag} testId="ward-referral-readmission" />
@@ -3574,10 +3581,11 @@ function WardReferralDrawerContent({
                     </dl>
                   </section>
                   <section className={styles.railCard} data-layout="pair">
+                    {/* Audit 11 Oct 2026: the decision time appears once the referral is sent. */}
                     <div title={OPERATIONAL_DEFAULT_LABEL}>
-                      <p className={styles.eyebrow}>Decision due</p>
-                      <strong className={styles.mono}>{decisionDueAt(now) ?? "Choose urgency"}</strong>
-                      <small>{tier === undefined ? "No tier yet" : `Tier ${tier} default`}</small>
+                      <p className={styles.eyebrow}>Urgency</p>
+                      <strong className={styles.mono}>{tier === undefined ? "Choose urgency" : `T${tier}`}</strong>
+                      <small>Decision due shows after Send</small>
                     </div>
                     <div>
                       <p className={styles.eyebrow}>Already open</p>
@@ -3721,8 +3729,48 @@ function WardReferralDrawerContent({
                         : goBack
                   }
                 >
-                  {confirmationOpen ? "Back to referral" : activeSection === "patient" ? "Cancel" : "Back"}
+                  {confirmationOpen
+                    ? "Back to referral"
+                    : activeSection === "patient"
+                      ? dirty
+                        ? "Discard"
+                        : "Cancel"
+                      : "Back"}
                 </button>
+                {/* Audit 11 Oct 2026: Save draft keeps the referral in this tab and closes, so a
+                    referrer called away does not lose it. */}
+                {confirmationOpen ? null : (
+                  <button
+                    type="button"
+                    className={styles.btnCancelReferral}
+                    data-testid="ward-referral-save-draft"
+                    disabled={sendPending || !dirty}
+                    title={dirty ? "Keep this draft until the tab reloads" : "Nothing typed yet"}
+                    onClick={keepAndClose}
+                  >
+                    Save draft
+                  </button>
+                )}
+                {/* Audit 11 Oct 2026: Send is always visible; until every item is in it stays locked
+                    and says what it waits on. */}
+                {!confirmationOpen && activeSection !== "placement" ? (
+                  <>
+                    <button
+                      type="button"
+                      className={styles.btnCancelReferral}
+                      data-testid="ward-referral-send-locked"
+                      title={phNeedsLine}
+                      disabled
+                      aria-describedby={`${sectionId}-send-waits`}
+                    >
+                      <Lock aria-hidden="true" />
+                      Send
+                    </button>
+                    <span className="sr-only" id={`${sectionId}-send-waits`}>
+                      Send waits on the steps after this one. {phNeedsLine}.
+                    </span>
+                  </>
+                ) : null}
                 <button
                   className={styles.btnSendReferral}
                   onClick={

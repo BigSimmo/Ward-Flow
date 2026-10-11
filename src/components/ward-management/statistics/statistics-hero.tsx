@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
-import { CalendarRange, Download, Pause, Play, type LucideIcon } from "lucide-react";
+import { CalendarRange, Download, type LucideIcon } from "lucide-react";
 
 import { Button, Card, CardHead, Hero, LiveChip, PhoneSheet, SrOnly, cx, useIsPhone } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -26,15 +26,7 @@ const PHONE_SECTION_WORD: Partial<Record<StatisticsNavSection, string>> = {
  * The phone hero's action row (v10 phone): the time range as one pill that opens its sheet, or the
  * page's own control (Change ward), then the round pause button.
  */
-function PhoneHeroActions({
-  titleAction,
-  paused,
-  onTogglePause,
-}: {
-  titleAction?: ReactNode;
-  paused: boolean;
-  onTogglePause: () => void;
-}) {
+function PhoneHeroActions({ titleAction }: { titleAction?: ReactNode }) {
   const [rangeOpen, setRangeOpen] = useState(false);
   return (
     <span className={phoneStyles.heroActions}>
@@ -54,15 +46,7 @@ function PhoneHeroActions({
           <span className={phoneStyles.rangeMore}>· Shift, 7 and 30 days Preview</span>
         </button>
       )}
-      <Button
-        variant="onHero"
-        iconOnly
-        icon={paused ? Play : Pause}
-        aria-label="Pause live updates"
-        aria-pressed={paused}
-        className={phoneStyles.pauseButton}
-        onClick={onTogglePause}
-      />
+      {/* Device audit (11 Oct 2026): the pause lives in the Live pill on the eyebrow line. */}
       <PhoneSheet
         open={rangeOpen}
         onClose={() => setRangeOpen(false)}
@@ -179,8 +163,15 @@ export function StatisticsHero({
           titleMeta={phone?.sub}
           lead={phone?.lead}
           stats={phone?.stats ?? chips ?? stats}
-          aside={<LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} />}
-          bar={<PhoneHeroActions titleAction={titleAction} paused={paused} onTogglePause={onTogglePause} />}
+          aside={
+            <LiveChip
+              state={paused ? "paused" : "live"}
+              onHero
+              age={formatInstant(now)}
+              onTogglePause={onTogglePause}
+            />
+          }
+          bar={<PhoneHeroActions titleAction={titleAction} />}
         />
         <div className={styles.phoneNav} data-testid={navTestId}>
           <StatisticsNav
