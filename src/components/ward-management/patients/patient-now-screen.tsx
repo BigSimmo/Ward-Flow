@@ -1192,6 +1192,21 @@ export function PatientNowScreen({
             />
           ) : undefined,
         phoneFoot: phoneStatusFoot,
+        barMain:
+          isPhone && (mode === "idle" || mode === "cto") ? (
+            <Link
+              href={
+                livePatient
+                  ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
+                  : "/mockups/ward-flow/referrals/new"
+              }
+              className={buttonClass({ variant: modeMeta.quiet ? "pri" : "light", size: "sm" })}
+              data-testid="ward-person-refer-outpatient-phone"
+            >
+              <FileText size={14} aria-hidden="true" />
+              New referral
+            </Link>
+          ) : undefined,
       }}
       legal={
         mode !== "idle" || isPhone ? (
