@@ -1,6 +1,7 @@
 import { vitestCacheDirectory } from "./scripts/test-cache-path.mjs";
 import { COVERAGE_INCLUDE_GLOBS } from "./scripts/coverage-contract.mjs";
 import { NODE_UNIT_TEST_GLOBS, DOM_UNIT_TEST_GLOBS, LIVE_UNIT_TEST_GLOBS } from "./scripts/unit-test-population.mjs";
+import { UnitDurationSequencer } from "./scripts/ward-flow/unit-durations.mjs";
 
 const liveProviderTests = process.env.ALLOW_PROVIDER_TESTS === "true";
 
@@ -23,6 +24,9 @@ const config = {
     // idle. Scale to the host but cap so a smaller runner cannot oversubscribe,
     // and honour an explicit override for constrained environments.
     maxWorkers: process.env.VITEST_MAX_WORKERS ? Number(process.env.VITEST_MAX_WORKERS) : 4,
+    // CI runs (the unit shards and the related-tests step) start with no Vitest results cache, so run
+    // their files longest first by measured cost; elsewhere Vitest orders by its own cached durations.
+    ...(process.env.CI ? { sequence: { sequencer: UnitDurationSequencer } } : {}),
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
