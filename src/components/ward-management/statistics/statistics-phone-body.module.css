@@ -269,8 +269,8 @@
 /* A segmented control that stays in view under the header while its list scrolls (One ward). */
 .stickySeg {
   position: sticky;
-  /* Under the phone app bar, which stays 52px tall while the page scrolls. */
-  top: 52px;
+  /* Follow the same stable height as the phone app bar. */
+  top: var(--wf-header-height, 3.5rem);
   z-index: 2;
   padding-block: var(--wf-s-1);
   background: var(--wf-canvas);

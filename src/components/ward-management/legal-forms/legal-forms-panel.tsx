@@ -326,7 +326,7 @@ export function FocusPanel({
           ? receivedRef.current
           : examRef.current;
     target?.scrollIntoView?.({ block: "nearest" });
-    target?.focus();
+    target?.focus({ preventScroll: true });
   }, [focusGap]);
 
   const submitWritten = (event: FormEvent<HTMLFormElement>) => {

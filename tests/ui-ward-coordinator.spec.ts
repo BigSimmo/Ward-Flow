@@ -551,7 +551,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(shortlist.length).toBeGreaterThan(0);
     expect(shortlist.every((candidate) => !candidate.verdict.eligible)).toBe(true);
 
-    await page.getByRole("region", { name: "Priority queue" }).locator('[data-testid="ward-queue-row-WF-009"]').click();
+    const selectedRow = page.getByRole("region", { name: "Priority queue" }).getByTestId("ward-queue-row-WF-009");
+    await selectedRow.click();
+    await expect(selectedRow).toHaveAttribute("aria-pressed", "true");
 
     // Every routed node is marked not-eligible on the node itself...
     const routed = diagram.locator('[data-routed="true"]');
@@ -1060,7 +1062,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // WF-009's default candidate (Dabakarn) fails exactly one of the eleven gates
     // (prior_decline) — enough to prove ordering without depending on how many gates fail.
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    const selectedRow = queue.getByTestId("ward-queue-row-WF-009");
+    await selectedRow.click();
+    await expect(selectedRow).toHaveAttribute("aria-pressed", "true");
     const passFlags = await shortlist
       .locator('[data-testid^="ward-gate-"]')
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-pass")));
@@ -1107,13 +1111,17 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
   test("never labels an ineligible candidate as the suggested destination", async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
+    // The queue is server-rendered before its click handlers and hero geometry settle.
+    await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-009: every one of its three candidates is ineligible, so there is no unit this
     // panel may honestly suggest.
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    const ineligibleRow = queue.locator('[data-testid="ward-queue-row-WF-009"]');
+    await ineligibleRow.click();
+    await expect(ineligibleRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).not.toContainText("Suggested destination");
     await expect(shortlist).toContainText("No eligible destination found yet.");
 
@@ -1121,7 +1129,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // "Suggested destination" must not appear here either. That referral — BTY Adult Secure,
     // selectable via the diagram's shared selection state — passes every gate, so presenting it
     // as fact carries no hidden risk of recommending a failing unit.
-    await queue.locator('[data-testid="ward-queue-row-WF-017"]').click();
+    const referredRow = queue.locator('[data-testid="ward-queue-row-WF-017"]');
+    await referredRow.click();
+    await expect(referredRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).toContainText("Parallel referral: BTY Adult Secure");
     await expect(shortlist).not.toContainText("Suggested destination");
 

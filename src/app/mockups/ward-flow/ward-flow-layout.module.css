@@ -52,7 +52,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--ground);
-  scroll-padding-top: 3.75rem;
+  scroll-padding-top: var(--wf-header-height);
 }
 
 /*
@@ -93,22 +93,19 @@
   }
   .shellContent {
     height: auto;
-    overflow-y: visible;
-  }
-  /* A visible/hidden overflow pair creates a scroll container even when only the document
-     scrolls. Use clip on statistics so the navigation can anchor to the document on mobile. */
-  .shellContent:has([data-testid="ward-statistics-nav"]) {
     overflow-x: clip;
     overflow-y: visible;
+  }
+
+  :global(html):has(.shellRow) {
+    scroll-padding-top: var(--wf-header-height);
   }
 }
 
-/* Phone only (8 Oct 2026): clip rather than hide, so the column is not a scroll container and the
-   header bar stays pinned to the top while the document scrolls. Desktop is unchanged. */
+/* The phone header keeps one height while its control faces condense on scroll. */
 @media (max-width: 48rem) {
-  .shellContent {
-    overflow-x: clip;
-    overflow-y: visible;
+  :global(html):has(.shellRow) {
+    --wf-header-height: 3.5rem;
   }
 }
 

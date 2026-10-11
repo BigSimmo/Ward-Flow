@@ -51,7 +51,7 @@
 /* The source filter stays under the header while the list scrolls. */
 .seg {
   position: sticky;
-  top: 3.5rem;
+  top: var(--wf-header-height, 3.5rem);
   z-index: 3;
   margin: 0 calc(-1 * var(--wf-s-3));
   padding: var(--wf-s-2) var(--wf-s-3);
