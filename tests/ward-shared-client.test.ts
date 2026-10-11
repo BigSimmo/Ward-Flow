@@ -241,3 +241,27 @@ describe("phone alert calls", () => {
     await expect(failing.pushUnsubscribe(endpoint)).rejects.toThrow();
   });
 });
+
+it("aborts disposed requests and suppresses late snapshots", async () => {
+  let finish!: (response: Response) => void;
+  let signal: AbortSignal | null | undefined;
+  const changed = vi.fn();
+  const client = new SharedWorkspaceClient({
+    baseUrl: "https://example.test",
+    token: async () => "token",
+    changed,
+    fetch: async (_url, init) => {
+      signal = init?.signal;
+      return new Promise((r) => {
+        finish = r;
+      });
+    },
+  });
+  const pending = client.refresh();
+  await vi.waitFor(() => expect(finish).toBeDefined());
+  client.dispose();
+  expect(signal?.aborted).toBe(true);
+  finish(Response.json({ snapshot: snapshot(1) }));
+  await pending;
+  expect(changed).not.toHaveBeenCalled();
+});

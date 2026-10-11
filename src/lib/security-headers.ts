@@ -36,18 +36,16 @@ export type ContentSecurityPolicyOptions = SecurityHeaderFlags & {
   // Per-request nonce (base64) generated in src/proxy.ts. script-src allow-lists
   // this nonce instead of 'unsafe-inline', so only scripts carrying it execute.
   nonce: string;
-  // Extra connect-src origins for the shared Azure workspace (resolveSharedWorkspaceOrigins).
+  // Exact connect-src origins for the selected shared workspace and identity provider.
   sharedOrigins?: readonly string[];
 };
 
 /** Microsoft sign-in, which the shared workspace's MSAL client calls for tokens. */
 export const MICROSOFT_SIGN_IN_ORIGIN = "https://login.microsoftonline.com";
 
-// The shared Azure workspace (ward-shared-access.tsx) is the one browser-side
-// cross-origin caller: it fetches from its Azure Function and gets tokens from
-// Microsoft sign-in. Both origins are allowed only when the Function URL is
-// configured and https, so a build without the shared workspace keeps
-// connect-src same-origin. NEXT_PUBLIC_* is fixed at build time.
+// Browser auth and the workspace API are scoped to configured exact origins.
+// HTTP is permitted only for an explicitly configured loopback API in development.
+// NEXT_PUBLIC_* is fixed at build time; no provider wildcard is allowed.
 export function resolveSharedWorkspaceOrigins(
   baseUrl: string | undefined = process.env.NEXT_PUBLIC_WARD_API_BASE_URL,
 ): string[] {
@@ -58,7 +56,19 @@ export function resolveSharedWorkspaceOrigins(
   } catch {
     return [];
   }
-  if (url.protocol !== "https:") return [];
+  if (url.username || url.password) return [];
+  const provider = process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER ?? "entra";
+  const loopback =
+    process.env.NODE_ENV === "development" &&
+    url.protocol === "http:" &&
+    ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  if (url.protocol !== "https:" && !loopback) return [];
+  if (provider === "supabase") {
+    if (process.env.NEXT_PUBLIC_WARD_SUPABASE_URL?.replace(/\/$/, "") !== "https://zakzoemeedfepxcstsou.supabase.co")
+      return [];
+    return [url.origin, "https://zakzoemeedfepxcstsou.supabase.co"];
+  }
+  if (provider !== "entra" || url.protocol !== "https:") return [];
   return [url.origin, MICROSOFT_SIGN_IN_ORIGIN];
 }
 
@@ -96,9 +106,8 @@ export function buildContentSecurityPolicy({
     upgradeInsecureRequests +
     // img-src/media-src/connect-src are same-origin only. The former clinical app's
     // Supabase Storage allowance (*.supabase.co) was removed on 4 October 2026:
-    // Ward Flow loads no cross-origin media and makes no browser-side Supabase
-    // calls, and a bare `https:` would needlessly widen the exfil surface. Provider
-    // calls are server-side only, so the browser gets no provider origin.
+    // Ward Flow loads no cross-origin media. Auth calls get only the exact
+    // configured project origin through connect-src, never media allowances.
     "img-src 'self' data: blob:; " +
     "media-src 'self'; " +
     // No external error-ingest origin: Ward Flow has no registered browser

@@ -208,3 +208,26 @@ describe("security headers", () => {
     });
   });
 });
+
+describe("Supabase scoped auth origins", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("allows exact project and exact loopback API only in dev", () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "supabase");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://zakzoemeedfepxcstsou.supabase.co");
+    vi.stubEnv("NODE_ENV", "development");
+    expect(resolveSharedWorkspaceOrigins("http://127.0.0.1:4810")).toEqual([
+      "http://127.0.0.1:4810",
+      "https://zakzoemeedfepxcstsou.supabase.co",
+    ]);
+    vi.stubEnv("NODE_ENV", "production");
+    expect(resolveSharedWorkspaceOrigins("http://127.0.0.1:4810")).toEqual([]);
+  });
+  it("refuses a foreign project and remote http", () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "supabase");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://other.supabase.co");
+    expect(resolveSharedWorkspaceOrigins("https://api.example.test")).toEqual([]);
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://zakzoemeedfepxcstsou.supabase.co");
+    vi.stubEnv("NODE_ENV", "development");
+    expect(resolveSharedWorkspaceOrigins("http://remote.example.test:4810")).toEqual([]);
+  });
+});
