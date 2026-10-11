@@ -149,6 +149,13 @@ const PINNED: Record<string, string | null> = {
   // the route selects presentation only and does not copy its reducer or actions.
   "ward/[unitId]/answer": "WardScreen",
   wards: "WardIndex",
+  // Preview-only device audit mockups (11 Oct 2026): not in the nav, each renders the real
+  // component with a preview option.
+  "preview/phoneshell/home": "PhoneShellPreview",
+  "preview/phoneshell/ward": "PhoneShellPreview",
+  "preview/phoneshell/officer": "PhoneShellPreview",
+  "preview/communityteam": "CommunityScreen",
+  "preview/capacity": "CapacityScreen",
 };
 
 describe("every ward route renders the component it is pinned to", () => {

@@ -100,6 +100,8 @@ const WardMhaCalculator = dynamic(
 
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
+import { useWardPhoneShellPreview } from "@/components/ward-management/preview/ward-phone-shell-preview";
+import { wardPreviewStandIn } from "@/components/ward-management/preview/ward-preview-routes";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
 import { openWardMenu, PHONE_QUERY, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import {
@@ -532,9 +534,15 @@ function isReferralSheetPath(pathname: string): boolean {
 }
 
 export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
-  const pathname = usePathname() ?? "";
+  const routePathname = usePathname() ?? "";
+  // A preview-only mockup route reads as the live page it stands in for. Live paths are unchanged.
+  const pathname = wardPreviewStandIn(routePathname) ?? routePathname;
   const router = useRouter();
   const isPhone = usePhoneViewport();
+  // Device audit mockups (preview routes only): options A and C carry Tasks in the page dock, so the
+  // phone bar drops its own. Null on every live page.
+  const shellPreview = useWardPhoneShellPreview();
+  const tasksInDock = isPhone && (shellPreview === "A" || shellPreview === "C");
   const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
   const {
     movements,
@@ -1376,6 +1384,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           className={styles.drawerTrigger}
           data-bar-mode="tasks"
           data-testid="ward-bar-tasks-trigger"
+          style={tasksInDock ? { display: "none" } : undefined}
           aria-haspopup="dialog"
           aria-expanded={openPanel === "tasks"}
           aria-controls="ward-bar-tasks-drawer"

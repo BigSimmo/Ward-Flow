@@ -19,6 +19,10 @@
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
+import {
+  wardPreviewKeepsNewReferral,
+  wardPreviewStandIn,
+} from "@/components/ward-management/preview/ward-preview-routes";
 
 /**
  * The eight coordinator-level mode ids.
@@ -405,6 +409,26 @@ export const WARD_ADD_PERSON_HREF = "/mockups/ward-flow/people/new";
  */
 export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new Map([
   [
+    "/mockups/ward-flow/preview/phoneshell/home",
+    "Preview-only device audit mockup (11 Oct 2026) for Josh to compare options; not a destination, so kept out of the nav.",
+  ],
+  [
+    "/mockups/ward-flow/preview/phoneshell/ward",
+    "Preview-only device audit mockup (11 Oct 2026) for Josh to compare options; not a destination, so kept out of the nav.",
+  ],
+  [
+    "/mockups/ward-flow/preview/phoneshell/officer",
+    "Preview-only device audit mockup (11 Oct 2026) for Josh to compare options; not a destination, so kept out of the nav.",
+  ],
+  [
+    "/mockups/ward-flow/preview/communityteam",
+    "Preview-only device audit mockup (11 Oct 2026) for Josh to compare options; not a destination, so kept out of the nav.",
+  ],
+  [
+    "/mockups/ward-flow/preview/capacity",
+    "Preview-only device audit mockup (11 Oct 2026) for Josh to compare options; not a destination, so kept out of the nav.",
+  ],
+  [
     "/mockups/ward-flow/command",
     "A deliberate redirect to /mockups/ward-flow, documented in its own route file (command/page.tsx) — route alias for the command view.",
   ],
@@ -678,6 +702,9 @@ export const WARD_PRIMARY_ACTIONS: readonly WardPrimaryActionEntry[] = [
  * `\/?` tolerance (`ward-place.ts`) for the same reason.
  */
 function normalizeWardPathname(pathname: string): string {
+  // A preview-only mockup route reads as the live page it stands in for (null for every live path).
+  const standIn = wardPreviewStandIn(pathname);
+  if (standIn) return standIn;
   return pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
 }
 
@@ -728,6 +755,7 @@ function matchesDynamicRoute(route: string, pathname: string): boolean {
  * field that a given kind does not carry.
  */
 export function resolveWardPrimaryAction(pathname: string): WardPrimaryAction | undefined {
+  if (wardPreviewKeepsNewReferral(pathname)) return resolveWardPrimaryAction(WARD_HOME_HREF);
   const normalized = normalizeWardPathname(pathname);
   const exact = WARD_PRIMARY_ACTIONS.find((entry) => entry.route === normalized);
   if (exact) return exact.action;

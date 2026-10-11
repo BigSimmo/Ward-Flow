@@ -68,7 +68,11 @@ function recordedSexOf(sex: string | undefined): RecordedSex {
   return RECORDED_SEXES.find((listed) => listed === sex) ?? "Not recorded";
 }
 
-export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
+/**
+ * `list` (device audit mockups, preview only): the short list of bookings without the 14-day grid,
+ * and Book as a secondary button so the page keeps one primary. Off by default, so live is unchanged.
+ */
+export function PlannedAdmissionsPanel({ now, list = false }: { now: Instant; list?: boolean }) {
   const {
     units,
     patients,
@@ -341,17 +345,29 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   return (
     <WardPanel
       title="Planned admissions"
-      count={`${booked} booked, next ${PLANNED_ADMISSION_WINDOW_DAYS} days`}
+      count={list ? `${booked} booked` : `${booked} booked, next ${PLANNED_ADMISSION_WINDOW_DAYS} days`}
       testId="ward-capacity-planned-admissions"
       headerAction={
-        <Button ref={bookButton} variant="pri" size="sm" onClick={openBook} data-testid="ward-planned-book">
+        <Button
+          ref={bookButton}
+          variant={list ? "sec" : "pri"}
+          size="sm"
+          onClick={openBook}
+          data-testid="ward-planned-book"
+        >
           <CalendarPlus size={16} aria-hidden="true" />
           Book
         </Button>
       }
     >
-      <div className={styles.body}>
-        <div className={styles.stripScroll} role="region" aria-label="Planned admissions per day" tabIndex={0}>
+      <div className={styles.body} data-list={list || undefined}>
+        <div
+          hidden={list}
+          className={styles.stripScroll}
+          role="region"
+          aria-label="Planned admissions per day"
+          tabIndex={0}
+        >
           <table className={styles.strip} data-testid="ward-planned-strip">
             <thead>
               <tr>

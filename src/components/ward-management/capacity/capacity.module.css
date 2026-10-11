@@ -1644,3 +1644,48 @@
   padding: var(--wf-s-2) var(--wf-s-3);
   background: var(--wf-canvas);
 }
+
+/* ── Device audit mockups (preview only) ─────────────────────────────────────────────────── */
+.previewRail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* B: one column, read top to bottom; the rail's parts sit side by side under the map. */
+.capacityGrid[data-preview-layout="B"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 64.01rem) {
+  .capacityGrid[data-preview-layout="B"] .previewRail > .secondary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .capacityGrid[data-preview-layout="B"] .previewRail > .secondary > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.capacityGrid[data-preview-layout="B"] .previewRail > .secondary svg {
+  max-height: 13rem;
+}
+
+/* C: the bed-kind chips are the map's switch, so they lead the map rather than trail it. */
+.capacityGrid[data-preview-layout="C"] > section[data-ward-primitive="panel"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.capacityGrid[data-preview-layout="C"] > section[data-ward-primitive="panel"] > header {
+  order: -2;
+}
+
+.capacityGrid[data-preview-layout="C"] .highlightRow {
+  order: -1;
+  border-top: 0;
+  border-bottom: 1px solid var(--wf-line);
+}

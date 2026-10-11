@@ -112,7 +112,14 @@ import {
 } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
 import phoneCss from "./community-team-phone.module.css";
-import { CommunityPhoneFacts, CommunityTeamPhone, type CommunityPhoneListId } from "./community-team-phone";
+import {
+  CommunityPhoneFacts,
+  CommunityTeamPhone,
+  type CommunityPhoneList,
+  type CommunityPhoneListId,
+} from "./community-team-phone";
+import { CommunityTeamLayout } from "./community-team-layout";
+import type { WardPreviewOption } from "@/components/ward-management/preview/ward-preview-routes";
 import v6 from "./community-team-v6.module.css";
 import {
   DEMO_COMMUNITY_REFERRALS,
@@ -517,8 +524,14 @@ export function CommunityScreen({
   admissions,
   referrals,
   demonstration = false,
+  preview,
 }: {
   teamId: string;
+  /**
+   * Device audit mockups (preview route only): lay the page out as option A, B or C of the
+   * rebuilt team body. Undefined on the live route, which renders exactly as before.
+   */
+  preview?: WardPreviewOption;
   demonstration?: boolean;
   admissions?: Admission[];
   referrals?: Referral[];
@@ -1354,6 +1367,16 @@ export function CommunityScreen({
         </ol>
       </section>
     ) : null;
+  // Preview: a digest of all zeros folds to one quiet line.
+  const previewSinceQuiet =
+    preview !== undefined &&
+    teamSinceItems(
+      sourceReferrals,
+      [team.name, ...ratifiedSameServiceNames(team.name)],
+      currentShiftStartInstant(now),
+      now,
+      waitingReferrals.length,
+    ).every((item) => item.value === 0);
   const sinceElement = (
     <SinceYouLooked
       id="ward-community-since"
@@ -1642,7 +1665,9 @@ export function CommunityScreen({
   const coveragePanel = (
     <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
       <details ref={limitsDisclosureRef} className={styles.governanceSection} data-testid="ward-community-limits" open>
-        <summary className={styles.governanceSummary}>Data provenance, coverage limits and team facts</summary>
+        <summary className={styles.governanceSummary}>
+          {preview ? "Provenance, coverage limits and team facts" : "Data provenance, coverage limits and team facts"}
+        </summary>
         <div className={styles.governanceBody}>
           {/* Coverage limits */}
           <div className={styles.cardPanel}>
@@ -1933,72 +1958,10 @@ export function CommunityScreen({
   }
 
   // Built only on a phone, so desktop does no phone work.
-  const communityPhoneTree = isPhone ? (
-    <>
-      <CommunityTeamPhone
-        teamName={team.name}
-        caseload={isDemoMode ? teamConfig.caseload : caseloadRows.length}
-        sub={
-          <>
-            {suburbsNamingTeam
-              ? `${suburbsNamingTeam} ${suburbsNamingTeam === 1 ? "suburb" : "suburbs"}`
-              : "Suburbs not recorded"}
-            {isDemoMode ? "" : " · crisis open not recorded"}
-          </>
-        }
-        figures={[
-          {
-            id: "waiting",
-            value: phoneWaitingValue,
-            label: "Waiting",
-            tone: phoneUrgent > 0 ? "danger" : undefined,
-          },
-          {
-            id: "inBed",
-            value: isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length,
-            label: "In a bed",
-          },
-          {
-            id: "back",
-            value: isDemoMode ? teamConfig.egress : lists.expectedBack.length,
-            label: "Back",
-            tone: pastPlannedDateCount > 0 ? "warning" : undefined,
-          },
-        ]}
-        list={phoneList}
-        onList={(id) => setActiveTab(phoneListTab[id])}
-        onIntake={() => {
-          setIntakeDraft(BLANK_INTAKE_DRAFT);
-          setActiveModalType("intake");
-        }}
-        onSwitchTeam={() => setSwitchOpen(true)}
-        switchTriggerRef={switchTriggerRef}
-        since={sinceElement}
-        notices={noticesSection}
-        howToReach={howToReachPanel}
-        onDuty={onDutyPanel}
-        coverage={coveragePanel}
-        search={renderSearch}
-        samples={[
-          { id: "activity", label: "Activity sample", onPress: () => setActiveDrawer("activityDrawer") },
-          { id: "tasks", label: "Tasks sample", onPress: () => setActiveDrawer("tasksDrawer") },
-          { id: "tools", label: "Tools sample", onPress: () => setActiveDrawer("toolsDrawer") },
-        ]}
-        actions={[
-          { id: "contact", label: "Record contact", icon: Phone, onPress: () => setActiveModalType("contact") },
-          {
-            id: "cto",
-            label: "CTO register",
-            icon: FileText,
-            onPress: () => {
-              setActiveTab("tab-caseload");
-              scrollToSection("ward-community-phone-lists");
-            },
-          },
-          { id: "mdt", label: "Catchment MDT", icon: Users, onPress: () => setActiveModalType("handover") },
-        ]}
-        attention={phoneAttentionItems}
-        lists={[
+  // Built on a phone, or for a preview layout (device audit mockups), so desktop does no list work.
+  const phoneLists: CommunityPhoneList[] =
+    isPhone || preview
+      ? [
           {
             id: "waiting",
             label: "Waiting",
@@ -2217,156 +2180,229 @@ export function CommunityScreen({
               },
             ],
           },
-        ]}
-      />
-
-      <PhoneSheet
-        open={phoneReferral !== undefined}
-        onClose={closePhoneReferral}
-        title={phoneName(phoneReferralPerson, "Referral").split(", ").reverse().join(" ")}
-        description={`${phoneReferralPerson?.umrn ?? "No UMRN"} · Waiting answer`}
-        height="tall"
-        data-testid="ward-community-phone-referral"
-        primary={
-          phoneReferral === undefined
-            ? undefined
-            : phoneDeclining
+        ]
+      : [];
+  const phoneSheets =
+    isPhone || preview ? (
+      <>
+        <PhoneSheet
+          open={phoneReferral !== undefined}
+          onClose={closePhoneReferral}
+          title={phoneName(phoneReferralPerson, "Referral").split(", ").reverse().join(" ")}
+          description={`${phoneReferralPerson?.umrn ?? "No UMRN"} · Waiting answer`}
+          height="tall"
+          data-testid="ward-community-phone-referral"
+          primary={
+            phoneReferral === undefined
+              ? undefined
+              : phoneDeclining
+                ? {
+                    label: "Decline referral",
+                    disabledReason: declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined,
+                    onAction: () => {
+                      handleConfirmDecline(phoneReferral.id);
+                      closePhoneReferral();
+                    },
+                  }
+                : { label: "Accept referral", onAction: () => handleConfirmAccept(phoneReferral.id) }
+          }
+          secondary={
+            phoneDeclining
               ? {
-                  label: "Decline referral",
-                  disabledReason: declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined,
+                  label: "Back",
                   onAction: () => {
-                    handleConfirmDecline(phoneReferral.id);
-                    closePhoneReferral();
+                    setPhoneDeclining(false);
+                    setDeclineDraft(undefined);
                   },
                 }
-              : { label: "Accept referral", onAction: () => handleConfirmAccept(phoneReferral.id) }
-        }
-        secondary={
-          phoneDeclining
-            ? {
-                label: "Back",
-                onAction: () => {
-                  setPhoneDeclining(false);
-                  setDeclineDraft(undefined);
-                },
-              }
-            : { label: "Decline", onAction: () => setPhoneDeclining(true) }
-        }
-      >
-        {phoneReferral ? (
-          <div className={phoneCss.sheetBody}>
-            {acceptanceMessage ? (
-              <p className={phoneCss.sheetNote} role={acceptanceError || acceptanceRefusal ? "alert" : "status"}>
-                {acceptanceMessage}
-              </p>
-            ) : null}
-            <CommunityPhoneFacts
-              facts={[
-                {
-                  label: "Waiting",
-                  value: referralWaitLine(phoneReferral, now),
-                  tone: phoneReferral.urgency === 1 ? "danger" : undefined,
-                },
-                { label: "From", value: referralOriginLabel(phoneReferral) },
-                { label: "Home", value: phoneReferral.homeRegion },
-                { label: "Priority", value: urgencyTierLabel(phoneReferral.urgency) },
-              ]}
-            />
-            {phoneDeclining ? (
-              <>
-                <fieldset className={phoneCss.reasons}>
-                  <legend>Why decline?</legend>
-                  {COMMUNITY_DECLINE_REASONS.map((reason) => (
-                    <Radio
-                      key={reason}
-                      name={`ward-community-phone-decline-${phoneReferral.id}`}
-                      className={phoneCss.reason}
-                      label={COMMUNITY_DECLINE_REASON_LABELS[reason]}
-                      checked={declineDraft === reason}
-                      onChange={() => setDeclineDraft(reason)}
-                    />
-                  ))}
-                </fieldset>
-                <p className={phoneCss.sheetNote}>The referrer sees the reason.</p>
-              </>
-            ) : (
-              <>
-                <p className={phoneCss.sheetNote}>
-                  {phoneReferral.history ||
-                    `${phoneReferral.ageBand} · ${phoneReferral.homeRegion}. ${phoneReferral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
+              : { label: "Decline", onAction: () => setPhoneDeclining(true) }
+          }
+        >
+          {phoneReferral ? (
+            <div className={phoneCss.sheetBody}>
+              {acceptanceMessage ? (
+                <p className={phoneCss.sheetNote} role={acceptanceError || acceptanceRefusal ? "alert" : "status"}>
+                  {acceptanceMessage}
                 </p>
-                <ReferralIntakeSummary intake={phoneReferral.intake} />
-                <div className={phoneCss.sheetActions}>
-                  <Button size="sm" onClick={() => handleActionClick("Contacted", phoneReferral)}>
-                    Log team contact
-                  </Button>
-                  <Button size="sm" onClick={() => handleActionClick("Assign", phoneReferral)}>
-                    Assign
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      closePhoneReferral();
-                      handleActionClick("Review", phoneReferral);
-                    }}
-                  >
-                    Full referral
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        ) : null}
-      </PhoneSheet>
+              ) : null}
+              <CommunityPhoneFacts
+                facts={[
+                  {
+                    label: "Waiting",
+                    value: referralWaitLine(phoneReferral, now),
+                    tone: phoneReferral.urgency === 1 ? "danger" : undefined,
+                  },
+                  { label: "From", value: referralOriginLabel(phoneReferral) },
+                  { label: "Home", value: phoneReferral.homeRegion },
+                  { label: "Priority", value: urgencyTierLabel(phoneReferral.urgency) },
+                ]}
+              />
+              {phoneDeclining ? (
+                <>
+                  <fieldset className={phoneCss.reasons}>
+                    <legend>Why decline?</legend>
+                    {COMMUNITY_DECLINE_REASONS.map((reason) => (
+                      <Radio
+                        key={reason}
+                        name={`ward-community-phone-decline-${phoneReferral.id}`}
+                        className={phoneCss.reason}
+                        label={COMMUNITY_DECLINE_REASON_LABELS[reason]}
+                        checked={declineDraft === reason}
+                        onChange={() => setDeclineDraft(reason)}
+                      />
+                    ))}
+                  </fieldset>
+                  <p className={phoneCss.sheetNote}>The referrer sees the reason.</p>
+                </>
+              ) : (
+                <>
+                  <p className={phoneCss.sheetNote}>
+                    {phoneReferral.history ||
+                      `${phoneReferral.ageBand} · ${phoneReferral.homeRegion}. ${phoneReferral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
+                  </p>
+                  <ReferralIntakeSummary intake={phoneReferral.intake} />
+                  <div className={phoneCss.sheetActions}>
+                    <Button size="sm" onClick={() => handleActionClick("Contacted", phoneReferral)}>
+                      Log team contact
+                    </Button>
+                    <Button size="sm" onClick={() => handleActionClick("Assign", phoneReferral)}>
+                      Assign
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        closePhoneReferral();
+                        handleActionClick("Review", phoneReferral);
+                      }}
+                    >
+                      Full referral
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : null}
+        </PhoneSheet>
 
-      <PhoneSheet
-        open={phoneDeparture !== undefined}
-        onClose={() => setPhoneDepartureId(null)}
-        title={phoneName(phoneDeparturePerson, "Departure").split(", ").reverse().join(" ")}
-        description={`${phoneDeparturePerson?.umrn ?? "No UMRN"} · Discharged into the catchment`}
-        height="tall"
-        data-testid="ward-community-phone-departure"
-        primary={
-          phoneDeparture?.patientId
-            ? {
-                label: "Open patient",
-                onAction: () => {
-                  const patientId = phoneDeparture.patientId!;
-                  setPhoneDepartureId(null);
-                  openDossier(patientId);
-                },
-              }
-            : undefined
+        <PhoneSheet
+          open={phoneDeparture !== undefined}
+          onClose={() => setPhoneDepartureId(null)}
+          title={phoneName(phoneDeparturePerson, "Departure").split(", ").reverse().join(" ")}
+          description={`${phoneDeparturePerson?.umrn ?? "No UMRN"} · Discharged into the catchment`}
+          height="tall"
+          data-testid="ward-community-phone-departure"
+          primary={
+            phoneDeparture?.patientId
+              ? {
+                  label: "Open patient",
+                  onAction: () => {
+                    const patientId = phoneDeparture.patientId!;
+                    setPhoneDepartureId(null);
+                    openDossier(patientId);
+                  },
+                }
+              : undefined
+          }
+        >
+          {phoneDeparture ? (
+            <div className={phoneCss.sheetBody}>
+              <CommunityPhoneFacts
+                facts={[
+                  { label: "Left", value: departureLabel(phoneDeparture, now) },
+                  { label: "From", value: unitName(phoneDeparture.unitId, units) },
+                  {
+                    label: "Follow-up",
+                    value: phoneDeparture.followUp?.state?.replaceAll("_", " ") ?? "Not recorded",
+                  },
+                  {
+                    label: "Contact",
+                    value:
+                      currentCareContact(phoneDeparture.careJourney)?.outcome?.replaceAll("_", " ") ?? "Not recorded",
+                  },
+                ]}
+              />
+              <CommunityFollowUp admissionId={phoneDeparture.id} teamId={team.id} />
+            </div>
+          ) : null}
+        </PhoneSheet>
+      </>
+    ) : null;
+
+  const communityPhoneTree = isPhone ? (
+    <>
+      <CommunityTeamPhone
+        teamName={team.name}
+        caseload={isDemoMode ? teamConfig.caseload : caseloadRows.length}
+        sub={
+          <>
+            {suburbsNamingTeam
+              ? `${suburbsNamingTeam} ${suburbsNamingTeam === 1 ? "suburb" : "suburbs"}`
+              : "Suburbs not recorded"}
+            {isDemoMode ? "" : " · crisis open not recorded"}
+          </>
         }
-      >
-        {phoneDeparture ? (
-          <div className={phoneCss.sheetBody}>
-            <CommunityPhoneFacts
-              facts={[
-                { label: "Left", value: departureLabel(phoneDeparture, now) },
-                { label: "From", value: unitName(phoneDeparture.unitId, units) },
-                {
-                  label: "Follow-up",
-                  value: phoneDeparture.followUp?.state?.replaceAll("_", " ") ?? "Not recorded",
-                },
-                {
-                  label: "Contact",
-                  value:
-                    currentCareContact(phoneDeparture.careJourney)?.outcome?.replaceAll("_", " ") ?? "Not recorded",
-                },
-              ]}
-            />
-            <CommunityFollowUp admissionId={phoneDeparture.id} teamId={team.id} />
-          </div>
-        ) : null}
-      </PhoneSheet>
+        figures={[
+          {
+            id: "waiting",
+            value: phoneWaitingValue,
+            label: "Waiting",
+            tone: phoneUrgent > 0 ? "danger" : undefined,
+          },
+          {
+            id: "inBed",
+            value: isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length,
+            label: "In a bed",
+          },
+          {
+            id: "back",
+            value: isDemoMode ? teamConfig.egress : lists.expectedBack.length,
+            label: "Back",
+            tone: pastPlannedDateCount > 0 ? "warning" : undefined,
+          },
+        ]}
+        list={phoneList}
+        onList={(id) => setActiveTab(phoneListTab[id])}
+        onIntake={() => {
+          setIntakeDraft(BLANK_INTAKE_DRAFT);
+          setActiveModalType("intake");
+        }}
+        onSwitchTeam={() => setSwitchOpen(true)}
+        switchTriggerRef={switchTriggerRef}
+        since={sinceElement}
+        notices={noticesSection}
+        howToReach={howToReachPanel}
+        onDuty={onDutyPanel}
+        coverage={coveragePanel}
+        search={renderSearch}
+        samples={[
+          { id: "activity", label: "Activity sample", onPress: () => setActiveDrawer("activityDrawer") },
+          { id: "tasks", label: "Tasks sample", onPress: () => setActiveDrawer("tasksDrawer") },
+          { id: "tools", label: "Tools sample", onPress: () => setActiveDrawer("toolsDrawer") },
+        ]}
+        actions={[
+          { id: "contact", label: "Record contact", icon: Phone, onPress: () => setActiveModalType("contact") },
+          {
+            id: "cto",
+            label: "CTO register",
+            icon: FileText,
+            onPress: () => {
+              setActiveTab("tab-caseload");
+              scrollToSection("ward-community-phone-lists");
+            },
+          },
+          { id: "mdt", label: "Catchment MDT", icon: Users, onPress: () => setActiveModalType("handover") },
+        ]}
+        attention={phoneAttentionItems}
+        lists={phoneLists}
+      />
+      {phoneSheets}
     </>
   ) : null;
 
   return (
     <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
       <main id="main-content" className={styles.main}>
-        {isPhone ? null : (
+        {isPhone || preview ? null : (
           <>
             <div className={v6.standing}>
               {/*
@@ -2738,7 +2774,56 @@ export function CommunityScreen({
             {sinceElement}
           </>
         )}
-        {isPhone ? communityPhoneTree : null}
+        {preview ? null : isPhone ? communityPhoneTree : null}
+        {preview ? (
+          <>
+            <CommunityTeamLayout
+              option={preview}
+              teamName={team.name}
+              caseload={isDemoMode ? teamConfig.caseload : caseloadRows.length}
+              sub={
+                suburbsNamingTeam
+                  ? `${suburbsNamingTeam} ${suburbsNamingTeam === 1 ? "suburb" : "suburbs"}`
+                  : "Suburbs not recorded"
+              }
+              figures={[
+                {
+                  id: "waiting",
+                  value: phoneWaitingValue,
+                  label: "Waiting",
+                  tone: phoneUrgent > 0 ? "danger" : undefined,
+                },
+                {
+                  id: "inBed",
+                  value: isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length,
+                  label: "In a bed",
+                },
+                {
+                  id: "back",
+                  value: isDemoMode ? teamConfig.egress : lists.expectedBack.length,
+                  label: "Back",
+                  tone: pastPlannedDateCount > 0 ? "warning" : undefined,
+                },
+                { id: "ctos", value: phoneCtoRows.length, label: "On a CTO" },
+              ]}
+              lists={phoneLists}
+              onSwitchTeam={() => setSwitchOpen(true)}
+              switchTriggerRef={switchTriggerRef}
+              since={previewSinceQuiet ? null : sinceElement}
+              sinceWindow="the start of this shift"
+              howToReach={howToReachPanel}
+              onDuty={onDutyPanel}
+              attention={phoneAttentionItems}
+              about={
+                <>
+                  {noticesSection}
+                  {coveragePanel}
+                </>
+              }
+            />
+            {phoneSheets}
+          </>
+        ) : null}
 
         <Drawer
           open={switchOpen}
@@ -2792,7 +2877,7 @@ export function CommunityScreen({
           </div>
         </Drawer>
 
-        {isPhone ? null : (
+        {isPhone || preview ? null : (
           <div className={`${styles.contentWorkspace} ${v6.workspace}`}>
             {/* ── Tab 1: Priority Referral Triage Queue ── */}
             <div

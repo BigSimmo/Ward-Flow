@@ -70,6 +70,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
+import { PhoneShellPreview } from "@/components/ward-management/preview/phone-shell-preview";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
 import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-area-board";
@@ -187,6 +188,19 @@ type RouteRender = { route: string; render: () => ReactNode };
  * `/mockups/ward-flow/out-of-area` (Phase 8 Task 5, `OutOfAreaBoard`) does the same again.
  */
 const RENDERABLE_ROUTES: RouteRender[] = [
+  // Preview-only device audit mockups (11 Oct 2026), unlisted in the nav.
+  ...(["home", "ward", "officer"] as const).map((page) => ({
+    route: `${ROUTE_PREFIX}/preview/phoneshell/${page}`,
+    render: () => createElement(PhoneShellPreview, { page, option: "A" }),
+  })),
+  {
+    route: `${ROUTE_PREFIX}/preview/communityteam`,
+    render: () => createElement(CommunityScreen, { teamId: "midland", preview: "A" }),
+  },
+  {
+    route: `${ROUTE_PREFIX}/preview/capacity`,
+    render: () => createElement<{ preview?: "A" | "B" | "C" }>(CapacityScreen, { preview: "A" }),
+  },
   { route: `${ROUTE_PREFIX}/statistics`, render: () => createElement(StatisticsScreen) },
   { route: `${ROUTE_PREFIX}/statistics/overview`, render: () => createElement(StatisticsOverviewScreen) },
   { route: `${ROUTE_PREFIX}/statistics/compare`, render: () => createElement(StatisticsCompareScreen) },

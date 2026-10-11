@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "re
 import {
   Activity,
   BedSingle,
+  Building2,
   House,
   Inbox,
   ChevronRight,
@@ -14,7 +15,9 @@ import {
   Plus,
   Search,
   Settings,
+  Siren,
   Truck,
+  Users,
   Wrench,
 } from "lucide-react";
 
@@ -24,6 +27,11 @@ import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-coun
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
+import { WARD_NEW_REFERRAL_MENU } from "@/components/ward-management/ward-nav";
+import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
+import type { InboxItem } from "@/components/ward-management/ward-derivations";
+import { useWardPhoneShellPreview } from "@/components/ward-management/preview/ward-phone-shell-preview";
+import { wardPreviewStandIn, type WardPreviewOption } from "@/components/ward-management/preview/ward-preview-routes";
 import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -36,10 +44,11 @@ import {
 
 import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
-import { settingsHref } from "./ward-facade";
+import { movementHref, settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
 import styles from "./ward-phone-menu.module.css";
+import pageDock from "./ward-phone-page-dock.module.css";
 
 /**
  * Phone menu (Josh, 10 Oct 2026, locked from the phone header and navigation mockups, set 9 with
@@ -115,7 +124,7 @@ function countIn(counts: CountMap, id: string): WardNavCount | undefined {
 }
 
 /** What the menu lists, for this role and these counts. Pure, so the sheet only renders it. */
-function phoneMenuModel(role: WardChromeRole, counts: CountMap) {
+function phoneMenuModel(role: WardChromeRole, counts: CountMap, previewNeedsOnly = false) {
   const entries = railEntries();
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const dock = DOCK_PLACES[role].flatMap(([id, label]) => {
@@ -133,7 +142,8 @@ function phoneMenuModel(role: WardChromeRole, counts: CountMap) {
   const shown = new Set([
     "referral-intake",
     ...dock.map((place) => place.entry.id),
-    ...needs.map((need) => need.entry.id),
+    // Preview: Needs you is act-now rows, not pages, so every page stays in its group.
+    ...(previewNeedsOnly ? [] : needs.map((need) => need.entry.id)),
   ]);
   const rank = (id: string) => wardNavRoleRank(role, id) ?? Number.MAX_SAFE_INTEGER;
   const groups = RAIL_GROUPS.map((group) => ({
@@ -144,6 +154,127 @@ function phoneMenuModel(role: WardChromeRole, counts: CountMap) {
       .toSorted((a, b) => rank(a.id) - rank(b.id)),
   })).filter((group) => group.entries.length > 0);
   return { entries, byId, dock, needs, groups };
+}
+
+/**
+ * Device audit mockups (11 Oct 2026, preview only): Needs you holds only what is act-now or
+ * overdue. Movements' "still open" and Referrals' "awaiting a decision" are not that, so they leave
+ * the list and stay in their groups. Act-now rows carry the thin red edge.
+ */
+type NeedRow = {
+  id: string;
+  label: string;
+  meta: string;
+  count?: number;
+  href: string;
+  icon: typeof Plus;
+  actNow: boolean;
+};
+
+const ACT_NOW_RECORDS_SHOWN = 3;
+
+function previewNeeds(
+  option: WardPreviewOption,
+  byId: ReadonlyMap<string, RailEntry>,
+  counts: CountMap,
+  actNow: readonly InboxItem[],
+): NeedRow[] {
+  const rows: NeedRow[] = [];
+  const movements = byId.get("movements");
+  if (option === "C") {
+    // C lists the act-now records themselves, the same rows the Tasks list leads with.
+    for (const item of actNow.slice(0, ACT_NOW_RECORDS_SHOWN)) {
+      rows.push({
+        id: item.id,
+        label: item.title,
+        meta: item.detail,
+        href: item.href ?? (item.movementId ? movementHref(item.movementId) : (movements?.href ?? "")),
+        icon: item.icon,
+        actNow: true,
+      });
+    }
+  } else if (actNow.length > 0 && movements) {
+    rows.push({
+      id: "act-now",
+      label: "Act now",
+      meta: "to act on now",
+      count: actNow.length,
+      href: movements.href,
+      icon: movements.icon,
+      actNow: true,
+    });
+  }
+  for (const id of ["delays", "discharges"] as const) {
+    const entry = byId.get(id);
+    const count = countIn(counts, id);
+    if (entry && count?.urgent && count.value > 0) {
+      rows.push({
+        id,
+        label: entry.label,
+        meta: count.noun,
+        count: count.value,
+        href: entry.href,
+        icon: entry.icon,
+        actNow: false,
+      });
+    }
+  }
+  return rows;
+}
+
+function NeedRowLink({ row, onGo }: { row: NeedRow; onGo: () => void }) {
+  return (
+    <li>
+      <Link
+        href={row.href}
+        className={styles.row}
+        data-act-now={row.actNow || undefined}
+        aria-label={row.count === undefined ? `${row.label}, ${row.meta}` : `${row.label}, ${row.count} ${row.meta}`}
+        data-testid="ward-phone-menu-need"
+        onClick={onGo}
+      >
+        <RowBody
+          icon={row.icon}
+          label={row.label}
+          meta={
+            <>
+              <Dot tone={row.actNow ? "danger" : "warning"} />
+              <span>{row.meta}</span>
+            </>
+          }
+        />
+        <CountChip value={row.count} className={styles.count} />
+        <Chevron />
+      </Link>
+    </li>
+  );
+}
+
+type DockLook = "menu" | "rise" | "float" | "flat";
+
+const PREVIEW_DOCK_LOOK: Record<WardPreviewOption, Exclude<DockLook, "menu">> = {
+  A: "rise",
+  B: "float",
+  C: "flat",
+};
+
+/** B's capsule steps aside while the page scrolls down and comes back on the way up. */
+function useHideOnScrollDown(enabled: boolean): boolean {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    if (!enabled) return undefined;
+    let last = -1;
+    const onScroll = (event: Event) => {
+      const target = event.target;
+      const top =
+        target instanceof HTMLElement ? target.scrollTop : (document.scrollingElement?.scrollTop ?? window.scrollY);
+      if (last >= 0 && Math.abs(top - last) > 6) setHidden(top > last && top > 80);
+      last = top;
+    };
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", onScroll, { capture: true });
+  }, [enabled]);
+  return enabled && hidden;
 }
 
 function announceGo(pathname: string, entry: RailEntry) {
@@ -256,7 +387,9 @@ function PhoneDock({
   onGo,
   onCreate,
   onDrawer,
+  look = "menu",
 }: {
+  look?: DockLook;
   places: ReturnType<typeof phoneMenuModel>["dock"];
   counts: CountMap;
   pathname: string;
@@ -266,8 +399,55 @@ function PhoneDock({
   onCreate: () => void;
   onDrawer: (id: DrawerId) => void;
 }) {
+  const createLabel = "Create: new referral, transport, delay or bed";
+  const create =
+    look === "float" ? (
+      <span className={styles.riseSlot}>
+        <button
+          type="button"
+          className={pageDock.capsuleNew}
+          aria-label={createLabel}
+          aria-haspopup="dialog"
+          data-testid="ward-phone-create"
+          onClick={onCreate}
+        >
+          <Plus aria-hidden="true" strokeWidth={2} />
+        </button>
+      </span>
+    ) : look === "flat" ? (
+      <button
+        type="button"
+        className={pageDock.flatNew}
+        aria-label={createLabel}
+        aria-haspopup="dialog"
+        data-testid="ward-phone-create"
+        onClick={onCreate}
+      >
+        <span className={pageDock.flatNewTile}>
+          <Plus aria-hidden="true" strokeWidth={2} />
+        </span>
+        <span className={pageDock.flatNewLabel}>New</span>
+      </button>
+    ) : (
+      <span className={styles.riseSlot}>
+        <button
+          type="button"
+          className={styles.rise}
+          aria-label={createLabel}
+          aria-haspopup="dialog"
+          data-testid="ward-phone-create"
+          onClick={onCreate}
+        >
+          <Plus aria-hidden="true" strokeWidth={2} />
+        </button>
+      </span>
+    );
   return (
-    <nav className={styles.dock} aria-label="Quick open" data-testid="ward-phone-dock">
+    <nav
+      className={look === "float" ? `${styles.dock} ${pageDock.capsule}` : styles.dock}
+      aria-label="Quick open"
+      data-testid="ward-phone-dock"
+    >
       {places.map(({ entry, label }) => (
         <Link
           key={entry.id}
@@ -286,18 +466,7 @@ function PhoneDock({
           />
         </Link>
       ))}
-      <span className={styles.riseSlot}>
-        <button
-          type="button"
-          className={styles.rise}
-          aria-label="Create: new referral, transport, delay or bed"
-          aria-haspopup="dialog"
-          data-testid="ward-phone-create"
-          onClick={onCreate}
-        >
-          <Plus aria-hidden="true" strokeWidth={2} />
-        </button>
-      </span>
+      {create}
       <button
         type="button"
         className={styles.dockItem}
@@ -417,19 +586,61 @@ function WhoLink({ role, onClose }: { role: WardChromeRole; onClose: () => void 
   );
 }
 
+const REFERRAL_DESTINATION_ICONS = { ward: Building2, community: Users, ed: Siren } as const;
+
+/** Preview C: the create item that belongs to the page you are on comes first after New referral. */
+function pageCreateId(pathname: string): string | null {
+  const page = wardPreviewStandIn(pathname) ?? pathname;
+  if (page.startsWith("/mockups/ward-flow/transport")) return "officer";
+  if (page.startsWith("/mockups/ward-flow/ward/") || page.startsWith("/mockups/ward-flow/board/")) return "wards";
+  if (page.startsWith("/mockups/ward-flow/delays")) return "delays";
+  return null;
+}
+
+function CreateRow({
+  item,
+  entry,
+  onClose,
+}: {
+  item: (typeof CREATE_LINKS)[number];
+  entry: RailEntry;
+  onClose: () => void;
+}) {
+  return (
+    <li>
+      <Link href={entry.href} className={styles.row} onClick={onClose}>
+        <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
+        <Chevron />
+      </Link>
+    </li>
+  );
+}
+
 function CreateSheet({
   open,
   onClose,
   returnFocusRef,
   byId,
   onNewReferral,
+  option = null,
+  pathname = "",
 }: {
   open: boolean;
   onClose: () => void;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
+  /** Device audit mockups only. Null draws today's sheet. */
+  option?: WardPreviewOption | null;
+  pathname?: string;
 }) {
+  const links = CREATE_LINKS.flatMap((item) => {
+    const entry = byId.get(item.id);
+    return entry ? [{ item, entry }] : [];
+  });
+  const pageId = option === "C" ? pageCreateId(pathname) : null;
+  const pageLink = links.find(({ item }) => item.id === pageId);
+  const otherLinks = links.filter(({ item }) => item.id !== pageId);
   return (
     <Sheet
       id="ward-phone-create"
@@ -457,20 +668,37 @@ function CreateSheet({
         <Inbox aria-hidden="true" strokeWidth={1.75} />
         New referral
       </button>
-      <ul className={`${styles.list} ${styles.rich}`}>
-        {CREATE_LINKS.flatMap((item) => {
-          const entry = byId.get(item.id);
-          return entry
-            ? [
-                <li key={item.id}>
+      {option === "B" ? (
+        <section aria-label="Refer to" className={styles.section}>
+          <p className={styles.heading}>Or refer straight to</p>
+          <ul className={styles.list}>
+            {WARD_NEW_REFERRAL_MENU.map((entry) => {
+              const Icon = REFERRAL_DESTINATION_ICONS[entry.destination as keyof typeof REFERRAL_DESTINATION_ICONS];
+              return (
+                <li key={entry.destination}>
                   <Link href={entry.href} className={styles.row} onClick={onClose}>
-                    <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
+                    <RowBody icon={Icon ?? Inbox} label={entry.label} />
                     <Chevron />
                   </Link>
-                </li>,
-              ]
-            : [];
-        })}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+      {pageLink ? (
+        <section aria-label="For this page" className={styles.section}>
+          <p className={styles.heading}>For this page</p>
+          <ul className={`${styles.list} ${styles.rich}`}>
+            <CreateRow item={pageLink.item} entry={pageLink.entry} onClose={onClose} />
+          </ul>
+        </section>
+      ) : null}
+      {option === "B" || pageLink ? <p className={styles.heading}>Something else</p> : null}
+      <ul className={`${styles.list} ${styles.rich}`}>
+        {otherLinks.map(({ item, entry }) => (
+          <CreateRow key={item.id} item={item} entry={entry} onClose={onClose} />
+        ))}
       </ul>
     </Sheet>
   );
@@ -596,6 +824,8 @@ function MenuPages({
   query,
   entries,
   needs,
+  strictNeeds,
+  actNowTotal,
   groups,
   pageRow,
   onResult,
@@ -605,6 +835,9 @@ function MenuPages({
   query: string;
   entries: RailEntry[];
   needs: PhoneMenuModel["needs"];
+  /** Device audit mockups only: act-now and overdue rows in place of `needs`. */
+  strictNeeds: NeedRow[] | null;
+  actNowTotal: number;
   groups: PhoneMenuModel["groups"];
   pageRow: PageRowRender;
   onResult: (item: SearchResultItem) => void;
@@ -615,7 +848,23 @@ function MenuPages({
   if (search) return <MenuResults search={search} pageRow={pageRow} onGo={onResult} />;
   return (
     <>
-      {needs.length > 0 ? (
+      {strictNeeds ? (
+        <Section label="Needs you" rich>
+          {strictNeeds.length === 0 ? (
+            <li className={styles.empty}>Nothing is act-now or overdue.</li>
+          ) : (
+            strictNeeds.map((row) => <NeedRowLink key={row.id} row={row} onGo={onClose} />)
+          )}
+          {strictNeeds.some((row) => row.actNow && row.count === undefined) && actNowTotal > ACT_NOW_RECORDS_SHOWN ? (
+            <li>
+              <button type="button" className={styles.row} onClick={() => onDrawer("tasks")}>
+                <RowBody icon={ListChecks} label={`All ${actNowTotal} act-now in Tasks`} />
+                <Chevron />
+              </button>
+            </li>
+          ) : null}
+        </Section>
+      ) : needs.length > 0 ? (
         <Section label="Needs you" rich>
           {needs.map(({ entry, count }) => pageRow(entry, count, true))}
         </Section>
@@ -655,7 +904,23 @@ export function WardPhoneMenu({
     [],
   );
 
-  const { entries, byId, dock, needs, groups } = phoneMenuModel(role, counts);
+  const preview = useWardPhoneShellPreview();
+  const { entries, byId, dock, needs, groups } = phoneMenuModel(role, counts, preview !== null);
+
+  // Device audit mockups (preview routes only): the dock moves onto the page and Needs you keeps
+  // only act-now and overdue rows. Null on every live page, which draws today's menu unchanged.
+  const flow = useWardFlow();
+  const actNow = useMemo(() => (preview ? activeActNowItems(flow, flow.now) : []), [preview, flow]);
+  const strictNeeds = preview ? previewNeeds(preview, byId, counts, actNow) : null;
+  // Nothing twice: a page listed under Needs you leaves its group.
+  const needIds = new Set(strictNeeds?.map((row) => row.id) ?? []);
+  const shownGroups = strictNeeds
+    ? groups
+        .map((group) => ({ ...group, entries: group.entries.filter((entry) => !needIds.has(entry.id)) }))
+        .filter((group) => group.entries.length > 0)
+    : groups;
+  const dockLook = preview ? PREVIEW_DOCK_LOOK[preview] : null;
+  const dockHidden = useHideOnScrollDown(dockLook === "float");
 
   const close = () => setOpen(false);
   const closeCreate = () => setCreateOpen(false);
@@ -707,16 +972,18 @@ export function WardPhoneMenu({
         bodyClassName={styles.body}
         footerClassName={styles.foot}
         footer={
-          <PhoneDock
-            places={dock}
-            counts={counts}
-            pathname={pathname}
-            tasksCount={tasksCount}
-            activityUnread={activityUnread}
-            onGo={go}
-            onCreate={create}
-            onDrawer={drawer}
-          />
+          preview ? undefined : (
+            <PhoneDock
+              places={dock}
+              counts={counts}
+              pathname={pathname}
+              tasksCount={tasksCount}
+              activityUnread={activityUnread}
+              onGo={go}
+              onCreate={create}
+              onDrawer={drawer}
+            />
+          )
         }
       >
         <MenuSearch query={query} onQuery={setQuery} />
@@ -724,7 +991,9 @@ export function WardPhoneMenu({
           query={query}
           entries={entries}
           needs={needs}
-          groups={groups}
+          strictNeeds={strictNeeds}
+          actNowTotal={actNow.length}
+          groups={shownGroups}
           pageRow={pageRow}
           onResult={(item) => {
             announceToWardShell(`${item.title}.`);
@@ -741,7 +1010,32 @@ export function WardPhoneMenu({
         returnFocusRef={returnFocusRef}
         byId={byId}
         onNewReferral={onNewReferral}
+        option={preview}
+        pathname={pathname}
       />
+
+      {dockLook ? (
+        <div
+          className={`${pageDock.pageDock} ${pageDock[dockLook]}`}
+          data-wf-page-dock={dockLook}
+          data-hidden={dockHidden || undefined}
+        >
+          <PhoneDock
+            look={dockLook}
+            places={dock}
+            counts={counts}
+            pathname={pathname}
+            tasksCount={tasksCount}
+            activityUnread={activityUnread}
+            onGo={(entry) => announceGo(pathname, entry)}
+            onCreate={() => {
+              setCreateOpen(true);
+              announceToWardShell("Create opened.");
+            }}
+            onDrawer={onOpenDrawer}
+          />
+        </div>
+      ) : null}
     </>
   );
 }

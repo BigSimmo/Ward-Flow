@@ -49,8 +49,10 @@ import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
 import { bedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
 import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
+import type { WardPreviewOption } from "@/components/ward-management/preview/ward-preview-routes";
 import {
   bedKindGaps,
+  bedsOfKindAtUnit,
   bedKindTotals,
   countCellText,
   freeingCellText,
@@ -95,7 +97,24 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
  * checks whether ANY row actually carries a number first, so a future change that starts returning
  * real figures renders correctly without this file needing to change.
  */
-export function CapacityScreen() {
+/**
+ * `preview` (device audit mockups, 11 Oct 2026, preview routes only): one bed map instead of the
+ * map plus the repeated ward table, Planned admissions as a short list, chip labels that name their
+ * unit, one primary, and a smaller phone hero. Each option arranges those differently:
+ *   A - the map with the rail beside it, planned bookings at the foot of the rail.
+ *   B - read top to bottom like the bed meeting: mismatch, the map as rows, then forecast and plans.
+ *   C - the mismatch is the switch: each bed kind highlights the wards with that bed free.
+ * Undefined on the live route, which renders exactly as before.
+ */
+/** Preview chip words: each names what it counts (wards), so none repeats a hero bed figure. */
+const PREVIEW_HIGHLIGHT_LABELS: Record<string, string> = {
+  ready: "Any bed ready",
+  "locked-ready": "Locked bed ready",
+  "open-ready": "Open bed ready",
+  "needs-confirming": "Count not confirmed",
+};
+
+export function CapacityScreen({ preview }: { preview?: WardPreviewOption } = {}) {
   const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration, plannedAdmissions } =
     useWardFlow();
   const { now, paused, togglePause } = usePageLive();
@@ -166,6 +185,8 @@ export function CapacityScreen() {
     target?.focus();
   }, [selectedUnitId]);
   const [networkFilterId, setNetworkFilterId] = useState("all");
+  // Preview C: the bed kind whose wards the map highlights.
+  const [previewKind, setPreviewKind] = useState<BedKindGap["id"] | null>(null);
   function highlightWards(filterId: string) {
     setNetworkFilterId(filterId);
     const table = document.getElementById("capacity-wards");
@@ -208,6 +229,9 @@ export function CapacityScreen() {
   const totalLockedReady = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
   const totalOpenReady = netTotals.ready - totalLockedReady;
   const totalPulled = networkRows.reduce((sum, row) => sum + row.pulled, 0);
+  // Preview phone hero: the ring's figure without the ring, one decimal with %.
+  const occupancyPercentText =
+    netTotals.beds > 0 ? `${((totalOccupied / netTotals.beds) * 100).toFixed(1)}%` : "Not known";
   // The ward whose count is oldest: the hero's jump chip opens it.
   const oldestCount = networkRows.reduce<NetworkWardRow | undefined>(
     (oldest, row) => (oldest === undefined || row.confirmedAt < oldest.confirmedAt ? row : oldest),
@@ -319,6 +343,147 @@ export function CapacityScreen() {
   // out of every figure on this screen, and saying so is a different act from counting it.
   const excludedBeyondToday = releasesBeyondToday(bedReleases, now);
 
+  const railAside = (
+    <aside
+      className={styles.secondary}
+      aria-label="Network summary and ward detail"
+      data-wf-rail={preview ? undefined : ""}
+    >
+      {selectedRow ? (
+        <CapacityWardSidebar
+          key={`${worldGeneration}:coordinator:${selectedRow.unit.id}`}
+          row={selectedRow}
+          now={now}
+          onBack={clearWard}
+        />
+      ) : (
+        <>
+          <div className={styles.networkHeaderRow}>
+            <h2 ref={networkHeading} tabIndex={-1} className={styles.networkHeading}>
+              Network
+            </h2>
+            <span className={styles.networkHeaderTime}>as at {formatInstantWithDay(now, now)}</span>
+          </div>
+          <BedsForecastPanel forecast={forecast} />
+          <CapacityTabs
+            id="capacity-network"
+            label="Network details"
+            value={networkTab}
+            onChange={setNetworkTab}
+            options={[
+              { id: "freeing", label: "Beds freeing" },
+              { id: "attention", label: "Attention" },
+            ]}
+          />
+          <div
+            id="capacity-network-panel"
+            role="tabpanel"
+            aria-labelledby={`capacity-network-${networkTab}-tab`}
+            tabIndex={0}
+            className={styles.sidebarBody}
+          >
+            {networkTab === "freeing" ? (
+              <>
+                {/*
+                          R2 item 6 (P3): this sub-panel reads `networkRows`/`freeingWards`, never
+                          `scopedNetworkRows` — it is whole-network by the same reasoning "Where the
+                          mismatch is" gives above (a bed freeing anywhere is worth knowing about
+                          regardless of which service is chosen). Labelled explicitly while a service
+                          is chosen so it does not read as a scoped figure sitting beside the
+                          genuinely-scoped "Ready now" section and ward table.
+                        */}
+                <h3 className={styles.sidebarSectionTitle}>
+                  Freeing today{service !== null ? " across the whole network" : ""}{" "}
+                  <span>{freeingTracked ? countCellText(totalFreeing) : "Not tracked here"}</span>
+                </h3>
+                {!freeingTracked ? (
+                  <p className={styles.absent}>Beds freeing today are not tracked here.</p>
+                ) : freeingWards.length === 0 ? (
+                  <p className={styles.absent}>No ward reports a bed freeing today.</p>
+                ) : (
+                  <ul className={`${styles.attention} ${styles.freeingList}`}>
+                    {freeingWards.map((row) => (
+                      <li key={row.unit.id} className={styles.freeingItem}>
+                        <button
+                          type="button"
+                          id={`capacity-freeing-ward-${row.unit.id}`}
+                          className={styles.freeingWardButton}
+                          aria-label={`${row.unit.name}, ${row.freeing} freeing today`}
+                          onClick={(event) => selectWard(row.unit.id, event.currentTarget)}
+                        >
+                          {/*
+                                    Visible name is the ward alone — the freeing count sits beside
+                                    the button so `textContent` of the opener matches the sidebar
+                                    `h2` focus target (ward name), not "Ward · N freeing today".
+                                  */}
+                          <span className={styles.freeingWardName}>{row.unit.name}</span>
+                        </button>
+                        <span className={styles.freeingBadge} aria-hidden="true">
+                          {row.freeing} freeing today
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {excludedBeyondToday > 0 ? (
+                  <p className={styles.excluded} data-testid="ward-capacity-excluded-beyond-today">
+                    {excludedBeyondToday} releases outside today, excluded from today’s figures.
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <>
+                {/* R2 item 6 (P3): `shortfalls`/`gapRows` are the same whole-network bed-kind
+                            gap this screen's own "Where the mismatch is" panel already states is
+                            unscoped ("Across the whole network, not only {S}.") — labelled here too
+                            while a service is chosen. */}
+                <h3 className={styles.sidebarSectionTitle}>
+                  Needs you{service !== null ? " across the whole network" : ""}{" "}
+                  <span>
+                    {shortfalls.length} of {gapRows.length}
+                  </span>
+                </h3>
+                {shortfalls.length === 0 ? (
+                  <p className={styles.absent}>No bed kind is short right now.</p>
+                ) : (
+                  <ul className={styles.attention}>
+                    {shortfalls.map((row) => (
+                      <li key={row.id} className={styles.attentionItem}>
+                        <span className={styles.attentionWho}>{row.need}</span>
+                        {Math.abs(row.gap)} short · {row.waiting} waiting, {row.bedsThatFit} fit
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <button
+                  type="button"
+                  className={styles.attentionAction}
+                  onClick={() => {
+                    setNetworkFilterId("needs-confirming");
+                    document.getElementById("capacity-wards")?.scrollIntoView({ block: "start" });
+                  }}
+                >
+                  {networkRows.filter((row) => !isConfirmationFresh(row.unit, now)).length} wards need confirming
+                  {service !== null ? " across the whole network" : ""} · Highlight wards
+                </button>
+              </>
+            )}
+          </div>
+          <ReadyNowSection
+            service={service}
+            netTotals={netTotals}
+            totalLockedReady={totalLockedReady}
+            totalOpenReady={totalOpenReady}
+            scopedReady={scopedReady}
+            scopedLockedReady={scopedLockedReady}
+            scopedOpenReady={scopedOpenReady}
+            scopedPendingPreparation={scopedPendingPreparation}
+          />
+        </>
+      )}
+    </aside>
+  );
+
   return (
     <div className={styles.screen} data-testid="ward-capacity-page" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
@@ -357,7 +522,31 @@ export function CapacityScreen() {
                 : undefined
           }
           stats={
-            isPhone ? (
+            isPhone && preview ? (
+              <>
+                {preview !== "A" ? (
+                  <HeroStat
+                    value={Math.abs(Math.min(0, gapTotals.gap))}
+                    label="Beds short"
+                    tone={gapTotals.gap < 0 ? "warning" : undefined}
+                  />
+                ) : null}
+                <HeroStat
+                  value={totalLockedReady}
+                  label="Locked ready"
+                  tone="success"
+                  pressed={networkFilterId === "locked-ready"}
+                  onToggle={() => {
+                    highlightWards(networkFilterId === "locked-ready" ? "all" : "locked-ready");
+                    setPhoneTab("wards");
+                  }}
+                />
+                {preview !== "C" ? (
+                  <HeroStat value={totalPulled} label="Beds pulled" tone={totalPulled > 0 ? "warning" : undefined} />
+                ) : null}
+                {preview === "A" ? <HeroStat value={occupancyPercentText} label="Of beds full" /> : null}
+              </>
+            ) : isPhone ? (
               <>
                 <HeroStat
                   value={totalLockedReady}
@@ -374,12 +563,14 @@ export function CapacityScreen() {
             ) : undefined
           }
           lead={
-            // v10 Capacity: the one ring on the page, ahead of the title.
-            <OccupancyRing
-              percent={netTotals.beds > 0 ? (totalOccupied / netTotals.beds) * 100 : null}
-              alertAt={BED_ALERT_THRESHOLD_PERCENT}
-              scope={service ?? "Statewide"}
-            />
+            // v10 Capacity: the one ring on the page, ahead of the title. Preview: figures only on a phone.
+            preview && isPhone ? undefined : (
+              <OccupancyRing
+                percent={netTotals.beds > 0 ? (totalOccupied / netTotals.beds) * 100 : null}
+                alertAt={BED_ALERT_THRESHOLD_PERCENT}
+                scope={service ?? "Statewide"}
+              />
+            )
           }
           bar={
             isPhone ? undefined : (
@@ -387,19 +578,28 @@ export function CapacityScreen() {
                 <HeroStat
                   inline
                   value={totalLockedReady}
-                  label="Locked ready"
+                  label={preview ? "Locked beds ready" : "Locked ready"}
                   pressed={networkFilterId === "locked-ready"}
                   onToggle={() => highlightWards(networkFilterId === "locked-ready" ? "all" : "locked-ready")}
                 />
                 <HeroStat
                   inline
                   value={totalOpenReady}
-                  label="Open ready"
+                  label={preview ? "Open beds ready" : "Open ready"}
                   pressed={networkFilterId === "open-ready"}
                   onToggle={() => highlightWards(networkFilterId === "open-ready" ? "all" : "open-ready")}
                 />
-                <HeroStat inline value={totalPulled} label="Pulled" tone={totalPulled > 0 ? "warning" : undefined} />
-                <HeroStat inline value={freeingTracked ? totalFreeing : "Not tracked"} label="Due out today" />
+                <HeroStat
+                  inline
+                  value={totalPulled}
+                  label={preview ? "Beds pulled" : "Pulled"}
+                  tone={totalPulled > 0 ? "warning" : undefined}
+                />
+                <HeroStat
+                  inline
+                  value={freeingTracked ? totalFreeing : "Not tracked"}
+                  label={preview ? "Beds due out today" : "Due out today"}
+                />
                 {oldestCount ? (
                   <HeroStat
                     inline
@@ -419,23 +619,25 @@ export function CapacityScreen() {
               <PageLiveChip paused={paused} onTogglePause={togglePause} />
               {/* The one-page morning bed-meeting sheet: today's capacity, expected discharges, people
                *  waiting in ED and the top delays, scoped to the service chosen here. */}
-              <BedMeetingSheetLauncher
-                now={now}
-                buttonClassName={buttonClass({ variant: "light" })}
-                icon={isPhone ? <Printer size={16} aria-hidden="true" /> : undefined}
-                buildSheet={() =>
-                  bedMeetingSheet({
-                    units,
-                    movements,
-                    bedReleases,
-                    admissions,
-                    leaveBeds,
-                    now,
-                    service,
-                    nameOf: (movement) => patientOf(movement).displayName,
-                  })
-                }
-              />
+              {preview && isPhone ? null : (
+                <BedMeetingSheetLauncher
+                  now={now}
+                  buttonClassName={buttonClass({ variant: preview ? "onHero" : "light" })}
+                  icon={isPhone ? <Printer size={16} aria-hidden="true" /> : undefined}
+                  buildSheet={() =>
+                    bedMeetingSheet({
+                      units,
+                      movements,
+                      bedReleases,
+                      admissions,
+                      leaveBeds,
+                      now,
+                      service,
+                      nameOf: (movement) => patientOf(movement).displayName,
+                    })
+                  }
+                />
+              )}
             </>
           }
         />
@@ -613,14 +815,15 @@ export function CapacityScreen() {
               freeingTracked={freeingTracked}
               totalFreeing={totalFreeing}
               freeingWards={freeingWards}
+              plainForecast={preview !== undefined}
             />
           ) : null}
 
-          <div className={styles.capacityGrid}>
+          <div className={styles.capacityGrid} data-preview-layout={preview}>
             <WardPanel title="Bed map" count={`${service === null ? netTotals.beds : scopedBeds} beds`}>
               <div className={styles.capacityPanelBody} role="region" aria-label="Bed map details" tabIndex={0}>
                 <BedMap
-                  initialLayout="grid"
+                  initialLayout={preview === "B" ? "row" : preview === "C" ? "table" : "grid"}
                   initialBedDetail={false}
                   units={units}
                   bedReleases={bedReleases}
@@ -630,7 +833,15 @@ export function CapacityScreen() {
                   onSelectWard={selectWard}
                   service={service}
                   highlightUnitIds={
-                    networkFilterId === "all" ? undefined : new Set(matchingNetworkRows.map((row) => row.unit.id))
+                    previewKind
+                      ? new Set(
+                          scopedNetworkRows
+                            .filter((row) => bedsOfKindAtUnit(row.unit, previewKind) > 0)
+                            .map((row) => row.unit.id),
+                        )
+                      : networkFilterId === "all"
+                        ? undefined
+                        : new Set(matchingNetworkRows.map((row) => row.unit.id))
                   }
                 />
               </div>
@@ -638,268 +849,173 @@ export function CapacityScreen() {
                 <span className={styles.highlightLabel} aria-hidden="true">
                   Highlight
                 </span>
-                {networkFilters.slice(1).map((filter) => (
-                  <FilterChip
-                    key={filter.id}
-                    pressed={networkFilterId === filter.id}
-                    onPressedChange={(pressed) => highlightWards(pressed ? filter.id : "all")}
-                    count={scopedNetworkRows.filter(filter.predicate).length}
-                  >
-                    {filter.id === "ready"
-                      ? "Bed ready"
-                      : filter.id === "locked-ready"
-                        ? "Locked ready"
-                        : "Unconfirmed"}
-                  </FilterChip>
-                ))}
+                {preview === "C"
+                  ? gapRows.map((row) => {
+                      const wards = scopedNetworkRows.filter((ward) => bedsOfKindAtUnit(ward.unit, row.id) > 0).length;
+                      return (
+                        <FilterChip
+                          key={row.id}
+                          pressed={previewKind === row.id}
+                          onPressedChange={(pressed) => setPreviewKind(pressed ? row.id : null)}
+                          count={`${wards} ${wards === 1 ? "ward" : "wards"}`}
+                        >
+                          {row.need.replace(/^An? /u, "").replace(/^./u, (first) => first.toUpperCase())}
+                        </FilterChip>
+                      );
+                    })
+                  : preview
+                    ? networkFilters.slice(1).map((filter) => {
+                        const wards = scopedNetworkRows.filter(filter.predicate).length;
+                        return (
+                          <FilterChip
+                            key={filter.id}
+                            pressed={networkFilterId === filter.id}
+                            onPressedChange={(pressed) => highlightWards(pressed ? filter.id : "all")}
+                            count={`${wards} ${wards === 1 ? "ward" : "wards"}`}
+                          >
+                            {PREVIEW_HIGHLIGHT_LABELS[filter.id] ?? filter.label}
+                          </FilterChip>
+                        );
+                      })
+                    : networkFilters.slice(1).map((filter) => (
+                        <FilterChip
+                          key={filter.id}
+                          pressed={networkFilterId === filter.id}
+                          onPressedChange={(pressed) => highlightWards(pressed ? filter.id : "all")}
+                          count={scopedNetworkRows.filter(filter.predicate).length}
+                        >
+                          {filter.id === "ready"
+                            ? "Bed ready"
+                            : filter.id === "locked-ready"
+                              ? "Locked ready"
+                              : "Unconfirmed"}
+                        </FilterChip>
+                      ))}
                 <Link className={styles.highlightLink} href="/mockups/ward-flow/discharges">
                   Discharge board
                 </Link>
               </div>
             </WardPanel>
 
-            <aside className={styles.secondary} aria-label="Network summary and ward detail" data-wf-rail>
-              {selectedRow ? (
-                <CapacityWardSidebar
-                  key={`${worldGeneration}:coordinator:${selectedRow.unit.id}`}
-                  row={selectedRow}
-                  now={now}
-                  onBack={clearWard}
-                />
-              ) : (
-                <>
-                  <div className={styles.networkHeaderRow}>
-                    <h2 ref={networkHeading} tabIndex={-1} className={styles.networkHeading}>
-                      Network
-                    </h2>
-                    <span className={styles.networkHeaderTime}>as at {formatInstantWithDay(now, now)}</span>
-                  </div>
-                  <BedsForecastPanel forecast={forecast} />
-                  <CapacityTabs
-                    id="capacity-network"
-                    label="Network details"
-                    value={networkTab}
-                    onChange={setNetworkTab}
-                    options={[
-                      { id: "freeing", label: "Beds freeing" },
-                      { id: "attention", label: "Attention" },
-                    ]}
-                  />
-                  <div
-                    id="capacity-network-panel"
-                    role="tabpanel"
-                    aria-labelledby={`capacity-network-${networkTab}-tab`}
-                    tabIndex={0}
-                    className={styles.sidebarBody}
-                  >
-                    {networkTab === "freeing" ? (
-                      <>
-                        {/*
-                          R2 item 6 (P3): this sub-panel reads `networkRows`/`freeingWards`, never
-                          `scopedNetworkRows` — it is whole-network by the same reasoning "Where the
-                          mismatch is" gives above (a bed freeing anywhere is worth knowing about
-                          regardless of which service is chosen). Labelled explicitly while a service
-                          is chosen so it does not read as a scoped figure sitting beside the
-                          genuinely-scoped "Ready now" section and ward table.
-                        */}
-                        <h3 className={styles.sidebarSectionTitle}>
-                          Freeing today{service !== null ? " across the whole network" : ""}{" "}
-                          <span>{freeingTracked ? countCellText(totalFreeing) : "Not tracked here"}</span>
-                        </h3>
-                        {!freeingTracked ? (
-                          <p className={styles.absent}>Beds freeing today are not tracked here.</p>
-                        ) : freeingWards.length === 0 ? (
-                          <p className={styles.absent}>No ward reports a bed freeing today.</p>
-                        ) : (
-                          <ul className={`${styles.attention} ${styles.freeingList}`}>
-                            {freeingWards.map((row) => (
-                              <li key={row.unit.id} className={styles.freeingItem}>
-                                <button
-                                  type="button"
-                                  id={`capacity-freeing-ward-${row.unit.id}`}
-                                  className={styles.freeingWardButton}
-                                  aria-label={`${row.unit.name}, ${row.freeing} freeing today`}
-                                  onClick={(event) => selectWard(row.unit.id, event.currentTarget)}
-                                >
-                                  {/*
-                                    Visible name is the ward alone — the freeing count sits beside
-                                    the button so `textContent` of the opener matches the sidebar
-                                    `h2` focus target (ward name), not "Ward · N freeing today".
-                                  */}
-                                  <span className={styles.freeingWardName}>{row.unit.name}</span>
-                                </button>
-                                <span className={styles.freeingBadge} aria-hidden="true">
-                                  {row.freeing} freeing today
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {excludedBeyondToday > 0 ? (
-                          <p className={styles.excluded} data-testid="ward-capacity-excluded-beyond-today">
-                            {excludedBeyondToday} releases outside today, excluded from today’s figures.
-                          </p>
-                        ) : null}
-                      </>
-                    ) : (
-                      <>
-                        {/* R2 item 6 (P3): `shortfalls`/`gapRows` are the same whole-network bed-kind
-                            gap this screen's own "Where the mismatch is" panel already states is
-                            unscoped ("Across the whole network, not only {S}.") — labelled here too
-                            while a service is chosen. */}
-                        <h3 className={styles.sidebarSectionTitle}>
-                          Needs you{service !== null ? " across the whole network" : ""}{" "}
-                          <span>
-                            {shortfalls.length} of {gapRows.length}
-                          </span>
-                        </h3>
-                        {shortfalls.length === 0 ? (
-                          <p className={styles.absent}>No bed kind is short right now.</p>
-                        ) : (
-                          <ul className={styles.attention}>
-                            {shortfalls.map((row) => (
-                              <li key={row.id} className={styles.attentionItem}>
-                                <span className={styles.attentionWho}>{row.need}</span>
-                                {Math.abs(row.gap)} short · {row.waiting} waiting, {row.bedsThatFit} fit
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        <button
-                          type="button"
-                          className={styles.attentionAction}
-                          onClick={() => {
-                            setNetworkFilterId("needs-confirming");
-                            document.getElementById("capacity-wards")?.scrollIntoView({ block: "start" });
-                          }}
-                        >
-                          {networkRows.filter((row) => !isConfirmationFresh(row.unit, now)).length} wards need
-                          confirming{service !== null ? " across the whole network" : ""} · Highlight wards
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  <ReadyNowSection
-                    service={service}
-                    netTotals={netTotals}
-                    totalLockedReady={totalLockedReady}
-                    totalOpenReady={totalOpenReady}
-                    scopedReady={scopedReady}
-                    scopedLockedReady={scopedLockedReady}
-                    scopedOpenReady={scopedOpenReady}
-                    scopedPendingPreparation={scopedPendingPreparation}
-                  />
-                </>
-              )}
-            </aside>
-          </div>
-
-          <div
-            id="capacity-wards"
-            ref={tableDialog}
-            className={`${styles.wardsSection} ${tableFullscreen ? styles.tableFullscreen : ""}`}
-            role={tableFullscreen ? "dialog" : undefined}
-            aria-modal={tableFullscreen ? true : undefined}
-            aria-label={tableFullscreen ? "Ward capacity full screen" : undefined}
-            tabIndex={-1}
-          >
-            <WardPanel
-              title="Wards"
-              count={`${scopedNetworkRows.length} ${scopedNetworkRows.length === 1 ? "ward" : "wards"} ${service === null ? "in the network" : `in ${service}`}, ${matchingNetworkRows.length} matching`}
-            >
-              <div className={styles.filters}>
-                <div className={styles.tableToolbar}>
-                  <button
-                    type="button"
-                    className={styles.fullscreenButton}
-                    aria-pressed={showAllColumns}
-                    onClick={() => setShowAllColumns(!showAllColumns)}
-                  >
-                    {showAllColumns ? "Key columns" : "More columns"}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.fullscreenButton}
-                    aria-expanded={tableFullscreen}
-                    onClick={() => setTableFullscreen(!tableFullscreen)}
-                  >
-                    {tableFullscreen ? "Close full screen" : "Full screen"}
-                  </button>
-                </div>
-                <WardFilters
-                  legend="Highlight wards"
-                  activeId={networkFilterId}
-                  onChange={setNetworkFilterId}
-                  options={networkFilters.map((option) => ({
-                    id: option.id,
-                    label: option.label,
-                    count: scopedNetworkRows.filter(option.predicate).length,
-                  }))}
-                />
-                <label className={styles.sortControl}>
-                  <span className={styles.sortLabel}>Order</span>
-                  <div className={styles.sortSelectWrap}>
-                    <select
-                      id="capacity-ward-sort"
-                      name="wardSort"
-                      aria-label="Sort wards"
-                      value={wardSort}
-                      onChange={(event) => setWardSort(event.target.value)}
-                    >
-                      <option value="name">Ward A–Z</option>
-                      <option value="ready">Most ready</option>
-                      <option value="confirmation">Oldest confirmation</option>
-                    </select>
-                    <span className={styles.sortChevron} aria-hidden="true">
-                      ▾
-                    </span>
-                  </div>
-                </label>
+            {preview ? (
+              <div className={styles.previewRail} data-wf-rail="">
+                {preview === "C" ? <PlannedAdmissionsPanel key={worldGeneration} now={now} list /> : null}
+                {railAside}
+                {preview === "A" ? <PlannedAdmissionsPanel key={worldGeneration} now={now} list /> : null}
               </div>
-              <div
-                ref={networkBody}
-                className={styles.networkBody}
-                role="region"
-                aria-label="Ward capacity table"
-                aria-describedby={networkOverflow && !showAllColumns ? "capacity-table-scroll-notice" : undefined}
-                tabIndex={0}
+            ) : (
+              railAside
+            )}
+          </div>
+          {preview === "B" && !isPhone ? <PlannedAdmissionsPanel key={worldGeneration} now={now} list /> : null}
+
+          {preview ? null : (
+            <div
+              id="capacity-wards"
+              ref={tableDialog}
+              className={`${styles.wardsSection} ${tableFullscreen ? styles.tableFullscreen : ""}`}
+              role={tableFullscreen ? "dialog" : undefined}
+              aria-modal={tableFullscreen ? true : undefined}
+              aria-label={tableFullscreen ? "Ward capacity full screen" : undefined}
+              tabIndex={-1}
+            >
+              <WardPanel
+                title="Wards"
+                count={`${scopedNetworkRows.length} ${scopedNetworkRows.length === 1 ? "ward" : "wards"} ${service === null ? "in the network" : `in ${service}`}, ${matchingNetworkRows.length} matching`}
               >
-                {networkOverflow && !showAllColumns ? (
-                  <p id="capacity-table-scroll-notice" className={styles.tableScrollNotice}>
-                    Scroll sideways to see more ward details.
-                  </p>
-                ) : null}
-                <WardTable
-                  className={`${styles.networkTable} ${showAllColumns ? styles.detailTable : styles.compactTable}`}
-                  wrapperClassName={styles.networkTableScroll}
-                  testId="ward-capacity-network-table"
-                  hasScrollThreshold={showAllColumns}
-                  overflowing={networkOverflow}
-                  ariaLabel="Scrollable ward capacity table"
+                <div className={styles.filters}>
+                  <div className={styles.tableToolbar}>
+                    <button
+                      type="button"
+                      className={styles.fullscreenButton}
+                      aria-pressed={showAllColumns}
+                      onClick={() => setShowAllColumns(!showAllColumns)}
+                    >
+                      {showAllColumns ? "Key columns" : "More columns"}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.fullscreenButton}
+                      aria-expanded={tableFullscreen}
+                      onClick={() => setTableFullscreen(!tableFullscreen)}
+                    >
+                      {tableFullscreen ? "Close full screen" : "Full screen"}
+                    </button>
+                  </div>
+                  <WardFilters
+                    legend="Highlight wards"
+                    activeId={networkFilterId}
+                    onChange={setNetworkFilterId}
+                    options={networkFilters.map((option) => ({
+                      id: option.id,
+                      label: option.label,
+                      count: scopedNetworkRows.filter(option.predicate).length,
+                    }))}
+                  />
+                  <label className={styles.sortControl}>
+                    <span className={styles.sortLabel}>Order</span>
+                    <div className={styles.sortSelectWrap}>
+                      <select
+                        id="capacity-ward-sort"
+                        name="wardSort"
+                        aria-label="Sort wards"
+                        value={wardSort}
+                        onChange={(event) => setWardSort(event.target.value)}
+                      >
+                        <option value="name">Ward A–Z</option>
+                        <option value="ready">Most ready</option>
+                        <option value="confirmation">Oldest confirmation</option>
+                      </select>
+                      <span className={styles.sortChevron} aria-hidden="true">
+                        ▾
+                      </span>
+                    </div>
+                  </label>
+                </div>
+                <div
+                  ref={networkBody}
+                  className={styles.networkBody}
+                  role="region"
+                  aria-label="Ward capacity table"
+                  aria-describedby={networkOverflow && !showAllColumns ? "capacity-table-scroll-notice" : undefined}
+                  tabIndex={0}
                 >
-                  <thead>
-                    <tr className={styles.stickyHeaderRow}>
-                      <th scope="col">Ward</th>
-                      <th scope="col">Bed kinds</th>
-                      <th scope="col">Ready</th>
-                      <th scope="col">Locked</th>
-                      <th scope="col">Freeing</th>
-                      <th scope="col">{bedReleaseStateLabels.confirmed}</th>
-                      <th scope="col">{bedReleaseStateLabels.expected}</th>
-                      <th scope="col">{BED_RELEASE_BLOCKED_FIGURE_LABEL}</th>
-                      <th scope="col">Discharges due today</th>
-                      <th scope="col">Transfers today</th>
-                      <th scope="col">{BED_STATE_LABELS.pulled}</th>
-                      <th scope="col">{BED_STATE_LABELS.closed}</th>
-                      <th scope="col">{BED_STATE_LABELS.occupied}</th>
-                      <th scope="col">Sex mix</th>
-                      <th scope="col">Specialling</th>
-                      <th scope="col">Involuntary-capable</th>
-                      <th scope="col">Confirmed</th>
-                      <th scope="col">Ask for an update</th>
-                    </tr>
-                  </thead>
-                  {/*
+                  {networkOverflow && !showAllColumns ? (
+                    <p id="capacity-table-scroll-notice" className={styles.tableScrollNotice}>
+                      Scroll sideways to see more ward details.
+                    </p>
+                  ) : null}
+                  <WardTable
+                    className={`${styles.networkTable} ${showAllColumns ? styles.detailTable : styles.compactTable}`}
+                    wrapperClassName={styles.networkTableScroll}
+                    testId="ward-capacity-network-table"
+                    hasScrollThreshold={showAllColumns}
+                    overflowing={networkOverflow}
+                    ariaLabel="Scrollable ward capacity table"
+                  >
+                    <thead>
+                      <tr className={styles.stickyHeaderRow}>
+                        <th scope="col">Ward</th>
+                        <th scope="col">Bed kinds</th>
+                        <th scope="col">Ready</th>
+                        <th scope="col">Locked</th>
+                        <th scope="col">Freeing</th>
+                        <th scope="col">{bedReleaseStateLabels.confirmed}</th>
+                        <th scope="col">{bedReleaseStateLabels.expected}</th>
+                        <th scope="col">{BED_RELEASE_BLOCKED_FIGURE_LABEL}</th>
+                        <th scope="col">Discharges due today</th>
+                        <th scope="col">Transfers today</th>
+                        <th scope="col">{BED_STATE_LABELS.pulled}</th>
+                        <th scope="col">{BED_STATE_LABELS.closed}</th>
+                        <th scope="col">{BED_STATE_LABELS.occupied}</th>
+                        <th scope="col">Sex mix</th>
+                        <th scope="col">Specialling</th>
+                        <th scope="col">Involuntary-capable</th>
+                        <th scope="col">Confirmed</th>
+                        <th scope="col">Ask for an update</th>
+                      </tr>
+                    </thead>
+                    {/*
                     🔴 **THE WARD TABLE'S OWN SCOPING — §2 "the map groups and ward table are
                     scoped."** `networkServiceGroups` itself is untouched above (still grouped from
                     every ward in the network, exactly as it always was), so nothing about how a
@@ -913,30 +1029,57 @@ export function CapacityScreen() {
                     group at all makes no claim about it, which the scope bar above already covers
                     ("Showing N of M wards, in {S}.").
                   */}
-                  {(service === null
-                    ? networkServiceGroups
-                    : networkServiceGroups.filter((group) => group.service === service)
-                  ).map((group) => (
-                    <NetworkServiceGroupRows
-                      key={group.service}
-                      group={group}
-                      now={now}
-                      activeNetworkFilter={activeNetworkFilter}
-                      selectedUnitId={selectedUnitId}
-                      onSelectWard={selectWard}
-                      onRequestRefresh={(unitId) =>
-                        dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId })
-                      }
-                    />
-                  ))}
-                </WardTable>
-              </div>
-            </WardPanel>
+                    {(service === null
+                      ? networkServiceGroups
+                      : networkServiceGroups.filter((group) => group.service === service)
+                    ).map((group) => (
+                      <NetworkServiceGroupRows
+                        key={group.service}
+                        group={group}
+                        now={now}
+                        activeNetworkFilter={activeNetworkFilter}
+                        selectedUnitId={selectedUnitId}
+                        onSelectWard={selectWard}
+                        onRequestRefresh={(unitId) =>
+                          dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId })
+                        }
+                      />
+                    ))}
+                  </WardTable>
+                </div>
+              </WardPanel>
+            </div>
+          )}
+        </div>
+        {preview && !isPhone ? null : (
+          <div
+            className={styles.plannedWrap}
+            data-phone-hidden={isPhone && phoneTab !== "planned" ? "true" : undefined}
+          >
+            <PlannedAdmissionsPanel key={worldGeneration} now={now} list={preview !== undefined} />
           </div>
-        </div>
-        <div className={styles.plannedWrap} data-phone-hidden={isPhone && phoneTab !== "planned" ? "true" : undefined}>
-          <PlannedAdmissionsPanel key={worldGeneration} now={now} />
-        </div>
+        )}
+        {preview && isPhone && phoneTab === "overview" ? (
+          // Preview: printing the bed meeting sheet is a desk task, so on a phone it leaves the hero
+          // for one quiet button at the foot of Overview.
+          <BedMeetingSheetLauncher
+            now={now}
+            buttonClassName={buttonClass({ variant: "sec" })}
+            icon={<Printer size={16} aria-hidden="true" />}
+            buildSheet={() =>
+              bedMeetingSheet({
+                units,
+                movements,
+                bedReleases,
+                admissions,
+                leaveBeds,
+                now,
+                service,
+                nameOf: (movement) => patientOf(movement).displayName,
+              })
+            }
+          />
+        ) : null}
         <WardPrototypeFooter testId="ward-capacity-governance" note="Statewide bed capacity · Not a medical device" />
       </main>
     </div>

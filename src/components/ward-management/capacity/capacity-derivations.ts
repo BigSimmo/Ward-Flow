@@ -79,7 +79,7 @@ function bedKindOfMovement(cohort: Cohort, security: Security): BedKindId {
  * `tests/ward-locked-not-authorised.test.ts`) and merging them here would make a shortfall
  * disappear behind a bed nobody may actually place a detained patient in.
  */
-function bedsOfKindAtUnit(unit: Unit, kind: BedKindId): number {
+export function bedsOfKindAtUnit(unit: Unit, kind: BedKindId): number {
   switch (kind) {
     case "locked_adult":
       return unit.cohort === "Adult" ? lockedBedsFree(unit) : 0;
