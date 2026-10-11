@@ -2600,8 +2600,10 @@
   }
 }
 
-/* The worklist and the combined transport / shape panel share one bottom edge. */
-@media screen and (min-width: 1101px) {
+/* The worklist and the combined transport / shape panel share one bottom edge, only while they sit
+   side by side (above 85rem, movement-flow `.layout`). Below that they stack, and a fixed shared
+   height collapsed the worklist to its headers at 1180 (device audit 11 Oct 2026). */
+@media screen and (min-width: 85.0625rem) {
   .columns {
     min-height: 54rem;
     height: var(--ward-workspace-height, clamp(54rem, calc(100dvh - 5rem), 68rem));
