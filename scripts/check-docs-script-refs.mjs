@@ -144,7 +144,12 @@ function main() {
     let markdown;
     try {
       markdown = readFileSync(path.join(repoRoot, target), "utf8");
-    } catch {
+    } catch (error) {
+      // A maintained root document is required policy; a missing one must fail, not pass silently.
+      if (MAINTAINED_ROOT_DOCS.includes(target)) {
+        stale++;
+        console.error(`${target}: maintained document could not be read (${error.code ?? error.message})`);
+      }
       continue;
     }
     let current;
