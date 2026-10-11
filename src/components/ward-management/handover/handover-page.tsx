@@ -13,7 +13,6 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import {
-  Activity,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -22,6 +21,7 @@ import {
   Columns3,
   Keyboard,
   MonitorPlay,
+  MoreHorizontal,
   Printer,
   Sparkles,
   Timer as TimerIcon,
@@ -29,7 +29,6 @@ import {
 
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
-import { openWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
@@ -65,6 +64,7 @@ import {
   type SinceItem,
   Icon,
   LiveChip,
+  Menu,
   Popover,
   Segmented,
   Select,
@@ -76,6 +76,7 @@ import {
   cx,
   durMinutes,
   tableClasses,
+  useMediaQuery,
 } from "@/components/wf";
 
 import {
@@ -100,8 +101,6 @@ import {
   heldDischarges,
   isActNow,
   isbarText,
-  isMoving,
-  isWaitingForBed,
   pillTest,
   summaryText,
   toHandoverRow,
@@ -495,8 +494,8 @@ export function HandoverPage() {
     () => ({
       act: rows.filter((row) => groupOf(row, now, cutoff) === "act").length,
       due: rows.filter((row) => groupOf(row, now, cutoff) === "due").length,
-      bed: rows.filter(isWaitingForBed).length,
-      mov: rows.filter(isMoving).length,
+      bed: rows.filter((row) => groupOf(row, now, cutoff) === "bed").length,
+      mov: rows.filter((row) => groupOf(row, now, cutoff) === "mov").length,
       new: rows.filter((row) => row.openedAt >= newSince).length,
     }),
     [rows, now, cutoff, newSince],
@@ -564,7 +563,12 @@ export function HandoverPage() {
   const outsideAct = outside.filter((row) => isActNow(row, now));
 
   /* columns */
-  const columnIds = customColumns ?? DENSITY_COLUMNS[density];
+  // Desktop with the sign-off rail beside the table (1201px and up): Standard drops Legal and obs and
+  // fits the rest to the card, so Due and Next step are on screen rather than scrolled off (device
+  // audit 11 Oct 2026). Full and custom columns keep their own set.
+  const railBeside = useMediaQuery("(min-width: 75.0625rem)");
+  const fitted = railBeside && !present && customColumns === null && density === "std";
+  const columnIds = customColumns ?? (fitted ? DENSITY_COLUMNS.std.filter((id) => id !== "lo") : DENSITY_COLUMNS[density]);
   const columns = columnsFor(columnIds);
   const wide = present || columnIds.length > 8;
   const compact = customColumns === null && density === "min";
@@ -722,28 +726,11 @@ export function HandoverPage() {
       : { id: "feeds", done: true, text: "Every ward feed is current" },
     takenAt !== null
       ? { id: "print", done: true, text: `Printed copy taken ${formatInstantWithDay(takenAt, now)}` }
-      : {
-          id: "print",
-          done: false,
-          text: "No printed copy yet",
-          action: isPhoneWidth
-            ? undefined
-            : {
-                label: "Print handover",
-                onClick: () => {
-                  setDrawerOpen(false);
-                  setSheetOpen(true);
-                },
-              },
-        },
+      : // Print and the meeting timer live once, in the hero (device audit 11 Oct 2026).
+        { id: "print", done: false, text: "No printed copy yet" },
     meetings.length
       ? { id: "meet", done: true, text: `Meeting timed, ${meetings[0]!.minutes} min` }
-      : {
-          id: "meet",
-          done: false,
-          text: "Meeting not timed",
-          action: { label: "Start timer", onClick: toggleMeeting },
-        },
+      : { id: "meet", done: false, text: "Meeting not timed" },
   ];
   const canSignOff = canDispatch("coordinator", "RECORD_HANDOVER_SIGN_OFF") && !passed;
 
@@ -984,26 +971,33 @@ export function HandoverPage() {
               "Start meeting"
             )}
           </Button>
-          <Button
-            variant="onHero"
-            size="sm"
-            icon={MonitorPlay}
-            aria-pressed={present}
-            onClick={() => setPresent((on) => !on)}
-          >
-            {present ? "Exit present" : "Present"}
-          </Button>
-          <Button
-            variant="onHero"
-            size="sm"
-            icon={Printer}
-            aria-pressed={sheetOpen}
-            onClick={() => setSheetOpen((open) => !open)}
-            data-testid="ward-handover-print"
-          >
-            Print handover
-          </Button>
-          {signOffButton}
+          {/* Present and Print sit behind More, so the band carries one primary (device audit 11 Oct 2026). */}
+          <Menu
+            label="More handover actions"
+            align="end"
+            items={[
+              {
+                id: "present",
+                label: present ? "Exit present" : "Present",
+                icon: MonitorPlay,
+                onSelect: () => setPresent((on) => !on),
+              },
+              {
+                id: "print",
+                label: "Print handover",
+                icon: Printer,
+                onSelect: () => setSheetOpen((open) => !open),
+              },
+            ]}
+            trigger={(props) => (
+              <Button {...props} variant="onHero" size="sm" icon={MoreHorizontal} data-testid="ward-handover-more">
+                More
+              </Button>
+            )}
+          />
+          {/* With the rail beside the table its Sign off is the one; below 1201px the rail is a
+              drawer and this opens it. */}
+          {railBeside && !present ? null : signOffButton}
         </>
       }
       bar={
@@ -1102,9 +1096,6 @@ export function HandoverPage() {
       <Link href="/mockups/ward-flow/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
         Downtime pack
       </Link>
-      <Button variant="ghost" size="sm" icon={Activity} onClick={() => openWardDrawer("activity")}>
-        Activity
-      </Button>
       <Popover
         label="Keyboard shortcuts"
         align="end"
@@ -1204,10 +1195,19 @@ export function HandoverPage() {
         ) : null}
       </div>
       <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Handover patients">
-        <table className={cx(tableClasses.table, styles.sheetTable, compact && styles.compact)}>
+        <table
+          className={cx(tableClasses.table, styles.sheetTable, compact && styles.compact, fitted && styles.fitted)}
+        >
           <colgroup>
             {columns.map((column) => (
-              <col key={column.id} style={{ width: column.width }} />
+              <col
+                key={column.id}
+                style={{
+                  width: fitted
+                    ? `${((column.width / columns.reduce((sum, entry) => sum + entry.width, 0)) * 100).toFixed(2)}%`
+                    : column.width,
+                }}
+              />
             ))}
           </colgroup>
           <thead>
@@ -1379,7 +1379,6 @@ export function HandoverPage() {
         id="ward-handover-since"
         since={formatInstantWithDay(newSince, now)}
         items={sinceTotal === 0 ? [] : sinceItems}
-        onCopy={copySince}
       />
     </div>
   ) : null;

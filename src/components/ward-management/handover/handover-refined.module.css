@@ -287,6 +287,11 @@
   table-layout: fixed;
 }
 
+/* Desktop with the rail beside: the columns share the card's width instead of scrolling. */
+.sheetTable.fitted {
+  min-width: 0;
+}
+
 /* Cell padding and dividers come from the wf table primitive; this adds the sticky head and the
    12px floor for the header label. */
 .sheetTable th {
@@ -1135,4 +1140,9 @@
 
 .gap {
   font-family: var(--wf-font);
+}
+
+/* A time in the Due column never truncates. */
+.nowrap {
+  white-space: nowrap;
 }
