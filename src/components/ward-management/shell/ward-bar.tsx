@@ -987,13 +987,14 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   useEffect(() => {
     function onPopState() {
-      const closingPanel = closingViaHistoryRef.current;
-      if (closingPanel !== null) {
-        // Only the drawer that initiated Back may be closed by its delayed event.
+      const closing = closingViaHistoryRef.current;
+      if (closing !== null) {
+        // Only the drawer that initiated Back may be closed by its delayed event, and it keeps
+        // the caller's choice not to announce (a service pick announces its own confirmation).
         closingViaHistoryRef.current = null;
-        if (openPanel !== closingPanel.id) return;
+        if (openPanel !== closing.id) return;
         setOpenPanel(null);
-        if (closingPanel.announce) announceToWardShell("Closed.");
+        if (closing.announce) announceToWardShell("Closed.");
         return;
       }
       if (openPanel === null) return;

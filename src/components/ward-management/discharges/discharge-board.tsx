@@ -1,5 +1,5 @@
 "use client";
-import { wardScrollBehavior } from "@/lib/ward-scroll";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { DischargeCareJourney } from "./discharge-care-journey";
 
 import Link from "next/link";

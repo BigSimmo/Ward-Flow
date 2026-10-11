@@ -1,6 +1,6 @@
 "use client";
 
-import { wardScrollBehavior } from "@/lib/ward-scroll";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowRight, BookOpen, ChevronRight, Download, History, Info, MapPin, Plus, Search, X } from "lucide-react";

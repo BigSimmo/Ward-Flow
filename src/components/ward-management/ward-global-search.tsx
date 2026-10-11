@@ -1,6 +1,6 @@
 "use client";
 
-import { revealWardOption } from "@/lib/ward-scroll";
+import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";

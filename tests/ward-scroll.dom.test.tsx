@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { revealWardOption, wardScrollBehavior } from "@/lib/ward-scroll";
+import { revealWardOption, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
 afterEach(() => {
   vi.restoreAllMocks();

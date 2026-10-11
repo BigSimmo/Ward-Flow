@@ -23,7 +23,7 @@
 // GUARANTEED to sum to `unit.beds` — which this map depends on, because every bed must land in
 // exactly one square. A map built on `NetworkWardRow.ready` could one day draw more squares than a
 // ward has beds, or fewer, the moment a future feed lets `allocatable` exceed `empty`.
-import { wardScrollBehavior } from "@/lib/ward-scroll";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { StatusGlyph, WardCapacityRow, WardCapacityRows } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { useState, useRef, useEffect, useCallback } from "react";

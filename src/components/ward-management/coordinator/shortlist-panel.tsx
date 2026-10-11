@@ -1,6 +1,6 @@
 "use client";
 
-import { wardScrollBehavior } from "@/lib/ward-scroll";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";

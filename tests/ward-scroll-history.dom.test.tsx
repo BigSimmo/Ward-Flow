@@ -22,6 +22,7 @@ describe("Ward desktop scroll history", () => {
     );
     const { container, rerender } = render(view());
     const column = container.firstElementChild as HTMLElement;
+    // jsdom does not fire `scroll` for a scrollTop write; a browser does for the user's scroll.
     column.scrollTop = 420;
     fireEvent.scroll(column);
     // A shorter destination can clamp the old column during the route commit.
@@ -31,6 +32,7 @@ describe("Ward desktop scroll history", () => {
     rerender(view());
     expect(column.scrollTop).toBe(0);
     column.scrollTop = 75;
+    fireEvent.scroll(column);
     pathname = "/mockups/ward-flow/search";
     window.history.replaceState(null, "", pathname);
     act(() => window.dispatchEvent(new PopStateEvent("popstate")));

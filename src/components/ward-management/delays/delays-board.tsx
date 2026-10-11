@@ -8,7 +8,7 @@
  * Every figure is read from the engine (`delays-board-model.ts`). Selecting, filtering and the
  * graphs are presentation state only; the one write is Escalate, which the screen dispatches.
  */
-import { wardScrollBehavior } from "@/lib/ward-scroll";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import {
   useCallback,
   useEffect,
