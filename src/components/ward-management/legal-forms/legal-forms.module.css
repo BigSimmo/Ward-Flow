@@ -1444,3 +1444,75 @@ button.taskLabel[aria-pressed="true"] {
 .phoneRow[data-dim="true"] * {
   color: var(--wf-dim);
 }
+
+/* v10 phone row (11 Oct 2026): the form's name, then where and what is left to record, each on its
+   own line. Only the phone row renders these spans. */
+.phoneMetaLine {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 48rem) {
+  /* v10 phone: the group head names its order at the right ("least time left"). */
+  .groupHead > .groupOrder {
+    display: inline;
+    font-size: var(--wf-fs-12);
+  }
+}
+
+/* v10 phone second pass: the two hero actions share the row equally, and the view switch stays
+ * under the bar while the list scrolls. Phone only (both render on the phone alone). */
+.phoneHeroAction {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+}
+
+.phoneViews {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 6;
+  box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
+}
+
+/* v10 phone form sheet: one header (the sheet's), and the panel sits flat in the sheet. Only the
+ * phone sheet renders .phoneFocus. */
+.phoneFocus .focusHead {
+  display: none;
+}
+
+.phoneFocus .panel {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* ─── v10 phone fidelity (11 Oct 2026) ───
+ * The view switch keeps its 8px canvas collar right under the bar once the page has scrolled (the
+ * bar condenses from 56px to 52px), so no row shows through a gap. In the form sheet, Copy and the next step live in the sheet's own pinned foot, so
+ * the panel's foot keeps only the quiet Open move link, flat on the sheet. Phone only. */
+@media (max-width: 48rem) {
+  :global(body:has([data-scrolled="true"])) .phoneViews {
+    top: calc(3.25rem + var(--wf-s-2));
+  }
+
+  .phoneFocus .focusFoot {
+    justify-content: center;
+    padding: var(--wf-s-2) 0 0;
+    border-top: 0;
+    background: none;
+  }
+
+  .phoneFocus .focusFoot > button,
+  .phoneFocus .focusFoot > .footSpacer {
+    display: none;
+  }
+
+  .phoneFocus .focusFoot > :last-child {
+    flex: 0 1 auto;
+  }
+}

@@ -2,7 +2,7 @@
 
 import { wardScrollBehavior } from "@/lib/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Mail, MapPin, Printer, Search, Star, Users } from "lucide-react";
+import { ChevronDown, Clock, Copy, Mail, MapPin, Printer, Search, Star, Users, X } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
 import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -14,9 +14,11 @@ import {
   Hero,
   HeroChip,
   HeroChips,
+  HeroStat,
   HeroTrack,
   Icon,
   Kbd,
+  PillTabs,
   Sheet,
   SrOnly,
   StatusGlyph,
@@ -375,6 +377,7 @@ export function OnCallScreen() {
       value={coverAt}
       onChange={setCoverAt}
       size="sm"
+      className={isPhone ? styles.coverTrack : undefined}
     />
   );
 
@@ -386,8 +389,38 @@ export function OnCallScreen() {
           atLater ? `Who answers at ${hhmm(minute)}${minute < boardMinute ? " tomorrow" : ""}` : "Who to call now"
         }
         title={`${answering.length} ${answering.length === 1 ? "line" : "lines"} answering`}
-        stats={heroStats}
-        aside={clock}
+        stats={
+          isPhone ? (
+            <>
+              <HeroStat
+                value={closed.length}
+                label={
+                  <>
+                    <X size={12} aria-hidden="true" />
+                    Closed now
+                  </>
+                }
+              />
+              <HeroStat
+                value={endingSoon.length}
+                label="Ending soon"
+                tone="warning"
+                pressed={highlight === "soon"}
+                onToggle={() => toggleHighlight("soon")}
+              />
+              <HeroStat
+                value={checkDue.length}
+                label="Check due"
+                tone="warning"
+                pressed={highlight === "due"}
+                onToggle={() => toggleHighlight("due")}
+              />
+            </>
+          ) : (
+            heroStats
+          )
+        }
+        aside={isPhone ? undefined : clock}
         bar={
           <>
             <span className={styles.heroLabel}>Cover at</span>
@@ -527,6 +560,19 @@ export function OnCallScreen() {
     </FilterChip>
   ));
 
+  // Phone: Ending soon and Check due are the hero figures, so the chips are the other two, uncounted.
+  const phoneHighlightChips = HIGHLIGHTS.filter((item) => item.id === "now" || item.id === "email").map((item) => (
+    <FilterChip
+      key={item.id}
+      pressed={highlight === item.id}
+      onPressedChange={() => toggleHighlight(item.id)}
+      className={styles.chip}
+    >
+      {item.id === "email" ? <Icon icon={Mail} size={16} /> : <StatusGlyph tone="success" size={9} />}
+      {item.label}
+    </FilterChip>
+  ));
+
   const groupByChip =
     tab === "hospitals" ? (
       <FilterChip
@@ -534,7 +580,7 @@ export function OnCallScreen() {
         onPressedChange={(on) => setGroupBy(on ? "role" : "place")}
         className={styles.chip}
       >
-        <Icon icon={groupBy === "role" ? Users : MapPin} size={14} />
+        <Icon icon={isPhone || groupBy === "role" ? Users : MapPin} size={isPhone ? 16 : 14} />
         By role
       </FilterChip>
     ) : null;
@@ -552,17 +598,48 @@ export function OnCallScreen() {
     </p>
   ) : null;
 
+  const downtimeCard = (
+    <DowntimeCard
+      open={downtimeOpen}
+      onClose={() => setDowntimeOpen(false)}
+      entries={[
+        ...keyLines,
+        ...entries.filter((entry) => favourites.includes(entry.id) && !KEY_LINE_IDS.includes(entry.id as never)),
+      ]}
+      onCopy={actions.onCopy}
+      notice={sheetNotice}
+    />
+  );
+
   if (isPhone) {
     return (
       <div className={styles.screen} data-testid="ward-on-call-screen" data-ward-design="v8">
         <main id="main-content" className={styles.main}>
           {hero}
           <div className={styles.phoneTools}>
+            <div className={styles.phoneChips}>
+              <button type="button" className={styles.phoneAction} onClick={copyWhoIsOn}>
+                <Icon icon={Copy} size={16} />
+                Copy who is on
+              </button>
+              <button type="button" className={styles.phoneAction} onClick={() => setDowntimeOpen(true)}>
+                <Icon icon={Printer} size={16} />
+                Downtime card
+              </button>
+            </div>
             {search}
-            <Tabs label="Directory" items={tabItems} value={tab} onChange={setTab} className={styles.phoneTabs} />
+            <div className={styles.phoneSeg}>
+              <PillTabs
+                label="Directory"
+                items={tabItems.map((item) => (item.id === "mine" ? item : { ...item, count: undefined }))}
+                value={tab}
+                onChange={setTab}
+                fill
+              />
+            </div>
             <div className={styles.phoneChips}>
               {groupByChip}
-              {highlightChips}
+              {phoneHighlightChips}
             </div>
           </div>
           <PhoneDirectory
@@ -588,6 +665,7 @@ export function OnCallScreen() {
         {sheetEntry ? (
           <PhoneSheet entry={sheetEntry} actions={actions} notice={sheetNotice} onClose={() => setSheetId(null)} />
         ) : null}
+        {downtimeCard}
       </div>
     );
   }
@@ -687,16 +765,7 @@ export function OnCallScreen() {
           note="Not a medical device. Synthetic records, mock numbers. Calling and email are not wired."
         />
       </main>
-      <DowntimeCard
-        open={downtimeOpen}
-        onClose={() => setDowntimeOpen(false)}
-        entries={[
-          ...keyLines,
-          ...entries.filter((entry) => favourites.includes(entry.id) && !KEY_LINE_IDS.includes(entry.id as never)),
-        ]}
-        onCopy={actions.onCopy}
-        notice={sheetNotice}
-      />
+      {downtimeCard}
     </div>
   );
 }

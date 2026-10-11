@@ -520,6 +520,9 @@ export type MovementHorizonEvent = {
   type: MovementHorizonEventType;
   startH: number;
   durH: number;
+  /** The recorded planned move time behind `startH`, when there is one. Without it `startH` is 0
+   *  because nothing places the event, not because it is due now. */
+  plannedAt?: Instant;
   origin: string;
   dest: string;
   /** `""` when the movement carries no transport — never a placeholder carrier name. */
@@ -582,6 +585,9 @@ function horizonEvent(
     type,
     startH,
     durH,
+    ...(movement.plannedMoveAt !== undefined && movement.stage !== "moving"
+      ? { plannedAt: movement.plannedMoveAt }
+      : {}),
     origin: departmentLabel(movement.originEdId, ed?.name),
     dest: destName,
     carrier: movement.transport?.provider ?? "",
@@ -646,4 +652,3 @@ export function deriveMovementHorizonLanes(
     (a, b) => b.events.length - a.events.length || a.name.localeCompare(b.name),
   );
 }
-

@@ -271,6 +271,13 @@ export function DowntimePackScreen() {
         <main id="main-content" className={styles.main}>
           <PhoneHero
             level={1}
+            eyebrow="Downtime pack"
+            chip={
+              <span className={styles.frozen} data-testid="ward-downtime-frozen">
+                <span className={styles.frozenDot} aria-hidden="true" />
+                Frozen <b>{frozenAt}</b>
+              </span>
+            }
             title={`Frozen at ${frozenAt}`}
             sub={`${reportDay(pack.generatedAt, dayZero)} · does not update while open`}
             figures={[
@@ -287,7 +294,7 @@ export function DowntimePackScreen() {
           />
           {staleLine ? <p className={styles.phoneNote}>{staleLine}</p> : null}
           <Segmented<Section>
-            className={styles.phoneSeg}
+            className={cx(styles.phoneSeg, styles.phoneSegPinned)}
             size="md"
             label="Downtime pack section"
             value={section}
@@ -296,13 +303,22 @@ export function DowntimePackScreen() {
               { id: "beds", label: "Beds" },
               { id: "ed", label: "ED" },
               { id: "moves", label: "Moves" },
-              { id: "forms", label: "Forms" },
+              { id: "forms", label: "Forms", count: pack.legalForms.length },
             ]}
           />
           {section === "beds" ? (
             groups.map((group) => (
               <section key={group.service} className={styles.phoneGroup} aria-label={group.service}>
-                <GroupHead title={group.service} meta={`${group.total.ready} ready`} variant="letter" />
+                <GroupHead
+                  title={group.service}
+                  aside={
+                    <>
+                      <b className={styles.phoneGroupFigure}>{group.total.ready}</b> ready
+                    </>
+                  }
+                  variant="letter"
+                  className={styles.phoneGroupHead}
+                />
                 <ul className={styles.phoneList}>
                   {group.wards.map((ward) => (
                     <PhoneListRow
@@ -310,7 +326,12 @@ export function DowntimePackScreen() {
                       as="li"
                       name={ward.name}
                       meta={wardLine(ward)}
-                      value={ward.counts.ready}
+                      value={
+                        <span className={styles.phoneReady}>
+                          {ward.counts.ready > 0 ? <StatusGlyph tone="success" size={9} /> : null}
+                          {ward.counts.ready}
+                        </span>
+                      }
                       time="ready"
                       onSelect={() =>
                         setSheet({

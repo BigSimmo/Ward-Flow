@@ -1245,8 +1245,8 @@
   }
 }
 
-/* Phone: the selected record becomes a bottom sheet and table rows become cards. */
-@media (max-width: 40rem) {
+/* Phone (to 48rem, where the phone details render): the selected record becomes a bottom sheet. */
+@media (max-width: 48rem) {
   .scrim {
     display: block;
     position: fixed;
@@ -1275,7 +1275,10 @@
   .identity {
     padding-right: 3rem;
   }
+}
 
+/* Phone: table rows become cards. */
+@media (max-width: 40rem) {
   .workTable thead {
     position: absolute;
     width: 1px;
@@ -1765,4 +1768,487 @@
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
+}
+
+/*
+ * v10 Discharges > Phone. Now and History sit under the hero beside a filter button that opens the
+ * filters as a sheet; Copy summary is the hero's one full-width action; the two charts are a pair
+ * of cards; the register drops its desk header and each row reads ward, service and person, then
+ * the stage line, with the timing on the right. Nothing here applies above 48rem.
+ */
+.phToolbar,
+.phHeroAction.phHeroAction {
+  display: none;
+}
+
+@media screen and (max-width: 48rem) {
+  .main {
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-8);
+  }
+
+  .kpiStrip {
+    flex: 1 1 100%;
+  }
+
+  .phoneHero :has(> .kpiStrip) {
+    flex-wrap: wrap;
+  }
+
+  .phHeroAction.phHeroAction {
+    display: inline-flex;
+    flex: 1 1 100%;
+    grid-column: 1 / -1;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    margin-top: var(--wf-s-3);
+    border-radius: var(--wf-r-pill);
+  }
+
+  .phToolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-3);
+  }
+
+  .phToolbar > .populationSwitch {
+    display: grid;
+    flex: 1 1 auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 3px;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-track);
+  }
+
+  .phToolbar > .populationSwitch button {
+    justify-content: center;
+    height: 40px;
+    border: 1px solid transparent;
+    border-radius: var(--wf-r-pill);
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-13);
+  }
+
+  .phToolbar > .populationSwitch button[aria-pressed="true"] {
+    border-color: var(--wf-line-3);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    color: var(--wf-ink-1);
+  }
+
+  .phToolbar > .populationSwitch button:focus-visible {
+    outline-color: var(--wf-focus-ring);
+  }
+
+  .phFilterButton {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    color: var(--wf-ink-1);
+    cursor: pointer;
+  }
+
+  .phFilterButton[data-active="true"] {
+    border-color: var(--wf-accent);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  .phFilterButton:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* Inside the filter sheet the card loses its own frame and the labels show again. */
+  .filterCard {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .phChartCards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wf-s-3);
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .phChartCard {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    min-width: 0;
+    min-height: 60px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    color: var(--wf-ink-1);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .phChartCard:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .phChartIcon {
+    flex: 0 0 auto;
+    color: var(--wf-ink-3);
+  }
+
+  .phChartText {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .phChartTitle {
+    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  }
+
+  .phChartMeta {
+    overflow: hidden;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phChartMeta b {
+    color: var(--wf-ink-1);
+    font-family: var(--wf-mono);
+  }
+
+  /* The register: no desk header; the hero figures and the cards do that work on a phone. */
+  .register .panelHeader {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .register .statusFilters,
+  .register .viewSwitch,
+  .register .shownCountBadge {
+    display: none;
+  }
+
+  .register .highlightNote {
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .workTable .groupRow th {
+    padding: var(--wf-s-2) var(--wf-s-3);
+    background: var(--wf-surface-2);
+  }
+
+  .groupHead {
+    align-items: center;
+  }
+
+  .groupHead h3 {
+    font-size: var(--wf-fs-12);
+    letter-spacing: var(--wf-tr-caps, 0.06em);
+    text-transform: uppercase;
+  }
+
+  .groupSub {
+    display: none;
+  }
+
+  /* A row: ward, then service and person, then the stage line; the timing on the right. */
+  .workTable tr:not(.groupRow) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 2px var(--wf-s-3);
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .workTable td:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .workTable td:nth-child(3) {
+    grid-column: 1;
+    grid-row: 2;
+    max-width: none;
+  }
+
+  .workTable td.timingCell {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: right;
+  }
+
+  .timingCell .due {
+    display: none;
+  }
+
+  .timingCell .band {
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14, 20px) var(--wf-mono);
+  }
+
+  .timingCell .overdue {
+    margin: 0;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+  }
+
+  .workTable .recordButton {
+    font-size: var(--wf-fs-14);
+  }
+
+  .workTable td:first-child .secondary {
+    color: var(--wf-ink-2);
+  }
+
+  .stageCluster {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--wf-s-1);
+    min-width: 0;
+    overflow: hidden;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .stageCluster .badge {
+    flex: 0 0 auto;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    font-weight: 500;
+  }
+
+  .stageCluster .blocker,
+  .stageCluster .secondary {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stageCluster .blocker::before,
+  .stageCluster .secondary::before {
+    content: "· ";
+  }
+}
+
+/* v10 phone: a long group ends in a "Show N more" row; the release sheet pins Open ward and Clear
+   blocker; transport and dossier open under the sheet on request. */
+.phMoreRow,
+.phMore,
+.phFootPri {
+  display: none;
+}
+
+@media screen and (max-width: 48rem) {
+  .phMoreRow {
+    display: table-row;
+  }
+
+  .phMoreRow > td {
+    padding: 0;
+  }
+
+  .phMore {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
+    border: 0;
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+    color: var(--wf-accent);
+    font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
+    cursor: pointer;
+  }
+
+  .tabPane + .phMore {
+    margin-top: var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+  }
+
+  .detailFooter {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    justify-content: stretch;
+    padding: 12px var(--wf-s-4) calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--wf-surface-2);
+  }
+
+  .detailFooter > a,
+  .detailFooter > button {
+    min-height: 48px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .detailFooter > a:only-child {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .phFootPri.phFootPri {
+    display: inline-flex;
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  /* v10 group header: glyph, label, count and a fold chevron, the whole row one 48px target. */
+  .workTable .groupRow th:has(> .phGroupToggle) {
+    padding: 0;
+  }
+
+  .phGroupToggle {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    width: 100%;
+    min-height: 48px;
+    padding: 0 var(--wf-s-3);
+    border: 0;
+    background: transparent;
+    color: var(--wf-ink-2);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .phGroupToggle h3 {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    letter-spacing: var(--wf-tr-caps, 0.06em);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .phGroupCount {
+    margin-left: 4px;
+    color: var(--wf-ink-1);
+    font-family: var(--wf-mono);
+  }
+
+  .phGroupChevron {
+    flex: none;
+    color: var(--wf-ink-3);
+  }
+
+  /* v10 release sheet: ward title, person and UMRN subline, the stage pill under it. */
+  .phIdentity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding-right: 2.25rem;
+  }
+
+  .phIdentityMeta {
+    margin: 0;
+    color: var(--wf-ink-2);
+    font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  }
+
+  /* 2x2 facts, hairline-divided, on a plain surface. */
+  .phFacts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    overflow: hidden;
+  }
+
+  .phFacts > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  .phFacts > div:nth-child(odd) {
+    border-right: 1px solid var(--wf-line);
+  }
+
+  .phFacts > div:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .phFacts dt {
+    color: var(--wf-ink-3);
+    font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  }
+
+  .phFacts dd {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--wf-ink-1);
+    font: 500 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Milestones as one bordered list, rows hairline-divided. */
+  .timeline {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .timelineItem {
+    align-items: center;
+    padding: 10px 12px;
+  }
+
+  .timelineItem + .timelineItem {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .timelineItem > svg {
+    margin-top: 0;
+  }
+
+  .timelineTitle {
+    font-size: var(--wf-fs-14);
+  }
+
+  .phGroupToggle:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
 }

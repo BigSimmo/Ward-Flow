@@ -281,3 +281,31 @@ export function GroupHead({
     </h3>
   );
 }
+
+/**
+ * Phone row (v10): a list row in one inset card. Glyph, the alert, the patient and the route, with
+ * how long and the owner on the right. The row opens the alert's sheet, where its actions are.
+ */
+export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
+  const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
+  return (
+    <li className={styles.phoneRow} onClick={selectOnRowClick(entry, handlers)} {...rowData(entry, handlers)}>
+      <span className={styles.phoneRowGlyph}>
+        {entry.snooze ? <AlarmClock size={14} aria-hidden="true" /> : <StatusGlyph tone={glyphTone(entry)} />}
+      </span>
+      <span className={styles.phoneRowText}>
+        <OpenButton entry={entry} handlers={handlers} />
+        <span className={styles.phoneRowLine}>
+          <Who entry={entry} />
+        </span>
+        <span className={styles.phoneRowLine}>{route}</span>
+      </span>
+      <span className={styles.phoneRowEnd}>
+        <span className={styles.phoneRowAge}>
+          {entry.raised !== undefined ? minutesText(Math.max(0, now - entry.raised)) : ""}
+        </span>
+        <span className={styles.phoneRowOwner}>{ownerShort(entry.owner, ownedByBookingWard(entry))}</span>
+      </span>
+    </li>
+  );
+}

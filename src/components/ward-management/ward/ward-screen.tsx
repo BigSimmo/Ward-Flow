@@ -5,7 +5,17 @@ import { WardReferralInbox } from "../referrals/ward-referral-inbox";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronLeft, Clock, FileText, ListChecks, Printer, Search, Send } from "lucide-react";
+import {
+  ArrowLeftRight,
+  ChevronDown,
+  ChevronLeft,
+  Clock,
+  FileText,
+  ListChecks,
+  Printer,
+  Search,
+  Send,
+} from "lucide-react";
 import { useEffect, useCallback, useRef, useState, type FormEvent } from "react";
 
 import {
@@ -45,8 +55,10 @@ import {
   Hero,
   LiveChip,
   Menu,
+  ScrollRow,
   TextInput,
   buttonClass,
+  useIsPhone,
   useOptionalToast,
   durMinutes,
 } from "@/components/wf";
@@ -236,6 +248,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // listed cross-role pair in `ward-role-permissions.ts`.
   const raiseReferralGate = useRoleGate()("RECEIVE_REFERRAL");
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  // Phone (v10): This shift and Ward flow sit behind a chip and open as bottom sheets.
+  const isPhone = useIsPhone();
+  const [phonePanel, setPhonePanel] = useState<"shift" | "flow" | null>(null);
+  // A sheet left open when the screen widens past the phone is closed, not reopened on return.
+  const [panelWasPhone, setPanelWasPhone] = useState(isPhone);
+  if (panelWasPhone !== isPhone) {
+    setPanelWasPhone(isPhone);
+    if (!isPhone) setPhonePanel(null);
+  }
+  const [phoneTodoCount, setPhoneTodoCount] = useState<number | undefined>(undefined);
   const [dismissedBuzzes, setDismissedBuzzes] = useState<number[]>([]);
   // Item 44, build plan task F3 (§2 "Bed board, ward page and all seven statistics screens: a
   // sentence only."). A hook, so it is read unconditionally, before the not-found early return
@@ -1753,6 +1775,191 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             unitHealthService(candidate) === unitHealthService(unit),
         );
 
+  const wardSwitchMenu =
+    switchUnits.length > 0 ? (
+      <Menu
+        label="Switch ward"
+        align="start"
+        items={switchUnits.map((candidate) => ({
+          id: candidate.id,
+          label: candidate.name,
+          meta: candidate.siteCode,
+          onSelect: () => {
+            const href = unitHref(candidate.id);
+            if (router) router.push(href);
+            else window.location.assign(href);
+          },
+        }))}
+        trigger={(props) => (
+          <button
+            type="button"
+            {...props}
+            className={styles.wardSwitch}
+            aria-label={`Switch ward, now ${unit.name}`}
+            data-testid="ward-switch-btn"
+          >
+            <ChevronDown size={16} aria-hidden="true" />
+          </button>
+        )}
+      />
+    ) : null;
+  const wardRibbon = (
+    <WardTelemetryRibbon
+      unit={unit}
+      capacity={{ available: states.ready, occupied: states.occupied }}
+      staffedSpecialling={staffedSpecialling}
+      now={now}
+      filter={activeTab === "attn" ? bedFilter : undefined}
+      onFilter={(next) => {
+        setBedFilter(next);
+        if (next === "shift-end") setFlowTab("discharges");
+        showHome("bed-capacity");
+      }}
+      actNow={actNowCount}
+      onActNow={() => {
+        setShiftView("todo");
+        if (isPhone) {
+          setActiveTab("attn");
+          setPhonePanel("shift");
+          return;
+        }
+        showHome("ward-this-shift");
+      }}
+      phone={isPhone}
+    />
+  );
+  const wardHeroFoot = (
+    <span className={styles.heroFootStack}>
+      <span className={styles.heroMeta}>
+        <Clock size={14} aria-hidden="true" className={styles.heroMetaIcon} />
+        <span>{shiftLine(now)}</span>
+        {" · "}
+        {unit.cohort} · {designationSummary(unit).toLowerCase()} ·{" "}
+        <Link
+          className={styles.heroBedListLink}
+          href="#bed-capacity"
+          data-testid="ward-hero-open-bed-list"
+          onClick={(event) => {
+            event.preventDefault();
+            setBedFilter("all");
+            showHome("bed-capacity");
+          }}
+        >
+          {unit.beds} beds · {capacity.available} ready
+        </Link>
+        {" · "}
+        {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
+        <span>Roster not recorded</span> · {staffedSpecialling} on 1:1 specialling ·{" "}
+        {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
+        {(unit.intakeConstraints ?? []).length > 0
+          ? ` · ${(unit.intakeConstraints ?? [])
+              .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)
+              .join(", ")}`
+          : ""}
+      </span>
+      <CheckingFoot
+        items={[
+          {
+            id: "stale",
+            label: `Bed counts older than ${durMinutes(unit.allocatable.staleAfterMinutes)}`,
+            value: bedCountsStale ? 1 : 0,
+            tone: bedCountsStale ? "warning" : undefined,
+          },
+          {
+            id: "held",
+            label: "Discharges held up",
+            value: blockedReleases.length,
+            tone: blockedReleases.length > 0 ? "danger" : undefined,
+          },
+          {
+            id: "past",
+            label: "Past expected date",
+            value: bedsList.filter((bed) => bed.pastDate).length,
+          },
+        ]}
+        notChecked={["roster, no feed"]}
+      />
+    </span>
+  );
+  const wardHeroFootAside = (
+    <span>
+      {unit.allocatable.source === "ward" ? "Confirmed" : "Last figure"} {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
+      {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
+    </span>
+  );
+
+  const tabHome = (
+    <li role="presentation">
+      <button
+        type="button"
+        className={styles.tabBtn}
+        role="tab"
+        id="tabBtn-attn"
+        aria-selected={activeTab !== "return" && activeTab !== "board"}
+        aria-controls={
+          activeTab === "coming"
+            ? "tab-coming"
+            : activeTab === "out"
+              ? "tab-out"
+              : activeTab === "beds"
+                ? "tab-beds"
+                : "tab-attn"
+        }
+        aria-label="Home (Worth Your Attention)"
+        onClick={() => {
+          setActiveTab("attn");
+        }}
+      >
+        <span>Home</span>
+      </button>
+    </li>
+  );
+  const tabBoard = (
+    <li role="presentation">
+      <button
+        type="button"
+        className={styles.tabBtn}
+        role="tab"
+        id="tabBtn-board"
+        aria-selected={activeTab === "board"}
+        aria-controls="tab-attn"
+        aria-label="Bed board (pick up and place)"
+        data-testid="ward-tab-board"
+        onClick={() => {
+          setActiveTab("board");
+        }}
+      >
+        <span>Bed board</span>
+        {boardWaiting.length > 0 ? (
+          <span className={styles.tabBadge} aria-label={`${boardWaiting.length} waiting to be placed`}>
+            {boardWaiting.length}
+          </span>
+        ) : null}
+      </button>
+    </li>
+  );
+  const tabDecisions = (
+    <li role="presentation">
+      <button
+        type="button"
+        className={styles.tabBtn}
+        role="tab"
+        id="tabBtn-return"
+        aria-selected={activeTab === "return"}
+        aria-controls="tab-return"
+        aria-label="Decisions (Ward record)"
+        onClick={() => {
+          setActiveTab("return");
+        }}
+      >
+        <span>Decisions</span>
+        <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-label={decisionsDueLabel}>
+          {decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}
+        </span>
+      </button>
+    </li>
+  );
+
   return (
     <div
       className={styles.screen}
@@ -1779,36 +1986,25 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           <h2 className={styles.srOnlyHeading}>This ward</h2>
           <Hero
             className={styles.wardHero}
-            eyebrow={`Ward · ${site ? site.name : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`}
-            title={unit.name}
+            eyebrow={
+              isPhone
+                ? `${site ? site.name.replace(/\s+(Public Hospital|Hospital|Health Campus|Health Service)$/u, "") : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
+                : `Ward · ${site ? site.name : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
+            }
+            title={
+              isPhone ? (
+                <span className={styles.phoneHeroTitle}>
+                  <span className={styles.phoneHeroName}>{unit.name}</span>
+                  {wardSwitchMenu}
+                </span>
+              ) : (
+                unit.name
+              )
+            }
             titleMeta={
-              switchUnits.length > 0 ? (
-                <Menu
-                  label="Switch ward"
-                  align="start"
-                  items={switchUnits.map((candidate) => ({
-                    id: candidate.id,
-                    label: candidate.name,
-                    meta: candidate.siteCode,
-                    onSelect: () => {
-                      const href = unitHref(candidate.id);
-                      if (router) router.push(href);
-                      else window.location.assign(href);
-                    },
-                  }))}
-                  trigger={(props) => (
-                    <button
-                      type="button"
-                      {...props}
-                      className={styles.wardSwitch}
-                      aria-label={`Switch ward, now ${unit.name}`}
-                      data-testid="ward-switch-btn"
-                    >
-                      <ChevronDown size={16} aria-hidden="true" />
-                    </button>
-                  )}
-                />
-              ) : null
+              isPhone
+                ? `${unit.beds} beds · ${states.occupied} occupied · ${unit.allocatable.source === "ward" ? "confirmed" : "last figure"} ${formatInstant(unit.allocatable.confirmedAt)}`
+                : wardSwitchMenu
             }
             aside={
               <>
@@ -1825,182 +2021,76 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </button>
               </>
             }
-            bar={
-              <WardTelemetryRibbon
-                unit={unit}
-                capacity={{ available: states.ready, occupied: states.occupied }}
-                staffedSpecialling={staffedSpecialling}
-                now={now}
-                filter={activeTab === "attn" ? bedFilter : undefined}
-                onFilter={(next) => {
-                  setBedFilter(next);
-                  if (next === "shift-end") setFlowTab("discharges");
-                  showHome("bed-capacity");
-                }}
-                actNow={actNowCount}
-                onActNow={() => {
-                  setShiftView("todo");
-                  showHome("ward-this-shift");
-                }}
-              />
-            }
-            foot={
-              <span className={styles.heroFootStack}>
-                <span className={styles.heroMeta}>
-                  <Clock size={14} aria-hidden="true" className={styles.heroMetaIcon} />
-                  <span>{shiftLine(now)}</span>
-                  {" · "}
-                  {unit.cohort} · {designationSummary(unit).toLowerCase()} ·{" "}
-                  <Link
-                    className={styles.heroBedListLink}
-                    href="#bed-capacity"
-                    data-testid="ward-hero-open-bed-list"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setBedFilter("all");
-                      showHome("bed-capacity");
-                    }}
-                  >
-                    {unit.beds} beds · {capacity.available} ready
-                  </Link>
-                  {" · "}
-                  {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
-                  <span>Roster not recorded</span> · {staffedSpecialling} on 1:1 specialling ·{" "}
-                  {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
-                  {(unit.intakeConstraints ?? []).length > 0
-                    ? ` · ${(unit.intakeConstraints ?? [])
-                        .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)
-                        .join(", ")}`
-                    : ""}
-                </span>
-                <CheckingFoot
-                  items={[
-                    {
-                      id: "stale",
-                      label: `Bed counts older than ${durMinutes(unit.allocatable.staleAfterMinutes)}`,
-                      value: bedCountsStale ? 1 : 0,
-                      tone: bedCountsStale ? "warning" : undefined,
-                    },
-                    {
-                      id: "held",
-                      label: "Discharges held up",
-                      value: blockedReleases.length,
-                      tone: blockedReleases.length > 0 ? "danger" : undefined,
-                    },
-                    {
-                      id: "past",
-                      label: "Past expected date",
-                      value: bedsList.filter((bed) => bed.pastDate).length,
-                    },
-                  ]}
-                  notChecked={["roster, no feed"]}
-                />
-              </span>
-            }
-            footAside={
-              <span>
-                {unit.allocatable.source === "ward" ? "Confirmed" : "Last figure"}{" "}
-                {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
-                {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
-              </span>
-            }
+            stats={isPhone ? wardRibbon : undefined}
+            bar={isPhone ? undefined : wardRibbon}
+            foot={isPhone ? undefined : wardHeroFoot}
+            footAside={isPhone ? undefined : wardHeroFootAside}
           />
 
-          <nav className={styles.tabBarWrap} aria-label="Ward Operational Tabs">
-            <ul className={styles.tabList} role="tablist" id="mainTabList" aria-label="Ward views">
-              <li role="presentation">
+          {isPhone ? (
+            <>
+              <ScrollRow className={styles.phoneChips} role="toolbar" aria-label="Ward actions">
                 <button
                   type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-attn"
-                  aria-selected={activeTab !== "return" && activeTab !== "board"}
-                  aria-controls={
-                    activeTab === "coming"
-                      ? "tab-coming"
-                      : activeTab === "out"
-                        ? "tab-out"
-                        : activeTab === "beds"
-                          ? "tab-beds"
-                          : "tab-attn"
-                  }
-                  aria-label="Home (Worth Your Attention)"
+                  className={styles.phoneChip}
+                  aria-haspopup="dialog"
                   onClick={() => {
                     setActiveTab("attn");
+                    setPhonePanel("shift");
                   }}
+                  data-testid="ward-phone-chip-shift"
                 >
-                  <span>Home</span>
-                </button>
-              </li>
-              <li role="presentation">
-                <button
-                  type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-board"
-                  aria-selected={activeTab === "board"}
-                  aria-controls="tab-attn"
-                  aria-label="Bed board (pick up and place)"
-                  data-testid="ward-tab-board"
-                  onClick={() => {
-                    setActiveTab("board");
-                  }}
-                >
-                  <span>Bed board</span>
-                  {boardWaiting.length > 0 ? (
-                    <span className={styles.tabBadge} aria-label={`${boardWaiting.length} waiting to be placed`}>
-                      {boardWaiting.length}
-                    </span>
+                  <ListChecks size={16} aria-hidden="true" />
+                  This shift
+                  {phoneTodoCount !== undefined ? (
+                    <span className={styles.phoneChipCount}>{phoneTodoCount}</span>
                   ) : null}
                 </button>
-              </li>
-              <li role="presentation">
                 <button
                   type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-return"
-                  aria-selected={activeTab === "return"}
-                  aria-controls="tab-return"
-                  aria-label="Decisions (Ward record)"
+                  className={styles.phoneChip}
+                  aria-haspopup="dialog"
                   onClick={() => {
-                    setActiveTab("return");
+                    setActiveTab("attn");
+                    setPhonePanel("flow");
                   }}
+                  data-testid="ward-phone-chip-flow"
                 >
-                  <span>Decisions</span>
-                  <span
-                    className={styles.tabBadge}
-                    id="badgeReturn"
-                    title={decisionsDueLabel}
-                    aria-label={decisionsDueLabel}
-                  >
-                    {decisionsDue > 0 ? `${decisionsDue} Due` : "Done"}
-                  </span>
+                  <ArrowLeftRight size={16} aria-hidden="true" />
+                  Ward flow
                 </button>
-              </li>
-            </ul>
-            <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
-              <TextInput
-                type="search"
-                icon={Search}
-                boxClassName={styles.findBox}
-                aria-label="Find a bed or person on this ward"
-                placeholder="Find bed or person"
-                value={bedQuery}
-                onChange={(event) => {
-                  setBedQuery(event.target.value);
-                  if (activeTab !== "attn" && activeTab !== "board") setActiveTab("attn");
-                }}
-                onClear={() => {
-                  setBedQuery("");
-                }}
-                data-testid="ward-find-input"
-              />
-              <div className={styles.notificationTriggerWrap}>
+                <button
+                  type="button"
+                  className={styles.phoneChip}
+                  onClick={() => {
+                    setDailySheetOpen(true);
+                  }}
+                  data-testid="ward-open-daily-sheet-btn"
+                >
+                  <FileText size={16} aria-hidden="true" />
+                  Shift brief
+                </button>
+                <Link
+                  className={styles.phoneChip}
+                  href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
+                >
+                  <Printer size={16} aria-hidden="true" />
+                  Handover
+                </Link>
+                <button
+                  type="button"
+                  className={styles.phoneChip}
+                  onClick={handleRaiseWardReferral}
+                  title="Record a ward-to-ward referral with this ward as the sending ward."
+                  {...raiseReferralGate.buttonProps}
+                >
+                  <Send size={16} aria-hidden="true" />
+                  Raise referral
+                </button>
                 <button
                   ref={notificationTriggerRef}
                   type="button"
-                  className={buttonClass({ variant: "ghost", size: "sm" })}
+                  className={styles.phoneChip}
                   onClick={() => {
                     setNotificationCenterOpen((prev) => !prev);
                   }}
@@ -2009,72 +2099,169 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   title="Buzzes, urgent tasks and notices"
                 >
                   <ListChecks size={16} aria-hidden="true" />
-                  <span>Tasks</span>
+                  Tasks
                   {unreadAlertsCount > 0 ? (
-                    <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
+                    <span className={styles.phoneChipCount} data-testid="ward-notification-count-badge">
                       {unreadAlertsCount}
                     </span>
                   ) : null}
                 </button>
-                {notificationCenterOpen ? (
-                  <div
-                    ref={notificationCenterRef}
-                    className={styles.notificationCenterContainer}
-                    data-testid="ward-notification-center-wrap"
-                  >
-                    <WardNotificationCenter
-                      unitId={unit.id}
-                      unitName={unit.name}
-                      now={now}
-                      movements={movements}
-                      notices={notices}
-                      refreshRequests={refreshRequests}
-                      morningRollupConfirmed={isRollupConfirmedToday}
-                      morningRollupDeadlinePassed={morningRollupDeadlinePassed}
-                      morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
-                      onConfirmMorningRollup={handleConfirmMorningRollup}
-                      onAcknowledgeNotice={handleAcknowledgeNotice}
-                      onDismissBuzz={handleDismissBuzz}
-                      onClose={() => {
-                        setNotificationCenterOpen(false);
-                      }}
-                    />
-                  </div>
-                ) : null}
-              </div>
-              <button
-                type="button"
-                className={buttonClass({ variant: "ghost", size: "sm" })}
-                onClick={() => {
-                  setDailySheetOpen(true);
-                }}
-                title="Open this shift's brief."
-                data-testid="ward-open-daily-sheet-btn"
-              >
-                <FileText size={16} aria-hidden="true" />
-                Shift brief
-              </button>
-              <Link
-                className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
-                href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
-              >
-                <Printer size={16} aria-hidden="true" />
-                Handover
-              </Link>
-              <button
-                type="button"
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                onClick={handleRaiseWardReferral}
-                title="Record a ward-to-ward referral with this ward as the sending ward."
-                {...raiseReferralGate.buttonProps}
-              >
-                <Send size={16} aria-hidden="true" />
-                Raise referral
-              </button>
+              </ScrollRow>
               {raiseReferralGate.note}
-            </div>
-          </nav>
+              {notificationCenterOpen ? (
+                <div
+                  ref={notificationCenterRef}
+                  className={styles.phoneNotificationCenter}
+                  data-testid="ward-notification-center-wrap"
+                >
+                  <WardNotificationCenter
+                    unitId={unit.id}
+                    unitName={unit.name}
+                    now={now}
+                    movements={movements}
+                    notices={notices}
+                    refreshRequests={refreshRequests}
+                    morningRollupConfirmed={isRollupConfirmedToday}
+                    morningRollupDeadlinePassed={morningRollupDeadlinePassed}
+                    morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
+                    onConfirmMorningRollup={handleConfirmMorningRollup}
+                    onAcknowledgeNotice={handleAcknowledgeNotice}
+                    onDismissBuzz={handleDismissBuzz}
+                    onClose={() => {
+                      setNotificationCenterOpen(false);
+                    }}
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : null}
+          {isPhone ? null : (
+            <nav className={styles.tabBarWrap} aria-label="Ward Operational Tabs">
+              <ul className={styles.tabList} role="tablist" id="mainTabList" aria-label="Ward views">
+                {isPhone ? (
+                  <>
+                    {tabHome}
+                    {tabDecisions}
+                    {tabBoard}
+                  </>
+                ) : (
+                  <>
+                    {tabHome}
+                    {tabBoard}
+                    {tabDecisions}
+                  </>
+                )}
+              </ul>
+              {isPhone ? null : (
+                <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
+                  <TextInput
+                    type="search"
+                    icon={Search}
+                    boxClassName={styles.findBox}
+                    aria-label="Find a bed or person on this ward"
+                    placeholder="Find bed or person"
+                    value={bedQuery}
+                    onChange={(event) => {
+                      setBedQuery(event.target.value);
+                      if (activeTab !== "attn" && activeTab !== "board") setActiveTab("attn");
+                    }}
+                    onClear={() => {
+                      setBedQuery("");
+                    }}
+                    data-testid="ward-find-input"
+                  />
+                  <div className={styles.notificationTriggerWrap}>
+                    <button
+                      ref={notificationTriggerRef}
+                      type="button"
+                      className={buttonClass({ variant: "ghost", size: "sm" })}
+                      onClick={() => {
+                        setNotificationCenterOpen((prev) => !prev);
+                      }}
+                      aria-expanded={notificationCenterOpen}
+                      data-testid="ward-notifications-toggle-btn"
+                      title="Buzzes, urgent tasks and notices"
+                    >
+                      <ListChecks size={16} aria-hidden="true" />
+                      <span>Tasks</span>
+                      {unreadAlertsCount > 0 ? (
+                        <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
+                          {unreadAlertsCount}
+                        </span>
+                      ) : null}
+                    </button>
+                    {notificationCenterOpen ? (
+                      <div
+                        ref={notificationCenterRef}
+                        className={styles.notificationCenterContainer}
+                        data-testid="ward-notification-center-wrap"
+                      >
+                        <WardNotificationCenter
+                          unitId={unit.id}
+                          unitName={unit.name}
+                          now={now}
+                          movements={movements}
+                          notices={notices}
+                          refreshRequests={refreshRequests}
+                          morningRollupConfirmed={isRollupConfirmedToday}
+                          morningRollupDeadlinePassed={morningRollupDeadlinePassed}
+                          morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
+                          onConfirmMorningRollup={handleConfirmMorningRollup}
+                          onAcknowledgeNotice={handleAcknowledgeNotice}
+                          onDismissBuzz={handleDismissBuzz}
+                          onClose={() => {
+                            setNotificationCenterOpen(false);
+                          }}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "ghost", size: "sm" })}
+                    onClick={() => {
+                      setDailySheetOpen(true);
+                    }}
+                    title="Open this shift's brief."
+                    data-testid="ward-open-daily-sheet-btn"
+                  >
+                    <FileText size={16} aria-hidden="true" />
+                    Shift brief
+                  </button>
+                  <Link
+                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
+                    href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
+                  >
+                    <Printer size={16} aria-hidden="true" />
+                    Handover
+                  </Link>
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "sec", size: "sm" })}
+                    onClick={handleRaiseWardReferral}
+                    title="Record a ward-to-ward referral with this ward as the sending ward."
+                    {...raiseReferralGate.buttonProps}
+                  >
+                    <Send size={16} aria-hidden="true" />
+                    Raise referral
+                  </button>
+                  {raiseReferralGate.note}
+                </div>
+              )}
+            </nav>
+          )}
         </section>
+        {isPhone ? (
+          /* Phone (v10): the three views pin under the header as one segmented control, outside the
+             ward card so they stay in place while the page scrolls. */
+          <nav className={`${styles.tabBarWrap} ${styles.phoneTabBar}`} aria-label="Ward Operational Tabs">
+            <ul className={styles.tabList} role="tablist" id="mainTabList" aria-label="Ward views">
+              {tabHome}
+              {tabDecisions}
+              {tabBoard}
+            </ul>
+          </nav>
+        ) : null}
 
         {/* ───────── TAB 1: WORTH YOUR ATTENTION ───────── */}
         <section
@@ -2085,6 +2272,38 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           data-active={activeTab === "attn" || activeTab === "board"}
         >
           <WardHomeTab
+            phonePanel={isPhone ? phonePanel : undefined}
+            onPhonePanelChange={setPhonePanel}
+            onTodoCount={setPhoneTodoCount}
+            phoneShiftLabel={shiftLine(now)}
+            phoneHeroFoot={
+              isPhone ? (
+                <>
+                  {wardHeroFoot}
+                  {wardHeroFootAside}
+                </>
+              ) : undefined
+            }
+            phoneFiguresSummary={`Closed ${states.closed} · Pulled ${states.pulled} · Expected out ${breakdown.expectedToday} · Held up ${blockedReleases.length}`}
+            phoneFind={
+              isPhone ? (
+                <TextInput
+                  type="search"
+                  icon={Search}
+                  boxClassName={styles.phoneFindBox}
+                  aria-label="Find a bed or person on this ward"
+                  placeholder="Find bed or person"
+                  value={bedQuery}
+                  onChange={(event) => {
+                    setBedQuery(event.target.value);
+                  }}
+                  onClear={() => {
+                    setBedQuery("");
+                  }}
+                  data-testid="ward-find-input"
+                />
+              ) : undefined
+            }
             unit={unit}
             onAcceptInPrinciple={handleAcceptInPrinciple}
             units={units}

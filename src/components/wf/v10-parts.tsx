@@ -6,6 +6,7 @@ import { cx } from "./cx";
 import { SrOnly } from "./primitives";
 import { StackBar, type StackSegment } from "./stat";
 import { StatusGlyph, type WfTone } from "./status-glyph";
+import { SinceYouLookedFold } from "./since-you-looked-fold";
 import styles from "./v10-parts.module.css";
 
 /*
@@ -405,7 +406,46 @@ export function SinceYouLooked({
   id?: string;
   className?: string;
 }) {
-  return (
+  // Phone (v10): one summary row that opens the digest, not a grid of tiles.
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const lead = items
+    .slice(0, 2)
+    .map((item) => `${item.value} ${item.word}`)
+    .join(" · ");
+  const summary =
+    items.length > 0 ? (
+      <>
+        <b className={styles.sinceRowCount}>{total}</b> {total === 1 ? "change" : "changes"} since{" "}
+        {isClockLike(since) ? <b className={styles.sinceClock}>{since}</b> : since}
+        {lead ? ` · ${lead}` : ""}
+      </>
+    ) : (
+      <>
+        <b className={styles.sinceRowCount}>0</b> changes since{" "}
+        {isClockLike(since) ? <b className={styles.sinceClock}>{since}</b> : since}, nothing new
+      </>
+    );
+  // Phone sheet body (v10): one card of rows, the word over its detail, the figure at the right.
+  const sheetBody =
+    items.length === 0 ? (
+      <p className={styles.sinceEmpty}>Nothing has changed since {since}.</p>
+    ) : (
+      <ul className={styles.sinceSheetList}>
+        {items.map((item) => (
+          <li key={item.id} className={styles.sinceSheetRow}>
+            <span className={styles.sinceSheetText}>
+              <span className={styles.sinceSheetWord}>{item.word.charAt(0).toUpperCase() + item.word.slice(1)}</span>
+              {item.detail ? <span className={styles.sinceSheetDetail}>{item.detail}</span> : null}
+            </span>
+            <span className={styles.sinceSheetFigure}>
+              {item.tone ? <StatusGlyph tone={item.tone} size={10} /> : null}
+              {item.value}
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
+  const full = (
     <section id={id} className={cx(styles.since, className)} aria-label={`Since you looked at ${since}`}>
       <CardHead
         title="Since you looked"
@@ -436,5 +476,18 @@ export function SinceYouLooked({
         </ul>
       )}
     </section>
+  );
+  return (
+    <SinceYouLookedFold
+      summary={summary}
+      label={`Since you looked at ${since}`}
+      id={id}
+      className={cx(styles.since, className)}
+      sheetDescription={<>At {isClockLike(since) ? <b className={styles.sinceClock}>{since}</b> : since}</>}
+      sheetBody={sheetBody}
+      onCopy={onCopy}
+    >
+      {full}
+    </SinceYouLookedFold>
   );
 }

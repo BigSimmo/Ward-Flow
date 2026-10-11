@@ -36,6 +36,48 @@
   --mono: var(--wf-mono);
 }
 
+/* Phone sheets render in the overlay root, outside .answerScreen: they read the same names. */
+.phoneSheetScope {
+  --ground: var(--wf-canvas);
+  --surface: var(--wf-surface);
+  --surface-2: var(--wf-surface-2);
+  --sunk: var(--wf-surface-2);
+  --ink: var(--wf-ink-1);
+  --ink-soft: var(--wf-ink-2);
+  --muted: var(--wf-ink-2);
+  --line: var(--wf-line);
+  --line-strong: var(--wf-line-2);
+  --accent: var(--wf-accent);
+  --accent-ink: var(--wf-accent-ink);
+  --accent-soft: var(--wf-accent-tint);
+  --good: var(--wf-success-ink);
+  --good-soft: var(--wf-surface-2);
+  --warn: var(--wf-warning-ink);
+  --warn-soft: var(--wf-surface-2);
+  --danger: var(--wf-danger-ink);
+  --danger-soft: var(--wf-surface-2);
+  --body: var(--wf-font);
+  --mono: var(--wf-mono);
+  color: var(--ink);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+.phoneSheetScope .historyScopeNote {
+  display: none;
+}
+
+.phoneSheetScope {
+  --on-accent: var(--wf-on-accent);
+}
+
+/* Phone sheet: the ward's own Confirm is a full pill beside the stepper, as in the v10 sheet. */
+.phoneSheetScope .capacityForm .btnPrimary {
+  flex: 1 1 auto;
+  min-height: var(--wf-touch);
+  border-radius: var(--wf-r-pill);
+}
+
 /* Prototype Governance Banner (FF8) */
 .governanceBanner {
   display: flex;
@@ -965,6 +1007,12 @@
   gap: 0.25rem;
 }
 
+.formNote {
+  margin: 0;
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
 .formLabel {
   font-size: var(--t-0);
   font-weight: 600;
@@ -1885,36 +1933,6 @@
  * left and Accept in principle on the right. The back link keeps its words as its accessible name
  * and a full 48px target. The page foot keeps the 12px gutter. Desktop is unchanged. */
 @media screen and (max-width: 48rem) {
-  .answerTop > section {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    column-gap: var(--wf-s-3);
-    padding-bottom: var(--wf-s-3);
-  }
-
-  .answerTop > section > div {
-    display: contents;
-  }
-
-  .answerTop > section > div:first-child > :first-child {
-    order: 1;
-    flex: 1 1 100%;
-  }
-
-  .answerTop > section > div:last-child > :first-child {
-    order: 2;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .answerTop > section > div:first-child > :last-child:not(:first-child) {
-    order: 3;
-    flex: 0 1 auto;
-    min-width: 0;
-    margin-left: auto;
-  }
-
   .answerTop .backLink {
     min-width: var(--spacing-tap, 3rem);
     min-height: var(--spacing-tap, 3rem);
@@ -1999,5 +2017,668 @@
 
   .heroNav button {
     min-height: var(--wf-touch, 44px);
+  }
+}
+
+/* Phone v10 (11 Oct 2026): the hero says which request this is with three figures (Ready, In
+ * use, Gates pass) and Previous and Next as two pills. Below it one patient card with four facts
+ * (the rest a tap away) and the ISBAR summary folded, then Fits this ward folding the gates, then
+ * Confirm your beds, Census and Recent answers as rows that open in place. Decline and Accept in
+ * principle stay pinned at the bottom of the screen. The phone-only classes render only on a
+ * phone; everything else sits under the phone query. */
+.phoneLinkRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--wf-touch);
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+  font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
+  color: var(--wf-accent-ink);
+  list-style: none;
+  cursor: pointer;
+}
+
+.phoneLinkRow::-webkit-details-marker {
+  display: none;
+}
+
+.phoneIsbar[open] > .phoneLinkRow {
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.phoneGates,
+.phoneFold {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
+}
+
+.phoneGates > summary,
+.phoneFold > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
+  list-style: none;
+  cursor: pointer;
+}
+
+.phoneGates > summary::-webkit-details-marker,
+.phoneFold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.phoneFoldText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.phoneFoldTitle {
+  font: 600 var(--wf-fs-14) / 1.25 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.phoneFoldLine {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneFoldCount {
+  flex: none;
+  font: 700 var(--wf-fs-15) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.phoneFoldChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-fast, 120ms) ease;
+}
+
+details[open] > summary > .phoneFoldChevron {
+  transform: rotate(90deg);
+}
+
+.phoneGatesCount {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-12) / 1.3 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+.phoneGates:focus-visible,
+.phoneFold:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Inside the phone sheet the panel is one solid card; the sheet title replaces its heading. */
+.phoneFoldBody > section,
+.phoneSheetGates > section {
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phoneSheetGates .answerGatesHeading {
+  display: none;
+}
+
+.phoneFoldBody > section > :first-child {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .answerTop .heroNav {
+    display: flex;
+    flex: 1 1 100%;
+    gap: var(--wf-s-2);
+  }
+
+  .answerTop .heroNav > button {
+    flex: 1 1 0;
+    justify-content: center;
+    min-height: var(--wf-touch);
+    border-radius: var(--wf-r-pill);
+  }
+
+  .answerTop .heroNavPos {
+    display: none;
+  }
+
+  .workspace {
+    padding-bottom: calc(var(--wf-touch) + var(--wf-s-6, 24px));
+  }
+
+  .answerGrid,
+  .lowerRow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+  }
+
+  .answerGrid {
+    align-items: stretch;
+  }
+
+  .lowerRow {
+    align-items: stretch;
+    gap: 0;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    overflow: hidden;
+  }
+
+  .lowerRow > .phoneFold {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .lowerRow > .phoneFold + .phoneFold {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  /* The request: no panel heading, the patient card is the first thing. */
+  .answerSplit {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .splitGrid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+  }
+
+  .referralCard > .panelHeader {
+    display: none;
+  }
+
+  .referralCard {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    overflow: hidden;
+  }
+
+  .referralCard .sbarCard {
+    padding: 0;
+  }
+
+  .referralCard .patientDossierBanner {
+    padding: var(--wf-s-3) var(--wf-s-4) 0;
+  }
+
+  .answerFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: var(--wf-s-3) var(--wf-s-3);
+    padding: 0;
+    border-radius: var(--wf-r-md);
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .answerFacts > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .answerFacts > div:nth-child(odd) {
+    border-right: 1px solid var(--wf-line);
+  }
+
+  .answerFacts[data-folded="true"] > div:nth-child(n + 5) {
+    display: none;
+  }
+
+  .answerFacts[data-folded="true"] > div:nth-child(3),
+  .answerFacts[data-folded="true"] > div:nth-child(4) {
+    border-bottom: 0;
+  }
+
+  .answerFacts dt {
+    font-size: var(--wf-fs-12);
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .answerFacts dd {
+    font-size: var(--wf-fs-14);
+    font-weight: 600;
+  }
+
+  .referralCard .answerIdentityAbsence {
+    margin: 0;
+    padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  }
+
+  .phoneIsbar {
+    padding: 0;
+  }
+
+  .phoneIsbar .sbarSection {
+    padding-inline: var(--wf-s-4);
+  }
+
+  .gatesCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .phoneSheetGates .answerGates {
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  /* Decline and Accept in principle stay at the bottom of the screen. */
+  .decisionArea {
+    position: fixed;
+    z-index: 20;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wf-s-2);
+    margin: 0;
+    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-glass-bar, var(--wf-surface));
+    backdrop-filter: blur(16px);
+  }
+
+  .decisionArea > .askButton {
+    display: none;
+  }
+
+  .answerGrid,
+  .answerSplit,
+  .splitGrid,
+  .referralCard,
+  .gatesCard {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .gatesCard > .badge {
+    max-width: 100%;
+    white-space: normal;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .phoneClear {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-1);
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .phoneClearTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    margin: 0;
+    font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
+    color: var(--wf-ink-1);
+  }
+
+  .phoneClearText {
+    margin: 0;
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-2);
+  }
+
+  .decisionArea > button {
+    justify-content: center;
+    min-height: var(--wf-touch);
+    border-radius: var(--wf-r-pill);
+  }
+}
+
+/* Phone: the eligibility sentence is a line of text, not a pill, so it never wraps inside one. */
+@media (max-width: 48rem) {
+  .badge[data-level] {
+    display: block;
+    height: auto;
+    padding: 0 var(--wf-s-1);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+    white-space: normal;
+  }
+}
+
+/* Phone (v10): the request card opens with "This patient" beside a person tile, then pill chips. */
+@media (max-width: 48rem) {
+  .phonePatientHead {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-4) 0;
+  }
+
+  .phonePatientTile {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-2);
+  }
+
+  .phonePatientLine {
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+  }
+
+  .phonePatientChips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4) 0;
+  }
+
+  .phonePatientChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    height: 28px;
+    padding: 0 10px;
+    overflow: hidden;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 48rem) {
+  .referralCard .answerFacts {
+    border: 1px solid var(--wf-line);
+  }
+
+  .referralCard .answerFacts > div:nth-last-child(-n + 2):nth-child(odd),
+  .referralCard .answerFacts > div:last-child {
+    border-bottom: 0;
+  }
+}
+
+/* Phone (v10): the Decline and Accept sheets. These render only on phone, inside the sheet portal. */
+.phoneDeclineFieldset {
+  display: grid;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.phoneSheetLabel {
+  margin-bottom: var(--wf-s-1);
+  padding: 0;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.phoneRadioRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  cursor: pointer;
+}
+
+.phoneRadioRow:has(input:checked) {
+  border: 2px solid var(--wf-accent);
+  padding: 0 calc(var(--wf-s-3) - 1px);
+}
+
+.phoneRadioRow input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--wf-accent);
+}
+
+.phoneWaitlist {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  margin-top: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.phoneWaitlistHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.phoneWaitlistHead > :last-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.phoneWaitlistHead > :first-child {
+  margin-top: 5px;
+}
+
+.phoneWaitlist > button {
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneAcceptFacts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0 0 var(--wf-s-4);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.phoneAcceptFacts dt {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.phoneAcceptFacts dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneSheetField {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin-bottom: var(--wf-s-4);
+}
+
+.phoneSheetFieldLabel {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.phoneSegment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+}
+
+.phoneSegment button {
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 var(--wf-s-2);
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.phoneSegment button[aria-pressed="true"] {
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.phoneSheetInput {
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-15) / 1 var(--wf-font);
+}
+
+.phoneSheetNote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.phoneSheetNote > :first-child {
+  margin-top: 5px;
+}
+
+.phoneSheetNudge {
+  margin: 0 0 var(--wf-s-1);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
+   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
+   tablet keep the toast above. */
+@media (max-width: 48rem) {
+  .toast {
+    --toast-bg: light-dark(
+      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
+      color-mix(in srgb, var(--wf-track) 97%, transparent)
+    );
+    --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
+    --toast-ring: light-dark(transparent, var(--wf-line-2));
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 92px;
+    left: 12px;
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    margin: 0 auto;
+    transform: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: var(--toast-bg);
+    box-shadow:
+      0 0 0 1px var(--toast-ring),
+      var(--wf-e2);
+    color: var(--toast-ink);
+    font: 500 var(--wf-fs-13) / 18px var(--wf-font);
+    text-align: left;
+    white-space: normal;
+    z-index: var(--z-toast);
+  }
+
+  .toast > svg {
+    display: none;
+  }
+  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
+  :global(html:has([role="dialog"][aria-modal="true"])) .toast {
+    bottom: 136px;
   }
 }

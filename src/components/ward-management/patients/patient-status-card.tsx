@@ -675,7 +675,22 @@ function CellAction({ action, primary }: { action: StatusAction; primary: boolea
  * cell names its owner and carries at most one action. The first gate that is not clear holds
  * the page's one primary action.
  */
-export function PatientStatusCard({ mode, context }: { mode: PatientMode; context: PatientStatusContext }) {
+export function PatientStatusCard({
+  mode,
+  context,
+  barLead,
+  barMain,
+  phoneFoot,
+}: {
+  mode: PatientMode;
+  context: PatientStatusContext;
+  /** v10 phone: a quiet control at the start of the pinned bar (Copy summary). Phone only. */
+  barLead?: ReactNode;
+  /** v10 phone: the bar's main control when no gate holds the primary (New referral). Phone only. */
+  barMain?: ReactNode;
+  /** v10 phone: the quiet line at the foot of the card ("Arrived Mon 5 Oct 09:12"). Phone only. */
+  phoneFoot?: string;
+}) {
   const status = buildPatientStatus(mode, context);
   const primaryKey =
     status.rows?.find((r) => !r.done && r.action?.kind === "button")?.key ??
@@ -690,15 +705,20 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
     ? (status.rows?.find((r) => r.key === primaryKey)?.action ?? status.cells.find((c) => c.key === primaryKey)?.action)
     : undefined;
   const inList = (key: string) => !(pinned && key === primaryKey);
+  /* v10 Patient, phone: outside a placement the card has no verdict row unless it counts steps
+   * (absent without leave); the mode is already the hero's eyebrow, and the meta moves to a foot. */
+  const placing = mode === "find" || mode === "held" || mode === "transit";
+  const phoneQuiet = isPhone && !placing && !status.meter;
   return (
     <>
       <section
         className={styles.card}
         aria-label="Status"
         data-act={status.tone === "danger" || undefined}
+        data-ph-placing={(isPhone && placing) || undefined}
         data-testid="ward-patient-status-card"
       >
-        <div className={styles.head}>
+        <div className={styles.head} hidden={phoneQuiet}>
           <span className={styles.verdict} data-testid="ward-patient-status-verdict">
             <StatusGlyph tone={status.tone} size={12} />
             {status.verdict}
@@ -746,7 +766,12 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
         ) : null}
         <div className={styles.cells} hidden={status.cells.length === 0}>
           {status.cells.map((cell) => (
-            <div key={cell.key} className={styles.cell} data-testid={`ward-patient-gate-${cell.key}`}>
+            <div
+              key={cell.key}
+              className={styles.cell}
+              data-testid={`ward-patient-gate-${cell.key}`}
+              data-ph-quiet={isPhone || undefined}
+            >
               <div className={styles.label}>
                 <cell.icon size={14} aria-hidden="true" />
                 <span>{cell.label}</span>
@@ -766,10 +791,12 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
             </div>
           ))}
         </div>
+        {phoneQuiet ? <p className={styles.phFoot}>{phoneFoot ?? status.meta}</p> : null}
       </section>
-      {pinned ? (
+      {isPhone && (pinned || barLead || barMain) ? (
         <div className={styles.phBar} data-testid="ward-patient-phone-action-bar">
-          <CellAction action={pinned} primary />
+          {barLead ? <span className={styles.phLead}>{barLead}</span> : null}
+          {pinned ? <CellAction action={pinned} primary /> : barMain}
         </div>
       ) : null}
     </>

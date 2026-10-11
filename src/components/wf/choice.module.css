@@ -368,6 +368,19 @@
   .segItem {
     flex: 0 0 auto;
   }
+  /* v10 phone switch: a pill track whose options share its width (they still scroll when they
+   * cannot fit). */
+  .seg {
+    padding: 2px;
+    border-radius: var(--wf-r-pill);
+  }
+  .seg .segItem {
+    flex: 1 0 auto;
+    justify-content: center;
+    padding: 0 12px;
+    border-radius: var(--wf-r-pill);
+    font-size: var(--wf-fs-13);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -389,5 +402,20 @@
   .segItem:focus-visible,
   .chip:focus-visible {
     outline: 2px solid CanvasText;
+  }
+}
+
+/* Phone (v10 mockup): the hero track is the same pill as the phone Segmented. */
+@media (max-width: 48rem) {
+  .trk {
+    padding: 2px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .trk .segItem {
+    flex: 1 0 auto;
+    justify-content: center;
+    padding: 0 12px;
+    border-radius: var(--wf-r-pill);
   }
 }

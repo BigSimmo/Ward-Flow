@@ -781,3 +781,287 @@
   gap: var(--wf-s-2);
   padding-bottom: var(--wf-s-2);
 }
+
+/* v10 phone list (11 Oct 2026): the health service's dot before the ED name, plain pips with no
+ * ring, and the filters sitting on the sheet rather than in their own card. Phone only. */
+.phoneName {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.svcDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--wf-r-pill);
+  background: var(--svc, var(--wf-ink-3));
+}
+
+.svcDot[data-service="North Metro"] {
+  --svc: var(--wf-svc-north);
+}
+
+.svcDot[data-service="South Metro"] {
+  --svc: var(--wf-svc-south);
+}
+
+.svcDot[data-service="East Metro"] {
+  --svc: var(--wf-svc-east);
+}
+
+.svcDot[data-service="WACHS"] {
+  --svc: var(--wf-svc-wachs);
+}
+
+.svcDot[data-service="CAHS"] {
+  --svc: var(--wf-svc-cahs);
+}
+
+.svcDot[data-service="Private"] {
+  --svc: var(--wf-svc-private);
+}
+
+@media (max-width: 48rem) {
+  .filters {
+    gap: var(--wf-s-3);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .phoneMeta .pips {
+    gap: 2px;
+    height: 12px;
+  }
+
+  .phoneMeta .pip {
+    width: 10px;
+    height: 10px;
+    border: 0;
+    background: none;
+  }
+
+  .phoneMeta .more {
+    margin-left: 4px;
+  }
+}
+
+/* v10 phone second pass (11 Oct 2026): the search is a 44px pill and the health services are
+ * separate pill chips (label then a plain mono count), the picked one edged in the accent. */
+@media (max-width: 48rem) {
+  .search {
+    min-height: 44px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .phoneServices :global([role="radiogroup"]) {
+    gap: var(--wf-s-2);
+    padding: 2px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .phoneServices :global([role="radio"]) {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+    box-shadow: none;
+  }
+
+  .phoneServices :global([role="radio"][aria-checked="true"]) {
+    border-color: var(--wf-accent);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  .phoneServices :global([role="radio"]) > span:last-child {
+    min-width: 0;
+    padding: 0;
+    background: none;
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .phoneServices :global([role="radio"][aria-checked="true"]) > span:last-child {
+    color: var(--wf-ink-1);
+  }
+}
+
+/* v10 phone ED preview: the four facts share one card on hairlines, the people waiting form one
+ * joined list with the UMRN first in each meta line, and Enter takes the rest of the footer. */
+@media (max-width: 48rem) {
+  .previewFacts {
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .previewFacts > div {
+    min-height: 54px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .previewFacts > div:nth-child(odd) {
+    border-right: 1px solid var(--wf-line);
+  }
+
+  .previewFacts > div:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .previewList[data-phone="true"] {
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .previewList[data-phone="true"] .previewPerson {
+    min-height: 52px;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .previewList[data-phone="true"] .previewPerson + .previewPerson {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  /* Act now keeps its thin red edge, drawn inside the joined list. */
+  .previewList[data-phone="true"] .previewPerson[data-act-now="true"] {
+    box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+  }
+
+  .previewUmrn {
+    font-family: var(--wf-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .previewFoot > :last-child {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 48rem) {
+  .previewList[data-phone="true"] .num {
+    font-size: var(--wf-fs-13);
+  }
+
+  .previewTrend > .meta {
+    font-family: var(--wf-font);
+  }
+}
+
+/* v10 phone lane sheet: the tier as a small round chip, then quiet label and value lines. */
+.tierChip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.laneFacts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-4) 0 0;
+}
+
+.laneFacts > div {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+}
+
+.laneFacts dt {
+  color: var(--wf-ink-2);
+}
+
+.laneFacts dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font-weight: 500;
+}
+
+/* The 44px chips reach a 48px hit area. */
+@media (max-width: 48rem) {
+  .phoneServices :global([role="radio"]) {
+    position: relative;
+  }
+
+  .phoneServices :global([role="radio"])::after {
+    content: "";
+    position: absolute;
+    inset: -2px 0;
+  }
+}
+
+/* ─── v10 phone fidelity (11 Oct 2026) ───
+ * Status and order sit beside the search; EDs, Wait lanes and By service run the full width and
+ * stay pinned under the bar while the list scrolls (56px at rest, 52px once scrolled; the switch
+ * only sticks after a scroll), on a canvas band so no row shows behind it. Phone-only elements. */
+.phoneSearchRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-width: 0;
+}
+
+.phoneSearchRow > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.phoneSearchRow > button {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneViewRow {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 6;
+  width: auto;
+  margin: calc(var(--wf-s-2) * -1) calc(var(--wf-s-3) * -1);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-canvas);
+}
+
+:global(body:has([data-scrolled="true"])) .phoneViewRow {
+  top: 3.25rem;
+}
+
+.phoneViewRow :global([role="radiogroup"]) {
+  width: 100%;
+}
+
+.phoneViewRow :global([role="radio"]) {
+  flex: 1 1 0;
+  justify-content: center;
+}

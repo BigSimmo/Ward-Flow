@@ -117,19 +117,17 @@ export function PhoneFocal({
         : "";
   return (
     <div className={styles.focalWrap} id="ward-reach-bed" tabIndex={-1}>
-      <div className={styles.focalSeg} role="radiogroup" aria-label="Bed flow for">
-        {FOCAL.map(([id, label]) => (
-          <button key={id} type="button" role="radio" aria-checked={focalId === id} onClick={() => setFocalId(id)}>
-            {label}
-          </button>
-        ))}
-      </div>
       <div className={styles.focal}>
+        <div className={styles.focalSeg} role="radiogroup" aria-label="Bed flow for">
+          {FOCAL.map(([id, label]) => (
+            <button key={id} type="button" role="radio" aria-checked={focalId === id} onClick={() => setFocalId(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
         <span className={styles.focalLabel}>
           <ServiceTag service={entry.service} label="" />
           {keyLineLabel(entry)}
-          <span className={styles.spacer} />
-          <span>{now.kind === "on" ? now.line?.label : now.kind === "off" ? now.next?.label : ""}</span>
         </span>
         <span className={styles.focalNumber}>{number ?? "Not held"}</span>
         <span className={styles.focalUntil}>
@@ -205,11 +203,13 @@ function PhoneRow({
             {byRole ? <ServiceTag service={entry.service} label="" /> : null}
             {name}
           </b>
-          <span>{sub}</span>
+          <span className={styles.phoneRowMeta}>
+            <Until entry={entry} minute={actions.minute} />
+            <span className={styles.phoneRowSub}>{sub ? `· ${sub}` : null}</span>
+          </span>
         </span>
         <span className={styles.phoneRowEnd}>
           {number ? <span className={styles.number}>{number}</span> : <span className={styles.cellSub}>Email</span>}
-          <Until entry={entry} minute={actions.minute} />
         </span>
       </button>
       <CallButton entry={entry} actions={actions} />
@@ -289,52 +289,54 @@ export function PhoneDirectory({
               </span>
             </div>
           ) : null}
-          {block.groups.map((group) => {
-            const open = tab === "mine" || openKey === group.key || (queryActive && group.rows.some(isHighlighted));
-            const on = group.rows.filter((entry) => isAnswering(entry, actions.minute)).length;
-            return (
-              <section key={group.key} className={styles.phoneGroup}>
-                {tab !== "mine" ? (
-                  <button
-                    type="button"
-                    className={styles.phoneGroupHead}
-                    aria-expanded={open}
-                    onClick={() => setOpened({ scope, key: open ? "" : group.key })}
-                  >
-                    {group.code ? <span className={styles.code}>{group.code}</span> : null}
-                    <b>{group.title}</b>
-                    <span className={styles.spacer} />
-                    <span className={cx(styles.cellSub, styles.mono)}>
-                      {on}/{group.rows.length}
-                    </span>
-                    <Icon icon={ChevronDown} size={14} className={cx(styles.chevron, !open && styles.chevronShut)} />
-                  </button>
-                ) : null}
-                {open ? (
-                  <ul className={styles.phoneRows}>
-                    {group.rows.map((entry) => (
-                      <PhoneRow
-                        key={entry.id}
-                        entry={entry}
-                        actions={actions}
-                        byRole={byRole}
-                        highlighted={isHighlighted(entry)}
-                        dimmed={dimming && !isHighlighted(entry)}
-                        onOpen={onOpen}
-                      />
-                    ))}
-                  </ul>
-                ) : null}
-              </section>
-            );
-          })}
+          <div className={styles.phoneBlockList}>
+            {block.groups.map((group) => {
+              const open = tab === "mine" || openKey === group.key || (queryActive && group.rows.some(isHighlighted));
+              const on = group.rows.filter((entry) => isAnswering(entry, actions.minute)).length;
+              return (
+                <section key={group.key} className={styles.phoneGroup}>
+                  {tab !== "mine" ? (
+                    <button
+                      type="button"
+                      className={styles.phoneGroupHead}
+                      aria-expanded={open}
+                      onClick={() => setOpened({ scope, key: open ? "" : group.key })}
+                    >
+                      {group.code ? <span className={styles.code}>{group.code}</span> : null}
+                      <b>{group.title}</b>
+                      <span className={styles.spacer} />
+                      <span className={cx(styles.cellSub, styles.mono)}>
+                        {on}/{group.rows.length}
+                      </span>
+                      <Icon icon={ChevronDown} size={16} className={cx(styles.chevron, !open && styles.chevronShut)} />
+                    </button>
+                  ) : null}
+                  {open ? (
+                    <ul className={styles.phoneRows}>
+                      {group.rows.map((entry) => (
+                        <PhoneRow
+                          key={entry.id}
+                          entry={entry}
+                          actions={actions}
+                          byRole={byRole}
+                          highlighted={isHighlighted(entry)}
+                          dimmed={dimming && !isHighlighted(entry)}
+                          onOpen={onOpen}
+                        />
+                      ))}
+                    </ul>
+                  ) : null}
+                </section>
+              );
+            })}
+          </div>
         </div>
       ))}
     </div>
   );
 }
 
-/** The contact card as a bottom sheet, led by four large action tiles. */
+/** The contact card as a bottom sheet: Copy, Email and Star tiles, the call pinned in the foot (v10). */
 export function PhoneSheet({
   entry,
   actions,
@@ -363,19 +365,24 @@ export function PhoneSheet({
       mobilePlacement="bottom"
       mobileSize="viewport"
       testId="ward-on-call-sheet"
+      footer={
+        number ? (
+          <Button
+            variant="pri"
+            size="lg"
+            icon={PhoneCall}
+            className={styles.sheetCall}
+            onClick={() => actions.onCall(entry)}
+          >
+            Call <span className={styles.mono}>{number}</span>
+          </Button>
+        ) : undefined
+      }
     >
       <div className={styles.sheetBody}>
         <div className={styles.actionTiles}>
           {number ? (
             <>
-              <button
-                type="button"
-                className={cx(styles.actionTile, styles.actionTilePri)}
-                onClick={() => actions.onCall(entry)}
-              >
-                <Icon icon={PhoneCall} size={20} />
-                Call
-              </button>
               <button
                 type="button"
                 className={styles.actionTile}

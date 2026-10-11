@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { PublicClientApplication, type AccountInfo } from "@azure/msal-browser";
 import { SharedWorkspaceClient, type SharedView } from "./ward-shared-client";
 import {
@@ -22,6 +23,27 @@ export type WardSharedConnection = SharedView & {
   /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
   pushApi: PhonePushApi;
 };
+
+/**
+ * Where the header asks the data mode to sit (v10: the Prototype pill beside the service pill).
+ * Without a header slot (a test, a page with no shell) the full Data mode bar shows above the app.
+ */
+const DataModeSlotContext = createContext<((slot: HTMLElement | null) => void) | null>(null);
+
+/** What the data mode says, for the phone menu (the phone's lean bar has no room for the pill). */
+export type WardDataMode = { detail: string; openHospitalRecords: () => void };
+const DataModeContext = createContext<WardDataMode | null>(null);
+
+/** The current data mode, or null outside `WardSharedAccess`. */
+export function useWardDataMode(): WardDataMode | null {
+  return useContext(DataModeContext);
+}
+
+/** The header's place for the Prototype pill. Renders nothing outside `WardSharedAccess`. */
+export function WardDataModeSlot({ className }: { className?: string }) {
+  const setSlot = useContext(DataModeSlotContext);
+  return setSlot ? <span ref={setSlot} className={className} data-wf-data-mode-slot="" /> : null;
+}
 
 /** How long sign-out waits for this device's phone alerts to be released. */
 const PHONE_RELEASE_WAIT_MS = 2000;
@@ -160,6 +182,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
   const [showLiveInfo, setShowLiveInfo] = useState(false);
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
   const pushKind = !connection.enabled
     ? "local"
@@ -176,9 +199,10 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   // know how much of it this bar takes (globals.css, --wf-data-bar-height). The bar only changes
   // height when its text changes (a render) or the window width wraps it (a resize), so those two
   // re-measure it; no ResizeObserver, which screens' own overflow tests stub as a single instance.
+  // Once the header holds the Prototype pill there is no bar above the app, so it takes 0px.
   const syncBarHeight = useCallback(() => {
     const bar = toolbar.current;
-    if (bar) document.documentElement.style.setProperty("--wf-data-bar-height", `${bar.offsetHeight}px`);
+    document.documentElement.style.setProperty("--wf-data-bar-height", `${bar ? bar.offsetHeight : 0}px`);
   }, []);
   useEffect(syncBarHeight);
   useEffect(() => {
@@ -188,66 +212,129 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
       document.documentElement.style.removeProperty("--wf-data-bar-height");
     };
   }, [syncBarHeight]);
+  const detail = `Invented records · ${
+    connection.enabled
+      ? connected
+        ? "Shared database connected"
+        : "Shared database not connected"
+      : "Local demonstration"
+  }`;
+  const openLiveInfo = useCallback(() => {
+    setShowLiveInfo(true);
+  }, []);
+  const dataMode = useMemo<WardDataMode>(() => ({ detail, openHospitalRecords: openLiveInfo }), [detail, openLiveInfo]);
   return (
     <PhonePushAccessContext.Provider value={pushAccess}>
-      <section ref={toolbar} className={styles.toolbar} aria-label="Ward Flow data mode" data-data-mode="prototype">
-        <div>
+      <DataModeSlotContext.Provider value={setSlot}>
+        <DataModeContext.Provider value={dataMode}>
+          {slot ? (
+            createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot)
+          ) : (
+            <section
+              ref={toolbar}
+              className={styles.toolbar}
+              aria-label="Ward Flow data mode"
+              data-data-mode="prototype"
+            >
+              <div>
+                <strong>Data mode: Prototype</strong>
+                <span className={styles.detail}>{detail}</span>
+              </div>
+              <div className={styles.controls} role="group" aria-label="Data mode controls">
+                <button
+                  type="button"
+                  aria-pressed={!showLiveInfo}
+                  onClick={() => {
+                    setShowLiveInfo(false);
+                  }}
+                >
+                  Prototype
+                </button>
+                <button type="button" aria-expanded={showLiveInfo} onClick={openLiveInfo}>
+                  Hospital records (unavailable)
+                </button>
+              </div>
+            </section>
+          )}
+          {showLiveInfo && (
+            <section className={styles.notice} aria-label="Hospital records unavailable">
+              <h1>Hospital records are not connected</h1>
+              <p>
+                Hospital-record mode uses real clinical systems in a separately approved workspace. Prototype mode uses
+                invented records, including when it connects to Azure.
+              </p>
+              <p>
+                Hospital approval, a separate clinical database and the data connection must be configured before that
+                mode can open. Selecting this option does not connect or relabel any data.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLiveInfo(false);
+                }}
+              >
+                Return to prototype
+              </button>
+            </section>
+          )}
+          <div hidden={showLiveInfo} inert={showLiveInfo}>
+            <WardSharedWorkspaceContent connection={connection}>{children}</WardSharedWorkspaceContent>
+          </div>
+        </DataModeContext.Provider>
+      </DataModeSlotContext.Provider>
+    </PhonePushAccessContext.Provider>
+  );
+}
+
+/** v10 header pill: "Prototype", opening a small panel that says what the data is. */
+function DataModePill({ detail, onHospitalRecords }: { detail: string; onHospitalRecords: () => void }) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (event: PointerEvent) => {
+      if (!wrap.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  return (
+    <div ref={wrap} className={styles.pillWrap} data-data-mode="prototype">
+      <button
+        type="button"
+        className={styles.pill}
+        aria-expanded={open}
+        aria-label={`Data mode: Prototype. ${detail}`}
+        onClick={() => {
+          setOpen((value) => !value);
+        }}
+      >
+        <span className={styles.pillRing} aria-hidden="true" />
+        Prototype
+      </button>
+      {open && (
+        <section className={styles.pop} aria-label="Ward Flow data mode">
           <strong>Data mode: Prototype</strong>
-          <span className={styles.detail}>
-            Invented records ·{" "}
-            {connection.enabled
-              ? connected
-                ? "Shared database connected"
-                : "Shared database not connected"
-              : "Local demonstration"}
-          </span>
-        </div>
-        <div className={styles.controls} role="group" aria-label="Data mode controls">
+          <span className={styles.detail}>{detail}</span>
           <button
             type="button"
-            aria-pressed={!showLiveInfo}
             onClick={() => {
-              setShowLiveInfo(false);
-            }}
-          >
-            Prototype
-          </button>
-          <button
-            type="button"
-            aria-expanded={showLiveInfo}
-            onClick={() => {
-              setShowLiveInfo(true);
+              setOpen(false);
+              onHospitalRecords();
             }}
           >
             Hospital records (unavailable)
           </button>
-        </div>
-      </section>
-      {showLiveInfo && (
-        <section className={styles.notice} aria-label="Hospital records unavailable">
-          <h1>Hospital records are not connected</h1>
-          <p>
-            Hospital-record mode uses real clinical systems in a separately approved workspace. Prototype mode uses
-            invented records, including when it connects to Azure.
-          </p>
-          <p>
-            Hospital approval, a separate clinical database and the data connection must be configured before that mode
-            can open. Selecting this option does not connect or relabel any data.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setShowLiveInfo(false);
-            }}
-          >
-            Return to prototype
-          </button>
         </section>
       )}
-      <div hidden={showLiveInfo} inert={showLiveInfo}>
-        <WardSharedWorkspaceContent connection={connection}>{children}</WardSharedWorkspaceContent>
-      </div>
-    </PhonePushAccessContext.Provider>
+    </div>
   );
 }
 

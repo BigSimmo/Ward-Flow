@@ -932,3 +932,246 @@
     outline-offset: -2px;
   }
 }
+
+/*
+ * Phone (v10 Tasks sheet, 11 Oct 2026): a plain list sheet. Title and one note line, the status
+ * switch across the width, then state and order as two equal selects on one row, then the rows.
+ * No accent stripe or tinted fill on an open row (Josh); the row icon is a bare glyph, not a tile.
+ * Buttons are 44px pills sharing their row. Phone only; desktop and tablet are unchanged.
+ */
+@media (max-width: 48rem) {
+  .drawer {
+    background: var(--wf-surface-2);
+  }
+
+  .header {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-2) var(--wf-s-2) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .headerIcon,
+  .kbd {
+    display: none;
+  }
+
+  .heading {
+    font-size: var(--wf-fs-15);
+    line-height: var(--wf-lh-15);
+  }
+
+  .headingCount {
+    height: 24px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .closeButton {
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+    border-radius: 50%;
+  }
+
+  .controls {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-2);
+  }
+
+  /* The four figures repeat the switch's own counts: one quiet line instead of four boxes. */
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px var(--wf-s-3);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .summary .stat {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 5px;
+    padding: 0;
+    border: 0;
+  }
+
+  .summary .stat strong {
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+  }
+
+  .filterBar {
+    display: block;
+  }
+
+  .segmented {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 2px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .segment {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 var(--wf-s-2);
+    border-radius: var(--wf-r-pill);
+    font-size: var(--wf-fs-13);
+  }
+
+  .filterMeta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--wf-s-2);
+  }
+
+  /* The "N of M" line stays for screen readers; the switch already shows the counts. */
+  .filterStatus {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .selectWrap {
+    min-width: 0;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 var(--wf-s-3);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    box-shadow: none;
+  }
+
+  .selectWrap select {
+    flex: 1 1 auto;
+    max-width: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--wf-fs-13);
+  }
+
+  .selectWrap .count {
+    display: none;
+  }
+
+  .drawerBody {
+    padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-4);
+  }
+
+  .row {
+    gap: var(--wf-s-2);
+    min-height: 60px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    box-sizing: border-box;
+  }
+
+  /* No stripe and no fill on the open row: its actions under it say it is open. */
+  .row[data-expanded="true"] {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .rowHead {
+    gap: 10px;
+  }
+
+  .rowIcon {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--wf-ink-3);
+  }
+
+  .rowTitle {
+    font-size: var(--wf-fs-14);
+    line-height: var(--wf-lh-14);
+  }
+
+  .rowValue {
+    font-size: var(--wf-fs-13);
+  }
+
+  .rowDetail,
+  .ackStatus,
+  .rowActions {
+    padding-left: 30px;
+  }
+
+  .rowActions {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+    gap: var(--wf-s-2);
+  }
+
+  .btn {
+    height: 44px;
+    min-height: 44px;
+    padding: 0 var(--wf-s-3);
+    border-radius: var(--wf-r-pill);
+    font-size: var(--wf-fs-13);
+    box-shadow: none;
+  }
+
+  .btnIcon {
+    width: auto;
+  }
+
+  /* v10 Tasks sheet (phone): the title, one note line ("11 open · due first") and the rows. The
+     filter and sort controls and the count chip leave; the list is due first. Every action stays
+     on its row: tap a row to open it. */
+  .headingCount,
+  .controls,
+  .rowMeta[data-phone-hidden],
+  .rowWhen[data-phone-hidden] {
+    display: none;
+  }
+
+  .sectionHead[data-phone-quiet] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .drawerBody {
+    padding-top: var(--wf-s-3);
+  }
+
+  .rowHead {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .rowTitle {
+    min-height: 0;
+    font-size: var(--wf-fs-14);
+  }
+
+  .rowWho {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .rowDue {
+    color: var(--wf-ink-2);
+    font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .row {
+    cursor: pointer;
+  }
+}

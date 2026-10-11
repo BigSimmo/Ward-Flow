@@ -4,7 +4,19 @@ import { DischargeCareJourney } from "./discharge-care-journey";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight, ClipboardList, Copy, List, OctagonAlert, Printer, Truck, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
+  Copy,
+  Filter,
+  List,
+  OctagonAlert,
+  Printer,
+  TrendingUp,
+  Truck,
+  X,
+} from "lucide-react";
 import { MissingValue } from "@/components/ui/missing-value";
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import {
@@ -40,7 +52,6 @@ import {
   FilterChip,
   Hero,
   LiveChip,
-  PhoneListRow,
   PhoneSheet,
   Select,
   StatusGlyph,
@@ -92,6 +103,23 @@ const GROUP_LABELS = {
 } as const;
 
 type GroupKey = keyof typeof GROUP_LABELS;
+
+/** v10 phone group headers: one glyph and a short label per group. */
+const PHONE_GROUP_TONES: Record<GroupKey, WfTone> = {
+  blocked: "danger",
+  confirmed: "success",
+  expected: "neutral",
+  "discharged-today": "closed",
+};
+const PHONE_GROUP_LABELS: Record<GroupKey, string> = {
+  blocked: "Blocked",
+  confirmed: "Confirmed",
+  expected: "Expected",
+  "discharged-today": "Discharged · 24h",
+};
+
+/** v10 phone: rows a group shows before its "Show N more" row. */
+const PHONE_GROUP_CAP = 6;
 
 /**
  * Every group, in the fixed scan order spec D9 names — blocked first because those are the rows
@@ -333,12 +361,15 @@ function perthDay(instant: Instant, dayZero: Date, options: Intl.DateTimeFormatO
 
 function RecordedDischargeMilestones({
   milestones,
+  title = "Recorded discharge milestones",
 }: {
   milestones: { label: string; detail: string; state: "complete" | "pending" | "blocked" }[];
+  /** v10 phone sheet reads "Milestones". */
+  title?: string;
 }) {
   return (
     <div className={pageStyles.milestones}>
-      <span className={pageStyles.sectionLabel}>Recorded discharge milestones</span>
+      <span className={pageStyles.sectionLabel}>{title}</span>
       <ol className={pageStyles.timeline}>
         {milestones.map((milestone) => (
           <li className={pageStyles.timelineItem} key={milestone.label} data-state={milestone.state}>
@@ -388,6 +419,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const [openError, setOpenError] = useState(false);
   const isPhone = useIsPhone();
   const [phoneChart, setPhoneChart] = useState<"days" | "barriers" | null>(null);
+  // v10 phone: the filters sit one tap away behind the filter button beside Now and History.
+  const [phoneFiltersOpen, setPhoneFiltersOpen] = useState(false);
+  // v10 phone: a long group shows its first rows and a "Show N more" row, not every row.
+  // v10 phone: the release sheet scrolls as one; transport and dossier open under it on request.
+  const [phoneReleaseMore, setPhoneReleaseMore] = useState(false);
+  const [phoneGroupsOpen, setPhoneGroupsOpen] = useState<Partial<Record<GroupKey, boolean>>>({});
+  // v10 phone: each group header folds its rows; "Discharged · 24h" starts folded.
+  const [phoneGroupsFolded, setPhoneGroupsFolded] = useState<Partial<Record<GroupKey, boolean>>>({
+    "discharged-today": true,
+  });
   const [drawerTab, setDrawerTab] = useState<"milestones" | "barriers" | "transport" | "dossier">("milestones");
   const [view, setView] = useState<TableView>("list");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
@@ -609,6 +650,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const selectRelease = (id: string, opener: HTMLElement) => {
     triggerRef.current = opener;
     setSelected(null);
+    setPhoneReleaseMore(false);
     setReleaseId(id);
     focusDetail();
   };
@@ -740,6 +782,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           ? "Departed"
           : WORK_STATUS_LABELS[detailRelease.state]
       : "";
+  /* v10 phone: no tabs in the release sheet — milestones and the barrier always show, transport
+     and dossier on request. Desktop and tablet keep the tabs. */
+  const releasePaneClass = (tab: "milestones" | "barriers" | "transport" | "dossier") =>
+    (isPhone ? tab === "milestones" || tab === "barriers" || phoneReleaseMore : drawerTab === tab)
+      ? pageStyles.tabPane
+      : pageStyles.tabPaneHidden;
+
   const tabList = (hasBlocker: boolean) => (
     <div className={pageStyles.drawerTabs} role="tablist" aria-label="Discharge inspection sections">
       {(
@@ -915,6 +964,236 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     </button>
   );
 
+  // Now and History: in the hero on desktop and tablet, under it on a phone (v10).
+  const populationSwitch = (
+    <div className={pageStyles.populationSwitch} role="group" aria-label="Now or history">
+      <button
+        type="button"
+        aria-pressed={population === "releases"}
+        data-testid="ward-discharge-now"
+        onClick={() => {
+          setPopulation("releases");
+          setStatus("all");
+          setDestination("all");
+          setBlockerCategory("all");
+          setHighlight(null);
+          clearSelection();
+        }}
+      >
+        Now
+        <span className="sr-only">, anonymous releases {bedReleases.length}</span>
+      </button>
+      <button
+        type="button"
+        aria-pressed={population === "records"}
+        data-testid="ward-discharge-history"
+        onClick={() => {
+          setPopulation("records");
+          setStatus("all");
+          setDestination("all");
+          setBlockerCategory("all");
+          setHighlight(null);
+          clearSelection();
+        }}
+      >
+        History
+        <span className="sr-only">
+          , admission records {guarded.status === "allowed" ? records.length : "unavailable"}
+        </span>
+      </button>
+    </div>
+  );
+  const filterCard = (
+    <Card as="div" className={pageStyles.filterCard} aria-label="Discharge filters" role="region">
+      <div className={pageStyles.filters}>
+        <label htmlFor="discharges-filter-service" className={pageStyles.filterField}>
+          <span className={pageStyles.filterLabelText}>Service</span>
+          <Select
+            id="discharges-filter-service"
+            name="dischargesFilterService"
+            value={service}
+            boxClassName={pageStyles.filterSelect}
+            onChange={(event) => {
+              setService(event.target.value);
+              setWard("all");
+              clearSelection();
+            }}
+          >
+            <option value="all">All services</option>
+            {services.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </Select>
+        </label>
+        <label htmlFor="discharges-filter-ward" className={pageStyles.filterField}>
+          <span className={pageStyles.filterLabelText}>Ward</span>
+          <Select
+            id="discharges-filter-ward"
+            name="dischargesFilterWard"
+            value={ward}
+            boxClassName={pageStyles.filterSelect}
+            onChange={(event) => {
+              setWard(event.target.value);
+              clearSelection();
+            }}
+          >
+            <option value="all">All wards</option>
+            {scopedUnits.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.name}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label htmlFor="discharges-filter-blocker" className={pageStyles.filterField}>
+          <span className={pageStyles.filterLabelText}>Blocker</span>
+          <Select
+            id="discharges-filter-blocker"
+            name="dischargesFilterBlocker"
+            value={blockerCategory}
+            boxClassName={pageStyles.filterSelect}
+            onChange={(event) => {
+              setBlockerCategory(event.target.value);
+              clearSelection();
+            }}
+          >
+            <option value="all">All blockers</option>
+            {BLOCKER_CATEGORIES.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.label}
+              </option>
+            ))}
+          </Select>
+        </label>
+        {population === "records" && (
+          <>
+            <label htmlFor="discharges-filter-identity" className={pageStyles.filterField}>
+              <span className={pageStyles.filterLabelText}>Patient link</span>
+              <Select
+                id="discharges-filter-identity"
+                name="dischargesFilterIdentity"
+                value={identity}
+                boxClassName={pageStyles.filterSelect}
+                onChange={(event) => {
+                  setIdentity(event.target.value);
+                  clearSelection();
+                }}
+              >
+                <option value="all">All records</option>
+                <option value="linked">Linked patient</option>
+                <option value="missing">Missing or unavailable</option>
+              </Select>
+            </label>
+            <label htmlFor="discharges-filter-destination" className={pageStyles.filterField}>
+              <span className={pageStyles.filterLabelText}>Destination</span>
+              <Select
+                id="discharges-filter-destination"
+                name="dischargesFilterDestination"
+                value={destination}
+                boxClassName={pageStyles.filterSelect}
+                onChange={(event) => {
+                  setDestination(event.target.value);
+                  clearSelection();
+                }}
+              >
+                <option value="all">All destinations</option>
+                {LEAVING_DESTINATIONS.map((dest) => (
+                  <option key={dest.id} value={dest.id}>
+                    {dest.label}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          </>
+        )}
+        <label htmlFor="discharges-sort" className={pageStyles.filterField}>
+          <span className={pageStyles.filterLabelText}>Sort</span>
+          <Select
+            id="discharges-sort"
+            name="dischargesSort"
+            value={sortMode}
+            boxClassName={pageStyles.filterSelect}
+            data-testid="ward-discharges-sort"
+            onChange={(event) => {
+              setSortMode(event.target.value as DueSortMode);
+            }}
+          >
+            {DUE_SORT_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </label>
+        {filtersActive && (
+          <Button size="sm" variant="ghost" className={pageStyles.clearButton} onClick={clearAllFilters}>
+            Clear filters
+          </Button>
+        )}
+      </div>
+      {population === "records" ? (
+        <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick destination filters">
+          <span className={pageStyles.filterLabelText}>Destination</span>
+          <FilterChip
+            className={pageStyles.quickChip}
+            pressed={destination === "all"}
+            count={destinationCount("all")}
+            onPressedChange={() => {
+              setDestination("all");
+              clearSelection();
+            }}
+          >
+            All
+          </FilterChip>
+          {LEAVING_DESTINATIONS.slice(0, 4).map((item) => (
+            <FilterChip
+              key={item.id}
+              className={pageStyles.quickChip}
+              pressed={destination === item.id}
+              count={destinationCount(item.id)}
+              onPressedChange={() => {
+                setDestination(destination === item.id ? "all" : item.id);
+                clearSelection();
+              }}
+            >
+              {item.label}
+            </FilterChip>
+          ))}
+        </div>
+      ) : (
+        <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick blocker filters">
+          <span className={pageStyles.filterLabelText}>Blocker</span>
+          {/* v10: the barrier chips highlight matching rows and dim the rest; none is hidden. */}
+          <FilterChip
+            className={pageStyles.quickChip}
+            pressed={highlight?.kind !== "barrier"}
+            count={blockerCount("all")}
+            onPressedChange={() => {
+              if (highlight?.kind === "barrier") setHighlight(null);
+            }}
+          >
+            All
+          </FilterChip>
+          {BLOCKER_CATEGORIES.slice(0, 4).map((cat) => (
+            <FilterChip
+              key={cat.id}
+              className={pageStyles.quickChip}
+              pressed={highlight?.kind === "barrier" && highlight.id === cat.id}
+              count={blockerCount(cat.id)}
+              onPressedChange={() =>
+                setHighlight(
+                  highlight?.kind === "barrier" && highlight.id === cat.id ? null : { kind: "barrier", id: cat.id },
+                )
+              }
+            >
+              {cat.label}
+            </FilterChip>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+
   return (
     <div className={`${styles.screen} ${pageStyles.screen}`} data-testid="ward-discharge-board" data-ward-design="v6">
       <main id="main-content" className={pageStyles.main}>
@@ -939,7 +1218,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         </p>
         <Hero
           className={pageStyles.phoneHero}
-          eyebrow={population === "releases" ? "Bed release · all services" : "History · admission records"}
+          eyebrow={
+            population === "releases"
+              ? isPhone
+                ? `Bed release · ${service === "all" ? "statewide" : service}`
+                : "Bed release · all services"
+              : "History · admission records"
+          }
           title={`${openCount} ${openCount === 1 ? "discharge" : "discharges"} open`}
           titleMeta={
             <span className={pageStyles.bedDaysPast} data-testid="ward-discharge-bed-days-past">
@@ -949,13 +1234,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           aside={
             <div className={pageStyles.heroTools}>
               <LiveChip state="live" onHero />
-              <Button size="sm" variant="onHero" icon={Copy} onClick={copySummary} data-testid="ward-discharge-copy">
-                Copy summary
-              </Button>
+              {isPhone ? null : (
+                <Button size="sm" variant="onHero" icon={Copy} onClick={copySummary} data-testid="ward-discharge-copy">
+                  Copy summary
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="onHero"
                 icon={Printer}
+                className={pageStyles.desktopOnly}
                 onClick={() => window.print()}
                 data-testid="ward-discharge-print"
               >
@@ -967,277 +1255,123 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             </div>
           }
           bar={
-            <div
-              className={pageStyles.kpiStrip}
-              data-testid="ward-discharge-kpi-strip"
-              role="region"
-              aria-label="Discharge pipeline highlights"
-            >
-              {WORK_ORDER.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  data-testid={`ward-discharge-kpi-${key}`}
-                  className={pageStyles.kpi}
-                  aria-pressed={statusHighlight === key}
-                  aria-label={`${kpiCardLabel(key, population)}: ${counts[key]}`}
-                  onClick={() => {
-                    setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
-                    setStatus("all");
-                  }}
+            <>
+              <div
+                className={pageStyles.kpiStrip}
+                data-testid="ward-discharge-kpi-strip"
+                role="region"
+                aria-label="Discharge pipeline highlights"
+              >
+                {WORK_ORDER.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    data-testid={`ward-discharge-kpi-${key}`}
+                    className={pageStyles.kpi}
+                    aria-pressed={statusHighlight === key}
+                    aria-label={`${kpiCardLabel(key, population)}: ${counts[key]}`}
+                    onClick={() => {
+                      setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
+                      setStatus("all");
+                    }}
+                  >
+                    <strong className={pageStyles.kpiValue}>{counts[key]}</strong>
+                    <span className={pageStyles.kpiLabel}>
+                      {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
+                      <span>
+                        {isPhone && key === "blocked" && population === "releases"
+                          ? "Blocked"
+                          : kpiCardLabel(key, population)}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {isPhone ? (
+                /* v10 phone: the hero's one action, full width under the figures. */
+                <Button
+                  variant="onHero"
+                  icon={Copy}
+                  className={pageStyles.phHeroAction}
+                  onClick={copySummary}
+                  data-testid="ward-discharge-copy"
                 >
-                  <strong className={pageStyles.kpiValue}>{counts[key]}</strong>
-                  <span className={pageStyles.kpiLabel}>
-                    {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
-                    <span>{kpiCardLabel(key, population)}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
+                  Copy summary
+                </Button>
+              ) : null}
+            </>
           }
-          barAside={
-            <div className={pageStyles.populationSwitch} role="group" aria-label="Now or history">
-              <button
-                type="button"
-                aria-pressed={population === "releases"}
-                data-testid="ward-discharge-now"
-                onClick={() => {
-                  setPopulation("releases");
-                  setStatus("all");
-                  setDestination("all");
-                  setBlockerCategory("all");
-                  setHighlight(null);
-                  clearSelection();
-                }}
-              >
-                Now
-                <span className="sr-only">, anonymous releases {bedReleases.length}</span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={population === "records"}
-                data-testid="ward-discharge-history"
-                onClick={() => {
-                  setPopulation("records");
-                  setStatus("all");
-                  setDestination("all");
-                  setBlockerCategory("all");
-                  setHighlight(null);
-                  clearSelection();
-                }}
-              >
-                History
-                <span className="sr-only">
-                  , admission records {guarded.status === "allowed" ? records.length : "unavailable"}
-                </span>
-              </button>
-            </div>
-          }
+          barAside={isPhone ? undefined : populationSwitch}
         />
-        <Card as="div" className={pageStyles.filterCard} aria-label="Discharge filters" role="region">
-          <div className={pageStyles.filters}>
-            <label htmlFor="discharges-filter-service" className={pageStyles.filterField}>
-              <span className={pageStyles.filterLabelText}>Service</span>
-              <Select
-                id="discharges-filter-service"
-                name="dischargesFilterService"
-                value={service}
-                boxClassName={pageStyles.filterSelect}
-                onChange={(event) => {
-                  setService(event.target.value);
-                  setWard("all");
-                  clearSelection();
-                }}
-              >
-                <option value="all">All services</option>
-                {services.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </Select>
-            </label>
-            <label htmlFor="discharges-filter-ward" className={pageStyles.filterField}>
-              <span className={pageStyles.filterLabelText}>Ward</span>
-              <Select
-                id="discharges-filter-ward"
-                name="dischargesFilterWard"
-                value={ward}
-                boxClassName={pageStyles.filterSelect}
-                onChange={(event) => {
-                  setWard(event.target.value);
-                  clearSelection();
-                }}
-              >
-                <option value="all">All wards</option>
-                {scopedUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <label htmlFor="discharges-filter-blocker" className={pageStyles.filterField}>
-              <span className={pageStyles.filterLabelText}>Blocker</span>
-              <Select
-                id="discharges-filter-blocker"
-                name="dischargesFilterBlocker"
-                value={blockerCategory}
-                boxClassName={pageStyles.filterSelect}
-                onChange={(event) => {
-                  setBlockerCategory(event.target.value);
-                  clearSelection();
-                }}
-              >
-                <option value="all">All blockers</option>
-                {BLOCKER_CATEGORIES.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            {population === "records" && (
-              <>
-                <label htmlFor="discharges-filter-identity" className={pageStyles.filterField}>
-                  <span className={pageStyles.filterLabelText}>Patient link</span>
-                  <Select
-                    id="discharges-filter-identity"
-                    name="dischargesFilterIdentity"
-                    value={identity}
-                    boxClassName={pageStyles.filterSelect}
-                    onChange={(event) => {
-                      setIdentity(event.target.value);
-                      clearSelection();
-                    }}
-                  >
-                    <option value="all">All records</option>
-                    <option value="linked">Linked patient</option>
-                    <option value="missing">Missing or unavailable</option>
-                  </Select>
-                </label>
-                <label htmlFor="discharges-filter-destination" className={pageStyles.filterField}>
-                  <span className={pageStyles.filterLabelText}>Destination</span>
-                  <Select
-                    id="discharges-filter-destination"
-                    name="dischargesFilterDestination"
-                    value={destination}
-                    boxClassName={pageStyles.filterSelect}
-                    onChange={(event) => {
-                      setDestination(event.target.value);
-                      clearSelection();
-                    }}
-                  >
-                    <option value="all">All destinations</option>
-                    {LEAVING_DESTINATIONS.map((dest) => (
-                      <option key={dest.id} value={dest.id}>
-                        {dest.label}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
-              </>
-            )}
-            <label htmlFor="discharges-sort" className={pageStyles.filterField}>
-              <span className={pageStyles.filterLabelText}>Sort</span>
-              <Select
-                id="discharges-sort"
-                name="dischargesSort"
-                value={sortMode}
-                boxClassName={pageStyles.filterSelect}
-                data-testid="ward-discharges-sort"
-                onChange={(event) => {
-                  setSortMode(event.target.value as DueSortMode);
-                }}
-              >
-                {DUE_SORT_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            {filtersActive && (
-              <Button size="sm" variant="ghost" className={pageStyles.clearButton} onClick={clearAllFilters}>
-                Clear filters
-              </Button>
-            )}
+        {isPhone ? (
+          <div className={pageStyles.phToolbar}>
+            {populationSwitch}
+            <button
+              type="button"
+              className={pageStyles.phFilterButton}
+              aria-label={filtersActive ? "Filters, some applied" : "Filters"}
+              aria-expanded={phoneFiltersOpen}
+              data-active={filtersActive || undefined}
+              onClick={() => setPhoneFiltersOpen(true)}
+              data-testid="ward-discharge-phone-filters"
+            >
+              <Filter size={18} aria-hidden="true" />
+            </button>
           </div>
-          {population === "records" ? (
-            <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick destination filters">
-              <span className={pageStyles.filterLabelText}>Destination</span>
-              <FilterChip
-                className={pageStyles.quickChip}
-                pressed={destination === "all"}
-                count={destinationCount("all")}
-                onPressedChange={() => {
-                  setDestination("all");
-                  clearSelection();
-                }}
-              >
-                All
-              </FilterChip>
-              {LEAVING_DESTINATIONS.slice(0, 4).map((item) => (
-                <FilterChip
-                  key={item.id}
-                  className={pageStyles.quickChip}
-                  pressed={destination === item.id}
-                  count={destinationCount(item.id)}
-                  onPressedChange={() => {
-                    setDestination(destination === item.id ? "all" : item.id);
-                    clearSelection();
-                  }}
-                >
-                  {item.label}
-                </FilterChip>
-              ))}
-            </div>
-          ) : (
-            <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick blocker filters">
-              <span className={pageStyles.filterLabelText}>Blocker</span>
-              {/* v10: the barrier chips highlight matching rows and dim the rest; none is hidden. */}
-              <FilterChip
-                className={pageStyles.quickChip}
-                pressed={highlight?.kind !== "barrier"}
-                count={blockerCount("all")}
-                onPressedChange={() => {
-                  if (highlight?.kind === "barrier") setHighlight(null);
-                }}
-              >
-                All
-              </FilterChip>
-              {BLOCKER_CATEGORIES.slice(0, 4).map((cat) => (
-                <FilterChip
-                  key={cat.id}
-                  className={pageStyles.quickChip}
-                  pressed={highlight?.kind === "barrier" && highlight.id === cat.id}
-                  count={blockerCount(cat.id)}
-                  onPressedChange={() =>
-                    setHighlight(
-                      highlight?.kind === "barrier" && highlight.id === cat.id ? null : { kind: "barrier", id: cat.id },
-                    )
-                  }
-                >
-                  {cat.label}
-                </FilterChip>
-              ))}
-            </div>
-          )}
-        </Card>
+        ) : null}
+        {isPhone ? (
+          <PhoneSheet
+            open={phoneFiltersOpen}
+            onClose={() => setPhoneFiltersOpen(false)}
+            title="Filters"
+            description="Filters narrow the list. Highlights never hide anyone."
+            height="tall"
+          >
+            {filterCard}
+          </PhoneSheet>
+        ) : (
+          filterCard
+        )}
         {guarded.status === "allowed" && isPhone ? (
           /* v10 phone: the two charts are one tap away as cards; each opens a sheet that scrolls
              sideways with 48px tap columns. A tap highlights rows and closes the sheet. */
           <div className={pageStyles.phChartCards} data-testid="ward-discharge-phone-chart-cards">
-            <PhoneListRow
-              name="Expected discharges per day"
-              meta={`Passed and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
-              value={chartDays.reduce((sum, day) => sum + day.expected + day.blocked, 0)}
-              onSelect={() => setPhoneChart("days")}
-            />
-            <PhoneListRow
-              name="Blocked by barrier"
-              meta={`${barrierCounts.filter((barrier) => barrier.count > 0).length} barriers`}
-              value={barrierCounts.reduce((sum, barrier) => sum + barrier.count, 0)}
-              onSelect={() => setPhoneChart("barriers")}
-            />
+            <button
+              type="button"
+              className={pageStyles.phChartCard}
+              aria-label={`Expected discharges per day, passed and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
+              onClick={() => setPhoneChart("days")}
+            >
+              <TrendingUp size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
+              <span className={pageStyles.phChartText}>
+                <span className={pageStyles.phChartTitle}>Per day</span>
+                <span className={pageStyles.phChartMeta}>
+                  <b>
+                    {(() => {
+                      const day = chartDays.find((candidate) => candidate.key === 0);
+                      return day ? day.expected + day.blocked : 0;
+                    })()}
+                  </b>{" "}
+                  today · <b>{chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0}</b> past
+                </span>
+              </span>
+              <ChevronRight size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
+            </button>
+            <button
+              type="button"
+              className={pageStyles.phChartCard}
+              aria-label={`Blocked by barrier, ${barrierCounts.filter((barrier) => barrier.count > 0).length} barriers`}
+              onClick={() => setPhoneChart("barriers")}
+            >
+              <OctagonAlert size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
+              <span className={pageStyles.phChartText}>
+                <span className={pageStyles.phChartTitle}>By barrier</span>
+                <span className={pageStyles.phChartMeta}>
+                  {barrierCounts[0] && barrierCounts[0].count > 0 ? `Most: ${barrierCounts[0].label}` : "None blocked"}
+                </span>
+              </span>
+              <ChevronRight size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
+            </button>
             <PhoneSheet
               open={phoneChart !== null}
               onClose={() => setPhoneChart(null)}
@@ -1457,26 +1591,50 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       >
                         <tr className={pageStyles.groupRow}>
                           <th colSpan={3} scope="rowgroup">
-                            <div className={pageStyles.groupHead}>
-                              <span className={pageStyles.groupGlyph}>
-                                <StatusGlyph tone="danger" size={9} />
-                              </span>
-                              <h3>
-                                {key === "discharged-today" ? "Discharged in last 24 hours" : GROUP_LABELS[key]}{" "}
-                                <span className={pageStyles.groupCount}>{releaseGroups[key].length}</span>
-                              </h3>
-                              <span className={pageStyles.groupSub}>{GROUP_DESCRIPTIONS[key]}</span>
-                            </div>
+                            {isPhone ? (
+                              <button
+                                type="button"
+                                className={pageStyles.phGroupToggle}
+                                aria-expanded={!phoneGroupsFolded[key]}
+                                data-testid={`ward-discharge-group-toggle-${key}`}
+                                onClick={() => setPhoneGroupsFolded((folded) => ({ ...folded, [key]: !folded[key] }))}
+                              >
+                                <StatusGlyph tone={PHONE_GROUP_TONES[key]} size={10} />
+                                <h3>
+                                  {PHONE_GROUP_LABELS[key]}{" "}
+                                  <span className={pageStyles.phGroupCount}>{releaseGroups[key].length}</span>
+                                </h3>
+                                {phoneGroupsFolded[key] ? (
+                                  <ChevronRight size={16} aria-hidden="true" className={pageStyles.phGroupChevron} />
+                                ) : (
+                                  <ChevronDown size={16} aria-hidden="true" className={pageStyles.phGroupChevron} />
+                                )}
+                              </button>
+                            ) : (
+                              <div className={pageStyles.groupHead}>
+                                <span className={pageStyles.groupGlyph}>
+                                  <StatusGlyph tone="danger" size={9} />
+                                </span>
+                                <h3>
+                                  {key === "discharged-today" ? "Discharged in last 24 hours" : GROUP_LABELS[key]}{" "}
+                                  <span className={pageStyles.groupCount}>{releaseGroups[key].length}</span>
+                                </h3>
+                                <span className={pageStyles.groupSub}>{GROUP_DESCRIPTIONS[key]}</span>
+                              </div>
+                            )}
                           </th>
                         </tr>
-                        {releaseGroups[key].length === 0 ? (
+                        {isPhone && phoneGroupsFolded[key] ? null : releaseGroups[key].length === 0 ? (
                           <tr>
                             <td colSpan={3} className={pageStyles.emptyGroup}>
                               None
                             </td>
                           </tr>
                         ) : (
-                          litFirst(releaseGroups[key], releaseLit).map((release) => {
+                          (isPhone && !phoneGroupsOpen[key]
+                            ? litFirst(releaseGroups[key], releaseLit).slice(0, PHONE_GROUP_CAP)
+                            : litFirst(releaseGroups[key], releaseLit)
+                          ).map((release) => {
                             const unit = units.find((candidate) => candidate.id === release.unitId);
                             const linked = records.find((candidate) => candidate.admissionId === release.admissionId);
                             const overdue = release.state !== "discharged" && release.expectedAt < now;
@@ -1514,7 +1672,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                     {healthServiceLabel(unit)}
                                     {linked ? (
                                       <>
-                                        <span aria-hidden="true"> · </span>
+                                        <span aria-hidden="true">{isPhone ? "\u00a0· " : " · "}</span>
                                         <span className={pageStyles.patientHint}>{recordName(linked)}</span>
                                       </>
                                     ) : null}
@@ -1553,6 +1711,24 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             );
                           })
                         )}
+                        {isPhone &&
+                        !phoneGroupsFolded[key] &&
+                        !phoneGroupsOpen[key] &&
+                        releaseGroups[key].length > PHONE_GROUP_CAP ? (
+                          <tr className={pageStyles.phMoreRow}>
+                            <td colSpan={3}>
+                              <button
+                                type="button"
+                                className={pageStyles.phMore}
+                                data-testid={`ward-discharge-group-more-${key}`}
+                                onClick={() => setPhoneGroupsOpen((open) => ({ ...open, [key]: true }))}
+                              >
+                                Show {releaseGroups[key].length - PHONE_GROUP_CAP} more{" "}
+                                {(key === "discharged-today" ? "discharged" : GROUP_LABELS[key]).toLowerCase()}
+                              </button>
+                            </td>
+                          </tr>
+                        ) : null}
                       </tbody>
                     ))
                   )}
@@ -1686,6 +1862,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
 
                     <div className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
                       <RecordedDischargeMilestones
+                        title={isPhone ? "Milestones" : undefined}
                         milestones={[
                           {
                             label: "Expected discharge date",
@@ -1904,49 +2081,127 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   </>
                 ) : detailRelease ? (
                   <>
-                    <div className={pageStyles.identity}>
-                      <div className={pageStyles.identityText}>
-                        <h3 className={pageStyles.patientFullName}>
-                          {linkedReleaseRecord
-                            ? recordName(linkedReleaseRecord)
-                            : unitLabel(selectedUnit, detailRelease.unitId)}
-                        </h3>
-                        <p className={pageStyles.identityMeta}>
-                          {linkedReleaseRecord?.identity.kind === "linked" && (
-                            <span className={pageStyles.mono}>UMRN {linkedReleaseRecord.identity.patient.umrn}</span>
-                          )}
-                          <span>{unitLabel(selectedUnit, detailRelease.unitId)}</span>
-                          <span>{healthServiceLabel(selectedUnit)}</span>
-                        </p>
-                      </div>
-                      {detailTone ? (
-                        <Badge tone={detailTone} size="sm">
-                          {detailBadgeLabel}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <dl className={pageStyles.detailStats}>
-                      {detailRelease.state !== "discharged" && detailRelease.expectedAt < now ? (
-                        <div>
-                          <dt>Overdue</dt>
-                          <dd>{durMinutes(now - detailRelease.expectedAt)}</dd>
+                    {isPhone ? (
+                      <>
+                        {/* v10 phone release sheet: the ward leads; person and UMRN on one subline. */}
+                        <div className={pageStyles.phIdentity}>
+                          <h3 className={pageStyles.patientFullName}>
+                            {unitLabel(selectedUnit, detailRelease.unitId)}
+                          </h3>
+                          <p className={pageStyles.phIdentityMeta}>
+                            {[
+                              healthServiceLabel(selectedUnit),
+                              linkedReleaseRecord ? recordName(linkedReleaseRecord) : null,
+                              linkedReleaseRecord?.identity.kind === "linked"
+                                ? linkedReleaseRecord.identity.patient.umrn
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join("\u00a0· ")}
+                          </p>
+                          {detailTone ? (
+                            <Badge tone={detailTone} size="sm">
+                              {detailBadgeLabel}
+                            </Badge>
+                          ) : null}
                         </div>
-                      ) : detailRelease.state !== "discharged" ? (
-                        <div>
-                          <dt>Due in</dt>
-                          <dd>{durMinutes(detailRelease.expectedAt - now)}</dd>
+                        <dl className={pageStyles.phFacts}>
+                          <div>
+                            <dt>{detailRelease.state === "discharged" ? "Released" : "Expected out"}</dt>
+                            <dd className={pageStyles.mono}>
+                              {recordedMoment(
+                                detailRelease.state === "discharged"
+                                  ? detailRelease.confirmedAt
+                                  : detailRelease.expectedAt,
+                                dayZero,
+                              )}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>When</dt>
+                            <dd>
+                              {detailRelease.state === "discharged"
+                                ? "Departed"
+                                : detailRelease.expectedAt < now
+                                  ? "Now"
+                                  : BAND_LABELS[releaseBand(detailRelease, now) as ReleaseBand]}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Against date</dt>
+                            <dd>
+                              {detailRelease.state !== "discharged" && detailRelease.expectedAt < now ? (
+                                <>
+                                  <StatusGlyph tone="danger" size={9} /> {durMinutes(now - detailRelease.expectedAt)}{" "}
+                                  past
+                                </>
+                              ) : detailRelease.state !== "discharged" ? (
+                                `In ${durMinutes(detailRelease.expectedAt - now)}`
+                              ) : (
+                                "Met"
+                              )}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Destination</dt>
+                            <dd>
+                              {LEAVING_DESTINATIONS.find((item) => item.id === linkedReleaseRecord?.leavingDestination)
+                                ?.label ?? "Not recorded"}
+                            </dd>
+                          </div>
+                        </dl>
+                      </>
+                    ) : (
+                      <>
+                        <div className={pageStyles.identity}>
+                          <div className={pageStyles.identityText}>
+                            <h3 className={pageStyles.patientFullName}>
+                              {linkedReleaseRecord
+                                ? recordName(linkedReleaseRecord)
+                                : unitLabel(selectedUnit, detailRelease.unitId)}
+                            </h3>
+                            <p className={pageStyles.identityMeta}>
+                              {linkedReleaseRecord?.identity.kind === "linked" && (
+                                <span className={pageStyles.mono}>
+                                  UMRN {linkedReleaseRecord.identity.patient.umrn}
+                                </span>
+                              )}
+                              <span>{unitLabel(selectedUnit, detailRelease.unitId)}</span>
+                              <span>{healthServiceLabel(selectedUnit)}</span>
+                            </p>
+                          </div>
+                          {detailTone ? (
+                            <Badge tone={detailTone} size="sm">
+                              {detailBadgeLabel}
+                            </Badge>
+                          ) : null}
                         </div>
-                      ) : null}
-                      <div>
-                        <dt>{detailRelease.state === "discharged" ? "Released" : "Expected"}</dt>
-                        <dd>
-                          {recordedMoment(
-                            detailRelease.state === "discharged" ? detailRelease.confirmedAt : detailRelease.expectedAt,
-                            dayZero,
-                          )}
-                        </dd>
-                      </div>
-                    </dl>
+                        <dl className={pageStyles.detailStats}>
+                          {detailRelease.state !== "discharged" && detailRelease.expectedAt < now ? (
+                            <div>
+                              <dt>Overdue</dt>
+                              <dd>{durMinutes(now - detailRelease.expectedAt)}</dd>
+                            </div>
+                          ) : detailRelease.state !== "discharged" ? (
+                            <div>
+                              <dt>Due in</dt>
+                              <dd>{durMinutes(detailRelease.expectedAt - now)}</dd>
+                            </div>
+                          ) : null}
+                          <div>
+                            <dt>{detailRelease.state === "discharged" ? "Released" : "Expected"}</dt>
+                            <dd>
+                              {recordedMoment(
+                                detailRelease.state === "discharged"
+                                  ? detailRelease.confirmedAt
+                                  : detailRelease.expectedAt,
+                                dayZero,
+                              )}
+                            </dd>
+                          </div>
+                        </dl>
+                      </>
+                    )}
 
                     {linkedReleaseRecord ? (
                       <Button
@@ -1962,10 +2217,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       </Button>
                     ) : null}
 
-                    {tabList(Boolean(detailRelease.blocker))}
+                    {isPhone ? null : tabList(Boolean(detailRelease.blocker))}
 
-                    <div className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <div className={releasePaneClass("milestones")}>
                       <RecordedDischargeMilestones
+                        title={isPhone ? "Milestones" : undefined}
                         milestones={[
                           {
                             label: "Expected discharge date",
@@ -2016,7 +2272,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       />
                     </div>
 
-                    <div className={drawerTab === "barriers" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <div className={releasePaneClass("barriers")}>
                       {detailRelease.blocker ? (
                         <div className={pageStyles.barrierBox}>
                           <div className={pageStyles.barrierText}>
@@ -2046,7 +2302,17 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       )}
                     </div>
 
-                    <div className={drawerTab === "transport" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    {isPhone ? (
+                      <button
+                        type="button"
+                        className={pageStyles.phMore}
+                        aria-expanded={phoneReleaseMore}
+                        onClick={() => setPhoneReleaseMore((open) => !open)}
+                      >
+                        {phoneReleaseMore ? "Hide transport and dossier" : "Show transport and dossier"}
+                      </button>
+                    ) : null}
+                    <div className={releasePaneClass("transport")}>
                       <dl className={pageStyles.factList}>
                         <dt>Booking reference</dt>
                         <dd>Not recorded</dd>
@@ -2063,7 +2329,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       </div>
                     </div>
 
-                    <div className={drawerTab === "dossier" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <div className={releasePaneClass("dossier")}>
                       <dl className={pageStyles.factList}>
                         <dt>{detailRelease.state === "discharged" ? "Recorded release" : "Expected release"}</dt>
                         <dd>
@@ -2162,6 +2428,24 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   >
                     Open ward
                   </Link>
+                  {isPhone && detailRelease?.blocker && detailRelease.state !== "discharged" ? (
+                    <Button
+                      variant="pri"
+                      className={pageStyles.phFootPri}
+                      data-testid="ward-discharge-clear-blocker"
+                      onClick={() =>
+                        dispatch({
+                          type: "CLEAR_BED_RELEASE_BLOCK",
+                          role: "coordinator",
+                          now,
+                          releaseId: detailRelease.id,
+                          actingUnitId: detailRelease.unitId,
+                        })
+                      }
+                    >
+                      Clear blocker
+                    </Button>
+                  ) : null}
                 </footer>
               )}
             </aside>

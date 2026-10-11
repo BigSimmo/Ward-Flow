@@ -106,4 +106,49 @@
   .item {
     min-height: var(--wf-touch, 44px);
   }
+
+  /* v10 phone: the section reads as a caps label over a glyph list. */
+  .phTitle {
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    letter-spacing: var(--wf-tr-caps, 0.06em);
+    text-transform: uppercase;
+  }
+
+  .glyph {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+  }
+
+  .item {
+    gap: var(--wf-s-3);
+    font-size: var(--wf-fs-14);
+  }
+
+  .item:hover {
+    background: transparent;
+  }
+}
+
+/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
+   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
+   tablet keep the toast above. */
+@media (max-width: 48rem) {
+  .toast {
+    position: fixed;
+    right: 12px;
+    bottom: 92px;
+    left: 12px;
+    z-index: var(--z-toast);
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    margin: 0 auto;
+  }
+  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
+  :global(html:has([role="dialog"][aria-modal="true"])) .toast {
+    bottom: 136px;
+  }
 }

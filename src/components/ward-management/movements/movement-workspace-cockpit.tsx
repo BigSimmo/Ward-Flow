@@ -1177,6 +1177,7 @@ export function MovementWorkspaceCockpit({
 
         <WardPrototypeFooter
           testId="ward-console-governance"
+          className={styles.phPageFoot}
           note="Synthetic prototype only · Eligibility is checked automatically; an authorised human confirms every destination · Not clinical severity"
         />
         <span id="ward-console-confirm-unavailable" className="sr-only">

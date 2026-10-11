@@ -2,12 +2,25 @@
 
 import { wardScrollBehavior } from "@/lib/ward-scroll";
 import Link from "next/link";
-import { AlertCircle, BedDouble, Check, Clock, Copy, FileText, FileUp, Scale } from "lucide-react";
+import {
+  AlertCircle,
+  BedDouble,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Copy,
+  FileText,
+  FileUp,
+  Scale,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
 import { PatientRecordOverview } from "./patient-record-overview";
 import { PatientFlightHeader } from "./patient-flight-header";
+import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -21,7 +34,11 @@ import {
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
 import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
-import type { Patient, PatientId } from "@/components/ward-management/ward-patients";
+import {
+  activeCommunityTreatmentOrder,
+  type Patient,
+  type PatientId,
+} from "@/components/ward-management/ward-patients";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
@@ -30,8 +47,8 @@ import { PersonScreen } from "./person-screen";
 import { PatientTransitOperations } from "./patient-transit-operations";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
-import { PATIENT_MODES, patientMode } from "./patient-mode";
-import { PatientStatusCard, dayLabel, type PatientStatusContext } from "./patient-status-card";
+import { PATIENT_MODES, patientMode, type PatientMode } from "./patient-mode";
+import { PatientStatusCard, buildPatientStatus, dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -54,6 +71,7 @@ import {
   CardHead,
   JourneyStrip,
   LiveChip,
+  type JourneyStage,
   StatusGlyph,
   buttonClass,
   useIsPhone,
@@ -157,6 +175,29 @@ interface PatientNowScreenProps {
 
 type TabKey = "now" | "history" | "community" | "details" | "documents";
 
+/**
+ * v10 phone movement hero: how many of the "Cannot move" cells are clear. Its own component, so the
+ * status context (whose clearance handler remembers its trigger in a ref) is read as a prop rather
+ * than during the screen's render.
+ */
+function PhoneClearFact({ mode, context }: { mode: PatientMode; context: PatientStatusContext }) {
+  const status = buildPatientStatus(mode, context);
+  const clear = status.cells.filter((cell) => cell.clear).length;
+  return (
+    <span className={styles.v6HeroFact}>
+      <strong className={styles.v6HeroWait}>
+        {clear} of {status.cells.length}
+      </strong>
+      <span className={styles.phFigLabel}>
+        {clear < status.cells.length ? (
+          <StatusGlyph tone={status.tone === "danger" ? "danger" : "warning"} size={9} />
+        ) : null}
+        Clear
+      </span>
+    </span>
+  );
+}
+
 export function PatientNowScreen({
   patientId,
   movementId,
@@ -199,12 +240,18 @@ export function PatientNowScreen({
   const [wardAttemptFor, setWardAttemptFor] = useState<{ admissionId: string; start: number }>();
   const operationsRef = useRef<HTMLDivElement | null>(null);
   // The placement work sits on Now in every placement mode, so opening it only moves focus there.
+  // v10 phone movement: the placement workspace waits behind the Destination row until opened.
+  const [phoneOpsOpen, setPhoneOpsOpen] = useState(initialTaskAction === "refer");
   function openOperations() {
     setActiveTab("now");
-    requestAnimationFrame(() => {
-      operationsRef.current?.focus({ preventScroll: true });
-      operationsRef.current?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
-    });
+    setPhoneOpsOpen(true);
+    // Two frames: the phone workspace mounts on the first render after opening.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        operationsRef.current?.focus({ preventScroll: true });
+        operationsRef.current?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
+      }),
+    );
   }
   // A task's Refer action lands on the placement work, as it did when Now had a separate view.
   useEffect(() => {
@@ -381,8 +428,12 @@ export function PatientNowScreen({
   }
 
   // Keyboard navigation for tablist
+  // Phone: a "contact" task opens on Community, so that tab stays on the phone's shorter list.
+  const phoneKeepsCommunity = initialTaskAction === "contact";
   const TAB_KEYS: TabKey[] = isPhone
-    ? ["now", "history", "documents"]
+    ? isLiveBedflow && liveMovement
+      ? ["now", "history", ...(phoneKeepsCommunity ? (["community"] as const) : []), "details", "documents"]
+      : ["now", "history", ...(phoneKeepsCommunity ? (["community"] as const) : []), "documents"]
     : ["now", "history", "community", "details", "documents"];
   function handleTabKeyDown(e: ReactKeyboardEvent) {
     const currentIndex = TAB_KEYS.indexOf(activeTab);
@@ -489,6 +540,73 @@ export function PatientNowScreen({
     stayArrivedAt !== undefined && stayArrivedAt !== null
       ? Math.floor(Math.max(0, now - stayArrivedAt) / 1440) + 1
       : undefined;
+  /* v10 Patient, phone: the stay the hero describes. On the ward it is the open stay; on a record
+   * with nothing open it is the last stay that ended. Its own movement (the one that brought them)
+   * gives the strip's first stages and the arrival line. Read only from recorded times. */
+  const lastStay =
+    mode === "idle" || mode === "cto"
+      ? (resolved.stays ?? [])
+          .filter((stay) => stay.leftAt !== null && stay.arrivedAt !== null)
+          .sort((a, b) => (b.leftAt ?? 0) - (a.leftAt ?? 0))[0]
+      : undefined;
+  const heroStay = stayCurrent ? resolved.liveAdmission : lastStay;
+  const heroStayMovement = heroStay?.movementId ? movements.find((m) => m.id === heroStay.movementId) : undefined;
+  const heroStayUnitName = heroStay ? (units.find((u) => u.id === heroStay.unitId)?.name ?? "the ward") : undefined;
+  const awaySince =
+    mode === "leave"
+      ? stayLeaveBed?.confirmedAt
+      : mode === "awol"
+        ? stayLeaveBed?.absentWithoutLeave?.since
+        : mode === "ed"
+          ? (resolved.liveAdmission?.awayAtEmergencyDepartmentSince ?? undefined)
+          : undefined;
+  const phoneStayStages: JourneyStage[] | undefined = (() => {
+    if (!isPhone || isLiveBedflow || !heroStay || heroStay.arrivedAt === null) return undefined;
+    const arrivedAt = heroStay.arrivedAt;
+    const before = heroStayMovement
+      ? patientJourneyStages(heroStayMovement, arrivedAt).map((stage) => ({ ...stage, now: undefined }))
+      : [];
+    const stayEnd = heroStay.leftAt ?? awaySince ?? now;
+    const stages: JourneyStage[] = [
+      ...before,
+      {
+        id: "stay",
+        label: `On ward, ${heroStayUnitName}`,
+        minutes: Math.max(0, stayEnd - arrivedAt),
+        now: heroStay.leftAt === null && awaySince === undefined ? true : undefined,
+      },
+    ];
+    if (heroStay.leftAt === null && awaySince !== undefined)
+      stages.push({
+        id: "away",
+        label: mode === "leave" ? "On leave" : mode === "awol" ? "Absent" : "At ED",
+        minutes: Math.max(0, now - awaySince),
+        now: true,
+      });
+    return stages;
+  })();
+  const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
+  const ctoInForce = activeCommunityTreatmentOrder(livePatient);
+  const phoneLegal = ctoInForce
+    ? { value: ctoInForce.form, label: "In force" }
+    : formMovement?.legalForm
+      ? { value: formMovement.legalForm.code, label: "In force" }
+      : {
+          // A figure, so the status's first word ("Voluntary"); the full words are on Legal now.
+          value:
+            (
+              (mode === "idle" ? livePatient?.legalStatus : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ??
+              "Not recorded"
+            ).split(" ")[0] ?? "Not recorded",
+          label: "Legal status",
+        };
+  const heroStayOrigin = heroStayMovement ? edById(heroStayMovement.originEdId)?.name : undefined;
+  const phoneStatusFoot =
+    mode === "ward" && heroStay?.arrivedAt != null
+      ? `Arrived ${dayLabel(heroStay.arrivedAt, dayZero).replace(",", "")}${heroStay.arrivedAt >= 0 ? ` ${clock(heroStay.arrivedAt)}` : ""}${heroStayOrigin ? ` from ${heroStayOrigin}` : ""}`
+      : (mode === "idle" || mode === "cto") && lastStay?.leftAt != null
+        ? `No open placement or stay · discharged ${dayLabel(lastStay.leftAt, dayZero)}`
+        : undefined;
 
   function openTransportForm() {
     setTransportCadDraft(displayCadNumber ?? "");
@@ -692,9 +810,28 @@ export function PatientNowScreen({
     { key: "documents", label: "Documents", count: documentCount },
   ];
   /* v10 Patient, Phone: "Segmented control: Now, History, Forms." */
-  const phoneTabs = tabs
-    .filter((tab) => tab.key === "now" || tab.key === "history" || tab.key === "documents")
-    .map((tab) => (tab.key === "documents" ? { ...tab, label: "Forms" } : tab));
+  /* v10 Movement, Phone: "Now, History, Details, Docs" while a movement is live. */
+  const phoneMovement = isPhone && isLiveBedflow && liveMovement !== undefined;
+  const phoneTabs = phoneMovement
+    ? tabs
+        .filter((tab) => tab.key !== "community" || phoneKeepsCommunity)
+        .map((tab) =>
+          tab.key === "documents" ? { ...tab, label: "Docs", count: undefined } : { ...tab, count: undefined },
+        )
+    : tabs
+        .filter(
+          (tab) =>
+            tab.key === "now" ||
+            tab.key === "history" ||
+            tab.key === "documents" ||
+            (tab.key === "community" && phoneKeepsCommunity),
+        )
+        .map((tab) => (tab.key === "documents" ? { ...tab, label: "Forms" } : tab));
+  const canWithdraw =
+    liveMovement !== undefined &&
+    !liveMovement.closure &&
+    ["placement_requested", "destination_review"].includes(liveMovement.stage) &&
+    !liveMovement.acceptedUnitId;
 
   return (
     <main
@@ -723,12 +860,40 @@ export function PatientNowScreen({
             patient={livePatient}
             displayToday={displayToday}
             isLiveBedflow={isLiveBedflow}
-            quiet={modeMeta.quiet}
+            quiet={modeMeta.quiet && !isPhone}
             statePill={
               <span className={styles.gbPill} data-testid="ward-patient-mode-pill">
                 <StatusGlyph tone={modeMeta.tone} size={10} />
                 {modeMeta.pill}
               </span>
+            }
+            phoneEyebrow={
+              phoneMovement ? (
+                `Movement · Tier ${urgencyTier ?? "not recorded"}`
+              ) : (
+                <span className={styles.phEyebrow}>
+                  <StatusGlyph tone={modeMeta.tone} size={10} />
+                  {modeMeta.pill}
+                </span>
+              )
+            }
+            phoneFootKind="actions"
+            phoneFoot={
+              phoneMovement ? (
+                <div className={styles.phHeroActions}>
+                  <ContextualBackLink
+                    fallbackHref="/mockups/ward-flow/movements"
+                    className={buttonClass({ variant: "onHero" })}
+                    data-testid="ward-patient-phone-movements-back"
+                  >
+                    <ChevronLeft size={16} aria-hidden="true" />
+                    Movements
+                  </ContextualBackLink>
+                  <Button variant="onHero" icon={Copy} onClick={handleCopySummary}>
+                    {copied ? "Copied" : "Copy handover"}
+                  </Button>
+                </div>
+              ) : undefined
             }
             location={where}
             statusDetail={
@@ -741,7 +906,119 @@ export function PatientNowScreen({
                     : modeMeta.label
             }
             facts={
-              isLiveBedflow && liveMovement ? (
+              phoneMovement ? (
+                <span className={styles.v6HeroFacts} data-testid="ward-patient-phone-figures">
+                  <span className={styles.v6HeroFact}>
+                    <strong className={styles.v6HeroWait}>{waitedStr}</strong>
+                    <span>Since opened</span>
+                  </span>
+                  <span className={styles.v6HeroFact}>
+                    <strong className={styles.v6HeroWait}>
+                      {currentStageIndex + 1} of {STAGES.length}
+                    </strong>
+                    <span>Stage</span>
+                  </span>
+                  <PhoneClearFact mode={mode} context={statusContext} />
+                </span>
+              ) : isPhone && !isLiveBedflow ? (
+                /* v10 Patient, phone: three figures, the value over its label, from the record. */
+                <span className={styles.v6HeroFacts} data-testid="ward-patient-phone-figures">
+                  {(mode === "idle" || mode === "cto"
+                    ? [
+                        {
+                          key: "discharged",
+                          value:
+                            lastStay?.leftAt != null
+                              ? now - lastStay.leftAt < 6 * 1440
+                                ? dayLabel(lastStay.leftAt, dayZero).replace(",", "").split(" ")[0]
+                                : dayLabel(lastStay.leftAt, dayZero).replace(",", "").split(" ").slice(1).join(" ")
+                              : "None",
+                          label: "Discharged",
+                        },
+                        { key: "orders", value: ctoInForce ? "1" : "0", label: "Orders" },
+                        { key: "presentations", value: String(record.presentations.length), label: "Presentations" },
+                      ]
+                    : mode === "leave" && stayLeaveBed
+                      ? [
+                          {
+                            key: "due",
+                            value: clock(stayLeaveBed.expectedReturn),
+                            label: "Due back",
+                            tone: "neutral" as const,
+                          },
+                          now > stayLeaveBed.expectedReturn
+                            ? { key: "from", value: dur(now - stayLeaveBed.expectedReturn), label: "Overdue" }
+                            : { key: "from", value: dur(stayLeaveBed.expectedReturn - now), label: "From now" },
+                          { key: "legal", ...phoneLegal },
+                        ]
+                      : mode === "awol" && stayLeaveBed?.absentWithoutLeave
+                        ? [
+                            {
+                              key: "absent",
+                              value: dur(Math.max(0, now - stayLeaveBed.absentWithoutLeave.since)),
+                              label: "Absent",
+                              tone: "danger" as const,
+                            },
+                            {
+                              key: "steps",
+                              value: `${stayLeaveBed.absentWithoutLeave.steps.length}/${ABSENCE_STEPS.length}`,
+                              label: "Steps done",
+                            },
+                            { key: "legal", ...phoneLegal },
+                          ]
+                        : mode === "ed" && awaySince !== undefined
+                          ? [
+                              {
+                                key: "away",
+                                value: dur(Math.max(0, now - awaySince)),
+                                label: "At ED",
+                                tone: "warning" as const,
+                              },
+                              {
+                                key: "bed",
+                                value:
+                                  resolved.liveAdmission?.bedNumber !== undefined
+                                    ? `Bed ${String(resolved.liveAdmission.bedNumber).padStart(2, "0")}`
+                                    : "Bed",
+                                label: "Held",
+                              },
+                              { key: "legal", ...phoneLegal },
+                            ]
+                          : [
+                              {
+                                key: "day",
+                                value: stayDay !== undefined ? `Day ${stayDay}` : "Day not recorded",
+                                label: "On ward",
+                                tone: "success" as const,
+                              },
+                              { key: "legal", ...phoneLegal },
+                              {
+                                key: "out",
+                                value:
+                                  typeof resolved.liveAdmission?.expectedDischargeAt === "number"
+                                    ? dayLabel(resolved.liveAdmission.expectedDischargeAt, dayZero).replace(",", "")
+                                    : "None",
+                                label: "Expected out",
+                              },
+                            ]
+                  ).map(
+                    (fig: {
+                      key: string;
+                      value: string;
+                      label: string;
+                      tone?: "success" | "warning" | "danger" | "neutral";
+                    }) => (
+                      <span key={fig.key} className={styles.v6HeroFact}>
+                        <strong className={styles.v6HeroWait}>{fig.value}</strong>
+                        <span className={styles.phFigLabel}>
+                          {fig.tone ? <StatusGlyph tone={fig.tone} size={9} /> : null}
+                          {fig.label}
+                        </span>
+                      </span>
+                    ),
+                  )}
+                </span>
+              ) : isLiveBedflow && liveMovement ? (
                 <span className={styles.v6HeroFacts}>
                   <span className={styles.v6HeroFact}>
                     <StatusGlyph tone={tierTone} size={9} />
@@ -812,7 +1089,20 @@ export function PatientNowScreen({
               )
             }
             journey={
-              isLiveBedflow && liveMovement ? (
+              phoneStayStages ? (
+                <JourneyStrip
+                  surface="hero"
+                  label="This record's last stay"
+                  stages={phoneStayStages}
+                  formatDuration={(minutes) =>
+                    minutes >= 1440
+                      ? `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h`
+                      : dur(minutes)
+                  }
+                  note={false}
+                  className={`${styles.v6Journey} ${styles.phStayStrip}`}
+                />
+              ) : isLiveBedflow && liveMovement && !phoneMovement ? (
                 <JourneyStrip
                   surface="hero"
                   label="Journey since this movement opened"
@@ -824,7 +1114,25 @@ export function PatientNowScreen({
               ) : undefined
             }
             steps={
-              isLiveBedflow ? (
+              phoneMovement ? (
+                <div className={styles.phDots}>
+                  <span className={styles.phDotRow} aria-hidden="true">
+                    {STAGES.map((stage, i) => (
+                      <span
+                        key={stage.id}
+                        className={styles.phDot}
+                        data-s={i < currentStageIndex ? "done" : i === currentStageIndex ? "now" : "next"}
+                      />
+                    ))}
+                  </span>
+                  <span>
+                    <span className="sr-only">
+                      Stage {currentStageIndex + 1} of {STAGES.length}:{" "}
+                    </span>
+                    {STAGES[currentStageIndex].label}
+                  </span>
+                </div>
+              ) : isLiveBedflow ? (
                 <ol
                   className={styles.v6Steps}
                   aria-label={`The seven stages. Stage ${currentStageIndex + 1} of ${STAGES.length}, ${STAGES[currentStageIndex].label}, is current`}
@@ -919,41 +1227,26 @@ export function PatientNowScreen({
                     </button>
                   ))}
                 </div>
-                {isPhone ? (
-                  /* v10 phone: Community and Details sit one tap away beside the segmented control. */
-                  <div className={styles.v6PhoneMore} data-testid="ward-patient-phone-more-tabs">
-                    {tabs
-                      .filter((tab) => tab.key === "community" || tab.key === "details")
-                      .map((tab) => (
-                        <Button
-                          key={tab.key}
-                          variant="ghost"
-                          size="sm"
-                          aria-pressed={activeTab === tab.key}
-                          aria-controls={`pnpane-${tab.key}`}
-                          onClick={() => setActiveTab(tab.key)}
-                        >
-                          {tab.label}
-                          {tab.count !== undefined ? ` ${tab.count}` : ""}
-                        </Button>
-                      ))}
-                  </div>
-                ) : null}
               </>
             }
             actions={
               <>
-                {modeMeta.quiet ? null : <LiveChip state="live" onHero />}
-                <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
-                  {copied
-                    ? "Copied"
-                    : isLiveBedflow
-                      ? "Copy handover"
-                      : mode === "awol"
-                        ? "Copy missing person summary"
-                        : "Copy summary"}
-                </Button>
-                {mode === "idle" || mode === "cto" ? (
+                {modeMeta.quiet ? null : (
+                  // v10 phone: the movement page reads "Live HH:MM", the patient page a plain "Live".
+                  <LiveChip state="live" age={phoneMovement ? undefined : null} onHero />
+                )}
+                {isPhone ? null : (
+                  <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
+                    {copied
+                      ? "Copied"
+                      : isLiveBedflow
+                        ? "Copy handover"
+                        : mode === "awol"
+                          ? "Copy missing person summary"
+                          : "Copy summary"}
+                  </Button>
+                )}
+                {(mode === "idle" || mode === "cto") && !isPhone ? (
                   <Link
                     href={
                       livePatient
@@ -1020,10 +1313,83 @@ export function PatientNowScreen({
               aria-labelledby="pntab-now"
               hidden={activeTab !== "now"}
             >
-              <PatientStatusCard mode={mode} context={statusContext} />
+              <PatientStatusCard
+                mode={mode}
+                context={statusContext}
+                barLead={
+                  isPhone && !phoneMovement ? (
+                    <Button
+                      iconOnly
+                      icon={Copy}
+                      aria-label={copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary"}
+                      onClick={handleCopySummary}
+                    />
+                  ) : undefined
+                }
+                phoneFoot={phoneStatusFoot}
+                barMain={
+                  isPhone && (mode === "idle" || mode === "cto") ? (
+                    <Link
+                      href={
+                        livePatient
+                          ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
+                          : "/mockups/ward-flow/referrals/new"
+                      }
+                      className={buttonClass({ variant: "pri" })}
+                      data-testid="ward-person-refer-outpatient"
+                    >
+                      <FileText size={16} aria-hidden="true" />
+                      New referral
+                    </Link>
+                  ) : undefined
+                }
+              />
               <div className={styles.gbCols}>
                 <div className={styles.gbCol}>
-                  {isLiveBedflow && liveMovement ? (
+                  {phoneMovement && liveMovement ? (
+                    <>
+                      <section className={styles.phCard} aria-labelledby="ph-journey-head">
+                        <h2 id="ph-journey-head" className={styles.phCardHead}>
+                          Journey so far
+                        </h2>
+                        <div className={styles.phCardBody}>
+                          <JourneyStrip
+                            label="Journey since this movement opened"
+                            stages={patientJourneyStages(liveMovement, now)}
+                            formatDuration={dur}
+                            note={false}
+                          />
+                        </div>
+                      </section>
+                      <button
+                        type="button"
+                        className={styles.phMoreRow}
+                        aria-expanded={phoneOpsOpen}
+                        aria-controls="patient-operations"
+                        onClick={() => (phoneOpsOpen ? setPhoneOpsOpen(false) : openOperations())}
+                        data-testid="ward-patient-phone-destination"
+                      >
+                        <BedDouble size={16} aria-hidden="true" />
+                        <span className={styles.phMoreText}>
+                          <strong>Destination</strong>
+                          <span>
+                            {acceptingUnit
+                              ? `${acceptingUnit.name} accepted`
+                              : liveMovement.referredUnitIds.length > 0
+                                ? `${liveMovement.referredUnitIds.length} ward${liveMovement.referredUnitIds.length === 1 ? "" : "s"} asked`
+                                : "Shortlist eligible wards · none asked"}
+                          </span>
+                        </span>
+                        <ChevronRight
+                          size={16}
+                          aria-hidden="true"
+                          className={styles.phChevron}
+                          data-open={phoneOpsOpen}
+                        />
+                      </button>
+                    </>
+                  ) : null}
+                  {isLiveBedflow && liveMovement && (!phoneMovement || phoneOpsOpen) ? (
                     <div
                       id="patient-operations"
                       ref={operationsRef}
@@ -1397,11 +1763,12 @@ export function PatientNowScreen({
                       onRecordLeave={recordLeave}
                       onGoneToEd={goneToEd}
                       onSaveDischarge={saveDischarge}
+                      dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
                       refusal={wardRefusal}
                       roleLimit={(eventType) => gate(eventType).reason}
                     />
                   ) : null}
-                  {mode === "ward" || mode === "ed" ? (
+                  {(mode === "ward" || mode === "ed") && !isPhone ? (
                     <PatientWhyCard
                       title="Why admitted"
                       chip={stayUnit ? stayUnit.name : undefined}
@@ -1423,7 +1790,7 @@ export function PatientNowScreen({
                       onRecordReturn={recordReturn}
                     />
                   ) : null}
-                  {mode === "idle" || mode === "cto" ? (
+                  {(mode === "idle" || mode === "cto") && !isPhone ? (
                     <PatientRecordOverview
                       patient={livePatient}
                       record={record}
@@ -1437,7 +1804,34 @@ export function PatientNowScreen({
                 {/* The shorter side column pins under the top bar once the columns sit side by side
                     (they stack at 1120px and below). */}
                 <div className={styles.gbCol} data-wf-rail="1121">
-                  {isLiveBedflow && liveMovement ? (
+                  {phoneMovement && liveMovement ? (
+                    <dl className={styles.phFacts} data-testid="ward-patient-phone-facts">
+                      <div>
+                        <dt>Needs</dt>
+                        <dd>
+                          {liveMovement.security} {liveMovement.cohort.toLowerCase()} bed
+                          {liveMovement.specialling ? ", 1:1" : ""}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Opened</dt>
+                        <dd className={styles.v6Mono}>{clock(liveMovement.openedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Legal</dt>
+                        <dd>
+                          {liveMovement.legalForm
+                            ? `Form ${liveMovement.legalForm.code}`
+                            : (liveMovement.legalStatus ?? "Not recorded")}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Catchment</dt>
+                        <dd>{livePatient?.catchmentCommunityTeam ?? "Not recorded"}</dd>
+                      </div>
+                    </dl>
+                  ) : null}
+                  {isLiveBedflow && liveMovement && !phoneMovement ? (
                     <PatientWhyCard
                       title="Why they're here"
                       chip={`Opened ${clock(liveMovement.openedAt)}`}
@@ -1447,7 +1841,7 @@ export function PatientNowScreen({
                       patient={livePatient}
                     />
                   ) : null}
-                  {mode !== "idle" ? (
+                  {(mode !== "idle" || isPhone) && !phoneMovement ? (
                     <PatientLegalNowCard
                       movement={movementInForce ? liveMovement : undefined}
                       patient={livePatient}
@@ -1457,9 +1851,83 @@ export function PatientNowScreen({
                       }}
                     />
                   ) : null}
-                  <PatientContactsCard rows={contacts} />
+                  <PatientContactsCard rows={contacts} framed={phoneMovement} />
+                  {phoneMovement ? (
+                    <button
+                      type="button"
+                      className={styles.phMoreRow}
+                      onClick={openOperations}
+                      data-testid="ward-patient-phone-corrections"
+                    >
+                      <X size={16} aria-hidden="true" />
+                      <span className={styles.phMoreText}>
+                        <strong>{canWithdraw ? "Withdraw referral" : "Review and corrections"}</strong>
+                        <span>
+                          {canWithdraw
+                            ? "Closes the movement and frees any held bed"
+                            : "Step back with a recorded reason"}
+                        </span>
+                      </span>
+                      <ChevronRight size={16} aria-hidden="true" />
+                    </button>
+                  ) : null}
                 </div>
               </div>
+              {isPhone && !phoneMovement ? (
+                /* v10 phone: Community and Details are rows one tap away at the foot of Now. */
+                <ul className={styles.phMoreRows} data-testid="ward-patient-phone-more-tabs">
+                  {(mode === "idle" || mode === "cto") && !lastStay ? null : (
+                    <li>
+                      <button
+                        type="button"
+                        className={styles.phMoreRow}
+                        aria-controls="pnpane-history"
+                        data-testid="ward-patient-phone-why"
+                        onClick={() => {
+                          setActiveTab("history");
+                          requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+                        }}
+                      >
+                        <span className={styles.phMoreText}>
+                          <strong>{mode === "idle" || mode === "cto" ? "Last admission" : "Why admitted"}</strong>
+                          <span>
+                            {(resolved.liveReferral?.history?.trim() || record.reason) +
+                              (heroStayOrigin ? ` · ${heroStayOrigin}` : "")}
+                          </span>
+                        </span>
+                        <ChevronRight size={16} aria-hidden="true" />
+                      </button>
+                    </li>
+                  )}
+                  {tabs
+                    .filter((tab) => tab.key === "community" || tab.key === "details")
+                    .map((tab) => (
+                      <li key={tab.key}>
+                        <button
+                          type="button"
+                          className={styles.phMoreRow}
+                          aria-controls={`pnpane-${tab.key}`}
+                          onClick={() => {
+                            setActiveTab(tab.key);
+                            requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+                          }}
+                        >
+                          <span className={styles.phMoreText}>
+                            <strong>{tab.label}</strong>
+                            <span>
+                              {tab.key === "community"
+                                ? record.community.teams.length > 0
+                                  ? `${record.community.teams.map((team) => team.name).join(", ")} · ${record.community.teams.length} on record`
+                                  : "No community team on record"
+                                : "UMRN, date of birth, where they live"}
+                            </span>
+                          </span>
+                          <ChevronRight size={16} aria-hidden="true" />
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              ) : null}
             </div>
 
             {/* Tab 2: HISTORY */}

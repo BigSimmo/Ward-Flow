@@ -33,8 +33,8 @@
   border-radius: var(--pill, 9999px);
   padding: 6px 14px;
   box-shadow: var(--lift);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
