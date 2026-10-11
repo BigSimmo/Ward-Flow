@@ -329,6 +329,9 @@ export function clearGlobalSearchRecents() {
 }
 
 /** The header's bottom edge, so the scrim and palette start under the bar rather than covering it. */
+/** The width where the open search is a full screen sheet (`.popup` in the module's phone block). */
+const PHONE_SEARCH_QUERY = "(max-width: 48rem)";
+
 function headerBottom(root: HTMLElement | null): number {
   if (!root) return 0;
   const bar = root.closest("header") ?? root;
@@ -691,6 +694,19 @@ export function WardGlobalSearch({
       window.visualViewport?.removeEventListener("resize", schedule);
       window.visualViewport?.removeEventListener("scroll", schedule);
       if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [showPopup]);
+
+  // Phone (Josh, 11 Oct 2026, iPhone Safari): the search fills the screen, so the page behind it
+  // must not scroll. When it could, Safari grew and shrank its toolbar under the open search, which
+  // cut off the search's top and left the page showing below its footer.
+  useEffect(() => {
+    if (!showPopup || !window.matchMedia(PHONE_SEARCH_QUERY).matches) return;
+    const root = document.documentElement;
+    const previous = root.style.overflowY;
+    root.style.overflowY = "hidden";
+    return () => {
+      root.style.overflowY = previous;
     };
   }, [showPopup]);
 
