@@ -54,7 +54,7 @@ describe("missing maintained documents", () => {
       expect(result.status).not.toBe(0);
       expect(result.stderr).toContain("PROJECT-INSTRUCTIONS-CONTINUATION.md: maintained document could not be read");
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 });
