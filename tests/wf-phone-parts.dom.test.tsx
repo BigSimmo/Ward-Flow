@@ -407,7 +407,9 @@ describe("Phone CSS", () => {
   it("gives the row action a 36px face, and the act now edge no fill", () => {
     expect(block(".rowAction.rowAction")).toContain("min-height: 36px");
     const edge = block(".rowActNow::before");
-    expect(edge).toContain("inset 0 0 0 1px var(--wf-danger)");
+    // Device audit (11 Oct 2026): a thin left edge on the row, never a box round it.
+    expect(edge).toContain("inset 2px 0 0 var(--wf-danger)");
+    expect(edge).not.toContain("inset 0 0 0 1px");
     expect(edge).not.toContain("background");
     expect(block(".rowName")).toContain("var(--wf-fs-14)");
     expect(block(".rowMeta")).toContain("var(--wf-fs-12)");

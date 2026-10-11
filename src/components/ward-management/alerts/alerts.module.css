@@ -405,15 +405,15 @@ button.check[aria-pressed="true"] {
   color: var(--wf-dim);
 }
 
-/* Act now: a thin red full edge, never a fill or stripe. */
+/* Act now: a thin red left edge, never a fill and never a box (device audit, 11 Oct 2026). */
 .row[data-act] {
-  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: inset 2px 0 0 var(--wf-act-edge);
 }
 
 .row[data-act][data-selected] {
   box-shadow:
     inset 3px 0 0 var(--wf-accent-strong),
-    inset 0 0 0 1px var(--wf-act-edge);
+    inset 5px 0 0 var(--wf-act-edge);
 }
 
 .card[data-act] {
@@ -1542,9 +1542,9 @@ button.check[aria-pressed="true"] {
   cursor: pointer;
 }
 
-/* Act now: a thin red edge, no fill. */
+/* Act now: a thin red left edge, no fill, never a box (device audit, 11 Oct 2026). */
 .phoneRow[data-act="true"] {
-  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: inset 2px 0 0 var(--wf-act-edge);
 }
 
 .phoneRow[data-dim="true"],

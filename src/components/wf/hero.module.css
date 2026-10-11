@@ -438,30 +438,29 @@
     right: max(var(--wf-band-right, 0px), var(--wf-s-4));
     gap: var(--wf-s-1);
   }
-  .hero [data-wf-live] > [aria-hidden="true"] {
+  .hero [data-wf-live] > [aria-hidden="true"],
+  .hero [data-wf-live] > button > [aria-hidden="true"] {
     height: 22px;
     padding: 0 10px;
     border-radius: var(--wf-r-pill);
   }
-  /* Its pause stays reachable: a small round button with the full 48px hit area around it. */
-  .hero [data-wf-live] > button {
-    position: relative;
-    width: 22px;
-    height: 22px;
+  /* The pill with its folded pause (device audit, 11 Oct 2026) keeps a 48px tall hit area. */
+  /* `[aria-pressed]` lifts this over page rules that give every button a 48px min-height. */
+  .hero [data-wf-live] > button[aria-pressed] {
     min-width: 0;
     min-height: 0;
-    border-radius: 50%;
+    border-radius: var(--wf-r-pill);
   }
   .hero [data-wf-live] > button::after {
     content: "";
     position: absolute;
-    inset: -13px;
+    inset: -13px -4px;
   }
   .hero:has([data-wf-live]) .eyebrow {
     padding-right: 120px;
   }
   .hero:has([data-wf-live] > button) .eyebrow {
-    padding-right: 150px;
+    padding-right: 140px;
   }
   .hero:has([data-wf-live]):not(:has(.eyebrow)) .titleBlock {
     padding-top: 40px;

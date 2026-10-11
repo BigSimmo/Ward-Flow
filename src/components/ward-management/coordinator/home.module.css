@@ -429,16 +429,17 @@
   box-shadow: inset 3px 0 0 var(--wf-pri-1);
 }
 
-/* Desktop: overdue is act now, so a thin red edge all round and no fill. The phone is unchanged. */
+/* Desktop: overdue is act now, so a thin red left edge, no fill and never a box (device audit,
+   11 Oct 2026). */
 @media (min-width: 48.0625rem) {
   .queueRow[data-overdue="true"] {
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 55%, transparent);
+    box-shadow: inset 2px 0 0 var(--wf-danger);
   }
 
   .queueRowSelected[data-overdue="true"] {
     box-shadow:
       inset 3px 0 0 var(--wf-pri-1),
-      inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 55%, transparent);
+      inset 5px 0 0 var(--wf-danger);
   }
 }
 
@@ -1988,15 +1989,15 @@ button.registerRow:hover {
     font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
   }
 
-  /* Overdue is act now: a thin red edge all round, no fill (v10 phone row `.act`). */
+  /* Overdue is act now: a thin red left edge, no fill, never a box (device audit, 11 Oct 2026). */
   .queueRow[data-overdue="true"] {
-    box-shadow: inset 0 0 0 1px var(--wf-danger);
+    box-shadow: inset 2px 0 0 var(--wf-danger);
   }
 
   .queueRowSelected[data-overdue="true"] {
     box-shadow:
       inset 3px 0 0 var(--wf-pri-1),
-      inset 0 0 0 1px var(--wf-danger);
+      inset 5px 0 0 var(--wf-danger);
   }
 
   .queueRow[data-dim="true"][data-overdue="true"] {

@@ -628,19 +628,21 @@ export const WARD_PRIMARY_ACTIONS: readonly WardPrimaryActionEntry[] = [
     route: "/mockups/ward-flow/ed/[edId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
-  // Record a decision — the Movements overview and an individual Movement.
+  // Movements, a Movement and a Community team. Device audit, 11 Oct 2026 (item 6, "keep the shell
+  // stable"): these used to swap the header primary for "Record a decision" and "Contact a team",
+  // both unwired. New referral is now the one header primary on every page, as v10 set for
+  // Statistics on 10 Oct 2026.
   {
     route: "/mockups/ward-flow/movements",
-    action: { kind: "record-decision", label: "Record a decision" },
+    action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
     route: "/mockups/ward-flow/movements/[movementId]",
-    action: { kind: "record-decision", label: "Record a decision" },
+    action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
-  // Contact a team — Community team.
   {
     route: "/mockups/ward-flow/community/[teamId]",
-    action: { kind: "contact-team", label: "Contact a team" },
+    action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   // Statistics and its Ward, Community team, ED and Service detail routes. v10 (10 Oct 2026): New
   // referral is the one header primary on every page; Export moves into the statistics hero.

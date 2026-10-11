@@ -802,7 +802,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       Clear
                     </Button>
                   ) : null}
-                  <span className={styles.keys} aria-hidden="true">
+                  <span className={styles.keys} aria-hidden="true" data-kbd-hint="">
                     Press <kbd>/</kbd> to search, <kbd>J</kbd> <kbd>K</kbd> to move
                   </span>
                 </div>

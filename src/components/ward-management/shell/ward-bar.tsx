@@ -566,7 +566,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, [liveClockFace]);
   useEffect(() => () => publishLiveClock(undefined), []);
 
-  const { role, placeId } = useWardNavCounts();
+  const { role, shellRole, placeId } = useWardNavCounts();
   const roleCategory = roleReferralCategory(role);
   const checksPublication = useWardChecks();
 
@@ -683,8 +683,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // the one place that must gate — `wardTasksAreActionableForRole` exists in `ward-chrome-role.ts`
   // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
   // own "No outstanding work right now." empty state, never a network list with every action refused.
+  // Device audit item 6 (11 Oct 2026): Tasks is the signed-in person's count on every page, so it
+  // is gated on `shellRole`, not the route — it no longer drops to 0 on ED, team and officer pages.
   const tasksItems = useMemo(() => {
-    if (!wardTasksAreActionableForRole(role)) return [];
+    if (!wardTasksAreActionableForRole(shellRole)) return [];
     const open = movements.filter(isOpen);
     // Stream A, 9 Oct 2026: decision targets join the same list.
     return [
@@ -702,7 +704,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     movements,
     now,
     units,
-    role,
+    shellRole,
     plannedAdmissions,
     admissions,
     patients,
@@ -1201,7 +1203,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         onOpenDrawer={openPopover}
         onOpenReferral={openReferral}
       />
-      <div className={styles.title}>
+      {/* Device audit (11 Oct 2026): on the phone the whole title block is the service control's
+          tap target, not only the 91 x 18 service line. A tap on the title forwards to the service
+          button, which stays the one keyboard and screen-reader control; taps inside the button's
+          own container (the button itself, the sheet and its scrim) are left to it. */}
+      <div
+        className={styles.title}
+        onClick={
+          isPhone
+            ? (event) => {
+                if ((event.target as Element).closest(`.${styles.scopeBadgeContainer}`)) return;
+                serviceTriggerRef.current?.click();
+              }
+            : undefined
+        }
+      >
         <div className={styles.titleGroup}>
           <span
             className={styles.place}
@@ -1898,7 +1914,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             ownership={inboxOwnership}
             snoozes={inboxSnoozes}
             configuration={configuration}
-            role={role}
+            role={shellRole}
             now={now}
             dispatch={dispatch}
             onClose={() => closePopover("tasks")}

@@ -81,7 +81,7 @@ describe("the rail's chosen-service word (item 52)", () => {
     renderRail();
     expect(screen.getAllByRole("button", { name: "Menu" })).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "All pages" }));
-    const navigation = screen.getByRole("dialog", { name: "Ward Flow navigation" });
+    const navigation = screen.getByRole("dialog", { name: "Menu" });
     expect(within(navigation).getByRole("link", { name: /Statistics/i })).toHaveAttribute(
       "href",
       "/mockups/ward-flow/statistics",
