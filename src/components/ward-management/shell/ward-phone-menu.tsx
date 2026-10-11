@@ -524,18 +524,21 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
     const viewHrefs = new Set(results.views.map((view) => view.href));
     const lower = needle.toLowerCase();
     const pages = entries.filter((entry) => entry.label.toLowerCase().includes(lower) || viewHrefs.has(entry.href));
+    // A screen already listed as a page drops out, including an alias titled the same (Escalation
+    // is "Delays" and redirects there).
     const pageHrefs = new Set(pages.map((entry) => entry.href));
-    // Escalation is a retired URL that redirects to Delays, so it must not survive as a
-    // second screen result when the Delays page is already listed.
-    if (pageHrefs.has("/mockups/ward-flow/delays")) {
-      pageHrefs.add("/mockups/ward-flow/escalation");
-    }
+    const pageLabels = new Set(pages.map((entry) => entry.label.toLowerCase()));
     const groups: SearchResultGroup[] = refusal
       ? []
       : smartSearchGroups(results, needle, units, { patients, referrals, movements, plannedAdmissions })
           .map((group) =>
             group.key === "views"
-              ? { ...group, items: group.items.filter((item) => !pageHrefs.has(item.href)) }
+              ? {
+                  ...group,
+                  items: group.items.filter(
+                    (item) => !pageHrefs.has(item.href) && !pageLabels.has(item.title.toLowerCase()),
+                  ),
+                }
               : group,
           )
           .filter((group) => group.items.length > 0);
