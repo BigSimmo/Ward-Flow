@@ -4,7 +4,12 @@ import { BaseSequencer } from "vitest/node";
 
 const UNIT_DURATIONS = new URL("./unit-durations.json", import.meta.url);
 
-/** Measured seconds per unit test file, or {} when the record is missing or unreadable. */
+/**
+ * Measured seconds per unit test file, or {} when the record is missing or unreadable.
+ *
+ * @param {string | URL} [file]
+ * @returns {Record<string, number>}
+ */
 export function readUnitDurations(file = UNIT_DURATIONS) {
   try {
     const seconds = JSON.parse(readFileSync(file, "utf8")).seconds;
