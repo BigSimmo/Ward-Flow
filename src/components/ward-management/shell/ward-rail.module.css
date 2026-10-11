@@ -2397,18 +2397,13 @@
   display: none;
 }
 
-/* Header taps (Josh, 11 Oct 2026): the server cannot know the width, so it drew the full sidebar
- * here and the app folded it to the icon rail on load, sliding every header button 208px left
- * under a finger mid-tap. Until the rail knows it is in landscape (`data-tablet`, set on load), it
- * holds the icon rail's width with its contents hidden, so the header is in place from first paint. */
+/* Header taps (Josh, 11 Oct 2026): the server cannot know the width, so it draws the rail closed
+ * until the app identifies landscape. The normal closed-rail rules below keep its compact links
+ * usable while holding the header's position from first paint. */
 @media (min-width: 1001px) and (max-width: 1200px) {
   .rail:not([data-tablet]) {
     width: var(--rail-closed-w);
     overflow: hidden;
-  }
-
-  .rail:not([data-tablet]) > * {
-    visibility: hidden;
   }
 }
 
