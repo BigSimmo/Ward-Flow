@@ -675,7 +675,16 @@ function CellAction({ action, primary }: { action: StatusAction; primary: boolea
  * cell names its owner and carries at most one action. The first gate that is not clear holds
  * the page's one primary action.
  */
-export function PatientStatusCard({ mode, context }: { mode: PatientMode; context: PatientStatusContext }) {
+export function PatientStatusCard({
+  mode,
+  context,
+  barLead,
+}: {
+  mode: PatientMode;
+  context: PatientStatusContext;
+  /** v10 phone: a quiet control at the start of the pinned bar (Copy summary). Phone only. */
+  barLead?: ReactNode;
+}) {
   const status = buildPatientStatus(mode, context);
   const primaryKey =
     status.rows?.find((r) => !r.done && r.action?.kind === "button")?.key ??
@@ -767,9 +776,10 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
           ))}
         </div>
       </section>
-      {pinned ? (
+      {isPhone && (pinned || barLead) ? (
         <div className={styles.phBar} data-testid="ward-patient-phone-action-bar">
-          <CellAction action={pinned} primary />
+          {barLead ? <span className={styles.phLead}>{barLead}</span> : null}
+          {pinned ? <CellAction action={pinned} primary /> : null}
         </div>
       ) : null}
     </>

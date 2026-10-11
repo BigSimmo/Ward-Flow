@@ -4910,6 +4910,10 @@
 @media (max-width: 48rem) {
   .v6HeroWrap .v6Hero {
     gap: var(--wf-s-2);
+  }
+
+  /* The band (shared hero, data-band="on") keeps its own padding and its 22px lip room. */
+  .v6HeroWrap .v6Hero:not([data-band="on"]) {
     padding: var(--wf-s-3);
   }
 
@@ -5236,5 +5240,211 @@
 
   .v6PhoneMore > * {
     min-height: var(--wf-touch, 44px);
+  }
+}
+
+/* v10 Patient, phone (11 Oct 2026): the mode as the eyebrow, one identity line under the name,
+ * Community and Details as rows at the foot of Now, and no back arrow beside the segmented control
+ * (the header menu and the browser carry navigation). These classes render only on phone. */
+.phEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.phIdSub {
+  display: block;
+  min-width: 0;
+  max-width: calc(100vw - 2 * var(--wf-s-4));
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phMoreRows {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phMoreRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phMoreRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phMoreRow > svg {
+  flex: none;
+  color: var(--wf-ink-2);
+}
+
+.phMoreText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phMoreText strong {
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+.phMoreText span {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 48rem) {
+  .v6HeroTabsRow > a[data-testid="ward-patient-back-button"] {
+    display: none;
+  }
+}
+
+/* v10 Movement, phone (11 Oct 2026): three figures, the stage dots, Movements and Copy handover as
+ * two equal buttons, then Journey so far, Destination, the facts and Who to call on the page.
+ * These classes render only on phone. */
+.phHeroActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--wf-s-2);
+  width: 100%;
+}
+
+.phHeroActions > a,
+.phHeroActions > button {
+  box-sizing: border-box;
+  width: 100%;
+  height: 48px;
+  min-height: 0;
+  justify-content: center;
+  border-radius: var(--wf-r-pill);
+  white-space: nowrap;
+}
+
+.phFigLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.phDots {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 24px;
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+}
+
+.phDotRow {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.phDot {
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 55%, transparent);
+  border-radius: 50%;
+}
+
+.phDot[data-s="done"],
+.phDot[data-s="now"] {
+  border-color: var(--wf-hero-ink);
+  background: var(--wf-hero-ink);
+}
+
+.phCard {
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phCardHead {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-14) / 1 var(--wf-font);
+}
+
+.phCardBody {
+  padding: var(--wf-s-3);
+}
+
+.phFacts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phFacts > div {
+  min-width: 0;
+  padding: 10px var(--wf-s-3);
+}
+
+.phFacts > div:nth-child(even) {
+  border-left: 1px solid var(--wf-line);
+}
+
+.phFacts > div:nth-child(n + 3) {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phFacts dt {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.phFacts dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phChevron[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+@media (max-width: 48rem) {
+  /* A record with one hero fact (not active) gives it the whole row instead of a clipped third. */
+  .v6HeroFacts > .v6HeroFact:only-child {
+    grid-column: 1 / -1;
   }
 }

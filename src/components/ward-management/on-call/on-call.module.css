@@ -1294,7 +1294,7 @@
 .focalWrap {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   min-width: 0;
   white-space: normal;
@@ -1303,53 +1303,49 @@
 
 .focalSeg {
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  margin: 0 -4px 2px;
 }
 
 .focalSeg button {
-  flex: 1 1 auto;
-  height: 32px;
-  padding: 0 6px;
-  border: 1px solid transparent;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 44px;
+  padding: 0 4px;
+  border: 0;
   border-radius: var(--wf-r-pill);
   background: transparent;
   color: var(--wf-hero-ink-2);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
   cursor: pointer;
 }
 
 .focalSeg button[aria-checked="true"] {
-  border-color: color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
   background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
   color: var(--wf-hero-ink);
-  font-weight: 600;
+}
+
+.focalSeg button:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: -2px;
 }
 
 .focal {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-  border-radius: 20px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--wf-hero-ink) 10%, transparent),
-    color-mix(in srgb, var(--wf-hero-ink) 4%, transparent)
-  );
+  padding: 10px 12px 12px;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
 }
 
 .focalLabel {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--wf-fs-13);
-  color: var(--wf-hero-ink-2);
-}
-
-.focalLabel > span:last-child {
-  font-size: var(--wf-fs-12);
-  color: var(--wf-hero-ink-3);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  color: var(--wf-hero-ink);
 }
 
 .focalNumber {
@@ -1365,8 +1361,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--wf-fs-13);
+  min-width: 0;
+  font-size: var(--wf-fs-12);
   color: var(--wf-hero-ink-2);
+  white-space: nowrap;
 }
 
 .focalUntil b {
@@ -1376,11 +1374,27 @@
 .focalActions {
   display: flex;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .focalActions > * {
-  min-height: var(--ward-tap, 3rem);
+  min-height: 44px;
+  border-radius: var(--wf-r-pill);
+}
+
+/* 44px faces (v10 phone) keep a 48px hit area. */
+.focalActions > *,
+.focalSeg button,
+.phoneCall {
+  position: relative;
+}
+
+.focalActions > *::after,
+.focalSeg button::after,
+.phoneCall::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
 }
 
 .focalCall {
@@ -1391,10 +1405,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 52px;
+  min-height: 54px;
   padding: 0 4px 0 0;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  border-radius: var(--wf-r-pill);
 }
 
 .focalMiniOpen {
@@ -1415,27 +1429,63 @@
 
 .focalMiniOpen .mono {
   color: var(--wf-hero-ink-2);
+  font-weight: 600;
 }
 
 .phoneTools {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .phoneTools .search {
   width: 100%;
-  min-height: var(--ward-tap, 3rem);
+  min-height: 48px;
+  border-radius: var(--wf-r-pill);
 }
 
 .phoneChips {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin: 0 calc(-1 * var(--wf-s-4));
-  padding: 0 var(--wf-s-4);
+  padding: 2px var(--wf-s-4);
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+.phoneChips > * {
+  flex: 0 0 auto;
+  min-height: 44px;
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.phoneAction:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The directory tabs stay under the header while the list scrolls (v10 phone). */
+.phoneSeg {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 3;
+  margin: 0 calc(-1 * var(--wf-s-4));
+  padding: 8px var(--wf-s-4);
+  background: var(--wf-canvas);
 }
 
 .phoneHits {
@@ -1461,24 +1511,46 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 4px 0;
+  min-height: 36px;
+  padding: 0 12px;
+  background: var(--wf-surface-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
 }
 
-.phoneGroup {
+.phoneServiceHead .svc,
+.phoneServiceHead .svcStrong {
+  font: inherit;
+  color: inherit;
+}
+
+.phoneServiceHead > .mono {
+  font-weight: 700;
+  color: var(--wf-ink-1);
+  letter-spacing: 0;
+}
+
+.phoneBlockList {
   overflow: hidden;
   border: 1px solid var(--wf-line);
-  border-radius: 20px;
+  border-radius: 16px;
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
+}
+
+.phoneGroup + .phoneGroup {
+  border-top: 1px solid var(--wf-line);
 }
 
 .phoneGroupHead {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   min-height: 52px;
-  padding: 0 14px;
+  padding: 0 12px;
   border: 0;
   background: transparent;
   color: var(--wf-ink-1);
@@ -1502,7 +1574,7 @@
 .phoneGroupHead:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
-  border-radius: 20px;
+  border-radius: 16px;
 }
 
 .phoneRows {
@@ -1513,10 +1585,10 @@
 
 .phoneRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--ward-tap, 3rem);
+  grid-template-columns: minmax(0, 1fr) 44px;
   gap: 6px;
   align-items: center;
-  min-height: 64px;
+  min-height: 60px;
   padding: 0 8px 0 0;
 }
 
@@ -1530,8 +1602,8 @@
   gap: 10px;
   align-items: center;
   min-width: 0;
-  min-height: 64px;
-  padding: 8px 4px 8px 14px;
+  min-height: 52px;
+  padding: 6px 4px 6px 22px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -1551,7 +1623,7 @@
   min-width: 0;
 }
 
-.phoneRowName b {
+.phoneRowName > b {
   display: block;
   font: 600 var(--wf-fs-14) / 20px var(--wf-font);
   overflow: hidden;
@@ -1559,17 +1631,29 @@
   white-space: nowrap;
 }
 
-.phoneRowName b .svc {
+.phoneRowName > b .svc {
   margin-right: 6px;
   vertical-align: middle;
 }
 
-.phoneRowName > span {
-  font-size: var(--wf-fs-12);
+.phoneRowMeta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
   color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.phoneRowMeta > .phoneUntil {
+  flex: 0 0 auto;
+}
+
+.phoneRowSub {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .phoneRowEnd {
@@ -1607,12 +1691,14 @@
   display: inline-grid;
   place-items: center;
   width: var(--ward-tap, 3rem);
+  height: var(--ward-tap, 3rem);
+  min-width: var(--ward-tap, 3rem);
   min-height: var(--ward-tap, 3rem);
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--wf-success) 35%, var(--wf-line-2));
+  border: 1px solid var(--wf-line-2);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--wf-success) 10%, var(--wf-surface));
-  color: var(--wf-success-ink);
+  background: var(--wf-surface);
+  color: var(--wf-accent-ink);
   cursor: pointer;
 }
 
@@ -1739,7 +1825,23 @@
     height: var(--ward-tap, 3rem);
   }
   .focalSeg button {
-    height: var(--ward-tap, 3rem);
+    height: 44px;
+  }
+  /* Cover at (v10 phone): a pill track that fills the row, pill options. */
+  .trackWrap {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .coverTrack {
+    width: 100%;
+    border-radius: var(--wf-r-pill);
+    padding: 3px;
+  }
+  .coverTrack > * {
+    flex: 1 1 0;
+    justify-content: center;
+    min-height: 44px;
+    border-radius: var(--wf-r-pill);
   }
   .lineLabel span {
     white-space: nowrap;

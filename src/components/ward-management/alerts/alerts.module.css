@@ -76,45 +76,6 @@
   white-space: nowrap;
 }
 
-/* Phone: the conditions sit one tap away in a sheet. */
-.phoneChecking {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-height: var(--wf-touch);
-  padding: 0 var(--wf-s-4);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.phoneChecking:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-.phoneCheckingLabel {
-  color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.phoneCheckingText {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
 /* In the sheet the conditions read on the page surface, one per line. */
 .phoneChecks .checking {
   flex-direction: column;
@@ -1445,13 +1406,247 @@ button.check[aria-pressed="true"] {
   }
 }
 
-/* Phone (v10): the views as a full-width segmented control with 44px touch targets. */
-.phoneTabs {
+/* ---------- Phone (v10), rendered only under 48rem ---------- */
+.phoneHeroActions {
+  display: flex;
+  gap: var(--wf-s-2);
   width: 100%;
 }
 
-.phoneTabs [role="radio"] {
+.phoneHeroActions > * {
+  min-height: 44px;
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneHeroActions > :not(:last-child) {
   flex: 1 1 0;
+}
+
+.phoneHeroActions > :last-child {
+  flex: 0 0 44px;
+  width: 44px;
+}
+
+/* The directive line and the one-tap cards: a light row with a chevron. */
+.phoneDirective,
+.phoneCard {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneCard > svg {
+  flex: 0 0 auto;
+  color: var(--wf-ink-2);
+}
+
+.phoneDirective > svg:last-child,
+.phoneCard > svg:last-child {
+  color: var(--wf-ink-3);
+}
+
+.phoneDirective:focus-visible,
+.phoneCard:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneCardText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneCardTitle {
+  overflow: hidden;
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneCardMeta {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneCardMeta b {
+  color: var(--wf-ink-1);
+  font-weight: 700;
+}
+
+.phoneChips {
+  display: flex;
+  gap: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-3)) var(--wf-s-3);
+  padding: 2px var(--wf-s-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.phoneChips::-webkit-scrollbar {
+  display: none;
+}
+
+.phoneChips > * {
+  flex: none;
+  gap: 6px;
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneChips b {
+  margin-right: 6px;
+  font-weight: 600;
+  font-size: var(--wf-fs-13);
+}
+
+/* One inset card: group bands, then rows. */
+.phoneList {
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phoneRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: var(--wf-s-2) 10px;
+  align-items: center;
+  min-height: 72px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  cursor: pointer;
+}
+
+/* Act now: a thin red edge, no fill. */
+.phoneRow[data-act="true"] {
+  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+}
+
+.phoneRow[data-dim="true"],
+.phoneRow[data-dim="true"] * {
+  color: var(--wf-dim);
+}
+
+.phoneRow[data-selected] {
+  background: var(--wf-surface-2);
+}
+
+.phoneRowGlyph {
+  display: inline-flex;
   justify-content: center;
-  min-height: var(--wf-touch);
+  color: var(--wf-ink-3);
+}
+
+.phoneRowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneRowText .rowOpen {
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+/* The open button covers the row, so the whole row is the tap target. */
+.phoneRowText .rowOpen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.phoneRowLine {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneRowLine .who {
+  font: inherit;
+}
+
+.phoneRowLine .umrn {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.phoneRowEnd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.phoneRowAge {
+  font: 600 var(--wf-fs-14) / 20px var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+.phoneRowOwner {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  white-space: nowrap;
+}
+
+.phoneNote {
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-align: center;
+}
+
+@media (max-width: 48rem) {
+  /* The views stay under the header while the list scrolls. */
+  .tabsBar {
+    position: sticky;
+    top: 3.5rem;
+    z-index: 3;
+    margin: 0 calc(-1 * var(--wf-s-3)) var(--wf-s-1);
+    padding: var(--wf-s-2) var(--wf-s-3);
+    background: var(--wf-canvas);
+  }
+
+  .phoneList .group + .group .groupHead,
+  .phoneList .groupHead {
+    min-height: 36px;
+    padding: 0 var(--wf-s-3);
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface-2);
+  }
+
+  .phoneList .group:first-child .groupHead {
+    border-top: 0;
+  }
+
+  .phoneList .groupEmpty {
+    padding: var(--wf-s-3);
+  }
 }

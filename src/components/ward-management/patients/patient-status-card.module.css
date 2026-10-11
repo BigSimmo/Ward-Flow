@@ -209,19 +209,38 @@
   border-color: var(--wf-act-edge);
 }
 
-/* v10 phone: the gate board's one primary, pinned at the bottom of the screen. */
+/* v10 phone: the gate board's one primary, pinned at the bottom of the screen with Copy beside it.
+ * It sits last in the Now pane (order) so it stays pinned while the whole pane scrolls. */
 .phBar {
   position: sticky;
-  bottom: var(--wf-s-2);
+  bottom: 0;
   z-index: 3;
+  order: 99;
   display: flex;
-  padding: var(--wf-s-2);
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-3)) calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-canvas);
 }
 
 .phBar > * {
   flex: 1 1 auto;
-  min-height: var(--wf-touch, 44px);
+  min-height: 48px;
+  justify-content: center;
+  border-radius: var(--wf-r-pill);
+}
+
+.phBar > .phLead {
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-height: 48px;
+  align-items: center;
+}
+
+.phLead > button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
 }

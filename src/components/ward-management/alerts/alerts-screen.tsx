@@ -11,7 +11,10 @@ import {
   Columns3,
   Copy,
   List,
+  Pause,
+  Play,
   Radio,
+  Activity,
   Smartphone,
   Users,
   X,
@@ -80,6 +83,7 @@ import {
 } from "./alerts-model";
 import {
   AlertCard,
+  AlertPhoneRow,
   AlertRow,
   GroupHead,
   ownedByBookingWard,
@@ -106,6 +110,7 @@ import {
   IconTile,
   PhoneHero,
   PhoneSheet,
+  PillTabs,
   Kbd,
   Segmented,
   Select,
@@ -205,6 +210,7 @@ function AlertsWorkspace() {
   const [chosenId, setChosenId] = useState<string | undefined>(undefined);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [phoneChecks, setPhoneChecks] = useState(false);
+  const [phoneToday, setPhoneToday] = useState(false);
   // A request to focus the release reason once the panel or sheet has drawn it.
   const [releaseRequest, setReleaseRequest] = useState(0);
   const releasePending = useRef(false);
@@ -931,14 +937,20 @@ function AlertsWorkspace() {
         : "No alert needs you";
 
   // ---- Queue views ----
-  const RowView = isPhone ? AlertCard : AlertRow;
-  const rows = (list: QueueEntry[]) => (
-    <ul className={isPhone ? styles.cards : styles.rows}>
-      {list.map((entry) => (
-        <RowView key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
-      ))}
-    </ul>
-  );
+  const rows = (list: QueueEntry[]) =>
+    isPhone ? (
+      <ul className={styles.phoneRows}>
+        {list.map((entry) => (
+          <AlertPhoneRow key={entry.item.id} entry={entry} now={now} handlers={queueHandlers} />
+        ))}
+      </ul>
+    ) : (
+      <ul className={styles.rows}>
+        {list.map((entry) => (
+          <AlertRow key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
+        ))}
+      </ul>
+    );
   const groupSection = (key: string, label: string, list: QueueEntry[], head: ReactNode, empty?: string) => (
     <section
       key={key}
@@ -1065,6 +1077,39 @@ function AlertsWorkspace() {
     />
   ) : null;
 
+  const todayChart = (
+    <TodayChart
+      now={now}
+      selectedId={selected?.item.id}
+      onPick={(id) => {
+        const entry = allEntries.find((candidate) => candidate.item.id === id);
+        if (entry) select(entry);
+      }}
+      raised={allEntries
+        .filter((entry) => entry.raised !== undefined)
+        .map((entry) => ({
+          id: entry.item.id,
+          at: entry.raised!,
+          shape: entry.group === "act" ? ("act" as const) : ("wait" as const),
+          title: `${entry.item.title}, ${entry.subject.displayName}, raised ${formatInstantWithDay(entry.raised!, now)}`,
+        }))}
+      acted={history
+        .filter((entry) => entry.action)
+        .map((entry) => ({
+          id: entry.id,
+          at: entry.at,
+          shape: "done" as const,
+          title: `${entry.title}, ${formatInstantWithDay(entry.at, now)}`,
+        }))}
+      broadcasts={(broadcastAlerts ?? []).map((alert) => ({
+        id: alert.id,
+        from: alert.dispatchedAt,
+        until: alert.stoodDownAt ?? alert.expiresAt,
+        title: `${alert.title}, sent ${formatInstantWithDay(alert.dispatchedAt, now)}`,
+      }))}
+    />
+  );
+
   const checkingFoot = (
     <div className={styles.checking}>
       <span className={styles.checkingLabel}>Checking</span>
@@ -1136,13 +1181,34 @@ function AlertsWorkspace() {
                     }`
                   : "Checking every condition below"
               }
+              eyebrow="Alerts"
               figures={[
-                { id: "act", value: actEntries.length, label: "Act now", tone: "danger" },
-                { id: "wait", value: waitEntries.length, label: "Waiting", tone: "warning" },
-                { id: "mine", value: yoursCount, label: "Yours" },
+                {
+                  id: "act",
+                  value: actEntries.length,
+                  label: "Act now",
+                  tone: "danger",
+                  pressed: pill === "act",
+                  onPress: () => togglePill("act"),
+                },
+                {
+                  id: "wait",
+                  value: waitEntries.length,
+                  label: "Waiting",
+                  tone: "warning",
+                  pressed: pill === "wait",
+                  onPress: () => togglePill("wait"),
+                },
+                {
+                  id: "mine",
+                  value: yoursCount,
+                  label: "Yours",
+                  pressed: pill === "mine",
+                  onPress: () => togglePill("mine"),
+                },
               ]}
               actions={
-                <>
+                <div className={styles.phoneHeroActions}>
                   <Button variant="onHero" icon={ChevronRight} onClick={handleNext}>
                     Next alert
                   </Button>
@@ -1154,19 +1220,36 @@ function AlertsWorkspace() {
                   >
                     Broadcast
                   </Button>
-                </>
+                  <Button
+                    variant="onHero"
+                    iconOnly
+                    icon={live.paused ? Play : Pause}
+                    aria-pressed={live.paused}
+                    aria-label={live.paused ? "Resume live updates" : "Hold the list still"}
+                    onClick={live.togglePause}
+                  />
+                </div>
               }
             />
-            <button type="button" className={styles.phoneChecking} onClick={() => setPhoneChecks(true)}>
-              <span className={styles.phoneCheckingLabel}>Checking</span>
-              <span className={styles.phoneCheckingText}>
-                <span className={styles.mono}>{checks.length}</span> conditions,{" "}
-                <span className={styles.mono}>{checks.reduce((sum, check) => sum + check.n, 0)}</span> found
-              </span>
-              <ChevronRight size={16} aria-hidden="true" />
-            </button>
+            {activeBroadcast ? (
+              <button type="button" className={styles.phoneDirective} onClick={() => setTab("broadcast")}>
+                <StatusGlyph tone={directiveTone} />
+                <span className={styles.phoneCardText}>
+                  <span className={styles.phoneCardTitle}>{activeBroadcast.title}</span>
+                  <span className={styles.phoneCardMeta}>
+                    <b className={styles.mono}>{activeBroadcast.acknowledgedUnits.length}</b> of{" "}
+                    <span className={styles.mono}>{units.length}</span> answered · ends{" "}
+                    <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
+                  </span>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" />
+              </button>
+            ) : null}
             <PhoneSheet open={phoneChecks} onClose={() => setPhoneChecks(false)} title="Checking" height="tall">
               <div className={styles.phoneChecks}>{checkingFoot}</div>
+            </PhoneSheet>
+            <PhoneSheet open={phoneToday} onClose={() => setPhoneToday(false)} title="Today" height="tall">
+              <div className={styles.phoneChecks}>{todayChart}</div>
             </PhoneSheet>
           </>
         ) : (
@@ -1311,14 +1394,14 @@ function AlertsWorkspace() {
             <Card as="section" className={styles.queueCard} aria-label="Alerts">
               <div className={styles.tabsBar}>
                 {isPhone ? (
-                  // Phone (v10): the four views as one 44px segmented control, not a tab strip.
-                  <Segmented<AlertsTab>
-                    className={styles.phoneTabs}
-                    items={tabs}
+                  // Phone (v10): the four views as pill tabs that stay under the header; a count shows when it is not zero.
+                  <PillTabs<AlertsTab>
+                    items={tabs.map((item) => (item.count ? item : { ...item, count: undefined }))}
                     value={tab}
                     onChange={setTab}
                     label="Alerts views"
-                    size="md"
+                    idPrefix="alerts"
+                    fill
                   />
                 ) : (
                   <Tabs items={tabs} value={tab} onChange={setTab} label="Alerts views" idPrefix="alerts" />
@@ -1395,7 +1478,43 @@ function AlertsWorkspace() {
                       </Button>
                     ) : null}
                   </div>
-                  {view === "lanes" ? lanesView : view === "owner" ? ownerView : urgencyView}
+                  {isPhone ? (
+                    <>
+                      {owners.length > 0 ? (
+                        <div className={styles.phoneChips} role="group" aria-label="Highlight by owner">
+                          {/* Yours is a hero figure on phone, so the chips are the other owners. */}
+                          {owners
+                            .filter((owner) => ownerShort(owner) !== "You")
+                            .map((owner) => (
+                              <FilterChip
+                                key={owner}
+                                className={styles.filterBtn}
+                                pressed={ownerHighlight === owner}
+                                onPressedChange={() =>
+                                  setOwnerHighlight((current) => (current === owner ? null : owner))
+                                }
+                              >
+                                <b className={styles.mono}>
+                                  {allEntries.filter((entry) => entry.owner === owner).length}
+                                </b>
+                                {ownerShort(
+                                  owner,
+                                  allEntries.some((entry) => entry.owner === owner && ownedByBookingWard(entry)),
+                                )}
+                              </FilterChip>
+                            ))}
+                        </div>
+                      ) : null}
+                      <div className={styles.phoneList}>{urgencyView}</div>
+                      <p className={styles.phoneNote}>Act now first · longest overdue next</p>
+                    </>
+                  ) : view === "lanes" ? (
+                    lanesView
+                  ) : view === "owner" ? (
+                    ownerView
+                  ) : (
+                    urgencyView
+                  )}
                 </TabPanel>
               ) : null}
 
@@ -1616,37 +1735,37 @@ function AlertsWorkspace() {
                   </span>
                 </span>
               </div>
-              <TodayChart
-                now={now}
-                selectedId={selected?.item.id}
-                onPick={(id) => {
-                  const entry = allEntries.find((candidate) => candidate.item.id === id);
-                  if (entry) select(entry);
-                }}
-                raised={allEntries
-                  .filter((entry) => entry.raised !== undefined)
-                  .map((entry) => ({
-                    id: entry.item.id,
-                    at: entry.raised!,
-                    shape: entry.group === "act" ? ("act" as const) : ("wait" as const),
-                    title: `${entry.item.title}, ${entry.subject.displayName}, raised ${formatInstantWithDay(entry.raised!, now)}`,
-                  }))}
-                acted={history
-                  .filter((entry) => entry.action)
-                  .map((entry) => ({
-                    id: entry.id,
-                    at: entry.at,
-                    shape: "done" as const,
-                    title: `${entry.title}, ${formatInstantWithDay(entry.at, now)}`,
-                  }))}
-                broadcasts={(broadcastAlerts ?? []).map((alert) => ({
-                  id: alert.id,
-                  from: alert.dispatchedAt,
-                  until: alert.stoodDownAt ?? alert.expiresAt,
-                  title: `${alert.title}, sent ${formatInstantWithDay(alert.dispatchedAt, now)}`,
-                }))}
-              />
+              {todayChart}
             </Card>
+            {isPhone ? (
+              <>
+                <button type="button" className={styles.phoneCard} onClick={() => setPhoneToday(true)}>
+                  <Clock size={18} aria-hidden="true" />
+                  <span className={styles.phoneCardText}>
+                    <span className={styles.phoneCardTitle}>Today</span>
+                    <span className={styles.phoneCardMeta}>
+                      <b className={styles.mono}>{allEntries.filter((entry) => entry.raised !== undefined).length}</b>{" "}
+                      raised · <b className={styles.mono}>{history.filter((entry) => entry.action).length}</b> acted on
+                      · <b className={styles.mono}>{(broadcastAlerts ?? []).length}</b> broadcast
+                    </span>
+                  </span>
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
+                <button type="button" className={styles.phoneCard} onClick={() => setPhoneChecks(true)}>
+                  <Activity size={18} aria-hidden="true" />
+                  <span className={styles.phoneCardText}>
+                    <span className={styles.phoneCardTitle}>
+                      Checking <span className={styles.mono}>{checks.length}</span> conditions
+                    </span>
+                    <span className={styles.phoneCardMeta}>
+                      <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> firing · handover
+                      sheets not checked
+                    </span>
+                  </span>
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
+              </>
+            ) : null}
           </div>
 
           {slideOver ? null : (

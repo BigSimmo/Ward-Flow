@@ -1,0 +1,224 @@
+/* Patient chronology, phone layout (v10, 11 Oct 2026). Rendered only under 48rem. Tokens only,
+   12px floor, 48px hit areas. The patient name in the hero is the tap to change patient; a sticky
+   source filter; one inset list with day bands; Download CSV in a sticky action bar. */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+}
+
+/* The hero title as a button: the name and a chevron, on the band. */
+.who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 44px;
+  margin: -9px 0 -9px -4px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.who:focus-visible {
+  outline: 2px solid var(--wf-hero-ink, currentColor);
+  outline-offset: 0;
+}
+
+.whoName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The source filter stays under the header while the list scrolls. */
+.seg {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 3;
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-canvas);
+}
+
+.list {
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.dayHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 36px;
+  margin: 0;
+  padding: 0 var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.list > section:first-child .dayHead {
+  border-top: 0;
+}
+
+.dayHead b {
+  color: var(--wf-ink-1);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rows > li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 12px;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.time {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+.noTime {
+  display: block;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 14px var(--wf-font);
+  white-space: normal;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.action {
+  overflow: hidden;
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.foot {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-align: center;
+}
+
+/* Download CSV stays one tap away at the foot; record kind, view and print sit behind More. */
+.bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  gap: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-canvas);
+}
+
+.more {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.moreButton {
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 50%;
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.moreButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.barPrimary.barPrimary {
+  flex: 1 1 auto;
+  min-height: 48px;
+  justify-content: center;
+  border-radius: var(--wf-r-pill);
+}
+
+.choose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}
+
+.choose p {
+  margin: 0;
+}
