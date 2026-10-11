@@ -14,7 +14,7 @@ import {
   type ButtonHTMLAttributes,
   type RefObject,
 } from "react";
-import { ChevronDown, Pencil, X } from "lucide-react";
+import { ChevronDown, Pencil, X, MoreHorizontal } from "lucide-react";
 import styles from "./ed-board-controls.module.css";
 
 type AnchorProps = {
@@ -447,6 +447,7 @@ export function EdActionsMenu({
   onViewRecord,
   onEditPresentation,
   onEditPlan,
+  compact = false,
 }: {
   patientName: string;
   children: ReactNode;
@@ -455,6 +456,8 @@ export function EdActionsMenu({
   onViewRecord: () => void;
   onEditPresentation: () => void;
   onEditPlan: () => void;
+  /** A small icon trigger beside a row's one Next button (ED mockup A2). */
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>();
@@ -490,13 +493,21 @@ export function EdActionsMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={`Actions for ${patientName}`}
+        data-compact={compact ? "true" : undefined}
+        title={compact ? "More actions" : undefined}
         onClick={() => {
           if (open) close();
           else setOpen(true);
         }}
       >
-        Actions
-        <ChevronDown aria-hidden="true" />
+        {compact ? (
+          <MoreHorizontal aria-hidden="true" />
+        ) : (
+          <>
+            Actions
+            <ChevronDown aria-hidden="true" />
+          </>
+        )}
       </button>
       <EdPopover
         open={open}

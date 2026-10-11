@@ -9,16 +9,18 @@ import styles from "./preview-bar.module.css";
  * Preview-only control: one compact line naming the mockup topic and switching between options
  * A, B and C (and, where a topic spans pages, the page). It never appears on a live route.
  */
-export function MockupPreviewBar({
+export function MockupPreviewBar<Option extends string = MockupOption>({
   topic,
   option,
   hrefFor,
   pages,
+  options = MOCKUP_OPTIONS as unknown as readonly Option[],
 }: {
   topic: string;
-  option: MockupOption;
-  hrefFor: (option: MockupOption, page?: string) => string;
+  option: Option;
+  hrefFor: (option: Option, page?: string) => string;
   pages?: { id: string; label: string; current: boolean }[];
+  options?: readonly Option[];
 }) {
   const currentPage = pages?.find((page) => page.current)?.id;
   return (
@@ -27,7 +29,7 @@ export function MockupPreviewBar({
         Mockup · <b>{topic}</b>
       </span>
       <span className={styles.group}>
-        {MOCKUP_OPTIONS.map((candidate) => (
+        {options.map((candidate) => (
           <Link
             key={candidate}
             href={hrefFor(candidate, currentPage)}

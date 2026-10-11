@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { edById } from "@/components/ward-management/ward-sites";
-import { parseMockupOption } from "@/components/ward-management/preview/preview-option";
+import { parseEdPreviewOption } from "@/components/ward-management/preview/preview-option";
 import { EdPagePreview } from "@/components/ward-management/preview/ed-page-preview";
 
 export const metadata: Metadata = {
@@ -17,5 +17,5 @@ export default async function EdPagePreviewPage({
 }) {
   const query = await searchParams;
   const ed = edById(query?.ed ?? "peel-ed") ?? edById("peel-ed");
-  return <EdPagePreview option={parseMockupOption(query?.option)} edId={ed?.id ?? "peel-ed"} />;
+  return <EdPagePreview option={parseEdPreviewOption(query?.option)} edId={ed?.id ?? "peel-ed"} />;
 }

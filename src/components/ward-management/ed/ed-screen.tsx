@@ -6,7 +6,16 @@ import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { Fragment, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { createReadmissionIndex, movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 
@@ -107,7 +116,7 @@ import {
   isArrivalLate,
 } from "@/components/ward-management/referrals/arrival-time-modal";
 
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import {
   buttonClass,
   JourneyStrip,
@@ -119,9 +128,10 @@ import {
   StatusGlyph,
   useIsPhone,
   useIsTabletPortrait,
+  useMediaQuery,
   useOptionalToast,
 } from "@/components/wf";
-import type { MockupOption } from "@/components/ward-management/preview/preview-option";
+import type { EdPreviewOption } from "@/components/ward-management/preview/preview-option";
 import { EdElsewhereLinks, EdNeedsYou, type EdNeedsItem } from "./ed-needs-you";
 import { edJourneyStages } from "./ed-journey";
 import styles from "./ed.module.css";
@@ -136,7 +146,7 @@ const RECORDED_ED_FORMS = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
 type EdScreenProps = {
   edId: string;
   /** ED page mockup layout (device audit 11 Oct 2026), from a preview route only. */
-  preview?: MockupOption;
+  preview?: EdPreviewOption;
 };
 
 /**
@@ -1279,7 +1289,9 @@ function edStepSaid(event: EdStepEvent): string {
   }
 }
 
-export function EdScreen({ edId, preview }: EdScreenProps) {
+export function EdScreen({ edId, preview: previewOption }: EdScreenProps) {
+  /** A2 is option A with today's board table, refined; everything outside the board reads as A. */
+  const preview = previewOption === "A2" ? "A" : previewOption;
   const {
     movements,
     units,
@@ -1501,7 +1513,11 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
   /** Mockups: the board is list rows with one Next button on every width; edits live in the sheet. */
-  const listRows = isPhone || preview !== undefined;
+  const tableA2 = previewOption === "A2" && !isPhone;
+  /** A2: the sticky rail sits beside the table only where the full table still fits beside it. */
+  const roomForRailBesideTable = useMediaQuery("(min-width: 100rem)");
+  const needsRailSlides = isTabletPortrait || (tableA2 && !roomForRailBesideTable);
+  const listRows = isPhone || (preview !== undefined && !tableA2);
   const [needsRailOpen, setNeedsRailOpen] = useState(false);
   const [phonePane, setPhonePane] = useState<"board" | "needs" | "lists">("board");
   /** Phone: the board row whose person sheet is open, and why the last tapped action is unavailable. */
@@ -2834,7 +2850,10 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
         id="main-content"
         className={styles.main}
         data-phone-pane={isPhone && (preview === undefined || preview === "A") ? phonePane : undefined}
-        data-preview-layout={preview === "A" && !isPhone && !isTabletPortrait ? "rail" : undefined}
+        data-preview-layout={
+          preview === "A" && !isPhone && !needsRailSlides && !(tableA2 && fullscreenBoard) ? "rail" : undefined
+        }
+        data-handover-view={tableA2 && fullscreenBoard ? "true" : undefined}
       >
         <EdOverview
           key={department.id}
@@ -3256,7 +3275,8 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
         <section
           aria-label="This department's patients"
           data-pane="board"
-          className={`${styles.panel} ${styles.full} ${styles.listSection}${fullscreenBoard ? ` ${styles.fullscreenBoard}` : ""}`}
+          className={`${styles.panel} ${styles.full} ${styles.listSection}${fullscreenBoard && !tableA2 ? ` ${styles.fullscreenBoard}` : ""}`}
+          data-handover-view={tableA2 && fullscreenBoard ? "true" : undefined}
           tabIndex={0}
         >
           <div className={styles.ph}>
@@ -3266,7 +3286,15 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
                 type="button"
                 className={styles.fullscreenToggleBtn}
                 onClick={() => setFullscreenBoard((prev) => !prev)}
-                aria-label={fullscreenBoard ? "Exit larger screen mode" : "Larger screen mode"}
+                aria-label={
+                  tableA2
+                    ? fullscreenBoard
+                      ? "Exit handover view"
+                      : "Handover view, full width"
+                    : fullscreenBoard
+                      ? "Exit larger screen mode"
+                      : "Larger screen mode"
+                }
                 title={fullscreenBoard ? "Exit larger screen mode (Esc)" : "Expand board to larger screen mode"}
               >
                 <svg
@@ -3287,8 +3315,27 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
                     <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
                   )}
                 </svg>
-                <span>{fullscreenBoard ? "Exit larger screen" : "Larger screen mode"}</span>
+                <span>
+                  {tableA2
+                    ? fullscreenBoard
+                      ? "Exit handover view"
+                      : "Handover view"
+                    : fullscreenBoard
+                      ? "Exit larger screen"
+                      : "Larger screen mode"}
+                </span>
               </button>
+              {tableA2 && needsRailSlides ? (
+                <PortraitRail
+                  mode="slide"
+                  title="Needs you"
+                  summary={String(needsYouItems.length)}
+                  open={needsRailOpen}
+                  onOpenChange={setNeedsRailOpen}
+                >
+                  <EdNeedsYou items={needsYouItems} framed={false} />
+                </PortraitRail>
+              ) : null}
               <span className={styles.count}>
                 <b>{patients.length}</b> {patients.length === 1 ? "person" : "people"}
               </span>
@@ -3395,6 +3442,8 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
             </p>
           ) : (
             (() => {
+              /** A2: the open person sheet renders after the table, never inside a table row. */
+              let a2Sheet: ReactNode = null;
               const renderBoardRow = (movement: (typeof visiblePatients)[number]) => {
                 const minutesInDepartment = Math.max(now - movement.openedAt, 0);
                 const medicalClearance = movementMedicalClearance(movement, referrals);
@@ -4088,7 +4137,7 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
                       </p>
                     ) : (
                       <>
-                        {nextAction && !listRows ? (
+                        {nextAction && !listRows && !tableA2 ? (
                           <button
                             type="button"
                             data-testid={`ward-ed-next-${movement.id}`}
@@ -4102,7 +4151,7 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
                             {nextAction.label}
                           </button>
                         ) : null}
-                        {listRows ? (
+                        {listRows || tableA2 ? (
                           <div
                             className={styles.phoneSheetActions}
                             role="group"
@@ -4150,7 +4199,7 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
                             {menuItems}
                           </EdActionsMenu>
                         )}
-                        {listRows && phoneSheetReason ? (
+                        {(listRows || tableA2) && phoneSheetReason ? (
                           <p className={styles.phoneSheetReason} role="status">
                             {phoneSheetReason}
                           </p>
@@ -4981,6 +5030,315 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
                   legalStatusChangeOpen ||
                   legalFormExpiryOpen ||
                   receiptCorrectionOpen;
+                const phoneBay = patientBay(movement.id);
+                // Mockups: an action that opens a form opens the person sheet, so edits happen there.
+                const sheetOpen = phoneSheetFor === movement.id || (previewOption !== undefined && subFormOpen);
+                const closeSheet = () => {
+                  setPhoneSheetFor(undefined);
+                  setPhoneSheetReason(undefined);
+                  if (previewOption === undefined || !subFormOpen) return;
+                  setExaminationOpenFor(undefined);
+                  setEdOutcomeOpenFor(undefined);
+                  setUrgencyChangeOpenFor(undefined);
+                  setLegalStatusChangeOpenFor(undefined);
+                  setTransportOpenFor(undefined);
+                  setWithdrawOpenFor(undefined);
+                  setLegalFormExpiryOpenFor(undefined);
+                  setReceiptCorrectionOpenFor(undefined);
+                  setCommunityReferralOpenFor(undefined);
+                };
+                const personSheet = sheetOpen ? (
+                  <PhoneSheet
+                    open
+                    onClose={closeSheet}
+                    title={patientInfo.displayName}
+                    description={
+                      <>
+                        <span className={styles.phoneSheetUmrn}>{patientInfo.umrn}</span> · {department.siteCode} ED ·{" "}
+                        {phoneBay.toLowerCase()}
+                      </>
+                    }
+                    height="tall"
+                    placement={isPhone ? "bottom" : "right"}
+                    className={styles.phoneSheet}
+                    data-testid={`ward-ed-phone-sheet-${movement.id}`}
+                    secondary={{
+                      label: "Open patient",
+                      onAction: () => {
+                        closeSheet();
+                        setSelectedPatientId(movement.id);
+                      },
+                    }}
+                    primary={
+                      nextAction && !movement.closure
+                        ? {
+                            label: nextAction.label,
+                            disabledReason: nextAction.blocked,
+                            onAction: nextAction.run,
+                          }
+                        : undefined
+                    }
+                  >
+                    <dl className={styles.phoneSheetFacts}>
+                      <div>
+                        <dt>In ED</dt>
+                        <dd className={styles.phoneSheetMono}>{splitDuration(minutesInDepartment)}</dd>
+                      </div>
+                      <div>
+                        <dt>Stage</dt>
+                        <dd>{stageCopy[movement.stage].label}</dd>
+                      </div>
+                      <div>
+                        <dt>Tier</dt>
+                        <dd>
+                          <span className={styles.phoneTier} data-urgency={movement.urgency}>
+                            T{movement.urgency}
+                          </span>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Form</dt>
+                        <dd>{movement.legalForm ? `Form ${movement.legalForm.code}` : "None"}</dd>
+                      </div>
+                    </dl>
+                    {/* v10 phone person sheet: where the time in the department went, then the
+                          few facts a coordinator checks, above the actions. */}
+                    <section className={styles.phoneSheetSection} aria-label="Time in the department">
+                      <h3 className={styles.phoneSheetHeading}>Time in the department</h3>
+                      <JourneyStrip
+                        stages={edJourneyStages(
+                          movement,
+                          movementMedicalClearance(movement, referrals),
+                          stageCopy[movement.stage].label,
+                          now,
+                        )}
+                        formatDuration={splitDuration}
+                        label="Time in the department"
+                      />
+                    </section>
+                    <dl className={styles.phoneSheetPairs}>
+                      <div>
+                        <dt>Cohort</dt>
+                        <dd>
+                          {movement.cohort} · {movement.sex}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Destination</dt>
+                        <dd>{destinationLabel}</dd>
+                      </div>
+                      <div>
+                        <dt>Psychiatric review</dt>
+                        <dd>{movement.examination ? "Recorded" : "Not recorded"}</dd>
+                      </div>
+                      <div>
+                        <dt>Medically cleared</dt>
+                        <dd>
+                          {movementMedicalClearance(movement, referrals) === undefined
+                            ? "Not recorded"
+                            : movementMedicalClearance(movement, referrals)?.cleared
+                              ? "Yes"
+                              : "No"}
+                        </dd>
+                      </div>
+                      {movement.legalForm ? (
+                        <div>
+                          <dt>Form ends</dt>
+                          <dd className={movement.legalForm.dueAt === undefined ? undefined : styles.phoneSheetMono}>
+                            {movement.legalForm.dueAt === undefined
+                              ? "Not written"
+                              : minutesUntil(movement.legalForm.dueAt, now) >= 0
+                                ? `in ${splitDuration(minutesUntil(movement.legalForm.dueAt, now))}`
+                                : `passed ${splitDuration(Math.abs(minutesUntil(movement.legalForm.dueAt, now)))} ago`}
+                          </dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                    {subFormOpen ? <div className={styles.phoneSheetForm}>{subFormContent}</div> : null}
+                    <section className={styles.phoneSheetSection} aria-label="Actions">
+                      <h3 className={styles.phoneSheetHeading}>Actions</h3>
+                      <div className={styles.nextGroup}>{nextGroupBody}</div>
+                    </section>
+                    <section className={styles.phoneSheetSection} aria-label="On the board">
+                      <h3 className={styles.phoneSheetHeading}>On the board</h3>
+                      <div className={styles.phoneSheetField}>
+                        <span>Presentation</span>
+                        <div>{patientExtras}</div>
+                      </div>
+                      <div className={styles.phoneSheetField}>
+                        <span>Legal form</span>
+                        <div>{formControl}</div>
+                      </div>
+                      <div className={styles.phoneSheetField}>
+                        <span>Medically cleared</span>
+                        <div>{clearedControl}</div>
+                      </div>
+                      <div className={styles.phoneSheetField}>
+                        <span>Psychiatric review</span>
+                        <div>{reviewControl}</div>
+                      </div>
+                      <div className={styles.phoneSheetField}>
+                        <span>Destination</span>
+                        <div>{destinationContent}</div>
+                      </div>
+                    </section>
+                    <div className={styles.phoneSheetCards}>{expandedCards}</div>
+                  </PhoneSheet>
+                ) : null;
+                if (tableA2) {
+                  if (sheetOpen) a2Sheet = personSheet;
+                  const overTarget = minutesInDepartment > accessTarget;
+                  const waitTone = overTarget
+                    ? ("danger" as const)
+                    : minutesInDepartment > accessTarget / 3
+                      ? ("warning" as const)
+                      : undefined;
+                  const openSheet = () => {
+                    setPhoneSheetReason(undefined);
+                    setPhoneSheetFor(movement.id);
+                  };
+                  const formWords = movement.legalForm ? `Form ${movement.legalForm.code}` : "No form";
+                  const clearedWords =
+                    medicalClearance === undefined ? "Pending" : medicalClearance.cleared ? "Cleared" : "Not cleared";
+                  const clearedTone =
+                    medicalClearance === undefined
+                      ? ("neutral" as const)
+                      : medicalClearance.cleared
+                        ? ("success" as const)
+                        : ("danger" as const);
+                  const reviewWords = movement.examination ? "Reviewed" : "Not reviewed";
+                  const destinationName =
+                    acceptedUnit && !movement.closure ? acceptedUnit.name.split(" — ")[0] : undefined;
+                  const formCell = (
+                    <span className={styles.a2Value}>
+                      {formExpiryWarningText !== undefined ? <StatusGlyph tone="warning" size={8} /> : null}
+                      <span
+                        className={movement.legalForm ? styles.a2Mono : styles.a2Quiet}
+                        title={formExpiryWarningText ?? formExpiryText}
+                      >
+                        {movement.legalForm ? movement.legalForm.code : "None"}
+                      </span>
+                    </span>
+                  );
+                  const clearedCell = (
+                    <span className={styles.a2Value}>
+                      <StatusGlyph tone={clearedTone} size={8} />
+                      <span className={medicalClearance === undefined ? styles.a2Quiet : undefined}>
+                        {clearedWords}
+                      </span>
+                    </span>
+                  );
+                  const reviewCell = (
+                    <span className={styles.a2Value}>
+                      <StatusGlyph tone={movement.examination ? "success" : "neutral"} size={8} />
+                      <span className={movement.examination ? undefined : styles.a2Quiet}>{reviewWords}</span>
+                    </span>
+                  );
+                  const destinationCell = destinationName ? (
+                    <span className={styles.a2Value} title={`${acceptedUnit?.name}, accepted`}>
+                      <Check size={14} aria-hidden="true" className={styles.a2Tick} />
+                      <span className={styles.a2Truncate}>{destinationName}</span>
+                      <span className="sr-only">, accepted</span>
+                    </span>
+                  ) : (
+                    <span className={`${styles.a2Value} ${styles.a2Quiet}`}>
+                      <span className={styles.a2Truncate}>{destinationLabel}</span>
+                    </span>
+                  );
+                  const nextCell = (
+                    <span className={styles.a2Next}>
+                      {nextAction && !movement.closure ? (
+                        <button
+                          type="button"
+                          data-testid={`ward-ed-next-${movement.id}`}
+                          className={buttonClass({ variant: "sec", size: "sm" })}
+                          aria-disabled={nextAction.blocked ? "true" : undefined}
+                          title={nextAction.blocked ?? undefined}
+                          aria-expanded={nextAction.expanded}
+                          onClick={nextAction.blocked ? ignoreUnavailableActivation : nextAction.run}
+                        >
+                          {nextAction.label}
+                        </button>
+                      ) : (
+                        <span className={styles.a2Quiet}>
+                          {movement.edOutcome !== undefined && !movement.leftDepartmentAt
+                            ? "Left the department"
+                            : movement.closure
+                              ? "Withdrawn"
+                              : "Nothing due"}
+                        </span>
+                      )}
+                      {movement.closure ? null : (
+                        <EdActionsMenu
+                          patientName={patientInfo.displayName}
+                          testId={`ward-ed-actions-menu-${movement.id}`}
+                          triggerTestId={`ward-ed-unfold-${movement.id}`}
+                          onViewRecord={openSheet}
+                          onEditPresentation={openSheet}
+                          onEditPlan={openSheet}
+                          compact
+                        >
+                          {menuItems}
+                        </EdActionsMenu>
+                      )}
+                    </span>
+                  );
+                  return (
+                    <tr
+                      key={movement.id}
+                      className={styles.a2Row}
+                      data-testid={`ward-ed-patient-${movement.id}`}
+                      data-act-now={overTarget ? "true" : undefined}
+                      data-dim={isBoardRowDim(movement) ? "true" : undefined}
+                      data-selected={sheetOpen ? "true" : undefined}
+                    >
+                      <td className={styles.a2Tier}>
+                        <span className={styles.phoneTier} data-urgency={movement.urgency}>
+                          <span aria-hidden="true">T{movement.urgency}</span>
+                          <span className="sr-only">{urgencyTierLabel(movement.urgency)}</span>
+                        </span>
+                      </td>
+                      <td className={styles.a2Patient}>
+                        <button
+                          type="button"
+                          className={styles.a2Name}
+                          onClick={openSheet}
+                          title={`Open ${patientInfo.displayName}`}
+                          data-testid={`ward-ed-row-name-${movement.id}`}
+                        >
+                          {patientInfo.formalName}
+                        </button>
+                        <span className={styles.a2Sub}>
+                          {isTabletPortrait
+                            ? [
+                                phoneBay,
+                                formWords,
+                                medicalClearance === undefined ? "Clearance due" : clearedWords,
+                                movement.examination ? "Reviewed" : "Review due",
+                              ].join(" · ")
+                            : `${patientInfo.umrn} · ${movement.cohort} · ${movement.security}`}
+                        </span>
+                      </td>
+                      <td className={styles.a2Wait}>
+                        <span className={styles.a2Value}>
+                          {waitTone ? <StatusGlyph tone={waitTone} size={8} /> : null}
+                          <b className={styles.a2Mono}>{splitDuration(minutesInDepartment)}</b>
+                        </span>
+                        {overTarget ? <span className={styles.a2Sub}>over target</span> : null}
+                      </td>
+                      {isTabletPortrait ? null : (
+                        <>
+                          <td className={styles.a2Mono}>{phoneBay.replace(/^Bay /, "")}</td>
+                          <td>{formCell}</td>
+                          <td>{clearedCell}</td>
+                          <td>{reviewCell}</td>
+                        </>
+                      )}
+                      <td>{destinationCell}</td>
+                      <td>{nextCell}</td>
+                    </tr>
+                  );
+                }
                 if (listRows) {
                   const phoneOverTarget = minutesInDepartment > accessTarget;
                   const phoneWaitTone = phoneOverTarget
@@ -4994,12 +5352,6 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
                       : movement.closure
                         ? "Withdrawn"
                         : nextAction?.label;
-                  const phoneBay = patientBay(movement.id);
-                  const sheetOpen = phoneSheetFor === movement.id;
-                  const closeSheet = () => {
-                    setPhoneSheetFor(undefined);
-                    setPhoneSheetReason(undefined);
-                  };
                   return (
                     <Fragment key={movement.id}>
                       <PhoneListRow
@@ -5066,146 +5418,7 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
                           setPhoneSheetFor(movement.id);
                         }}
                       />
-                      {sheetOpen ? (
-                        <PhoneSheet
-                          open
-                          onClose={closeSheet}
-                          title={patientInfo.displayName}
-                          description={
-                            <>
-                              <span className={styles.phoneSheetUmrn}>{patientInfo.umrn}</span> · {department.siteCode}{" "}
-                              ED · {phoneBay.toLowerCase()}
-                            </>
-                          }
-                          height="tall"
-                          placement={isPhone ? "bottom" : "right"}
-                          className={styles.phoneSheet}
-                          data-testid={`ward-ed-phone-sheet-${movement.id}`}
-                          secondary={{
-                            label: "Open patient",
-                            onAction: () => {
-                              closeSheet();
-                              setSelectedPatientId(movement.id);
-                            },
-                          }}
-                          primary={
-                            nextAction && !movement.closure
-                              ? {
-                                  label: nextAction.label,
-                                  disabledReason: nextAction.blocked,
-                                  onAction: nextAction.run,
-                                }
-                              : undefined
-                          }
-                        >
-                          <dl className={styles.phoneSheetFacts}>
-                            <div>
-                              <dt>In ED</dt>
-                              <dd className={styles.phoneSheetMono}>{splitDuration(minutesInDepartment)}</dd>
-                            </div>
-                            <div>
-                              <dt>Stage</dt>
-                              <dd>{stageCopy[movement.stage].label}</dd>
-                            </div>
-                            <div>
-                              <dt>Tier</dt>
-                              <dd>
-                                <span className={styles.phoneTier} data-urgency={movement.urgency}>
-                                  T{movement.urgency}
-                                </span>
-                              </dd>
-                            </div>
-                            <div>
-                              <dt>Form</dt>
-                              <dd>{movement.legalForm ? `Form ${movement.legalForm.code}` : "None"}</dd>
-                            </div>
-                          </dl>
-                          {/* v10 phone person sheet: where the time in the department went, then the
-                              few facts a coordinator checks, above the actions. */}
-                          <section className={styles.phoneSheetSection} aria-label="Time in the department">
-                            <h3 className={styles.phoneSheetHeading}>Time in the department</h3>
-                            <JourneyStrip
-                              stages={edJourneyStages(
-                                movement,
-                                movementMedicalClearance(movement, referrals),
-                                stageCopy[movement.stage].label,
-                                now,
-                              )}
-                              formatDuration={splitDuration}
-                              label="Time in the department"
-                            />
-                          </section>
-                          <dl className={styles.phoneSheetPairs}>
-                            <div>
-                              <dt>Cohort</dt>
-                              <dd>
-                                {movement.cohort} · {movement.sex}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt>Destination</dt>
-                              <dd>{destinationLabel}</dd>
-                            </div>
-                            <div>
-                              <dt>Psychiatric review</dt>
-                              <dd>{movement.examination ? "Recorded" : "Not recorded"}</dd>
-                            </div>
-                            <div>
-                              <dt>Medically cleared</dt>
-                              <dd>
-                                {movementMedicalClearance(movement, referrals) === undefined
-                                  ? "Not recorded"
-                                  : movementMedicalClearance(movement, referrals)?.cleared
-                                    ? "Yes"
-                                    : "No"}
-                              </dd>
-                            </div>
-                            {movement.legalForm ? (
-                              <div>
-                                <dt>Form ends</dt>
-                                <dd
-                                  className={movement.legalForm.dueAt === undefined ? undefined : styles.phoneSheetMono}
-                                >
-                                  {movement.legalForm.dueAt === undefined
-                                    ? "Not written"
-                                    : minutesUntil(movement.legalForm.dueAt, now) >= 0
-                                      ? `in ${splitDuration(minutesUntil(movement.legalForm.dueAt, now))}`
-                                      : `passed ${splitDuration(Math.abs(minutesUntil(movement.legalForm.dueAt, now)))} ago`}
-                                </dd>
-                              </div>
-                            ) : null}
-                          </dl>
-                          {subFormOpen ? <div className={styles.phoneSheetForm}>{subFormContent}</div> : null}
-                          <section className={styles.phoneSheetSection} aria-label="Actions">
-                            <h3 className={styles.phoneSheetHeading}>Actions</h3>
-                            <div className={styles.nextGroup}>{nextGroupBody}</div>
-                          </section>
-                          <section className={styles.phoneSheetSection} aria-label="On the board">
-                            <h3 className={styles.phoneSheetHeading}>On the board</h3>
-                            <div className={styles.phoneSheetField}>
-                              <span>Presentation</span>
-                              <div>{patientExtras}</div>
-                            </div>
-                            <div className={styles.phoneSheetField}>
-                              <span>Legal form</span>
-                              <div>{formControl}</div>
-                            </div>
-                            <div className={styles.phoneSheetField}>
-                              <span>Medically cleared</span>
-                              <div>{clearedControl}</div>
-                            </div>
-                            <div className={styles.phoneSheetField}>
-                              <span>Psychiatric review</span>
-                              <div>{reviewControl}</div>
-                            </div>
-                            <div className={styles.phoneSheetField}>
-                              <span>Destination</span>
-                              <div>{destinationContent}</div>
-                            </div>
-                          </section>
-                          <div className={styles.phoneSheetCards}>{expandedCards}</div>
-                        </PhoneSheet>
-                      ) : null}
+                      {personSheet}
                     </Fragment>
                   );
                 }
@@ -5337,6 +5550,43 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
                   </Fragment>
                 );
               };
+              if (tableA2) {
+                const a2Rows = visiblePatients.map(renderBoardRow);
+                const columns = isTabletPortrait
+                  ? ["T", "Patient", "In ED", "Destination", "Next"]
+                  : ["T", "Patient", "In ED", "Bay", "Form", "Cleared", "Review", "Destination", "Next"];
+                return (
+                  <>
+                    {boardMatchCount === 0 ? (
+                      <p className={styles.noPatientMatches}>
+                        No one matches this search and filter. Everyone stays below, dimmed.
+                      </p>
+                    ) : null}
+                    <table
+                      className={styles.a2Table}
+                      data-columns={isTabletPortrait ? "priority" : "all"}
+                      aria-label="Emergency department board, longest wait first"
+                    >
+                      <colgroup>
+                        {columns.map((column) => (
+                          <col key={column} data-col={column} />
+                        ))}
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          {columns.map((column) => (
+                            <th key={column} scope="col">
+                              {column === "T" ? <abbr title="Tier">T</abbr> : column}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>{a2Rows}</tbody>
+                    </table>
+                    {a2Sheet}
+                  </>
+                );
+              }
               return listRows ? (
                 <>
                   {boardMatchCount === 0 ? (
@@ -5424,7 +5674,7 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
           )}
         </section>
 
-        {preview === "A" ? (
+        {preview === "A" && !tableA2 ? (
           isTabletPortrait ? (
             <PortraitRail
               mode="slide"
@@ -5438,6 +5688,9 @@ export function EdScreen({ edId, preview }: EdScreenProps) {
           ) : (
             <EdNeedsYou items={needsYouItems} data-pane="needs" data-preview-rail="" />
           )
+        ) : null}
+        {tableA2 && !needsRailSlides && !fullscreenBoard ? (
+          <EdNeedsYou items={needsYouItems} data-pane="needs" data-preview-rail="" />
         ) : null}
         {preview !== undefined ? (
           <EdElsewhereLinks
