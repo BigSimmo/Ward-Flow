@@ -3131,7 +3131,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         <section
           aria-label="This department's patients"
           data-pane="board"
-          className={`${styles.panel} ${styles.full} ${styles.listSection}`}
+          className={`${styles.panel} ${styles.full} ${styles.listSection}${!boardTable && fullscreenBoard ? ` ${styles.fullscreenBoard}` : ""}`}
           data-handover-view={boardTable && fullscreenBoard ? "true" : undefined}
           tabIndex={0}
         >

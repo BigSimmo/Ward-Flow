@@ -738,7 +738,7 @@ export function WardPhoneMenu({
   onNewReferral,
 }: WardPhoneMenuProps) {
   const pathname = usePathname() ?? "";
-  const { counts, role, shellRole } = useWardNavCounts();
+  const { counts, shellRole } = useWardNavCounts();
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -755,7 +755,8 @@ export function WardPhoneMenu({
     [],
   );
 
-  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(role, counts);
+  // One order for the signed-in person (device audit, 11 Oct 2026), as the desktop rail.
+  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
   const flow = useWardFlow();
   const actNowCount = useMemo(
@@ -806,7 +807,7 @@ export function WardPhoneMenu({
         mobileSize="viewport"
         mobileBreakpoint="phone"
         returnFocusRef={returnFocusRef}
-        headerLeading={<WhoLink role={role} onClose={close} />}
+        headerLeading={<WhoLink role={shellRole} onClose={close} />}
         contentClassName={styles.sheet}
         headerClassName={styles.head}
         titleClassName="sr-only"

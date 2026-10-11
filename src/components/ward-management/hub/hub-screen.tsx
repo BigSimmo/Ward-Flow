@@ -136,7 +136,7 @@ function barWidth(part: number, total: number): string {
  * Pulled, the one occupancy count every page and the rail print (`ward-occupancy.ts`, device audit
  * 11 Oct 2026); it used to count the Occupied box alone, so Places read 79.6% against the rail's 85%.
  */
-function occupiedShare({
+function occupancyShare({
   occupied,
   pulled,
   beds,
@@ -834,7 +834,7 @@ export function HubScreen() {
                   pressed={highlight === "closed"}
                   onToggle={() => toggleHighlight("closed")}
                 />
-                <HeroStat inline value={occupiedShare(network) ?? "Not recorded"} label={BED_STATE_LABELS.occupied} />
+                <HeroStat inline value={occupancyShare(network) ?? "Not recorded"} label="Occupancy" />
                 <HeroStat
                   inline
                   value={staleCount}
@@ -1081,7 +1081,7 @@ export function HubScreen() {
               ) : null}
               {shownSections.map((section) => {
                 const sectionBeds = section.key === "ward" ? networkBeds(section.entries) : undefined;
-                const sectionShare = sectionBeds === undefined ? undefined : occupiedShare(sectionBeds);
+                const sectionShare = sectionBeds === undefined ? undefined : occupancyShare(sectionBeds);
                 return (
                   <section key={section.key} aria-label={section.label} className={styles.group}>
                     <div className={styles.groupHeadRow}>
@@ -1090,7 +1090,7 @@ export function HubScreen() {
                       </h2>
                       {sectionBeds === undefined ? null : (
                         <span className={styles.groupMeta}>
-                          {sectionBeds.ready} ready{sectionShare === undefined ? "" : ` · ${sectionShare} occupied`}
+                          {sectionBeds.ready} ready{sectionShare === undefined ? "" : ` · ${sectionShare} occupancy`}
                         </span>
                       )}
                     </div>
@@ -1123,7 +1123,7 @@ export function HubScreen() {
                         const key = `${section.key}-${group.label}`;
                         const open = !folded.has(key);
                         const groupBeds = networkBeds(group.entries);
-                        const groupShare = occupiedShare(groupBeds);
+                        const groupShare = occupancyShare(groupBeds);
                         return (
                           <div key={key}>
                             <h3 className={styles.subGroupHead}>
@@ -1141,7 +1141,7 @@ export function HubScreen() {
                                 <span className={styles.subGroupMeta}>
                                   {groupBeds.ready} ready
                                   {groupShare === undefined ? null : (
-                                    <span className={styles.subGroupShare}>{groupShare} occupied</span>
+                                    <span className={styles.subGroupShare}>{groupShare} occupancy</span>
                                   )}
                                 </span>
                               </button>
@@ -1245,8 +1245,8 @@ export function HubScreen() {
                     <span className={styles.legendItem}>
                       <b>{network.occupied}</b> {BED_STATE_LABELS.occupied.toLowerCase()}
                     </span>
-                    {occupiedShare(network) === undefined ? null : (
-                      <span className={styles.legendShare}>{occupiedShare(network)} occupied</span>
+                    {occupancyShare(network) === undefined ? null : (
+                      <span className={styles.legendShare}>{occupancyShare(network)} occupancy</span>
                     )}
                   </p>
                 </div>

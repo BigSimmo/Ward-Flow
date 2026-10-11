@@ -585,6 +585,9 @@ export function HandoverPage() {
 
   /* selection */
   const selected = selectedId === null ? undefined : allRows.find((row) => row.id === selectedId);
+  // The rail's own Sign off shows only when the rail is on screen beside the Patients table and is
+  // not holding a picked patient's flow; everywhere else the hero button is the way in.
+  const signOffInRail = railBeside && !wide && tab === "pts" && !selected;
   const pick = (id: string) => {
     setSelectedId(id);
     if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
@@ -1025,7 +1028,7 @@ export function HandoverPage() {
           />
           {/* With the rail beside the table its Sign off is the one; below 1201px the rail is a
               drawer and this opens it. */}
-          {railBeside && !present ? null : signOffButton}
+          {signOffInRail ? null : signOffButton}
         </>
       }
       bar={

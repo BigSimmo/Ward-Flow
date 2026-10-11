@@ -629,7 +629,11 @@ export function MovementsScreen() {
       : rows;
   /* Device audit, 11 Oct 2026: on phone a group opens as its header and count; one tap shows its rows. */
   const groupRows = (id: string, rows: Movement[]) =>
-    isPhone ? (phoneOpenGroups.has(id) ? rows : capRows(rows, 0)) : capRows(rows, GROUP_CAP);
+    isPhone
+      ? phoneOpenGroups.has(id)
+        ? rows
+        : rows.filter((movement) => pinnedRowIds.has(movement.id) || isMarked(movement))
+      : capRows(rows, GROUP_CAP);
   const togglePhoneGroup = (id: string) =>
     setPhoneOpenGroups((open) => {
       const next = new Set(open);

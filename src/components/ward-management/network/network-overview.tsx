@@ -218,7 +218,7 @@ export function NetworkBedflow({
                     {share === undefined ? null : (
                       <>
                         {" "}
-                        · <b>{share}</b> occupied
+                        · <b>{share}</b> occupancy
                       </>
                     )}
                   </span>

@@ -309,7 +309,7 @@
 
 @media (pointer: coarse) {
   .jumpItem {
-    min-height: 44px;
+    min-height: var(--ward-tap, 48px);
   }
 }
 

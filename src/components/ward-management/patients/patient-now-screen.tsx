@@ -1191,6 +1191,22 @@ export function PatientNowScreen({
               onClick={handleCopySummary}
             />
           ) : undefined,
+        // Phone keeps the patient's own New referral (preselected) when there is no stay to act on.
+        barMain:
+          isPhone && (mode === "idle" || mode === "cto") ? (
+            <Link
+              href={
+                livePatient
+                  ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
+                  : "/mockups/ward-flow/referrals/new"
+              }
+              className={buttonClass({ variant: "pri" })}
+              data-testid="ward-person-refer-outpatient"
+            >
+              <FileText size={16} aria-hidden="true" />
+              New referral
+            </Link>
+          ) : undefined,
         phoneFoot: phoneStatusFoot,
       }}
       legal={

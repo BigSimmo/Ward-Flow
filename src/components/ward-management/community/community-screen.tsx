@@ -1866,7 +1866,15 @@ export function CommunityScreen({
     ["tab-egress", isDemoMode ? teamConfig.egress : lists.expectedBack.length],
     ["tab-caseload", isDemoMode ? teamConfig.caseload : caseloadRows.length],
   ];
-  const firstListWithSomeone = tabCounts.find(([, count]) => count > 0)?.[0] ?? "tab-triage";
+  // Phone lists render live rows (or the sample referrals), so the phone opens on one with rows in it.
+  const phoneRowCounts: [ActiveTabType, number][] = [
+    ["tab-triage", isDemoMode && !hasAnyReferralsForTeam ? demoTeamReferrals.length : waitingReferrals.length],
+    ["tab-inpatients", lists.currentlyAdmitted.length],
+    ["tab-egress", lists.expectedBack.length],
+    ["tab-caseload", caseloadRows.length],
+  ];
+  const firstListWithSomeone =
+    (isPhone ? phoneRowCounts : tabCounts).find(([, count]) => count > 0)?.[0] ?? "tab-triage";
   // Held from the first render (React's "adjust state while rendering" pattern), so the list never
   // switches under the reader when the last row leaves it.
   if (chosenTab === null) setActiveTab(firstListWithSomeone);
