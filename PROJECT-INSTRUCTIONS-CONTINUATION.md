@@ -2,29 +2,31 @@
 
 Read and follow [task lifecycle and receipt handoff](docs/task-receipts.md) at task start, checkpoint, blocker, resume and completion. Reuse the original task identity; local receipt export is a handoff, not canonical reconciliation.
 
-This file is the always-loaded Ward Flow core. Some older checks locate policy headings in this
-file; the repository boundary above governs their interpretation. Open a reference file only when
-its topic applies and its instructions have been verified for this repository.
+This file continues the always-loaded Ward Flow entry point in `AGENTS.md`. Some older checks locate
+policy headings in `AGENTS.md`; the repository boundary in `AGENTS.md` governs their interpretation.
+Open a reference file only when its topic applies and its instructions have been verified for this
+repository.
 
-**Read these first:** the repository boundary above, `# API and provider confirmation boundary`,
-and `# Local server safety`. Verify the actual destination before any push, pull request or deploy.
+**Read these first:** `# Ward Flow repository boundary`, `# API and provider confirmation boundary`,
+and `# Local server safety` in `AGENTS.md`. Verify the actual destination before any push, pull
+request or deploy.
 
 Several `docs/agents/` files were copied from PsychSift. They are background only where they name
 another repository, remote, provider or CI workflow. Do not execute their Git or provider procedures
 for Ward Flow. The `Run PR` sweep is disabled here until a Ward Flow specific workflow is written.
 
-| Topic                                                                                                                     | Full text                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Gate selection, the verification tier table, the gate arbiter                                                             | [`docs/agents/verification-gates.md`](docs/agents/verification-gates.md)                     |
-| Historical PR workflow; do not execute its GitHub procedures in Ward Flow                                                 | [`docs/agents/pull-request-workflow.md`](docs/agents/pull-request-workflow.md)               |
-| The `upload` shortcut                                                                                                     | [`docs/agents/upload-shortcut.md`](docs/agents/upload-shortcut.md)                           |
-| Button and route wiring, the bundle budget                                                                                | [`docs/agents/wiring-and-bundle-budget.md`](docs/agents/wiring-and-bundle-budget.md)         |
-| External skill precedence, evidence and calibration                                                                       | [`docs/agents/external-skill-precedence.md`](docs/agents/external-skill-precedence.md)       |
-| Deleting code you believe is dead                                                                                         | [`docs/agents/dead-code-deletion.md`](docs/agents/dead-code-deletion.md)                     |
-| Claude Code hook scripts                                                                                                  | [`docs/agents/claude-hook-scripts.md`](docs/agents/claude-hook-scripts.md)                   |
-| The `bug-hunter` shortcut                                                                                                 | [`docs/agents/bug-hunter-shortcut.md`](docs/agents/bug-hunter-shortcut.md)                   |
-| Repository skills                                                                                                         | [`docs/agents/repository-skills-and-issues.md`](docs/agents/repository-skills-and-issues.md) |
-| Codex dependency, review throttling, desktop worktree, reasoning effort, productivity, GitHub review, Cloud; Cursor Cloud | the `docs/agents/codex-*.md` and `docs/agents/cursor-cloud.md` pointers below                |
+| Topic                                                                                                                     | Full text                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Gate selection, the verification tier table, the gate arbiter                                                             | [`docs/agents/verification-gates.md`](docs/agents/verification-gates.md)                         |
+| Historical PR workflow; do not execute its GitHub procedures in Ward Flow                                                 | [`docs/agents/pull-request-workflow.md`](docs/agents/pull-request-workflow.md)                   |
+| The `upload` shortcut                                                                                                     | [`docs/agents/upload-shortcut.md`](docs/agents/upload-shortcut.md)                               |
+| Button and route wiring, the bundle budget                                                                                | [`docs/agents/wiring-and-bundle-budget.md`](docs/agents/wiring-and-bundle-budget.md)             |
+| External skill precedence, evidence and calibration                                                                       | [`docs/agents/external-skill-precedence.md`](docs/agents/external-skill-precedence.md)           |
+| Deleting code you believe is dead                                                                                         | [`docs/agents/dead-code-deletion.md`](docs/agents/dead-code-deletion.md)                         |
+| Claude Code hook scripts                                                                                                  | [`docs/agents/claude-hook-scripts.md`](docs/agents/claude-hook-scripts.md)                       |
+| The `bug-hunter` shortcut                                                                                                 | [`docs/agents/bug-hunter-shortcut.md`](docs/agents/bug-hunter-shortcut.md)                       |
+| Repository skills                                                                                                         | [`docs/agents/repository-skills-and-issues.md`](docs/agents/repository-skills-and-issues.md)     |
+| Codex dependency, review throttling, desktop worktree, reasoning effort, productivity, GitHub review, Cloud; Cursor Cloud | the `docs/agents/codex-*.md` and `docs/agents/cursor-cloud.md` pointers below and in `AGENTS.md` |
 
 Some headings remain for existing policy checks, including `## Bare PR publication is not readiness work`,
 `# Search chrome behaviour`, `## Anti-conflict and CI-speed operating procedure`, and

@@ -5,6 +5,7 @@ const scope = (...files: string[]) => classifyChanges(files.map((file) => ({ sta
 describe("policy-only coverage contract", () => {
   it.each([
     "AGENTS.md",
+    "PROJECT-INSTRUCTIONS-CONTINUATION.md",
     "docs/task-receipts.md",
     "docs/agents/task-efficiency.md",
     "README.local-source.md",
