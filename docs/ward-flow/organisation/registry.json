@@ -673,6 +673,15 @@
       "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
     },
     {
+      "id": "ward-scroll-interactions",
+      "path": "src/components/ward-management/ward-scroll.ts",
+      "owner": "ward-flow",
+      "module": "shell",
+      "system": "behaviour",
+      "reference": "tests/ward-scroll.dom.test.tsx",
+      "reviewedBy": "Codex local scroll audit, 2026-10-11"
+    },
+    {
       "id": "psychsift-ward-output-exclusion",
       "path": "src/lib/ward-output.ts",
       "owner": "excluded",

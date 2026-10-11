@@ -1481,7 +1481,7 @@
 /* The directory tabs stay under the header while the list scrolls (v10 phone). */
 .phoneSeg {
   position: sticky;
-  top: 3.5rem;
+  top: var(--wf-header-height, 3.5rem);
   z-index: 3;
   margin: 0 calc(-1 * var(--wf-s-4));
   padding: 8px var(--wf-s-4);

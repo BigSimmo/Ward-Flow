@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -370,7 +371,7 @@ function focusFirstCandidate(from: HTMLElement) {
   const first = from
     .closest("[data-testid^='ward-shortlist-']")
     ?.querySelector<HTMLElement>("[data-testid^='ward-shortlist-candidate-'][data-fit]");
-  first?.scrollIntoView({ block: "center", behavior: "smooth" });
+  first?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
   first?.focus({ preventScroll: true });
 }
 

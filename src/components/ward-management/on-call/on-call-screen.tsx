@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Clock, Copy, Mail, MapPin, Printer, Search, Star, Users, X } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
@@ -855,7 +856,7 @@ function DirectoryTable({
     const row = box?.querySelector<HTMLElement>(`#ward-on-call-svc-${tone}`);
     if (!box || !row) return;
     const head = box.querySelector("thead")?.getBoundingClientRect().height ?? 0;
-    box.scrollTo({ top: row.offsetTop - head, behavior: "smooth" });
+    box.scrollTo({ top: row.offsetTop - head, behavior: wardScrollBehavior() });
   }
   return (
     <div className={styles.tableScroll} ref={scroller}>

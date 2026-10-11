@@ -8,6 +8,7 @@
  * Every figure is read from the engine (`delays-board-model.ts`). Selecting, filtering and the
  * graphs are presentation state only; the one write is Escalate, which the screen dispatches.
  */
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import {
   useCallback,
   useEffect,
@@ -1087,7 +1088,7 @@ export function DelaysBoard({
     if (sheet) return;
     window.requestAnimationFrame(() => {
       const button = document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${id}"]`);
-      button?.scrollIntoView({ block: "center", behavior: "smooth" });
+      button?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
       button?.focus({ preventScroll: true });
     });
   };
@@ -1894,7 +1895,7 @@ export function DelaysBoard({
                   }}
                   onToTable={() => {
                     setPhoneSheet(null);
-                    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    tableRef.current?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
                   }}
                 />
               </PhoneSheet>
@@ -1919,7 +1920,7 @@ export function DelaysBoard({
               }}
               onPick={reveal}
               onToTable={() => {
-                tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                tableRef.current?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
                 tableRef.current?.focus({ preventScroll: true });
               }}
             />

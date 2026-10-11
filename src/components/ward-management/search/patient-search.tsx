@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
   useEffect,
@@ -782,7 +783,7 @@ export function PatientSearchPage() {
     window.setTimeout(() => {
       document
         .querySelector(`[data-id="${CSS.escape(row.key)}"]`)
-        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+        ?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
     }, 30);
     window.setTimeout(() => setFlashKey(null), 1800);
   };
@@ -793,7 +794,7 @@ export function PatientSearchPage() {
     window.setTimeout(() => {
       document
         .getElementById(`ward-patient-search-group-${group}`)
-        ?.scrollIntoView({ block: "start", behavior: "smooth" });
+        ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
     }, 30);
   };
 

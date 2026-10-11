@@ -87,6 +87,8 @@
   --wf-h-chip: 22px;
   --wf-h-sm: 30px;
   --wf-h-md: 36px;
+  /* Shared sticky header and navigation geometry. Phone overrides this in the Ward layout. */
+  --wf-header-height: 3.75rem;
   --wf-h-lg: 44px;
   --wf-row: 52px;
   --wf-row-compact: 44px;

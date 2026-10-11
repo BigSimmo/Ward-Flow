@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -74,7 +75,7 @@ export function CapacityPhoneWards({
   function jump(id: string) {
     setRegion(id);
     const target = document.getElementById(id === "all" ? "capacity-phone-wards" : `capacity-phone-region-${id}`);
-    target?.scrollIntoView({ block: "start", behavior: "smooth" });
+    target?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
   }
 
   const highlightChips = filters.filter((filter) => filter.id !== "all" && filter.id !== "open-ready");
