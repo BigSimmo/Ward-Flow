@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode, type RefObject } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
 import {
   Activity,
   BedSingle,
@@ -24,6 +24,15 @@ import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-coun
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
+import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
+import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import {
+  SearchResultIcon,
+  smartSearchGroups,
+  type SearchResultGroup,
+  type SearchResultItem,
+} from "@/components/ward-management/ward-global-search";
 
 import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
@@ -475,11 +484,11 @@ function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string
   return (
     <label className={styles.search}>
       <Search aria-hidden="true" strokeWidth={1.75} />
-      <span className="sr-only">Go to a page</span>
+      <span className="sr-only">Go to a page or patient</span>
       <input
         type="search"
         value={query}
-        placeholder="Go to a page"
+        placeholder="Go to a page or patient"
         autoComplete="off"
         onChange={(event) => onQuery(event.target.value)}
         data-testid="ward-phone-menu-search"
@@ -488,13 +497,99 @@ function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string
   );
 }
 
-/** With a filter typed, the matching pages. Without one, Needs you, every page by group, then More. */
+/** Records per kind in the menu, the same short list the header search shows under All. */
+const MENU_RESULTS_PER_GROUP = 6;
+
+/**
+ * The menu's search is the app's one smart search (`searchWardFlow`, grouped by
+ * `smartSearchGroups`), so it finds the same patients, movements, places, forms and tasks as the
+ * header search. Pages come first from the rail's own role-ordered entries; a screen the engine
+ * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
+ */
+function useMenuSearch(query: string, entries: RailEntry[]) {
+  const { movements, patients, units, referrals, plannedAdmissions, now } = useWardFlow();
+  const needle = useDeferredValue(query).trim();
+  return useMemo(() => {
+    if (!needle) return null;
+    const refusal = refusalFor(needle);
+    const results = searchWardFlow({
+      query: needle,
+      patients,
+      movements,
+      units,
+      now,
+      limitPerGroup: MENU_RESULTS_PER_GROUP,
+      plannedAdmissions,
+    });
+    const viewHrefs = new Set(results.views.map((view) => view.href));
+    const lower = needle.toLowerCase();
+    const pages = entries.filter((entry) => entry.label.toLowerCase().includes(lower) || viewHrefs.has(entry.href));
+    const pageHrefs = new Set(pages.map((entry) => entry.href));
+    const groups: SearchResultGroup[] = refusal
+      ? []
+      : smartSearchGroups(results, needle, units, { patients, referrals, movements, plannedAdmissions })
+          .map((group) =>
+            group.key === "views"
+              ? { ...group, items: group.items.filter((item) => !pageHrefs.has(item.href)) }
+              : group,
+          )
+          .filter((group) => group.items.length > 0);
+    return { needle, refusal, pages, groups };
+  }, [needle, entries, movements, patients, units, referrals, plannedAdmissions, now]);
+}
+
+function ResultRow({ item, onGo }: { item: SearchResultItem; onGo: (item: SearchResultItem) => void }) {
+  return (
+    <li>
+      <Link href={item.href} className={styles.row} onClick={() => onGo(item)} data-testid="ward-phone-menu-result">
+        <SearchResultIcon kind={item.kind} id={item.id} className={styles.rowIcon} />
+        <span className={styles.rowText}>
+          <span className={styles.rowLabel}>{item.title}</span>
+          {item.meta ? <span className={styles.rowMeta}>{item.meta}</span> : null}
+        </span>
+        <Chevron />
+      </Link>
+    </li>
+  );
+}
+
+function MenuResults({
+  search,
+  pageRow,
+  onGo,
+}: {
+  search: NonNullable<ReturnType<typeof useMenuSearch>>;
+  pageRow: PageRowRender;
+  onGo: (item: SearchResultItem) => void;
+}) {
+  const { needle, refusal, pages, groups } = search;
+  return (
+    <>
+      {pages.length > 0 ? <Section label="Pages">{pages.map((entry) => pageRow(entry))}</Section> : null}
+      {groups.map((group) => (
+        <Section key={group.key} label={group.heading}>
+          {group.items.map((item) => (
+            <ResultRow key={`${item.kind}-${item.id}`} item={item} onGo={onGo} />
+          ))}
+        </Section>
+      ))}
+      {refusal ? (
+        <p className={styles.empty}>{refusal.sentence}</p>
+      ) : pages.length === 0 && groups.length === 0 ? (
+        <p className={styles.empty}>{NOTHING_FOUND(needle)}</p>
+      ) : null}
+    </>
+  );
+}
+
+/** With a search typed, the matching pages and records. Without one, Needs you, every page by group, then More. */
 function MenuPages({
   query,
   entries,
   needs,
   groups,
   pageRow,
+  onResult,
   onDrawer,
   onClose,
 }: {
@@ -503,15 +598,12 @@ function MenuPages({
   needs: PhoneMenuModel["needs"];
   groups: PhoneMenuModel["groups"];
   pageRow: PageRowRender;
+  onResult: (item: SearchResultItem) => void;
   onDrawer: (id: DrawerId) => void;
   onClose: () => void;
 }) {
-  const needle = query.trim().toLowerCase();
-  if (needle) {
-    const results = entries.filter((entry) => entry.label.toLowerCase().includes(needle));
-    if (results.length === 0) return <p className={styles.empty}>No page called “{query.trim()}”.</p>;
-    return <Section label="Pages found">{results.map((entry) => pageRow(entry))}</Section>;
-  }
+  const search = useMenuSearch(query, entries);
+  if (search) return <MenuResults search={search} pageRow={pageRow} onGo={onResult} />;
   return (
     <>
       {needs.length > 0 ? (
@@ -625,6 +717,10 @@ export function WardPhoneMenu({
           needs={needs}
           groups={groups}
           pageRow={pageRow}
+          onResult={(item) => {
+            announceToWardShell(`${item.title}.`);
+            close();
+          }}
           onDrawer={drawer}
           onClose={close}
         />
