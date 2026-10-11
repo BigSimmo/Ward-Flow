@@ -23,10 +23,29 @@
   background: var(--wf-surface);
 }
 
-/* Act now: a thin red edge all round, no fill. */
+/* Act now: an inset coral marker and subtle tint. */
 .card[data-act-now="true"] {
-  border-color: var(--wf-danger);
-  box-shadow: 0 0 0 1px var(--wf-danger);
+  border-color: var(--wf-line);
+  background: var(--wf-act-tint);
+  position: relative;
+}
+
+.card[data-act-now="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .card[data-act-now="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }
 
 .cardHead {
