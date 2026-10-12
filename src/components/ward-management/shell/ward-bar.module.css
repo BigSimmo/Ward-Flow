@@ -944,7 +944,10 @@
   }
 }
 
-@container ward-bar (max-width: 42rem) {
+/* 48rem matches the phone search sheet (`PHONE_SEARCH_QUERY`), so a 672 to 768px phone or small
+ * tablet in portrait never pairs the full-screen results with an inline header field. The bar is never
+ * this narrow above the phone breakpoint. */
+@container ward-bar (max-width: 48rem) {
   .centerGroup,
   .searchWrap {
     flex: 0 0 auto;
@@ -2635,7 +2638,7 @@
  * 56px once scrolled). Last in the file, and prefixed with `.bar`, so it outranks the phone and
  * scrolled face rules above.
  */
-@container ward-bar (max-width: 42rem) {
+@container ward-bar (max-width: 48rem) {
   .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
     position: fixed;
     inset: 0 0 auto;
@@ -3507,7 +3510,7 @@
     font-size: var(--wf-fs-16);
   }
 
-  @container ward-bar (max-width: 42rem) {
+  @container ward-bar (max-width: 48rem) {
     .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
       opacity: 1;
       color: transparent;
