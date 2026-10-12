@@ -930,11 +930,11 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     type="search"
                     icon={Search}
                     boxClassName={a.search}
-                    placeholder="Search queue"
+                    placeholder="Filter queue"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onClear={() => setSearchQuery("")}
-                    aria-label="Search referrals"
+                    aria-label="Filter referrals"
                   />
                 ) : null}
                 {/* v10: Refused once moved here from the hero, which keeps its five chips. */}
