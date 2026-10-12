@@ -127,7 +127,10 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   // its distance from today rather than failing to render.
   function calendarDay(dayOffset: number, options: Intl.DateTimeFormatOptions): string {
     if (!(dayZero instanceof Date)) return dayOffset < 0 ? `${-dayOffset}d ago` : `+${dayOffset}d`;
-    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", options);
+    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", {
+      ...options,
+      timeZone: "Australia/Perth",
+    });
   }
 
   function dayLabel(dayOffset: number): string {

@@ -25,7 +25,12 @@ function dayOptionLabel(day: number, now: Instant, dayZero: Date): string {
   if (day === 0) return "Today";
   if (day === 1) return "Tomorrow";
   const date = calendarDateOf(Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + day * MINUTES_PER_DAY, dayZero);
-  return `In ${day} days, ${date.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}`;
+  return `In ${day} days, ${date.toLocaleDateString("en-AU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "Australia/Perth",
+  })}`;
 }
 
 /** v10 phone: the leave sheet offers four return times as chips (a past one is not offered). */
