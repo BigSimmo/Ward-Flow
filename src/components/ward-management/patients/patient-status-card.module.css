@@ -383,12 +383,13 @@
   font-size: var(--wf-fs-14);
 }
 
-/* Device audit (11 Oct 2026): the phone dock now sits on every phone page, so the pinned action bar
-   rests above it (the same 96px the dock keeps clear under the page) rather than behind it. */
+/* The pinned action bar sits flush on the phone dock (Josh, 12 Oct 2026, iPhone). A sticky bar
+   already stops above the scroller's dock padding, so its offset only steps back down to the dock's
+   flat edge, and its own padding keeps the button clear of the + hump. */
 @media (max-width: 48rem) {
   .phBar {
-    bottom: var(--wf-dock-clear, 0px);
-    padding-bottom: var(--wf-s-2);
+    bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px));
+    padding-bottom: calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px));
   }
 }
 

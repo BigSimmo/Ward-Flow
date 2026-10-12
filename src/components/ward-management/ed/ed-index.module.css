@@ -627,8 +627,9 @@
     gap: var(--wf-s-2);
   }
 
+  /* Choice options keep the shared compact phone face; their hit area reaches 48px on its own. */
   .main a,
-  .main button:not(.mark) {
+  .main button:not(.mark):not([role="radio"]) {
     min-height: var(--spacing-tap, 3rem);
   }
 

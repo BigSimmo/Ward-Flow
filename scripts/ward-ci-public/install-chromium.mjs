@@ -14,11 +14,22 @@ export function runBounded(command, args, timeoutMs) {
   });
 }
 
+/** A timed-out attempt can leave root apt-get holding the dpkg lock; let it finish before the retry. */
+export function waitForPackageManager(deadline, now = Date.now) {
+  while (now() < deadline && spawnSync("pgrep", ["^(apt-get|dpkg)$"]).status === 0) spawnSync("sleep", ["2"]);
+}
+
 /**
  * Six-minute shared budget, two attempts per operation; the workflow adds an eight-minute outer bound.
- * @param {{ cacheHit?: boolean, execute?: (command: string, args: string[], timeoutMs: number) => { status: number | null, error?: { code?: string }, signal?: string | null }, now?: () => number, log?: (message: string) => void }} options
+ * @param {{ cacheHit?: boolean, execute?: (command: string, args: string[], timeoutMs: number) => { status: number | null, error?: { code?: string }, signal?: string | null }, now?: () => number, log?: (message: string) => void, waitForIdle?: (deadline: number) => void }} options
  */
-export function installChromium({ cacheHit = false, execute = runBounded, now = Date.now, log = console.log } = {}) {
+export function installChromium({
+  cacheHit = false,
+  execute = runBounded,
+  now = Date.now,
+  log = console.log,
+  waitForIdle = execute === runBounded ? (deadline) => waitForPackageManager(deadline, now) : () => {},
+} = {}) {
   const deadline = now() + 360_000;
   const operations = cacheHit
     ? [
@@ -29,6 +40,7 @@ export function installChromium({ cacheHit = false, execute = runBounded, now = 
   for (const args of operations) {
     let installed = false;
     for (let attempt = 1; attempt <= 2; attempt++) {
+      if (attempt > 1) waitForIdle(deadline);
       const remaining = deadline - now();
       if (remaining <= 0) {
         log("Chromium setup failed: six-minute installation budget exhausted.");

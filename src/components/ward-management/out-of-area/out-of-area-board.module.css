@@ -1752,9 +1752,12 @@ fieldset.formRow {
    capsule; the main button is a full pill and copy a round button. */
 .phoneBar {
   right: 0;
-  /* Rests on the phone dock (device audit, 11 Oct 2026); it covered the dock's Create button. */
-  bottom: var(--wf-dock-clear, 0px);
+  /* Sits flush on the phone dock's flat edge (Josh, 12 Oct 2026, iPhone); its padding clears the
+     + hump, which it covered when it sat at the foot of the screen. */
+  bottom: var(--wf-dock-top, 0px);
   left: 0;
+  /* Under the shell bar's layer (z 30), which holds the dock, so the + hump draws over the bar. */
+  z-index: 29;
   align-items: center;
   border: 0;
   border-radius: 0;
@@ -1820,7 +1823,11 @@ fieldset.formRow {
 .phoneBar {
   /* Above the dock the home-bar inset is already cleared, so it is added only without a dock. */
   padding: var(--wf-s-3) var(--wf-s-4)
-    max(var(--wf-s-3), calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px) - var(--wf-dock-clear, 0px)));
+    max(
+      var(--wf-s-3),
+      calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px) - var(--wf-dock-top, 0px)),
+      calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px))
+    );
   border-top: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
   box-shadow: 0 -6px 16px -12px color-mix(in srgb, var(--wf-ink-1) 28%, transparent);
