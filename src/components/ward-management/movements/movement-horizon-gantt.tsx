@@ -336,6 +336,7 @@ export function MovementHorizonGantt({
                 type="button"
                 className={buttonClass({ variant: "sec", size: "sm", iconOnly: true, className: styles.scrubStep })}
                 aria-label={`Back ${scrubStep} hours`}
+                title={scrub === 0 ? "Already at now" : undefined}
                 disabled={scrub === 0}
                 onClick={() => handleScrubberChange(Math.max(0, scrub - scrubStep))}
               >

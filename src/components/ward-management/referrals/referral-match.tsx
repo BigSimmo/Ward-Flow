@@ -239,6 +239,12 @@ type ReferralMatchViewProps = {
  * Owns its own hooks (the draft note), independent of `ReferralMatchView`'s own strict hook order,
  * so it can be called from any of that component's three return branches without disturbing it.
  */
+/** Brings the confirm row into view when it opens, so Confirm and Cancel are never below the fold.
+ *  Module-level so React calls it once on mount, not on every render (site review, 12 Oct 2026). */
+function revealConfirmRow(node: HTMLDivElement | null) {
+  node?.scrollIntoView?.({ block: "nearest" });
+}
+
 export function ReferralHistoryAndCorrections({
   referral,
   now,
@@ -824,6 +830,7 @@ export function ReferralMatchView({
                 </button>
               ) : (
                 <div
+                  ref={revealConfirmRow}
                   className={styles.confirmActionRow}
                   data-testid="ward-referral-match-accept-confirm-group-emergency_department"
                 >

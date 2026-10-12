@@ -782,7 +782,7 @@ export function ShortlistPanel({
     "Choose at least one candidate ward before overriding — nothing is overridden against a default.";
   const activeNotice = activeUnit ? restrictionNotice(movement, activeUnit) : undefined;
 
-  const { score, factors } = operationalScore(movement, now);
+  const { factors } = operationalScore(movement, now);
 
   /** Adds or removes a unit from the referral selection, capped at the coordinator-configured
    * `parallelReferralCap` (Task 7 of the audit-wiring plan, 2026-09-16 — previously the constant
@@ -2447,9 +2447,7 @@ export function ShortlistPanel({
       ) : null}
 
       <details className={`${styles.shortlistScoreDetails} ${shortlistStyles.scoreDetails} source-print`}>
-        <summary className={`${styles.shortlistScoreSummary} ${shortlistStyles.tabularNum}`}>
-          Operational score {score}
-        </summary>
+        <summary className={`${styles.shortlistScoreSummary} ${shortlistStyles.tabularNum}`}>Why this wait</summary>
         <p className={styles.shortlistScoreNote}>The factors below explain a wait; they do not order the queue.</p>
         {factors.length === 0 ? (
           <p className={styles.placeholder}>No contributing factors currently.</p>
