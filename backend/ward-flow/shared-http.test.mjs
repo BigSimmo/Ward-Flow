@@ -182,3 +182,13 @@ test("shared configuration refuses any other server, even in the approved resour
     /Unapproved/,
   );
 });
+
+test("A4-3: a shared command carrying a real-looking identifier is refused before the database", async () => {
+  const { calls, handler } = setup();
+  const response = await handler(
+    request("/commands", { ...body, event: { type: "ADD_PATIENT", umrn: "UMRN-1234567", givenName: "Test" } }),
+  );
+  assert.equal(response.status, 422);
+  assert.equal(calls.length, 0);
+  assert.doesNotMatch(await response.text(), /1234567/);
+});

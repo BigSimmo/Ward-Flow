@@ -5,6 +5,7 @@ import { openStorage, createStore } from "./database.mjs";
 import { createPush, errorFields } from "./push.mjs";
 import { createAuthenticator } from "./auth.mjs";
 import { createHandler } from "./server.mjs";
+import { createSessionCounter } from "./session-quota.mjs";
 
 let handlerPromise;
 let sharedStoreRef;
@@ -29,6 +30,7 @@ function handler() {
       store: createStore(storage),
       authenticate: await createAuthenticator(config),
       sharedStore,
+      countSessions: createSessionCounter(storage),
     });
   })().catch((error) => {
     handlerPromise = undefined;

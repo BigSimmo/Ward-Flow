@@ -7,6 +7,8 @@ import { createStore, openStorage } from "./database.mjs";
 import { createAuthenticator, VerifierUnavailableError } from "./auth.mjs";
 import { createSharedHandler } from "./shared-http.mjs";
 import { createPush, errorFields } from "./push.mjs";
+import { checkSyntheticPayload } from "./synthetic-scan.mjs";
+import { createSessionCounter, MAX_SESSIONS_PER_OWNER } from "./session-quota.mjs";
 
 const BODY_LIMIT = 1_048_576;
 const SESSION_PATH = /^\/v1\/sessions\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
@@ -41,6 +43,7 @@ export function createHandler({
   store,
   authenticate,
   sharedStore,
+  countSessions,
   log = (event) => console.info(JSON.stringify(event)),
 }) {
   const sharedHandler = sharedStore
@@ -153,6 +156,26 @@ export function createHandler({
         (body.requestId !== undefined && (typeof body.requestId !== "string" || !UUID.test(body.requestId)))
       )
         return respond(400, { error: "A synthetic snapshot and valid request ID are required" });
+      // The "synthetic" label is the client's claim; this scan is the server's own check. A
+      // real-looking identifier is refused before anything is stored. The response names the kind
+      // of identifier only, never the value, and the log keeps its closed vocabulary.
+      const scan = checkSyntheticPayload(body.payload);
+      if (!scan.safe)
+        return respond(
+          422,
+          { error: "The snapshot looks like it contains a real identifier; nothing was saved", reason: scan.reason },
+          "identifier_refused",
+        );
+      // A new session (revision 0) counts against the owner's cap; saves to an existing one do not.
+      if (body.expectedRevision === 0 && countSessions) {
+        const existing = await countSessions(owner, MAX_SESSIONS_PER_OWNER);
+        if (existing >= MAX_SESSIONS_PER_OWNER)
+          return respond(
+            409,
+            { error: `This account already has ${MAX_SESSIONS_PER_OWNER} sessions; no new session was created` },
+            "session_limit",
+          );
+      }
       const revision = await store.save(
         owner,
         sessionId,
@@ -240,7 +263,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         push: await createPush(config),
       });
     }
-    const server = listen(createHandler({ config, store: createStore(storage), authenticate, sharedStore }), config);
+    const server = listen(
+      createHandler({
+        config,
+        store: createStore(storage),
+        authenticate,
+        sharedStore,
+        countSessions: createSessionCounter(storage),
+      }),
+      config,
+    );
     registerShutdown(server, pool);
     // Phone push: the same five-minute act-now re-check the Azure timer trigger runs.
     if (sharedStore?.pushEnabled)

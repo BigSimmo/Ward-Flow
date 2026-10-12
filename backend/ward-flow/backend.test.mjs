@@ -508,6 +508,8 @@ test("tenant users are accepted when WARD_ALLOW_TENANT_USERS is enabled", async 
   const tenantConfig = readConfig({
     ...environment,
     WARD_ALLOW_TENANT_USERS: "true",
+    // A4-8: tenant-wide mode now also requires the approved client app list.
+    WARD_ALLOWED_CLIENT_IDS: "66666666-6666-4666-8666-666666666666",
   });
   assert.equal(tenantConfig.allowTenantUsers, true);
   const otherUserOid = "33333333-3333-4333-8333-333333333333";
@@ -519,6 +521,7 @@ test("tenant users are accepted when WARD_ALLOW_TENANT_USERS is enabled", async 
           tid: environment.AZURE_TENANT_ID,
           oid: otherUserOid,
           scp: "WardFlow.Access",
+          azp: "66666666-6666-4666-8666-666666666666",
         },
       }),
     },
@@ -778,4 +781,107 @@ test("adapter configuration failures have a sanitized response-correlated diagno
   assert.equal(response.status, 503);
   assert.equal(events[0].requestId, response.headers["x-request-id"]);
   assert.doesNotMatch(JSON.stringify(events), /private configuration/);
+});
+
+// ---- 12 October 2026 security review (A4-3, A4-8) ----
+
+test("A4-3: a session save carrying a real-looking identifier is refused before storage", async () => {
+  for (const payload of [
+    { version: 5, state: { notes: "Medicare 2123 45678 1" } },
+    { version: 5, state: { notes: "UR No. 1234567" } },
+    { version: 5, state: { ihi: "8003 6012 3456 7890" } },
+    { version: 5, state: { card: 2953457091 } },
+  ]) {
+    const { handler, calls } = setup();
+    const response = await handler(request("PUT", { ...body, payload }));
+    assert.equal(response.status, 422);
+    assert.equal(calls.length, 0);
+    assert.doesNotMatch(await response.text(), /1234567|45678|3456/);
+  }
+  const { handler, calls } = setup();
+  const synthetic = { version: 5, state: { patients: [{ id: "PT-DN-0001", umrn: "UM100001" }] } };
+  assert.equal((await handler(request("PUT", { ...body, payload: synthetic }))).status, 200);
+  assert.equal(calls.length, 1);
+});
+
+test("A4-8: tenant-wide mode refuses configuration without approved client apps", () => {
+  assert.throws(() => readConfig({ ...environment, WARD_ALLOW_TENANT_USERS: "true" }), /WARD_ALLOWED_CLIENT_IDS/);
+  assert.throws(
+    () => readConfig({ ...environment, WARD_ALLOW_TENANT_USERS: "true", WARD_ALLOWED_CLIENT_IDS: "not-a-uuid" }),
+    /client app/,
+  );
+});
+
+test("A4-8: tenant-wide mode refuses guest accounts and unapproved client apps", async () => {
+  const clientId = "66666666-6666-4666-8666-666666666666";
+  const tenantConfig = readConfig({
+    ...environment,
+    WARD_ALLOW_TENANT_USERS: "true",
+    WARD_ALLOWED_CLIENT_IDS: clientId,
+  });
+  const member = {
+    tid: environment.AZURE_TENANT_ID,
+    oid: "33333333-3333-4333-8333-333333333333",
+    scp: "WardFlow.Access",
+    azp: clientId,
+  };
+  let payload = member;
+  const authenticate = await createAuthenticator(tenantConfig, {
+    keys: {},
+    jose: { jwtVerify: async () => ({ payload }) },
+  });
+  assert.equal(await authenticate("Bearer accepted"), member.oid);
+  payload = { ...member, azp: undefined, appid: clientId };
+  assert.equal(await authenticate("Bearer accepted"), member.oid);
+  for (const invalid of [
+    { ...member, acct: 1 },
+    { ...member, idp: "https://sts.windows.net/77777777-7777-4777-8777-777777777777/" },
+    { ...member, idp: "live.com" },
+    { ...member, azp: "88888888-8888-4888-8888-888888888888" },
+    { ...member, azp: undefined },
+  ]) {
+    payload = invalid;
+    await assert.rejects(authenticate("Bearer accepted"), /Unauthorised/);
+  }
+});
+
+test("A4-8: a new session is refused once the owner reaches the session cap", async () => {
+  const { MAX_SESSIONS_PER_OWNER, createSessionCounter } = await import("./session-quota.mjs");
+  const calls = [];
+  const handlerFor = (count) =>
+    createHandler({
+      config,
+      store: {
+        save: async (...args) => {
+          calls.push(args);
+          return 1;
+        },
+      },
+      authenticate: async () => environment.WARD_ALLOWED_OBJECT_ID,
+      countSessions: async () => count,
+      log: () => {},
+    });
+  assert.equal((await handlerFor(MAX_SESSIONS_PER_OWNER)(request("PUT", body))).status, 409);
+  assert.equal(calls.length, 0);
+  // Saving to an existing session is not a new session.
+  assert.equal(
+    (await handlerFor(MAX_SESSIONS_PER_OWNER)(request("PUT", { ...body, expectedRevision: 1 }))).status,
+    200,
+  );
+  assert.equal((await handlerFor(MAX_SESSIONS_PER_OWNER - 1)(request("PUT", body))).status, 200);
+
+  // The counter reads the owner's prefix in the Blob list API and follows continuation markers.
+  const urls = [];
+  const pages = ["<Blob></Blob><Blob></Blob><NextMarker>m1</NextMarker>", "<Blob></Blob><NextMarker></NextMarker>"];
+  const counter = createSessionCounter({
+    ...config.storage,
+    request: async (_method, url) => {
+      urls.push(url);
+      return new Response(pages.shift(), { status: 200 });
+    },
+  });
+  assert.equal(await counter(environment.WARD_ALLOWED_OBJECT_ID, 10), 3);
+  assert.match(urls[0], /comp=list/);
+  assert.match(urls[0], new RegExp(`prefix=${environment.WARD_ALLOWED_OBJECT_ID}%2F`));
+  assert.match(urls[1], /marker=m1/);
 });
