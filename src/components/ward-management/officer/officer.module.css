@@ -1861,8 +1861,8 @@
   .selectButton.selectButton {
     align-items: center;
     gap: var(--wf-s-1);
-    min-height: 2.75rem;
-    margin-block: -13px;
+    min-height: 3rem;
+    margin-block: -15px;
   }
 
   .jobRoute {

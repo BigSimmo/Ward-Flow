@@ -510,16 +510,13 @@ export function OutOfAreaPhone({
                   {TRAVEL_SHORT[selected.entry.band]}
                 </dd>
               </div>
-              {/* Site review 12 Oct 2026: when everyone reads the same plan state, the hero says it once. */}
-              {planVaries ? (
-                <div>
-                  <dt>Return</dt>
-                  <dd>
-                    <StatusGlyph tone={STATUS_TONE[selected.status]} size={9} />
-                    {RETURN_STATUS_SHORT[selected.status]}
-                  </dd>
-                </div>
-              ) : null}
+              <div>
+                <dt>Return</dt>
+                <dd>
+                  <StatusGlyph tone={STATUS_TONE[selected.status]} size={9} />
+                  {RETURN_STATUS_SHORT[selected.status]}
+                </dd>
+              </div>
             </dl>
             <p className={styles.peekLine}>
               <Icon icon={BedDouble} size={14} />
