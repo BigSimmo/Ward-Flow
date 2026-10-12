@@ -606,9 +606,9 @@
 
 .sticky {
   position: sticky;
-  /* Sits flush on the phone dock's flat top; the scroller's trailing padding is accounted for
-     separately (Josh, 12 Oct 2026, iPhone). */
-  bottom: var(--wf-dock-top, 0px);
+  /* Sits flush on the phone dock: the sticky bar already stops above the scroller's dock padding,
+     so it steps back down to the dock's flat edge (Josh, 12 Oct 2026, iPhone). */
+  bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px));
   z-index: 15;
   display: flex;
   gap: 8px;
