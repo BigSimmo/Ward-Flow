@@ -118,7 +118,13 @@ function judgedRequestUrl(request: Request): URL {
 
   try {
     const fromHost = new URL(`${requestUrl.protocol}//${host}`);
-    return fromHost.hostname ? fromHost : requestUrl;
+    // Only a loopback Host is believed (12 October 2026 review, A4-13). A caller can put anything
+    // in Host — a DNS-rebinding page sends its own domain — and a non-loopback value would mark
+    // the request "not local" and skip the port rule entirely. So a non-loopback Host never
+    // loosens the verdict: the request is judged by the address the server answered on instead.
+    // In production that address is the wildcard bind (0.0.0.0), which is not loopback either,
+    // so the deployment is still left unguarded exactly as before.
+    return fromHost.hostname && isLocalUrl(fromHost) ? fromHost : requestUrl;
   } catch {
     // An unparseable Host cannot be trusted to loosen anything; fall back to the URL, which is
     // what this guard judged by before the header was consulted at all.

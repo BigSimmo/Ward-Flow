@@ -3,6 +3,8 @@
 // or patient-identifying text (clinical query/answer content, emails). Values under
 // sensitive keys are redacted and long strings truncated before serialization.
 
+import { scanIdentifierText } from "@/lib/synthetic-data-guard";
+
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 const REDACTED = "[redacted]";
@@ -15,15 +17,26 @@ const MAX_DEPTH = 5;
 // `queryText`, `query_text`, `rawQuery`, `normalizedQuery`, `answerText` and
 // `answer_text` through. Over-redacting a `queryMode`-style label is the accepted
 // cost of a redaction layer that does not depend on call-site discipline.
+//
+// Ward Flow identity fields are included (12 October 2026 review, A4-9): record numbers (`umrn`,
+// `mrn`, `ihi`, Medicare), the person's name fields (`givenName`, `familyName`, `fullName`,
+// `surname`, `preferredName`), date of birth, contact details and free-text `notes`/`comment`.
+// A bare `name` key is left readable: in Ward Flow it names an error class, a ward or a site.
 const SENSITIVE_KEY =
-  /authorization|cookie|token|secret|api[-_]?key|password|service[-_]?role|email|query|question|prompt|\bcontent\b|answer|patient|\bmrn\b/i;
+  /authorization|cookie|token|secret|api[-_]?key|password|service[-_]?role|email|query|question|prompt|\bcontent\b|answer|patient|mrn|ihi|medicare|given[-_]?name|family[-_]?name|first[-_]?name|last[-_]?name|full[-_]?name|surname|preferred[-_]?name|date[-_]?of[-_]?birth|\bdob\b|phone|mobile|address|notes?\b|comment|free[-_]?text|typed/i;
 
-const SENSITIVE_VALUE_PATTERN = /\b(?:mrn|ur|unit\s*no\.?)\s*[:#]?\s*\d{6,10}\b|\b\d{3}\s\d{3}\s\d{4}\b/i;
+// Synthetic UMRNs (two letters and six digits, `UM100001`) still identify a patient record in a
+// log line, so they are redacted alongside the real identifier shapes the synthetic-data scan finds.
+const WARD_FLOW_RECORD_VALUE = /\bUM\d{6}\b|\bUMRN\b/i;
+
+function hasSensitiveValue(value: string): boolean {
+  return WARD_FLOW_RECORD_VALUE.test(value) || scanIdentifierText(value) !== null;
+}
 
 function redactValue(value: unknown, depth: number): unknown {
   if (value === null || value === undefined) return value;
   if (typeof value === "string") {
-    if (SENSITIVE_VALUE_PATTERN.test(value)) return REDACTED;
+    if (hasSensitiveValue(value)) return REDACTED;
     return value.length > MAX_STRING_LENGTH ? `${value.slice(0, MAX_STRING_LENGTH)}…[truncated]` : value;
   }
   if (typeof value === "number" || typeof value === "boolean") return value;
@@ -72,17 +85,25 @@ export function registerSentryLogForwarder(forwarder: SentryLogForwarder | null)
   sentryLogForwarder = forwarder;
 }
 
+/**
+ * One JSON log line. The logger's own `level`, `message` and `timestamp` are written after the
+ * context, so a context key with one of those names cannot overwrite them (A4-11).
+ */
+export function formatLogLine(
+  level: LogLevel,
+  message: string,
+  redactedContext?: Record<string, unknown>,
+  now: Date = new Date(),
+): string {
+  return JSON.stringify({ ...(redactedContext ?? {}), level, message, timestamp: now.toISOString() });
+}
+
 function emit(level: LogLevel, message: string, context?: Record<string, unknown>) {
   // Keep tests quiet; they assert on responses, not log output.
   if (env().NODE_ENV === "test") return;
   if (LEVEL_RANK[level] < LEVEL_RANK[activeLevel()]) return;
   const redacted = context ? redactLogContext(context) : undefined;
-  const line = JSON.stringify({
-    level,
-    message,
-    timestamp: new Date().toISOString(),
-    ...(redacted ?? {}),
-  });
+  const line = formatLogLine(level, message, redacted);
   if (level === "error") console.error(line);
   else if (level === "warn") console.warn(line);
   else console.log(line);

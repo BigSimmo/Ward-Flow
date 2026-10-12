@@ -75,6 +75,12 @@ const APPROVED_SHARED_MODULES = new Map([
       "It also owns the Glare mode preference for the same reason.",
   ],
   [
+    "@/lib/synthetic-data-guard",
+    "the one synthetic-data identifier scan, shared with the Azure backend (12 October 2026 review, " +
+      "A4-4): the shared workspace client must refuse a real-looking identifier before sending, and a " +
+      "ward-local copy would drift from the server's scan, which is exactly what the review faulted.",
+  ],
+  [
     "@/components/ui/missing-value",
     "the shared empty-value renderer, which distinguishes a field that CANNOT apply from one nobody filled in -- arrived with main and is a clinical-meaning distinction, not a convenience",
   ],
@@ -273,7 +279,8 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 9 -> 10 on 2026-10-07: the v6 design system kit, @/components/wf, approved by Josh.
     // 10 -> 11 on 2026-10-10: @/lib/theme-client, the one theme switch. The ward's own appearance key
     // was the defect, so the ward now calls the owner.
-    expect(APPROVED_SHARED_MODULES.size).toBe(11);
+    // 11 -> 12 on 2026-10-12: @/lib/synthetic-data-guard, the shared identifier scan (A4-4).
+    expect(APPROVED_SHARED_MODULES.size).toBe(12);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -292,6 +299,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/wf",
       "@/lib/client-store-factory",
       "@/lib/form-register",
+      "@/lib/synthetic-data-guard",
       "@/lib/theme-client",
     ]);
     // 4 -> 6 on 2026-09-12, when the sign-in screen arrived as a SIBLING route

@@ -24,14 +24,15 @@ function mockupsEnabled(): boolean {
 
 export default async function MockupsLayout({ children }: { children: ReactNode }) {
   // src/proxy.ts already blocks every /mockups/** path in production (the real
-  // gate). This is defense-in-depth for direct/dev-server access — except the
-  // developer-gated subtrees listed in DEVELOPER_GATED_PATH_PREFIXES, which proxy
-  // marks via this header so they can reach their own signed-in-administrator gate
-  // (`DeveloperAreaGate`) instead of a bare 404. The count is deliberately not
-  // stated: this comment kept naming a smaller set for months after a fourth prefix
-  // was added (2026-09-02 audit, L76/L82). The header is proxy-only: any
-  // client-supplied copy of it is stripped before this point, so it cannot be
-  // spoofed.
+  // block). This is defense-in-depth for direct/dev-server access — except the
+  // subtrees listed in DEVELOPER_GATED_PATH_PREFIXES, which proxy marks via this
+  // header. Those subtrees are deliberately public in production: the owner removed
+  // the developer key, and the sign-in gate with it, on 28 September 2026, so the
+  // synthetic Ward Flow prototype opens without one (see ward-flow/layout.tsx). No
+  // other check runs after this one. The count is deliberately not stated: this
+  // comment kept naming a smaller set for months after a fourth prefix was added
+  // (2026-09-02 audit, L76/L82). The header is proxy-only: any client-supplied copy
+  // of it is stripped before this point, so it cannot be spoofed.
   const isDeveloperGatedArea = (await headers()).get(DEVELOPER_AREA_HEADER) === "1";
   if (!mockupsEnabled() && !isDeveloperGatedArea) {
     notFound();

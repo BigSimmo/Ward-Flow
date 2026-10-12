@@ -1,5 +1,8 @@
-// Shared between `src/proxy.ts` and the Server Components it signals to
-// (`src/app/mockups/layout.tsx`, `DeveloperAreaGate`). Pure string constants only
+// Shared between `src/proxy.ts` and the Server Component it signals to
+// (`src/app/mockups/layout.tsx`). The former `DeveloperAreaGate` sign-in gate was
+// removed with the developer key on 28 September 2026 (owner decision): the
+// "gated" prefixes below are now publicly exempt from the production mockup
+// block, not guarded by a sign-in. Pure string constants only
 // — no side effects, no stateful singletons — so this is safe to import from a
 // Proxy file per its "no shared modules/globals" guidance.
 //
