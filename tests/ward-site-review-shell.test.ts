@@ -19,13 +19,13 @@ describe("site review shell fixes", () => {
     expect(read("src/components/wf/hero.module.css")).toMatch(/--wf-focus-gap:\s*var\(--wf-hero-2\)/u);
   });
 
-  it("gives the Live pill's folded pause a 28px target, 44px on phone, without moving the pill", () => {
+  it("gives the Live pill's folded pause a 28px target, 48px on phone, without moving the pill", () => {
     const live = read("src/components/wf/live.module.css");
     const toggle = /\n\.toggle\s*\{([^}]*)\}/u.exec(live)?.[1] ?? "";
     expect(toggle).toMatch(/--wf-live-hit:\s*max\(28px, var\(--wf-tablet-tap, 0px\)\)/u);
     expect(toggle).toMatch(/min-height:\s*var\(--wf-live-hit\)/u);
     expect(toggle).toMatch(/margin-block:/u);
-    expect(live).toMatch(/@media \(max-width: 48rem\) \{\s*\.toggle\s*\{\s*--wf-live-hit:\s*44px;/u);
+    expect(live).toMatch(/@media \(max-width: 48rem\) \{\s*\.toggle\s*\{\s*--wf-live-hit:\s*48px;/u);
     // One control: no hairline splitting the glyph off as a separate tile.
     const glyph = /\n\.toggleGlyph\s*\{([^}]*)\}/u.exec(live)?.[1] ?? "";
     expect(glyph).not.toMatch(/border-left/u);

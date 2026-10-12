@@ -763,7 +763,7 @@ export function ShortlistPanel({
   // fresh, so an override attempted against a non-referable movement is refused by the reducer
   // exactly like Refer would be, the refusal surfaces on the Exceptions drawer via `rejections`,
   // and no local flag here is ever left claiming a success that did not happen.
-  const canOverride = hasReferSelection && referralBlocked === undefined;
+  const canOverride = hasReferSelection;
   // Same fact as `allSelectedReferable`. A ward that only declined before is NOT one of these, so
   // the "Use Override instead" sentence below can never be shown about it again.
   const firstIneligibleSelected = referredCandidates.find(
