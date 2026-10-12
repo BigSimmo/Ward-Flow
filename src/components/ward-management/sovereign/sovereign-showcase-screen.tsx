@@ -355,7 +355,7 @@ export function SovereignShowcaseScreen() {
             />
             <CardBody className={styles.foundations}>
               <div className={styles.typeCol}>
-                <h3 className={styles.eyebrow}>Type, {TYPE_SCALE.length} sizes</h3>
+                <h2 className={styles.eyebrow}>Type, {TYPE_SCALE.length} sizes</h2>
                 <ul className={styles.typeList} aria-label="Type scale examples">
                   {TYPE_SCALE.map((row) => (
                     <li key={row.size}>
@@ -366,7 +366,7 @@ export function SovereignShowcaseScreen() {
                 </ul>
               </div>
               <div className={styles.colourCol}>
-                <h3 className={styles.eyebrow}>Colour roles</h3>
+                <h2 className={styles.eyebrow}>Colour roles</h2>
                 <div className={styles.swatchGrid} role="radiogroup" aria-label="Theme token swatches">
                   {COLOUR_ROLES.map((role) => (
                     <button
@@ -399,7 +399,7 @@ export function SovereignShowcaseScreen() {
               </div>
               <div className={styles.scales}>
                 <div>
-                  <h3 className={styles.eyebrow}>Radius</h3>
+                  <h2 className={styles.eyebrow}>Radius</h2>
                   <ul className={styles.scaleRow}>
                     {RADII.map((radius) => (
                       <li key={radius.id}>
@@ -414,7 +414,7 @@ export function SovereignShowcaseScreen() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className={styles.eyebrow}>Depth</h3>
+                  <h2 className={styles.eyebrow}>Depth</h2>
                   <ul className={styles.scaleRow}>
                     {(["e1", "e2", "e3"] as const).map((depth) => (
                       <li key={depth}>
@@ -429,7 +429,7 @@ export function SovereignShowcaseScreen() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className={styles.eyebrow}>Space</h3>
+                  <h2 className={styles.eyebrow}>Space</h2>
                   <ul className={styles.scaleRow}>
                     {([1, 2, 3, 4] as const).map((step) => (
                       <li key={step}>
@@ -477,7 +477,7 @@ export function SovereignShowcaseScreen() {
                 </tbody>
               </table>
               <div className={styles.kinds}>
-                <h3 className={styles.eyebrow}>Service kinds</h3>
+                <h2 className={styles.eyebrow}>Service kinds</h2>
                 <div className={styles.kindRow}>
                   {SERVICE_KINDS.map((kind) => (
                     <Badge key={kind.id}>
@@ -561,12 +561,12 @@ export function SovereignShowcaseScreen() {
 
             <div className={styles.tableExample}>
               <div className={styles.tableHeading}>
-                <h3>
+                <h2>
                   Shared table{" "}
                   <span className={styles.tableMeta}>
                     {appliedDensity === "compact" ? "Compact" : "Comfortable"} density
                   </span>
-                </h3>
+                </h2>
                 <span className={styles.headMeta}>Waits tick and cross thresholds</span>
               </div>
               <div className={styles.exampleTableScroll}>

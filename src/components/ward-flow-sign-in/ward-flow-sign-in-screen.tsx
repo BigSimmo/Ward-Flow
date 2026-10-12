@@ -181,7 +181,7 @@ export function WardFlowSignInScreen() {
   }, [chooseRole, pressSignIn]);
 
   return (
-    <main className={styles.page}>
+    <main id="main-content" className={styles.page}>
       <header className={styles.masthead}>
         <p className={styles.brand}>
           <span className={styles.wordmark}>Ward Flow</span>

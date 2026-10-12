@@ -21,6 +21,8 @@ export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | nu
         ),
       ).filter((element) => !element.closest("[hidden], [inert]"));
     pushSheet(id, panel);
+    // A panel with nothing focusable inside is focused itself, which a plain div ignores without a tabindex.
+    if (!panel.hasAttribute("tabindex")) panel.setAttribute("tabindex", "-1");
     (focusables()[0] ?? panel).focus();
     const keydown = (event: KeyboardEvent) => {
       if (!isTopmostSheet(id)) return;

@@ -27,6 +27,7 @@ import { movementSearchState } from "./search-operational-state";
 
 import styles from "./record-preview.module.css";
 import searchStyles from "./search.module.css";
+import { isCommunityReferral } from "./community-referral";
 
 const NOT_RECORDED = "Not recorded";
 
@@ -321,10 +322,7 @@ export function RecordPreview({
       urgency = `Tier ${linkedMovement.urgency}`;
       recordOpenedAt = linkedMovement.openedAt;
     } else if (referral) {
-      const isComm =
-        referral.originSiteCode.includes("CMHT") ||
-        referral.originSiteCode.includes("Clinic") ||
-        (referral.homeRegion as unknown as string) === "Community";
+      const isComm = isCommunityReferral(referral);
       if (isComm) {
         presenceStatus = "community";
         bannerTitle = "NOT IN HOSPITAL · COMMUNITY OUTPATIENT";
@@ -680,10 +678,7 @@ export function RecordPreview({
       referral.patientId !== undefined ? patients.find((candidate) => candidate.id === referral.patientId) : undefined;
     const linkedMovement = linkedOpenMovementFor(referral, movements);
 
-    const isComm =
-      referral.originSiteCode.includes("CMHT") ||
-      referral.originSiteCode.includes("Clinic") ||
-      (referral.homeRegion as unknown as string) === "Community";
+    const isComm = isCommunityReferral(referral);
     const presenceStatus = isComm ? "community" : "live";
     const bannerTitle = isComm ? "NOT IN HOSPITAL · COMMUNITY REFERRAL" : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
     const bannerTag = isComm ? "Community Referral" : "Acute Referral";

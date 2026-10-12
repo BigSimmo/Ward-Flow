@@ -61,7 +61,6 @@
     "test:e2e:ward-journeys": "node scripts/run-playwright.mjs --project=chromium-mockups ui-ward-",
     "test:e2e:advisory": "node scripts/run-playwright.mjs --project=chromium --project=chromium-mockups --grep \"@quarantine|@mockup\" --pass-with-no-tests",
     "test:e2e:chromium": "node scripts/run-playwright.mjs --project=chromium --project=chromium-mockups",
-    "test:e2e:visual:update": "node scripts/run-playwright.mjs --config=playwright.visual.config.ts --update-snapshots",
     "worktrees:report": "node scripts/clean-worktree.mjs",
     "worktrees:inventory": "node scripts/worktree-inventory.mjs",
     "clean:worktree": "npm run worktrees:report",
