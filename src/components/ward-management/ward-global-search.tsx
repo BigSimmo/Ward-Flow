@@ -835,9 +835,8 @@ export function WardGlobalSearch({
 
   /**
    * Only intercepts when a test has supplied `onNavigate`, and only for the plain click a real
-   * anchor would otherwise have handled itself when results are current. A modified click (middle button,
-   * ctrl/cmd, shift)
-   * is left completely alone in every case, real or tested, because that is the browser's own
+   * anchor would otherwise have handled itself when results are current. A modified click (middle
+   * button, ctrl/cmd, shift) on a current row is left completely alone in every case, real or tested, because that is the browser's own
    * "open in a new tab/window" gesture and this control has no business overriding it.
    */
   function onOptionClick(event: MouseEvent<HTMLAnchorElement>, href: string) {
