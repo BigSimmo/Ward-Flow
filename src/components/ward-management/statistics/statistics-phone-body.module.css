@@ -255,6 +255,13 @@
   font-family: var(--wf-mono);
 }
 
+/* U2 (site review, 12 Oct 2026): a unit after a figure ("12 d") at the 12px text floor; a bare
+ * <small> rendered 11.2px. */
+.unit {
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
 /* Segmented controls run the full width with equal options. */
 .seg {
   width: 100%;

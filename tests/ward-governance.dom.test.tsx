@@ -182,8 +182,12 @@ describe("GovernanceView", () => {
     expect(screen.getByRole("region", { name: "Review history" })).toHaveTextContent(
       "Review attempts cannot be reviewed.",
     );
-    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toBeDisabled();
-    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toBeDisabled();
+    // Greyed with a reason (site review B3): aria-disabled keeps the tab stop and names why.
+    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toHaveAccessibleDescription();
+    // Greyed with a reason (site review B3): aria-disabled keeps the tab stop and names why.
+    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toHaveAccessibleDescription();
   });
 
   it("seeds synthetic review events on a fresh session so Review has work (pass 2 engine)", () => {
@@ -238,8 +242,12 @@ describe("GovernanceView", () => {
     expect(screen.getAllByText("Select an event from the register").length).toBeGreaterThan(0);
     const reviewPanel = screen.getByTestId("ward-governance-decision-record");
     expect(reviewPanel).toHaveTextContent("No event selected");
-    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toBeDisabled();
-    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toBeDisabled();
+    // Greyed with a reason (site review B3): aria-disabled keeps the tab stop and names why.
+    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toHaveAccessibleDescription();
+    // Greyed with a reason (site review B3): aria-disabled keeps the tab stop and names why.
+    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toHaveAccessibleDescription();
   });
 
   it("does not offer a legacy facts tab or a change-audit panel", () => {

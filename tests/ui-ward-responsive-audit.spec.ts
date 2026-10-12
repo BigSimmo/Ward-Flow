@@ -10,6 +10,18 @@ const routes = [
   ["Service statistics", "/statistics/service/East%20Metro"],
 ] as const;
 
+// Phone (48rem and under) scrolls the work column, not the window, so iOS Safari's toolbar never
+// collapses under the fixed dock (12 Oct 2026). These read and move that column.
+async function scrollColumn(page: Page, top: number) {
+  await page.evaluate((y) => {
+    document.querySelector<HTMLElement>("[data-wf-scroller]")!.scrollTop = y;
+  }, top);
+}
+
+function columnScrollTop(page: Page) {
+  return page.evaluate(() => document.querySelector<HTMLElement>("[data-wf-scroller]")!.scrollTop);
+}
+
 async function assertKeyboardTableScroll(page: Page) {
   const regions = page.getByRole("region", { name: /scrollable table/ });
   for (const region of await regions.all()) {
@@ -36,11 +48,11 @@ test.describe("@mockup Ward phone scrolling", () => {
     const bar = page.getByTestId("ward-bar");
     await expect(page.getByTestId("ward-bar-phone-menu")).toBeVisible();
     await page.waitForLoadState("networkidle");
-    await page.evaluate(() => window.scrollTo(0, 0));
+    await scrollColumn(page, 0);
     await expect(bar).not.toHaveAttribute("data-scrolled", "true");
     const restingHeight = await bar.evaluate((element) => element.getBoundingClientRect().height);
 
-    await page.evaluate(() => window.scrollTo(0, 200));
+    await scrollColumn(page, 200);
     await expect(bar).toHaveAttribute("data-scrolled", "true");
     // Wait for every frame of the actual transition; a reduced-motion run hid this reflow.
     const heights = await bar.evaluate(async (element) => {
@@ -57,13 +69,15 @@ test.describe("@mockup Ward phone scrolling", () => {
     await expect.poll(() => bar.evaluate((element) => element.getBoundingClientRect().top)).toBe(0);
 
     // Small scroll reversals must not repeatedly swap the scope and live count.
-    await page.evaluate(() => window.scrollTo(0, 7));
+    await scrollColumn(page, 7);
     await page.evaluate(
       () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
     );
     await expect(bar).toHaveAttribute("data-scrolled", "true");
-    await page.evaluate(() => window.scrollTo(0, 0));
+    await scrollColumn(page, 0);
     await expect(bar).not.toHaveAttribute("data-scrolled", "true");
+    // The window itself never scrolls on phone.
+    expect(await page.evaluate(() => scrollY)).toBe(0);
   });
 
   test("phone menu fills the available bottom edge and restores scrolling after viewport changes", async ({ page }) => {
@@ -74,10 +88,10 @@ test.describe("@mockup Ward phone scrolling", () => {
     await expect(page.getByTestId("ward-bar-phone-menu")).toBeVisible();
     await page.waitForLoadState("networkidle");
     const bar = page.getByTestId("ward-bar");
-    await page.evaluate(() => window.scrollTo(0, 200));
+    await scrollColumn(page, 200);
     await expect(bar).toHaveAttribute("data-scrolled", "true");
     await expect.poll(() => bar.evaluate((element) => element.getBoundingClientRect().top)).toBe(0);
-    const before = await page.evaluate(() => scrollY);
+    const before = await columnScrollTop(page);
     // A real touch at the visible button centre avoids Playwright scrolling the sticky bar's
     // ancestors before clicking, which changes the scroll position this assertion measures.
     const trigger = await page.getByTestId("ward-bar-phone-menu").boundingBox();
@@ -94,10 +108,11 @@ test.describe("@mockup Ward phone scrolling", () => {
     }
     await menu.getByRole("button", { name: /close/i }).click();
     await expect(menu).not.toBeVisible();
-    await expect.poll(() => page.evaluate(() => scrollY)).toBeCloseTo(before, 0);
+    await expect.poll(() => columnScrollTop(page)).toBeCloseTo(before, 0);
     await page.mouse.move(190, 400);
     await page.mouse.wheel(0, 100);
-    await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(before);
+    await expect.poll(() => columnScrollTop(page)).toBeGreaterThan(before);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
   });
 
   test("short phone pages fill taller viewports and navigation returns to the top", async ({ page }) => {
@@ -106,21 +121,21 @@ test.describe("@mockup Ward phone scrolling", () => {
     await page.goto("/mockups/ward-flow", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-bar-phone-menu")).toBeVisible();
     await page.waitForLoadState("networkidle");
-    await page.evaluate(() => window.scrollTo(0, 200));
+    await scrollColumn(page, 200);
     await expect
       .poll(() => page.getByTestId("ward-bar").evaluate((element) => element.getBoundingClientRect().top))
       .toBe(0);
     const trigger = await page.getByTestId("ward-bar-phone-menu").boundingBox();
     expect(trigger).not.toBeNull();
     await page.touchscreen.tap(trigger!.x + trigger!.width / 2, trigger!.y + trigger!.height / 2);
-    await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+    await expect.poll(() => columnScrollTop(page)).toBeGreaterThan(0);
     await page.getByTestId("ward-phone-menu-search").fill("On-call");
     await page
       .getByTestId("ward-phone-menu")
       .getByRole("link", { name: /on.call/i })
       .click();
     await expect(page).toHaveURL(/\/on-call$/);
-    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+    await expect.poll(() => columnScrollTop(page)).toBe(0);
     for (const height of [664, 1100]) {
       await page.setViewportSize({ width: 390, height });
       await expect
@@ -385,7 +400,8 @@ test.describe("@mockup Ward scroll geometry", () => {
       for (const offset of [9, 12, 300, 600]) {
         await page.evaluate(
           ({ width, offset }) => {
-            if (width <= 1000) window.scrollTo(0, offset);
+            // Phone and desktop scroll the work column; tablet (48rem to 1000px) the window.
+            if (width > 768 && width <= 1000) window.scrollTo(0, offset);
             else document.querySelector<HTMLElement>("[data-wf-scroller]")!.scrollTop = offset;
           },
           { width, offset },
@@ -402,7 +418,7 @@ test.describe("@mockup Ward scroll geometry", () => {
         return { top: rect.top, shellTop: shell.getBoundingClientRect().top, page: window.scrollY };
       });
       expect(geometry.top).toBeCloseTo(width <= 1000 ? 0 : geometry.shellTop, 0);
-      if (width > 1000) expect(geometry.page).toBe(0);
+      if (width <= 768 || width > 1000) expect(geometry.page).toBe(0);
     }
   });
 
@@ -411,13 +427,13 @@ test.describe("@mockup Ward scroll geometry", () => {
     await page.goto("/mockups/ward-flow/search", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
     await page.waitForLoadState("networkidle");
-    await page.evaluate(() => window.scrollTo(0, 500));
+    await scrollColumn(page, 500);
     const input = page.getByTestId("ward-global-search-input");
     await input.click();
     await input.fill("a");
     const popup = page.getByTestId("ward-global-search-popup");
     await expect(popup).toBeVisible();
-    const before = await page.evaluate(() => window.scrollY);
+    const before = await columnScrollTop(page);
     await input.press("End");
     await expect
       .poll(() =>
@@ -432,7 +448,7 @@ test.describe("@mockup Ward scroll geometry", () => {
         }),
       )
       .toBe(true);
-    expect(await page.evaluate(() => window.scrollY)).toBe(before);
+    expect(await columnScrollTop(page)).toBe(before);
   });
 
   test("a sheet follows responsive scroll owners and restores the desktop position", async ({ page }) => {
@@ -454,11 +470,12 @@ test.describe("@mockup Ward scroll geometry", () => {
     await page.mouse.click(trigger!.x + trigger!.width / 2, trigger!.y + trigger!.height / 2);
     await expect(page.getByTestId("ward-bar-tasks-sheet")).toBeVisible();
     await expect(column).toHaveCSS("overflow-y", "hidden");
-    for (const width of [390, 820]) {
-      await page.setViewportSize({ width, height: 900 });
-      await expect(column).toHaveCSS("overflow-y", "visible");
-      await expect.poll(() => column.evaluate((element) => element.style.overflowY)).toBe("");
-    }
+    // Phone scrolls the column like desktop, so it stays locked; tablet scrolls the window.
+    await page.setViewportSize({ width: 390, height: 900 });
+    await expect(column).toHaveCSS("overflow-y", "hidden");
+    await page.setViewportSize({ width: 820, height: 900 });
+    await expect(column).toHaveCSS("overflow-y", "visible");
+    await expect.poll(() => column.evaluate((element) => element.style.overflowY)).toBe("");
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect(column).toHaveCSS("overflow-y", "hidden");
     expect(await column.evaluate((element) => element.scrollTop)).toBe(420);
@@ -501,7 +518,7 @@ test.describe("@mockup phone navigation follows the stable header", () => {
     ["Community", "/community", "community_phonePanes__", 0],
     ["ED", "/ed/rph-ed", "ed_phonePanes__", 0],
     ["Ward statistics", "/statistics/ward/rph-adult-secure", "statistics-phone-body_stickySeg__", 0],
-    ["Out-of-area", "/out-of-area", "out-of-area-board_phoneTabs__", 8],
+    ["Out-of-area", "/out-of-area", "out-of-area-board_phoneTabs__", 0],
   ] as const;
   for (const [label, route, classPrefix, collar] of strips) {
     test(`${label} keeps its navigation aligned while crossing the scroll threshold`, async ({ page }, testInfo) => {
@@ -512,7 +529,7 @@ test.describe("@mockup phone navigation follows the stable header", () => {
       const strip = page.locator(`[class*="${classPrefix}"]`);
       await expect(strip).toBeVisible();
       for (const offset of [0, 12, 80, 500]) {
-        await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), offset);
+        await scrollColumn(page, offset);
         await expect(bar).toHaveCSS("height", "56px");
         await expect(strip).toHaveCSS("top", `${56 + collar}px`);
       }

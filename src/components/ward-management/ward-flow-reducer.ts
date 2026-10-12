@@ -1238,6 +1238,22 @@ export function heldUnitGenderRefusal(
  * do not quote it. And do not restore a literal list here to be helpful — that is what this note
  * exists to prevent.
  */
+/**
+ * B1 (site review, 12 Oct 2026): a ward answering a referral names itself with `actingUnitId`, and
+ * is refused when the ward it answers for is not its own. The coordinator acts for any ward and
+ * sends none. A ward that sends none keeps the older behaviour (the route sends one today).
+ */
+function wardActingUnitRefusal(
+  event: Extract<WardFlowEvent, { type: "ACCEPT_REFERRAL" | "DECLINE_REFERRAL" }>,
+  addressing: ReferralAddressing,
+): string | undefined {
+  if (event.role !== "ward" || event.actingUnitId === undefined) return undefined;
+  const answering =
+    event.unitId ?? (addressing.destination.kind === "psychiatric_ward" ? addressing.destination.unitId : undefined);
+  if (answering === event.actingUnitId) return undefined;
+  return `${event.type} was raised acting as unit ${event.actingUnitId} but answers for ${answering ?? "no named ward"}; a ward answers only its own referrals`;
+}
+
 function referralAcceptanceRefusal(
   event: OverridableWardFlowEvent,
   referral: Referral,
@@ -2232,7 +2248,8 @@ function heldBedRefusal(
           arm.state === "accepted" &&
           arm.heldBedNumber === bedNumber &&
           arm.destination.kind === "psychiatric_ward" &&
-          arm.destination.unitId === unit.id,
+          // A referral sent to any ward names its ward only once accepted (`acceptedUnitId`).
+          (arm.acceptedUnitId ?? arm.destination.unitId) === unit.id,
       ),
   );
   return heldByMovement || heldByReferral ? `Bed ${bedNumber} on ${unit.name} is already held for someone` : null;
@@ -2256,7 +2273,15 @@ function withReferralDecisionUndo(state: WardFlowState, next: WardFlowState, eve
       referralId: before.id,
       at: event.now,
       role: event.role,
-      unitId: event.destinationKind === "psychiatric_ward" ? (event.unitId ?? null) : null,
+      // The ward that answered: named on the event, or the one ward this referral was addressed to.
+      unitId:
+        event.destinationKind === "psychiatric_ward"
+          ? (event.unitId ??
+            before.destinations
+              .map((arm) => (arm.destination.kind === "psychiatric_ward" ? arm.destination.unitId : undefined))
+              .find((unitId) => unitId !== undefined) ??
+            null)
+          : null,
       before,
       after,
       noticeIds: next.notices.slice(state.notices.length).map((notice) => notice.id),
@@ -2516,6 +2541,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (record.beforeBed !== null) {
         const bedRefusal = bedNumberRefusal(state, unit, record.beforeBed, admission.id);
         if (bedRefusal) return reject(state, event, `${bedRefusal}, so the move cannot be undone`);
+        // B9 (site review, 12 Oct 2026): the same held-bed check PLACE_IN_BED makes, so an undo never
+        // puts a patient back in a bed held since for somebody on their way.
+        const heldRefusal = heldBedRefusal(state, unit, record.beforeBed);
+        if (heldRefusal) return reject(state, event, `${heldRefusal}, so the move cannot be undone`);
       }
       // Exact: a stay that had no bed number before gets none back (the key absent, not undefined).
       const { bedNumber: _placed, ...unplaced } = admission;
@@ -7268,6 +7297,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `referral ${referral.id} was not addressed to ${event.destinationKind.replace(/_/g, " ")}`,
         );
       }
+      const actingRefusal = wardActingUnitRefusal(event, addressing);
+      if (actingRefusal) return reject(state, event, actingRefusal);
       // FD-22: the first acceptance ends the placement. A second destination accepting afterwards
       // would mean two places believing they had taken the same person -- the exact outcome the
       // automatic cancellation exists to prevent, so it is refused rather than recorded.
@@ -7724,6 +7755,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `referral ${referral.id} was not addressed to ${event.destinationKind.replace(/_/g, " ")}`,
         );
       }
+      const actingRefusal = wardActingUnitRefusal(event, addressing);
+      if (actingRefusal) return reject(state, event, actingRefusal);
       // RB5 (item 16): the same community exemption as `ACCEPT_REFERRAL`'s own guard, above -- a
       // community team may still decline its own arm after a ward or ED has accepted.
       if (event.destinationKind !== "community_team" && referralState(referral) === "accepted") {

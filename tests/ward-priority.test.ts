@@ -263,24 +263,59 @@ describe("queue order", () => {
    * Narrowed rather than removed: the tier ladder still governs everyone without a flag, and
    * deleting this would have left that unasserted at the moment something was placed above it.
    */
-  it("keeps every tier 1 above every tier 2 and every tier 2 above every tier 3, among the unflagged", () => {
+  /**
+   * D-32 on Home (decision 4, site review 12 Oct 2026, Josh approved): beneath the flag and the
+   * act-now pins the queue is longest wait first, as the Referrals board is, and the tier only
+   * breaks a tie on wait. This replaced "every tier 1 above every tier 2, among the unflagged".
+   */
+  it("orders the unflagged longest wait first, with the tier breaking a tie (D-32)", () => {
     const ordered = queueOrder(wardMovements, NOW_ANCHOR).filter((movement) => !movement.flaggedUrgent);
     expect(ordered.length, "the fixture must still hold unflagged movements to order").toBeGreaterThan(1);
-    const tiers = ordered.map((movement) => movement.urgency);
-    expect([...tiers].sort((a, b) => a - b)).toEqual(tiers);
+    for (let index = 1; index < ordered.length; index += 1) {
+      const earlierWait = NOW_ANCHOR - ordered[index - 1].openedAt;
+      const laterWait = NOW_ANCHOR - ordered[index].openedAt;
+      expect(earlierWait).toBeGreaterThanOrEqual(laterWait);
+      if (earlierWait === laterWait) expect(ordered[index - 1].urgency).toBeLessThanOrEqual(ordered[index].urgency);
+    }
+    const tiers = new Set(ordered.map((movement) => movement.urgency));
+    expect(tiers.size, "tiers must interleave for the wait-first order to mean anything").toBeGreaterThan(1);
+  });
+
+  it("breaks a tie on wait by tier: tier 1 before tier 3", () => {
+    const base = movementById("WF-001");
+    const tierThree: Movement = { ...base, id: "WF-TIE-T3", urgency: 3, openedAt: NOW_ANCHOR - 300 };
+    const tierOne: Movement = { ...base, id: "WF-TIE-T1", urgency: 1, openedAt: NOW_ANCHOR - 300 };
+    expect(queueOrder([tierThree, tierOne], NOW_ANCHOR).map((movement) => movement.id)).toEqual([
+      "WF-TIE-T1",
+      "WF-TIE-T3",
+    ]);
+  });
+
+  it("pins act-now movements above a longer wait, beneath the flag", () => {
+    const base = movementById("WF-001");
+    const longWait: Movement = { ...base, id: "WF-LONG", flaggedUrgent: false, urgency: 1, openedAt: NOW_ANCHOR - 900 };
+    const actNow: Movement = { ...base, id: "WF-ACT", flaggedUrgent: false, urgency: 3, openedAt: NOW_ANCHOR - 20 };
+    const flagged: Movement = { ...base, id: "WF-FLAG", flaggedUrgent: true, urgency: 3, openedAt: NOW_ANCHOR - 5 };
+    expect(queueOrder([longWait, actNow, flagged], NOW_ANCHOR).map((movement) => movement.id)).toEqual([
+      "WF-FLAG",
+      "WF-LONG",
+      "WF-ACT",
+    ]);
+    expect(
+      queueOrder([longWait, actNow, flagged], NOW_ANCHOR, new Set(["WF-ACT"])).map((movement) => movement.id),
+    ).toEqual(["WF-FLAG", "WF-ACT", "WF-LONG"]);
   });
 
   /**
    * ITEM 37, RESOLVED 2026-09-17. This used to read "orders by operational score within a tier,
-   * highest first" -- `queueOrder`'s third key is no longer `operationalScore`. The owner's fuller
-   * ruling, named as deferred at the time, was "otherwise go by time for the main level of
-   * urgency", and that is what the third key is now: the wait itself, uncapped. See
-   * `queueOrder`'s own doc comment (`ward-priority.ts`) for what changed and what did not.
+   * highest first" -- `queueOrder`'s third key is no longer `operationalScore`. Since D-32 reached
+   * Home (12 Oct 2026) the wait leads outright, so within a tier it still reads longest first.
    */
   it("orders by wait, longest first, within a tier", () => {
     const ordered = queueOrder(wardMovements, NOW_ANCHOR);
     for (let index = 1; index < ordered.length; index += 1) {
       if (ordered[index].urgency !== ordered[index - 1].urgency) continue;
+      if (ordered[index].flaggedUrgent !== ordered[index - 1].flaggedUrgent) continue;
       const earlierWait = NOW_ANCHOR - ordered[index - 1].openedAt;
       const laterWait = NOW_ANCHOR - ordered[index].openedAt;
       expect(earlierWait).toBeGreaterThanOrEqual(laterWait);
@@ -473,25 +508,21 @@ describe("the urgent flag, and the ranking decision partly resolved beneath it",
     ).toBe(true);
   });
 
-  it("changes NOTHING beneath the flag -- the tiers and the wait still order the rest", () => {
+  it("changes NOTHING beneath the flag -- the wait, then the tier, still order the rest", () => {
     // The additive half of the ruling, asserted directly: strip the flag from the fixture and the
-    // queue must still order everyone by tier, then wait -- exactly the ranking `queueOrder` uses
-    // beneath the flag today (item 37 replaced the operational-score tie-break this used to check
-    // with the wait itself; see that function's own doc comment).
+    // queue must still order everyone by the ranking `queueOrder` uses beneath the flag today --
+    // longest wait first, tier breaking a tie (D-32 on Home, 12 Oct 2026).
     const unflagged = wardMovements.map((movement) => ({ ...movement, flaggedUrgent: false, urgentFlag: undefined }));
     const ordered = queueOrder(unflagged, NOW_ANCHOR);
-    const tiers = ordered.map((movement) => movement.urgency);
-    expect(
-      [...tiers].sort((a, b) => a - b),
-      "with no flags, tier order must be intact -- the flag was supposed to sit ABOVE the existing " +
-        "ranking, not replace it",
-    ).toEqual(tiers);
-
     for (let index = 1; index < ordered.length; index += 1) {
-      if (ordered[index].urgency !== ordered[index - 1].urgency) continue;
       const earlierWait = NOW_ANCHOR - ordered[index - 1].openedAt;
       const laterWait = NOW_ANCHOR - ordered[index].openedAt;
-      expect(earlierWait).toBeGreaterThanOrEqual(laterWait);
+      expect(
+        earlierWait,
+        "with no flags, the wait must order the queue -- the flag was supposed to sit ABOVE the existing " +
+          "ranking, not replace it",
+      ).toBeGreaterThanOrEqual(laterWait);
+      if (earlierWait === laterWait) expect(ordered[index - 1].urgency).toBeLessThanOrEqual(ordered[index].urgency);
     }
   });
 

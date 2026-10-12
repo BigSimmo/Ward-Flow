@@ -2859,15 +2859,21 @@ tr.qRow:focus-visible {
   line-height: 1.25;
 }
 
+/* Words stay neutral ink and the box stays neutral (site review 12 Oct 2026); only the tier glyph
+   and the chip's edge carry the tone. No red or amber box, no red or amber text. */
 .tierLabel[data-urgency="1"] {
   border-color: var(--danger, var(--line-strong));
-  background: var(--danger-soft, var(--surface-2));
-  color: var(--danger, var(--ink));
 }
 
 .tierLabel[data-urgency="2"] {
   border-color: var(--warn, var(--line-strong));
-  background: var(--warn-soft, var(--surface-2));
+}
+
+.tierLabel[data-urgency="1"] .urgencyGlyph {
+  color: var(--danger, var(--ink));
+}
+
+.tierLabel[data-urgency="2"] .urgencyGlyph {
   color: var(--warn, var(--ink));
 }
 
@@ -6391,12 +6397,10 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
     font-family: var(--wf-font);
   }
 
-  .boardTable .thinSelect[data-cleared="yes"] {
-    color: var(--wf-success-ink);
-  }
-
+  /* Words stay neutral ink; the glyph beside the choice carries its tone (site review 12 Oct 2026). */
+  .boardTable .thinSelect[data-cleared="yes"],
   .boardTable .thinSelect[data-cleared="no"] {
-    color: var(--wf-danger-ink);
+    color: var(--wf-ink-1);
   }
 
   .boardTable .compactExpiry {
@@ -7194,8 +7198,31 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
     min-height: var(--spacing-tap, 3rem);
   }
 
+  /* The department list tabs take the shared phone pill size (`--wf-phone-*`): a 32px face with a
+     transparent 48px hit area, carried in the scrolling row's own padding so it is not clipped. */
+  .departmentListTabs {
+    gap: var(--wf-phone-pill-gap);
+    padding-block: var(--wf-phone-pill-hit);
+  }
+
   .departmentListTabs .tabBtn {
-    min-height: var(--spacing-tap, 3rem);
+    position: relative;
+    gap: var(--wf-phone-pill-gap);
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .departmentListTabs .tabBtn::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+
+  .departmentListTabs .tabNum {
+    font-size: var(--wf-phone-pill-count-fs);
   }
 
   /* The time sits beside the name, so the facts under the name get the full row width. */
@@ -7870,7 +7897,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   width: 52px;
 }
 .a2Table col[data-col="Form"] {
-  width: 76px;
+  width: 96px;
 }
 .a2Table col[data-col="Cleared"] {
   width: 112px;
@@ -8065,6 +8092,11 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 
 .a2Quiet {
   color: var(--wf-ink-2);
+}
+
+/* A legal form name ("Form 4A") never wraps or truncates. */
+.a2NoWrap {
+  white-space: nowrap;
 }
 
 .a2Truncate {

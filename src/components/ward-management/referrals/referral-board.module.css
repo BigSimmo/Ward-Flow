@@ -824,8 +824,9 @@
 
 .panelMeta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-1);
+  gap: 0 var(--wf-s-1);
   min-width: 0;
   margin: 0;
   color: var(--wf-ink-3);
@@ -998,6 +999,26 @@
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   font-weight: 400;
+}
+
+/* U1 (review 12 Oct 2026): on desktop the facts reflow to fewer columns rather than cut the
+   hospital or the legal status ("Royal Perth Ho…"). Hairlines come from the grid gap, so a cell
+   that moves to a new row keeps its rules. */
+@media (min-width: 48.0625rem) {
+  .strip {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: 1px;
+    overflow: hidden;
+    background: var(--wf-line);
+  }
+
+  .strip > div {
+    background: var(--wf-surface);
+  }
+
+  .strip > div + div {
+    border-left: 0;
+  }
 }
 
 .panelTabs.panelTabs {
@@ -1529,25 +1550,31 @@
     min-width: 8rem;
   }
 
+  /* U1 (review 12 Oct 2026): the sort order itself never truncates ("Longest wait fi…" at 1180);
+     only the "tier breaks ties" tail gives way, and the search box shrinks first. */
   .toolbarNote {
     flex: 1 1 auto;
     justify-content: flex-end;
-    min-width: 0;
+    min-width: min-content;
     overflow: hidden;
   }
 
   .orderNote {
-    display: block;
-    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    min-width: min-content;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .orderNote svg {
-    display: inline;
-    margin-right: var(--wf-s-1);
-    vertical-align: -2px;
+  .orderNote b {
+    flex: 0 0 auto;
+  }
+
+  .orderTie {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -1558,19 +1585,69 @@
     display: none;
   }
 
+  /* Queue and History pin under the phone header in their own row (shared `pinnedSwitch`). The
+     row carries Home's vertical padding; the negative top margin keeps the resting spacing. */
+  .phoneViewRow {
+    margin: calc(-1 * var(--wf-s-2)) 0 calc(var(--wf-s-3) - var(--wf-s-2));
+    padding-block: var(--wf-s-2);
+  }
+
+  /* The shared phone segmented size (`--wf-phone-seg-*`, Josh, 12 Oct 2026): a 34px track with
+     28px tabs, each with a transparent 48px hit area. Two short tabs always fit, so the track does
+     not scroll and nothing clips the hit areas; the band round the track keeps them clear. */
   .viewTabs.viewTabs {
     display: flex;
     flex: 1 1 100%;
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--wf-phone-seg-h);
+    margin-block: var(--wf-phone-seg-band);
+    padding: 2px;
+    overflow: visible;
   }
 
   .viewTabs [role="tab"] {
+    position: relative;
     flex: 1 1 0;
     justify-content: center;
-    height: calc(var(--wf-touch, 44px) - 6px);
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .viewTabs [role="tab"]::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
+  }
+
+  /* The detail sheet's tabs take the same phone segmented size: a 34px track with 28px tabs, each
+     with a transparent 48px hit area. Three short tabs always fit, so the track does not scroll
+     and nothing clips the hit areas; the band round the track keeps them off its neighbours. */
+  .panelTabs.panelTabs {
+    align-items: center;
+    height: var(--wf-phone-seg-h);
+    box-sizing: border-box;
+    margin-block: var(--wf-phone-seg-band);
+    padding: 2px;
+    overflow: visible;
   }
 
   .panelTabs [role="tab"] {
-    height: calc(var(--wf-touch, 44px) - 6px);
+    position: relative;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .panelTabs [role="tab"]::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
   }
 }
 
@@ -1840,4 +1917,28 @@
 .rowOn[data-overdue="true"],
 .cardOn[data-overdue="true"] {
   background: var(--wf-selected);
+}
+
+/* D-16 not-wired popovers (shared `NotWiredButton`). At the panel foot it opens upward so the
+   clipped panel never hides it; on the phone's full-width Claim it opens from the left edge. */
+.notWiredUp {
+  display: inline-flex;
+}
+
+.notWiredStart,
+.notWiredStart > span {
+  display: flex;
+  width: 100%;
+}
+
+.notWiredUp [role="group"] {
+  top: auto;
+  right: auto;
+  bottom: calc(100% + 4px);
+  left: 0;
+}
+
+.notWiredStart [role="group"] {
+  right: auto;
+  left: 0;
 }

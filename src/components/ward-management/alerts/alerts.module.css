@@ -1583,6 +1583,10 @@ button.check[aria-pressed="true"] {
 
 .phoneRowText .rowOpen {
   font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+  /* U2 (site review, 12 Oct 2026): the button itself measures 44px tall, not the 20px of its line;
+     the negative margin keeps the row's layout exactly as it was. Phone rows only. */
+  padding-block: 12px;
+  margin-block: -12px;
 }
 
 /* The open button covers the row, so the whole row is the tap target. */

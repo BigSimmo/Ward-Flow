@@ -7,9 +7,11 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 
 import { Badge, Button, Card, CardHead, Stat, StatGroup, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 
 import styles from "./home.module.css";
 import {
+  changesSinceInstant,
   changesSinceLastLook,
   hasAnyChange,
   LAST_LOOK_STORAGE_KEY,
@@ -137,7 +139,13 @@ export function useSinceLastLook(world: LastLookWorld, now: Instant) {
     };
   }, []);
 
-  const changes = useMemo(() => changesSinceLastLook(previous, current, world), [previous, current, world]);
+  // Before any look this session, count what the record says happened since the shift started, so
+  // "N new since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026).
+  const changes = useMemo(
+    () =>
+      changesSinceLastLook(previous, current, world) ?? changesSinceInstant(world, currentShiftStartInstant(now), now),
+    [previous, current, world, now],
+  );
   const markSeen = useCallback(() => writeSnapshot(latest.current), []);
   return { changes, markSeen };
 }
@@ -148,6 +156,8 @@ type SinceGroup = { key: string; tone: WfTone; title: string; detail?: string };
 /** The phone sheet's quiet line under its title: when the last look was, and how long ago. */
 export function sinceSheetDescription(changes: ChangesSinceLastLook | undefined, now: Instant): string {
   if (!changes) return "First look this session";
+  if (changes.basis === "shift")
+    return `First look this session. Counted from the shift start, ${formatInstantWithDay(changes.since, now)}`;
   const minutesAgo = Math.max(0, now - changes.since);
   const ago = minutesAgo < 1 ? "just now" : `${durMinutes(minutesAgo)} ago`;
   return `Your last visit ${formatInstantWithDay(changes.since, now)}, ${ago}`;
@@ -217,8 +227,12 @@ export function SinceLastLookSheetBody({
           {
             key: "quiet",
             tone: changes ? "success" : "neutral",
-            title: changes ? "Nothing new since you last looked" : "New events count from your next look",
-            detail: changes ? undefined : "This is your first look this session",
+            title: !changes
+              ? "New events count from your next look"
+              : changes.basis === "shift"
+                ? "Nothing new since the shift started"
+                : "Nothing new since you last looked",
+            detail: !changes || changes.basis === "shift" ? "This is your first look this session" : undefined,
           },
         ];
   return (
@@ -283,7 +297,9 @@ export function SinceLastLookPanel({
         <CardHead icon={History} title="Since you looked" aside={<Badge variant="mono">{ago}</Badge>} />
         <p className={styles.sinceQuiet}>
           <StatusGlyph tone="success" size={9} />
-          Nothing new since you last looked at {since}.
+          {changes.basis === "shift"
+            ? `Nothing new since the shift started at ${since}.`
+            : `Nothing new since you last looked at ${since}.`}
         </p>
         <ActivityTimeline lines={activity} />
       </Card>
@@ -344,7 +360,7 @@ export function SinceLastLookPanel({
       <CardHead
         icon={History}
         title="Since you looked"
-        meta={`at ${since}`}
+        meta={changes.basis === "shift" ? `since the shift started at ${since}` : `at ${since}`}
         aside={<Badge variant="mono">{ago}</Badge>}
       />
       <StatGroup className={styles.sinceStats}>

@@ -4,7 +4,11 @@ import { join, relative, sep } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { DUPLICATE_SENTENCES, duplicateSentence } from "@/components/ward-management/referrals/referral-duplicate";
+import {
+  DUPLICATE_SENTENCES,
+  duplicateCaseHref,
+  duplicateSentence,
+} from "@/components/ward-management/referrals/referral-duplicate";
 import type { Referral } from "@/components/ward-management/ward-model";
 import type { PatientId } from "@/components/ward-management/ward-patients";
 import { referrals as seedReferrals } from "@/components/ward-management/ward-movements";
@@ -126,6 +130,27 @@ describe("the duplicate sentence", () => {
  * ⚠️ Asserted over BOTH sentences from the exported array, never over whichever one a call happened
  * to return: a property checked on one of two strings is checked on neither.
  */
+describe("L5 — Where this case is follows the case's stage", () => {
+  it("points at the Referrals board while a referral still waits for an answer", () => {
+    expect(duplicateCaseHref({ patientId: SOMEONE, referrals: [referralFor(SOMEONE, "queued")] })).toBe(
+      "/mockups/ward-flow/referrals",
+    );
+  });
+
+  it("points at the person's own page once a referral is accepted, since the board no longer lists it", () => {
+    expect(duplicateCaseHref({ patientId: SOMEONE, referrals: [referralFor(SOMEONE, "accepted")] })).toBe(
+      `/mockups/ward-flow/people/${SOMEONE}`,
+    );
+  });
+
+  it("has no link exactly when there is no sentence", () => {
+    for (const referrals of [[], [referralFor(SOMEONE, "declined")], [referralFor(SOMEBODY_ELSE, "queued")]]) {
+      expect(duplicateCaseHref({ patientId: SOMEONE, referrals })).toBeUndefined();
+      expect(duplicateSentence({ patientId: SOMEONE, referrals })).toBeUndefined();
+    }
+  });
+});
+
 describe("FD-23 — the duplicate sentence never says where", () => {
   it("names no unit, ward, department or team, in either sentence", () => {
     // Real unit names, so the guard is anchored to the actual vocabulary rather than to a guess.

@@ -81,6 +81,7 @@ import {
   type RecordGap,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 
 /**
  * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work
@@ -137,12 +138,15 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     useWardFlow();
   const now = useWardFlowClock();
   const gate = useRoleGate();
+  // B2 (site review, 12 Oct 2026): every step is recorded as the route's own role, so history names
+  // who acted (the coordinator here) rather than a borrowed "ED".
+  const routeRole = useRouteRole();
   // v10 pass 3: a recorded form time and a Tell record each offer Undo on the toast.
   const { run: runStep, offer: offerUndo } = useUndoableStep({
     dispatch,
     rejections,
     now,
-    routeRole: useRouteRole(),
+    routeRole,
   });
 
   const [view, setView] = useState<View>("clocks");
@@ -287,8 +291,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     setRecordOpen(true);
   };
 
-  // Feature 11: Mark received is the ED's event; this coordinator route keeps it through the
-  // listed cross-role pair in `ward-role-permissions.ts`.
+  // Feature 11: Mark received is the ED's or the coordinator's event, raised as the route's role.
   const receivedGate = gate("RECORD_LEGAL_FORM_RECEIVED");
   // Record a form: the coordinator always may; another route sees it greyed with the reason.
   const recordGate = gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form");
@@ -296,10 +299,10 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     if (!receivedGate.allowed) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
     runStep(
-      { type: "RECORD_LEGAL_FORM_RECEIVED", role: "ed", now, movementId: movement.id },
+      { type: "RECORD_LEGAL_FORM_RECEIVED", role: routeRole, now, movementId: movement.id },
       {
         success: "Form marked received",
-        undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: "ed", now: at, movementId: movement.id }),
+        undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
         undone: "Received mark undone.",
       },
     );
@@ -448,7 +451,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
         runStep(
           {
             type: "RECORD_LEGAL_FORM_WRITTEN",
-            role: "coordinator",
+            role: routeRole,
             now,
             movementId,
             formCode,
@@ -458,7 +461,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           },
           {
             success: "Form time recorded",
-            undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: "coordinator", now: at, movementId }),
+            undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
             undone: "Form time undone.",
           },
         );
@@ -719,7 +722,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               <ChevronRight size={16} aria-hidden="true" />
             </button>
             <Segmented<View>
-              className={styles.phoneViews}
+              className={`${styles.phoneViews} ${wardPin.pinnedSwitch}`}
               label="View"
               value={view}
               onChange={setView}

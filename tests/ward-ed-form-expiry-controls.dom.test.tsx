@@ -15,6 +15,7 @@ vi.mock("next/link", () => ({
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { perthCalendarDay } from "@/components/ward-management/ward-clock";
 
 /**
  * T3 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answers 1 and 5: the
@@ -35,15 +36,14 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * the real clock at run time for the same reason.
  */
 
+/** The Perth calendar day a moment falls on, as a date input reads it (L7), whatever the test's zone. */
 function dateInputValue(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const { year, monthIndex, day } = perthCalendarDay(date);
+  return `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 const TODAY = dateInputValue(new Date());
-const TOMORROW = dateInputValue(new Date(new Date().setDate(new Date().getDate() + 1)));
+const TOMORROW = dateInputValue(new Date(Date.now() + 864e5));
 
 /** Surfaces the last raised movement's id, code and expiry, so assertions read the MODEL rather
  *  than an input's own value. */

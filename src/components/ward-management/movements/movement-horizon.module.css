@@ -397,8 +397,22 @@
 }
 
 .tickTime {
+  display: flex;
+  min-width: 0;
   color: var(--wf-ink-3);
   font-family: var(--wf-font);
+}
+
+/* Never truncate a time: the clock keeps its width and only the day word after it may clip. */
+.tickClock {
+  flex: none;
+}
+
+.tickDay {
+  min-width: 0;
+  overflow: hidden;
+  white-space: pre;
+  text-overflow: ellipsis;
 }
 
 .ganttTick.nowTick .tickOffset {

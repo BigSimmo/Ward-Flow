@@ -105,6 +105,12 @@ interface TooltipState {
 }
 
 /** Accepted corridors merged per ED and ward pair, busiest first (the rail and the phone sheet). */
+/** "02:42 tomorrow" as its clock face and day words, so the two can clip differently. */
+function splitClockAndDay(label: string): { clock: string; day: string } {
+  const match = /^(\d{1,2}:\d{2})(?:,?\s*)(.*)$/.exec(label);
+  return match ? { clock: match[1], day: match[2] } : { clock: label, day: "" };
+}
+
 export function rankCorridorPairs(corridors: MovementHorizonGanttProps["corridors"]) {
   const acceptedPairs = new Set(corridors.map((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}`));
   return Array.from(acceptedPairs, (key) => {
@@ -172,6 +178,8 @@ export function MovementHorizonGantt({
       isNow,
       offset: isNow ? "Now" : `+${Math.round(h)}h`,
       time: formatInstantWithDay(tickInstant, now),
+      // Site review 12 Oct 2026: the clock time never truncates; only its day word may.
+      ...splitClockAndDay(formatInstantWithDay(tickInstant, now)),
     });
   }
   const scrubStep = Math.round(step);
@@ -328,6 +336,7 @@ export function MovementHorizonGantt({
                 type="button"
                 className={buttonClass({ variant: "sec", size: "sm", iconOnly: true, className: styles.scrubStep })}
                 aria-label={`Back ${scrubStep} hours`}
+                title={scrub === 0 ? "Already at now" : undefined}
                 disabled={scrub === 0}
                 onClick={() => handleScrubberChange(Math.max(0, scrub - scrubStep))}
               >
@@ -430,7 +439,10 @@ export function MovementHorizonGantt({
                           title={`${t.offset} ${t.time}`}
                         >
                           <span className={styles.tickOffset}>{t.offset}</span>
-                          <span className={styles.tickTime}>{t.time}</span>
+                          <span className={styles.tickTime}>
+                            <span className={styles.tickClock}>{t.clock}</span>
+                            {t.day ? <span className={styles.tickDay}> {t.day}</span> : null}
+                          </span>
                         </div>
                       ))}
                     </div>

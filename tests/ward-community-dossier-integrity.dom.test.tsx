@@ -105,7 +105,7 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     openReferral("missing-operational-record");
     const dossier = screen.getByRole("dialog", { name: "Referral unavailable" });
     expect(dossier).toHaveTextContent("No patient or clinical information has been inferred");
-    expect(within(dossier).getByRole("button", { name: "Accept Referral" })).toBeDisabled();
+    expect(within(dossier).getByRole("button", { name: "Accept referral" })).toBeDisabled();
     expect(dossier).not.toHaveTextContent(/PT-4409|RF-8824|clear pathology/);
   });
 
@@ -114,7 +114,7 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     fireEvent.click(screen.getByRole("button", { name: "Create referral" }));
     openReferral(screen.getByTestId("referral-id").textContent!);
     fireEvent.click(screen.getByRole("button", { name: "Withdraw referral" }));
-    fireEvent.click(screen.getByRole("button", { name: "Accept Referral" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Accept referral" }));
     expect(screen.getByTestId("community-acceptance-result")).toHaveTextContent("cannot be accepted");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
@@ -123,10 +123,10 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     start();
     fireEvent.click(screen.getByRole("button", { name: "Create referral" }));
     openReferral(screen.getByTestId("referral-id").textContent!);
-    fireEvent.click(screen.getByRole("button", { name: "Accept Referral" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Accept referral" }));
     expect(screen.getByTestId("community-acceptance-result")).toHaveTextContent(`accepted for ${TEAM_NAME} follow-up`);
     expect(screen.getByTestId("community-acceptance-result")).toHaveTextContent("No clinician assignment was recorded");
-    expect(screen.getByRole("button", { name: "Accept Referral" })).toBeDisabled();
+    expect(within(screen.getByRole("dialog")).getByRole("button", { name: "Accept referral" })).toBeDisabled();
   });
 
   it("opens the actual triage record for Review and accurately describes row contacts", () => {
@@ -143,10 +143,10 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
   it("discloses the unsupported dossier editor and unavailable patient follow-up", () => {
     start();
     openPatient(seed.patients[0]!.id);
-    fireEvent.click(screen.getByRole("button", { name: "Edit Dossier" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit dossier" }));
     expect(document.getElementById("actionToastMsg")).toHaveTextContent("Not wired in this prototype.");
     expect(document.body).not.toHaveTextContent("digital audit signature");
-    fireEvent.click(screen.getByRole("button", { name: "Arrange Follow-Up" }));
+    fireEvent.click(screen.getByRole("button", { name: "Arrange follow-up" }));
     expect(screen.getByTestId("community-patient-care")).toHaveTextContent("No matching admission is available");
   });
 
@@ -162,7 +162,7 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     start({ teamId: team.id });
     openPatient(admission.patientId!);
     const before = Number(screen.getByTestId("recorded-appointments").textContent);
-    fireEvent.click(screen.getByRole("button", { name: "Arrange Follow-Up" }));
+    fireEvent.click(screen.getByRole("button", { name: "Arrange follow-up" }));
     const care = screen.getByRole("region", { name: "Care journey" });
     fireEvent.change(within(care).getByRole("combobox", { name: "Responsible clinician" }), {
       target: { value: "demo-adult-clinician" },

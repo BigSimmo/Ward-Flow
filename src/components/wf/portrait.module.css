@@ -85,13 +85,21 @@
   opacity: 0.45;
 }
 
-/* Act now: a thin red edge on this row only, never a fill. */
+/* Act now (#249, site review 12 Oct 2026): the approved faint coral tint and a rounded coral
+ * marker at the row's start, never a red box. `.row` is the positioned parent. */
+.actNow {
+  position: relative;
+  background: var(--wf-act-tint);
+}
+
 .actNow::before {
   content: "";
   position: absolute;
-  inset: 0;
-  z-index: 1;
-  box-shadow: inset 0 0 0 1px var(--wf-danger);
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-act-edge);
   pointer-events: none;
 }
 
@@ -198,8 +206,7 @@
 
 @media (forced-colors: active) {
   .actNow::before {
-    box-shadow: none;
-    outline: 1px solid CanvasText;
-    outline-offset: -1px;
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

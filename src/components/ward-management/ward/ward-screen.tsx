@@ -94,6 +94,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { WardAnswerView } from "./ward-answer-view";
 import styles from "./ward.module.css";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WardDecisionsCockpit, openDecisionCount } from "./ward-decisions-cockpit";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
 import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
@@ -112,6 +113,7 @@ import {
 } from "./ward-bed-board-logic";
 import { layoutBedNumbers } from "./ward-bed-layout";
 import type { BedItem } from "./ward-beds-matrix";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   LEAVE_BED_OPEN_WARNING_MINUTES,
@@ -339,6 +341,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }, [now, rejections.length]);
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
+  // The capacity confirmation does not join the sheet stack, so it holds the page still itself.
+  useWardPageScrollLock(confirmNumbersOpen);
   const [drawerLeavingDestination, setDrawerLeavingDestination] =
     useState<LeavingDestination>("discharged-to-the-community");
   // A destination belongs to the bed it was chosen for: opening or stepping to another bed starts
@@ -702,6 +706,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // screen shows. `capacity.held` is NOT Closed (it still counts a live pull's empty bed), and
   // "Held" is reserved for a bed kept for a patient on leave.
   const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+  // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`): the same percentage this
+  // ward shows on Ward answer, the rail and Capacity.
+  const occupancy = wardOccupancy([unit], admissions, bedReleases);
   // Visual-fix pass: the capacity board (`CapacityView` in `ward-management-modes.tsx`) was just
   // corrected to source Confirmed/Expected from `capacityBreakdown()` rather than `unitCapacity()`'s
   // raw, state-and-timing-blind `potential` count — this screen used to be the one place still
@@ -1327,6 +1334,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         referralId: pick.referralId,
         destinationKind: "psychiatric_ward",
         unitId: boardUnitId,
+        actingUnitId: boardUnitId,
         bedNumber,
       });
     }
@@ -1679,7 +1687,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     dispatch({ type: "END_LEAVE_BED", role: "ward", now, leaveBedId, actingUnitId: unitId });
   }
 
+  // L2 (site review, 12 Oct 2026): only the discharges the ward figures count for today, from the
+  // same `releaseBand` window as `capacityBreakdown` (Confirmed, Expected, Discharges held up). A
+  // release dated beyond today is not a decision for this shift, so it no longer inflates the
+  // Decisions badge past the ward's own expected discharges.
   const departureDecisions = pendingBedReleases
+    .filter((release) => releaseBand(release, now) !== "beyond-today")
     .filter((release) => release.state === "expected" || release.blocker !== null)
     .map((release) => ({
       id: release.id,
@@ -2586,10 +2599,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               byLabel: formatInstantWithDay(dayShiftEndInstant(now), now),
             }}
           />
-          <footer className={styles.protoBanner}>
-            SYNTHETIC PROTOTYPE &middot; Scoped to {unit.name} &middot; Bed decisions remain human-confirmed &middot;
-            Not a medical device
-          </footer>
+          {/* U3: the page's prototype footer below carries this safety line; it is not repeated here. */}
         </section>
 
         {/* ───────── TAB 2: COMING IN ───────── */}
@@ -2847,7 +2857,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                         </dd>
                       </div>
                       <div>
-                        <dt>Occupied Census</dt>
+                        <dt>Beds in use</dt>
                         <dd
                           style={{
                             fontFamily: "var(--mono, monospace)",
@@ -2855,8 +2865,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                             fontWeight: 600,
                           }}
                         >
-                          {states.occupied} / {unit.beds} beds (
-                          {unit.beds > 0 ? Math.round((states.occupied / unit.beds) * 100) : 0}%)
+                          {occupancy.inUse} / {unit.beds} beds ({formatWardOccupancy(occupancy)})
                         </dd>
                       </div>
                       <div>

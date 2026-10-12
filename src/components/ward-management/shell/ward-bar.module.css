@@ -201,6 +201,26 @@
   }
 }
 
+/* B7 (site review, 12 Oct 2026): below 860px wide the header's New referral shows its plus icon
+ * only; the words stay for screen readers, so the button no longer runs past the edge. */
+@media (min-width: 48.0625rem) and (max-width: 860px) {
+  .bar .primaryPrefix,
+  .bar .primaryMain {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .bar .primary {
+    padding-left: 10px;
+  }
+}
+
 .titleGroup {
   display: flex;
   align-items: center;
@@ -924,7 +944,11 @@
   }
 }
 
-@container ward-bar (max-width: 42rem) {
+/* 768px matches the phone search sheet (`PHONE_SEARCH_QUERY`, 48rem at the initial 16px), so a 672 to
+ * 768px phone or small tablet in portrait never pairs the full-screen results with an inline header
+ * field. Pixels, because a container query's rem follows the density setting's 15px or 17px root. The
+ * bar is never this narrow above the phone breakpoint. */
+@container ward-bar (max-width: 768px) {
   .centerGroup,
   .searchWrap {
     flex: 0 0 auto;
@@ -2615,7 +2639,7 @@
  * 56px once scrolled). Last in the file, and prefixed with `.bar`, so it outranks the phone and
  * scrolled face rules above.
  */
-@container ward-bar (max-width: 42rem) {
+@container ward-bar (max-width: 768px) {
   .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
     position: fixed;
     inset: 0 0 auto;
@@ -2804,8 +2828,12 @@
     display: none;
   }
 
-  .bar.bar[data-band="ink"] {
+  .bar.bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    ) {
     --wf-focus-ring: var(--wf-hero-ink);
+    --wf-focus-gap: var(--wf-hero-1);
     background: var(--wf-hero-1);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -2822,29 +2850,66 @@
     box-shadow: var(--wf-e-bar);
   }
 
-  .bar[data-band="ink"] .place {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .place {
     color: var(--wf-hero-ink);
   }
 
-  .bar[data-band="ink"] .scopeBadgeBtn,
-  .bar[data-band="ink"] .drawerTrigger,
-  .bar[data-band="ink"] .triggerIcon {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .scopeBadgeBtn,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .drawerTrigger,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .triggerIcon {
     color: var(--wf-hero-ink);
   }
 
-  .bar[data-band="ink"] .scopeCaret,
-  .bar[data-band="ink"] .triggerCaret {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .scopeCaret,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .triggerCaret {
     color: var(--wf-hero-ink-2);
   }
 
-  .bar[data-band="ink"] .scopeBadgeBtn::before,
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type::before {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .scopeBadgeBtn::before,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search"])
+    > div:first-of-type::before {
     background: var(--wf-on-hero-fill);
     border-color: var(--wf-on-hero-line);
     box-shadow: none;
   }
 
-  .bar[data-band="ink"]
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
     .searchWrap
     :global([data-testid="ward-global-search"]):focus-within
     > div:first-of-type::before {
@@ -2852,53 +2917,107 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
   }
 
-  .bar[data-band="ink"] .scopeBadgeBtn:hover::before,
-  .bar[data-band="ink"] .drawerTrigger:hover::before {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .scopeBadgeBtn:hover::before,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .drawerTrigger:hover::before {
     background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
   }
 
-  .bar[data-band="ink"] .drawerTrigger[aria-expanded="true"]::before {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .drawerTrigger[aria-expanded="true"]::before {
     border-color: var(--wf-on-hero-line);
     background: var(--wf-on-hero-fill);
     box-shadow: none;
   }
 
   /* The service dot keeps its own colour; its halo takes the band so it never smudges. */
-  .bar[data-band="ink"] .scopeDot {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .scopeDot {
     box-shadow: 0 0 0 2px var(--wf-on-hero-line);
   }
 
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type > svg,
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search-input"])::placeholder {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search"])
+    > div:first-of-type
+    > svg,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search-input"])::placeholder {
     color: var(--wf-hero-ink-3);
   }
 
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search-input"]) {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search-input"]) {
     color: var(--wf-hero-ink);
   }
 
-  .bar[data-band="ink"] .searchWrap :global([data-ward-search-shortcut]) {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .searchWrap
+    :global([data-ward-search-shortcut]) {
     border-color: var(--wf-on-hero-line);
     background: transparent;
     color: var(--wf-hero-ink-2);
   }
 
-  .bar[data-band="ink"] .unread {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .unread {
     background: var(--wf-hero-ink-2);
   }
 
-  .bar[data-band="ink"] .badge {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .badge {
     background: transparent;
     box-shadow: inset 0 0 0 1px var(--wf-on-hero-line);
     color: var(--wf-hero-ink);
   }
 
-  .bar[data-band="ink"] .vsep {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .vsep {
     background: var(--wf-on-hero-line);
   }
 
   /* The primary keeps its blue face; its focus gap takes the band colour. */
-  .bar[data-band="ink"] .primary {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+    )
+    .primary {
     --wf-focus-ring: var(--wf-hero-ink);
   }
 }
@@ -3372,5 +3491,88 @@
   /* The sheet is h-full of that shortened backdrop, so it ends at the bottom edge. */
   .drawerSheetReferral {
     border-radius: 0 !important;
+  }
+}
+
+/*
+ * ── Phone search, opened (Josh, 12 Oct 2026, iPhone Safari) ──────────────────────────────────
+ * The open field and the results sheet under it read as one full screen surface. The field's band
+ * starts at the very top of the screen, under the status bar (padded by the safe area or by
+ * whatever sits above the bar), square, on the sheet's own surface, with a hairline where the
+ * results begin. So no strip of the page's dark header band shows above or around it. The field is
+ * one clean pill: a filled face with a single edge that turns the focus colour, no glow.
+ * The closed field is an invisible 48px tap target over the magnifier. It is kept at 16px text so
+ * iOS does not zoom the page on focus, and it is hidden by transparent text rather than opacity,
+ * because Safari treats a fully transparent field as hidden and may not raise the keyboard for it.
+ * Phone only; the tablet and desktop rules above are unchanged.
+ */
+@media (max-width: 48rem) {
+  .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
+    font-size: var(--wf-fs-16);
+  }
+
+  @container ward-bar (max-width: 768px) {
+    .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
+      opacity: 1;
+      color: transparent;
+      caret-color: transparent;
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search-input"])::placeholder {
+      color: transparent;
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type,
+    .bar.bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+      --wgs-sheet-top: max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px));
+      top: 0;
+      box-sizing: border-box;
+      height: calc(var(--wgs-sheet-top) + var(--wgs-bar-h, 3.5rem));
+      padding-top: var(--wgs-sheet-top);
+      border-radius: 0;
+      background: var(--wf-surface);
+      box-shadow: inset 0 -1px 0 var(--wf-line);
+      transition: none;
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type::before,
+    .bar.bar[data-band="ink"]
+      .searchWrap
+      :global([data-testid="ward-global-search"][data-open])
+      > div:first-of-type::before {
+      inset: calc(var(--wgs-sheet-top) + 6px) 80px 6px 12px;
+      border: 1px solid var(--wf-line-2);
+      border-radius: var(--wf-r-pill);
+      background: var(--wf-surface-2);
+      box-shadow: none;
+      transition: border-color var(--wf-m-fast) var(--wf-ease);
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search"][data-open]):focus-within > div:first-of-type::before,
+    .bar.bar[data-band="ink"]
+      .searchWrap
+      :global([data-testid="ward-global-search"][data-open]):focus-within
+      > div:first-of-type::before {
+      border-color: var(--wf-focus-ring);
+      box-shadow: none;
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]),
+    .bar.bar[data-band="ink"]
+      .searchWrap
+      :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]) {
+      color: var(--wf-ink-1);
+      caret-color: var(--wf-focus-ring);
+    }
+
+    .bar
+      .searchWrap
+      :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"])::placeholder {
+      color: var(--wf-ink-3);
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search-cancel"]) {
+      min-height: var(--spacing-tap, 3rem);
+    }
   }
 }

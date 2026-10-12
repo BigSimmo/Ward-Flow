@@ -1610,6 +1610,19 @@
   font-weight: 600;
 }
 
+/* L6: the hospital name truncates with an ellipsis, never a hard cut. */
+.wardHospital {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* L6: the pinned send bar never covers a field scrolled to or focused. */
+.drawerBody {
+  scroll-padding-bottom: var(--wf-s-4);
+}
+
 .wardMeta {
   display: block;
 }
@@ -2965,6 +2978,7 @@ details.refCard > summary {
     overflow-x: hidden;
     overflow-y: auto;
     padding: 0 var(--wf-s-4) calc(6rem + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
     border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
     background: var(--wf-canvas);
     box-shadow: var(--wf-e3);
@@ -3073,6 +3087,11 @@ details.refCard > summary {
   .drawerWide[data-ph-mode="sheet"] .confirmationPanel,
   .drawerWide[data-ph-mode="sheet"] .drawerBody > section {
     padding-top: var(--wf-s-3);
+  }
+
+  /* L6: a field scrolled to or focused stops clear of the pinned bar below. */
+  .drawerWide[data-ph-mode] :is(input, select, textarea, button, [tabindex]) {
+    scroll-margin-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
   }
 
   /* The pinned bar: one primary, and Back in a step sheet. */

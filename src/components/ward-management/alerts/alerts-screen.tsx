@@ -19,8 +19,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
+import { isOpen } from "@/components/ward-management/ward-derivations";
+import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import {
   activeSnooze,
   currentInboxOwner,
@@ -33,6 +33,7 @@ import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reduce
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
@@ -75,6 +76,7 @@ import {
   effectiveOwner,
   isQueueItem,
   minutesText,
+  admissionIdOfInboxId,
   movementIdOfInboxId,
   bookingOfInboxId,
   raisedAt,
@@ -188,13 +190,38 @@ function AlertsWorkspace() {
   const plannedAdmissions = state.plannedAdmissions;
   // Every computed row this screen covers, then the snoozed ones set aside: they leave the active
   // list and come back by themselves when their return time passes (stream A, 9 Oct 2026).
+  // L1 (site review, 12 Oct 2026): the one task list the header's Tasks badge reads (`taskItems`),
+  // so "Now" and the badge agree; the arrival and discharge notification rows are no longer dropped.
+  const admissions = state.admissions;
+  const supportNotifications = state.supportNotifications;
   const allInbox = useMemo(
     () =>
-      [
-        ...buildActionInbox(openMovements, now, units, { plannedAdmissions }),
-        ...decisionTargetInboxItems(openMovements, now, configuration),
-      ].filter(isQueueItem),
-    [openMovements, now, units, plannedAdmissions, configuration],
+      taskItems(
+        {
+          movements,
+          units,
+          configuration,
+          inboxSnoozes,
+          admissions,
+          patients,
+          referrals,
+          supportNotifications,
+          plannedAdmissions,
+        },
+        now,
+      ).filter(isQueueItem),
+    [
+      movements,
+      units,
+      configuration,
+      inboxSnoozes,
+      admissions,
+      patients,
+      referrals,
+      supportNotifications,
+      plannedAdmissions,
+      now,
+    ],
   );
   const { active: inbox, snoozed: snoozedInbox } = useMemo(
     () => partitionSnoozed(allInbox, inboxSnoozes, now),
@@ -369,6 +396,8 @@ function AlertsWorkspace() {
     trapFocus(e, modalRef.current);
   };
 
+  useWardPageScrollLock(isBroadcastModalOpen);
+
   useEffect(() => {
     if (!isBroadcastModalOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -397,7 +426,10 @@ function AlertsWorkspace() {
       const booking = item.plannedAdmission
         ? { planned: item.plannedAdmission, personLabel: item.personLabel }
         : undefined;
-      const subject = resolveAlertSubject(movement, item.movementId, umrnLookup, units, booking);
+      const dischargeAdmissionId = admissionIdOfInboxId(item.id);
+      const admission =
+        dischargeAdmissionId !== undefined ? admissions.find((stay) => stay.id === dischargeAdmissionId) : undefined;
+      const subject = resolveAlertSubject(movement, item.movementId, umrnLookup, units, booking, admission);
       const owner = effectiveOwner(item, inboxOwnership[item.id]);
       return {
         item,
@@ -413,7 +445,7 @@ function AlertsWorkspace() {
         action: alertActionFor(item, subject),
       };
     },
-    [movements, umrnLookup, units, inboxOwnership, inboxAcknowledgements, inboxSnoozes, now],
+    [movements, admissions, umrnLookup, units, inboxOwnership, inboxAcknowledgements, inboxSnoozes, now],
   );
   const isHighlighted = useCallback(
     (entry: Omit<QueueEntry, "highlighted">) =>
@@ -633,6 +665,14 @@ function AlertsWorkspace() {
       scope: "Watches booked planned admissions whose expected arrival time has passed with no arrival recorded.",
     },
     {
+      key: "notify",
+      kind: "notify",
+      label: "Notifications to record",
+      n: countKind("notify"),
+      scope:
+        "Watches recent arrivals, transfers and discharges where a carer, personal support person or advocacy service notification is not recorded.",
+    },
+    {
       key: "target",
       kind: "target",
       label: "Target overdue",
@@ -670,7 +710,10 @@ function AlertsWorkspace() {
       const movementId = movementIdOfInboxId(inboxItemId);
       const movement = movements.find((candidate: Movement) => candidate.id === movementId);
       const booking = bookingOfInboxId(inboxItemId, plannedAdmissions);
-      const subject = resolveAlertSubject(movement, movementId, umrnLookup, units, booking);
+      const dischargeAdmissionId = admissionIdOfInboxId(inboxItemId);
+      const admission =
+        dischargeAdmissionId !== undefined ? admissions.find((stay) => stay.id === dischargeAdmissionId) : undefined;
+      const subject = resolveAlertSubject(movement, movementId, umrnLookup, units, booking, admission);
       const kind = alertKindOf(inboxItemId);
       return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"}, ${subject.displayName} ${subject.umrn}`;
     };
@@ -763,6 +806,7 @@ function AlertsWorkspace() {
     umrnLookup,
     units,
     plannedAdmissions,
+    admissions,
     now,
   ]);
 

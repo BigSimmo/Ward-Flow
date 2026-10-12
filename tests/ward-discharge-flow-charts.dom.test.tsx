@@ -68,31 +68,32 @@ describe("Discharges charts under the table (direction A)", () => {
   it("clears a hiding status filter on a chart click, and drops the highlight on a population switch", () => {
     renderBoard();
     fireEvent.click(screen.getByRole("button", { name: /^History/u }));
-    const confirmedTab = () =>
-      within(screen.getByLabelText("Filter by discharge status")).getByRole("button", { name: /^Confirmed/ });
-    fireEvent.click(confirmedTab());
+    const statusSelect = () => screen.getByRole("combobox", { name: "Status" }) as HTMLSelectElement;
+    fireEvent.change(statusSelect(), { target: { value: "confirmed" } });
+    expect(statusSelect().value).toBe("confirmed");
     const first = within(screen.getByTestId("ward-discharge-barrier-bars")).getAllByRole("button")[0]!;
     const count = Number(/: (\d+) blocked/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
     expect(count).toBeGreaterThan(0);
     fireEvent.click(first);
-    expect(confirmedTab()).toHaveAttribute("aria-pressed", "false");
+    expect(statusSelect().value).toBe("all");
     expect(worklistRows().filter((row) => row.getAttribute("data-highlighted") === "true")).toHaveLength(count);
     fireEvent.click(screen.getByRole("button", { name: /^Now,/u }));
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
   });
 
-  it("barrier quick chips highlight matching rows and hide none (v10: chips highlight, not filter)", () => {
+  it("offers one control per filter: no blocker chip row and no status tab row (decision 5)", () => {
     renderBoard();
-    const before = worklistRows().length;
-    const bar = within(screen.getByRole("toolbar", { name: "Quick blocker filters" }));
-    const chip = bar.getAllByRole("button").find((button) => button.textContent?.startsWith("Accommodation"));
-    expect(chip).toBeDefined();
-    fireEvent.click(chip!);
-    expect(chip).toHaveAttribute("aria-pressed", "true");
-    expect(worklistRows()).toHaveLength(before);
-    expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(/all rows stay/);
-    fireEvent.click(chip!);
-    expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
+    expect(screen.queryByRole("toolbar", { name: "Quick blocker filters" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Filter by discharge status")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("combobox", { name: "Blocker" })).toHaveLength(1);
+    // The Status dropdown's counts are the hero chips' counts, so the two never disagree.
+    const options = within(screen.getByRole("combobox", { name: "Status" })).getAllByRole("option");
+    for (const key of ["blocked", "confirmed", "expected", "departed"]) {
+      const chip = screen.getByTestId(`ward-discharge-kpi-${key}`);
+      const count = /: (\d+)$/u.exec(chip.getAttribute("aria-label") ?? "")?.[1];
+      const option = options.find((candidate) => (candidate as HTMLOptionElement).value === key)!;
+      expect(option.textContent).toMatch(new RegExp(` · ${count}$`, "u"));
+    }
   });
 
   it("keeps the table full width until a row is opened", () => {

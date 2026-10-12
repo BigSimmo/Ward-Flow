@@ -45,6 +45,7 @@ import { settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
 import styles from "./ward-phone-menu.module.css";
+import actNowStyles from "./ward-phone-menu-act-now.module.css";
 import pageDock from "./ward-phone-page-dock.module.css";
 
 /**
@@ -222,9 +223,11 @@ function NeedRowLink({ row, onGo, onTasks }: { row: NeedRow; onGo: () => void; o
       <Chevron />
     </>
   );
+  // Site review, 12 Oct 2026: the act-now row takes the approved tint and rounded marker
+  // (`ward-phone-menu-act-now.module.css`), not the full red box the shared row rule drew.
   const common = {
-    className: styles.row,
-    "data-act-now": row.actNow || undefined,
+    className: row.actNow ? `${styles.row} ${actNowStyles.actNow}` : styles.row,
+    "data-act-marker": row.actNow || undefined,
     "aria-label": `${row.label}, ${row.count} ${row.meta}`,
     "data-testid": "ward-phone-menu-need",
   };
@@ -615,6 +618,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
       patients,
       movements,
       units,
+      referrals,
       now,
       limitPerGroup: MENU_RESULTS_PER_GROUP,
       plannedAdmissions,

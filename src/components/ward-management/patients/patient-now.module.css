@@ -5532,3 +5532,86 @@
     forced-color-adjust: none;
   }
 }
+
+/* Phone pinned record tabs (Josh, 12 Oct 2026). On a phone the screen renders the tabs row beside
+ * the record with the shared `pinnedSwitch` class, so it sticks under the header as Home's queue
+ * switch does. The row carries its own vertical padding (offset by a negative margin so the resting
+ * layout keeps its spacing), and the track takes the shared phone segmented size (`--wf-phone-seg-*`):
+ * a 48px box with a transparent band round a painted 34px pill, so each 28px tab keeps a 48px hit
+ * area without being clipped by the sideways scroll. Nothing here applies above 48rem. */
+@media (max-width: 48rem) {
+  .v6Page > .v6HeroTabsRow {
+    margin-block: calc(-1 * var(--wf-s-2));
+    padding-block: var(--wf-s-2);
+  }
+
+  .v6HeroTabsRow .v6Tabs {
+    --wf-seg-r: calc(var(--wf-phone-seg-h) / 2);
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--spacing-tap, 3rem);
+    padding: var(--wf-phone-seg-band) 3px;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+    background-image:
+      radial-gradient(
+        circle at var(--wf-seg-r) 50%,
+        var(--wf-surface-2) calc(var(--wf-seg-r) - 1px),
+        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        transparent var(--wf-seg-r)
+      ),
+      radial-gradient(
+        circle at var(--wf-seg-r) 50%,
+        var(--wf-surface-2) calc(var(--wf-seg-r) - 1px),
+        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        transparent var(--wf-seg-r)
+      ),
+      linear-gradient(
+        to bottom,
+        transparent var(--wf-phone-seg-band),
+        var(--wf-line) var(--wf-phone-seg-band),
+        var(--wf-line) calc(var(--wf-phone-seg-band) + 1px),
+        var(--wf-surface-2) calc(var(--wf-phone-seg-band) + 1px),
+        var(--wf-surface-2) calc(100% - var(--wf-phone-seg-band) - 1px),
+        var(--wf-line) calc(100% - var(--wf-phone-seg-band) - 1px),
+        var(--wf-line) calc(100% - var(--wf-phone-seg-band)),
+        transparent calc(100% - var(--wf-phone-seg-band))
+      );
+    background-position:
+      left center,
+      right center,
+      center;
+    background-size:
+      var(--wf-phone-seg-h) 100%,
+      var(--wf-phone-seg-h) 100%,
+      calc(100% - var(--wf-phone-seg-h)) 100%;
+    background-repeat: no-repeat;
+  }
+
+  .v6HeroTabsRow .v6Tab {
+    position: relative;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .v6HeroTabsRow .v6Tab::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
+  }
+
+  .v6HeroTabsRow .v6TabCount,
+  .v6HeroTabsRow .v6Tab[aria-selected="true"] .v6TabCount {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: var(--wf-phone-pill-count-fs);
+    line-height: 18px;
+  }
+}

@@ -255,3 +255,13 @@
     min-width: 0;
   }
 }
+
+/* U3: the journey's current step in words ("Bed offered just now"), under the strip. */
+.journeyNote {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

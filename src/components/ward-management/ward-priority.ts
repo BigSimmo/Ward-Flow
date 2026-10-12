@@ -225,7 +225,8 @@ function waitedMinutesUncapped(movement: Pick<Movement, "openedAt">, now: Instan
 }
 
 /**
- * The flag leads; beneath it, urgency tier, then the longest wait inside a tier — item 37,
+ * The flag leads; beneath it, act-now pins, then the longest wait with tier breaking ties (D-32,
+ * 12 Oct 2026, see below). Historically: urgency tier, then the longest wait inside a tier — item 37,
  * resolved 2026-09-17.
  *
  * ⚠️ **THIS USED TO BE THREE RANKINGS STACKED AS A DELIBERATE STAGE, NOT A DESIGN, AND THE
@@ -259,15 +260,31 @@ function waitedMinutesUncapped(movement: Pick<Movement, "openedAt">, now: Instan
  * property of THIS function — a reader has no way to tell "deliberate" from "happens to work"
  * from the code alone. `byLongestWait` (`movements-derivations.ts`) already ends its own
  * comparator on `a.id < b.id`; this matches it rather than inventing a second convention.
+ *
+ * ⚠️ **D-32 NOW COVERS THIS QUEUE — decision 4 of the 12 Oct 2026 site review (Recommended, Josh
+ * approved).** The Referrals board sorted longest wait first while this queue sorted tier first,
+ * so the two disagreed about who was next. Now: the flag still outranks everything; beneath it,
+ * movements with an active act-now task are pinned on top so emergencies stay visible; then
+ * everyone is ordered longest wait first, with the tier breaking a tie on wait, then the id.
  */
-export function queueOrder(movements: Movement[], now: Instant): Movement[] {
+export function queueOrder(
+  movements: Movement[],
+  now: Instant,
+  /**
+   * Movements with an active act-now (red) task, from `activeActNowItems` (`ward-act-now-items.ts`).
+   * They are pinned under the flag. Omitted, nothing is pinned but the flag.
+   */
+  actNowMovementIds: ReadonlySet<string> = new Set(),
+): Movement[] {
+  const pinned = (movement: Movement) => Number(actNowMovementIds.has(movement.id));
   return movements
     .filter(isOpen)
     .sort(
       (a, b) =>
         Number(isFlaggedUrgent(b)) - Number(isFlaggedUrgent(a)) ||
-        a.urgency - b.urgency ||
+        pinned(b) - pinned(a) ||
         waitedMinutesUncapped(b, now) - waitedMinutesUncapped(a, now) ||
+        a.urgency - b.urgency ||
         (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
     );
 }

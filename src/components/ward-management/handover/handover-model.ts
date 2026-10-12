@@ -144,6 +144,12 @@ export type HandoverRow = {
   escalated: boolean;
   urgent: boolean;
   eta?: Instant;
+  /**
+   * Whether the shared act-now list (`activeActNowItems`, `ward-act-now-items.ts`, the one the
+   * Alerts page and Tasks lead with) holds a row for this journey. Set by the page from the live
+   * state; a row built without it falls back to its own recorded times (`isActNow`).
+   */
+  actNow?: boolean;
 };
 
 function unitName(units: Unit[], id: string): string {
@@ -210,7 +216,14 @@ export function toHandoverRow(
 export type HandoverGroupId = "act" | "due" | "bed" | "acc" | "mov";
 export type HandoverTone = "act" | "due" | "calm";
 
+/**
+ * Act now on the sheet. L1 (site review, 12 Oct 2026): Handover read "Act now 3" while Alerts read
+ * 2, because the sheet kept its own list. With `actNow` set the sheet reads the shared act-now list
+ * (`activeActNowItems`), so a snoozed alert leaves both together. A journey flagged urgent by a
+ * person is always act now as well: that flag is a human safety call the sheet must not drop.
+ */
 export function isActNow(row: HandoverRow, now: Instant): boolean {
+  if (row.actNow !== undefined) return row.actNow || row.urgent;
   return (
     row.urgent ||
     (row.pullExpiresAt !== undefined && row.pullExpiresAt <= now) ||
@@ -240,7 +253,7 @@ export function groupOf(row: HandoverRow, now: Instant, cutoff: Instant): Handov
 
 export function handoverGroups(cutoff: Instant, now: Instant) {
   return [
-    { id: "act", title: "Act now", why: "Flagged urgent, typed form time passed or bed pull expired" },
+    { id: "act", title: "Act now", why: "On the act-now alerts, or flagged urgent" },
     {
       id: "due",
       title: `Due by ${formatInstantWithDay(cutoff, now)}`,

@@ -183,12 +183,9 @@
   font-weight: 500;
 }
 
-.previewTool,
-.previewTool[aria-disabled="true"] {
-  border: 1px dashed color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
-  background: transparent;
-  color: var(--wf-hero-ink-2);
-  box-shadow: none;
+/* Run sheet (D-16): a working control that says it is not wired; this class only places or hides it. */
+.previewTool {
+  display: inline-flex;
 }
 
 /* ---------- Needs you ---------- */

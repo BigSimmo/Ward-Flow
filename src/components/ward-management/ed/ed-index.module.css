@@ -1166,3 +1166,28 @@
     forced-color-adjust: none;
   }
 }
+
+/* Phone compact chips (Josh, 12 Oct 2026): the By service chips take the shared phone pill
+ * (`--wf-phone-*`): 32px faces, 13px 600 labels, 12px mono counts. The row carries the hit area in
+ * its padding so the 48px target is not clipped by the sideways scroll. Phone only. */
+@media (max-width: 48rem) {
+  .phoneServices :global([role="radiogroup"]) {
+    gap: var(--wf-phone-pill-gap);
+    padding: var(--wf-phone-pill-hit) 2px;
+  }
+
+  .phoneServices :global([role="radio"]) {
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+  }
+
+  .phoneServices :global([role="radio"]) > span:last-child {
+    font-size: var(--wf-phone-pill-count-fs);
+  }
+
+  .phoneServices :global([role="radio"])::after {
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+}

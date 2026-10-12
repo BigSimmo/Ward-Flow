@@ -1,7 +1,7 @@
 "use client";
 
 import { wardAddressing } from "@/components/ward-management/ward-eligibility";
-import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { useState, type ReactNode } from "react";
@@ -10,9 +10,7 @@ import { ClipboardCopy, Copy, FileText, ListOrdered, Phone, TriangleAlert } from
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
-import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed } from "@/components/ward-management/ward-model";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
   OVERDUE_AFTER_ANY_TIER_MINUTES,
@@ -36,6 +34,7 @@ import {
   type ClearanceStatus,
 } from "./referral-submission";
 import { ReferralDocumentLinks } from "./referral-flow-panels";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import styles from "./referral-board.module.css";
 
 /** The page's one link for counts that open the bed picture. Places lists every ward's ready beds. */
@@ -236,6 +235,12 @@ export function WaitRunway({
 
 export type BedsReadySummary = {
   cells: { label: string; value: number }[];
+  /**
+   * L1 (review 12 Oct 2026): the one statewide "beds ready" figure, the same sum Home, Capacity and
+   * the rail read (`capacityBreakdown(...).availableNow`, as `serviceRollup` sums it). Locked is a
+   * part of the cohort cells, never added on top: summing every cell read 33 against 26.
+   */
+  total: number;
   /** Beds counted as ready that are still being made ready, so a pull would be refused today. */
   preparing: number;
   oldestUpdateMinutes: number | undefined;
@@ -243,17 +248,19 @@ export type BedsReadySummary = {
 
 export function bedsReadySummary(
   units: Unit[],
-  admissions: readonly Admission[],
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
 ): BedsReadySummary {
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
+  let total = 0;
   let oldest: number | undefined;
   let preparing = 0;
   for (const unit of units) {
-    // Every unit counts: a unit without authorisation still takes voluntary admissions.
-    const ready = bedStates(unit, admissions, bedReleases, leaveBeds).ready;
+    // Every unit counts: a unit without authorisation still takes voluntary admissions. The shared
+    // per-unit ready figure, so the cohort cells add up to the same total every other page shows.
+    const ready = capacityBreakdown(unit, bedReleases, [...leaveBeds], now).availableNow;
+    total += ready;
     totals[unit.cohort] += ready;
     // Locked is the ready locked portion of any ward, mixed wards included.
     totals.Locked += Math.min(ready, lockedBedsFree(unit));
@@ -263,6 +270,7 @@ export function bedsReadySummary(
   }
   return {
     cells: (Object.keys(totals) as (keyof typeof totals)[]).map((label) => ({ label, value: totals[label] })),
+    total,
     preparing,
     oldestUpdateMinutes: oldest,
   };
@@ -784,15 +792,19 @@ export function ReferralPatientTab({
               />
             </>
           ) : null}
-          <Button
-            variant="sec"
-            size="sm"
-            icon={Phone}
-            disabledReason={intake?.referrer.phone ? NOT_WIRED : "No phone number recorded on this referral."}
-            reasonDisplay="tooltip"
-          >
-            Call
-          </Button>
+          {intake?.referrer.phone ? (
+            <NotWiredButton label="Call" variant="sec" size="sm" icon={Phone} />
+          ) : (
+            <Button
+              variant="sec"
+              size="sm"
+              icon={Phone}
+              disabledReason="No phone number recorded on this referral."
+              reasonDisplay="tooltip"
+            >
+              Call
+            </Button>
+          )}
         </div>
         <dl className={styles.pCells}>
           <div>

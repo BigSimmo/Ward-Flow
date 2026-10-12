@@ -60,12 +60,6 @@
     "owner": "v10 Home: invented bed-count freshness window, pending owner decision"
   },
   {
-    "file": "coordinator/priority-queue.tsx",
-    "rule": "hour window",
-    "text": "Targets T1 8h, T2 24h, T3 72h, pending clinical sign-off",
-    "owner": "v10 Home: invented tier targets, pending clinical sign-off (they differ from the referral board's OVERDUE_AFTER_MINUTES_BY_TIER 1h/4h/24h)"
-  },
-  {
     "file": "reports/downtime-pack-screen.tsx",
     "rule": "time constant",
     "text": "const STALE_AFTER_MINUTES = 60;",
