@@ -490,14 +490,14 @@
     background-color: transparent;
     background-image:
       radial-gradient(
-        circle at var(--wf-seg-r) 50%,
+        circle at 100% 50%,
         var(--wf-track) calc(var(--wf-seg-r) - 1px),
         var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
         var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
         transparent var(--wf-seg-r)
       ),
       radial-gradient(
-        circle at var(--wf-seg-r) 50%,
+        circle at 0 50%,
         var(--wf-track) calc(var(--wf-seg-r) - 1px),
         var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
         var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
@@ -518,9 +518,10 @@
       left center,
       right center,
       center;
+    /* Each end cap is only the outer half circle, so no ring shows inside the track. */
     background-size:
-      var(--wf-phone-seg-h) 100%,
-      var(--wf-phone-seg-h) 100%,
+      var(--wf-seg-r) 100%,
+      var(--wf-seg-r) 100%,
       calc(100% - var(--wf-phone-seg-h)) 100%;
     background-repeat: no-repeat;
   }

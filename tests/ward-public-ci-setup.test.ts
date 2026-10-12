@@ -57,6 +57,21 @@ describe("bounded required Chromium setup", () => {
     ).toBe(1);
     expect(calls).toBe(2);
   });
+  it("waits for a leftover package manager before the retry", () => {
+    const events: string[] = [];
+    let calls = 0;
+    expect(
+      installChromium({
+        execute: () => {
+          events.push("attempt");
+          return { status: ++calls === 1 ? 124 : 0 };
+        },
+        waitForIdle: () => events.push("wait"),
+        log: () => {},
+      }),
+    ).toBe(0);
+    expect(events).toEqual(["attempt", "wait", "attempt"]);
+  });
   it("shares a six-minute budget across all operations and attempts", () => {
     let clock = 0;
     const budgets: number[] = [];
