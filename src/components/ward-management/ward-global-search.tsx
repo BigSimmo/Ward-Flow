@@ -1,5 +1,6 @@
 "use client";
 
+import { lockPageScroll } from "@/components/ui/sheet-focus";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -746,18 +747,22 @@ export function WardGlobalSearch({
   // cut off the search's top and left the page showing below its footer.
   useEffect(() => {
     if (!showPopup) return;
-    const root = document.documentElement;
-    const previous = root.style.overflowY;
     const phone = window.matchMedia(PHONE_SEARCH_QUERY);
-    // Follows the width while open, so turning a tablet or resizing past 48rem keeps it right.
+    // The shared counted lock also holds the phone work column (`[data-wf-scroller]`), which is
+    // what scrolls on phone. Follows the width while open, so turning a tablet keeps it right.
+    let release: (() => void) | null = null;
     const apply = () => {
-      root.style.overflowY = phone.matches ? "hidden" : previous;
+      if (phone.matches && !release) release = lockPageScroll();
+      else if (!phone.matches && release) {
+        release();
+        release = null;
+      }
     };
     apply();
     phone.addEventListener("change", apply);
     return () => {
       phone.removeEventListener("change", apply);
-      root.style.overflowY = previous;
+      release?.();
     };
   }, [showPopup]);
 
