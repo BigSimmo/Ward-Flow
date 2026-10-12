@@ -298,6 +298,7 @@ export function WardBedDossierDrawer({
         aria-labelledby="drawer-bed-title"
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         onKeyDown={onKeyDown}
       >
         <div className={styles.grab} aria-hidden="true" />
@@ -763,6 +764,7 @@ function PhoneBedSheet({
         aria-labelledby="drawer-bed-title"
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         onKeyDown={onKeyDown}
       >
         <div className={styles.grab} aria-hidden="true" />

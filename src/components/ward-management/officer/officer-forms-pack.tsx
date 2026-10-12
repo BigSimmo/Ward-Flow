@@ -191,6 +191,7 @@ function PackUploadDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
       >
         <header className={styles.modalHead}>

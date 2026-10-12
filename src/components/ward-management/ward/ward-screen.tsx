@@ -4,7 +4,8 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { WardReferralInbox } from "../referrals/ward-referral-inbox";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { hasOpenSheet } from "@/components/ui/sheet-focus";
 import {
   ArrowLeftRight,
   Bell,
@@ -169,6 +170,15 @@ function useOptionalRouter(): ReturnType<typeof useRouter> | null {
   }
 }
 
+/** The search params, or null where the screen renders outside the app router. */
+function useOptionalSearchParams(): ReturnType<typeof useSearchParams> | null {
+  try {
+    return useSearchParams();
+  } catch {
+    return null;
+  }
+}
+
 /** "Day shift 07:00 to 15:00" for the shift `now` falls in, read from the labelled default pattern. */
 function shiftLine(now: Instant): string {
   const shift = currentShift(now);
@@ -324,7 +334,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [flowTab, setFlowTab] = useState<WardFlowTab>("referrals");
   const [shiftView, setShiftView] = useState<WardShiftView>("todo");
   const router = useOptionalRouter();
-  const [selectedBed, setSelectedBed] = useState<number | null>(null);
+  const searchParams = useOptionalSearchParams();
+  const bedParam = searchParams?.get("bed");
+  const parsedBed =
+    bedParam !== null && bedParam !== undefined && /^\d+$/.test(bedParam) ? Number.parseInt(bedParam, 10) : null;
+  const [selectedBed, setSelectedBed] = useState<number | null>(parsedBed);
+  const [prevBedParam, setPrevBedParam] = useState<string | null | undefined>(bedParam);
+  if (prevBedParam !== bedParam) {
+    setPrevBedParam(bedParam);
+    setSelectedBed(parsedBed);
+  }
   // v10 pass 3, Bed board: who is picked up, what the board says and the bed placed last.
   const [boardPick, setBoardPick] = useState<BoardPick | null>(null);
   const [boardSay, setBoardSay] = useState("");
@@ -354,6 +373,37 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setDestinationBed(selectedBed);
     setDrawerLeavingDestination("discharged-to-the-community");
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const bed = params.get("bed");
+      if (bed !== null && /^\d+$/.test(bed)) {
+        setSelectedBed(Number.parseInt(bed, 10));
+      } else {
+        setSelectedBed(null);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const current = url.searchParams.get("bed");
+    const next = selectedBed !== null ? String(selectedBed) : null;
+    if (current === next) return;
+
+    if (next !== null) {
+      url.searchParams.set("bed", next);
+      window.history.pushState(null, "", url.toString());
+    } else {
+      url.searchParams.delete("bed");
+      window.history.pushState(null, "", url.toString());
+    }
+  }, [selectedBed]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -532,17 +582,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        if (selectedBed !== null) {
-          closeBedDrawer();
+        if (hasOpenSheet()) return;
+        if (notificationCenterOpen) {
+          setNotificationCenterOpen(false);
+        } else if (confirmNumbersOpen) {
+          closeCapacityModal();
+        } else if (dailySheetOpen) {
+          setDailySheetOpen(false);
         } else if (boardPick !== null) {
           setBoardPick(null);
           setBoardSay("Put down. Nothing changed.");
-        } else if (dailySheetOpen) {
-          setDailySheetOpen(false);
-        } else if (confirmNumbersOpen) {
-          closeCapacityModal();
-        } else if (notificationCenterOpen) {
-          setNotificationCenterOpen(false);
+        } else if (selectedBed !== null) {
+          closeBedDrawer();
         }
       }
     }

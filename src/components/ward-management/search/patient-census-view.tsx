@@ -814,6 +814,13 @@ export function CensusDetail({ row, now, onClose, onCopy, copyNote }: CensusDeta
       <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals">
         Referral
       </Link>
+    ) : row.kind === "admission" && row.unitId ? (
+      <Link
+        className={buttonClass({ size: "sm" })}
+        href={`/mockups/ward-flow/ward/${encodeURIComponent(row.unitId)}${row.bedNumber !== undefined ? `?bed=${row.bedNumber}` : ""}`}
+      >
+        Ward bed
+      </Link>
     ) : quiet ? (
       <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals/new">
         New referral
