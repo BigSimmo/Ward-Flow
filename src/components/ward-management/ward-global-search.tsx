@@ -835,11 +835,19 @@ export function WardGlobalSearch({
 
   /**
    * Only intercepts when a test has supplied `onNavigate`, and only for the plain click a real
-   * anchor would otherwise have handled itself. A modified click (middle button, ctrl/cmd, shift)
+   * anchor would otherwise have handled itself when results are current. A modified click (middle button,
+   * ctrl/cmd, shift)
    * is left completely alone in every case, real or tested, because that is the browser's own
    * "open in a new tab/window" gesture and this control has no business overriding it.
    */
   function onOptionClick(event: MouseEvent<HTMLAnchorElement>, href: string) {
+    // Keep stale rows mounted to avoid the popup flash, but never let any kind of activation
+    // navigate to a result for text that is no longer in the field.
+    if (!resultsCurrent) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (event.defaultPrevented || event.button !== 0) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (!onNavigate) {
@@ -854,8 +862,11 @@ export function WardGlobalSearch({
 
   /** A preview action is a plain link too, with the same modified-click rule as a row. */
   function onPreviewOpen(event: MouseEvent<HTMLAnchorElement>, href: string) {
+    // Preview actions use real links too, so apply the stale-result guard before remembering or
+    // allowing plain, modified, or assistive-technology activation to leave this page.
     if (!resultsCurrent) {
       event.preventDefault();
+      event.stopPropagation();
       return;
     }
     if (previewItem) {
@@ -1024,11 +1035,15 @@ export function WardGlobalSearch({
                             href={item.href}
                             role="option"
                             aria-selected={resultsCurrent && activeIndex === index}
+                            aria-disabled={!resultsCurrent || undefined}
                             tabIndex={-1}
-                            // A stale row belongs to the previous text, so it cannot open until results catch up.
-                            onClick={(event) =>
-                              resultsCurrent ? onOptionClick(event, item.href) : event.preventDefault()
-                            }
+                            onClick={(event) => onOptionClick(event, item.href)}
+                            onAuxClick={(event) => {
+                              if (!resultsCurrent) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }
+                            }}
                             onMouseEnter={() => setHoverIndex(index)}
                             className={styles.option}
                             data-active={(resultsCurrent && activeIndex === index) || undefined}
@@ -1074,7 +1089,11 @@ export function WardGlobalSearch({
           </div>
 
           {previewItem ? (
-            <div className={styles.previewPane}>
+            <div
+              className={styles.previewPane}
+              inert={!resultsCurrent || undefined}
+              aria-disabled={!resultsCurrent || undefined}
+            >
               <GlobalSearchPreview
                 item={previewItem}
                 patients={patients}

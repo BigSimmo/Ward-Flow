@@ -297,9 +297,6 @@ describe("WardGlobalSearch", () => {
     // The popup must not unmount for the stale render: that was the per-keystroke flash on iPhone.
     expect(screen.getByTestId("ward-global-search-popup")).toBeInTheDocument();
     expect(input).not.toHaveAttribute("aria-activedescendant");
-    // A tap on a stale row must not open a record for the previous text either.
-    fireEvent.click(screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`), { button: 0 });
-    expect(onNavigate).not.toHaveBeenCalled();
   });
 
   it("does not select an old result after the search text changes", () => {
@@ -310,6 +307,19 @@ describe("WardGlobalSearch", () => {
     fireEvent.keyDown(input, { key: "ArrowDown" });
     fireEvent.change(input, { target: { value: "zzq-no-such-record-in-this-fixture-zzq" } });
     fireEvent.keyDown(input, { key: "Enter" });
+    expect(onNavigate).not.toHaveBeenCalled();
+  });
+
+  it("does not navigate when an old result is clicked before deferred results catch up", () => {
+    const { onNavigate } = renderSearch();
+    const input = screen.getByTestId("ward-global-search-input");
+    fireEvent.change(input, { target: { value: personQuery } });
+    const row = screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`);
+    deferred.held = personQuery;
+    fireEvent.change(input, { target: { value: "zzq-no-such-record-in-this-fixture-zzq" } });
+
+    fireEvent.click(row, { button: 0 });
+
     expect(onNavigate).not.toHaveBeenCalled();
   });
 
