@@ -55,6 +55,12 @@ export function alertGroupOf(item: InboxItem): AlertGroup {
 }
 
 /** The movement an inbox id names, for the categories whose remainder is a movement id. */
+/** The discharged stay a discharge notification row names, read from its id. */
+export function admissionIdOfInboxId(id: string): string | undefined {
+  const prefix = INBOX_CATEGORIES.support_notification_discharge.idPrefix;
+  return id.startsWith(prefix) ? id.slice(prefix.length) || undefined : undefined;
+}
+
 export function movementIdOfInboxId(id: string): string | undefined {
   const match = KIND_PREFIXES.find(([, candidate]) => id.startsWith(candidate));
   // A planned arrival row names a booking, never a movement; a discharge notification row names a stay.
@@ -135,11 +141,12 @@ export function resolveAlertSubject(
   lookup: { patients?: readonly Patient[]; referrals?: readonly Referral[]; movements?: readonly Movement[] },
   units: readonly { id: string; name: string }[],
   booking?: { planned: PlannedAdmission; personLabel?: string },
-  /** The discharged stay a discharge notification row names (it has no movement). */
+  /** The discharged stay a discharge notification row names. Pass it only for a discharge row: it
+   *  wins over a linked movement, so the row names the ward the person left, not the movement's ED. */
   admission?: Admission,
 ): AlertSubject {
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : undefined);
-  if (admission && !movement) {
+  if (admission) {
     const info = resolveSubjectPatient(admission, lookup);
     return {
       displayName: info.displayName,

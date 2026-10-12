@@ -1331,6 +1331,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         referralId: pick.referralId,
         destinationKind: "psychiatric_ward",
         unitId: boardUnitId,
+        actingUnitId: boardUnitId,
         bedNumber,
       });
     }

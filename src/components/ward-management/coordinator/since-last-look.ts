@@ -152,12 +152,21 @@ export function changesSinceInstant(
   now: Instant,
 ): ChangesSinceLastLook {
   const within = (at: Instant | undefined) => at !== undefined && at >= since && at <= now;
+  const newReferralIds = world.referrals.filter((referral) => within(referral.raisedAt)).map((referral) => referral.id);
+  const countedReferrals = new Set(newReferralIds);
   return {
     since,
     basis: "shift",
-    newReferralIds: world.referrals.filter((referral) => within(referral.raisedAt)).map((referral) => referral.id),
+    newReferralIds,
+    // A journey opened in the window counts unless its referral is already counted in the same
+    // window, so one opened today from an older referral is not lost.
     newMovementIds: world.movements
-      .filter((movement) => isOpen(movement) && movement.referralId === undefined && within(movement.openedAt))
+      .filter(
+        (movement) =>
+          isOpen(movement) &&
+          within(movement.openedAt) &&
+          (movement.referralId === undefined || !countedReferrals.has(movement.referralId)),
+      )
       .map((movement) => movement.id),
     bedsFreed: [],
     newDelays: [],

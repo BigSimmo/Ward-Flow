@@ -75,6 +75,7 @@ import {
   effectiveOwner,
   isQueueItem,
   minutesText,
+  admissionIdOfInboxId,
   movementIdOfInboxId,
   bookingOfInboxId,
   raisedAt,
@@ -422,8 +423,9 @@ function AlertsWorkspace() {
       const booking = item.plannedAdmission
         ? { planned: item.plannedAdmission, personLabel: item.personLabel }
         : undefined;
+      const dischargeAdmissionId = admissionIdOfInboxId(item.id);
       const admission =
-        item.admissionId !== undefined ? admissions.find((stay) => stay.id === item.admissionId) : undefined;
+        dischargeAdmissionId !== undefined ? admissions.find((stay) => stay.id === dischargeAdmissionId) : undefined;
       const subject = resolveAlertSubject(movement, item.movementId, umrnLookup, units, booking, admission);
       const owner = effectiveOwner(item, inboxOwnership[item.id]);
       return {
@@ -705,7 +707,10 @@ function AlertsWorkspace() {
       const movementId = movementIdOfInboxId(inboxItemId);
       const movement = movements.find((candidate: Movement) => candidate.id === movementId);
       const booking = bookingOfInboxId(inboxItemId, plannedAdmissions);
-      const subject = resolveAlertSubject(movement, movementId, umrnLookup, units, booking);
+      const dischargeAdmissionId = admissionIdOfInboxId(inboxItemId);
+      const admission =
+        dischargeAdmissionId !== undefined ? admissions.find((stay) => stay.id === dischargeAdmissionId) : undefined;
+      const subject = resolveAlertSubject(movement, movementId, umrnLookup, units, booking, admission);
       const kind = alertKindOf(inboxItemId);
       return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"}, ${subject.displayName} ${subject.umrn}`;
     };
@@ -798,6 +803,7 @@ function AlertsWorkspace() {
     umrnLookup,
     units,
     plannedAdmissions,
+    admissions,
     now,
   ]);
 
