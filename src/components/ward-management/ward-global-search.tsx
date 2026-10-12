@@ -835,18 +835,11 @@ export function WardGlobalSearch({
 
   /**
    * Only intercepts when a test has supplied `onNavigate`, and only for the plain click a real
-   * anchor would otherwise have handled itself when results are current. A modified click (middle
-   * button, ctrl/cmd, shift) on a current row is left completely alone in every case, real or tested, because that is the browser's own
+   * anchor would otherwise have handled itself. A modified click (middle button, ctrl/cmd, shift)
+   * on a current row is left completely alone in every case, real or tested, because that is the browser's own
    * "open in a new tab/window" gesture and this control has no business overriding it.
    */
   function onOptionClick(event: MouseEvent<HTMLAnchorElement>, href: string) {
-    // Keep stale rows mounted to avoid the popup flash, but never let any kind of activation
-    // navigate to a result for text that is no longer in the field.
-    if (!resultsCurrent) {
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
     if (event.defaultPrevented || event.button !== 0) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (!onNavigate) {
@@ -1036,7 +1029,17 @@ export function WardGlobalSearch({
                             aria-selected={resultsCurrent && activeIndex === index}
                             aria-disabled={!resultsCurrent || undefined}
                             tabIndex={-1}
-                            onClick={(event) => onOptionClick(event, item.href)}
+                            // Stale rows stay mounted to avoid the popup flash, but never open a
+                            // result for text that is no longer in the field. The footer link is
+                            // not a result, so it keeps working.
+                            onClick={(event) => {
+                              if (resultsCurrent) {
+                                onOptionClick(event, item.href);
+                                return;
+                              }
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
                             onAuxClick={(event) => {
                               if (!resultsCurrent) {
                                 event.preventDefault();

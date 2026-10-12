@@ -323,6 +323,18 @@ describe("WardGlobalSearch", () => {
     expect(onNavigate).not.toHaveBeenCalled();
   });
 
+  it("keeps Full patient search working while deferred results catch up", () => {
+    const { onNavigate } = renderSearch();
+    const input = screen.getByTestId("ward-global-search-input");
+    fireEvent.change(input, { target: { value: personQuery } });
+    deferred.held = personQuery;
+    fireEvent.change(input, { target: { value: "zzq-no-such-record-in-this-fixture-zzq" } });
+
+    fireEvent.click(screen.getByTestId("ward-global-search-full"), { button: 0 });
+
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+  });
+
   it("does not intercept a modified click — the browser's own new-tab gesture is left alone", () => {
     const { onNavigate } = renderSearch();
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: personQuery } });
