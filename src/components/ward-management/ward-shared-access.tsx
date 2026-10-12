@@ -194,24 +194,13 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     () => (pushKind === "connected" ? { kind: "connected", api: pushApi } : { kind: pushKind }),
     [pushKind, pushApi],
   );
-  const toolbar = useRef<HTMLElement>(null);
-  // Pinned side columns and panel heights size themselves against the window, so they need to
-  // know how much of it this bar takes (globals.css, --wf-data-bar-height). The bar only changes
-  // height when its text changes (a render) or the window width wraps it (a resize), so those two
-  // re-measure it; no ResizeObserver, which screens' own overflow tests stub as a single instance.
   // Once the header holds the Prototype pill there is no bar above the app, so it takes 0px.
-  const syncBarHeight = useCallback(() => {
-    const bar = toolbar.current;
-    document.documentElement.style.setProperty("--wf-data-bar-height", `${bar ? bar.offsetHeight : 0}px`);
-  }, []);
-  useEffect(syncBarHeight);
   useEffect(() => {
-    window.addEventListener("resize", syncBarHeight);
+    document.documentElement.style.setProperty("--wf-data-bar-height", "0px");
     return () => {
-      window.removeEventListener("resize", syncBarHeight);
       document.documentElement.style.removeProperty("--wf-data-bar-height");
     };
-  }, [syncBarHeight]);
+  }, []);
   const detail = `Invented records · ${
     connection.enabled
       ? connected
@@ -227,35 +216,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     <PhonePushAccessContext.Provider value={pushAccess}>
       <DataModeSlotContext.Provider value={setSlot}>
         <DataModeContext.Provider value={dataMode}>
-          {slot ? (
-            createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot)
-          ) : (
-            <section
-              ref={toolbar}
-              className={styles.toolbar}
-              aria-label="Ward Flow data mode"
-              data-data-mode="prototype"
-            >
-              <div>
-                <strong>Data mode: Prototype</strong>
-                <span className={styles.detail}>{detail}</span>
-              </div>
-              <div className={styles.controls} role="group" aria-label="Data mode controls">
-                <button
-                  type="button"
-                  aria-pressed={!showLiveInfo}
-                  onClick={() => {
-                    setShowLiveInfo(false);
-                  }}
-                >
-                  Prototype
-                </button>
-                <button type="button" aria-expanded={showLiveInfo} onClick={openLiveInfo}>
-                  Hospital records (unavailable)
-                </button>
-              </div>
-            </section>
-          )}
+          {slot ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot) : null}
           {showLiveInfo && (
             <section className={styles.notice} aria-label="Hospital records unavailable">
               <h1>Hospital records are not connected</h1>

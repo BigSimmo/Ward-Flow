@@ -33,7 +33,7 @@ function az(args, json = true) {
   const result = spawnSync(
     "az",
     [...args, "--subscription", config.subscriptionId, ...(json ? ["--output", "json"] : ["--output", "none"])],
-    { encoding: "utf8", maxBuffer: 4 * 1024 * 1024 },
+    { encoding: "utf8", maxBuffer: 4 * 1024 * 1024, shell: process.platform === "win32" },
   );
   if (result.error || result.status !== 0)
     throw new Error(
@@ -43,7 +43,11 @@ function az(args, json = true) {
 }
 // Account/ad commands do not accept --subscription; retain the selected identity and verify its tenant.
 function directory(args) {
-  const result = spawnSync("az", [...args, "--output", "json"], { encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });
+  const result = spawnSync("az", [...args, "--output", "json"], {
+    encoding: "utf8",
+    maxBuffer: 4 * 1024 * 1024,
+    shell: process.platform === "win32",
+  });
   if (result.error || result.status !== 0) throw new Error("Azure identity/directory access unavailable");
   return JSON.parse(result.stdout || "null");
 }
