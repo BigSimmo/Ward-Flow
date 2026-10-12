@@ -16,9 +16,10 @@
     position: sticky;
     top: var(--wf-header-height, 3.5rem);
     z-index: 6;
-    background-color: var(--wf-canvas);
+    /* A page whose ground is not the shared canvas sets --wf-pin-ground so the band matches it. */
+    background-color: var(--wf-pin-ground, var(--wf-canvas));
     box-shadow:
-      var(--wf-s-4) 0 0 var(--wf-canvas),
-      calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
+      var(--wf-s-4) 0 0 var(--wf-pin-ground, var(--wf-canvas)),
+      calc(-1 * var(--wf-s-4)) 0 0 var(--wf-pin-ground, var(--wf-canvas));
   }
 }

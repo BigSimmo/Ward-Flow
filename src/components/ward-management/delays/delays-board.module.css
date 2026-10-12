@@ -2747,3 +2747,28 @@ button.gLaneL:hover {
     font-variant-numeric: tabular-nums;
   }
 }
+
+/*
+ * Phone: one card only (Josh, 12 Oct 2026, iPhone). The owner pills and the blocker chips sit on the
+ * page, not in their own white cards, and the list keeps its one card. The pinned order switch's
+ * band takes this page's ground, so it no longer shows as a grey strip past the card edges.
+ * Nothing here applies above 48rem.
+ */
+@media (max-width: 48rem) {
+  /* Tripled with the attribute so it outranks delays.module.css's
+     `.screen[data-ward-design="v6"] [data-ward-primitive="panel"]`, which drew the cards back. */
+  .owners.owners.owners[data-ward-primitive],
+  .tableCard.tableCard.tableCard[data-ward-primitive] {
+    --wf-pin-ground: var(--ground, var(--wf-canvas));
+
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .owners.owners {
+    padding-inline: 0;
+  }
+}
