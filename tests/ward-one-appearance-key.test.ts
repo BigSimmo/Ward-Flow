@@ -63,9 +63,16 @@ const relative = (file: string) =>
     .join("/")
     .replace(`${process.cwd().split(sep).join("/")}/`, "");
 
+/**
+ * Each file is parsed once, while the file is collected, not inside a test. The tests below walk the
+ * same files four times, and under CI coverage one cold walk alone could outrun the 30s test timeout.
+ */
+const LITERALS = new Map(APP_FILES.map((file) => [file, literalsIn(file)]));
+const literalsOf = (file: string) => LITERALS.get(file) ?? literalsIn(file);
+
 /** Every file under `files` that spells `match` as a string literal. */
 function spelledIn(files: string[], match: (literal: string) => boolean): string[] {
-  return files.filter((file) => literalsIn(file).some(match)).map(relative);
+  return files.filter((file) => literalsOf(file).some(match)).map(relative);
 }
 
 describe("the appearance preference has exactly one key", () => {
@@ -88,7 +95,7 @@ describe("the appearance preference has exactly one key", () => {
 
   it("spells no appearance key of its own anywhere in ward source", () => {
     const own = SOURCE_FILES.flatMap((file) =>
-      literalsIn(file)
+      literalsOf(file)
         // The old change EVENT shared the prefix and was not a storage key; excluded by its suffix.
         .filter((literal) => APPEARANCE_KEY.test(literal) && !literal.endsWith("-change"))
         .map((literal) => `  ${literal} — ${relative(file)}`),
