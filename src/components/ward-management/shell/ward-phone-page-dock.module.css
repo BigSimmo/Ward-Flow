@@ -32,7 +32,7 @@
      var(--wf-dock-clear) instead of bottom: 0. The local class keeps the selector pure for the
      webpack CSS Modules build. */
   :global(body):has(.pageDock) {
-    --wf-dock-clear: calc(78px + max(8px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-clear: calc(72px + max(8px, env(safe-area-inset-bottom, 0px)));
   }
 
   :global(body):has(.pageDock) :global([data-wf-scroller]) {
