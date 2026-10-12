@@ -33,6 +33,7 @@ import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reduce
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
@@ -394,6 +395,8 @@ function AlertsWorkspace() {
     }
     trapFocus(e, modalRef.current);
   };
+
+  useWardPageScrollLock(isBroadcastModalOpen);
 
   useEffect(() => {
     if (!isBroadcastModalOpen) return;

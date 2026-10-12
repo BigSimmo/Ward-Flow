@@ -81,6 +81,7 @@ import {
   type RecordGap,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 
 /**
  * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work
@@ -721,7 +722,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               <ChevronRight size={16} aria-hidden="true" />
             </button>
             <Segmented<View>
-              className={styles.phoneViews}
+              className={`${styles.phoneViews} ${wardPin.pinnedSwitch}`}
               label="View"
               value={view}
               onChange={setView}

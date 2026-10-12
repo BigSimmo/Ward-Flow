@@ -82,6 +82,7 @@ import {
 } from "@/components/wf";
 
 import thirdEdition from "./governance-third-edition.module.css";
+import wardPin from "./ward-pinned-switch.module.css";
 
 /**
  * TWO NEW GOVERNANCE PANELS — built to sit inside `GovernanceView`
@@ -1242,7 +1243,7 @@ function GovernanceSession({
         }
       />
       <Segmented<"review" | "gaps" | "audit">
-        className={thirdEdition.phoneTabs}
+        className={`${thirdEdition.phoneTabs} ${wardPin.pinnedSwitch}`}
         label="Governance views"
         value={phoneTab}
         onChange={(next) => changeTab(next)}

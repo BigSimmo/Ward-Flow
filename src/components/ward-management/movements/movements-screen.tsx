@@ -83,6 +83,7 @@ import { MovementHorizonGantt, rankCorridorPairs } from "./movement-horizon-gant
 import { isCoordinatorStep, movementNextStep, nextStepTarget } from "./movement-next-step";
 import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ArrivalsAheadList } from "./arrivals-ahead-list";
 import arrivalsStyles from "./arrivals-ahead-list.module.css";
@@ -1185,6 +1186,7 @@ export function MovementsScreen() {
                 disclaiming. */}
             <Card aria-label="Movement worklist" data-ward-primitive="panel" className={styles.wlCard}>
               <CardHead
+                className={wardPin.pinnedSwitch}
                 icon={ArrowRightLeft}
                 title="Movement worklist"
                 action={

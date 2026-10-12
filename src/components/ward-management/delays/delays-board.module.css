@@ -2636,3 +2636,114 @@ button.gLaneL:hover {
   flex: 0 0 auto;
   white-space: nowrap;
 }
+
+/*
+ * Phone compact controls (Josh, 12 Oct 2026). The owner pills, the order switch and the filter chips
+ * take the one shared phone size (`--wf-phone-*` in the v6 tokens): 32px pills, a 34px track with
+ * 28px options, 13px 600 labels and 12px mono counts. Each face stays small and a transparent hit
+ * area reaches the 48px tap floor; the scrolling rows carry that hit area in their own padding so it
+ * is not clipped. The order switch pins under the phone header while the list scrolls (the shared
+ * `pinnedSwitch`, as Home's queue switch). Nothing here applies above 48rem.
+ */
+@media (max-width: 48rem) {
+  .owners {
+    gap: var(--wf-phone-pill-gap);
+    padding-block: var(--wf-phone-pill-hit);
+  }
+
+  .own,
+  .own:first-child,
+  .own:nth-child(3),
+  .own:nth-child(n + 3) {
+    position: relative;
+    gap: var(--wf-phone-pill-gap);
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+  }
+
+  .own::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+
+  .ownTop {
+    gap: var(--wf-phone-pill-gap);
+  }
+
+  .ownName {
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .ownTop b,
+  .ownSubCount {
+    font: 600 var(--wf-phone-pill-count-fs) / 1 var(--wf-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The order switch pins through the shared `pinnedSwitch`; this sets its band. */
+  .tableCard > .chead:first-child {
+    margin-bottom: 0;
+    padding: var(--wf-s-2) 0;
+  }
+
+  .tableCard > .chead:first-child > .seg {
+    padding: 2px;
+  }
+
+  .tableCard > .chead .seg button {
+    position: relative;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .tableCard > .chead .seg button::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
+  }
+
+  .fRow {
+    gap: var(--wf-phone-pill-gap);
+    margin-bottom: var(--wf-s-1);
+    padding-block: var(--wf-phone-pill-hit);
+  }
+
+  .chip,
+  .fRow > .seg > button,
+  .fRow > .chip,
+  .side[data-part] .seg button {
+    position: relative;
+    gap: var(--wf-phone-pill-gap);
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .chip::before,
+  .fRow > .seg > button::before,
+  .side[data-part] .seg button::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+
+  .side[data-part] .seg {
+    gap: var(--wf-phone-pill-gap);
+  }
+
+  .fRow .k,
+  .chip .k {
+    font-size: var(--wf-phone-pill-count-fs);
+    font-variant-numeric: tabular-nums;
+  }
+}

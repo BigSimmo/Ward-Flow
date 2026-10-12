@@ -119,6 +119,7 @@ import {
 import styles from "./referrals.module.css";
 import a from "./referral-board.module.css";
 import p from "./referral-board-phone.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 import { ReferralPhoneCard, ReferralPhoneChips, ReferralPhoneHero, ReferralPhoneTop } from "./referral-board-phone";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { useIsPhone } from "@/components/wf";
@@ -749,6 +750,20 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     </>
   );
 
+  const viewSwitch = (
+    <Tabs
+      label="Referral views"
+      idPrefix="ward-referral-view"
+      className={a.viewTabs}
+      value={view}
+      onChange={setView}
+      items={[
+        { id: "queue", label: "Queue", count: queued.length },
+        { id: "history", label: "History", count: decidedTotal },
+      ]}
+    />
+  );
+
   return (
     <div
       className={styles.screen}
@@ -904,18 +919,11 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           ) : null}
           <div className={styles.registerQueue} role="region" aria-label="Referral queues" tabIndex={0}>
             <Card className={cx(styles.v6QueueCard, a.queueCard)}>
+              {/* Phone (Josh, 12 Oct 2026): Queue and History pin under the phone header, as Home's
+                  queue switch does. The row sits in the queue card beside the list it pins over. */}
+              {phoneLayout ? <div className={cx(a.phoneViewRow, wardPin.pinnedSwitch)}>{viewSwitch}</div> : null}
               <div className={a.toolbar}>
-                <Tabs
-                  label="Referral views"
-                  idPrefix="ward-referral-view"
-                  className={a.viewTabs}
-                  value={view}
-                  onChange={setView}
-                  items={[
-                    { id: "queue", label: "Queue", count: queued.length },
-                    { id: "history", label: "History", count: decidedTotal },
-                  ]}
-                />
+                {phoneLayout ? null : viewSwitch}
                 {/* The search narrows queue rows only, so History (at most ten rows) does not offer it. */}
                 {view === "queue" ? (
                   <TextInput

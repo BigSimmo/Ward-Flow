@@ -23,6 +23,7 @@ import {
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
@@ -205,6 +206,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     onMessage: triggerToast,
     sayRefusal: wardSafeRejectionReason,
   });
+
+  // Hooks run before the early return below; the accept sheet only opens on a ward's incoming answer.
+  useWardPageScrollLock(acceptModalOpen && unit !== undefined);
 
   if (!unit) {
     return (

@@ -113,6 +113,7 @@ import {
 } from "./ward-bed-board-logic";
 import { layoutBedNumbers } from "./ward-bed-layout";
 import type { BedItem } from "./ward-beds-matrix";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   LEAVE_BED_OPEN_WARNING_MINUTES,
@@ -340,6 +341,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }, [now, rejections.length]);
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
+  // The capacity confirmation does not join the sheet stack, so it holds the page still itself.
+  useWardPageScrollLock(confirmNumbersOpen);
   const [drawerLeavingDestination, setDrawerLeavingDestination] =
     useState<LeavingDestination>("discharged-to-the-community");
   // A destination belongs to the bed it was chosen for: opening or stepping to another bed starts

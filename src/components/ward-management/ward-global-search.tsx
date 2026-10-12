@@ -9,9 +9,11 @@ import {
   useDeferredValue,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
@@ -331,6 +333,29 @@ export function clearGlobalSearchRecents() {
 /** The header's bottom edge, so the scrim and palette start under the bar rather than covering it. */
 /** The width where the open search is a full screen sheet (`.popup` in the module's phone block). */
 const PHONE_SEARCH_QUERY = "(max-width: 48rem)";
+
+/** The phone sheet's top: the open field's bottom edge (the bar's top or the status bar, plus the bar). */
+const PHONE_SHEET_TOP = "calc(max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px)) + var(--wgs-bar-h, 3.5rem))";
+
+/*
+ * Whether the phone sheet is showing, read from the same query as the stylesheet. The phone sheet
+ * has no preview pane, so the preview (which derives a patient's stage, waits and links) is not
+ * built there at all rather than built and hidden on every keystroke.
+ */
+function subscribePhone(onChange: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
+  const query = window.matchMedia(PHONE_SEARCH_QUERY);
+  query.addEventListener?.("change", onChange);
+  return () => query.removeEventListener?.("change", onChange);
+}
+
+function phoneSnapshot() {
+  return typeof window.matchMedia === "function" && window.matchMedia(PHONE_SEARCH_QUERY).matches === true;
+}
+
+function useIsPhoneSearch() {
+  return useSyncExternalStore(subscribePhone, phoneSnapshot, () => false);
+}
 
 function headerBottom(root: HTMLElement | null): number {
   if (!root) return 0;
@@ -653,7 +678,8 @@ export function WardGlobalSearch({
 
   /** The preview follows the pointer, then the keyboard, then falls back to the first row. */
   const previewIndex = hoverIndex >= 0 ? hoverIndex : activeIndex >= 0 ? activeIndex : 0;
-  const previewItem = refusal ? undefined : options[previewIndex];
+  const isPhone = useIsPhoneSearch();
+  const previewItem = refusal || isPhone ? undefined : options[previewIndex];
 
   /*
    * D1-style fix, same reason `PatientTypeahead` carries it: the list clips with its own scrollbar,
@@ -670,8 +696,17 @@ export function WardGlobalSearch({
    * header makes it the containing block for anything fixed inside it, so a fixed palette mounted
    * in place would be clipped to the bar. Its top is measured from the bar's own bottom edge, which
    * also follows the phone bar as it condenses on scroll.
+   *
+   * A LAYOUT EFFECT, so the first painted frame already has the measured top and bar height: with a
+   * plain effect the phone sheet painted one frame at the top of the screen over the field, then
+   * jumped (Josh, 12 Oct 2026). Every later measure is one per animation frame, and a scroll inside
+   * the palette's own list is ignored, so scrolling results does not re-measure the header.
+   *
+   * The on-screen keyboard's height (layout viewport minus the visual viewport) is written straight
+   * to the palette as `--wgs-kb`, not kept in state, so a keyboard resize never re-renders the rows.
+   * The phone sheet pads its bottom by it, so the footer sits just above the keyboard.
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!showPopup) return;
     let frame = 0;
     const measure = () => {
@@ -679,9 +714,17 @@ export function WardGlobalSearch({
       setTop(headerBottom(rootRef.current));
       const box = headerBox(rootRef.current);
       setBarBox((current) => (current.top === box.top && current.height === box.height ? current : box));
+      const viewport = window.visualViewport;
+      const keyboard =
+        viewport && viewport.scale <= 1
+          ? Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop))
+          : 0;
+      paletteRef.current?.style.setProperty("--wgs-kb", `${keyboard}px`);
     };
-    const schedule = () => {
-      if (!frame) frame = window.requestAnimationFrame(measure);
+    const schedule = (event?: Event) => {
+      const target = event?.target;
+      if (target instanceof Node && paletteRef.current?.contains(target)) return;
+      if (!frame) frame = window.requestAnimationFrame(() => measure());
     };
     measure();
     window.addEventListener("resize", schedule);
@@ -884,7 +927,15 @@ export function WardGlobalSearch({
       <div
         ref={paletteRef}
         className={styles.popup}
-        style={{ top: top + 8 }}
+        // The floating palette sits 8px under the bar. The phone sheet starts at the bottom of the
+        // open field, which ward-bar.module.css paints from the top of the screen (under the status
+        // bar) to the bar's bottom edge, so the two meet with no gap and no overlap.
+        style={
+          {
+            top: isPhone ? PHONE_SHEET_TOP : top + 8,
+            ...(barBox.height > 0 ? { "--wgs-bar-h": `${barBox.height}px`, "--wgs-bar-top": `${barBox.top}px` } : {}),
+          } as CSSProperties
+        }
         data-testid="ward-global-search-popup"
         data-start={isStart || undefined}
         // Clicking inside keeps focus in the header field, so the keyboard contract never breaks

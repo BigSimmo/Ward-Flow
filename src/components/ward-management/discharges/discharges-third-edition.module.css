@@ -2282,3 +2282,46 @@
     forced-color-adjust: none;
   }
 }
+
+/* Phone (Josh, 12 Oct 2026): Now and History pin under the phone header with the filter button,
+ * through the shared `pinnedSwitch` (ward-pinned-switch.module.css), as Home's queue switch does.
+ * The switch takes the shared phone track (`--wf-phone-*`): 34px with 28px options, 13px 600 labels;
+ * each option's transparent hit area reaches the 48px tap floor. Nothing here applies above 48rem. */
+@media screen and (max-width: 48rem) {
+  .phToolbar {
+    padding: var(--wf-s-2) 0;
+  }
+
+  .phToolbar > .populationSwitch {
+    padding: 2px;
+  }
+
+  .phToolbar > .populationSwitch button {
+    position: relative;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .phToolbar > .populationSwitch button::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
+  }
+
+  /* The filter button matches the track's 34px face; its hit area stays a 48px square. */
+  .phFilterButton {
+    position: relative;
+    width: var(--wf-phone-seg-h);
+    height: var(--wf-phone-seg-h);
+    margin-inline-end: var(--wf-phone-seg-band);
+  }
+
+  .phFilterButton::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-band));
+  }
+}

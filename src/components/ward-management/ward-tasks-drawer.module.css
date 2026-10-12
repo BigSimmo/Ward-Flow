@@ -1005,23 +1005,39 @@
     display: block;
   }
 
+  /* The filter switch takes the shared phone segmented size (`--wf-phone-seg-*`): a 34px track
+     with 28px options, each with a transparent 48px hit area. */
   .segmented {
     display: flex;
     width: 100%;
+    height: var(--wf-phone-seg-h);
     box-sizing: border-box;
+    margin-block: var(--wf-phone-seg-band);
     padding: 2px;
     border-radius: var(--wf-r-pill);
   }
 
   .segment {
+    position: relative;
     flex: 1 1 0;
     justify-content: center;
     min-width: 0;
-    height: 44px;
-    min-height: 44px;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
     padding: 0 var(--wf-s-2);
     border-radius: var(--wf-r-pill);
-    font-size: var(--wf-fs-13);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .segment::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
+  }
+
+  .segment .count {
+    font-size: var(--wf-phone-pill-count-fs);
   }
 
   .filterMeta {

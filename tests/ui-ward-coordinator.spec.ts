@@ -41,6 +41,10 @@ async function gotoCoordinator(page: Page) {
  * inside them; idempotent, so it is safe after every queue selection.
  */
 async function openShortlistSections(shortlist: Locator) {
+  // L3 (site review, 12 Oct 2026): once a ward has accepted, the card leads with the next step and
+  // keeps the bed list behind "Find another bed".
+  const findAnother = shortlist.getByTestId("ward-shortlist-find-another-bed");
+  if ((await findAnother.count()) > 0) await findAnother.click();
   const toggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -309,7 +313,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const phoneDrawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await expect(phoneDrawer).toBeVisible();
     await phoneDrawer.locator('[data-testid*="-WF-005"]').first().click();
-    await expect(page.getByTestId("ward-shortlist-refer")).toBeInViewport();
+    // L3: an accepted movement leads with its next step instead of Refer.
+    await expect(
+      page.getByTestId("ward-shortlist-refer").or(page.getByTestId("ward-shortlist-next-step")).first(),
+    ).toBeInViewport();
   });
 
   test("orders by clinical tier first and labels the score as operational, not clinical", async ({ page }) => {

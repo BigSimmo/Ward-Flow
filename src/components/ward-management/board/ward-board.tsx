@@ -63,6 +63,7 @@ import { parseReleaseDayInstant } from "@/components/ward-management/ward/releas
 import { asAtStamp, WardDailySheet } from "./ward-daily-sheet";
 import { StrandedPrompts } from "./stranded-prompts";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 
 import styles from "./board.module.css";
 
@@ -969,6 +970,8 @@ export function WardBoard({
     item?: ShiftTileItem;
     admissionId?: string;
   } | null>(null);
+  // Neither dialog joins the sheet stack, so each holds the page still itself (phone, 12 Oct 2026).
+  useWardPageScrollLock(blockerDialogItem !== null || pendingConfirm !== null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const blockerDialogRef = useRef<HTMLDivElement | null>(null);
   const blockerCloseBtnRef = useRef<HTMLButtonElement | null>(null);

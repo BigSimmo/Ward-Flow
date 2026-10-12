@@ -77,6 +77,7 @@ import {
 import { SupportNotificationChecklist } from "../movements/support-notification-checklist";
 import styles from "./discharges.module.css";
 import pageStyles from "./discharges-third-edition.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
@@ -1264,7 +1265,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           barAside={isPhone ? undefined : populationSwitch}
         />
         {isPhone ? (
-          <div className={pageStyles.phToolbar}>
+          <div className={`${pageStyles.phToolbar} ${wardPin.pinnedSwitch}`}>
             {populationSwitch}
             <button
               type="button"

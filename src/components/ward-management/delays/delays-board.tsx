@@ -88,6 +88,7 @@ import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
 import styles from "./delays-board.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -1734,7 +1735,7 @@ export function DelaysBoard({
               data-ward-primitive="panel"
               tabIndex={-1}
             >
-              <div className={styles.chead}>
+              <div className={`${styles.chead} ${wardPin.pinnedSwitch}`}>
                 <h2>{flat ? "Waiting" : "Waiting by blocker"}</h2>
                 <span
                   className={styles.meta}

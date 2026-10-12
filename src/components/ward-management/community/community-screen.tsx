@@ -1,6 +1,7 @@
 "use client";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
@@ -573,6 +574,8 @@ export function CommunityScreen({
     type: "review" | "assign";
     referral: Referral;
   } | null>(null);
+  // These dialogs do not join the sheet stack, so they hold the page still themselves (phone).
+  useWardPageScrollLock(transportBookFor !== undefined || transportCancelFor !== undefined || activeModal !== null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
   // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.

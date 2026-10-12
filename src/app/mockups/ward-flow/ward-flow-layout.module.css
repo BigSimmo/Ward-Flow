@@ -123,6 +123,41 @@
   }
 }
 
+/*
+ * Phone: the page scrolls inside the work column, not the window (Josh, 12 Oct 2026, iPhone
+ * Safari: "stop the bottom bar moving around like that when scrolling"). When the window scrolled,
+ * Safari collapsed and re-expanded its toolbar mid-scroll, which moved the bottom of the layout
+ * viewport, so the fixed dock jumped up and down and page content showed beneath it. With the
+ * window held still the toolbar never collapses and the dock and header stay put. This is the same
+ * fixed-height column the desktop already uses; tablet (48rem to 1000px) still scrolls the window.
+ * The row and column are positioned so screen-reader-only text cannot stretch the document.
+ * Screen only, so a printout is never cut to one screen's height.
+ */
+@media screen and (max-width: 48rem) {
+  :global(html):has(.shellRow) {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .shellRow {
+    position: relative;
+    height: calc(100dvh - var(--wf-data-bar-height, 0px));
+    min-height: 0;
+    max-height: calc(100dvh - var(--wf-data-bar-height, 0px));
+    overflow: hidden;
+  }
+
+  .shellContent {
+    position: relative;
+    height: 100%;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* Manual Ward preferences apply to route content without changing the host app or defaults. */
 :global(html[data-reduced-motion]) .shellRow,
 :global(html[data-reduced-motion]) .shellRow *,

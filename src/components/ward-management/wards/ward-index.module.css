@@ -716,20 +716,31 @@
     scrollbar-width: none;
   }
 
+  /* The Filters pill takes the shared phone pill size (`--wf-phone-*`): a 32px face with a
+     transparent 48px hit area. */
   .filtersToggle {
+    position: relative;
     display: inline-flex;
+    align-self: center;
     align-items: center;
-    gap: var(--wf-s-2);
-    min-height: var(--wf-touch, 44px);
-    padding: 0 var(--wf-s-3);
+    gap: var(--wf-phone-pill-gap);
+    height: var(--wf-phone-pill-h);
+    padding: 0 var(--wf-phone-pill-px);
     border: 1px solid var(--wf-line-ctl);
     border-radius: var(--wf-r-pill);
     background: var(--wf-surface);
     color: var(--wf-ink-1);
     font: inherit;
-    font-size: var(--wf-fs-13);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
+  }
+
+  .filtersToggle::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 
   .filtersToggle[aria-expanded="true"] {

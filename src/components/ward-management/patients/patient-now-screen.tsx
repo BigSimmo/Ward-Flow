@@ -1,7 +1,8 @@
 "use client";
 
 import { isTierOverdue } from "../ward-shared-figures";
-import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { scrollWardPageToTop, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -20,7 +21,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent a
 
 import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
 import { PatientRecordOverview } from "./patient-record-overview";
-import { PatientFlightHeader } from "./patient-flight-header";
+import { PatientFlightHeader, PatientRecordTabsRow } from "./patient-flight-header";
+import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -262,6 +264,7 @@ export function PatientNowScreen({
   const [showArrivalTimeModal, setShowArrivalTimeModal] = useState(false);
   const [showUploadFormsModal, setShowUploadFormsModal] = useState(false);
   const [showClearanceModal, setShowClearanceModal] = useState(false);
+  useWardPageScrollLock(showClearanceModal);
   const clearanceTriggerRef = useRef<HTMLButtonElement | null>(null);
   const clearanceModalRef = useRef<HTMLDivElement | null>(null);
   const [clearanceDraft, setClearanceDraft] = useState<"" | "cleared" | "not-cleared">("");
@@ -1363,7 +1366,7 @@ export function PatientNowScreen({
                   }
                   onOpen={() => {
                     setActiveTab(tab.key);
-                    requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+                    requestAnimationFrame(scrollWardPageToTop);
                   }}
                 />
               ))}
@@ -1371,6 +1374,32 @@ export function PatientNowScreen({
         ) : null
       }
     />
+  );
+
+  /* The record tabs. On a phone they render beside the record (below), pinned under the header. */
+  const recordTabs = (
+    <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
+      {(isPhone ? phoneTabs : tabs).map((tab) => (
+        <button
+          key={tab.key}
+          className={styles.v6Tab}
+          type="button"
+          role="tab"
+          id={`pntab-${tab.key}`}
+          aria-controls={`pnpane-${tab.key}`}
+          aria-selected={activeTab === tab.key}
+          tabIndex={activeTab === tab.key ? 0 : -1}
+          onClick={() => setActiveTab(tab.key)}
+        >
+          {tab.label}
+          {tab.count !== undefined ? (
+            <span className={styles.v6TabCount} id={`pncount-${tab.key}`}>
+              {tab.count}
+            </span>
+          ) : null}
+        </button>
+      ))}
+    </div>
   );
 
   return (
@@ -1740,32 +1769,7 @@ export function PatientNowScreen({
                 </ol>
               ) : null
             }
-            tabs={
-              <>
-                <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
-                  {(isPhone ? phoneTabs : tabs).map((tab) => (
-                    <button
-                      key={tab.key}
-                      className={styles.v6Tab}
-                      type="button"
-                      role="tab"
-                      id={`pntab-${tab.key}`}
-                      aria-controls={`pnpane-${tab.key}`}
-                      aria-selected={activeTab === tab.key}
-                      tabIndex={activeTab === tab.key ? 0 : -1}
-                      onClick={() => setActiveTab(tab.key)}
-                    >
-                      {tab.label}
-                      {tab.count !== undefined ? (
-                        <span className={styles.v6TabCount} id={`pncount-${tab.key}`}>
-                          {tab.count}
-                        </span>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
-              </>
-            }
+            tabs={recordTabs}
             actions={
               <>
                 {modeMeta.quiet ? null : (
@@ -1838,6 +1842,10 @@ export function PatientNowScreen({
             </Card>
           ) : null}
         </section>
+
+        {/* Phone (Josh, 12 Oct 2026): the record tabs pin under the phone header, as Home's queue
+            switch does. They sit in the page column beside the record they pin over. */}
+        {isPhone ? <PatientRecordTabsRow tabs={recordTabs} className={pinnedStyles.pinnedSwitch} /> : null}
 
         <section className={styles.v6Main} id="pnTabs" aria-label="The record">
           <div className={styles.v6TabBody} id="pnBody" tabIndex={0}>

@@ -465,3 +465,111 @@
 .segItem {
   min-height: var(--wf-tablet-tap, 0px);
 }
+
+/* ── Phone compact size (Josh, 12 Oct 2026) ────────────────────────────────────────────────────────
+ * Every phone segmented control and filter chip reads at one compact size, set once in the v6 tokens
+ * (`--wf-phone-*`): a 34px track with 28px options, 32px chips, 13px 600 labels. The tap target stays
+ * at the 48px floor through a transparent hit area, never a bigger face.
+ *
+ * The phone track still scrolls sideways, and a scroller clips whatever leaves its box, so the track
+ * box itself is the full 48px tall with a transparent band above and below (still shorter than the
+ * old 54px track). The 1px edged pill is painted as a background inside that band, which lets each
+ * option's hit area run the full 48px without being clipped. A chip row does the same with padding.
+ * A page that pins the track can give it a `background-color` to hide the list under the band.
+ * Nothing here applies above 48rem. */
+@media (max-width: 48rem) {
+  .seg {
+    --wf-seg-r: calc(var(--wf-phone-seg-h) / 2);
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--spacing-tap, 3rem);
+    padding: var(--wf-phone-seg-band) 3px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background-color: transparent;
+    background-image:
+      radial-gradient(
+        circle at var(--wf-seg-r) 50%,
+        var(--wf-track) calc(var(--wf-seg-r) - 1px),
+        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        transparent var(--wf-seg-r)
+      ),
+      radial-gradient(
+        circle at var(--wf-seg-r) 50%,
+        var(--wf-track) calc(var(--wf-seg-r) - 1px),
+        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        transparent var(--wf-seg-r)
+      ),
+      linear-gradient(
+        to bottom,
+        transparent var(--wf-phone-seg-band),
+        var(--wf-line) var(--wf-phone-seg-band),
+        var(--wf-line) calc(var(--wf-phone-seg-band) + 1px),
+        var(--wf-track) calc(var(--wf-phone-seg-band) + 1px),
+        var(--wf-track) calc(100% - var(--wf-phone-seg-band) - 1px),
+        var(--wf-line) calc(100% - var(--wf-phone-seg-band) - 1px),
+        var(--wf-line) calc(100% - var(--wf-phone-seg-band)),
+        transparent calc(100% - var(--wf-phone-seg-band))
+      );
+    background-position:
+      left center,
+      right center,
+      center;
+    background-size:
+      var(--wf-phone-seg-h) 100%,
+      var(--wf-phone-seg-h) 100%,
+      calc(100% - var(--wf-phone-seg-h)) 100%;
+    background-repeat: no-repeat;
+  }
+
+  .seg .segItem {
+    position: relative;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .seg .segItem::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
+  }
+
+  .seg .k,
+  .chip .k {
+    font-size: var(--wf-phone-pill-count-fs);
+  }
+
+  .chips {
+    flex-wrap: nowrap;
+    gap: var(--wf-phone-pill-gap);
+    padding-block: var(--wf-phone-pill-hit);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chip {
+    position: relative;
+    flex: 0 0 auto;
+    height: var(--wf-phone-pill-h);
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .chip::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+}

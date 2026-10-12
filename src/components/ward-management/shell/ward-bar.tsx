@@ -367,15 +367,19 @@ export function isPendingNavigation(href: string, current: string): boolean {
 const SCROLLED_AFTER_PX = 8;
 const RESTING_BELOW_PX = 2;
 
-function useBarScrolled(enabled: boolean): boolean {
+function useBarScrolled(barRef: RefObject<HTMLElement | null>, enabled: boolean): boolean {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     if (!enabled) return;
+    // Phone scrolls inside the work column (`[data-wf-scroller]`), not the window, so iOS Safari's
+    // toolbar never collapses and the fixed dock stays put (Josh, 12 Oct 2026). The window is still
+    // watched in case a page is ever shown without the shell's column.
+    const scroller = barRef.current?.closest<HTMLElement>("[data-wf-scroller]") ?? null;
     let frame = 0;
     const update = () => {
       frame = 0;
-      const offset = window.scrollY;
+      const offset = Math.max(scroller?.scrollTop ?? 0, window.scrollY);
       // Separate entry and exit thresholds avoid flicker during small scroll reversals or bounce.
       setScrolled((previous) => offset > (previous ? RESTING_BELOW_PX : SCROLLED_AFTER_PX));
     };
@@ -383,12 +387,14 @@ function useBarScrolled(enabled: boolean): boolean {
       if (!frame) frame = window.requestAnimationFrame(update);
     };
     frame = window.requestAnimationFrame(update);
+    scroller?.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
+      scroller?.removeEventListener("scroll", onScroll);
       window.removeEventListener("scroll", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [enabled]);
+  }, [barRef, enabled]);
 
   return enabled && scrolled;
 }
@@ -1178,10 +1184,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const activeServiceBadgeLabel = activeService ?? "Statewide";
   const activityHasUnread = unreadNoticeCount > 0;
 
-  const barScrolled = useBarScrolled(isPhone);
   // A page that opens on the shared Hero bands the header (v10 7.1). On phone the lean bar sits in
   // hero ink at rest and hands over to its own solid scrolled face (v10 Home mockup, 11 Oct 2026).
   const barRef = useRef<HTMLElement>(null);
+  const barScrolled = useBarScrolled(barRef, isPhone);
   const bandHero = useWfBandActive();
   const bandScrolled = useBandScrolled(barRef, bandHero && !isPhone);
   const bandState = !bandHero
