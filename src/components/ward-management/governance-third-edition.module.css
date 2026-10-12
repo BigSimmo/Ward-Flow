@@ -892,11 +892,6 @@
   color: var(--wf-dim);
 }
 
-/* Preview controls on the hero are dashed and carry their reason. */
-.previewButton {
-  border-style: dashed;
-}
-
 /* ---------- Phone tree (v10): its own design at 390 ---------- */
 .phoneScreen {
   display: flex;
@@ -1153,8 +1148,23 @@
   box-shadow: none;
 }
 
+/* Audit trust item: the sheet opens with neither answer picked. Only a checked answer takes the
+   accent border and tint; a focus ring sits outside the box so it cannot read as a selection. */
+.phoneDecision [role="radio"][aria-checked="false"] {
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface);
+  font-weight: 500;
+}
+
 .phoneDecision [role="radio"][aria-checked="true"] {
   border: 2px solid var(--wf-accent);
+  background: var(--wf-accent-tint);
+}
+
+.phoneDecision [role="radio"]:focus-visible {
+  box-shadow: none;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 /* Device audit 11 Oct 2026: the safety-incident line is a notice, so plain quiet text on the hero. */

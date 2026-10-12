@@ -1,5 +1,6 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BedDouble, Car, Check, Clock, House, Plane } from "lucide-react";
@@ -459,9 +460,7 @@ export function ReturnPlan({
                 </>
               )}
             </span>
-            <Button variant="sec" size="sm" disabledReason="Not wired in this prototype." reasonDisplay="tooltip">
-              Send to ward
-            </Button>
+            <NotWiredButton variant="sec" size="sm" label="Send to ward" />
             <Button
               variant="pri"
               size="sm"
@@ -532,9 +531,7 @@ function RecordedReturn({
             <span className={styles.need}>
               <StatusGlyph tone="neutral" size={10} /> Awaiting the receiving ward
             </span>
-            <Button variant="sec" size="sm" disabledReason="Not wired in this prototype." reasonDisplay="tooltip">
-              Mark ward agreed
-            </Button>
+            <NotWiredButton variant="sec" size="sm" label="Mark ward agreed" />
           </>
         )}
       </div>

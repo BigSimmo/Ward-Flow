@@ -26,6 +26,7 @@ import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/
 import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import type { HealthService } from "@/components/ward-management/ward-model";
@@ -130,7 +131,9 @@ export function StatisticsWardsIndexScreen() {
           service: site?.service as HealthService | undefined,
           beds: unit.beds,
           occupied: states.occupied,
-          rate: unit.beds > 0 ? Math.round((states.occupied / unit.beds) * 100) : 0,
+          // L1: the rate is the one occupancy count, Occupied + Pulled (`ward-occupancy.ts`).
+          inUse: wardBedsInUse(unit, admissions, bedReleases),
+          rate: unit.beds > 0 ? Math.round((wardBedsInUse(unit, admissions, bedReleases) / unit.beds) * 100) : 0,
           ready: states.ready,
           pending: bedsPendingPreparation(unit.id, bedReleases),
           pulled: states.pulled,
@@ -348,7 +351,7 @@ export function StatisticsWardsIndexScreen() {
                           {row.rate}%
                         </span>
                       }
-                      time={`${row.occupied} of ${row.beds}`}
+                      time={`${row.inUse} of ${row.beds}`}
                       href={wardStatisticsHref(row.id)}
                     />
                   );

@@ -45,7 +45,10 @@ export type CensusGroup = "wait" | "found" | "move" | "ward" | "off";
 export type CensusGlyph = "act" | "risk" | "done" | "move" | "wait" | "off";
 
 export const CENSUS_GROUPS: readonly { id: CensusGroup; label: string; short: string; glyph: CensusGlyph }[] = [
-  { id: "wait", label: "Waiting for a bed", short: "Waiting", glyph: "wait" },
+  // L1 (site review, 12 Oct 2026): "Waiting" here read as Home's "70 waiting" (people waiting in an
+  // ED). This group is people with no bed yet: ED waits with no accepted ward, queued referrals and
+  // ward waiting lists, so it carries its own noun.
+  { id: "wait", label: "Waiting for a bed", short: "No bed yet", glyph: "wait" },
   { id: "found", label: "Bed found", short: "Bed found", glyph: "done" },
   { id: "move", label: "Moving", short: "Moving", glyph: "move" },
   { id: "ward", label: "On a ward", short: "On a ward", glyph: "done" },

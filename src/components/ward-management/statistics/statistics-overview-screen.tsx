@@ -43,6 +43,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { axisMax } from "./statistics-axis";
 import { occupiedBeds } from "./statistics-occupancy";
+import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import {
   PhoneBody,
   PhoneFacts,
@@ -133,11 +134,13 @@ export function StatisticsOverviewScreen() {
 
   const occupancy = occupiedBeds(units, admissions, bedReleases, leaveBeds);
   const totalBeds = units.reduce((sum, unit) => sum + unit.beds, 0);
-  const occupiedShare = totalBeds > 0 ? (occupancy.occupied / totalBeds) * 100 : 0;
+  // L1 (site review, 12 Oct 2026): the one statewide occupancy figure Home's ring prints
+  // (`wardOccupancy`, Occupied + Pulled), so this page reads 85.2% where it read 79.6%.
+  const occupiedShare = wardOccupancy(units, admissions, bedReleases).percent ?? 0;
 
   const unitRows = units.map((unit) => {
     const states = bedStates(unit, admissions, bedReleases, leaveBeds);
-    const rate = unit.beds > 0 ? Math.round((states.occupied / unit.beds) * 100) : 0;
+    const rate = unit.beds > 0 ? Math.round(((states.occupied + states.pulled) / unit.beds) * 100) : 0;
     return { unit, states, rate, service: siteByCode(unit.siteCode)?.service ?? "Other" };
   });
   const wardsOverLine = unitRows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length;
@@ -152,6 +155,7 @@ export function StatisticsOverviewScreen() {
     const sum = (pick: (row: (typeof rows)[number]) => number) => rows.reduce((total, row) => total + pick(row), 0);
     const beds = sum((row) => row.unit.beds);
     const occupied = sum((row) => row.states.occupied);
+    const inUse = sum((row) => row.states.occupied + row.states.pulled);
     const ready = sum((row) => row.states.ready);
     const closed = sum((row) => row.states.closed);
     const sites = Array.from(
@@ -166,7 +170,7 @@ export function StatisticsOverviewScreen() {
       closed,
       headroom: ready + closed,
       over: rows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length,
-      share: beds > 0 ? occupied / beds : 0,
+      share: beds > 0 ? inUse / beds : 0,
       hospitals: sites.length > 0 ? sites.join(", ") : "Regional units",
     };
   });
@@ -176,13 +180,13 @@ export function StatisticsOverviewScreen() {
       section={section}
       navSection="overview"
       testId="ward-statistics-overview-screen"
-      title={`${occupancy.occupied} of ${totalBeds} beds in use`}
+      title={`${occupancy.inUse} of ${totalBeds} beds in use`}
       now={now}
       paused={live.paused}
       onTogglePause={live.togglePause}
       phone={{
         lead: <OccupancyRing percent={occupiedShare} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope="Statewide" />,
-        title: `${occupancy.occupied} of ${totalBeds} in use`,
+        title: `${occupancy.inUse} of ${totalBeds} in use`,
         sub: `${preparingCount} being made ready`,
         stats: (
           <>
@@ -199,7 +203,7 @@ export function StatisticsOverviewScreen() {
       stats={
         <>
           <HeroStat value={totalBeds} label="Inpatient beds" />
-          <HeroStat value={occupancy.occupied} label={`${occupiedShare.toFixed(1)}% occupied`} />
+          <HeroStat value={occupancy.inUse} label={`${occupiedShare.toFixed(1)}% in use`} />
           <HeroStat value={capacity.ready} label="Ready now" />
           <HeroStat value={preparingCount} label="Being made ready" />
           <HeroStat

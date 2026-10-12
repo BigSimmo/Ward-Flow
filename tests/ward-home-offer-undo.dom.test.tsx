@@ -83,6 +83,10 @@ describe("Placement override needs a second sign-off", () => {
   it("keeps Record override inert until a reason is chosen and the second sign-off is ticked", () => {
     renderHome();
     const shortlist = screen.getByLabelText("Placement");
+    // L3 (12 Oct 2026): an accepted patient's card leads with the next step; the bed list and the
+    // override sit behind "Find another bed".
+    const another = within(shortlist).queryByTestId("ward-shortlist-find-another-bed");
+    if (another) fireEvent.click(another);
     fireEvent.click(within(shortlist).getAllByTestId(/^ward-shortlist-candidate-/u)[0]!);
     fireEvent.click(within(shortlist).getByTestId("ward-shortlist-override-toggle"));
 

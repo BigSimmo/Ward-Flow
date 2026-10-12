@@ -120,6 +120,7 @@ import {
   type CommunityPhoneList,
   type CommunityPhoneListId,
 } from "./community-team-phone";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import v6 from "./community-team-v6.module.css";
 import {
   DEMO_COMMUNITY_REFERRALS,
@@ -1275,14 +1276,8 @@ export function CommunityScreen({
       </>,
     );
   }
-  if (unattributable.length > 0) {
-    attentionItems.push(
-      <>
-        {unattributable.length} admission{unattributable.length === 1 ? "" : "s"} could not be matched to any community
-        team at all — not this one, and not another.
-      </>,
-    );
-  }
+  // Site review 12 Oct 2026: admissions matched to no team are a fact about the data, not about this
+  // team, and they showed twice (main column and rail). The count stays in About this data only.
 
   const renderSearch = (close: () => void) => (
     <div className={v6.search}>
@@ -1886,7 +1881,7 @@ export function CommunityScreen({
     ["tab-caseload", caseloadRows.length],
   ];
   const firstListWithSomeone =
-    (isPhone ? phoneRowCounts : tabCounts).find(([, count]) => count > 0)?.[0] ?? "tab-triage";
+    (isPhone ? phoneRowCounts : tabCounts).find(([, count]) => count > 0)?.[0] ?? "tab-caseload";
   // Held from the first render (React's "adjust state while rendering" pattern), so the list never
   // switches under the reader when the last row leaves it.
   if (chosenTab === null) setChosenTab(firstListWithSomeone);
@@ -1970,16 +1965,6 @@ export function CommunityScreen({
           {pastPlannedDateCount} planned discharge {pastPlannedDateCount === 1 ? "date has" : "dates have"} passed
         </strong>
         <span className={phoneCss.attentionMeta}>Of {lists.expectedBack.length} expected back</span>
-      </>,
-    );
-  }
-  if (unattributable.length > 0) {
-    phoneAttentionItems.push(
-      <>
-        <strong>
-          {unattributable.length} admission{unattributable.length === 1 ? "" : "s"} matched to no community team
-        </strong>
-        <span className={phoneCss.attentionMeta}>Not this one, and not another</span>
       </>,
     );
   }
@@ -3144,7 +3129,7 @@ export function CommunityScreen({
                                       }}
                                       title="Open full referral triage assessment"
                                     >
-                                      Triage Dossier
+                                      Triage dossier
                                     </button>
                                   </div>
                                   <div className={styles.declineActions}>
@@ -3437,7 +3422,7 @@ export function CommunityScreen({
                                     setActiveDrawer("pxDrawer");
                                   }}
                                 >
-                                  Open Dossier
+                                  Open dossier
                                 </button>
                               </td>
                             </tr>
@@ -3546,7 +3531,7 @@ export function CommunityScreen({
                                             setActiveDrawer("pxDrawer");
                                           }}
                                         >
-                                          Open Dossier
+                                          Open dossier
                                         </button>
                                       ) : null}
                                       {canBook ? (
@@ -4249,7 +4234,7 @@ export function CommunityScreen({
                                     setActiveDrawer("pxDrawer");
                                   }}
                                 >
-                                  Open Dossier
+                                  Open dossier
                                 </button>
                               </td>
                             </tr>
@@ -4373,7 +4358,7 @@ export function CommunityScreen({
                                         setActiveDrawer("pxDrawer");
                                       }}
                                     >
-                                      View Dossier
+                                      View dossier
                                     </button>
                                   ) : (
                                     <span className={styles.footnote}>No dossier without a person on file.</span>
@@ -5350,14 +5335,16 @@ export function CommunityScreen({
 
               {(activeDrawer === "px" || activeDrawer === "pxDrawer") && (
                 <div className={styles.drawerFoot}>
+                  {/* D-16: pressable for the coordinator; it says it is not wired rather than greying. */}
                   <button
                     type="button"
                     className={styles.btnSmSec}
-                    aria-disabled="true"
-                    title="Not wired in this prototype."
-                    onClick={() => setToastMessage("Not wired in this prototype.")}
+                    onClick={() => {
+                      announceToWardShell("Edit dossier is not wired in this prototype.");
+                      setToastMessage("Not wired in this prototype.");
+                    }}
                   >
-                    Edit Dossier
+                    Edit dossier
                   </button>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button
@@ -5367,7 +5354,7 @@ export function CommunityScreen({
                         openPatientCare();
                       }}
                     >
-                      Record Contact
+                      Record contact
                     </button>
                     <button
                       type="button"
@@ -5375,7 +5362,7 @@ export function CommunityScreen({
                       id="pxConfirmFollowupBtn"
                       onClick={openPatientCare}
                     >
-                      Arrange Follow-Up
+                      Arrange follow-up
                     </button>
                   </div>
                 </div>
@@ -5409,7 +5396,7 @@ export function CommunityScreen({
                       else setAcceptanceError("Referral is unavailable. No acceptance was recorded.");
                     }}
                   >
-                    Accept Referral
+                    Accept referral
                   </button>
                 </div>
               )}
@@ -5699,7 +5686,7 @@ export function CommunityScreen({
                         title={clinicalContactCanSave() ? undefined : "Clinical contact is not recorded yet."}
                         onClick={clinicalContactCanSave() ? handleSaveClinicalContact : ignoreUnavailableActivation}
                       >
-                        Save Contact
+                        Save contact
                       </button>
                     </div>
                     <p
@@ -5745,7 +5732,7 @@ export function CommunityScreen({
                           if (typeof window !== "undefined") window.print();
                         }}
                       >
-                        Print Report
+                        Print report
                       </button>
                     </div>
                   </div>
@@ -5852,7 +5839,7 @@ export function CommunityScreen({
                           setActiveModalType(null);
                         }}
                       >
-                        Ping Duress GPS
+                        Ping duress GPS
                       </button>
                     </div>
                   </div>

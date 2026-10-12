@@ -46,6 +46,11 @@ type NewDelay = { movementId: string; title: string };
 
 export type ChangesSinceLastLook = {
   since: Instant;
+  /**
+   * What `since` is: the coordinator's last look (`look`), or, before any look this session, the
+   * start of the shift read from recorded times (`shift`, `changesSinceInstant`). Absent means look.
+   */
+  basis?: "look" | "shift";
   newReferralIds: string[];
   /** New journeys with no front-door referral of their own (a referral's journey is not counted twice). */
   newMovementIds: string[];
@@ -129,6 +134,36 @@ export function changesSinceLastLook(
     bedsFreed,
     newDelays,
     newEscalationIds: current.escalatedMovementIds.filter((id) => !seenEscalations.has(id)),
+  };
+}
+
+/**
+ * What the record says changed between `since` and `now`, from recorded times alone: referrals
+ * raised, journeys opened with no front-door referral, and escalations made in the window. Used
+ * before any look this session (L1, site review, 12 Oct 2026: Home said "0 new since 07:00" while
+ * Handover counted 32 opened since 07:00), so "new since 07:00" always counts what happened since
+ * 07:00. Beds freed and delays need a remembered picture, so they stay empty here.
+ *
+ * Handover's "Since you looked" strip should read this too, with its own window start.
+ */
+export function changesSinceInstant(
+  world: Pick<LastLookWorld, "referrals" | "movements">,
+  since: Instant,
+  now: Instant,
+): ChangesSinceLastLook {
+  const within = (at: Instant | undefined) => at !== undefined && at >= since && at <= now;
+  return {
+    since,
+    basis: "shift",
+    newReferralIds: world.referrals.filter((referral) => within(referral.raisedAt)).map((referral) => referral.id),
+    newMovementIds: world.movements
+      .filter((movement) => isOpen(movement) && movement.referralId === undefined && within(movement.openedAt))
+      .map((movement) => movement.id),
+    bedsFreed: [],
+    newDelays: [],
+    newEscalationIds: world.movements
+      .filter((movement) => isOpen(movement) && within(movement.escalation?.at))
+      .map((movement) => movement.id),
   };
 }
 

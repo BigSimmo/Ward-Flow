@@ -300,7 +300,7 @@ function Queue({
       id: "rollup",
       group: "act",
       tone: "danger",
-      title: `${rollupTimeLabel} Morning Bed Rollup Overdue`,
+      title: `${rollupTimeLabel} morning bed rollup overdue`,
       sub: staffingFact,
       phoneTitle: `Rollup overdue · due ${rollupTimeLabel}`,
       detail: staffingFact,
@@ -323,7 +323,7 @@ function Queue({
       id: "rollup",
       group: "wait",
       tone: "neutral",
-      title: `Morning Bed Rollup due ${rollupTimeLabel}`,
+      title: `Morning bed rollup due ${rollupTimeLabel}`,
       sub: staffingFact,
     });
   }
@@ -332,7 +332,7 @@ function Queue({
       id: "rollup-done",
       group: "done",
       tone: "success",
-      title: `${rollupTimeLabel} Morning Bed Rollup Confirmed`,
+      title: `${rollupTimeLabel} morning bed rollup confirmed`,
       sub: `${plannedDischarges} discharges scheduled today`,
       testId: "ward-morning-rollup-confirmed-banner",
     });
@@ -541,7 +541,9 @@ function Queue({
   }
 
   const groupLabel = new Map<Group, string>([
-    ["act", chosen === "departures" ? "Held up" : "Act now"],
+    // "Act now" is the Ward hero's and Home's own figure (L1, site review 12 Oct 2026), so a window
+    // here names what its red rows are instead of printing a second, smaller "Act now" count.
+    ["act", chosen === "departures" ? "Held up" : "Overdue"],
     ["wait", "Waiting"],
     ["ready", "Ready to sign off"],
     ["done", "Done"],

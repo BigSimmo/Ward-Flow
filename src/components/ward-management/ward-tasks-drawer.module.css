@@ -1154,8 +1154,14 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
+  /* Site review (12 Oct 2026): the title was a 20px target. It spans the row's text column and
+     its 12px block padding is taken back by a negative margin, so the target is 44px tall and the
+     row keeps its layout. A press on the patient line under it opens the same row. */
   .rowTitle {
+    justify-self: stretch;
     min-height: 0;
+    margin-block: -12px;
+    padding-block: 12px;
     font-size: var(--wf-fs-14);
   }
 

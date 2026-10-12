@@ -239,6 +239,23 @@
   color: var(--wf-ink-3);
 }
 
+/* Surname, then the initial that never truncates (the surname gives way first). */
+.cellName {
+  display: flex;
+  min-width: 0;
+}
+
+.cellInitial {
+  flex: none;
+  white-space: nowrap;
+  font: 500 var(--wf-fs-12) / 1.2 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.cell[data-dim="true"] .cellInitial {
+  color: var(--wf-dim);
+}
+
 .swatch {
   display: inline-block;
   flex: none;
@@ -271,7 +288,7 @@
   background: var(--wf-hatch-faint), var(--wf-surface);
 }
 
-/* Act now: the thin 1px red edge, no fill. */
+/* Act now: the faint coral tint, with the rounded coral marker below. */
 .cell[data-act="true"] {
   border-color: var(--wf-line);
 
@@ -537,6 +554,8 @@
   position: relative;
 }
 
+/* The approved coral marker (--wf-act-edge, #249). Not --wf-danger: the dim convention greys that
+   in move mode, and an act-now bed must keep its marker while other beds are being placed. */
 .cell[data-act="true"]::before {
   content: "";
   position: absolute;
@@ -544,7 +563,7 @@
   inset-inline-start: 6px;
   width: 3px;
   border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
+  background: var(--wf-act-edge);
   pointer-events: none;
 }
 

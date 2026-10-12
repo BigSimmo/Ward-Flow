@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   isOpen,
@@ -920,16 +921,13 @@ export function MovementsScreen() {
               <div className={flow.heroTools}>
                 {isPhone ? null : (
                   <>
-                    <button
-                      type="button"
-                      className={buttonClass({ variant: "onHero", size: "sm", className: flow.previewTool })}
-                      aria-disabled="true"
-                      title="Preview. Not wired in this prototype."
-                      onClick={() => announceToWardShell("Run sheet is a preview. Not wired in this prototype.")}
-                    >
-                      <Printer size={14} aria-hidden="true" />
-                      Run sheet
-                    </button>
+                    <NotWiredButton
+                      variant="onHero"
+                      size="sm"
+                      icon={Printer}
+                      label="Run sheet"
+                      wrapClassName={flow.previewTool}
+                    />
                     {/* Phone: Transport opens from the "Transport now" card below the hero. */}
                     <Link
                       href="/mockups/ward-flow/transport/officer"

@@ -172,11 +172,14 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     const worklistCount =
       groups.blocked.length + groups.confirmed.length + groups.expected.length + groups["discharged-today"].length;
     expect(worklistCount + groups.excludedBeyondToday + groups.completedBeforeToday).toBe(releaseCount);
-    expect(screen.getByRole("button", { name: `All ${worklistCount}` })).toHaveAttribute("aria-pressed", "true");
+    // Decision 5 (review 12 Oct 2026): the Status dropdown's "All statuses" carries the count.
+    const allStatuses = () =>
+      within(screen.getByRole("combobox", { name: "Status" })).getByRole("option", { name: /^All statuses/u });
+    expect(allStatuses()).toHaveTextContent(`All statuses · ${worklistCount}`);
 
     fireEvent.click(records);
-    expect(screen.getByRole("button", { name: `All ${recordCount}` })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.queryByRole("button", { name: `All ${releaseCount + recordCount}` })).toBeNull();
+    expect(allStatuses()).toHaveTextContent(`All statuses · ${recordCount}`);
+    expect(allStatuses()).not.toHaveTextContent(`All statuses · ${releaseCount + recordCount}`);
   });
 
   it("filters to the linked patients, opens one, and clears that identity on filter and population changes", () => {

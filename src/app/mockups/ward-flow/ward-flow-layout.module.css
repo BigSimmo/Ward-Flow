@@ -42,6 +42,20 @@
   outline-offset: -2px;
 }
 
+/*
+ * The two-tone focus ring (design system v9 section "Focus", carried into v10; site review,
+ * 12 Oct 2026). Most Ward controls draw the shared 2px `--wf-focus-ring` outline 2px off their
+ * edge, which left the gap to whatever sat behind and read as a single tone. This fills the gap
+ * with `--wf-focus-gap` and adds the soft halo, so the ring reads on tints, selected rows and the
+ * act-now edge. :where() keeps it at zero specificity: a control that draws its own focus or keeps
+ * a resting shadow is left exactly as it was. The hero sets its own gap (hero.module.css).
+ */
+:where(.shellRow) :where(button, a[href], summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  box-shadow:
+    0 0 0 2px var(--wf-focus-gap, var(--wf-surface)),
+    0 0 0 6px color-mix(in srgb, var(--wf-focus-ring, var(--focus)) 18%, transparent);
+}
+
 .shellContent {
   display: flex;
   flex-direction: column;

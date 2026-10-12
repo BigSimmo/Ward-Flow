@@ -152,10 +152,6 @@
   color: var(--wf-hero-ink-2);
 }
 
-.previewButton {
-  border-style: dashed;
-}
-
 .eyebrow {
   color: var(--wf-ink-2);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
@@ -1860,10 +1856,13 @@
     color: var(--wf-ink-3);
   }
 
+  /* Site review 12 Oct 2026: the name measured 18px tall. The ::after already spans the row; the
+     button's own box also reaches 44px, grown into the row's padding so the card keeps its height. */
   .selectButton.selectButton {
     align-items: center;
     gap: var(--wf-s-1);
-    min-height: 0;
+    min-height: 2.75rem;
+    margin-block: -13px;
   }
 
   .jobRoute {
@@ -2165,8 +2164,9 @@
   }
 }
 
-/* The ETA column hides while no job carries an ETA (device audit, 11 Oct 2026). The cell stays in
-   the row so the phone card's column positions do not shift. */
+/* A column hides while it would say the same on every row: ETA while no job carries one (device
+   audit, 11 Oct 2026), Forms while every job shows the same count (site review, 12 Oct 2026). The
+   cell stays in the row so the phone card's column positions do not shift. */
 .jobsTable thead th.etaOff,
 .jobsTable .jobRow > td.etaOff {
   display: none;

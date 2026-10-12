@@ -735,6 +735,14 @@
   background: var(--surface);
 }
 
+/* Why the greyed beds cannot be pressed (site review U1, 12 Oct 2026). */
+.bedGridReason {
+  margin: 0;
+  padding: 0 1rem 0.5rem;
+  font-size: var(--t-0, 0.75rem);
+  color: var(--muted);
+}
+
 .bedCell {
   border: 1px solid var(--line);
   border-radius: var(--r2);

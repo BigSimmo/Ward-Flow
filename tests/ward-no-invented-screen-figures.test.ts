@@ -135,6 +135,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^(?:CHART_\w+|MIDDAY_MINUTES|LATE_AFTERNOON_MINUTES)$/,
   },
   {
+    id: "perth-utc-offset",
+    why: "Western Australia's fixed UTC+8 offset (12 Oct 2026 site review, L7): a time-zone fact used to anchor day 0, not a clinical limit.",
+    file: /^ward-clock\.ts$/,
+    name: /^PERTH_UTC_OFFSET_MINUTES$/,
+  },
+  {
     id: "typing-pause",
     why: "The referral draft's autosave pause (9 Oct 2026): how long typing rests before tab memory is updated; never shown, not a limit.",
     file: /^referrals\/referral-draft-store\.ts$/,

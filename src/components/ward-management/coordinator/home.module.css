@@ -608,8 +608,9 @@
   line-height: var(--wf-lh-12);
 }
 
+/* B8 (site review, 12 Oct 2026): words neutral, the glyph carries the tone. */
 .queueWordOverdue {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-2);
 }
 
 .queueWordStrong {
@@ -813,7 +814,10 @@
   background: var(--wf-hover);
 }
 
+/* Site review (12 Oct 2026): the service name read "NORTH M…" because it was the only part of the
+   head allowed to shrink. The name now keeps its width and the ward count gives way first. */
 .groupName {
+  flex: none;
   min-width: 0;
   overflow: hidden;
   color: var(--wf-ink-1);
@@ -826,7 +830,11 @@
 }
 
 .groupCount {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   color: var(--wf-ink-3);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

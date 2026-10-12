@@ -542,11 +542,12 @@ button.stat:hover .statV {
 }
 
 .colB {
-  width: 9.5rem;
+  width: 9rem;
 }
 
+/* U1: wide enough for "Form 3B" plus the recorded time left, so legal status is never cut. */
 .colL {
-  width: 8.75rem;
+  width: 11rem;
 }
 
 /* Device audit (11 Oct 2026): on a tablet the table sits inside a narrower column, so the name and
@@ -2614,4 +2615,24 @@ button.gLaneL:hover {
     background: CanvasText;
     forced-color-adjust: none;
   }
+}
+
+/* U1 (review 12 Oct 2026): legal status as a short chip ("Form 3B", "Involuntary"), never cut. */
+.legalChip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: var(--wf-h-chip, 1.375rem);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.legalLeft {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }

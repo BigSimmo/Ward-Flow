@@ -761,6 +761,8 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     //     ledger is invisible to every screen test - a count would have absorbed the facade silently
     //     and then absorbed the next one too.
     //
+    // EIGHT FROM 12 OCTOBER 2026 (site review): the Patient Now bed and receiving-ward values link
+    // to the ward through `unitHref`.
     // SEVEN AS OF THE OCTOBER 2026 DELAYS BOARD: its release-the-bed link now takes `unitHref`
     // from the facade instead of typing the route, the re-pointing the note above expected.
     // SIX FROM 10 OCTOBER 2026: Change view (`ward-role-switcher.tsx`) no longer builds ward hrefs;
@@ -769,6 +771,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       "src/components/ward-management/capacity/capacity-screen.tsx",
       "src/components/ward-management/discharges/discharge-board.tsx",
       "src/components/ward-management/hub/hub-derivations.ts",
+      "src/components/ward-management/patients/patient-now-screen.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
       "src/components/ward-management/ward/ward-answer-view.tsx",
       "src/components/ward-management/wards/ward-index.tsx",

@@ -296,11 +296,12 @@ describe("the on-call screen", () => {
     expect(panel().getByText(/Call now:/u)).toBeVisible();
   });
 
-  it("marks Report change as not wired", () => {
+  it("keeps Report change pressable and says it is not wired (D-16)", () => {
     renderOnCall();
     const report = panel().getByRole("button", { name: /Report change/u });
-    expect(report).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getAllByText("Not wired in this prototype.").length).toBeGreaterThan(0);
+    expect(report).not.toHaveAttribute("aria-disabled");
+    fireEvent.click(report);
+    expect(screen.getByTestId("not-wired-popover")).toHaveTextContent("Not wired in this prototype.");
   });
 
   it("keeps My list as contact ids only, and restores it", async () => {

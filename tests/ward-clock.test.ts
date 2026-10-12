@@ -13,6 +13,10 @@ import {
   formatInstant,
   formatInstantWithDay,
   formatRemaining,
+  formatSheetMoment,
+  perthCalendarDay,
+  perthDateTimeLocal,
+  perthMidnight,
   minuteOfDay,
   minutesUntil,
   splitDuration,
@@ -177,22 +181,39 @@ describe("the clock knows what day it is, not only what time it is", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("anchors day 0 to local midnight of the day the session opened", () => {
-    const opened = new Date(2026, 7, 30, 14, 37, 12, 500);
+  it("anchors day 0 to Perth midnight of the Perth day the session opened (L7)", () => {
+    // 14:37 AWST on 30 August 2026 is 06:37 UTC.
+    const opened = new Date(Date.UTC(2026, 7, 30, 6, 37, 12, 500));
     const zero = demoDayZero(opened);
-    expect(zero.getFullYear()).toBe(2026);
-    expect(zero.getMonth()).toBe(7);
-    expect(zero.getDate()).toBe(30);
-    expect([zero.getHours(), zero.getMinutes(), zero.getSeconds(), zero.getMilliseconds()]).toEqual([0, 0, 0, 0]);
+    expect(zero.toISOString()).toBe("2026-08-29T16:00:00.000Z");
+    expect(perthCalendarDay(zero)).toEqual({ year: 2026, monthIndex: 7, day: 30, weekday: 0 });
+    // 23:30 UTC is already 07:30 the next morning in Perth, so day 0 is that Perth day.
+    expect(demoDayZero(new Date(Date.UTC(2026, 7, 30, 23, 30))).toISOString()).toBe("2026-08-30T16:00:00.000Z");
+    expect(perthMidnight(2026, 7, 30).getTime()).toBe(zero.getTime());
   });
 
   it("turns an instant plus day zero back into a real moment", () => {
-    const zero = demoDayZero(new Date(2026, 7, 30, 14, 37));
-    expect(calendarDateOf(10 * 60 + 42, zero).getHours()).toBe(10);
-    expect(calendarDateOf(10 * 60 + 42, zero).getMinutes()).toBe(42);
-    expect(calendarDateOf(10 * 60 + 42, zero).getDate(), "same day").toBe(30);
-    expect(calendarDateOf(10 * 60 + 42 + MINUTES_PER_DAY, zero).getDate(), "the next day").toBe(31);
-    expect(calendarDateOf(10 * 60 + 42 - MINUTES_PER_DAY, zero).getDate(), "the day before").toBe(29);
+    const zero = perthMidnight(2026, 7, 30);
+    const perth = (instant: number) => perthCalendarDay(calendarDateOf(instant, zero));
+    expect(calendarDateOf(10 * 60 + 42, zero).toISOString()).toBe("2026-08-30T02:42:00.000Z");
+    expect(perth(10 * 60 + 42).day, "same day").toBe(30);
+    expect(perth(10 * 60 + 42 + MINUTES_PER_DAY).day, "the next day").toBe(31);
+    expect(perth(10 * 60 + 42 - MINUTES_PER_DAY).day, "the day before").toBe(29);
+  });
+
+  it("prints the Perth day whatever the browser's time zone (L7)", () => {
+    // The day zero a Sydney browser gets at 01:00 Monday 31 August AEST (15:00 UTC Sunday), which is
+    // 23:00 Sunday in Perth: the demo day is Perth's Sunday, and its 01:00 is Sunday 01:00 AWST.
+    const zero = demoDayZero(new Date(Date.UTC(2026, 7, 30, 15, 0)));
+    expect(formatSheetMoment(60, zero)).toBe("Sun, 30 Aug, 01:00");
+    expect(formatSheetMoment(60 + MINUTES_PER_DAY, zero)).toBe("Mon, 31 Aug, 01:00");
+  });
+
+  it("reads a typed date and time as Perth wall time, and refuses one that is not real", () => {
+    expect(perthDateTimeLocal("2026-08-30T14:30")?.toISOString()).toBe("2026-08-30T06:30:00.000Z");
+    expect(perthDateTimeLocal("2026-02-31T10:00")).toBeUndefined();
+    expect(perthDateTimeLocal("2026-08-30T24:00")).toBeUndefined();
+    expect(perthDateTimeLocal("2026-08-30")).toBeUndefined();
   });
 
   it("says the day out loud whenever an instant is not today", () => {

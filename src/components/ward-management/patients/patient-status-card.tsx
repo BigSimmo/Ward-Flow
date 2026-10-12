@@ -1,4 +1,5 @@
 import type { MouseEvent, ReactNode } from "react";
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { BedDouble, CalendarDays, Clock, DoorOpen, Eye, Scale, Stethoscope, Truck, Users } from "lucide-react";
 import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
@@ -32,6 +33,8 @@ export interface StatusCell {
   /** True when this gate is clear. Counted by the meter, and never given the primary action. */
   clear?: boolean;
   action?: StatusAction;
+  /** Decision 2 (site review, 12 Oct 2026): the value opens the record it names (the ward, the job). */
+  href?: string;
 }
 
 export type StatusAction =
@@ -104,6 +107,10 @@ export interface PatientStatusContext {
   handoverRefusal?: string;
   /** Feature 11: why the route's role may not dispatch this event ("Ward only"), or undefined. */
   roleLimit?: (eventType: WardFlowEventType) => string | undefined;
+  /** Decision 2: the accepted ward's page, linked from the Bed cell's value. */
+  bedHref?: string;
+  /** Decision 2: the movement's own page (its transport job), linked from the Transport cell's value. */
+  transportHref?: string;
 }
 
 function clearanceCell(movement: Movement, onClearance: PatientStatusContext["onClearance"]): StatusCell {
@@ -133,6 +140,8 @@ function transportCell(
   onBook: () => void,
   waitingFor = "an accepted bed",
   bookingInCard = false,
+  /** B3: before the bed is held, Log booking opens the step that holds it rather than greying. */
+  onPriorStep?: () => void,
 ): StatusCell {
   const job = movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
   if (job)
@@ -188,7 +197,19 @@ function transportCell(
           },
           event: "BOOK_TRANSPORT",
         }
-      : { kind: "unavailable", label: "Log booking", reason: `Needs ${waitingFor}` },
+      : onPriorStep
+        ? {
+            kind: "button",
+            label: "Log booking",
+            ariaLabel: `Log booking. Needs ${waitingFor} first; opens that step`,
+            icon: Truck,
+            secondary: true,
+            onClick: () => {
+              onPriorStep();
+            },
+            event: "BOOK_TRANSPORT",
+          }
+        : { kind: "unavailable", label: "Log booking", reason: `Needs ${waitingFor}` },
   };
 }
 
@@ -255,7 +276,14 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       tone: "danger",
       verdict: "Cannot move",
       meta: "Bed is the blocker",
-      cells: [bed, clearanceCell(movement, ctx.onClearance), transportCell(movement, false, ctx.onBookTransport)],
+      cells: [
+        bed,
+        clearanceCell(movement, ctx.onClearance),
+        withHref(
+          transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onOpenPlacement),
+          ctx.transportHref,
+        ),
+      ],
     });
   }
 
@@ -275,6 +303,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       time: movement.acceptedAt !== undefined ? `Accepted ${clock(movement.acceptedAt)}` : undefined,
       clear: ctx.hasBedHold,
       action: ctx.hasBedHold ? undefined : { kind: "button", label: "Hold the bed", onClick: ctx.onOpenPlacement },
+      href: ctx.acceptedUnitName ? ctx.bedHref : undefined,
     };
     const status = withMeter({
       tone: "info",
@@ -283,7 +312,17 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       cells: [
         bed,
         clearanceCell(movement, ctx.onClearance),
-        transportCell(movement, movement.stage === "pulled", ctx.onBookTransport, "the bed held", ctx.bookingInCard),
+        withHref(
+          transportCell(
+            movement,
+            movement.stage === "pulled",
+            ctx.onBookTransport,
+            "the bed held",
+            ctx.bookingInCard,
+            ctx.onOpenPlacement,
+          ),
+          ctx.transportHref,
+        ),
       ],
     });
     if (ctx.handoverRefusal) {
@@ -307,6 +346,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
         {
           key: "collected",
           icon: Truck,
+          href: ctx.transportHref,
           label: "Collected",
           owner: "ED nurse in charge",
           tone: job?.collectedAt !== undefined ? "success" : "warning",
@@ -369,6 +409,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
           clear: ctx.hasBedHold,
           value: ctx.acceptedUnitName ?? "Not recorded",
           sub: ctx.hasBedHold ? "Bed held" : "No bed hold recorded",
+          href: ctx.acceptedUnitName ? ctx.bedHref : undefined,
         },
       ],
     };
@@ -677,6 +718,10 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
   };
 }
 
+function withHref(cell: StatusCell, href: string | undefined): StatusCell {
+  return href ? { ...cell, href } : cell;
+}
+
 function withMeter(status: PatientStatus): PatientStatus {
   const clear = status.cells.filter((c) => c.clear).length;
   return { ...status, meter: { clear, of: status.cells.length } };
@@ -811,7 +856,13 @@ export function PatientStatusCard({
               </div>
               <div className={styles.value}>
                 {cell.tone ? <StatusGlyph tone={cell.tone} size={11} /> : null}
-                <span>{cell.value}</span>
+                {cell.href ? (
+                  <Link className={styles.valueLink} href={cell.href}>
+                    {cell.value}
+                  </Link>
+                ) : (
+                  <span>{cell.value}</span>
+                )}
               </div>
               <div className={styles.sub}>{cell.sub}</div>
               {cell.time ? <div className={styles.time}>{cell.time}</div> : null}

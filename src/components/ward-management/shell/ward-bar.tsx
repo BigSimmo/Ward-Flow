@@ -42,8 +42,8 @@ import {
   subscribeThemePreference,
 } from "@/lib/theme-client";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
+import { taskItems } from "@/components/ward-management/ward-act-now-items";
+import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
@@ -64,7 +64,6 @@ import { wardPlaceFor, wardPlaceIdFor } from "@/components/ward-management/ward-
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import {
   edHealthService,
-  movementBelongsToService,
   SERVICE_SCOPED_SCREENS,
   unitHealthService,
 } from "@/components/ward-management/ward-service-scope";
@@ -278,7 +277,7 @@ const SERVICE_SCOPE_NOTE = `One service, or all of them. ${
   SERVICE_SCOPED_SCREENS.length > 1
     ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
     : SERVICE_SCOPED_SCREENS.join(", ")
-} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not.`;
+} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not. Each count is the people waiting in that service's emergency departments; a narrowed list also shows people referred to its wards.`;
 
 /** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (D-16) — named
  *  in one place so the three "not wired" primary-action kinds and any future caller share the
@@ -695,21 +694,24 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // own "No outstanding work right now." empty state, never a network list with every action refused.
   // Device audit item 6 (11 Oct 2026): Tasks is the signed-in person's count on every page, so it
   // is gated on `shellRole`, not the route — it no longer drops to 0 on ED, team and officer pages.
+  // L1 (site review, 12 Oct 2026): the one task list (`taskItems`, `ward-act-now-items.ts`) that
+  // Alerts and Home Exceptions read too, so the badge and those lists cannot disagree.
   const tasksItems = useMemo(() => {
     if (!wardTasksAreActionableForRole(shellRole)) return [];
-    const open = movements.filter(isOpen);
-    // Stream A, 9 Oct 2026: decision targets join the same list.
-    return [
-      ...buildActionInbox(open, now, units, {
+    return taskItems(
+      {
         movements,
+        units,
+        configuration,
+        inboxSnoozes,
         admissions,
         patients,
         referrals,
         supportNotifications,
         plannedAdmissions,
-      }),
-      ...decisionTargetInboxItems(open, now, configuration),
-    ];
+      },
+      now,
+    );
   }, [
     movements,
     now,
@@ -721,6 +723,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     referrals,
     supportNotifications,
     configuration,
+    inboxSnoozes,
   ]);
   // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
   const tasksActiveCount = useMemo(
@@ -728,32 +731,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [tasksItems, inboxSnoozes, now],
   );
   /**
-   * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service
-   * panel"). One open-movement membership count per `HEALTH_SERVICES` member, through
-   * `ward-service-scope.ts`'s own `movementBelongsToService` — the SAME join this panel's own
-   * count can never disagree with by construction, since it calls that function directly rather
-   * than a second copy.
-   *
-   * ⚠️ **CORRECTED, R2 (2026-09-17).** This used to cite a `shown + outside = total` test in
-   * `tests/ward-service-scope.test.ts` proving movement membership over the real seed — that test
-   * existed for MOVEMENTS once, under the name "TEST 8", but R1's own review had already replaced
-   * it (it proved only that a filter and its negation sum to the total, true of any predicate) and
-   * R2 replaced its successor again for the same reason. What proves `movementBelongsToService`
-   * correct today is that file's `movementHealthServices`/`movementBelongsToService` describe
-   * block, plus the R2 landmark-membership test — `shown + outside = total` survives in that file
-   * only for REFERRALS, a different population from what this comment named.
+   * The Service selector's own "{n} waiting" counts. L1 (site review, 12 Oct 2026): this used to
+   * count every open movement that touched a service (origin ED or any ward asked), so a person
+   * referred across services counted twice: "All services 70 open" over services adding to 97,
+   * and East Metro 43 here against 35 on Network. It now reads `waitingInEds`
+   * (`ward-shared-figures.ts`), the figure Home's hero and Network print: people waiting in each
+   * service's emergency departments. A person waits in one department, so the services add up to
+   * All services.
    */
-  const serviceOptionOpenCounts = useMemo(() => {
-    const openMovementsList = movements.filter(isOpen);
-    const counts = new Map<HealthService, number>();
-    for (const candidate of HEALTH_SERVICES) {
-      counts.set(
-        candidate,
-        openMovementsList.filter((movement) => movementBelongsToService(movement, candidate, units)).length,
-      );
-    }
-    return counts;
-  }, [movements, units]);
+  const waiting = useMemo(() => waitingInEds(movements, now), [movements, now]);
   const commandActivity = useMemo(
     () =>
       deriveCommandActivity({
@@ -1208,10 +1194,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         ? "light"
         : "ink";
   // Phone only: the condensed bar's live line, the open movements in the current scope.
-  const allOpenCount = movements.filter(isOpen).length;
-  const scopeOpenCount = activeService
-    ? (serviceOptionOpenCounts.get(activeService as HealthService) ?? 0)
-    : allOpenCount;
+  const allWaitingCount = waiting.total;
+  const scopeWaitingCount = activeService
+    ? (waiting.byService.get(activeService as HealthService) ?? 0)
+    : allWaitingCount;
 
   return (
     <header
@@ -1293,7 +1279,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           </button>
           {isPhone ? (
             <span className={styles.scopeLive} aria-hidden="true">
-              {scopeOpenCount} open · {activeServiceBadgeLabel}
+              {scopeWaitingCount} waiting · {activeServiceBadgeLabel}
             </span>
           ) : null}
 
@@ -1329,13 +1315,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                 <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
                 <span className={styles.serviceName}>All services</span>
                 <span className={`${styles.serviceOptionCount} ${styles.serviceAllCount}`} aria-hidden="true">
-                  {allOpenCount > 0 ? `${allOpenCount} open` : "none open"}
+                  {waitingText(allWaitingCount)}
                 </span>
                 <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === null} />
               </button>
               <hr className={styles.popoverRule} />
               {HEALTH_SERVICES.map((candidate) => {
-                const openCount = serviceOptionOpenCounts.get(candidate) ?? 0;
+                const waitingCount = waiting.byService.get(candidate) ?? 0;
                 return (
                   <button
                     key={candidate}
@@ -1351,7 +1337,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                     />
                     <span className={styles.serviceName}>{candidate}</span>
                     <span className={styles.serviceOptionCount} aria-hidden="true">
-                      {openCount > 0 ? `${openCount} open` : "none open"}
+                      {waitingText(waitingCount)}
                     </span>
                     <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === candidate} />
                   </button>

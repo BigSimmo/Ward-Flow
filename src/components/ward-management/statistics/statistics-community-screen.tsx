@@ -522,7 +522,7 @@ function TeamPhone({
                       "none"
                     ) : (
                       <>
-                        {days} <small>d</small>
+                        {days} <small className={phone.unit}>d</small>
                       </>
                     )
                   }

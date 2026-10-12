@@ -1,5 +1,6 @@
 "use client";
 
+import { isTierOverdue } from "../ward-shared-figures";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
@@ -54,6 +55,7 @@ import { buildPatientStatus, dayLabel, type PatientStatusContext } from "./patie
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { usePathname } from "next/navigation";
 import {
   PatientLastSeenCard,
   PatientLeaveCard,
@@ -212,6 +214,7 @@ export function PatientNowScreen({
   const gate = useRoleGate();
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
   const routeRole = useRouteRole();
+  const pathname = usePathname() ?? "";
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
@@ -474,9 +477,10 @@ export function PatientNowScreen({
     {
       dispatch({
         type: "BOOK_TRANSPORT",
-        role: "ed",
+        role: routeRole,
         now,
         movementId: liveMovement.id,
+        ...(routeRole === "ward" && liveMovement.acceptedUnitId ? { actingUnitId: liveMovement.acceptedUnitId } : {}),
         provider: transportProviderDraft,
         escortRequired: transportEscortDraft,
         cadNumber: cleanCad,
@@ -707,6 +711,16 @@ export function PatientNowScreen({
     admission: resolved.liveAdmission,
     patient: livePatient,
     acceptedUnitName: acceptingUnit?.name ?? stayUnit?.name,
+    // Decision 2 (site review, 12 Oct 2026): the Bed value opens the ward, the Transport value the
+    // movement's own page with its transport job (not linked when that is this page already).
+    bedHref:
+      (acceptingUnit ?? stayUnit) !== undefined
+        ? `/mockups/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
+        : undefined,
+    transportHref:
+      liveMovement && !pathname.includes(`/movements/${encodeURIComponent(liveMovement.id)}`)
+        ? `/mockups/ward-flow/movements/${encodeURIComponent(liveMovement.id)}`
+        : undefined,
     hasBedHold: liveMovement ? movementHasBedHold(liveMovement, admissions) : false,
     now,
     dayZero,
@@ -1547,6 +1561,12 @@ export function PatientNowScreen({
                     <StatusGlyph tone={tierTone} size={9} />
                     Tier {urgencyTier ?? "not recorded"} · {(liveMovement.security ?? "not recorded").toLowerCase()}
                   </span>
+                  {isTierOverdue(urgencyTier, now - liveMovement.openedAt) ? (
+                    <span className={styles.v6HeroFact}>
+                      <StatusGlyph tone="danger" size={9} />
+                      Overdue wait · {waitedStr}
+                    </span>
+                  ) : null}
                   {liveMovement.specialling ? (
                     <span className={styles.v6HeroFact}>
                       <StatusGlyph tone="warning" size={9} />
@@ -1989,7 +2009,7 @@ export function PatientNowScreen({
                   if (!liveMovement || !clearanceDraft || !clearanceAttested || !clearanceGate.allowed) return;
                   dispatch({
                     type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
-                    role: "ed",
+                    role: routeRole,
                     now,
                     movementId: liveMovement.id,
                     cleared: clearanceDraft === "cleared",
@@ -2029,7 +2049,12 @@ export function PatientNowScreen({
             height="tall"
             placement={isPhone ? "bottom" : "right"}
           >
-            <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} bare />
+            {/* B5 (site review, 12 Oct 2026): the sheet renders outside this page's `main`, so it
+                carries the page's design attribute itself; without it the deck lost its card and
+                button styles ("Hold the bed" read as plain text). */}
+            <div data-ward-design="v6">
+              <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} bare />
+            </div>
           </PhoneSheet>
           <PhoneSheet
             open={nowSheet === "transport"}

@@ -506,12 +506,9 @@ export function PatientCommunityTab({
                       <Button size="sm" onClick={onEndCto} disabledReason={endCtoUnavailable} reasonDisplay="tooltip">
                         Record ended
                       </Button>
-                    ) : stayOpen ? (
-                      // The page shows a placement or stay ahead of a CTO, so one recorded now would be hidden.
-                      <Button size="sm" disabledReason="Not while a placement or stay is open" reasonDisplay="tooltip">
-                        Record CTO
-                      </Button>
                     ) : (
+                      // B3 (site review, 12 Oct 2026): the engine records a CTO while a placement or
+                      // stay is open, and this row then shows it, so the action is not greyed for that.
                       <Button
                         size="sm"
                         onClick={onRecordCto}

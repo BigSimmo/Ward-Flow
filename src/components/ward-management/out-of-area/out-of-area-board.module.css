@@ -502,10 +502,6 @@
   color: var(--wf-dim);
 }
 
-.previewIcon {
-  border-style: dashed;
-}
-
 .cellText {
   display: block;
   overflow: hidden;

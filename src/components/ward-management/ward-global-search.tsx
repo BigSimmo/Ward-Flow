@@ -543,11 +543,12 @@ export function WardGlobalSearch({
             patients,
             movements,
             units,
+            referrals,
             now,
             limitPerGroup: FULL_RESULTS_PER_GROUP,
             plannedAdmissions,
           }),
-    [trimmed, patients, movements, units, now, plannedAdmissions],
+    [trimmed, patients, movements, units, referrals, now, plannedAdmissions],
   );
 
   const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);

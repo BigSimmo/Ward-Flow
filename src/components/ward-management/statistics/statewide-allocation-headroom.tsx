@@ -25,7 +25,8 @@ export function StatewideAllocationHeadroom({
   const occupancy = occupiedBeds(units, admissions, bedReleases, leaveBeds);
   const totalOccupiedBeds = occupancy.occupied;
   const preparingCount = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, bedReleases), 0);
-  const occupancyPct = totalAuthorizedBeds > 0 ? ((totalOccupiedBeds / totalAuthorizedBeds) * 100).toFixed(1) : "0.0";
+  // L1: the percentage is the one occupancy figure, Occupied + Pulled (`ward-occupancy.ts`).
+  const occupancyPct = totalAuthorizedBeds > 0 ? ((occupancy.inUse / totalAuthorizedBeds) * 100).toFixed(1) : "0.0";
 
   return (
     <section className={styles.chartCard} aria-labelledby="kpiCapH" data-testid="ward-statistics-overview-headroom">
@@ -45,7 +46,7 @@ export function StatewideAllocationHeadroom({
           <dt>Occupied</dt>
           <dd>{totalOccupiedBeds}</dd>
           <dd className={styles.kpiNote}>
-            {occupancyPct}% of all beds. {occupancy.pulled} more are pulled for people not yet arrived.
+            {occupancyPct}% of all beds in use, counting {occupancy.pulled} pulled for people not yet arrived.
           </dd>
         </div>
         <div className={styles.kpi} data-testid="headroom-ready-intake">

@@ -1,5 +1,6 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Phone, Route, Search } from "lucide-react";
@@ -509,13 +510,16 @@ export function OutOfAreaPhone({
                   {TRAVEL_SHORT[selected.entry.band]}
                 </dd>
               </div>
-              <div>
-                <dt>Return</dt>
-                <dd>
-                  <StatusGlyph tone={STATUS_TONE[selected.status]} size={9} />
-                  {RETURN_STATUS_SHORT[selected.status]}
-                </dd>
-              </div>
+              {/* Site review 12 Oct 2026: when everyone reads the same plan state, the hero says it once. */}
+              {planVaries ? (
+                <div>
+                  <dt>Return</dt>
+                  <dd>
+                    <StatusGlyph tone={STATUS_TONE[selected.status]} size={9} />
+                    {RETURN_STATUS_SHORT[selected.status]}
+                  </dd>
+                </div>
+              ) : null}
             </dl>
             <p className={styles.peekLine}>
               <Icon icon={BedDouble} size={14} />
@@ -548,9 +552,7 @@ export function OutOfAreaPhone({
                     ? "Continue return plan"
                     : "Plan return"}
               </Button>
-              <Button variant="sec" icon={Phone} disabledReason="Not wired in this prototype." reasonDisplay="tooltip">
-                Call ward
-              </Button>
+              <NotWiredButton variant="sec" icon={Phone} label="Call ward" />
             </div>
           </div>
         </Sheet>

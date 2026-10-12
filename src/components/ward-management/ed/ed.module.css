@@ -2859,15 +2859,21 @@ tr.qRow:focus-visible {
   line-height: 1.25;
 }
 
+/* Words stay neutral ink and the box stays neutral (site review 12 Oct 2026); only the tier glyph
+   and the chip's edge carry the tone. No red or amber box, no red or amber text. */
 .tierLabel[data-urgency="1"] {
   border-color: var(--danger, var(--line-strong));
-  background: var(--danger-soft, var(--surface-2));
-  color: var(--danger, var(--ink));
 }
 
 .tierLabel[data-urgency="2"] {
   border-color: var(--warn, var(--line-strong));
-  background: var(--warn-soft, var(--surface-2));
+}
+
+.tierLabel[data-urgency="1"] .urgencyGlyph {
+  color: var(--danger, var(--ink));
+}
+
+.tierLabel[data-urgency="2"] .urgencyGlyph {
   color: var(--warn, var(--ink));
 }
 
@@ -6391,12 +6397,10 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
     font-family: var(--wf-font);
   }
 
-  .boardTable .thinSelect[data-cleared="yes"] {
-    color: var(--wf-success-ink);
-  }
-
+  /* Words stay neutral ink; the glyph beside the choice carries its tone (site review 12 Oct 2026). */
+  .boardTable .thinSelect[data-cleared="yes"],
   .boardTable .thinSelect[data-cleared="no"] {
-    color: var(--wf-danger-ink);
+    color: var(--wf-ink-1);
   }
 
   .boardTable .compactExpiry {
@@ -7870,7 +7874,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   width: 52px;
 }
 .a2Table col[data-col="Form"] {
-  width: 76px;
+  width: 96px;
 }
 .a2Table col[data-col="Cleared"] {
   width: 112px;
@@ -8065,6 +8069,11 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 
 .a2Quiet {
   color: var(--wf-ink-2);
+}
+
+/* A legal form name ("Form 4A") never wraps or truncates. */
+.a2NoWrap {
+  white-space: nowrap;
 }
 
 .a2Truncate {

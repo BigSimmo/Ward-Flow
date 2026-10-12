@@ -11,6 +11,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { allOverrides } from "@/components/ward-management/ward-derivations";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -655,7 +656,6 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
 type GovernanceTab = "review" | "gaps" | "audit" | "registers" | "reports";
 type ReviewChip = "override" | "refused" | "access" | "follow-up";
 
-const NOT_WIRED = "Not wired in this prototype.";
 const FORMS_HREF = "/mockups/ward-flow/legal-forms";
 
 const REVIEWING_ROLES = [
@@ -1560,16 +1560,7 @@ function GovernanceSession({
               <History size={14} aria-hidden="true" />
               PIR chronology
             </Link>
-            <Button
-              variant="onHero"
-              size="sm"
-              icon={Download}
-              className={thirdEdition.previewButton}
-              disabledReason={NOT_WIRED}
-              reasonDisplay="tooltip"
-            >
-              Export
-            </Button>
+            <NotWiredButton variant="onHero" size="sm" icon={Download} label="Export" name="Export governance" />
           </span>
         }
       />
@@ -1994,9 +1985,7 @@ function GovernanceSession({
                 <p className={thirdEdition.quiet}>{report.text}</p>
               </CardBody>
               <CardFoot>
-                <Button variant="sec" size="sm" disabledReason={NOT_WIRED} reasonDisplay="tooltip">
-                  Open
-                </Button>
+                <NotWiredButton variant="sec" size="sm" label="Open" name={`Open ${report.title}`} />
               </CardFoot>
             </Card>
           ))}
@@ -2232,6 +2221,15 @@ function EventDetail({
   onChoose: (event: AuditEvent) => void;
   feedback: string;
 }) {
+  // Greyed always with a reason (B3): the role gate first, then what the event itself lacks.
+  const reviewReason = canReview
+    ? undefined
+    : (roleReason ??
+      (selected === null
+        ? "Choose an event first"
+        : selected.category === "review"
+          ? "Review attempts cannot be reviewed"
+          : "Saving the last review"));
   const subject = selected?.subject;
   const subjectWardId = subject?.kind === "admission" || subject?.kind === "bed-release" ? subject.unitId : null;
   const matchingWard = units.filter((unit) => unit.id === subjectWardId);
@@ -2366,8 +2364,7 @@ function EventDetail({
           <Button
             size="sm"
             variant="pri"
-            disabled={!canReview}
-            disabledReason={roleReason}
+            disabledReason={reviewReason}
             reasonDisplay="tooltip"
             onClick={() => onReview("reviewed")}
           >
@@ -2375,8 +2372,7 @@ function EventDetail({
           </Button>
           <Button
             size="sm"
-            disabled={!canReview}
-            disabledReason={roleReason}
+            disabledReason={reviewReason}
             reasonDisplay="tooltip"
             onClick={() => onReview("follow-up-required")}
           >

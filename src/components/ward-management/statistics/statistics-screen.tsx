@@ -72,7 +72,7 @@ import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
-import { hoursText, occupiedBeds } from "./statistics-occupancy";
+import { hoursText, occupancyPercent, occupiedBeds } from "./statistics-occupancy";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
@@ -214,7 +214,9 @@ export function StatisticsScreen({
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
   const occupancy = occupiedBeds(units, sourceAdmissions, sourceBedReleases, leaveBeds);
   const occupiedCount = occupancy.occupied;
-  const occupiedPct = totalBeds > 0 ? Math.round((occupiedCount / totalBeds) * 100) : 0;
+  // L1: the percentage and the count beside it are the one occupancy figure, Occupied + Pulled.
+  const inUseCount = occupancy.inUse;
+  const occupiedPct = occupancyPercent(occupancy);
   const availableNow = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).available, 0);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
   const pendingPreparation = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
@@ -287,7 +289,7 @@ export function StatisticsScreen({
     return units.map((u) => {
       const capInfo = unitCapacity(u, sourceBedReleases);
       const occupancyRate =
-        u.beds > 0 ? occupiedBeds([u], sourceAdmissions, sourceBedReleases, leaveBeds).occupied / u.beds : 0;
+        u.beds > 0 ? occupiedBeds([u], sourceAdmissions, sourceBedReleases, leaveBeds).inUse / u.beds : 0;
       return {
         id: u.id,
         name: u.name,
@@ -424,7 +426,7 @@ export function StatisticsScreen({
       <StatisticsSummaryPhone
         ready={availableNow}
         beingMadeReady={pendingPreparation}
-        occupied={occupiedCount}
+        occupied={inUseCount}
         occupiedPct={occupiedPct}
         waitingInEd={waitingCount}
         endedToday={dischargesCount}
@@ -469,7 +471,8 @@ export function StatisticsScreen({
               ["Beds ready now", availableNow],
               ["Beds", totalBeds],
               ["Occupied", occupiedCount],
-              ["Occupied percent", occupiedPct],
+              ["Beds in use (occupied or pulled)", inUseCount],
+              ["Occupancy percent", occupiedPct],
               ["Being made ready", pendingPreparation],
               ["Admissions ended today", dischargesCount],
               ["Waiting in ED", waitingCount],
@@ -478,7 +481,7 @@ export function StatisticsScreen({
           chips={
             <HeroChips label="Network at a glance">
               <HeroChip value={totalBeds} label="Beds" />
-              <HeroChip value={occupiedCount} label={`${occupiedPct}% occupied`} />
+              <HeroChip value={inUseCount} label={`${occupiedPct}% in use`} />
               <HeroChip value={pendingPreparation} label="Being made ready" />
               <HeroChip
                 value={<span data-testid="ward-statistics-discharges-today-count">{dischargesCount}</span>}

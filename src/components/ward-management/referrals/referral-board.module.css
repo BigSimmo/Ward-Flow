@@ -824,8 +824,9 @@
 
 .panelMeta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-1);
+  gap: 0 var(--wf-s-1);
   min-width: 0;
   margin: 0;
   color: var(--wf-ink-3);
@@ -998,6 +999,26 @@
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   font-weight: 400;
+}
+
+/* U1 (review 12 Oct 2026): on desktop the facts reflow to fewer columns rather than cut the
+   hospital or the legal status ("Royal Perth Ho…"). Hairlines come from the grid gap, so a cell
+   that moves to a new row keeps its rules. */
+@media (min-width: 48.0625rem) {
+  .strip {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: 1px;
+    overflow: hidden;
+    background: var(--wf-line);
+  }
+
+  .strip > div {
+    background: var(--wf-surface);
+  }
+
+  .strip > div + div {
+    border-left: 0;
+  }
 }
 
 .panelTabs.panelTabs {
@@ -1529,25 +1550,31 @@
     min-width: 8rem;
   }
 
+  /* U1 (review 12 Oct 2026): the sort order itself never truncates ("Longest wait fi…" at 1180);
+     only the "tier breaks ties" tail gives way, and the search box shrinks first. */
   .toolbarNote {
     flex: 1 1 auto;
     justify-content: flex-end;
-    min-width: 0;
+    min-width: min-content;
     overflow: hidden;
   }
 
   .orderNote {
-    display: block;
-    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    min-width: min-content;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .orderNote svg {
-    display: inline;
-    margin-right: var(--wf-s-1);
-    vertical-align: -2px;
+  .orderNote b {
+    flex: 0 0 auto;
+  }
+
+  .orderTie {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -1840,4 +1867,28 @@
 .rowOn[data-overdue="true"],
 .cardOn[data-overdue="true"] {
   background: var(--wf-selected);
+}
+
+/* D-16 not-wired popovers (shared `NotWiredButton`). At the panel foot it opens upward so the
+   clipped panel never hides it; on the phone's full-width Claim it opens from the left edge. */
+.notWiredUp {
+  display: inline-flex;
+}
+
+.notWiredStart,
+.notWiredStart > span {
+  display: flex;
+  width: 100%;
+}
+
+.notWiredUp [role="group"] {
+  top: auto;
+  right: auto;
+  bottom: calc(100% + 4px);
+  left: 0;
+}
+
+.notWiredStart [role="group"] {
+  right: auto;
+  left: 0;
 }
