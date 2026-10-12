@@ -1,5 +1,11 @@
 # Ward Flow development backend
 
+## Current provider support — 12 October 2026
+
+The shared synthetic workspace has independent database and identity selectors. Database presets are Azure PostgreSQL, the approved Supabase project and a portable PostgreSQL host; identity presets are Entra and the existing Supabase Auth project. Both Node and Azure Functions use the same backend factory. See [portable PostgreSQL setup and adapter contract](SETUP-POSTGRES.md) and [Supabase/Azure setup](SETUP-SUPABASE.md). Runtime startup never applies migrations or substitutes an administrator. Readiness requires migration 4. Other database engines require a tested store adapter; they are not currently implemented.
+
+The dated Azure-only notes below preserve implementation history. They do not describe the current shared Supabase connection or prove a current Azure deployment.
+
 This package stores synthetic Ward Flow demonstration sessions in the existing
 `wflowdev7273a083aue` Azure Storage account. It is a development service.
 Never enter or upload real patient information.

@@ -16,9 +16,7 @@ describe("confirmation-only nominated signup", () => {
   });
   it("submits normalized nominated email and never adopts signup tokens", async () => {
     const setItem = vi.fn();
-    const fetcher = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) =>
-      Response.json({ id: "12345678-1234-1234-1234-123456789abc" }),
-    );
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ id: "12345678-1234-1234-1234-123456789abc" }));
     const auth = new SupabaseWardAuth({
       url,
       publishableKey: "sb_publishable_test",

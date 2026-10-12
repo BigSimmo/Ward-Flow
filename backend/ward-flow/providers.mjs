@@ -25,18 +25,29 @@ async function supabaseFactories() {
   };
 }
 
+async function postgresFactories() {
+  const { createPortablePostgresPool, verifyPortableRuntimeRole } = await import("./portable-postgres.mjs");
+  return { createPool: createPortablePostgresPool, verifyPool: verifyPortableRuntimeRole };
+}
+
 /** Provider setup is lazy: Supabase never opens Blob Storage or constructs an Azure credential. */
 export async function createBackend(config, dependencies = {}) {
   const provider = config.databaseProvider ?? "azure";
-  if (!["azure", "supabase"].includes(provider)) throw new Error("Invalid backend provider");
-  const factories = await (
-    provider === "supabase" ? (dependencies.supabase ?? supabaseFactories) : (dependencies.azure ?? azureFactories)
-  )();
+  const loaders = {
+    azure: dependencies.azure ?? azureFactories,
+    supabase: dependencies.supabase ?? supabaseFactories,
+    postgres: dependencies.postgres ?? postgresFactories,
+  };
+  if (!Object.hasOwn(loaders, provider)) throw new Error("Invalid backend provider");
+  const factories = await loaders[provider]();
   let pool;
   try {
     const authProvider = config.authProvider ?? "entra";
     let createAuthenticator;
-    if (authProvider === (provider === "supabase" ? "supabase" : "entra")) {
+    if (
+      (provider === "supabase" && authProvider === "supabase") ||
+      (provider === "azure" && authProvider === "entra")
+    ) {
       createAuthenticator = factories.createAuthenticator;
     } else if (authProvider === "supabase") {
       createAuthenticator =
@@ -49,7 +60,7 @@ export async function createBackend(config, dependencies = {}) {
     let sharedStore;
     if (config.shared) {
       pool = await factories.createPool(config.postgres);
-      await factories.verifyPool?.(pool);
+      await factories.verifyPool?.(pool, { ...config.postgres, pushEnabled: !!config.push });
       const [{ createWorkspaceStore }, engine] = await Promise.all([
         (dependencies.workspace ?? (() => import("./postgres.mjs")))(),
         (dependencies.engine ?? (() => import("./dist/engine.mjs")))(),

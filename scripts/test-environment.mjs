@@ -43,6 +43,9 @@ const providerEnvironmentKeys = Object.freeze([
   "WARD_SUPABASE_PUBLISHABLE_KEY",
   "WARD_SUPABASE_DATABASE_URL",
   "WARD_SUPABASE_CA_CERT_FILE",
+  "WARD_POSTGRES_DATABASE_URL",
+  "WARD_POSTGRES_CA_CERT_FILE",
+  "WARD_POSTGRES_MIGRATION_DATABASE_URL",
 ]);
 
 const offlineUrlValues = Object.freeze({

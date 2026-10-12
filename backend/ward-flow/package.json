@@ -9,9 +9,10 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
-    "test": "node --test backend.test.mjs shared-http.test.mjs postgres.test.mjs azure-setup.test.mjs push.test.mjs supabase.test.mjs migrate.test.mjs package-deployment.test.mjs",
+    "test": "node --test backend.test.mjs shared-http.test.mjs postgres.test.mjs azure-setup.test.mjs push.test.mjs supabase.test.mjs migrate.test.mjs package-deployment.test.mjs portable-postgres.test.mjs provider-integration.test.mjs function-runtime.test.mjs postgres-preflight.test.mjs",
     "build:engine": "node build-engine.mjs",
     "migrate": "node --env-file-if-exists=.env migrate.mjs",
+    "migrate:postgres": "node --env-file-if-exists=.env migrate-postgres.mjs",
     "package:deployment": "node package-deployment.mjs",
     "azure:inspect": "node azure-setup.mjs inspect",
     "azure:provision": "node azure-setup.mjs provision",

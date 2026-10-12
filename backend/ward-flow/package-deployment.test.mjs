@@ -6,7 +6,15 @@ import path from "node:path";
 import { test } from "node:test";
 import { RUNTIME_FILES } from "./package-deployment.mjs";
 
-const providerFiles = ["providers.mjs", "supabase-config.mjs", "supabase-auth.mjs", "supabase-postgres.mjs"];
+const providerFiles = [
+  "providers.mjs",
+  "supabase-config.mjs",
+  "supabase-auth.mjs",
+  "supabase-postgres.mjs",
+  "function-runtime.mjs",
+  "postgres-config.mjs",
+  "portable-postgres.mjs",
+];
 
 test("the explicit deployment manifest includes provider startup and lazy runtime imports", () => {
   for (const file of providerFiles) assert.ok(RUNTIME_FILES.includes(file), `Missing runtime module ${file}`);

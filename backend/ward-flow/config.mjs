@@ -1,5 +1,6 @@
 import { readPushConfig } from "./push.mjs";
 import { readSupabaseIdentityConfig, readSupabaseDatabaseConfig } from "./supabase-config.mjs";
+import { readPortablePostgresConfig } from "./postgres-config.mjs";
 
 const STORAGE_ACCOUNT = "wflowdev7273a083aue";
 // Fixed allowlist of approved Ward Flow storage accounts. Agreement between the two environment
@@ -19,7 +20,7 @@ const PLACEHOLDER_IDS = new Set([
 export function readConfig(env = process.env) {
   const databaseProvider = env.WARD_DATABASE_PROVIDER || "azure";
   const authProvider = env.WARD_AUTH_PROVIDER || "entra";
-  if (!["azure", "supabase"].includes(databaseProvider) || !["entra", "supabase"].includes(authProvider))
+  if (!["azure", "supabase", "postgres"].includes(databaseProvider) || !["entra", "supabase"].includes(authProvider))
     throw new Error("Invalid provider configuration");
   const required = authProvider === "entra" ? ["AZURE_TENANT_ID", "WARD_API_AUDIENCE", "WARD_ALLOWED_OBJECT_ID"] : [];
   if (databaseProvider === "azure") required.push("AzureWebJobsStorage__accountName");
@@ -68,9 +69,9 @@ export function readConfig(env = process.env) {
   if (coordinatorIds.some((id) => !UUID.test(id) || PLACEHOLDER_IDS.has(id)))
     throw new Error("Invalid coordinator configuration");
   let postgres = null;
-  if (databaseProvider === "supabase") {
-    if (!shared) throw new Error("Supabase requires the shared workspace");
-    postgres = readSupabaseDatabaseConfig(env);
+  if (databaseProvider === "supabase" || databaseProvider === "postgres") {
+    if (!shared) throw new Error("Database provider requires the shared workspace");
+    postgres = databaseProvider === "supabase" ? readSupabaseDatabaseConfig(env) : readPortablePostgresConfig(env);
     if (!UUID.test(env.WARD_WORKSPACE_ID ?? "") || PLACEHOLDER_IDS.has(env.WARD_WORKSPACE_ID.toLowerCase()))
       throw new Error("Invalid workspace configuration");
   } else if (shared) {

@@ -53,8 +53,10 @@ export async function grantBackend(client, objectId) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const config = readConfig();
-  if (config.databaseProvider === "supabase")
-    throw new Error("Supabase migrations require a separate reviewed administrator; see SETUP-SUPABASE.md");
+  if (config.databaseProvider !== "azure")
+    throw new Error(
+      "Use the provider's separate reviewed administrator workflow; see SETUP-POSTGRES.md or SETUP-SUPABASE.md",
+    );
   if (!config.postgres) throw new Error("Shared PostgreSQL configuration required");
   const pool = createPostgresPool({ ...config.postgres, user: process.env.WARD_MIGRATION_ADMIN_NAME });
   try {

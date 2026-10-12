@@ -12,6 +12,8 @@ Ward Flow uses the same transactional PostgreSQL workspace store and `/v1/worksp
 
 Omitted selectors retain Azure/Entra compatibility. Shared browser operation remains opt-in through `NEXT_PUBLIC_WARD_SHARED_ENABLED=true`. Turning it off preserves the existing synthetic demo without provider requests.
 
+For another PostgreSQL host, use `WARD_DATABASE_PROVIDER=postgres` and [the portable setup guide](SETUP-POSTGRES.md); retain the chosen identity preset independently. The approved Supabase preset keeps its exact project/pooler restrictions. Both Node and Azure Functions now initialise through the same provider factory, and shared readiness requires migration 4. Provider hosting/network authentication still requires its own configuration and verification.
+
 ## Supabase setup
 
 Only project `zakzoemeedfepxcstsou` is approved. Its session-pooler host, copied from the owner’s Connect panel, is `aws-0-ap-southeast-2.pooler.supabase.com:5432`, database `postgres`. The runtime username is `wardflow_backend.zakzoemeedfepxcstsou`. The `postgres` administrator is for reviewed migrations only and is refused by the runtime adapter.
