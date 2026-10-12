@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile, chmod, rm, mkdir, copyFile, symlink } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, rm, mkdir, copyFile, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const subscriptionId = "11111111-1111-4111-8111-111111111111";
 const tenantId = "22222222-2222-4222-8222-222222222222";
@@ -76,16 +76,31 @@ async function run(
       ...extraResponses,
     };
     await writeFile(join(folder, "responses.json"), JSON.stringify(responses));
-    const executable = join(folder, "az");
+    const executable = join(folder, "fake-az.mjs");
     await writeFile(
       executable,
-      `#!${process.execPath}\nimport fs from 'node:fs';\nconst args=process.argv.slice(2);\nfs.appendFileSync(${JSON.stringify(join(folder, "calls.jsonl"))},JSON.stringify(args)+'\\n');\nconst responses=JSON.parse(fs.readFileSync(${JSON.stringify(join(folder, "responses.json"))},'utf8'));\nconst key=Object.keys(responses).find(key=>args.slice(0,key.split(' ').length).join(' ')===key);\nif(!key) process.exit(2);\nif(key==='deployment group create'){\nconst index=args.indexOf('--template-file');\nif(index<0 || !args[index+1] || !fs.statSync(args[index+1]).isFile()) process.exit(2);\n}\nprocess.stdout.write(JSON.stringify(responses[key]));\n`,
+      `import fs from 'node:fs';\nconst args=process.argv.slice(2);\nfs.appendFileSync(${JSON.stringify(join(folder, "calls.jsonl"))},JSON.stringify(args)+'\\n');\nconst responses=JSON.parse(fs.readFileSync(${JSON.stringify(join(folder, "responses.json"))},'utf8'));\nconst key=Object.keys(responses).find(key=>args.slice(0,key.split(' ').length).join(' ')===key);\nif(!key) { process.stderr.write('Unexpected mocked Azure command: '+args.join(' ')); process.exit(2); }\nif(key==='deployment group create'){\nconst index=args.indexOf('--template-file');\nif(index<0 || !args[index+1] || !fs.statSync(args[index+1]).isFile()) process.exit(2);\n}\nprocess.stdout.write(JSON.stringify(responses[key]));\n`,
     );
-    await chmod(executable, 0o700);
-    const result = spawnSync(process.execPath, [join(folder, "azure-setup.mjs"), mode, join(folder, "settings.json")], {
-      encoding: "utf8",
-      env: { ...process.env, PATH: `${folder}:${process.env.PATH}` },
-    });
+    // Patch the setup subprocess before its named ESM import is bound. The fake
+    // CLI still runs as a real subprocess, without relying on shell/PATH rules.
+    const preload = join(folder, "mock-azure-cli.mjs");
+    await writeFile(
+      preload,
+      `import childProcess from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
+const spawnSync = childProcess.spawnSync;
+childProcess.spawnSync = (command, args, options) => {
+  if (command !== 'az') throw new Error('Unexpected setup subprocess: ' + command);
+  return spawnSync(process.execPath, [${JSON.stringify(executable)}, ...args], options);
+};
+syncBuiltinESMExports();
+`,
+    );
+    const result = spawnSync(
+      process.execPath,
+      ["--import", pathToFileURL(preload).href, join(folder, "azure-setup.mjs"), mode, join(folder, "settings.json")],
+      { encoding: "utf8", env: { ...process.env } },
+    );
     const log = await readFile(join(folder, "calls.jsonl"), "utf8").catch((error) => {
       if (error.code === "ENOENT") return "";
       throw error;

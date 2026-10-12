@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
-    "test": "node --test backend.test.mjs shared-http.test.mjs postgres.test.mjs azure-setup.test.mjs push.test.mjs supabase.test.mjs",
+    "test": "node --test backend.test.mjs shared-http.test.mjs postgres.test.mjs azure-setup.test.mjs push.test.mjs supabase.test.mjs migrate.test.mjs package-deployment.test.mjs",
     "build:engine": "node build-engine.mjs",
     "migrate": "node --env-file-if-exists=.env migrate.mjs",
     "package:deployment": "node package-deployment.mjs",

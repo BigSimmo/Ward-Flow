@@ -82,3 +82,11 @@
 - [x] Fresh whole-branch review; fix substantive findings with focused regression proof.
 - [x] Format owned files and commit coherent named paths locally. No push/PR/deployment.
 - [x] Deliver backup/key locations, local URL, proof and exact remaining owner action.
+
+## Approved continuation: portable Azure recovery and PR readiness
+
+Execution resumes from clean e3a93fa2 on the same WF-33/WF-29/WF-57 task. Prepare a portable ZIP beside the verified Azure backup, with separate key, retained histories and final implementation, explicit safe restore helper, printable HTML and Markdown setup guide. Verify extraction, authenticated restoration, hashes and bundled revisions.
+
+Repair migration 4 trigger search paths and the 1–4 migration runner, separately harden the inspected Supabase automatic-RLS helper's browser privileges, and preserve its event trigger. Pin reviewed SQL to only zakzoemeedfepxcstsou. Retain informational indexes and the no-paid-upgrade boundary. Fix Azure runtime packaging and offline runner isolation. Run focused regressions during repairs, then the selected `npm run verify:pr-local -- --base 1158c0950871a00f9eae544075d965b6e4f0fcee` once on stable inputs. Record precise failed or unavailable checks. Commit named owned changes and prepare a local PR description; no publication, merge or deployment.
+
+Parallel ownership: backend_execute owns migration/packaging and their focused proof; azure_zip owns the external recovery package; parent owns scoped hosted operations, offline isolation and final integration. Fresh reviewer reads new repair deltas only. Reuse prior live account/save/reload/restart/conflict evidence; perform a restricted-runtime transaction and protection refusal after hardening.

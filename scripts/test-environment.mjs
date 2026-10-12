@@ -28,6 +28,21 @@ const providerEnvironmentKeys = Object.freeze([
   "NEXT_PUBLIC_SENTRY_DSN",
   "SENTRY_DSN",
   "ALLOW_PROVIDER_TESTS",
+  "NEXT_PUBLIC_WARD_API_BASE_URL",
+  "NEXT_PUBLIC_WARD_AUTH_PROVIDER",
+  "NEXT_PUBLIC_WARD_SUPABASE_URL",
+  "NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY",
+  "NEXT_PUBLIC_WARD_COORDINATOR_EMAIL",
+  "NEXT_PUBLIC_WARD_CLIENT_ID",
+  "NEXT_PUBLIC_WARD_TENANT_ID",
+  "NEXT_PUBLIC_WARD_API_SCOPE",
+  "WARD_DATABASE_PROVIDER",
+  "WARD_AUTH_PROVIDER",
+  "WARD_SUPABASE_PROJECT_REF",
+  "WARD_SUPABASE_URL",
+  "WARD_SUPABASE_PUBLISHABLE_KEY",
+  "WARD_SUPABASE_DATABASE_URL",
+  "WARD_SUPABASE_CA_CERT_FILE",
 ]);
 
 const offlineUrlValues = Object.freeze({
@@ -117,6 +132,7 @@ export function offlineTestEnvironment(source = process.env, overrides = {}) {
     ...environment,
     RAG_PROVIDER_MODE: "offline",
     NEXT_PUBLIC_DEMO_MODE: "true",
+    NEXT_PUBLIC_WARD_SHARED_ENABLED: "false",
     ...overrides,
   };
 }

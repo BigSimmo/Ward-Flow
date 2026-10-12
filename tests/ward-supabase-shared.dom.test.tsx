@@ -33,7 +33,12 @@ afterEach(() => {
   sessionStorage.clear();
 });
 describe("Supabase shared sign-in", () => {
-  it("makes no Auth, workspace or storage requests in local demo", () => {
+  it.each(["entra", "supabase"])("makes no Auth, workspace or storage requests in %s demo", (provider) => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", provider);
+    vi.stubEnv("NEXT_PUBLIC_WARD_CLIENT_ID", "synthetic-client");
+    vi.stubEnv("NEXT_PUBLIC_WARD_TENANT_ID", "synthetic-tenant");
+    vi.stubEnv("NEXT_PUBLIC_WARD_API_SCOPE", "synthetic-scope");
+    sessionStorage.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify({ access_token: "synthetic-expired-session" }));
     const fetcher = vi.fn();
     vi.stubGlobal("fetch", fetcher);
     const get = vi.spyOn(Storage.prototype, "getItem");
