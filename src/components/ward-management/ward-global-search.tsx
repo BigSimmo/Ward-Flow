@@ -661,7 +661,14 @@ export function WardGlobalSearch({
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
-  const showPopup = open && deferredQuery === query;
+  /*
+   * The popup stays mounted while React catches up with the typed text. Hiding it for that one
+   * render unmounted the list, dropped data-open and released the phone scroll lock on every
+   * keystroke, which read as a flash on iPhone. Stale rows stay visible but cannot be picked by
+   * keyboard until `resultsCurrent` is true again.
+   */
+  const showPopup = open;
+  const resultsCurrent = deferredQuery === query;
 
   /*
    * THE ACTIVE ROW RESETS WHENEVER THE OPTION LIST CHANGES IDENTITY — same render-phase adjustment
@@ -688,9 +695,9 @@ export function WardGlobalSearch({
    * Reveal the option inside the list only; `scrollIntoView` also moved the page behind it.
    */
   useEffect(() => {
-    if (!showPopup || activeIndex < 0) return;
+    if (!showPopup || !resultsCurrent || activeIndex < 0) return;
     revealWardOption(document.getElementById(`${id}-opt-${activeIndex}`));
-  }, [activeIndex, showPopup, id]);
+  }, [activeIndex, showPopup, resultsCurrent, id]);
 
   /*
    * THE PALETTE IS PORTALLED TO THE BODY, BECAUSE THE BAR IS GLASS. `backdrop-filter` on the
@@ -829,7 +836,7 @@ export function WardGlobalSearch({
   /**
    * Only intercepts when a test has supplied `onNavigate`, and only for the plain click a real
    * anchor would otherwise have handled itself. A modified click (middle button, ctrl/cmd, shift)
-   * is left completely alone in every case, real or tested, because that is the browser's own
+   * on a current row is left completely alone in every case, real or tested, because that is the browser's own
    * "open in a new tab/window" gesture and this control has no business overriding it.
    */
   function onOptionClick(event: MouseEvent<HTMLAnchorElement>, href: string) {
@@ -847,6 +854,13 @@ export function WardGlobalSearch({
 
   /** A preview action is a plain link too, with the same modified-click rule as a row. */
   function onPreviewOpen(event: MouseEvent<HTMLAnchorElement>, href: string) {
+    // Preview actions use real links too, so apply the stale-result guard before remembering or
+    // allowing plain, modified, or assistive-technology activation to leave this page.
+    if (!resultsCurrent) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (previewItem) {
       rememberRecent(previewItem);
       setRecentsVersion((version) => version + 1);
@@ -875,7 +889,7 @@ export function WardGlobalSearch({
       close();
       return;
     }
-    if (!showPopup || options.length === 0) {
+    if (!showPopup || !resultsCurrent || options.length === 0) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setOpen(true);
@@ -986,8 +1000,8 @@ export function WardGlobalSearch({
                 <Search className={styles.emptyIcon} aria-hidden="true" />
                 <span className={styles.emptyTitle}>No matches found</span>
                 <p className={styles.emptyDescription}>
-                  No matches for “{trimmed}”. Nothing here says whether the person or movement exists — only that this
-                  did not find one.
+                  No matches for “{trimmed}”. This does not say whether the person or movement exists, only that this
+                  search did not find one.
                 </p>
               </div>
             ) : (
@@ -1012,12 +1026,29 @@ export function WardGlobalSearch({
                             id={`${id}-opt-${index}`}
                             href={item.href}
                             role="option"
-                            aria-selected={activeIndex === index}
+                            aria-selected={resultsCurrent && activeIndex === index}
+                            aria-disabled={!resultsCurrent || undefined}
                             tabIndex={-1}
-                            onClick={(event) => onOptionClick(event, item.href)}
+                            // Stale rows stay mounted to avoid the popup flash, but never open a
+                            // result for text that is no longer in the field. The footer link is
+                            // not a result, so it keeps working.
+                            onClick={(event) => {
+                              if (resultsCurrent) {
+                                onOptionClick(event, item.href);
+                                return;
+                              }
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                            onAuxClick={(event) => {
+                              if (!resultsCurrent) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }
+                            }}
                             onMouseEnter={() => setHoverIndex(index)}
                             className={styles.option}
-                            data-active={activeIndex === index || undefined}
+                            data-active={(resultsCurrent && activeIndex === index) || undefined}
                             data-previewed={previewIndex === index || undefined}
                             data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
                           >
@@ -1060,7 +1091,11 @@ export function WardGlobalSearch({
           </div>
 
           {previewItem ? (
-            <div className={styles.previewPane}>
+            <div
+              className={styles.previewPane}
+              inert={!resultsCurrent || undefined}
+              aria-disabled={!resultsCurrent || undefined}
+            >
               <GlobalSearchPreview
                 item={previewItem}
                 patients={patients}
@@ -1143,7 +1178,7 @@ export function WardGlobalSearch({
           spellCheck={false}
           aria-haspopup="listbox"
           aria-controls={showPopup && options.length > 0 ? listId : undefined}
-          aria-activedescendant={activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined}
+          aria-activedescendant={resultsCurrent && activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined}
           aria-autocomplete="list"
           aria-describedby={hintId}
           placeholder={placeholder}
