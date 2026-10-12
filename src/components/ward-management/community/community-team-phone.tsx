@@ -18,6 +18,7 @@ import {
 } from "@/components/wf";
 
 import css from "./community-team-phone.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 
 /*
  * The community team page on a phone (v10 all-pages mockup, page "Community team", Phone; device
@@ -202,7 +203,7 @@ export function CommunityTeamPhone({
           <Segmented<CommunityPhoneListId>
             label="Team lists"
             size="md"
-            className={css.segmented}
+            className={`${css.segmented} ${wardPin.pinnedSwitch}`}
             value={list}
             onChange={onList}
             items={lists.map((entry) => ({ id: entry.id, label: entry.label, count: countOf(entry.id) }))}

@@ -1372,3 +1372,48 @@
     white-space: normal;
   }
 }
+
+/* Site review 12 Oct 2026, phone only: a team name in the postcode lookup is a 44px target, and
+   "Show in list" keeps to one line beside it. */
+@media (max-width: 48rem) {
+  .lookupName a {
+    display: flex;
+    align-items: center;
+    min-height: 3rem;
+  }
+
+  .lookupAside {
+    flex: none;
+  }
+
+  .lookupAside button {
+    white-space: nowrap;
+  }
+}
+
+/* Phone compact chips (Josh, 12 Oct 2026): the toolbar chips take the shared phone pill
+ * (`--wf-phone-*`): 32px faces, 13px 600 labels, 12px mono counts. The row carries the hit area in
+ * its padding so the 48px target is not clipped by the sideways scroll. Phone only. */
+@media (max-width: 48rem) {
+  .toolbar > :global([role="radiogroup"]) {
+    gap: var(--wf-phone-pill-gap);
+    padding: var(--wf-phone-pill-hit) 2px;
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"]),
+  .toolbar > button[aria-pressed] {
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"]) > span:last-child {
+    font-size: var(--wf-phone-pill-count-fs);
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"])::after,
+  .toolbar > button[aria-pressed]::after {
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+}

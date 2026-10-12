@@ -1,5 +1,6 @@
 "use client";
 
+import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -1092,7 +1093,7 @@ function EdLanes({
               {
                 id: "form",
                 label: "Form",
-                value: picked.person.movement.legalForm ? picked.person.movement.legalForm.code : "None",
+                value: picked.person.movement.legalForm ? legalStatusShort(picked.person.movement) : "None",
               },
               {
                 id: "tier",

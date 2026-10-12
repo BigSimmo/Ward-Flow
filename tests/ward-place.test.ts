@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
-import { allEmergencyDepartments, allUnits } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, allUnits, edShortName } from "@/components/ward-management/ward-sites";
 
 /**
  * `wardPlaceFor` — the place a route puts you in, or `undefined` where there is no place.
@@ -34,11 +34,12 @@ describe("wardPlaceFor", () => {
     });
   });
 
-  it("resolves an ED route to that department's name, sourced from ward-sites.ts", () => {
+  it("resolves an ED route to that department's short name, sourced from ward-sites.ts", () => {
+    // Short name since the 12 Oct 2026 site review: the full name clipped in the header.
     const department = allEmergencyDepartments()[0];
     expect(wardPlaceFor(`/mockups/ward-flow/ed/${department.id}`, allUnits())).toEqual({
       kind: "ed",
-      name: department.name,
+      name: edShortName(department),
     });
   });
 

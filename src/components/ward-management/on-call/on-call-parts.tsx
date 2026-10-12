@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Copy, Flag, Mail, PhoneCall, Star, X } from "lucide-react";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { Badge, Button, Icon, StatusGlyph, cx, durMinutes } from "@/components/wf";
@@ -467,9 +468,7 @@ function RecordFoot({ entry }: { entry: DirectoryEntry }) {
       <Badge size="sm" variant="plain">
         Not verified
       </Badge>
-      <Button variant="ghost" size="sm" icon={Flag} disabledReason={NOT_WIRED} reasonDisplay="tooltip">
-        Report change
-      </Button>
+      <NotWiredButton variant="ghost" size="sm" icon={Flag} label="Report change" />
     </div>
   );
 }

@@ -84,7 +84,15 @@ describe("referral slide-out, option B", () => {
     const rail = screen.getByTestId("ward-referral-summary-rail");
     expect(within(rail).getByRole("heading", { name: "Ready to send" })).toBeInTheDocument();
     expect(within(rail).getByText("Refer to")).toBeInTheDocument();
-    expect(within(rail).getByText(/of 9 ready/)).toBeInTheDocument();
+    // L1 (review 12 Oct 2026): one count. The summary's items left are the steps' needed items.
+    const [, ready, total] = /(\d+) of (\d+) ready/u.exec(rail.textContent ?? "") ?? [];
+    expect(ready).toBeDefined();
+    const stepNeeds = steps()
+      .getAllByRole("button")
+      .map((button) => Number(/(\d+) needed/u.exec(button.parentElement?.textContent ?? "")?.[1] ?? 0))
+      .reduce((sum, n) => sum + n, 0);
+    expect(stepNeeds).toBeGreaterThan(0);
+    expect(Number(total) - Number(ready)).toBe(stepNeeds);
   });
 
   it("closes straight away when nothing was entered", () => {
@@ -136,13 +144,13 @@ describe("referral slide-out, option B", () => {
     expect(screen.getByLabelText("Referring emergency department")).toHaveValue("RPH");
   });
 
-  it("asks before Open board leaves a draft with answers", () => {
+  it("asks before Where this case is leaves a draft with answers", () => {
     const { onClose } = renderDrawer({ initialPatientId: "PT-003" });
     const note = screen.getByTestId("ward-referral-already-open");
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));
     fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Typed reason" } });
     fireEvent.click(steps().getByRole("button", { name: "Patient" }));
-    fireEvent.click(within(note).getByRole("link", { name: "Open board" }));
+    fireEvent.click(within(note).getByRole("link", { name: "Where this case is" }));
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByRole("alertdialog", { name: "Close without sending?" })).toBeInTheDocument();
   });

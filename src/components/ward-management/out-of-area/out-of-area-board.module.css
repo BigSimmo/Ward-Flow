@@ -502,10 +502,6 @@
   color: var(--wf-dim);
 }
 
-.previewIcon {
-  border-style: dashed;
-}
-
 .cellText {
   display: block;
   overflow: hidden;
@@ -1884,5 +1880,24 @@ fieldset.formRow {
   /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
   :global(html:has([role="dialog"][aria-modal="true"])) .phoneToast {
     bottom: 136px;
+  }
+}
+
+/* Phone compact switch (Josh, 12 Oct 2026): Needs you, Everyone and Beds take the shared phone track
+ * (`--wf-phone-*`), whose 48px box carries a transparent band round the 34px track. The pinned
+ * switch paints that band in the canvas and sits flush under the bar; the collar runs to the sides
+ * and below only, so it never covers the bar. Phone only. */
+@media (max-width: 48rem) {
+  .phoneTabs [role="radio"] {
+    min-height: 0;
+  }
+
+  .phoneTabs {
+    top: var(--wf-header-height, 3.5rem);
+    background-color: var(--wf-canvas);
+    box-shadow:
+      var(--wf-s-2) 0 0 var(--wf-canvas),
+      calc(-1 * var(--wf-s-2)) 0 0 var(--wf-canvas),
+      0 var(--wf-s-2) 0 var(--wf-canvas);
   }
 }

@@ -193,13 +193,16 @@ describe("Patient Transport & Transfer Coordination section", () => {
       </WardFlowProvider>,
     );
 
-    // Gate board: while a bed is still being found, transport is a dashed, unavailable gate that
-    // says why, and the booking record is not on Now at all.
+    // Gate board: while a bed is still being found, transport says why. B3 (site review, 12 Oct
+    // 2026): Log booking is not greyed; it opens the step that is needed first (the bed), and the
+    // booking record is still not on Now at all.
     const gate = screen.getByTestId("ward-patient-gate-transport");
     expect(gate).toHaveTextContent("Not booked");
-    const logBooking = within(gate).getByRole("button", { name: "Log booking" });
-    expect(logBooking).toHaveAttribute("aria-disabled", "true");
+    expect(gate).toHaveTextContent("Needs an accepted bed");
+    const logBooking = within(gate).getByRole("button", { name: /^Log booking/ });
+    expect(logBooking).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(logBooking);
+    expect(screen.getByRole("dialog", { name: "Destination and placement" })).toBeInTheDocument();
     expect(screen.queryByTestId("ward-patient-transport-section")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-patient-cad-number")).not.toBeInTheDocument();

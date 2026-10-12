@@ -1,5 +1,6 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -698,16 +699,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 title="Export list as CSV"
                 onClick={exportList}
               />
-              <Button
-                variant="onHero"
-                size="sm"
-                iconOnly
-                icon={Printer}
-                aria-label="Print handover list"
-                className={styles.previewIcon}
-                disabledReason="Not wired in this prototype."
-                reasonDisplay="tooltip"
-              />
+              <NotWiredButton variant="onHero" size="sm" iconOnly icon={Printer} label="Print handover list" />
             </span>
           }
           foot={

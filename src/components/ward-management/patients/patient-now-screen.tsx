@@ -1,6 +1,8 @@
 "use client";
 
-import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { isTierOverdue } from "../ward-shared-figures";
+import { scrollWardPageToTop, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -19,7 +21,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent a
 
 import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
 import { PatientRecordOverview } from "./patient-record-overview";
-import { PatientFlightHeader } from "./patient-flight-header";
+import { PatientFlightHeader, PatientRecordTabsRow } from "./patient-flight-header";
+import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -54,6 +57,7 @@ import { buildPatientStatus, dayLabel, type PatientStatusContext } from "./patie
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { usePathname } from "next/navigation";
 import {
   PatientLastSeenCard,
   PatientLeaveCard,
@@ -212,12 +216,16 @@ export function PatientNowScreen({
   const gate = useRoleGate();
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
   const routeRole = useRouteRole();
+  const pathname = usePathname() ?? "";
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
   // timestamp, so the calendar date used to derive a patient's age must be rebuilt from `dayZero`.
   // `new Date(now)` would anchor to the 1970 epoch and render a negative age.
-  const displayToday = new Date(dayZero.getTime() + now * 60_000);
+  const displayInstant = new Date(dayZero.getTime() + now * 60_000);
+  const displayPerth = new Date(displayInstant.getTime() + 8 * 60 * 60_000);
+  // Build a local-date value from Perth's calendar fields so age calculations do not depend on the browser zone.
+  const displayToday = new Date(displayPerth.getUTCFullYear(), displayPerth.getUTCMonth(), displayPerth.getUTCDate());
 
   // Selected scenario / record ID, seeded from the route and re-synced on client-side navigation:
   // the WF-009/WF-004 toggle buttons also call setSelectedId but without changing `routeId`, so the
@@ -256,6 +264,7 @@ export function PatientNowScreen({
   const [showArrivalTimeModal, setShowArrivalTimeModal] = useState(false);
   const [showUploadFormsModal, setShowUploadFormsModal] = useState(false);
   const [showClearanceModal, setShowClearanceModal] = useState(false);
+  useWardPageScrollLock(showClearanceModal);
   const clearanceTriggerRef = useRef<HTMLButtonElement | null>(null);
   const clearanceModalRef = useRef<HTMLDivElement | null>(null);
   const [clearanceDraft, setClearanceDraft] = useState<"" | "cleared" | "not-cleared">("");
@@ -474,9 +483,10 @@ export function PatientNowScreen({
     {
       dispatch({
         type: "BOOK_TRANSPORT",
-        role: "ed",
+        role: routeRole,
         now,
         movementId: liveMovement.id,
+        ...(routeRole === "ward" && liveMovement.acceptedUnitId ? { actingUnitId: liveMovement.acceptedUnitId } : {}),
         provider: transportProviderDraft,
         escortRequired: transportEscortDraft,
         cadNumber: cleanCad,
@@ -707,6 +717,16 @@ export function PatientNowScreen({
     admission: resolved.liveAdmission,
     patient: livePatient,
     acceptedUnitName: acceptingUnit?.name ?? stayUnit?.name,
+    // Decision 2 (site review, 12 Oct 2026): the Bed value opens the ward, the Transport value the
+    // movement's own page with its transport job (not linked when that is this page already).
+    bedHref:
+      (acceptingUnit ?? stayUnit) !== undefined
+        ? `/mockups/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
+        : undefined,
+    transportHref:
+      liveMovement && !pathname.includes(`/movements/${encodeURIComponent(liveMovement.id)}`)
+        ? `/mockups/ward-flow/movements/${encodeURIComponent(liveMovement.id)}`
+        : undefined,
     hasBedHold: liveMovement ? movementHasBedHold(liveMovement, admissions) : false,
     now,
     dayZero,
@@ -1346,7 +1366,7 @@ export function PatientNowScreen({
                   }
                   onOpen={() => {
                     setActiveTab(tab.key);
-                    requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+                    requestAnimationFrame(scrollWardPageToTop);
                   }}
                 />
               ))}
@@ -1354,6 +1374,32 @@ export function PatientNowScreen({
         ) : null
       }
     />
+  );
+
+  /* The record tabs. On a phone they render beside the record (below), pinned under the header. */
+  const recordTabs = (
+    <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
+      {(isPhone ? phoneTabs : tabs).map((tab) => (
+        <button
+          key={tab.key}
+          className={styles.v6Tab}
+          type="button"
+          role="tab"
+          id={`pntab-${tab.key}`}
+          aria-controls={`pnpane-${tab.key}`}
+          aria-selected={activeTab === tab.key}
+          tabIndex={activeTab === tab.key ? 0 : -1}
+          onClick={() => setActiveTab(tab.key)}
+        >
+          {tab.label}
+          {tab.count !== undefined ? (
+            <span className={styles.v6TabCount} id={`pncount-${tab.key}`}>
+              {tab.count}
+            </span>
+          ) : null}
+        </button>
+      ))}
+    </div>
   );
 
   return (
@@ -1547,6 +1593,12 @@ export function PatientNowScreen({
                     <StatusGlyph tone={tierTone} size={9} />
                     Tier {urgencyTier ?? "not recorded"} · {(liveMovement.security ?? "not recorded").toLowerCase()}
                   </span>
+                  {isTierOverdue(urgencyTier, now - liveMovement.openedAt) ? (
+                    <span className={styles.v6HeroFact}>
+                      <StatusGlyph tone="danger" size={9} />
+                      Overdue wait · {waitedStr}
+                    </span>
+                  ) : null}
                   {liveMovement.specialling ? (
                     <span className={styles.v6HeroFact}>
                       <StatusGlyph tone="warning" size={9} />
@@ -1717,32 +1769,7 @@ export function PatientNowScreen({
                 </ol>
               ) : null
             }
-            tabs={
-              <>
-                <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
-                  {(isPhone ? phoneTabs : tabs).map((tab) => (
-                    <button
-                      key={tab.key}
-                      className={styles.v6Tab}
-                      type="button"
-                      role="tab"
-                      id={`pntab-${tab.key}`}
-                      aria-controls={`pnpane-${tab.key}`}
-                      aria-selected={activeTab === tab.key}
-                      tabIndex={activeTab === tab.key ? 0 : -1}
-                      onClick={() => setActiveTab(tab.key)}
-                    >
-                      {tab.label}
-                      {tab.count !== undefined ? (
-                        <span className={styles.v6TabCount} id={`pncount-${tab.key}`}>
-                          {tab.count}
-                        </span>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
-              </>
-            }
+            tabs={recordTabs}
             actions={
               <>
                 {modeMeta.quiet ? null : (
@@ -1815,6 +1842,10 @@ export function PatientNowScreen({
             </Card>
           ) : null}
         </section>
+
+        {/* Phone (Josh, 12 Oct 2026): the record tabs pin under the phone header, as Home's queue
+            switch does. They sit in the page column beside the record they pin over. */}
+        {isPhone ? <PatientRecordTabsRow tabs={recordTabs} className={pinnedStyles.pinnedSwitch} /> : null}
 
         <section className={styles.v6Main} id="pnTabs" aria-label="The record">
           <div className={styles.v6TabBody} id="pnBody" tabIndex={0}>
@@ -1989,7 +2020,7 @@ export function PatientNowScreen({
                   if (!liveMovement || !clearanceDraft || !clearanceAttested || !clearanceGate.allowed) return;
                   dispatch({
                     type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
-                    role: "ed",
+                    role: routeRole,
                     now,
                     movementId: liveMovement.id,
                     cleared: clearanceDraft === "cleared",
@@ -2029,7 +2060,12 @@ export function PatientNowScreen({
             height="tall"
             placement={isPhone ? "bottom" : "right"}
           >
-            <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} bare />
+            {/* B5 (site review, 12 Oct 2026): the sheet renders outside this page's `main`, so it
+                carries the page's design attribute itself; without it the deck lost its card and
+                button styles ("Hold the bed" read as plain text). */}
+            <div data-ward-design="v6">
+              <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} bare />
+            </div>
           </PhoneSheet>
           <PhoneSheet
             open={nowSheet === "transport"}

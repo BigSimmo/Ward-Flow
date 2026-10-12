@@ -189,9 +189,26 @@
   flex: none;
 }
 
+/* Phone: the highlight chips take the shared phone pill size (`--wf-phone-*`): a 32px face with a
+   transparent 48px hit area, carried in the scrolling row's own padding so it is not clipped. */
 @media (max-width: 48rem) {
+  .chips {
+    gap: var(--wf-phone-pill-gap);
+    padding-block: var(--wf-phone-pill-hit);
+  }
+
   .chips :global(button) {
-    min-height: var(--wf-touch);
+    position: relative;
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    white-space: nowrap;
+  }
+
+  .chips :global(button)::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 }
 
@@ -215,11 +232,13 @@
     box-shadow: none;
   }
 
+  /* The department pills take the shared phone pill size (`--wf-phone-*`): a 32px face with a
+     transparent 48px hit area, carried in the scrolling row's own padding. */
   .list {
     display: flex;
-    gap: var(--wf-s-2);
+    gap: var(--wf-phone-pill-gap);
     margin-inline: calc(var(--wf-s-3) * -1);
-    padding: 2px var(--wf-s-3);
+    padding: var(--wf-phone-pill-hit) var(--wf-s-3);
   }
 
   .list > li + li {
@@ -233,12 +252,22 @@
   .tile {
     flex-direction: row;
     align-items: center;
-    gap: 6px;
-    min-height: var(--spacing-tap, 3rem);
-    padding: 0 var(--wf-s-4);
+    position: relative;
+    gap: var(--wf-phone-pill-gap);
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    box-sizing: border-box;
+    padding: 0 var(--wf-phone-pill-px);
     border: 1px solid var(--wf-line);
     border-radius: var(--wf-r-pill);
     background: var(--wf-surface);
+    white-space: nowrap;
+  }
+
+  .tile::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 
   .tile::before {
@@ -275,7 +304,7 @@
   }
 
   .tile.current {
-    padding: 0 calc(var(--wf-s-4) - 1px);
+    padding: 0 calc(var(--wf-phone-pill-px) - 1px);
     border: 2px solid var(--wf-accent);
     background: var(--wf-surface);
   }
@@ -287,13 +316,16 @@
   }
 
   .tile .code {
-    font-size: var(--wf-fs-13);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
   }
 
   .tile .waiting b {
     color: var(--wf-ink-2);
-    font-size: var(--wf-fs-12);
-    font-weight: 500;
+    font-family: var(--wf-mono);
+    font-size: var(--wf-phone-pill-count-fs);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 }
 

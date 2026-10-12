@@ -148,17 +148,48 @@ function notifyStackListeners() {
   for (const listener of Array.from(stackListeners)) listener();
 }
 
-export function pushSheet(id: string, root: HTMLElement | null = null) {
-  if (openSheets.length === 0) {
+let pageScrollLockCount = 0;
+
+/**
+ * Holds the page still behind an overlay: html, body and every Ward work column
+ * (`[data-wf-scroller]`, which is the page's scroller on phone and desktop). Counted, so stacked
+ * overlays and a modal that does not join the sheet stack can each hold it. Returns the release,
+ * which is safe to call more than once. On phone this is what stops a swipe inside a popup from
+ * moving the page behind it (Josh, 12 Oct 2026): iOS Safari ignores `overflow: hidden` on the
+ * document for touch scrolling, but honours it on the work column, which now owns the scroll.
+ */
+export function lockPageScroll(): () => void {
+  if (pageScrollLockCount === 0) {
     bodyScrollLockPreviousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     rootScrollLockPreviousOverflowY = document.documentElement.style.overflowY;
     document.documentElement.style.overflowY = "hidden";
-    // Desktop Ward Flow scrolls inside the work column. Locking html/body alone
+    // Ward Flow scrolls inside the work column. Locking html/body alone
     // left that column movable behind a sheet. Keep its offset and exact inline style.
     syncPageScrollLocks();
     window.addEventListener("resize", schedulePageScrollLocks, { passive: true });
   }
+  pageScrollLockCount += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    pageScrollLockCount = Math.max(0, pageScrollLockCount - 1);
+    if (pageScrollLockCount > 0) return;
+    window.removeEventListener("resize", schedulePageScrollLocks);
+    if (pageScrollLockFrame) window.cancelAnimationFrame(pageScrollLockFrame);
+    pageScrollLockFrame = 0;
+    document.body.style.overflow = bodyScrollLockPreviousOverflow;
+    document.documentElement.style.overflowY = rootScrollLockPreviousOverflowY;
+    for (const [scroller, previous] of pageScrollLocks) scroller.style.overflowY = previous.overflowY;
+    pageScrollLocks.clear();
+  };
+}
+
+let releaseSheetPageScroll: (() => void) | null = null;
+
+export function pushSheet(id: string, root: HTMLElement | null = null) {
+  if (openSheets.length === 0 && !releaseSheetPageScroll) releaseSheetPageScroll = lockPageScroll();
   openSheets.push({ id, root });
   syncBackgroundInert();
   notifyStackListeners();
@@ -186,14 +217,9 @@ export function popSheet(id: string) {
       break;
     }
   }
-  if (openSheets.length === 0) {
-    window.removeEventListener("resize", schedulePageScrollLocks);
-    if (pageScrollLockFrame) window.cancelAnimationFrame(pageScrollLockFrame);
-    pageScrollLockFrame = 0;
-    document.body.style.overflow = bodyScrollLockPreviousOverflow;
-    document.documentElement.style.overflowY = rootScrollLockPreviousOverflowY;
-    for (const [scroller, previous] of pageScrollLocks) scroller.style.overflowY = previous.overflowY;
-    pageScrollLocks.clear();
+  if (openSheets.length === 0 && releaseSheetPageScroll) {
+    releaseSheetPageScroll();
+    releaseSheetPageScroll = null;
   }
   syncBackgroundInert();
   notifyStackListeners();

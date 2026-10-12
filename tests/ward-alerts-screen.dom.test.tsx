@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer";
+import { INBOX_CATEGORIES, seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { wardPlannedAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -172,7 +173,14 @@ describe("the Alerts screen reports on every condition it watches, firing or not
       countInCategory("destinations_declined") +
       countInCategory("transport_awaiting_departure") +
       // Planned admissions past their expected arrival (stream D) also draw a row.
-      buildActionInbox([], NOW, allUnits(), { plannedAdmissions: wardPlannedAdmissions }).length;
+      buildActionInbox([], NOW, allUnits(), { plannedAdmissions: wardPlannedAdmissions }).length +
+      // L1 (site review, 12 Oct 2026): the arrival and discharge notification rows the Tasks badge
+      // counts are on Alerts too, so the two agree.
+      taskItems(seedWardFlowState(), NOW).filter(
+        (item) =>
+          item.id.startsWith(INBOX_CATEGORIES.support_notification_arrival.idPrefix) ||
+          item.id.startsWith(INBOX_CATEGORIES.support_notification_discharge.idPrefix),
+      ).length;
     expect(rows, "no inbox row in the fixture — every assertion in this file would be vacuous").toBeGreaterThan(0);
 
     const { container } = renderScreen();

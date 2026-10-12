@@ -64,14 +64,14 @@ function answer(label: string, answer: string) {
 describe("approved four-tab referral drawer journey", () => {
   it("requires catchment confirmation and places the story in Referral, documents in Documentation", () => {
     setup();
-    // v6 (ReferralDrawer.webp): the footer always offers "Next: Referral"; it checks the patient step when pressed.
-    expect(screen.getByRole("button", { name: "Next: Referral" })).toBeInTheDocument();
+    // v6 (ReferralDrawer.webp): the footer always offers "Next, referral"; it checks the patient step when pressed.
+    expect(screen.getByRole("button", { name: "Next, referral" })).toBeInTheDocument();
     tab("Wards");
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Confirm the patient's catchment");
     tab("Patient");
     confirmCatchment();
-    next("Next: Referral");
+    next("Next, referral");
     expect(screen.getByLabelText(/Patient story/)).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Medical clearance" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Mental State Examination/)).not.toBeInTheDocument();
@@ -106,13 +106,13 @@ describe("approved four-tab referral drawer journey", () => {
   it("uploads actual charts, opens contact confirmation without dispatching, then sends once to selected inboxes", async () => {
     setup(true);
     confirmCatchment();
-    next("Next: Referral");
+    next("Next, referral");
     fireEvent.click(screen.getByRole("button", { name: "Emergency" }));
     fireEvent.change(screen.getByLabelText("Referring emergency department"), { target: { value: "RPH" } });
     fireEvent.change(screen.getByLabelText(/Patient story/), {
       target: { value: "Synthetic patient story for inbox review" },
     });
-    next("Next: Clearance");
+    next("Next, clearance");
     answer("Has the patient been medically cleared?", "No");
     fireEvent.change(screen.getByLabelText("Expected clearance"), { target: { value: "2026-10-07T18:00" } });
     fireEvent.change(screen.getByLabelText("Contact name"), { target: { value: "Demo Doctor" } });
@@ -127,7 +127,7 @@ describe("approved four-tab referral drawer journey", () => {
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Replace" })).toHaveLength(2), {
       timeout: 10_000,
     });
-    next("Next: Wards");
+    next("Next, wards");
     const locations = screen.getByRole("list", { name: "Placement Destination Options" });
     const first = within(locations).getByRole("checkbox", { name: /rph-adult-secure/ });
     fireEvent.click(first);

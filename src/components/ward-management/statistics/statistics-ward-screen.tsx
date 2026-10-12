@@ -75,7 +75,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
-import { occupiedBeds } from "./statistics-occupancy";
+import { occupancyPercent, occupiedBeds } from "./statistics-occupancy";
 import styles from "./statistics-v6.module.css";
 import ward from "./statistics-ward.module.css";
 
@@ -157,7 +157,8 @@ export function StatisticsWardScreen({
   const states = bedStates(unit, admissions, bedReleases, leaveBeds);
   const bedMap = bedMapCells(unit, admissions, bedReleases, leaveBeds, now);
   const wardOccupancy = occupiedBeds([unit], admissions, bedReleases, leaveBeds);
-  const occupancyPct = unit.beds > 0 ? Math.round((wardOccupancy.occupied / unit.beds) * 100) : 0;
+  // L1: the percentage is the one occupancy figure, Occupied + Pulled (`ward-occupancy.ts`).
+  const occupancyPct = occupancyPercent(wardOccupancy);
   const referrals = wardReferralTally(movements, unit.id);
 
   let ready: ReadyNotYetGone | null = null;
@@ -250,7 +251,7 @@ export function StatisticsWardScreen({
         figures: () => [
           ["Beds", unit.beds],
           ["Occupied", wardOccupancy.occupied],
-          ["Occupied percent", occupancyPct],
+          ["Occupancy percent (occupied or pulled)", occupancyPct],
           ["Pulled, not arrived", wardOccupancy.pulled],
           ["Ready", capacity.available],
           ["Average stay, days", averageStay ?? "none"],
@@ -264,7 +265,7 @@ export function StatisticsWardScreen({
           <>
             <HeroStat
               value={wardOccupancy.occupied}
-              label={`${occupancyPct}% occupied`}
+              label={`Occupied, ${occupancyPct}% in use`}
               tone={occupancyPct >= BED_ALERT_THRESHOLD_PERCENT ? "warning" : undefined}
             />
             <HeroStat value={capacity.available} label="Ready" />
@@ -276,7 +277,7 @@ export function StatisticsWardScreen({
         <>
           {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
               out; the export still carries it. */}
-          <HeroStat value={wardOccupancy.occupied} label={`${occupancyPct}% occupied`} />
+          <HeroStat value={wardOccupancy.occupied} label={`Occupied, ${occupancyPct}% in use`} />
           <HeroStat
             value={wardOccupancy.pulled}
             label={
@@ -706,7 +707,7 @@ function WardPhone({
                     "none"
                   ) : (
                     <>
-                      {days} <small>d</small>
+                      {days} <small className={phone.unit}>d</small>
                     </>
                   )
                 }

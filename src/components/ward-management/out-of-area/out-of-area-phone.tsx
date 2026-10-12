@@ -1,5 +1,6 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Phone, Route, Search } from "lucide-react";
@@ -548,9 +549,7 @@ export function OutOfAreaPhone({
                     ? "Continue return plan"
                     : "Plan return"}
               </Button>
-              <Button variant="sec" icon={Phone} disabledReason="Not wired in this prototype." reasonDisplay="tooltip">
-                Call ward
-              </Button>
+              <NotWiredButton variant="sec" icon={Phone} label="Call ward" />
             </div>
           </div>
         </Sheet>

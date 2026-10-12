@@ -18,7 +18,7 @@ import {
 } from "../ward-care-journey";
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
-import { formatInstantWithDay } from "../ward-clock";
+import { formatInstantWithDay, perthDateTimeLocal } from "../ward-clock";
 import styles from "./discharges-third-edition.module.css";
 const words = (value: string) => value.replaceAll("_", " ");
 function Choice({ label, values }: { label: string; values: readonly string[] }) {
@@ -51,8 +51,8 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
   const clinical = actor.role !== "community";
   const instant = (value: FormDataEntryValue | null) => {
     if (typeof value !== "string" || !value) return NaN;
-    const date = new Date(value);
-    return (date.getTime() - dayZero.getTime()) / 60_000;
+    const date = perthDateTimeLocal(value);
+    return date ? (date.getTime() - dayZero.getTime()) / 60_000 : NaN;
   };
   function save(value: unknown) {
     if (!validCareChange(value) || record.identity.kind !== "linked") {
