@@ -1256,7 +1256,9 @@ function NetworkRow({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const [asked, setAsked] = useState(false);
+  const { refreshRequests } = useWardFlow();
+  // From the shared record, so a demo reset clears it and a request made from the ward sidebar shows here too.
+  const asked = refreshRequests.some((request) => request.unitId === row.unit.id);
   const site = siteByCode(row.unit.siteCode);
   /*
    * Wards are always named, never shown as a bare code. The unresolved sentence comes from
@@ -1609,7 +1611,6 @@ function NetworkRow({
           onClick={(e) => {
             e.stopPropagation();
             onRequestRefresh();
-            setAsked(true);
           }}
         >
           {asked ? "Update requested" : "Request update"}
