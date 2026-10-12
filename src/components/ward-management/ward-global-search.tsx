@@ -854,6 +854,10 @@ export function WardGlobalSearch({
 
   /** A preview action is a plain link too, with the same modified-click rule as a row. */
   function onPreviewOpen(event: MouseEvent<HTMLAnchorElement>, href: string) {
+    if (!resultsCurrent) {
+      event.preventDefault();
+      return;
+    }
     if (previewItem) {
       rememberRecent(previewItem);
       setRecentsVersion((version) => version + 1);
@@ -1021,7 +1025,10 @@ export function WardGlobalSearch({
                             role="option"
                             aria-selected={resultsCurrent && activeIndex === index}
                             tabIndex={-1}
-                            onClick={(event) => onOptionClick(event, item.href)}
+                            // A stale row belongs to the previous text, so it cannot open until results catch up.
+                            onClick={(event) =>
+                              resultsCurrent ? onOptionClick(event, item.href) : event.preventDefault()
+                            }
                             onMouseEnter={() => setHoverIndex(index)}
                             className={styles.option}
                             data-active={(resultsCurrent && activeIndex === index) || undefined}
