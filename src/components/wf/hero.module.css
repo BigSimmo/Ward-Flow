@@ -662,7 +662,7 @@
  * on the hero. Desktop and tablet only: phone keeps its own measured band below.
  */
 @media (min-width: 48.0625rem) {
-  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) {
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"][data-wf-band-ssr="true"]:not([data-band]) {
     --wf-band-top: var(--wf-s-4);
     --wf-band-left: var(--wf-s-4);
     --wf-band-right: var(--wf-s-4);
@@ -682,7 +682,7 @@
       linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
   }
 
-  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"][data-wf-band-ssr="true"]:not([data-band])::after {
     content: "";
     position: absolute;
     left: 0;
@@ -698,11 +698,11 @@
 
 @media print {
   .hero[data-band="on"],
-  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) {
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"][data-wf-band-ssr="true"]:not([data-band]) {
     margin: 0;
   }
   .hero[data-band="on"]::after,
-  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"][data-wf-band-ssr="true"]:not([data-band])::after {
     display: none;
   }
 }

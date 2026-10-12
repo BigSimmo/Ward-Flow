@@ -55,6 +55,8 @@ export type HeroProps = {
    * `false` for a hero that must stay an inset card even at the top of a page.
    */
   band?: boolean;
+  /** Opt in when this hero is the first page content and may be band-painted in server HTML. */
+  opensPage?: boolean;
   className?: string;
 };
 
@@ -82,6 +84,7 @@ export function Hero({
   testId,
   quiet = false,
   band = true,
+  opensPage = false,
   className,
 }: HeroProps) {
   const titleId = useId();
@@ -96,6 +99,7 @@ export function Hero({
       data-testid={testId}
       // A band hero is server-rendered as the band (band.ts, site review B6); `card` opts out.
       data-wf-hero={quiet ? "quiet" : band ? "band" : "card"}
+      data-wf-band-ssr={opensPage && band && !quiet ? "true" : undefined}
     >
       <div className={cx(styles.row, styles.firstRow)}>
         {lead ? (

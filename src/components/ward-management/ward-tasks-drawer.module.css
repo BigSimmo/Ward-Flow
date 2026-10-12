@@ -1159,7 +1159,7 @@
      row keeps its layout. A press on the patient line under it opens the same row. */
   .rowTitle {
     justify-self: stretch;
-    min-height: 0;
+    min-height: 3rem;
     margin-block: -12px;
     padding-block: 12px;
     font-size: var(--wf-fs-14);

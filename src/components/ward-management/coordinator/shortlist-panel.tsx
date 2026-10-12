@@ -700,7 +700,7 @@ export function ShortlistPanel({
   // L3: the one next step once a destination has accepted (see the "Next step" section below).
   const placementNextStep: "hold" | "book" | "booked" | undefined = !acceptedUnit
     ? undefined
-    : movement.transport !== undefined
+    : movement.transport !== undefined && movement.transport.cancelledAt === undefined
       ? "booked"
       : movement.stage === "placement_requested" ||
           movement.stage === "destination_review" ||
@@ -763,7 +763,7 @@ export function ShortlistPanel({
   // fresh, so an override attempted against a non-referable movement is refused by the reducer
   // exactly like Refer would be, the refusal surfaces on the Exceptions drawer via `rejections`,
   // and no local flag here is ever left claiming a success that did not happen.
-  const canOverride = hasReferSelection;
+  const canOverride = hasReferSelection && referralBlocked === undefined;
   // Same fact as `allSelectedReferable`. A ward that only declined before is NOT one of these, so
   // the "Use Override instead" sentence below can never be shown about it again.
   const firstIneligibleSelected = referredCandidates.find(

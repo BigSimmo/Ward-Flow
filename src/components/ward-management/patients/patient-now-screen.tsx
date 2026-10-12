@@ -220,7 +220,10 @@ export function PatientNowScreen({
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
   // timestamp, so the calendar date used to derive a patient's age must be rebuilt from `dayZero`.
   // `new Date(now)` would anchor to the 1970 epoch and render a negative age.
-  const displayToday = new Date(dayZero.getTime() + now * 60_000);
+  const displayInstant = new Date(dayZero.getTime() + now * 60_000);
+  const displayPerth = new Date(displayInstant.getTime() + 8 * 60 * 60_000);
+  // Build a local-date value from Perth's calendar fields so age calculations do not depend on the browser zone.
+  const displayToday = new Date(displayPerth.getUTCFullYear(), displayPerth.getUTCMonth(), displayPerth.getUTCDate());
 
   // Selected scenario / record ID, seeded from the route and re-synced on client-side navigation:
   // the WF-009/WF-004 toggle buttons also call setSelectedId but without changing `routeId`, so the

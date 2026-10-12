@@ -1379,7 +1379,7 @@
   .lookupName a {
     display: flex;
     align-items: center;
-    min-height: 2.75rem;
+    min-height: 3rem;
   }
 
   .lookupAside {

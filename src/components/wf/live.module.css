@@ -237,9 +237,9 @@
 
 /* Phone (v10): the clock after "Live" is mono at the chip's own weight and ink ("Live 10:42"). */
 @media (max-width: 48rem) {
-  /* The folded pause is a 44px tall target on phone (site review, 12 Oct 2026). */
+  /* Keep the folded pause at the 48px minimum touch target on phone. */
   .toggle {
-    --wf-live-hit: 44px;
+    --wf-live-hit: 48px;
   }
   .u.clk {
     font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
