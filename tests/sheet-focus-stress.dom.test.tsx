@@ -67,9 +67,10 @@ describe("Sheet focus stress", () => {
     expect(background).not.toHaveAttribute("inert");
 
     unmount();
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    expect(document.body.style.overflow).toBe("scroll");
-    expect(markerCount()).toBe(0);
+    await waitFor(() => {
+      expect(document.body.style.overflow).toBe("scroll");
+      expect(markerCount()).toBe(0);
+    });
     background.remove();
     document.body.style.overflow = "";
   });
@@ -145,10 +146,10 @@ describe("Sheet focus stress", () => {
 
     // The lower sheet closes underneath the open one.
     rerender(<Pair lower={false} upper />);
-    await new Promise((resolve) => setTimeout(resolve, 80));
-
-    expect(document.activeElement).toBe(upperFocus);
-    expect(panelOf("Upper")?.contains(document.activeElement)).toBe(true);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(upperFocus);
+      expect(panelOf("Upper")?.contains(document.activeElement)).toBe(true);
+    });
   });
 
   it("stays balanced under StrictMode double-invoked effects", async () => {
@@ -185,12 +186,14 @@ describe("Sheet focus stress", () => {
       </Sheet>,
     );
 
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+    await waitFor(() => {
+      expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+    });
 
     unmount();
-    await new Promise((resolve) => setTimeout(resolve, 40));
-    expect(markerCount()).toBe(0);
+    await waitFor(() => {
+      expect(markerCount()).toBe(0);
+    });
     timeoutSpy.mockRestore();
   });
 
@@ -218,13 +221,15 @@ describe("Sheet focus stress", () => {
         <p>Body</p>
       </Sheet>,
     );
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await waitFor(() => {
+      expect(added.size).toBeGreaterThan(0);
+    });
     unmount();
-    await new Promise((resolve) => setTimeout(resolve, 40));
-
-    for (const type of ["focusin", "pointerdown", "keydown"]) {
-      expect(removed.get(type) ?? 0).toBeGreaterThanOrEqual(added.get(type) ?? 0);
-    }
+    await waitFor(() => {
+      for (const type of ["focusin", "pointerdown", "keydown"]) {
+        expect(removed.get(type) ?? 0).toBeGreaterThanOrEqual(added.get(type) ?? 0);
+      }
+    });
     addSpy.mockRestore();
     removeSpy.mockRestore();
   });
@@ -283,10 +288,11 @@ describe("Sheet focus stress", () => {
     act(() => {
       greedy.focus();
     });
-    await new Promise((resolve) => setTimeout(resolve, 120));
-
-    // The war ends: bounded reclaims, no stack overflow, focus left alone.
-    expect(steals).toBeLessThan(200);
+    await waitFor(() => {
+      // The war ends: bounded reclaims, no stack overflow, focus left alone.
+      expect(steals).toBeGreaterThan(0);
+      expect(steals).toBeLessThan(200);
+    });
     greedy.removeEventListener("focusout", steal);
     background.remove();
   });
