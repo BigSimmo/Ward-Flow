@@ -41,6 +41,10 @@ async function gotoCoordinator(page: Page) {
  * inside them; idempotent, so it is safe after every queue selection.
  */
 async function openShortlistSections(shortlist: Locator) {
+  // L3 (site review, 12 Oct 2026): once a ward has accepted, the card leads with the next step and
+  // keeps the bed list behind "Find another bed".
+  const findAnother = shortlist.getByTestId("ward-shortlist-find-another-bed");
+  if ((await findAnother.count()) > 0) await findAnother.click();
   const toggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -309,7 +313,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const phoneDrawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await expect(phoneDrawer).toBeVisible();
     await phoneDrawer.locator('[data-testid*="-WF-005"]').first().click();
-    await expect(page.getByTestId("ward-shortlist-refer")).toBeInViewport();
+    // L3: an accepted movement leads with its next step instead of Refer.
+    await expect(
+      page.getByTestId("ward-shortlist-refer").or(page.getByTestId("ward-shortlist-next-step")).first(),
+    ).toBeInViewport();
   });
 
   test("orders by clinical tier first and labels the score as operational, not clinical", async ({ page }) => {
@@ -330,52 +337,33 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(rowCount).toBeGreaterThan(0);
     expect(tiers).toHaveLength(rowCount);
 
-    // Commit bc7cb70fb (owner, 2026-08-30): a flagged-urgent patient outranks every tier, so the
-    // full rendered list is no longer tier-ascending — WF-018 (tier 3, flagged) legitimately
-    // leads unflagged tier-1 patients who have waited hours. The tier ladder still holds among
-    // the UNFLAGGED, narrowed the same way that commit narrowed "every tier 1 above every tier
-    // 2" in tests/ward-priority.test.ts.
-    const unflaggedRows = rows.filter({ hasNot: page.locator('[data-testid^="ward-queue-flag-"]') });
-    const unflaggedTiers = await unflaggedRows
-      .locator("[data-tier]")
-      .evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute("data-tier"))));
-    expect(unflaggedTiers.length, "the fixture must still hold unflagged rows to order").toBeGreaterThan(1);
-    expect(unflaggedTiers).toEqual([...unflaggedTiers].sort((a, b) => a - b));
-
-    // Within a tier, the wait must be non-increasing — the queue's core claim (Task 5 review
-    // Important 2). Item 37 (2026-09-17) changed queueOrder's tie-break inside a tier from
-    // operationalScore to the wait itself, uncapped, so this reads `data-wait` rather than
-    // `data-score` — the same property-off-the-record discipline the original assertion had, now
-    // pointed at the field that actually orders the queue. Inverting the tiebreak comparator in
-    // `queueOrder` must turn this red.
+    // D-32 on Home (decision 4, site review 12 Oct 2026): the flag leads, act-now rows are pinned
+    // under it (`data-pinned`), then every other row is longest wait first with the tier breaking a
+    // tie. So among rows that are neither flagged nor pinned, the wait must be non-increasing.
     const rowKeys = await rows.evaluateAll((nodes) =>
       nodes.map((node) => ({
         tier: Number(node.querySelector("[data-tier]")?.getAttribute("data-tier")),
         wait: Number(node.getAttribute("data-wait")),
+        flagged: node.querySelector('[data-testid^="ward-queue-flag-"]') !== null,
+        pinned: node.getAttribute("data-pinned") === "true",
       })),
     );
-    for (let i = 1; i < rowKeys.length; i++) {
-      const prev = rowKeys[i - 1];
-      const curr = rowKeys[i];
-      if (curr.tier === prev.tier) {
-        expect(
-          curr.wait,
-          `row ${i} (tier ${curr.tier}, wait ${curr.wait}) must not have waited longer than row ${i - 1} (wait ${prev.wait})`,
-        ).toBeLessThanOrEqual(prev.wait);
-      }
+    const rest = rowKeys.filter((row) => !row.flagged && !row.pinned);
+    expect(rest.length, "the fixture must still hold unflagged, unpinned rows to order").toBeGreaterThan(1);
+    for (let i = 1; i < rest.length; i++) {
+      const prev = rest[i - 1];
+      const curr = rest[i];
+      expect(
+        curr.wait,
+        `row ${i} (wait ${curr.wait}) must not have waited longer than row ${i - 1} (wait ${prev.wait})`,
+      ).toBeLessThanOrEqual(prev.wait);
+      if (curr.wait === prev.wait) expect(curr.tier).toBeGreaterThanOrEqual(prev.tier);
     }
 
-    // The score must never read as clinical severity.
-    await expect(queue).toContainText("Operational");
+    // The score must never read as clinical severity, and the "Operational" leftover is gone (U3).
+    await expect(queue).not.toContainText("Operational");
     await expect(queue).not.toContainText("Severity");
     await expect(queue).not.toContainText("Acuity");
-
-    // The rendered score is the derived one, not a constant or a stale placeholder (Task 5
-    // review Important 3) — compare the first row against itself rather than importing the
-    // derivation into this spec.
-    const firstRow = rows.first();
-    const firstRowScore = await firstRow.getAttribute("data-score");
-    await expect(firstRow).toContainText(`Operational ${firstRowScore}`);
 
     // The breach line used to be the row a coordinator must not miss (Task 5 review Important
     // 3, then Task 6A fix round 1, then the removal of the "Bed need confirmed" factor on
@@ -401,7 +389,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(queue).not.toContainText("passed its deadline");
 
     // Selecting a movement drives the rest of the screen.
-    await firstRow.click();
+    await rows.first().click();
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     const selectedId = await queue.locator('[aria-pressed="true"]').getAttribute("data-testid");
     const selectedMovementId = String(selectedId).replace("ward-queue-row-", "");

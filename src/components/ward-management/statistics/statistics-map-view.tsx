@@ -73,6 +73,7 @@ const daysText = (days: number) => `${days.toFixed(1)}d`;
 type WardFigures = {
   unit: Unit;
   ready: number;
+  /** Beds in use: Occupied + Pulled (`ward-occupancy.ts`). */
   occupied: number;
   pct: number;
   dischargedToday: number;
@@ -88,6 +89,7 @@ export type SiteFigures = {
   wards: WardFigures[];
   ed: EmergencyDepartment | undefined;
   beds: number;
+  /** Beds in use: Occupied + Pulled (`ward-occupancy.ts`). */
   occupied: number;
   pct: number;
   ready: number;
@@ -154,7 +156,9 @@ export function siteFigures({
     if (!site) return [];
     const siteUnits = units.filter((unit) => unit.siteCode === code);
     const wards: WardFigures[] = siteUnits.map((unit) => {
-      const occupied = occupiedBeds([unit], admissions, bedReleases, leaveBeds).occupied;
+      // L1 (site review, 12 Oct 2026): beds in use, Occupied + Pulled — the one occupancy count
+      // (`ward-occupancy.ts`), so every percentage and the over-the-line count below agree with Home.
+      const occupied = occupiedBeds([unit], admissions, bedReleases, leaveBeds).inUse;
       const onWard = admissions.filter((admission) => admission.unitId === unit.id);
       return {
         unit,
@@ -385,7 +389,7 @@ export function StatisticsMapView({
           : [
               { value: network.meanStay === null ? "none" : daysText(network.meanStay), label: "Mean stay" },
               { value: String(network.longStays), label: "Over 3 months" },
-              { value: String(network.occupied), label: "In a bed" },
+              { value: String(network.occupied), label: "Beds in use" },
             ];
 
   const nodes: WaMapNode[] = sites.map((site) => ({

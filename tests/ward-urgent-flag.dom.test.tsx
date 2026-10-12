@@ -207,7 +207,7 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
 });
 
 describe("the queue footer states the order of the tab on show", () => {
-  it("says tier first for patients and longest wait first for referrals (D-32)", () => {
+  it("says flagged and act now first, then longest wait, for patients and longest wait first for referrals (D-32)", () => {
     render(
       <PriorityQueue
         movements={wardMovements}
@@ -218,9 +218,9 @@ describe("the queue footer states the order of the tab on show", () => {
         onClearFilter={() => {}}
       />,
     );
-    expect(screen.getByText("Urgent first, then tier, then longest wait")).toBeInTheDocument();
+    expect(screen.getByText("Flagged and act now first, then longest wait")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: /^Referrals/ }));
     expect(screen.getByText("Longest wait first")).toBeInTheDocument();
-    expect(screen.queryByText("Urgent first, then tier, then longest wait")).toBeNull();
+    expect(screen.queryByText("Flagged and act now first, then longest wait")).toBeNull();
   });
 });

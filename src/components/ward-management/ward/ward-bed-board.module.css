@@ -239,6 +239,23 @@
   color: var(--wf-ink-3);
 }
 
+/* Surname, then the initial that never truncates (the surname gives way first). */
+.cellName {
+  display: flex;
+  min-width: 0;
+}
+
+.cellInitial {
+  flex: none;
+  white-space: nowrap;
+  font: 500 var(--wf-fs-12) / 1.2 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.cell[data-dim="true"] .cellInitial {
+  color: var(--wf-dim);
+}
+
 .swatch {
   display: inline-block;
   flex: none;
@@ -271,7 +288,7 @@
   background: var(--wf-hatch-faint), var(--wf-surface);
 }
 
-/* Act now: the thin 1px red edge, no fill. */
+/* Act now: the faint coral tint, with the rounded coral marker below. */
 .cell[data-act="true"] {
   border-color: var(--wf-line);
 
@@ -451,14 +468,43 @@
   }
 }
 
-/* Phone: stacked pods, 44px chips and Put down, four cells a row. */
+/* Phone: stacked pods and Put down, four cells a row. The waiting and coming-free chips take the
+   shared phone pill size (`--wf-phone-*`): a 32px face with a transparent 48px hit area, carried in
+   the scrolling row's own padding so it is not clipped. */
 @media (max-width: 48rem) {
   .body {
     padding: var(--wf-s-3);
   }
 
-  .chip {
-    min-height: 48px;
+  .waitlist {
+    gap: var(--wf-phone-pill-gap);
+    padding-block: var(--wf-phone-pill-hit);
+  }
+
+  .chipWrap {
+    gap: var(--wf-phone-pill-gap);
+  }
+
+  .chip,
+  .soonChip {
+    position: relative;
+    gap: var(--wf-phone-pill-gap);
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .chip::before,
+  .soonChip::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+
+  .chipMeta {
+    font-size: var(--wf-phone-pill-count-fs);
   }
 
   .say {
@@ -471,10 +517,6 @@
 
   .corridor {
     display: none;
-  }
-
-  .soonChip {
-    min-height: 48px;
   }
 
   .foot {
@@ -537,6 +579,8 @@
   position: relative;
 }
 
+/* The approved coral marker (--wf-act-edge, #249). Not --wf-danger: the dim convention greys that
+   in move mode, and an act-now bed must keep its marker while other beds are being placed. */
 .cell[data-act="true"]::before {
   content: "";
   position: absolute;
@@ -544,7 +588,7 @@
   inset-inline-start: 6px;
   width: 3px;
   border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
+  background: var(--wf-act-edge);
   pointer-events: none;
 }
 

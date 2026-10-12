@@ -6,6 +6,7 @@ import type { Movement } from "../ward-model";
 import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-legal-forms";
 import { RELEASE_PULL_REASONS, type ReleasePullReason } from "../ward-change-reasons";
 import { isArrivalLate, leaveBedNeedsOpenWarning } from "../ward-legal-clock";
+import { perthDateTimeLocal } from "../ward-clock";
 import styles from "./movement-workspace-cockpit.module.css";
 
 export function MovementWorkflowActions({ movement }: { movement: Movement }) {
@@ -24,8 +25,11 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
       : unit && movement.legalStatus === "Voluntary" && unit.lockedBeds > 0 && unit.beds - unit.lockedBeds <= 0
         ? "voluntary_on_locked_ward"
         : null;
-  const started = written ? (new Date(written).getTime() - dayZero.getTime()) / 60_000 : NaN;
-  const due = expiry ? (new Date(expiry).getTime() - dayZero.getTime()) / 60_000 : NaN;
+  // L7: a typed datetime-local value is Perth wall time, not the browser's zone.
+  const writtenAt = written ? perthDateTimeLocal(written) : undefined;
+  const expiryAt = expiry ? perthDateTimeLocal(expiry) : undefined;
+  const started = writtenAt ? (writtenAt.getTime() - dayZero.getTime()) / 60_000 : NaN;
+  const due = expiryAt ? (expiryAt.getTime() - dayZero.getTime()) / 60_000 : NaN;
   const before = () => {
     setSubmitted(rejections.length);
     setLocalError(null);

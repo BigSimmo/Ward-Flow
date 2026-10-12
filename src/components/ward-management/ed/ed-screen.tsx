@@ -1,4 +1,5 @@
 "use client";
+import { queueWaitThresholds } from "@/components/ward-management/coordinator/priority-queue";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
@@ -34,6 +35,8 @@ import {
   formatElapsed,
   formatInstantWithDay,
   minutesUntil,
+  perthCalendarDay,
+  perthMidnight,
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
@@ -50,7 +53,12 @@ import {
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
-import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import {
+  legalFormName,
+  legalStatusFull,
+  legalStatusShort,
+  SELECTABLE_LEGAL_FORMS,
+} from "@/components/ward-management/ward-legal-forms";
 import {
   TENTATIVE_DIAGNOSIS_BLOCKS,
   tentativeDiagnosisPhrase,
@@ -573,13 +581,12 @@ function instantFromDateAndTimeInputs(dateValue: string, timeValue: string, dayZ
   const day = Number(rawDay);
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return undefined;
   if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
-  const typedDate = new Date(year, month - 1, day);
-  // `new Date` silently rolls an invalid day (e.g. 31 Feb) into the next month rather than
-  // refusing it — reject anything that does not read back exactly, the same defensive check
-  // `minutesFromTimeInput` above makes for an out-of-range hour or minute.
-  if (typedDate.getFullYear() !== year || typedDate.getMonth() !== month - 1 || typedDate.getDate() !== day) {
-    return undefined;
-  }
+  // L7: the typed day is a Perth calendar day, whatever the browser's zone. An invalid day (e.g.
+  // 31 Feb) rolls into the next month, so anything that does not read back exactly is refused, the
+  // same defensive check `minutesFromTimeInput` above makes for an out-of-range hour or minute.
+  const typedDate = perthMidnight(year, month - 1, day);
+  const read = perthCalendarDay(typedDate);
+  if (read.year !== year || read.monthIndex !== month - 1 || read.day !== day) return undefined;
   const dayOffsetMinutes = Math.round((typedDate.getTime() - dayZero.getTime()) / 60_000);
   return dayOffsetMinutes + minuteOfDayValue;
 }
@@ -730,6 +737,22 @@ function isEdInitiatedWithdrawal(movement: Movement): boolean {
     movement.closure !== undefined &&
     (ED_INITIATED_WITHDRAWAL_REASONS as readonly string[]).includes(movement.closure.reason)
   );
+}
+
+/**
+ * L4 (site review 12 Oct 2026): the wait marker beside "In ED" reads the one tier-due rule Home
+ * uses (`queueWaitThresholds`, from Settings' "Tier 1 overdue after 1h"), so a T1 patient nine
+ * hours in is overdue here as on Home. Past the access target also marks overdue.
+ */
+function edWaitTone(
+  urgency: number,
+  minutesInDepartment: number,
+  accessTarget: number,
+): "danger" | "warning" | undefined {
+  const thresholds = queueWaitThresholds(urgency);
+  if (minutesInDepartment >= thresholds.overdue || minutesInDepartment > accessTarget) return "danger";
+  if (minutesInDepartment >= thresholds.dueSoon) return "warning";
+  return undefined;
 }
 
 function edOutcomeBlockedReason(movement: Movement): string | undefined {
@@ -4576,9 +4599,23 @@ export function EdScreen({ edId }: EdScreenProps) {
                             </label>
                           ))}
                         </fieldset>
-                        <button type="submit" disabled={!examinationOutcome} className={styles.declineSubmit}>
+                        {/* Greyed only with its reason (site review B3); the submit handler still refuses
+                            an empty choice. */}
+                        <button
+                          type="submit"
+                          aria-disabled={examinationOutcome ? undefined : "true"}
+                          aria-describedby={examinationOutcome ? undefined : `ward-ed-examine-choose-${movement.id}`}
+                          title={examinationOutcome ? undefined : "Choose an outcome first"}
+                          className={styles.declineSubmit}
+                          onClick={examinationOutcome ? undefined : ignoreUnavailableActivation}
+                        >
                           Confirm examination outcome
                         </button>
+                        {examinationOutcome ? null : (
+                          <span id={`ward-ed-examine-choose-${movement.id}`} className="sr-only">
+                            Choose an outcome first
+                          </span>
+                        )}
                       </form>
                     ) : null}
 
@@ -4974,7 +5011,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                       </div>
                       <div>
                         <dt>Form</dt>
-                        <dd>{movement.legalForm ? `Form ${movement.legalForm.code}` : "None"}</dd>
+                        <dd>{movement.legalForm ? legalStatusShort(movement) : "None"}</dd>
                       </div>
                     </dl>
                     {/* v10 phone person sheet: where the time in the department went, then the
@@ -5068,11 +5105,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                 if (boardTable) {
                   if (sheetOpen) a2Sheet = personSheet;
                   const overTarget = minutesInDepartment > accessTarget;
-                  const waitTone = overTarget
-                    ? ("danger" as const)
-                    : minutesInDepartment > accessTarget / 3
-                      ? ("warning" as const)
-                      : undefined;
+                  const waitTone = edWaitTone(movement.urgency, minutesInDepartment, accessTarget);
                   const openSheet = () => {
                     setPhoneSheetReason(undefined);
                     setPhoneSheetFor(movement.id);
@@ -5089,18 +5122,21 @@ export function EdScreen({ edId }: EdScreenProps) {
                   const reviewWords = movement.examination ? "Reviewed" : "Not reviewed";
                   const destinationName =
                     acceptedUnit && !movement.closure ? acceptedUnit.name.split(" — ")[0] : undefined;
+                  // U4 (site review 12 Oct 2026): the form reads "Form 4A" on one line, the same chip
+                  // wording as New referral; its register name, typed expiry and any warning sit in the
+                  // title and for screen readers, so the cell never wraps to three lines.
+                  const formTitle = movement.legalForm
+                    ? [`${legalStatusFull(movement)}.`, formExpiryText, formExpiryWarningText].filter(Boolean).join(" ")
+                    : undefined;
                   const formCell = (
-                    <span className={styles.a2Value}>
+                    <span className={styles.a2Value} title={formTitle}>
                       {formExpiryWarningText !== undefined ? <StatusGlyph tone="warning" size={8} /> : null}
-                      <span
-                        className={movement.legalForm ? styles.a2Mono : styles.a2Quiet}
-                        title={formExpiryWarningText ?? formExpiryText}
-                      >
-                        {movement.legalForm ? movement.legalForm.code : "None"}
+                      <span className={movement.legalForm ? styles.a2NoWrap : styles.a2Quiet}>
+                        {movement.legalForm ? legalStatusShort(movement) : "None"}
                       </span>
                     </span>
                   );
-                  const formFacts = <span className={styles.a2Facts}>{formExpiryFacts}</span>;
+                  const formFacts = <span className="sr-only">{formExpiryFacts}</span>;
                   const clearedCell = (
                     <span className={styles.a2Value}>
                       <StatusGlyph tone={clearedTone} size={8} />
@@ -5279,11 +5315,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                   );
                 }
                 const phoneOverTarget = minutesInDepartment > accessTarget;
-                const phoneWaitTone = phoneOverTarget
-                  ? ("danger" as const)
-                  : minutesInDepartment > accessTarget / 3
-                    ? ("warning" as const)
-                    : undefined;
+                const phoneWaitTone = edWaitTone(movement.urgency, minutesInDepartment, accessTarget);
                 const phoneNextLabel =
                   movement.edOutcome !== undefined && !movement.leftDepartmentAt
                     ? "Left the department"

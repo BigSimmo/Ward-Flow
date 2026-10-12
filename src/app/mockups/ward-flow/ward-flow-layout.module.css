@@ -42,6 +42,20 @@
   outline-offset: -2px;
 }
 
+/*
+ * The two-tone focus ring (design system v9 section "Focus", carried into v10; site review,
+ * 12 Oct 2026). Most Ward controls draw the shared 2px `--wf-focus-ring` outline 2px off their
+ * edge, which left the gap to whatever sat behind and read as a single tone. This fills the gap
+ * with `--wf-focus-gap` and adds the soft halo, so the ring reads on tints, selected rows and the
+ * act-now edge. :where() keeps it at zero specificity: a control that draws its own focus or keeps
+ * a resting shadow is left exactly as it was. The hero sets its own gap (hero.module.css).
+ */
+:where(.shellRow) :where(button, a[href], summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  box-shadow:
+    0 0 0 2px var(--wf-focus-gap, var(--wf-surface)),
+    0 0 0 6px color-mix(in srgb, var(--wf-focus-ring, var(--focus)) 18%, transparent);
+}
+
 .shellContent {
   display: flex;
   flex-direction: column;
@@ -106,6 +120,41 @@
 @media (max-width: 48rem) {
   :global(html):has(.shellRow) {
     --wf-header-height: 3.5rem;
+  }
+}
+
+/*
+ * Phone: the page scrolls inside the work column, not the window (Josh, 12 Oct 2026, iPhone
+ * Safari: "stop the bottom bar moving around like that when scrolling"). When the window scrolled,
+ * Safari collapsed and re-expanded its toolbar mid-scroll, which moved the bottom of the layout
+ * viewport, so the fixed dock jumped up and down and page content showed beneath it. With the
+ * window held still the toolbar never collapses and the dock and header stay put. This is the same
+ * fixed-height column the desktop already uses; tablet (48rem to 1000px) still scrolls the window.
+ * The row and column are positioned so screen-reader-only text cannot stretch the document.
+ * Screen only, so a printout is never cut to one screen's height.
+ */
+@media screen and (max-width: 48rem) {
+  :global(html):has(.shellRow) {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .shellRow {
+    position: relative;
+    height: calc(100dvh - var(--wf-data-bar-height, 0px));
+    min-height: 0;
+    max-height: calc(100dvh - var(--wf-data-bar-height, 0px));
+    overflow: hidden;
+  }
+
+  .shellContent {
+    position: relative;
+    height: 100%;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

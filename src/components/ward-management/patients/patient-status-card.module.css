@@ -71,6 +71,7 @@
 .cells {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  container-type: inline-size;
 }
 
 .cell {
@@ -124,6 +125,27 @@
   white-space: nowrap;
 }
 
+/* Decision 2: a value that opens its record reads as the value, underlined as a link. */
+.valueLink {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--wf-line-2);
+  text-underline-offset: 3px;
+}
+
+.valueLink:hover {
+  text-decoration-color: currentColor;
+}
+
+.valueLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .sub {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
@@ -138,6 +160,24 @@
   grid-column: 2;
   grid-row: 2 / span 3;
   align-self: end;
+}
+
+/*
+ * U1 (site review, 12 Oct 2026): a status value is never cut. When the three cells are narrow (an
+ * iPad in portrait), each cell's action moves under its value so the value has the full width.
+ * Phone cells (`data-ph-quiet`) keep their own layout.
+ */
+@container (max-width: 720px) {
+  .cell:not([data-ph-quiet]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cell:not([data-ph-quiet]) .action {
+    grid-column: 1;
+    grid-row: auto;
+    align-self: start;
+    margin-top: var(--wf-s-1);
+  }
 }
 
 @media (max-width: 760px) {

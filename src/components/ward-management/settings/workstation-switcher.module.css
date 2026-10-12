@@ -239,7 +239,7 @@
   border-style: dashed;
   border-color: var(--wf-line-3);
   background: transparent;
-  cursor: not-allowed;
+  cursor: pointer;
 }
 
 .preview .who > b {

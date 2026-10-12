@@ -54,7 +54,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "pt",
     header: "Patient",
-    width: 188,
+    width: 156,
     locked: true,
     cell: (row) => (
       <span className={styles.two}>
@@ -72,7 +72,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "st",
     header: "Status",
-    width: 168,
+    width: 140,
     cell: (row, ctx) => (
       <span className={styles.two}>
         <span className={styles.glyphText}>
@@ -87,7 +87,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "wait",
     header: "Waiting",
-    width: 92,
+    width: 84,
     mono: true,
     cell: (row, ctx) => (
       <span className={styles.two}>
@@ -100,7 +100,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "route",
     header: "From and to",
-    width: 172,
+    width: 140,
     cell: (row) => (
       <span className={styles.two}>
         <span className={styles.trunc}>{row.edShort}</span>
@@ -153,7 +153,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "due",
     header: "Due",
-    width: 100,
+    width: 92,
     mono: true,
     cell: (row, ctx) => {
       const due = dueParts(row, ctx.now);
@@ -169,9 +169,11 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     paper: (row, ctx) => dueShort(row, ctx.now) ?? "",
   },
   {
+    // U1 (site review, 12 Oct 2026): the action never truncates, so Next step takes the widest share
+    // and Patient, Status and From and to give way (names truncate first).
     id: "next",
     header: "Next step",
-    width: 196,
+    width: 300,
     cell: (row, ctx) => {
       const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
       return (

@@ -31,7 +31,7 @@ import {
   type Movement,
   type Unit,
 } from "@/components/ward-management/ward-model";
-import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { legalFormName, legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -88,6 +88,7 @@ import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
 import styles from "./delays-board.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -147,15 +148,24 @@ function ago(minutes: number): string {
   return minutes < 1 ? "just now" : `${splitDuration(minutes)} ago`;
 }
 
+/** U1 (review 12 Oct 2026): legal status is never cut. A short form chip, the full name as its title. */
 function legalCell(row: BoardRow): ReactNode {
   const form = row.movement.legalForm;
-  if (row.dueIn === undefined || form === undefined) return row.movement.legalStatus;
+  const short = legalStatusShort(row.movement);
+  const full = legalStatusFull(row.movement);
+  if (row.dueIn === undefined || form === undefined)
+    return (
+      <span className={styles.legalChip} title={full}>
+        {short}
+      </span>
+    );
   const tone = row.dueIn < 0 ? "danger" : dueTone(row.dueIn);
   const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
   return (
-    <span className={styles.lg}>
+    <span className={styles.lg} title={`${full}, ${left}`}>
       <Glyph tone={tone} />
-      <span className={styles.ell}>{`Form ${form.code}, ${left}`}</span>
+      <span className={styles.legalChip}>{short}</span>
+      <span className={styles.legalLeft}>{left}</span>
     </span>
   );
 }
@@ -1725,7 +1735,7 @@ export function DelaysBoard({
               data-ward-primitive="panel"
               tabIndex={-1}
             >
-              <div className={styles.chead}>
+              <div className={`${styles.chead} ${wardPin.pinnedSwitch}`}>
                 <h2>{flat ? "Waiting" : "Waiting by blocker"}</h2>
                 <span
                   className={styles.meta}

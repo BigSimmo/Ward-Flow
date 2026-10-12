@@ -3,7 +3,7 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { currentInboxOwner, type InboxOwnershipEntry } from "@/components/ward-management/ward-inbox-snooze";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -13,7 +13,8 @@ import { edById } from "@/components/ward-management/ward-sites";
  * the queue and who it belongs to, read only from the row's id and the model's own links.
  */
 
-export type AlertKind = "legal" | "declines" | "unsuitable" | "hold" | "transport" | "planned" | "target" | "running";
+export type AlertKind =
+  "legal" | "declines" | "unsuitable" | "hold" | "transport" | "planned" | "notify" | "target" | "running";
 
 /** The queue's three groups: act now (red), waiting (amber, counted) and running targets (listed, never counted). */
 export type AlertGroup = "act" | "wait" | "running";
@@ -25,6 +26,10 @@ const KIND_PREFIXES: [AlertKind, string][] = [
   ["hold", INBOX_CATEGORIES.bed_pull_expired.idPrefix],
   ["transport", INBOX_CATEGORIES.transport_awaiting_departure.idPrefix],
   ["planned", INBOX_CATEGORIES.planned_arrival_overdue.idPrefix],
+  // L1 (site review, 12 Oct 2026): the arrival and discharge notification rows the Tasks badge
+  // counts, so Alerts "Now" and the badge agree.
+  ["notify", INBOX_CATEGORIES.support_notification_arrival.idPrefix],
+  ["notify", INBOX_CATEGORIES.support_notification_discharge.idPrefix],
   // The running countdowns share a stem with the overdue rows, so they are matched first.
   ["running", INBOX_CATEGORIES.target_pending_referral_decision.idPrefix],
   ["running", INBOX_CATEGORIES.target_pending_transfer_acceptance.idPrefix],
@@ -50,10 +55,17 @@ export function alertGroupOf(item: InboxItem): AlertGroup {
 }
 
 /** The movement an inbox id names, for the categories whose remainder is a movement id. */
+/** The discharged stay a discharge notification row names, read from its id. */
+export function admissionIdOfInboxId(id: string): string | undefined {
+  const prefix = INBOX_CATEGORIES.support_notification_discharge.idPrefix;
+  return id.startsWith(prefix) ? id.slice(prefix.length) || undefined : undefined;
+}
+
 export function movementIdOfInboxId(id: string): string | undefined {
   const match = KIND_PREFIXES.find(([, candidate]) => id.startsWith(candidate));
-  // A planned arrival row names a booking, never a movement.
+  // A planned arrival row names a booking, never a movement; a discharge notification row names a stay.
   if (!match || match[0] === "planned") return undefined;
+  if (match[1] === INBOX_CATEGORIES.support_notification_discharge.idPrefix) return undefined;
   return id.slice(match[1].length);
 }
 
@@ -77,6 +89,7 @@ export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   hold: "Bed hold expired",
   transport: "Transport not yet left",
   planned: "Planned arrival not recorded",
+  notify: "Notifications to record",
   target: "Decision target overdue",
   running: "Decision target running",
 };
@@ -128,8 +141,20 @@ export function resolveAlertSubject(
   lookup: { patients?: readonly Patient[]; referrals?: readonly Referral[]; movements?: readonly Movement[] },
   units: readonly { id: string; name: string }[],
   booking?: { planned: PlannedAdmission; personLabel?: string },
+  /** The discharged stay a discharge notification row names. Pass it only for a discharge row: it
+   *  wins over a linked movement, so the row names the ward the person left, not the movement's ED. */
+  admission?: Admission,
 ): AlertSubject {
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : undefined);
+  if (admission) {
+    const info = resolveSubjectPatient(admission, lookup);
+    return {
+      displayName: info.displayName,
+      umrn: info.umrn,
+      from: unitName(admission.unitId) ?? "Ward not recorded",
+      patientHref: info.patient ? `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}` : undefined,
+    };
+  }
   if (booking) {
     const info = resolveSubjectPatient(booking.planned, lookup);
     return {
@@ -171,6 +196,11 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
       return { kind: "link", label: "Open transport", href: "/mockups/ward-flow/transport" };
     case "planned":
       return { kind: "link", label: "Open bookings", href: item.href ?? "/mockups/ward-flow/capacity" };
+    case "notify":
+      // A discharge row opens its stay on the discharges board, as the Tasks drawer does.
+      return item.admissionId !== undefined
+        ? { kind: "link", label: "Record notifications", href: "/mockups/ward-flow/discharges" }
+        : { kind: "link", label: "Record notifications", href: patientHref };
     default:
       if (item.id.includes("referral-decision")) {
         return { kind: "link", label: "Open referral", href: "/mockups/ward-flow/referrals" };

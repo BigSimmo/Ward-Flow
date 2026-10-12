@@ -1,0 +1,24 @@
+/*
+ * The phone pinned view switch, shared (Josh, 12 Oct 2026). Home's ED / Referrals queue switch
+ * (`.queueTools` in coordinator/home.module.css) is the reference: on a phone the page's main view
+ * switch sticks directly under the stable phone header while the list scrolls, on a canvas band
+ * that runs to the screen edges so no row shows beside or behind it.
+ *
+ * A page adds `pinnedSwitch` to the switch itself (a shared Segmented, whose phone box already
+ * carries a transparent band round its 34px track) or to the row that holds it (a page's own track
+ * plus a button; that row sets its own vertical padding). The element must sit in the same parent
+ * as the list it pins over, with no clipping or transformed ancestor between it and the scroller.
+ * `position: sticky` works whether the document or a `[data-wf-scroller]` element scrolls. The top
+ * is the shared header height, never a page's own number. Nothing here applies above 48rem.
+ */
+@media (max-width: 48rem) {
+  .pinnedSwitch {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+    background-color: var(--wf-canvas);
+    box-shadow:
+      var(--wf-s-4) 0 0 var(--wf-canvas),
+      calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
+  }
+}

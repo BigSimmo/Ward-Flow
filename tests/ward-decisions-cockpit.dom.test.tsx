@@ -107,7 +107,7 @@ describe("ward decisions cockpit", () => {
       </WardDecisionsCockpit>,
     );
     const banner = screen.getByTestId("ward-morning-rollup-overdue-banner");
-    expect(banner).toHaveTextContent("09:30 Morning Bed Rollup Overdue");
+    expect(banner).toHaveTextContent("09:30 morning bed rollup overdue");
     fireEvent.click(screen.getByTestId("ward-confirm-morning-rollup-btn"));
     expect(onConfirmRollup).toHaveBeenCalledOnce();
   });

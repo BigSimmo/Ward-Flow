@@ -12,6 +12,7 @@ import { WardOfflineBanner } from "@/components/ward-management/shell/ward-offli
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardRowDensity } from "@/components/ward-management/settings/row-density";
 import { WardGround } from "@/components/ward-management/ward-shell";
 
 import styles from "./ward-flow-layout.module.css";
@@ -116,6 +117,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
           any page without each screen mounting its own region. */}
       <ToastProvider>
         <WardAccessibility />
+        <WardRowDensity />
         <WardLiveRegion />
         <WardActNowNotifier />
         <div className={styles.shellRow}>

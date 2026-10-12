@@ -85,6 +85,7 @@ export function StatisticsSummaryPhone({
 }: {
   ready: number;
   beingMadeReady: number;
+  /** Beds in use: Occupied + Pulled, the one occupancy count (`ward-occupancy.ts`). */
   occupied: number;
   occupiedPct: number;
   waitingInEd: number;
@@ -150,7 +151,7 @@ export function StatisticsSummaryPhone({
           title={`${ready} ${ready === 1 ? "bed" : "beds"} ready now`}
           sub={`Prototype, invented records${beingMadeReady > 0 ? ` · ${beingMadeReady} being made ready` : ""}`}
           figures={[
-            { id: "occupied", value: occupied, label: `${occupiedPct}% occupied` },
+            { id: "occupied", value: occupied, label: `${occupiedPct}% in use` },
             { id: "ed", value: waitingInEd, label: "Waiting in ED" },
             { id: "ended", value: endedToday, label: "Ended today" },
           ]}

@@ -59,6 +59,32 @@ function surname(name: string | undefined): string {
   return parts[parts.length - 1] ?? name;
 }
 
+/**
+ * U1 (site review, 12 Oct 2026): an occupied bed reads surname first with the first initial, and
+ * the initial never truncates, so eight "Ferrowm…" beds in move mode read "Ferrowm…, E" and
+ * "Ferrowm…, I" and stay distinguishable beside their bed numbers.
+ */
+function occupantParts(name: string | undefined): { surname: string; initial: string } | null {
+  if (!name) return null;
+  const parts = name.trim().split(/\s+/);
+  if (parts.length < 2) return null;
+  return { surname: parts[parts.length - 1]!, initial: parts[0]!.charAt(0).toUpperCase() };
+}
+
+function CellWord({ bed }: { bed: BedItem }) {
+  const occupant =
+    bed.status === "ready" || bed.status === "closed" || bed.status === "incoming"
+      ? null
+      : occupantParts(bed.patientAlias);
+  if (occupant === null) return <span className={styles.cellWord}>{cellWord(bed)}</span>;
+  return (
+    <span className={styles.cellName}>
+      <span className={styles.cellWord}>{occupant.surname}</span>
+      <span className={styles.cellInitial}>, {occupant.initial}</span>
+    </span>
+  );
+}
+
 function cellWord(bed: BedItem): string {
   if (bed.status === "ready") return bed.heldFor ? `Held, ${surname(bed.heldFor)}` : "Free";
   if (bed.status === "closed") return "Closed";
@@ -256,7 +282,7 @@ export function WardBedBoard({
                         ) : (
                           <span className={styles.swatch} aria-hidden="true" />
                         )}
-                        <span className={styles.cellWord}>{cellWord(bed)}</span>
+                        <CellWord bed={bed} />
                       </span>
                     </button>
                   );

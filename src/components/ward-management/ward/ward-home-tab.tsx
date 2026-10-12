@@ -423,6 +423,22 @@ export function WardHomeTab({
                 : free
                   ? "Free to offer"
                   : stateWord;
+    // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
+    // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
+    // list view and the bed panel.
+    const tileNote = awayAtEd
+      ? `At ED ${bed.awayAtEdHours}h`
+      : bed.blockReason
+        ? "Held up"
+        : bed.pastDate
+          ? "Past date"
+          : bed.dischargeBarrier
+            ? "Barrier"
+            : leaving
+              ? bed.dischargeConfirmed
+                ? "Confirmed out"
+                : "Due out"
+              : note;
     const glyph = bedGlyphTone(bed);
     const number = String(bed.bedNumber).padStart(2, "0");
     const name = free ? "Free to offer" : (bed.patientAlias ?? stateWord);
@@ -436,7 +452,21 @@ export function WardHomeTab({
     ]
       .filter(Boolean)
       .join(", ");
-    return { bed, free, leaving, look, readyByShiftEnd, stateWord, days, note, glyph, number, name, accessibleName };
+    return {
+      bed,
+      free,
+      leaving,
+      look,
+      readyByShiftEnd,
+      stateWord,
+      days,
+      note,
+      tileNote,
+      glyph,
+      number,
+      name,
+      accessibleName,
+    };
   });
   const [innerBedFilter, setInnerBedFilter] = useState<WardBedFilter>("all");
   const bedFilter = bedFilterProp ?? innerBedFilter;
@@ -1528,7 +1558,7 @@ export function WardHomeTab({
                     </span>
                     <span className={styles.bedTileState} aria-hidden="true">
                       <span className={styles.bedTileNote}>
-                        {row.free ? row.stateWord : row.note === row.name ? "" : row.note}
+                        {row.free ? row.stateWord : row.note === row.name ? "" : row.tileNote}
                       </span>
                       {row.days ? <span className={styles.bedTileDays}>{row.days}</span> : null}
                     </span>

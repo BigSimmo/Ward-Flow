@@ -94,7 +94,8 @@ export function Hero({
       className={cx(styles.hero, quiet && styles.quiet, className)}
       aria-labelledby={titleId}
       data-testid={testId}
-      data-wf-hero={quiet ? "quiet" : "band"}
+      // A band hero is server-rendered as the band (band.ts, site review B6); `card` opts out.
+      data-wf-hero={quiet ? "quiet" : band ? "band" : "card"}
     >
       <div className={cx(styles.row, styles.firstRow)}>
         {lead ? (

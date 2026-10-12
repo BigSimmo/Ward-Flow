@@ -232,10 +232,12 @@ export function patientAddedOnDayOf(patient: Patient, now: Instant): boolean {
 /** Whole years, from the stored date of birth and a supplied "today". Never stored: see the field's
  *  own comment. `today` is passed rather than read so this stays deterministic. */
 export function patientAgeYears(patient: Patient, today: Date): number {
-  const born = new Date(patient.dateOfBirth);
-  let age = today.getFullYear() - born.getFullYear();
-  const monthDelta = today.getMonth() - born.getMonth();
-  if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < born.getDate())) age -= 1;
+  // Read the birth date's own calendar fields. `new Date("YYYY-MM-DD")` is UTC midnight, which
+  // local getters read as the day before in zones west of UTC.
+  const [year, month, day] = patient.dateOfBirth.slice(0, 10).split("-").map(Number);
+  let age = today.getFullYear() - year;
+  const monthDelta = today.getMonth() + 1 - month;
+  if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < day)) age -= 1;
   return age;
 }
 

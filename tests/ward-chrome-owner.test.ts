@@ -284,6 +284,10 @@ const V10_PINNED_VIEW_SWITCHES = [
   ".phoneViewRow",
   ".phoneViewTabs",
   ".phoneViews",
+  // 12 Oct 2026 (Josh): the shared phone pinned view switch (ward-pinned-switch.module.css), copied
+  // from Home's .queueTools and adopted by Delays, Movements, Discharges, Legal forms, Governance
+  // and Community team.
+  ".pinnedSwitch",
   ".queueTools",
   ".seg",
   ".segPinned",

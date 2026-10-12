@@ -1,5 +1,6 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob } from "./officer-jobs";
 import {
@@ -23,6 +24,8 @@ import {
   EmptyState,
   FilterChip,
   Hero,
+  HeroChip,
+  HeroChips,
   LiveChip,
   HeroStat,
   Icon,
@@ -1343,20 +1346,43 @@ export function OfficerScreen() {
     );
   }
 
-  const pillStat = (which: HighlightPill, value: number, label: string, short: string, tone?: WfTone) => (
-    <HeroStat
-      className={cx(styles.heroPill, PHONE_PILLS.includes(which) ? undefined : styles.deskOnly)}
-      value={value}
-      label={
-        <>
-          <span className={styles.longLabel}>{label}</span>
-          <span className={styles.shortLabel}>{short}</span>
-        </>
-      }
-      tone={tone}
-      pressed={pill === which}
-      onToggle={() => setPill((current) => (current === which ? null : which))}
-    />
+  // Larger screen: the shared hero chip every other page uses (site review U5). Phone keeps its own
+  // v10 design of three plain figures, so it stays on `HeroStat` and its phone styles.
+  const pillStat = (which: HighlightPill, value: number, label: string, short: string, tone?: WfTone) =>
+    isPhone ? (
+      <HeroStat
+        className={cx(styles.heroPill, PHONE_PILLS.includes(which) ? undefined : styles.deskOnly)}
+        value={value}
+        label={
+          <>
+            <span className={styles.longLabel}>{label}</span>
+            <span className={styles.shortLabel}>{short}</span>
+          </>
+        }
+        tone={tone}
+        pressed={pill === which}
+        onToggle={() => setPill((current) => (current === which ? null : which))}
+      />
+    ) : (
+      <HeroChip
+        key={which}
+        value={value}
+        label={label}
+        tone={tone}
+        pressed={pill === which}
+        onPress={() => setPill((current) => (current === which ? null : which))}
+      />
+    );
+
+  const heroPillStats = (
+    <>
+      {pillStat("requested", awaitingDeparture, "Not accepted", "To accept", "neutral")}
+      {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
+      {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
+      {pillStat("collected", inCustody, "On board", "On board", "info")}
+      {pillStat("late", pastEta, "Past ward ETA", "Late", pastEta > 0 ? "warning" : "neutral")}
+      {pillStat("forms", formsOutstanding, "Jobs need forms", "Need forms", "neutral")}
+    </>
   );
 
   // Hero tools: beside the title on the larger screen, under the figures on phone (v10).
@@ -1396,22 +1422,16 @@ export function OfficerScreen() {
           Arrivals <span className={styles.phArrivalsCount}>{upcoming}</span>
         </Button>
       ) : null}
-      <Button
-        variant="onHero"
-        size="sm"
-        icon={Truck}
-        className={cx(styles.previewButton, styles.deskOnly)}
-        aria-disabled="true"
-        title="Not wired in this prototype."
-        onClick={(event) => event.preventDefault()}
-      >
-        Log booking
-      </Button>
+      <NotWiredButton variant="onHero" size="sm" icon={Truck} label="Log booking" wrapClassName={styles.deskOnly} />
     </div>
   );
 
   const panelOpen = selectedJob !== undefined && selectedJob.transport !== undefined;
   const anyJobEta = jobs.some((movement) => expectedArrival(movement) !== undefined);
+  // Site review 12 Oct 2026: a column that says the same thing on every row ("0 of 3" thirteen
+  // times) says nothing; the hero's "Jobs need forms" and the job sheet still carry the count.
+  const formsVary =
+    jobs.length < 2 || new Set(jobs.map((movement) => (packRequired(movement) ? packCount(movement) : -1))).size > 1;
   useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
 
   return (
@@ -1425,14 +1445,13 @@ export function OfficerScreen() {
           aside={isPhone ? <LiveChip state="live" onHero /> : heroTools}
           barAside={isPhone ? heroTools : undefined}
           bar={
-            <div className={styles.heroPills} role="group" aria-label="Highlight jobs">
-              {pillStat("requested", awaitingDeparture, "Not accepted", "To accept", "neutral")}
-              {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
-              {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
-              {pillStat("collected", inCustody, "On board", "On board", "info")}
-              {pillStat("late", pastEta, "Past ward ETA", "Late", pastEta > 0 ? "warning" : "neutral")}
-              {pillStat("forms", formsOutstanding, "Jobs need forms", "Need forms", "neutral")}
-            </div>
+            isPhone ? (
+              <div className={styles.heroPills} role="group" aria-label="Highlight jobs">
+                {heroPillStats}
+              </div>
+            ) : (
+              <HeroChips label="Highlight jobs">{heroPillStats}</HeroChips>
+            )
           }
           foot={
             <div className={styles.fleetPanel} role="group" aria-label="Highlight jobs by provider">
@@ -1623,7 +1642,9 @@ export function OfficerScreen() {
                           <th scope="col">Patient</th>
                           <th scope="col">Route</th>
                           <th scope="col">Stage</th>
-                          <th scope="col">Forms</th>
+                          <th scope="col" className={formsVary ? undefined : styles.etaOff}>
+                            Forms
+                          </th>
                           {/* Device audit, 11 Oct 2026: the ETA column shows only when a job has one;
                               thirteen rows of "No ETA" said nothing. */}
                           <th scope="col" className={anyJobEta ? undefined : styles.etaOff}>
@@ -1732,7 +1753,7 @@ export function OfficerScreen() {
                                   transportLeg(transport)
                                 )}
                               </td>
-                              <td>
+                              <td className={formsVary ? undefined : styles.etaOff}>
                                 {!packRequired(movement) ? (
                                   <span className={styles.muted}>Not needed</span>
                                 ) : (

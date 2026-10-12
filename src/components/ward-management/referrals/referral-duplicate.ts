@@ -138,3 +138,21 @@ export function duplicateSentence(input: { patientId: PatientId; referrals: read
   // reported as one. A declined referral is precisely the case where raising another is correct.
   return undefined;
 }
+
+/**
+ * L5 / decision 2 (review 12 Oct 2026, Recommended): "Where this case is" follows the case's stage,
+ * so the link lands on the page that actually lists it. A referral still waiting for an answer is
+ * on the Referrals board; once one is accepted the case has moved on (ED board, Delays, a bed) and
+ * the person's own page is the one place that follows it. `undefined` exactly when
+ * `duplicateSentence` is, so the link never shows without the sentence.
+ *
+ * The href carries the synthetic patient id the People route already uses, never a name.
+ */
+export function duplicateCaseHref(input: { patientId: PatientId; referrals: readonly Referral[] }): string | undefined {
+  const states = input.referrals
+    .filter((referral) => referral.patientId === input.patientId)
+    .map((referral) => referralState(referral));
+  if (states.includes("queued")) return "/mockups/ward-flow/referrals";
+  if (states.includes("accepted")) return `/mockups/ward-flow/people/${encodeURIComponent(input.patientId)}`;
+  return undefined;
+}

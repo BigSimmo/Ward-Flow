@@ -21,7 +21,9 @@ import {
   type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
@@ -205,6 +207,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     sayRefusal: wardSafeRejectionReason,
   });
 
+  // Hooks run before the early return below; the accept sheet only opens on a ward's incoming answer.
+  useWardPageScrollLock(acceptModalOpen && unit !== undefined);
+
   if (!unit) {
     return (
       <div className={styles.answerScreen} data-testid="ward-unit-screen">
@@ -230,6 +235,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const breakdown = capacityBreakdown(currentUnit, bedReleases, leaveBeds, now);
   // The ruled four boxes for the census grid below; "Held" is kept for a leave bed only.
   const states = bedStates(currentUnit, admissions, bedReleases, leaveBeds);
+  // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`), so this ward reads the same
+  // percentage here as on its Ward page, the rail and Capacity.
+  const occupancy = wardOccupancy([currentUnit], admissions, bedReleases);
   // Owner ruling 2026-09-05, carried here: the ready figure above does not subtract a bed being
   // made ready (it must not lurch as cleaning starts and stops), so this sentence — using the
   // reducer's own `bedsPendingPreparation`, never re-derived — is what keeps a coordinator from
@@ -503,10 +511,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             isPhone ? (
               <>
                 <HeroStat value={states.ready} label="Ready" tone="success" />
-                <HeroStat
-                  value={unit.beds > 0 ? `${((states.occupied / unit.beds) * 100).toFixed(1)}%` : "Not recorded"}
-                  label="In use"
-                />
+                <HeroStat value={formatWardOccupancy(occupancy)} label="In use" />
                 {phoneGates ? (
                   <HeroStat
                     value={`${phoneGates.pass}/${phoneGates.total}`}
@@ -522,11 +527,11 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           lead={
             isPhone ? undefined : (
               <OccupancyRing
-                percent={unit.beds > 0 ? (states.occupied / unit.beds) * 100 : null}
+                percent={occupancy.percent}
                 alertAt={ANSWER_ALERT_LINE}
                 scope={unit.name}
                 status={
-                  unit.beds > 0 && (states.occupied / unit.beds) * 100 >= ANSWER_ALERT_LINE
+                  occupancy.percent !== null && occupancy.percent >= ANSWER_ALERT_LINE
                     ? { tone: "warning", word: `At risk, over ${ANSWER_ALERT_LINE}%` }
                     : { tone: "success", word: `In use, under ${ANSWER_ALERT_LINE}%` }
                 }
@@ -572,7 +577,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 {/* Facts, not filters: the same ruled four as the Census below, plus being made ready. */}
                 <HeroStat inline value={states.occupied} label={BED_STATE_LABELS.occupied} />
                 <HeroStat inline value={states.ready} label={BED_STATE_LABELS.ready} tone="success" />
-                <HeroStat inline value={pendingPreparation} label={BED_STATE_LABELS.beingMadeReady} />
+                {/* U3: no "0 being made ready" chip; it shows only when a bed is being made ready. */}
+                {pendingPreparation > 0 ? (
+                  <HeroStat inline value={pendingPreparation} label={BED_STATE_LABELS.beingMadeReady} />
+                ) : null}
                 <HeroStat inline value={states.pulled} label={BED_STATE_LABELS.pulled} />
                 <HeroStat inline value={states.closed} label={BED_STATE_LABELS.closed} />
               </div>
@@ -1340,6 +1348,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           }
                         }}
                         aria-label={`Bed ${bedNum} ${statusLabel}`}
+                        aria-describedby={isVacant ? undefined : `ward-answer-bed-reason-${unit.id}`}
+                        title={isVacant ? undefined : "Only a ready bed can take a request"}
                         disabled={!isVacant}
                       >
                         <span className={styles.bedNum}>{bedNum}</span>
@@ -1348,6 +1358,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                     );
                   })}
                 </div>
+                {/* The reason the greyed beds give (a disabled control always says why). */}
+                <p id={`ward-answer-bed-reason-${unit.id}`} className={styles.bedGridReason}>
+                  Only a ready bed can take a request.
+                </p>
                 {/* Shift milieu and staffing balance. The ratio ("1 : 3 (Compliant)"), the shift name and a
                   65/35 male-to-female split of the occupied count were typed in here (25 September
                   2026 review). Ward Flow holds no staffing figures and this screen counts no one's

@@ -32,11 +32,24 @@
      var(--wf-dock-clear) instead of bottom: 0. The local class keeps the selector pure for the
      webpack CSS Modules build. */
   :global(body):has(.pageDock) {
-    --wf-dock-clear: calc(78px + max(8px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-clear: calc(72px + max(8px, env(safe-area-inset-bottom, 0px)));
   }
 
   :global(body):has(.pageDock) :global([data-wf-scroller]) {
     padding-bottom: var(--wf-dock-clear);
+  }
+
+  /* While a sheet or dialog is open the dock steps out of view (Josh, 12 Oct 2026, iPhone: the dock
+     showed under the Broadcast sheet's footer). Some dialogs paint inside the page's own stacking
+     layers, below the dock, so hiding it is the one rule that works for all of them. The Menu and
+     Create sheets are the dock's own and already cover it, so they leave it as it was. */
+  :global(body:has([aria-modal="true"]:not([hidden], #ward-phone-menu, #ward-phone-create))) .pageDock.pageDock {
+    visibility: hidden;
+  }
+
+  /* A swipe that reaches the end of a popup stops there instead of carrying on to the page. */
+  :global(body):has(.pageDock) :global([aria-modal="true"]) {
+    overscroll-behavior: contain;
   }
 }
 

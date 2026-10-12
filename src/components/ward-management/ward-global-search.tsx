@@ -1,5 +1,6 @@
 "use client";
 
+import { lockPageScroll } from "@/components/ui/sheet-focus";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,9 +10,11 @@ import {
   useDeferredValue,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
@@ -332,6 +335,29 @@ export function clearGlobalSearchRecents() {
 /** The width where the open search is a full screen sheet (`.popup` in the module's phone block). */
 const PHONE_SEARCH_QUERY = "(max-width: 48rem)";
 
+/** The phone sheet's top: the open field's bottom edge (the bar's top or the status bar, plus the bar). */
+const PHONE_SHEET_TOP = "calc(max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px)) + var(--wgs-bar-h, 3.5rem))";
+
+/*
+ * Whether the phone sheet is showing, read from the same query as the stylesheet. The phone sheet
+ * has no preview pane, so the preview (which derives a patient's stage, waits and links) is not
+ * built there at all rather than built and hidden on every keystroke.
+ */
+function subscribePhone(onChange: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
+  const query = window.matchMedia(PHONE_SEARCH_QUERY);
+  query.addEventListener?.("change", onChange);
+  return () => query.removeEventListener?.("change", onChange);
+}
+
+function phoneSnapshot() {
+  return typeof window.matchMedia === "function" && window.matchMedia(PHONE_SEARCH_QUERY).matches === true;
+}
+
+function useIsPhoneSearch() {
+  return useSyncExternalStore(subscribePhone, phoneSnapshot, () => false);
+}
+
 function headerBottom(root: HTMLElement | null): number {
   if (!root) return 0;
   const bar = root.closest("header") ?? root;
@@ -543,11 +569,12 @@ export function WardGlobalSearch({
             patients,
             movements,
             units,
+            referrals,
             now,
             limitPerGroup: FULL_RESULTS_PER_GROUP,
             plannedAdmissions,
           }),
-    [trimmed, patients, movements, units, now, plannedAdmissions],
+    [trimmed, patients, movements, units, referrals, now, plannedAdmissions],
   );
 
   const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);
@@ -634,7 +661,14 @@ export function WardGlobalSearch({
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
-  const showPopup = open && deferredQuery === query;
+  /*
+   * The popup stays mounted while React catches up with the typed text. Hiding it for that one
+   * render unmounted the list, dropped data-open and released the phone scroll lock on every
+   * keystroke, which read as a flash on iPhone. Stale rows stay visible but cannot be picked by
+   * keyboard until `resultsCurrent` is true again.
+   */
+  const showPopup = open;
+  const resultsCurrent = deferredQuery === query;
 
   /*
    * THE ACTIVE ROW RESETS WHENEVER THE OPTION LIST CHANGES IDENTITY — same render-phase adjustment
@@ -652,7 +686,8 @@ export function WardGlobalSearch({
 
   /** The preview follows the pointer, then the keyboard, then falls back to the first row. */
   const previewIndex = hoverIndex >= 0 ? hoverIndex : activeIndex >= 0 ? activeIndex : 0;
-  const previewItem = refusal ? undefined : options[previewIndex];
+  const isPhone = useIsPhoneSearch();
+  const previewItem = refusal || isPhone ? undefined : options[previewIndex];
 
   /*
    * D1-style fix, same reason `PatientTypeahead` carries it: the list clips with its own scrollbar,
@@ -660,17 +695,26 @@ export function WardGlobalSearch({
    * Reveal the option inside the list only; `scrollIntoView` also moved the page behind it.
    */
   useEffect(() => {
-    if (!showPopup || activeIndex < 0) return;
+    if (!showPopup || !resultsCurrent || activeIndex < 0) return;
     revealWardOption(document.getElementById(`${id}-opt-${activeIndex}`));
-  }, [activeIndex, showPopup, id]);
+  }, [activeIndex, showPopup, resultsCurrent, id]);
 
   /*
    * THE PALETTE IS PORTALLED TO THE BODY, BECAUSE THE BAR IS GLASS. `backdrop-filter` on the
    * header makes it the containing block for anything fixed inside it, so a fixed palette mounted
    * in place would be clipped to the bar. Its top is measured from the bar's own bottom edge, which
    * also follows the phone bar as it condenses on scroll.
+   *
+   * A LAYOUT EFFECT, so the first painted frame already has the measured top and bar height: with a
+   * plain effect the phone sheet painted one frame at the top of the screen over the field, then
+   * jumped (Josh, 12 Oct 2026). Every later measure is one per animation frame, and a scroll inside
+   * the palette's own list is ignored, so scrolling results does not re-measure the header.
+   *
+   * The on-screen keyboard's height (layout viewport minus the visual viewport) is written straight
+   * to the palette as `--wgs-kb`, not kept in state, so a keyboard resize never re-renders the rows.
+   * The phone sheet pads its bottom by it, so the footer sits just above the keyboard.
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!showPopup) return;
     let frame = 0;
     const measure = () => {
@@ -678,9 +722,17 @@ export function WardGlobalSearch({
       setTop(headerBottom(rootRef.current));
       const box = headerBox(rootRef.current);
       setBarBox((current) => (current.top === box.top && current.height === box.height ? current : box));
+      const viewport = window.visualViewport;
+      const keyboard =
+        viewport && viewport.scale <= 1
+          ? Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop))
+          : 0;
+      paletteRef.current?.style.setProperty("--wgs-kb", `${keyboard}px`);
     };
-    const schedule = () => {
-      if (!frame) frame = window.requestAnimationFrame(measure);
+    const schedule = (event?: Event) => {
+      const target = event?.target;
+      if (target instanceof Node && paletteRef.current?.contains(target)) return;
+      if (!frame) frame = window.requestAnimationFrame(() => measure());
     };
     measure();
     window.addEventListener("resize", schedule);
@@ -702,18 +754,22 @@ export function WardGlobalSearch({
   // cut off the search's top and left the page showing below its footer.
   useEffect(() => {
     if (!showPopup) return;
-    const root = document.documentElement;
-    const previous = root.style.overflowY;
     const phone = window.matchMedia(PHONE_SEARCH_QUERY);
-    // Follows the width while open, so turning a tablet or resizing past 48rem keeps it right.
+    // The shared counted lock also holds the phone work column (`[data-wf-scroller]`), which is
+    // what scrolls on phone. Follows the width while open, so turning a tablet keeps it right.
+    let release: (() => void) | null = null;
     const apply = () => {
-      root.style.overflowY = phone.matches ? "hidden" : previous;
+      if (phone.matches && !release) release = lockPageScroll();
+      else if (!phone.matches && release) {
+        release();
+        release = null;
+      }
     };
     apply();
     phone.addEventListener("change", apply);
     return () => {
       phone.removeEventListener("change", apply);
-      root.style.overflowY = previous;
+      release?.();
     };
   }, [showPopup]);
 
@@ -780,7 +836,7 @@ export function WardGlobalSearch({
   /**
    * Only intercepts when a test has supplied `onNavigate`, and only for the plain click a real
    * anchor would otherwise have handled itself. A modified click (middle button, ctrl/cmd, shift)
-   * is left completely alone in every case, real or tested, because that is the browser's own
+   * on a current row is left completely alone in every case, real or tested, because that is the browser's own
    * "open in a new tab/window" gesture and this control has no business overriding it.
    */
   function onOptionClick(event: MouseEvent<HTMLAnchorElement>, href: string) {
@@ -798,6 +854,13 @@ export function WardGlobalSearch({
 
   /** A preview action is a plain link too, with the same modified-click rule as a row. */
   function onPreviewOpen(event: MouseEvent<HTMLAnchorElement>, href: string) {
+    // Preview actions use real links too, so apply the stale-result guard before remembering or
+    // allowing plain, modified, or assistive-technology activation to leave this page.
+    if (!resultsCurrent) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (previewItem) {
       rememberRecent(previewItem);
       setRecentsVersion((version) => version + 1);
@@ -826,7 +889,7 @@ export function WardGlobalSearch({
       close();
       return;
     }
-    if (!showPopup || options.length === 0) {
+    if (!showPopup || !resultsCurrent || options.length === 0) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setOpen(true);
@@ -883,7 +946,15 @@ export function WardGlobalSearch({
       <div
         ref={paletteRef}
         className={styles.popup}
-        style={{ top: top + 8 }}
+        // The floating palette sits 8px under the bar. The phone sheet starts at the bottom of the
+        // open field, which ward-bar.module.css paints from the top of the screen (under the status
+        // bar) to the bar's bottom edge, so the two meet with no gap and no overlap.
+        style={
+          {
+            top: isPhone ? PHONE_SHEET_TOP : top + 8,
+            ...(barBox.height > 0 ? { "--wgs-bar-h": `${barBox.height}px`, "--wgs-bar-top": `${barBox.top}px` } : {}),
+          } as CSSProperties
+        }
         data-testid="ward-global-search-popup"
         data-start={isStart || undefined}
         // Clicking inside keeps focus in the header field, so the keyboard contract never breaks
@@ -929,8 +1000,8 @@ export function WardGlobalSearch({
                 <Search className={styles.emptyIcon} aria-hidden="true" />
                 <span className={styles.emptyTitle}>No matches found</span>
                 <p className={styles.emptyDescription}>
-                  No matches for “{trimmed}”. Nothing here says whether the person or movement exists — only that this
-                  did not find one.
+                  No matches for “{trimmed}”. This does not say whether the person or movement exists, only that this
+                  search did not find one.
                 </p>
               </div>
             ) : (
@@ -955,12 +1026,29 @@ export function WardGlobalSearch({
                             id={`${id}-opt-${index}`}
                             href={item.href}
                             role="option"
-                            aria-selected={activeIndex === index}
+                            aria-selected={resultsCurrent && activeIndex === index}
+                            aria-disabled={!resultsCurrent || undefined}
                             tabIndex={-1}
-                            onClick={(event) => onOptionClick(event, item.href)}
+                            // Stale rows stay mounted to avoid the popup flash, but never open a
+                            // result for text that is no longer in the field. The footer link is
+                            // not a result, so it keeps working.
+                            onClick={(event) => {
+                              if (resultsCurrent) {
+                                onOptionClick(event, item.href);
+                                return;
+                              }
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                            onAuxClick={(event) => {
+                              if (!resultsCurrent) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }
+                            }}
                             onMouseEnter={() => setHoverIndex(index)}
                             className={styles.option}
-                            data-active={activeIndex === index || undefined}
+                            data-active={(resultsCurrent && activeIndex === index) || undefined}
                             data-previewed={previewIndex === index || undefined}
                             data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
                           >
@@ -1003,7 +1091,11 @@ export function WardGlobalSearch({
           </div>
 
           {previewItem ? (
-            <div className={styles.previewPane}>
+            <div
+              className={styles.previewPane}
+              inert={!resultsCurrent || undefined}
+              aria-disabled={!resultsCurrent || undefined}
+            >
               <GlobalSearchPreview
                 item={previewItem}
                 patients={patients}
@@ -1086,7 +1178,7 @@ export function WardGlobalSearch({
           spellCheck={false}
           aria-haspopup="listbox"
           aria-controls={showPopup && options.length > 0 ? listId : undefined}
-          aria-activedescendant={activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined}
+          aria-activedescendant={resultsCurrent && activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined}
           aria-autocomplete="list"
           aria-describedby={hintId}
           placeholder={placeholder}

@@ -29,10 +29,8 @@ import { ToastProvider } from "@/components/wf";
  * (8 Oct 2026, Josh: "remove anything unnecessary") retired them with the old page. The new page has
  * its own Preview settings, and this suite now holds every one of them to the same rule.
  *
- * Each Preview control is `aria-disabled` (not natively `disabled`) so it stays keyboard-reachable,
- * matching `ignoreUnavailableActivation`'s rationale in src/components/primitive-recipes/recipes.ts:
- * a `disabled` control drops out of the tab order and a screen-reader user moving by Tab never
- * reaches the reason.
+ * Site review (12 Oct 2026): Preview controls are no longer `aria-disabled`. Each works like any
+ * other control and says it is not wired when pressed (D-16), so nothing reads as refused.
  */
 
 const NOT_WIRED = "Not wired in this prototype.";
@@ -54,36 +52,30 @@ function renderSettings() {
 }
 
 describe("settings screen: every Preview control says it is not wired", () => {
-  it.each(TABS.map((name) => ({ name })))(
-    "$name: each aria-disabled control sits in a setting that carries the D4 sentence, and none is natively disabled",
-    ({ name }) => {
-      renderSettings();
-      fireEvent.click(screen.getByRole("radio", { name }));
-      const pane = screen.getByRole("main").querySelector<HTMLElement>("[data-pane]:not([hidden])");
-      expect(pane, "the chosen tab's pane did not show").not.toBeNull();
+  // Site review (12 Oct 2026): the coordinator is never shown a greyed or refused control. A Preview
+  // control works like any other (D-16): it is not aria-disabled, and pressing it says
+  // "<name> is not wired in this prototype." The only aria-disabled controls left are a wired
+  // stepper at its bound and Phone alerts, whose row says why (tests/ward-phone-push.dom.test.tsx).
+  it.each(TABS.map((name) => ({ name })))("$name: no Preview control is greyed", ({ name }) => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name }));
+    const pane = screen.getByRole("main").querySelector<HTMLElement>("[data-pane]:not([hidden])");
+    expect(pane, "the chosen tab's pane did not show").not.toBeNull();
+    const greyed = Array.from(pane!.querySelectorAll<HTMLElement>('[aria-disabled="true"], [disabled]')).filter(
+      (control) =>
+        !/^(Increase|Decrease) /.test(control.getAttribute("aria-label") ?? "") &&
+        !control.closest("[data-setting='phone-alerts']") &&
+        // A form's own submit waits for its field, and says so beside it.
+        control.getAttribute("type") !== "submit",
+    );
+    expect(greyed.map((control) => control.outerHTML.slice(0, 100))).toEqual([]);
+  });
 
-      // A wired stepper's button at its bound is aria-disabled too; that is a limit, not Preview.
-      // Phone alerts (feature 4) is wired but needs the shared Azure workspace: its row says why
-      // it is unavailable instead (tests/ward-phone-push.dom.test.tsx holds it to that).
-      const unavailable = Array.from(pane!.querySelectorAll<HTMLElement>('[aria-disabled="true"]')).filter(
-        (control) =>
-          !/^(Increase|Decrease) /.test(control.getAttribute("aria-label") ?? "") &&
-          !control.closest("[data-setting='phone-alerts']"),
-      );
-      for (const control of unavailable) {
-        const setting = control.closest<HTMLElement>("[data-setting]");
-        expect(setting, `${control.outerHTML.slice(0, 80)} sits outside any setting`).not.toBeNull();
-        expect(setting!.textContent).toContain(NOT_WIRED);
-        expect(control.hasAttribute("disabled")).toBe(false);
-      }
-    },
-  );
-
-  it("shows at least one Preview control, so the suite above is not vacuous", () => {
+  it("still marks Preview settings with the D4 sentence, so the suite above is not vacuous", () => {
     renderSettings();
     fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
-    const pane = screen.getByRole("main").querySelector("[data-pane]:not([hidden])");
-    expect(pane!.querySelectorAll('[aria-disabled="true"]').length).toBeGreaterThan(3);
+    const pane = screen.getByRole("main").querySelector("[data-pane]:not([hidden])")!;
+    expect(pane.textContent).toContain(NOT_WIRED);
   });
 
   it("pressing a Preview control says it is not wired and changes nothing", () => {
@@ -93,9 +85,27 @@ describe("settings screen: every Preview control says it is not wired", () => {
     const option = within(row)
       .getAllByRole("radio")
       .find((radio) => radio.getAttribute("aria-checked") === "false")!;
+    expect(option).not.toHaveAttribute("aria-disabled");
     fireEvent.click(option);
     expect(option).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByRole("status")).toHaveTextContent(`Text size: ${NOT_WIRED}`);
+    expect(screen.getByRole("status")).toHaveTextContent("Text size is not wired in this prototype.");
+  });
+
+  it("wires Row density: Compact sets dense rows on the page and Comfortable clears them", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
+    const row = screen.getByTestId("ward-settings-density");
+    fireEvent.click(within(row).getByRole("radio", { name: "Compact" }));
+    expect(within(row).getByRole("radio", { name: "Compact" })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(within(row).getByRole("radio", { name: "Comfortable" }));
+    expect(within(row).getByRole("radio", { name: "Comfortable" })).toHaveAttribute("aria-checked", "true");
+    window.localStorage.removeItem("ward-flow-row-density");
+  });
+
+  it("shows no build notes: no 'Fixed in code', 'Read by' or 'Needs Save'", () => {
+    renderSettings();
+    const text = screen.getByRole("main").textContent ?? "";
+    expect(text).not.toMatch(/Fixed in code|Read by|Needs Save/u);
   });
 
   it("keeps Mental Health Act section numbers and statutory claims out of the find index", () => {
@@ -115,7 +125,7 @@ describe("settings screen — the three controls Task 9 actually wired", () => {
   // v10: each wired rule is one stepper (no slider), named by what it sets.
   const WIRED_STEPPERS = ["ED access target", "Pulled bed hold duration", "Parallel referral enquiry limit"];
 
-  it("are not aria-disabled, unlike the Preview controls", () => {
+  it("are not aria-disabled", () => {
     renderSettings();
     // An earlier case leaves another tab in the address; the rules live on Rules.
     fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));

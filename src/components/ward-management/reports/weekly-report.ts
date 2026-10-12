@@ -1,5 +1,5 @@
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
-import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, perthCalendarDay, type Instant } from "@/components/ward-management/ward-clock";
 import { OUT_OF_AREA_BANDS, travelBand } from "@/components/ward-management/ward-distance";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -29,7 +29,7 @@ export type ReportWeek = {
 /** The Monday-start week `offset` full weeks before the current one. `dayZero` fixes the weekday. */
 export function reportWeek(offset: number, now: Instant, dayZero: Date): ReportWeek {
   const todayIndex = Math.floor(now / MINUTES_PER_DAY);
-  const weekdayOfDayZero = (dayZero.getDay() + 6) % 7; // Monday 0 … Sunday 6
+  const weekdayOfDayZero = (perthCalendarDay(dayZero).weekday + 6) % 7; // Monday 0 … Sunday 6
   const weekdayToday = (((weekdayOfDayZero + todayIndex) % 7) + 7) % 7;
   const thisMonday = todayIndex - weekdayToday;
   const startDay = thisMonday - 7 * (offset + 1);

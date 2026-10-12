@@ -25,3 +25,15 @@ export function revealWardOption(option: HTMLElement | null): void {
   if (row.top < top) scroller.scrollTop += row.top - top;
   else if (row.bottom > bottom) scroller.scrollTop += row.bottom - bottom;
 }
+
+/**
+ * Return the page to its top. The work column (`[data-wf-scroller]`) scrolls on every width from
+ * phone up (phone since 12 Oct 2026, so iOS Safari's toolbar never collapses under the dock); the
+ * window is reset too for the tablet widths where the document still scrolls.
+ */
+export function scrollWardPageToTop(): void {
+  if (typeof window === "undefined") return;
+  const scroller = document.querySelector<HTMLElement>("[data-wf-scroller]");
+  if (scroller) scroller.scrollTop = 0;
+  window.scrollTo({ top: 0 });
+}

@@ -30,7 +30,7 @@ import {
   type MovementSearchQuery,
 } from "@/components/ward-management/ward-derivations";
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
-import type { EmergencyDepartment, LegalForm, Movement, Unit } from "@/components/ward-management/ward-model";
+import type { EmergencyDepartment, LegalForm, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { findPatients, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
@@ -472,13 +472,23 @@ function leadingGroups(intent: SearchIntent, query: string): readonly SearchGrou
   }
 }
 
-function movementDisplayNames(movements: readonly Movement[], patients: readonly Patient[]): Record<string, string> {
-  const resolve = createPatientResolver({ patients, movements });
+/**
+ * The searchable person text for each movement: display name and UMRN. L5 (site review, 12 Oct
+ * 2026): "Wren" or his UMRN found Tobias Wren but not his open movement, because a movement linked
+ * through its referral resolved to nobody (the referrals were not passed) and the UMRN was never
+ * indexed. Every open movement is now findable by its patient's name and UMRN.
+ */
+function movementDisplayNames(
+  movements: readonly Movement[],
+  patients: readonly Patient[],
+  referrals: readonly Referral[] = [],
+): Record<string, string> {
+  const resolve = createPatientResolver({ patients, movements, referrals });
   const names: Record<string, string> = {};
   for (const movement of movements) {
     const resolved = resolve(movement);
     if (!resolved.patient) continue;
-    names[movement.id] = resolved.displayName;
+    names[movement.id] = `${resolved.displayName} ${resolved.umrn}`;
   }
   return names;
 }
@@ -515,6 +525,8 @@ export type SmartSearchInput = {
   patients: readonly Patient[];
   movements: Movement[];
   units: Unit[];
+  /** Referrals, so a movement linked to its patient through a referral is found by name and UMRN. */
+  referrals?: readonly Referral[];
   now?: number;
   limitPerGroup?: number;
   plannedAdmissions?: readonly import("@/components/ward-management/ward-admissions").PlannedAdmission[];
@@ -558,7 +570,7 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
   }
 
   const limit = input.limitPerGroup ?? 6;
-  const names = movementDisplayNames(input.movements, input.patients);
+  const names = movementDisplayNames(input.movements, input.patients, input.referrals);
 
   const people = rankAndLimit(
     findPatients(input.patients, trimmed),

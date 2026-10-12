@@ -26,6 +26,7 @@ import {
   REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS,
   REFERRAL_DECLINE_REASONS,
   genderReviewNeeded,
+  type BedRelease,
   type CommunityDeclineReason,
   type Referral,
   type ReferralDeclineReason,
@@ -34,6 +35,8 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import {
   candidateAccepts,
   COMMUNITY_DECLINE_REASON_LABELS,
@@ -186,8 +189,11 @@ const REJECTED_DECISION_LABELS: Record<(typeof MATCH_VIEW_DECISION_EVENTS)[numbe
 function formatUmrn(umrn: string): string {
   if (!umrn || umrn === "UMRN not recorded") return "UMRN not recorded";
   if (umrn.toUpperCase().startsWith("UMRN")) return umrn;
-  return `UMRN: ${umrn}`;
+  return `UMRN ${umrn}`;
 }
+
+const NO_ADMISSIONS: readonly Admission[] = [];
+const NO_RELEASES: readonly BedRelease[] = [];
 
 type ReferralMatchViewProps = {
   referral: Referral;
@@ -209,6 +215,9 @@ type ReferralMatchViewProps = {
    * rendered under the lists. Same handlers, same dispatches as the desktop view.
    */
   phone?: ReactNode;
+  /** For the shared occupancy figure (`ward-occupancy.ts`): occupied plus pulled, over every bed. */
+  admissions?: readonly Admission[];
+  bedReleases?: readonly BedRelease[];
 };
 
 /**
@@ -230,6 +239,12 @@ type ReferralMatchViewProps = {
  * Owns its own hooks (the draft note), independent of `ReferralMatchView`'s own strict hook order,
  * so it can be called from any of that component's three return branches without disturbing it.
  */
+/** Brings the confirm row into view when it opens, so Confirm and Cancel are never below the fold.
+ *  Module-level so React calls it once on mount, not on every render (site review, 12 Oct 2026). */
+function revealConfirmRow(node: HTMLDivElement | null) {
+  node?.scrollIntoView?.({ block: "nearest" });
+}
+
 export function ReferralHistoryAndCorrections({
   referral,
   now,
@@ -364,6 +379,8 @@ export function ReferralMatchView({
   hideDossierHeader = false,
   onDecision,
   phone,
+  admissions = NO_ADMISSIONS,
+  bedReleases = NO_RELEASES,
 }: ReferralMatchViewProps) {
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
@@ -784,7 +801,11 @@ export function ReferralMatchView({
           ) : null}
 
           {edAddressing && edAddressing.state === "queued" ? (
-            <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-emergency_department">
+            <div
+              className={styles.matchRowTop}
+              data-confirming={edAcceptConfirmOpen ? "true" : undefined}
+              data-testid="ward-referral-match-accept-controls-emergency_department"
+            >
               {!edAcceptConfirmOpen ? (
                 <button
                   type="button"
@@ -809,6 +830,7 @@ export function ReferralMatchView({
                 </button>
               ) : (
                 <div
+                  ref={revealConfirmRow}
                   className={styles.confirmActionRow}
                   data-testid="ward-referral-match-accept-confirm-group-emergency_department"
                 >
@@ -916,10 +938,11 @@ export function ReferralMatchView({
               </button>
             </div>
           ) : null}
-          <p className={styles.v10AskNote}>Decline needs a reason first. Accept records the decision only.</p>
-
-          {wholeWithdrawControl}
         </div>
+        {/* B4 (review 12 Oct 2026): the note and the withdraw disclosure sit outside the pinned
+            decision bar so the bar holds only Decline and Accept (or Confirm and Cancel). */}
+        <p className={styles.v10AskNote}>Decline needs a reason first. Accept records the decision only.</p>
+        {wholeWithdrawControl}
 
         {lastRejection ? (
           <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
@@ -1826,8 +1849,8 @@ export function ReferralMatchView({
                   const freeBeds = c.unit.allocatable.value;
                   const bedLabel = freeBeds > 0 ? `${freeBeds} ${freeBeds === 1 ? "bed" : "beds"} ready` : "Bed ready";
                   const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
-                  const occPct =
-                    c.unit.beds > 0 ? Math.round(((c.unit.beds - c.unit.empty.value) / c.unit.beds) * 100) : 0;
+                  // L1 (review 12 Oct 2026): the one occupancy count every page uses, occupied plus pulled.
+                  const occupancy = wardOccupancy([c.unit], admissions, bedReleases);
 
                   return (
                     <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardReady}`}>
@@ -1866,9 +1889,9 @@ export function ReferralMatchView({
                         <span className={styles.demoDot}>·</span>
                         <span>
                           <strong>
-                            {c.unit.beds - c.unit.empty.value} of {c.unit.beds}
+                            {occupancy.inUse} of {occupancy.beds}
                           </strong>{" "}
-                          beds occupied ({occPct}%)
+                          beds in use ({formatWardOccupancy(occupancy, "not recorded")})
                         </span>
                       </div>
 

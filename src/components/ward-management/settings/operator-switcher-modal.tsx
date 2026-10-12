@@ -331,9 +331,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
               key={name}
               type="button"
               className={cx(styles.stateTile, styles.preview)}
-              aria-disabled="true"
               title="No screen for this role yet"
-              onClick={() => (onPreview ? onPreview(name) : setPreviewNote(`${name}: Not wired in this prototype.`))}
+              // Site review (12 Oct 2026): a working tile that says it is not wired (D-16), not greyed.
+              onClick={() => (onPreview ? onPreview(name) : setPreviewNote(`${name} is not wired in this prototype.`))}
             >
               <Icon icon={glyph} size={16} />
               <span className={styles.who}>

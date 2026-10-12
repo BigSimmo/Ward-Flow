@@ -44,7 +44,8 @@ import {
   cx,
 } from "@/components/wf";
 
-import { NOT_WIRED, PreviewTag, ScopeLine, SettingRow } from "./settings-rows";
+import type { RowDensity } from "./row-density";
+import { PreviewTag, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
 import type { PublishedThreshold, ThresholdState } from "./settings-thresholds";
 
@@ -58,16 +59,12 @@ function RowSwitch({
   name,
   checked,
   onCheckedChange,
-  preview = false,
 }: {
   name: string;
   checked: boolean;
   onCheckedChange: (next: boolean) => void;
-  preview?: boolean;
 }) {
-  return (
-    <Switch checked={checked} onCheckedChange={onCheckedChange} unavailable={preview} label={<SrOnly>{name}</SrOnly>} />
-  );
+  return <Switch checked={checked} onCheckedChange={onCheckedChange} label={<SrOnly>{name}</SrOnly>} />;
 }
 
 /** A Preview segmented control: shows its intended default, says it is not wired when pressed. */
@@ -88,7 +85,6 @@ function PreviewSegmented({
       label={name}
       items={items.map((item) => ({ id: item, label: item }))}
       value={value}
-      unavailable
       onChange={() => onPreview(name)}
     />
   );
@@ -168,8 +164,7 @@ export function AlertsPane({
                     size="sm"
                     icon={BellOff}
                     className={styles.pill}
-                    disabledReason={NOT_WIRED}
-                    reasonDisplay="tooltip"
+                    onClick={() => onPreview("Snooze 15m")}
                   >
                     Snooze 15m
                   </Button>
@@ -207,7 +202,7 @@ export function AlertsPane({
               <RowSwitch name="Buzz sound" checked={buzz} onCheckedChange={onBuzzChange} />
             </SettingRow>
             <SettingRow setting="flash" title="Flash on urgent" sub="Screen edge flashes once" preview>
-              <RowSwitch name="Flash on urgent" checked onCheckedChange={() => onPreview("Flash on urgent")} preview />
+              <RowSwitch name="Flash on urgent" checked onCheckedChange={() => onPreview("Flash on urgent")} />
             </SettingRow>
             <SettingRow setting="buzz-again" title="Buzz again if not seen" sub="Until someone acknowledges" preview>
               <PreviewSegmented
@@ -219,7 +214,7 @@ export function AlertsPane({
             </SettingRow>
             <SettingRow setting="quiet-hours" title="Quiet hours" sub="Act now still sounds" preview>
               <span className={styles.mono}>23:00 to 07:00</span>
-              <RowSwitch name="Quiet hours" checked={false} onCheckedChange={() => onPreview("Quiet hours")} preview />
+              <RowSwitch name="Quiet hours" checked={false} onCheckedChange={() => onPreview("Quiet hours")} />
             </SettingRow>
             <SettingRow
               setting="shift-summary"
@@ -231,7 +226,6 @@ export function AlertsPane({
                 name="Summary at shift start"
                 checked
                 onCheckedChange={() => onPreview("Summary at shift start")}
-                preview
               />
             </SettingRow>
           </Card>
@@ -247,12 +241,7 @@ export function AlertsPane({
               />
             </SettingRow>
             <SettingRow setting="timer-seconds" title="Seconds on timers" sub="Under 10 minutes only" preview="quiet">
-              <RowSwitch
-                name="Seconds on timers"
-                checked
-                onCheckedChange={() => onPreview("Seconds on timers")}
-                preview
-              />
+              <RowSwitch name="Seconds on timers" checked onCheckedChange={() => onPreview("Seconds on timers")} />
             </SettingRow>
             <SettingRow
               setting="wallboard"
@@ -312,7 +301,6 @@ export function AlertsPane({
                       name={`${event.name}, in app`}
                       checked={event.inApp}
                       onCheckedChange={() => onPreview(`${event.name}, in app`)}
-                      preview
                     />
                   </span>
                   <span role="cell" className={styles.notifyCell}>
@@ -320,7 +308,6 @@ export function AlertsPane({
                       name={`${event.name}, sound`}
                       checked={event.sound}
                       onCheckedChange={() => onPreview(`${event.name}, sound`)}
-                      preview
                     />
                   </span>
                 </div>
@@ -353,6 +340,8 @@ export function DisplayPane({
   onReducedMotionChange,
   highContrast,
   onHighContrastChange,
+  rowDensity,
+  onRowDensityChange,
   onPreview,
 }: {
   appearance: WardAppearance;
@@ -365,6 +354,8 @@ export function DisplayPane({
   onReducedMotionChange: (next: boolean) => void;
   highContrast: boolean;
   onHighContrastChange: (next: boolean) => void;
+  rowDensity: RowDensity;
+  onRowDensityChange: (next: RowDensity) => void;
   onPreview: OnPreview;
 }) {
   return (
@@ -416,12 +407,16 @@ export function DisplayPane({
             <SettingRow setting="text-size" title="Text size" preview>
               <PreviewSegmented name="Text size" items={["S", "M", "L"]} value="M" onPreview={onPreview} />
             </SettingRow>
-            <SettingRow setting="density" title="Row density" preview>
-              <PreviewSegmented
-                name="Row density"
-                items={["Comfortable", "Compact"]}
-                value="Comfortable"
-                onPreview={onPreview}
+            <SettingRow setting="density" title="Row density" testId="ward-settings-density">
+              <Segmented<RowDensity>
+                className={styles.pillSeg}
+                label="Row density"
+                items={[
+                  { id: "comfortable", label: "Comfortable" },
+                  { id: "compact", label: "Compact" },
+                ]}
+                value={rowDensity}
+                onChange={onRowDensityChange}
               />
             </SettingRow>
             <SettingRow setting="touch" title="Touch mode" sub="Larger targets on tablets" preview>
@@ -449,7 +444,6 @@ export function DisplayPane({
                 name="Initials only on shared screens"
                 checked
                 onCheckedChange={() => onPreview("Initials only on shared screens")}
-                preview
               />
             </SettingRow>
             <SettingRow setting="lock-idle" title="Lock after idle" sub="Returns to a blank board" preview="quiet">
@@ -470,7 +464,6 @@ export function DisplayPane({
                 name="Clear session on close"
                 checked
                 onCheckedChange={() => onPreview("Clear session on close")}
-                preview
               />
             </SettingRow>
           </Card>
@@ -548,7 +541,6 @@ export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
                     key={name}
                     className={styles.pill}
                     pressed={name === "East Metro"}
-                    unavailable
                     onPressedChange={() => onPreview("Covering for")}
                   >
                     {name}
@@ -582,7 +574,6 @@ export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
                     key={section}
                     className={styles.pill}
                     pressed
-                    unavailable
                     onPressedChange={() => onPreview("Sheet sections")}
                   >
                     {section}
@@ -608,7 +599,6 @@ export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
                 name="Open handover at shift change"
                 checked={false}
                 onCheckedChange={() => onPreview("Open handover at shift change")}
-                preview
               />
             </SettingRow>
           </Card>

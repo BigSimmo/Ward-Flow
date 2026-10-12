@@ -26,7 +26,7 @@ export function ScopeLine({ kind }: { kind: "save" | "live" }) {
     <p className={styles.scopeLine}>
       {kind === "save" ? (
         // Not a checked chip: nothing is unsaved until a rule changes (device audit 11 Oct 2026).
-        <span className={styles.scopeTag}>Needs Save</span>
+        <span className={styles.scopeTag}>Save to apply</span>
       ) : (
         <span className={styles.scopeTag}>
           <StatusGlyph tone="success" size={8} />
@@ -82,6 +82,16 @@ export function SettingRow({
       {children ? <span className={styles.rowControl}>{children}</span> : null}
     </div>
   );
+}
+
+/** "Home, ED, Movements" reads "Shown on Home, ED and Movements". */
+export function shownOn(pages: string): string {
+  const list = pages
+    .split(",")
+    .map((page) => page.trim())
+    .filter(Boolean);
+  const last = list.pop();
+  return `Shown on ${list.length ? `${list.join(", ")} and ${last}` : (last ?? "")}`;
 }
 
 export type RuleRange = {
@@ -193,7 +203,6 @@ export function RuleRow({
           valueText={display}
           display={display}
           valueTestId={displayTestId}
-          unavailable={preview}
         />
         {changed ? (
           <span className={styles.changedTag}>
@@ -202,14 +211,12 @@ export function RuleRow({
         ) : null}
       </span>
       <span className={styles.effectCell}>
-        {preview ? (
-          <span className={styles.effectLine}>Fixed in code today</span>
-        ) : effect ? (
-          <span className={styles.effectLine}>{effect}</span>
-        ) : null}
+        {/* Site review (12 Oct 2026): plain words, no build notes. A Preview rule's card says it is
+            not wired once, so its row adds nothing here. */}
+        {!preview && effect ? <span className={styles.effectLine}>{effect}</span> : null}
         {usedBy ? (
-          <span className={styles.usedBy} title={`Read by ${usedBy}`}>
-            Read by {usedBy}
+          <span className={styles.usedBy} title={shownOn(usedBy)}>
+            {shownOn(usedBy)}
           </span>
         ) : null}
       </span>

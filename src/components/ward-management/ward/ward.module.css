@@ -5601,16 +5601,6 @@
   color: var(--accent-ink);
 }
 
-.protoBanner {
-  text-align: center;
-  font-size: var(--t-0, 0.75rem);
-  color: var(--muted);
-  padding: 2px 0 0;
-  border: 0;
-  margin: 0;
-  background: transparent;
-}
-
 @media (max-width: 1080px) {
   .breakdownStatsGrid {
     grid-template-columns: repeat(4, 1fr);
@@ -5634,8 +5624,7 @@
   .constraintsCard,
   .pipelineColumn,
   .leaveSectionCard,
-  .ledgerCard,
-  .protoBanner {
+  .ledgerCard {
     border: 1px solid CanvasText;
   }
 

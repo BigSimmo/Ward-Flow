@@ -1,5 +1,6 @@
 "use client";
 
+import { NotWiredButton } from "../not-wired-button";
 import { useState, type Ref } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronRight, UserRound } from "lucide-react";
@@ -236,9 +237,7 @@ export function AlertDetail({
             onSnooze={(until, reason) => handlers.onSnooze(item, until, reason)}
           />
         )}
-        <Button size="sm" variant="ghost" icon={ArrowUpRight} disabledReason="Not wired in this prototype.">
-          Escalate
-        </Button>
+        <NotWiredButton size="sm" variant="ghost" icon={ArrowUpRight} label="Escalate" />
       </div>
     </details>
   );

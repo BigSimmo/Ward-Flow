@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   isOpen,
@@ -82,6 +83,7 @@ import { MovementHorizonGantt, rankCorridorPairs } from "./movement-horizon-gant
 import { isCoordinatorStep, movementNextStep, nextStepTarget } from "./movement-next-step";
 import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ArrivalsAheadList } from "./arrivals-ahead-list";
 import arrivalsStyles from "./arrivals-ahead-list.module.css";
@@ -920,16 +922,13 @@ export function MovementsScreen() {
               <div className={flow.heroTools}>
                 {isPhone ? null : (
                   <>
-                    <button
-                      type="button"
-                      className={buttonClass({ variant: "onHero", size: "sm", className: flow.previewTool })}
-                      aria-disabled="true"
-                      title="Preview. Not wired in this prototype."
-                      onClick={() => announceToWardShell("Run sheet is a preview. Not wired in this prototype.")}
-                    >
-                      <Printer size={14} aria-hidden="true" />
-                      Run sheet
-                    </button>
+                    <NotWiredButton
+                      variant="onHero"
+                      size="sm"
+                      icon={Printer}
+                      label="Run sheet"
+                      wrapClassName={flow.previewTool}
+                    />
                     {/* Phone: Transport opens from the "Transport now" card below the hero. */}
                     <Link
                       href="/mockups/ward-flow/transport/officer"
@@ -1187,6 +1186,7 @@ export function MovementsScreen() {
                 disclaiming. */}
             <Card aria-label="Movement worklist" data-ward-primitive="panel" className={styles.wlCard}>
               <CardHead
+                className={wardPin.pinnedSwitch}
                 icon={ArrowRightLeft}
                 title="Movement worklist"
                 action={

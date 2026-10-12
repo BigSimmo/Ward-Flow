@@ -7243,3 +7243,36 @@
   font-weight: 500;
   cursor: pointer;
 }
+
+/* B4 (review 12 Oct 2026): in the desktop register panel the decide buttons sit in a bar pinned to
+   the foot of the scrolling panel body, so Decline and Accept (or Confirm and Cancel) always show.
+   The register match panel must not be its own clip box, or the bar would pin to it instead. */
+.screen[data-referral-view="register"] .registerDetail .matchPanel {
+  overflow: visible;
+}
+
+@media (min-width: 48.0625rem) {
+  .registerDetailBody .v10AskActions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin-top: var(--wf-s-3);
+    padding: var(--wf-s-3) 0;
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+  }
+}
+
+/* Confirm acceptance and Cancel take the whole bar row, side by side, and never clip. */
+.v10AskActions > .matchRowTop[data-confirming="true"] {
+  grid-column: 1 / -1;
+}
+
+.v10AskActions > .matchRowTop .confirmActionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.v10AskActions .confirmActionRow > button {
+  min-width: 0;
+}

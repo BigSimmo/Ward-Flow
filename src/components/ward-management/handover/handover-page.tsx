@@ -33,6 +33,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
@@ -379,6 +380,8 @@ export function HandoverPage() {
     dayZero,
     handoverSignOffs,
     rejections,
+    configuration,
+    inboxSnoozes,
   } = useWardFlow();
   const now = useWardFlowClock();
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
@@ -439,9 +442,19 @@ export function HandoverPage() {
   }, [copied]);
 
   /* rows and wards */
+  // Act now reads the shared act-now list (`ward-act-now-items.ts`), the one Alerts and Tasks show.
+  const actNowMovementIds = useMemo(
+    () =>
+      new Set(activeActNowItems({ movements, units, configuration, inboxSnoozes }, now).map((item) => item.movementId)),
+    [movements, units, configuration, inboxSnoozes, now],
+  );
   const allRows = useMemo(
-    () => movements.filter(isOpen).map((movement) => toHandoverRow(movement, units, patients, referrals)),
-    [movements, units, patients, referrals],
+    () =>
+      movements.filter(isOpen).map((movement) => ({
+        ...toHandoverRow(movement, units, patients, referrals),
+        actNow: actNowMovementIds.has(movement.id),
+      })),
+    [movements, units, patients, referrals, actNowMovementIds],
   );
   const rows = useMemo(
     () => allRows.filter((row) => movementInHandoverScope(row.movement, scope, units, referrals)),
@@ -557,7 +570,9 @@ export function HandoverPage() {
       },
     ];
   }, [admissions, wards, units, rows, newSince, now]);
-  const sinceTotal = sinceItems.reduce((sum, item) => sum + item.value, 0);
+  // L1 (site review, 12 Oct 2026): the chip counts each change once. "New act now" rows are already
+  // among "new on the sheet", so adding them again made the chip read 35 beside a strip of 0, 1, 32.
+  const sinceTotal = sinceItems.reduce((sum, item) => (item.id === "act" ? sum : sum + item.value), 0);
   const copySince = useCallback(() => {
     const text = [
       `Since ${formatInstantWithDay(newSince, now)} (${scopeLabel}):`,
@@ -1100,9 +1115,9 @@ export function HandoverPage() {
         </div>
       }
       footAside={
-        <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} waiting`}>
+        <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} waiting for a bed`}>
           <span>
-            <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> waiting
+            <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> waiting for a bed
           </span>
           <span className={styles.gapBar} aria-hidden="true">
             {readyTotal > 0 ? <i className={styles.gapReady} style={{ flex: readyTotal }} /> : null}
@@ -1376,6 +1391,7 @@ export function HandoverPage() {
           wards={wards}
           held={held}
           now={now}
+          waitingForBed={counts.bed}
           onOpenPatient={(id) => {
             setTab("pts");
             pick(id);

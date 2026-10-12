@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, type RefObject } from "react";
-import { canRestoreFocusTo, isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
+import { canRestoreFocusTo, isTopmostSheet, lockPageScroll, popSheet, pushSheet } from "@/components/ui/sheet-focus";
 
 /** Shared Ward dialog lifecycle using the existing overlay stack and background isolation. */
 export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | null>, onClose: () => void) {
@@ -50,4 +50,13 @@ export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | nu
       if (previous?.isConnected && canRestoreFocusTo(previous)) previous.focus({ preventScroll: true });
     };
   }, [open, ref, id]);
+}
+
+/**
+ * Holds the page still while a modal that keeps its own focus handling is open, so a swipe in it
+ * never scrolls the page behind (Josh, 12 Oct 2026, iPhone). `useWardModalFocus` and the shared
+ * Sheet, Dialog and phone sheet already hold it through the sheet stack.
+ */
+export function useWardPageScrollLock(open: boolean) {
+  useEffect(() => (open ? lockPageScroll() : undefined), [open]);
 }

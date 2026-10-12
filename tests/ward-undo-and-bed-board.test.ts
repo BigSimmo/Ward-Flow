@@ -116,10 +116,16 @@ describe("UNDO_REFERRAL_DECISION", () => {
       now: NOW,
       referralId,
       destinationKind: "psychiatric_ward",
+      unitId: UNIT,
       reason: REFERRAL_DECLINE_REASONS[0],
     });
     expect(declined.rejections).toEqual([]);
-    const undone = wardFlowReducer(declined, undoDecision(referralId, "ward"));
+    // The ward names itself to undo; one that does not is refused (site review, 12 Oct 2026).
+    const anyWard = wardFlowReducer(declined, undoDecision(referralId, "ward"));
+    expect(anyWard.rejections.at(-1)?.reason).toBe(
+      "Only the ward that made this decision, or the coordinator, can undo it",
+    );
+    const undone = wardFlowReducer(declined, undoDecision(referralId, "ward", NOW + 1, UNIT));
     expect(undone.rejections).toEqual([]);
     expect(referralState(referralOf(undone, referralId))).toBe("queued");
     expect(world(undone)).toEqual(world(before));
@@ -227,6 +233,33 @@ describe("ACCEPT_REFERRAL with a bed (Bed board Place here)", () => {
   });
 });
 
+describe("a ward answers only its own referrals (B1, site review 12 Oct 2026)", () => {
+  it("refuses a ward acting for another ward, and lets the coordinator answer for any ward", () => {
+    const { state, referralId } = withQueuedReferral();
+    const otherWard = wardFlowReducer(state, {
+      ...accept(referralId, "ward"),
+      actingUnitId: "rph-adult-open",
+    } as WardFlowEvent);
+    expect(otherWard.rejections.at(-1)?.reason).toMatch(/acting as unit rph-adult-open .* a ward answers only its own/);
+    const declineOther = wardFlowReducer(state, {
+      type: "DECLINE_REFERRAL",
+      role: "ward",
+      now: NOW,
+      referralId,
+      destinationKind: "psychiatric_ward",
+      unitId: UNIT,
+      actingUnitId: "rph-adult-open",
+      reason: REFERRAL_DECLINE_REASONS[0],
+    });
+    expect(declineOther.rejections.at(-1)?.reason).toMatch(/a ward answers only its own/);
+    const own = wardFlowReducer(state, { ...accept(referralId, "ward"), actingUnitId: UNIT } as WardFlowEvent);
+    expect(own.rejections).toEqual(state.rejections);
+    const byCoordinator = wardFlowReducer(state, accept(referralId, "coordinator"));
+    expect(byCoordinator.rejections).toEqual(state.rejections);
+    expect(referralOf(byCoordinator, referralId).destinations[0]?.decidedBy).toBe("Flow coordinator");
+  });
+});
+
 describe("PLACE_IN_BED and UNDO_PLACE_IN_BED", () => {
   const seededStay = (state: WardFlowState, index = 0) =>
     state.admissions.filter((a) => a.unitId === UNIT && a.state === "occupied")[index]!;
@@ -295,6 +328,19 @@ describe("PLACE_IN_BED and UNDO_PLACE_IN_BED", () => {
     );
     const byWard = wardFlowReducer(state, place(stay.id, 5));
     expect(wardFlowReducer(byWard, undoPlace(stay.id, "coordinator")).admissions).toEqual(state.admissions);
+  });
+
+  it("refuses an Undo that would put the patient back in a bed held since for somebody else (B9)", () => {
+    const { state, referralId } = withQueuedReferral();
+    const stay = seededStay(state);
+    const moved = run(state, place(stay.id, 3), place(stay.id, 5));
+    expect(moved.rejections).toEqual([]);
+    // Within the Undo window the coordinator accepts a referral into bed 3, which holds it.
+    const held = wardFlowReducer(moved, accept(referralId, "coordinator", NOW, 3));
+    expect(held.rejections).toEqual(moved.rejections);
+    const refused = wardFlowReducer(held, undoPlace(stay.id));
+    expect(refused.rejections.at(-1)?.reason).toMatch(/held.*so the move cannot be undone$/);
+    expect(refused.admissions.find((a) => a.id === stay.id)?.bedNumber).toBe(5);
   });
 
   it("refuses a taken bed, a bed off the ward, the same bed, and an Undo out of time or after a change", () => {
