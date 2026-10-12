@@ -284,7 +284,7 @@ describe("WardGlobalSearch", () => {
     expect(input).not.toHaveAttribute("aria-activedescendant");
   });
 
-  it("hides stale deferred results and ignores Enter until the current query has rendered", () => {
+  it("keeps the popup open on stale deferred results but ignores Enter until the current query has rendered", () => {
     const { onNavigate } = renderSearch();
     const input = screen.getByTestId("ward-global-search-input");
     fireEvent.change(input, { target: { value: personQuery } });
@@ -294,7 +294,8 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(input, { target: { value: "zzq-no-such-record-in-this-fixture-zzq" } });
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onNavigate).not.toHaveBeenCalled();
-    expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
+    // The popup must not unmount for the stale render: that was the per-keystroke flash on iPhone.
+    expect(screen.getByTestId("ward-global-search-popup")).toBeInTheDocument();
     expect(input).not.toHaveAttribute("aria-activedescendant");
   });
 

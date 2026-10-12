@@ -545,7 +545,7 @@ export function WardChromeSearch({
                 lineHeight: 1.4,
               }}
             >
-              No matches for “{trimmed}”. Nothing here says whether the person or record exists — only that this search
+              No matches for “{trimmed}”. This does not say whether the person or record exists, only that this search
               did not find one.
             </p>
           ) : (
