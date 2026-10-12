@@ -1,8 +1,10 @@
 # Ward Flow — status
 
 **Source baseline audited 8 October 2026:** dedicated `BigSimmo/Ward-Flow` main
-`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` (PR #121). This page describes that
-verified baseline and the local remediation programme. A later local change,
+`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` (PR #121). Main has moved on since (checked
+12 October 2026 at `ee07fd6`, PR #254), including the v10 design system and phone layouts. This page
+describes the audited baseline and the local remediation programme; it is not a statement about
+later commits or the hosted site. A later local change,
 publication and deployment each require separate evidence.
 
 Synthetic data only. Do not enter real patient information. Ward Flow is not

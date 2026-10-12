@@ -126,7 +126,7 @@ export function StatisticsSummaryPhone({
   const listLength = group === "hospital" ? hospitals.length : wards.length;
   const rangeSheet: Sheet = {
     title: "Time range",
-    description: "Figures are live now. History needs the metrics store.",
+    description: "Figures are current on the demo clock. History needs the metrics store.",
     body: <RangeChoices onNow={() => setSheet(null)} />,
   };
 

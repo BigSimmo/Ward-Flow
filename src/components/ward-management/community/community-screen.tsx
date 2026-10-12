@@ -55,7 +55,6 @@ import {
   nearDuplicateSpellingsOf,
 } from "@/components/ward-management/community/community-vocabulary";
 import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
-import { applyAppearance } from "@/components/ward-management/shell/ward-bar";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { elapsedDaysPhrase } from "@/components/ward-management/community/community-elapsed";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
@@ -752,11 +751,6 @@ export function CommunityScreen({
       el.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
     }
   }, []);
-
-  function handleSetThemeExplicit(theme: "light" | "dark" | "auto") {
-    applyAppearance(theme);
-    setToastMessage(`Appearance set to ${theme}.`);
-  }
 
   function handleActionClick(action: "Contacted" | "Review" | "Assign", referral: Referral) {
     if (action === "Contacted") {
@@ -5274,32 +5268,6 @@ export function CommunityScreen({
                 {(activeDrawer === "tools" || activeDrawer === "toolsDrawer") && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                     <div>
-                      <h4 style={{ margin: "0 0 0.5rem", fontSize: "var(--t-1)" }}>Appearance / Theme</h4>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button
-                          type="button"
-                          className={styles.btnSmSec}
-                          onClick={() => handleSetThemeExplicit("light")}
-                        >
-                          Light
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.btnSmSec}
-                          onClick={() => handleSetThemeExplicit("dark")}
-                        >
-                          Dark
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.btnSmSec}
-                          onClick={() => handleSetThemeExplicit("auto")}
-                        >
-                          System Auto
-                        </button>
-                      </div>
-                    </div>
-                    <div>
                       <h4 style={{ margin: "0 0 0.5rem", fontSize: "var(--t-1)" }}>Prototype State Simulation</h4>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                         <button
@@ -5834,7 +5802,7 @@ export function CommunityScreen({
                       }}
                     >
                       <b>Current Deployment:</b> Urgent joint assessment PT-4620 with MHERT / WA Police co-response.
-                      En-route {teamConfig.campus} to catchment residence. Duress beacon active &amp; verified.
+                      En-route {teamConfig.campus} to catchment residence. Duress beacon: not wired in this prototype.
                     </div>
 
                     <div
@@ -5848,11 +5816,11 @@ export function CommunityScreen({
                         type="button"
                         className={styles.btnSmPrimary}
                         onClick={() => {
-                          setToastMessage("Duress GPS beacon tested and verified online.");
+                          setToastMessage("Not wired in this prototype.");
                           setActiveModalType(null);
                         }}
                       >
-                        Ping Duress GPS
+                        Ping Duress GPS (not wired)
                       </button>
                     </div>
                   </div>

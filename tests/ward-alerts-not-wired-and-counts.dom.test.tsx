@@ -39,7 +39,7 @@ describe("Alerts — confirm controls (F3.1)", () => {
     expect(confirm).not.toBeDisabled();
 
     fireEvent.click(confirm);
-    expect(screen.getByText(/dispatched statewide\./i)).toBeInTheDocument();
+    expect(screen.getByText(/recorded for the prototype \(nothing is sent\)\./i)).toBeInTheDocument();
   });
 
   it("Escalate is aria-disabled, carries the exact D4 wording, and records nothing", () => {

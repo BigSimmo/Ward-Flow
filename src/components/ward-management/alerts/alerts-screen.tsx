@@ -315,8 +315,8 @@ function AlertsWorkspace() {
             ? "Statewide broadcast directive stood down."
             : `Broadcast directive stood down for ${broadcastRequest.scopeLabel}.`
           : broadcastRequest.scope === "all"
-            ? `Broadcast Directive "${broadcastRequest.title}" dispatched statewide. Target: ${broadcastRequest.scopeLabel}.`
-            : `Broadcast Directive "${broadcastRequest.title}" dispatched to ${broadcastRequest.scopeLabel}.`
+            ? `Broadcast Directive "${broadcastRequest.title}" recorded for the prototype (nothing is sent). Target: ${broadcastRequest.scopeLabel}.`
+            : `Broadcast Directive "${broadcastRequest.title}" recorded for ${broadcastRequest.scopeLabel} (nothing is sent).`
       : actionRequest && actionResult
         ? actionResult.accepted
           ? actionRequest.ok

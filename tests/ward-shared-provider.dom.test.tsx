@@ -85,7 +85,7 @@ describe("shared provider boundary", () => {
     if (accepted) {
       expect(screen.queryByRole("dialog")).toBeNull();
       expect(screen.getByRole("status", { name: "Broadcast feedback" })).toHaveTextContent(
-        "dispatched to Frankland Centre Forensic Mental Health.",
+        "recorded for Frankland Centre Forensic Mental Health (nothing is sent).",
       );
     } else {
       expect(screen.getByRole("dialog")).toBeInTheDocument();

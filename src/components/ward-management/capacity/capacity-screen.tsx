@@ -1256,6 +1256,7 @@ function NetworkRow({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const [asked, setAsked] = useState(false);
   const site = siteByCode(row.unit.siteCode);
   /*
    * Wards are always named, never shown as a bare code. The unresolved sentence comes from
@@ -1608,9 +1609,10 @@ function NetworkRow({
           onClick={(e) => {
             e.stopPropagation();
             onRequestRefresh();
+            setAsked(true);
           }}
         >
-          Request update
+          {asked ? "Update requested" : "Request update"}
         </button>
       </td>
     </tr>

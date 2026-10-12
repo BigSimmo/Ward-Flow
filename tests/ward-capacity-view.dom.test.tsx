@@ -294,9 +294,15 @@ describe("ward capacity headline (Task 7)", () => {
 
     expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("0");
     const table = screen.getByTestId("ward-capacity-network-table");
-    const readyBefore = within(table).getByTestId("ward-capacity-network-row-rph-adult-secure").textContent;
-
     const refreshButton = screen.getByTestId("ward-capacity-refresh-rph-adult-secure");
+    // The button's own label is the on-row acknowledgement; every other figure on the row must stay put.
+    const rowFigures = () =>
+      (within(table).getByTestId("ward-capacity-network-row-rph-adult-secure").textContent ?? "").replace(
+        refreshButton.textContent ?? "",
+        "",
+      );
+    const readyBefore = rowFigures();
+
     // A real, wired <button> — never an advisory element with no handler.
     expect(refreshButton.tagName).toBe("BUTTON");
     expect(refreshButton).not.toHaveAttribute("disabled");
@@ -306,10 +312,9 @@ describe("ward capacity headline (Task 7)", () => {
 
     // The one observable effect: a real dispatch reached the reducer's own `refreshRequests` list.
     expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("1");
+    expect(refreshButton).toHaveTextContent("Update requested");
     expect(
-      within(screen.getByTestId("ward-capacity-network-table")).getByTestId(
-        "ward-capacity-network-row-rph-adult-secure",
-      ).textContent,
+      rowFigures(),
       "asking a ward to restate its numbers moved a figure on its row; this control records that " +
         "somebody asked and must change nothing else",
     ).toBe(readyBefore);

@@ -58,7 +58,7 @@ function useLiveClock(): string | undefined {
 }
 
 const WORD: Record<LiveState, string> = {
-  live: "Live",
+  live: "Demo",
   paused: "Paused",
   syncing: "Syncing",
   stale: "Stale",
@@ -107,7 +107,7 @@ export function LiveChip({ state, age, asAt, onHero = false, onTogglePause, clas
           type="button"
           className={styles.toggle}
           // One name with aria-pressed: swapping the name too reads as "Resume, pressed".
-          aria-label="Pause live updates"
+          aria-label="Pause demo updates"
           aria-pressed={paused}
           onClick={onTogglePause}
         >
