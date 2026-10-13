@@ -1,3 +1,4 @@
+import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
@@ -31,6 +32,7 @@ export class SharedWorkspaceClient {
   private queue: WardFlowEvent[] = [];
   private disposed = false;
   private busy = false;
+  private readonly lifetime = new AbortController();
   private accessDenied() {
     return this.view.status === "not-authorised";
   }
@@ -64,15 +66,26 @@ export class SharedWorkspaceClient {
     if (snapshot.revision >= (this.view.snapshot?.revision ?? 0)) this.publish({ snapshot, receivedAt: Date.now() });
   }
   private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
-    const token = await this.options.token();
+    let token: string;
+    try {
+      token = await this.options.token();
+    } catch (error) {
+      if (error instanceof WardAuthError && error.kind === "session") {
+        this.pending = null;
+        this.queue = [];
+        this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error: error.message });
+      }
+      throw error;
+    }
     if (this.disposed) throw new Error("Connection closed");
     const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
       method: body ? "POST" : "GET",
       cache: "no-store",
       headers: { authorization: `Bearer ${token}`, ...(body ? { "content-type": "application/json" } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.any([AbortSignal.timeout(15000), this.lifetime.signal]),
     });
+    if (this.disposed) throw new Error("Connection closed");
     if (response.status === 401 || response.status === 403) {
       this.pending = null;
       this.queue = [];
@@ -85,6 +98,7 @@ export class SharedWorkspaceClient {
       throw new Error("Access denied");
     }
     const value = await response.json();
+    if (this.disposed) throw new Error("Connection closed");
     return { response, value };
   }
   async refresh() {
@@ -210,6 +224,7 @@ export class SharedWorkspaceClient {
   };
   dispose() {
     this.disposed = true;
+    this.lifetime.abort();
     this.queue = [];
     this.pending = null;
     this.view = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
