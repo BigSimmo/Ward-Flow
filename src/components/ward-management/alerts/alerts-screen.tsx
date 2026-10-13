@@ -57,7 +57,7 @@ import {
   broadcastKind,
   type BroadcastKind,
 } from "./ward-broadcast-model";
-import { directiveAcknowledgements, isAlertLive } from "./global-alert-view";
+import { broadcastScopeCount, directiveAcknowledgements, isAlertLive } from "./global-alert-view";
 import { PullNowCard, ReplyBoardList } from "./global-alert-panels";
 
 import {
@@ -1943,7 +1943,7 @@ function AlertsWorkspace() {
                     >
                       <option value="advisory">Advisory</option>
                       <option value="warning">Warning</option>
-                      <option value="critical">Gridlock</option>
+                      <option value="critical">Critical</option>
                     </Select>
                   </Field>
                   <Field label="Expires" id="alerts-broadcast-duration">
@@ -1966,13 +1966,24 @@ function AlertsWorkspace() {
                     value={broadcastScope}
                     onChange={(e) => setBroadcastScope(e.target.value as BroadcastTargetScope)}
                   >
-                    <option value="all">All 23 inpatient wards and 8 ED desks</option>
-                    <option value="metro_adult">Metropolitan adult units</option>
-                    <option value="ed_liaison">ED mental health liaison desks</option>
-                    <option value="forensic">Frankland Centre forensic</option>
-                    <option value="adolescent">CAMHS adolescent acute units</option>
-                    <option value="older_adult">Older adult units</option>
-                    <option value="regional_wachs">WACHS regional network</option>
+                    {/* Ops-12: each count is read from the unit list, never typed. */}
+                    <option value="all">All inpatient wards and ED desks, {broadcastScopeCount(units, "all")}</option>
+                    <option value="metro_adult">
+                      Metropolitan adult units, {broadcastScopeCount(units, "metro_adult")}
+                    </option>
+                    <option value="ed_liaison">
+                      ED mental health liaison desks, {broadcastScopeCount(units, "ed_liaison")}
+                    </option>
+                    <option value="forensic">
+                      Frankland Centre forensic, {broadcastScopeCount(units, "forensic")}
+                    </option>
+                    <option value="adolescent">
+                      CAMHS adolescent acute units, {broadcastScopeCount(units, "adolescent")}
+                    </option>
+                    <option value="older_adult">Older adult units, {broadcastScopeCount(units, "older_adult")}</option>
+                    <option value="regional_wachs">
+                      WACHS regional network, {broadcastScopeCount(units, "regional_wachs")}
+                    </option>
                   </Select>
                 </Field>
 

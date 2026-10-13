@@ -48,6 +48,21 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     expect(screen.getByLabelText(/^Start from$/i)).toBeInTheDocument();
   });
 
+  it("labels each target with counts from the unit list and names severity in one word set (ops-12)", () => {
+    renderAlertsScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+    const scope = screen.getByLabelText(/^Target scope$/i);
+    expect(within(scope).getByRole("option", { name: /^All inpatient wards and ED desks/ })).toHaveTextContent(
+      `${allUnits().length} wards and ${allEmergencyDepartments().length} ED desks`,
+    );
+    const severity = screen.getByLabelText(/^Severity$/i);
+    expect(
+      within(severity)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Advisory", "Warning", "Critical"]);
+  });
+
   it("populates form fields when changing the WA Mental Health template", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));

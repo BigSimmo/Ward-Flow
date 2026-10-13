@@ -47,12 +47,30 @@ export function wardsInBroadcastScope(units: readonly Unit[], scope: BroadcastTa
  * directives and is never counted.
  */
 export function directiveDesks(alert: BroadcastAlert, units: readonly Unit[]): string[] {
-  const wards = wardsInBroadcastScope(units, alert.targetScope);
-  const eds =
-    alert.targetScope === "all" || alert.targetScope === "ed_liaison"
-      ? allEmergencyDepartments().map((ed) => ed.id)
-      : [];
+  const { wards, eds } = desksInBroadcastScope(units, alert.targetScope);
   return [...wards, ...eds];
+}
+
+/** The ward and ED desks a target covers: every ED desk for every unit or ED liaison. */
+export function desksInBroadcastScope(
+  units: readonly Unit[],
+  scope: BroadcastTargetScope,
+): { wards: string[]; eds: string[] } {
+  const eds = scope === "all" || scope === "ed_liaison" ? allEmergencyDepartments().map((ed) => ed.id) : [];
+  return { wards: wardsInBroadcastScope(units, scope), eds };
+}
+
+/**
+ * How many desks a target covers, from the live unit list (ops-12, 13 Oct 2026), so a scope label
+ * never names a count the app does not have: "22 wards and 10 ED desks".
+ */
+export function broadcastScopeCount(units: readonly Unit[], scope: BroadcastTargetScope): string {
+  const { wards, eds } = desksInBroadcastScope(units, scope);
+  const parts = [
+    wards.length > 0 ? `${wards.length} ward${wards.length === 1 ? "" : "s"}` : "",
+    eds.length > 0 ? `${eds.length} ED desk${eds.length === 1 ? "" : "s"}` : "",
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" and ") : "no desks";
 }
 
 /** A directive's acknowledgements against the desks it asked, so nine wards read "of 9". */

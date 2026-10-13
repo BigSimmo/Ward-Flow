@@ -146,7 +146,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
     severity: "critical",
     category: "capacity_gridlock",
     targetScope: "all",
-    targetScopeLabel: "All 23 Inpatient Wards & 8 ED Desks",
+    targetScopeLabel: "All Inpatient Wards & ED Desks",
     defaultDurationMinutes: 240,
     defaultMessage:
       "Demo alert. Not a live broadcast. Metropolitan HDU is shown full in this prototype. Check morning discharges and step-down candidates.",
@@ -206,7 +206,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
     severity: "warning",
     category: "transport_delay",
     targetScope: "all",
-    targetScopeLabel: "All 23 Inpatient Wards & 8 ED Desks",
+    targetScopeLabel: "All Inpatient Wards & ED Desks",
     defaultDurationMinutes: 180,
     defaultMessage:
       "Demo alert. Not a live broadcast. Secure psychiatric transport is shown 90–120 minutes late. Hold current patients and watch form times.",
