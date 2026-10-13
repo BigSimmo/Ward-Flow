@@ -363,6 +363,20 @@ describe("ward capacity headline (Task 7)", () => {
     expect(screen.getByTestId("ward-capacity-refresh-rph-adult-secure")).toBeEnabled();
   });
 
+  it("treats a confirmation in the same minute as the request as not yet answering it", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CapacityScreen />
+        <ConfirmCapacityProbe unitId="rph-adult-secure" now={NOW_ANCHOR} />
+      </WardFlowProvider>,
+    );
+    showWardTable();
+    fireEvent.click(screen.getByTestId("ward-capacity-refresh-rph-adult-secure"));
+    fireEvent.click(screen.getByTestId("test-confirm-capacity"));
+    // Same-minute timestamps cannot be ordered, so the request stays outstanding and no duplicate is offered.
+    expect(screen.getByTestId("ward-capacity-refresh-rph-adult-secure")).toBeDisabled();
+  });
+
   /*
    * 🔴 **RE-POINTED AT `CapacityScreen` ON 2026-09-05, AFTER THE FIGURE IT ASKS FOR WAS BUILT.**
    *
