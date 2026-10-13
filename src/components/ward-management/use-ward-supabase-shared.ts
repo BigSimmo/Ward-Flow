@@ -58,6 +58,8 @@ export function useWardSupabaseShared(enabled: boolean) {
       if (expired) disconnect();
       const message = error instanceof WardAuthError ? error.message : "Shared sign-in is unavailable. Try again.";
       setForm((old) => ({ ...old, busy: false, message }));
+      // A rejected email or password is a form answer, not a service outage.
+      if (error instanceof WardAuthError && error.kind === "credentials") return;
       setView((old) => ({ ...old, status: expired ? "ready" : "unavailable", error: message }));
     };
     const connect = async () => {
@@ -187,11 +189,8 @@ export function useWardSupabaseShared(enabled: boolean) {
                 });
             }
             // Auth clears its local session synchronously; remote logout and phone cleanup are independent.
-            try {
-              await auth!.signOut();
-            } catch (error) {
-              fail(error);
-            }
+            // The local session is already cleared, so remote logout is best-effort.
+            await auth!.signOut().catch(() => {});
           },
           retry: () =>
             run(async () => {

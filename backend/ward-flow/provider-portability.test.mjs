@@ -140,6 +140,7 @@ const roleFields = [
   "audit_append_only",
   "browser_denied",
   "guards_valid",
+  "sequence_restricted",
 ];
 function safeSummary() {
   return {
@@ -400,4 +401,16 @@ test("Supabase verifier rejects malformed input before fetch and bounds headers 
     );
   for (const timeoutMs of [0, 5001, 1.5])
     assert.throws(() => createSupabaseAuthenticator(config, { timeoutMs }), /deadline/);
+});
+
+test("runtime summary refuses UPDATE on the audit and push ID sequences", () => {
+  assert.match(
+    RUNTIME_SUMMARY,
+    /NOT pg_catalog\.has_sequence_privilege\(r\.oid, 'ward_flow\.audit_sequence_seq', 'UPDATE'\)/,
+  );
+  assert.match(
+    RUNTIME_SUMMARY,
+    /NOT \$1::boolean OR NOT pg_catalog\.has_sequence_privilege\(r\.oid, 'ward_flow\.push_subscriptions_id_seq', 'UPDATE'\)/,
+  );
+  assert.match(RUNTIME_SUMMARY, /AS sequence_restricted/);
 });

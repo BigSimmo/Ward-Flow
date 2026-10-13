@@ -278,3 +278,44 @@ it("disposes the board immediately while phone cleanup is unresolved", async () 
   });
   vi.mocked(releasePhonePush).mockResolvedValue();
 });
+it("treats a rejected password as a form answer, not a sign-in outage", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json({}, { status: 400 })),
+  );
+  const { result } = renderHook(() => useWardShared(true));
+  await waitFor(() => expect(result.current.status).toBe("ready"));
+  await act(async () => {
+    await result.current.credentials!.signIn("synthetic@example.invalid", "wrong-password");
+  });
+  expect(result.current.status).toBe("ready");
+  expect(result.current.error ?? null).toBeNull();
+});
+it("keeps a deliberate sign-out quiet when remote logout fails", async () => {
+  vi.mocked(releasePhonePush).mockResolvedValue();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url) =>
+      String(url).includes("/v1/workspace")
+        ? Response.json({ snapshot: null }, { status: 503 })
+        : String(url).endsWith("/user")
+          ? Response.json(user)
+          : String(url).includes("/logout")
+            ? Promise.reject(new TypeError("offline"))
+            : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
+    ),
+  );
+  const { result } = renderHook(() => useWardShared(true));
+  await waitFor(() => expect(result.current.status).toBe("ready"));
+  await act(async () => {
+    await result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
+  });
+  await act(async () => {
+    result.current.signOut();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(result.current.signedIn).toBe(false);
+  expect(result.current.status).not.toBe("unavailable");
+  expect(result.current.error ?? null).toBeNull();
+  expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+});

@@ -82,6 +82,10 @@ SELECT current_user AS role,
     AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.audit', 'SELECT')
     AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.audit', 'INSERT')
     AND pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.audit_sequence_seq', 'USAGE') AS required_grants,
+  -- setval needs UPDATE; an over-granted role could rewind audit or push IDs.
+  NOT pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.audit_sequence_seq', 'UPDATE')
+    AND (NOT $1::boolean OR NOT pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.push_subscriptions_id_seq', 'UPDATE'))
+    AS sequence_restricted,
   NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.audit', 'UPDATE')
     AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.audit', 'DELETE')
     AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.audit', 'TRUNCATE')
@@ -169,6 +173,7 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "audit_append_only",
       "browser_denied",
       "guards_valid",
+      "sequence_restricted",
     ].every((field) => row[field] === true) ||
     !Array.isArray(row.versions) ||
     row.versions.length !== 4 ||
