@@ -19,7 +19,7 @@
     "tests/clean-artifacts-tracked-paths.test.ts": 0.1,
     "tests/clean-worktree.test.ts": 0.1,
     "tests/client-bundle-secret-redaction.test.ts": 0.1,
-    "tests/cloud-scenario-vault.test.ts": 0.2,
+    "tests/ward-cloud-scenario-vault.test.ts": 0.2,
     "tests/codebase-index-coverage.test.ts": 0.1,
     "tests/conditional-gate-satisfiability.test.ts": 2.2,
     "tests/contextual-back-navigation-contract.test.ts": 0.2,

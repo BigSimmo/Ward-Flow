@@ -18,7 +18,8 @@ import {
   type SharedView,
 } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { saveCloudScenario } from "@/lib/cloud-scenario-vault";
+import { saveCloudScenario } from "@/components/ward-management/cloud-scenario-vault";
+import { WARD_FLOW_STORED_STATE_VERSION } from "@/components/ward-management/ward-flow-storage-validation";
 import { formatLogLine, redactLogContext } from "@/lib/logger";
 import { redactCaptionIdentifiers, redactLogValue } from "@/lib/privacy";
 import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf";
@@ -145,7 +146,10 @@ describe("A4-4: the guard runs on the live save paths", () => {
       "token",
       "11111111-1111-4111-8111-111111111111",
       0,
-      { scenario: "synthetic" },
+      // A real stored world with the typed-text lock off, so only the backend's 422 can refuse it
+      // (the vault's own world and lock checks are A2-9's, covered in ward-cloud-scenario-vault).
+      JSON.parse(JSON.stringify({ version: WARD_FLOW_STORED_STATE_VERSION, state: seedWardFlowState() })),
+      { typedTextSeen: false },
     );
     expect(result.status).toBe("unsafe_payload");
   });

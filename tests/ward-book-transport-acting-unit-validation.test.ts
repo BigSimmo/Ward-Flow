@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+// Tests written before the strict ward-scope rule (12 Oct 2026): events gain the scope their record implies.
+import { scopedWardFlowReducer as wardFlowReducer } from "./helpers/ward-caller-scope";
 import { TRANSPORT_PROVIDERS } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
@@ -17,6 +19,10 @@ import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/com
  * round).
  */
 const NOW = NOW_ANCHOR;
+// Review finding S2-10 (fixed 13 Oct 2026): a ward books only for a move into or out of its own ward.
+// The seeded pulled movement starts at an emergency department, so the ward that may book it is the
+// receiving ward it was pulled to.
+const RECEIVING_WARD = seedWardFlowState().movements.find((candidate) => candidate.stage === "pulled")!.acceptedUnitId!;
 
 function heldBedMovement() {
   const state = seedWardFlowState();
@@ -49,7 +55,7 @@ describe("BOOK_TRANSPORT actingUnitId validation", () => {
   });
 
   it("still accepts a ward booking whose actingUnitId names a real unit", () => {
-    const state = book({ role: "ward", actingUnitId: "rph-adult-secure" });
+    const state = book({ role: "ward", actingUnitId: RECEIVING_WARD });
     expect(state.rejections).toEqual([]);
   });
 

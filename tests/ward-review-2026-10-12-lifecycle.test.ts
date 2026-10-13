@@ -195,7 +195,7 @@ describe("review 2026-10-08 lifecycle fixes", () => {
       unitIds: ["scgh-adult-open", "arm-adult-open"],
     });
     const before = h.state.notices.length;
-    h.ok({ type: "WITHDRAW_REFERRAL", role: "ed", movementId: movement.id, actingEdId: "jhc-ed" });
+    h.ok({ type: "WITHDRAW_REFERRAL", role: "ed", movementId: movement.id, actingPlaceId: "jhc-ed" });
     expect(newNotices(h, before).filter((n) => n === "ward_request_withdrawn->ward")).toHaveLength(2);
   });
 
@@ -216,7 +216,7 @@ describe("review 2026-10-08 lifecycle fixes", () => {
       estimatedAt: 0,
     });
     const before = h.state.notices.length;
-    h.ok({ type: "WITHDRAW_REFERRAL", role: "ed", movementId: movement.id, actingEdId: "jhc-ed" });
+    h.ok({ type: "WITHDRAW_REFERRAL", role: "ed", movementId: movement.id, actingPlaceId: "jhc-ed" });
     expect(newNotices(h, before)).toContain("transport_cancelled_officer->officer");
     expect(mv(h, movement.id).transport?.cancelledAt).toBeDefined();
   });

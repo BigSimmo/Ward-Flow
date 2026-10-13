@@ -7,9 +7,10 @@ import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-
 import {
   seedWardFlowState,
   seedWardFlowStateAt,
-  wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
+// Tests written before the strict ward-scope rule (12 Oct 2026): events gain the scope their record implies.
+import { scopedWardFlowReducer as wardFlowReducer } from "./helpers/ward-caller-scope";
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
 import { REFERRAL_DECLINE_REASONS, type Referral } from "../src/components/ward-management/ward-model";
 import { patientAddedOnDayOf } from "../src/components/ward-management/ward-patients";
@@ -120,7 +121,7 @@ describe("UNDO_REFERRAL_DECISION", () => {
       reason: REFERRAL_DECLINE_REASONS[0],
     });
     expect(declined.rejections).toEqual([]);
-    const undone = wardFlowReducer(declined, undoDecision(referralId, "ward"));
+    const undone = wardFlowReducer(declined, undoDecision(referralId, "ward", NOW + 1, UNIT));
     expect(undone.rejections).toEqual([]);
     expect(referralState(referralOf(undone, referralId))).toBe("queued");
     expect(world(undone)).toEqual(world(before));

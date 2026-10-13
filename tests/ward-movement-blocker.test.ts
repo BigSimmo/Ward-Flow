@@ -5,9 +5,10 @@ import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "../src/components/ward-man
 import {
   STAGE_TRANSITION_BLOCKERS,
   seedWardFlowState,
-  wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
+// Tests written before the strict ward-scope rule (12 Oct 2026): events gain the scope their record implies.
+import { scopedWardFlowReducer as wardFlowReducer } from "./helpers/ward-caller-scope";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
 import { operationalScore } from "../src/components/ward-management/ward-priority";
 import { allEmergencyDepartments, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";

@@ -4,6 +4,7 @@
  * Every rule, candidate and assertion is the one the guard file carried; see its header for why
  * the guard exists.
  */
+import { withCallerScope } from "./ward-caller-scope";
 import { COMMUNITY_TEAM_PAGES } from "../../src/components/ward-management/community/community-derivations";
 import {
   BROADCAST_CATEGORIES,
@@ -219,6 +220,15 @@ export const RECEIVE_REFERRAL_CANDIDATE = {
  * ONLY in that absent case was never given the precondition it needed to fire.
  */
 export function candidateEvents(
+  type: WardFlowEvent["type"],
+  state: WardFlowState,
+  now: number,
+  supplyDueAt = true,
+): WardFlowEvent[] {
+  return candidateEventsUnscoped(type, state, now, supplyDueAt).map((event) => withCallerScope(event, state));
+}
+
+function candidateEventsUnscoped(
   type: WardFlowEvent["type"],
   state: WardFlowState,
   now: number,
@@ -1503,6 +1513,7 @@ export function buildHeldMovementFor(code: string, now: number): { state: WardFl
     now,
     movementId: movement.id,
     unitId: unit!.id,
+    actingUnitId: unit!.id,
   });
   expect(
     acceptedInPrinciple.rejections,
@@ -1515,6 +1526,7 @@ export function buildHeldMovementFor(code: string, now: number): { state: WardFl
     now,
     movementId: movement.id,
     unitId: unit!.id,
+    actingUnitId: unit!.id,
   });
   expect(held.rejections, `PULL_PATIENT for Form ${code} was refused: ${held.rejections.at(-1)?.reason}`).toEqual([]);
 

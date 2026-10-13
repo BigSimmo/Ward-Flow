@@ -11,7 +11,7 @@
  */
 
 import { z } from "zod";
-import { checkSyntheticPayload } from "./synthetic-data-guard";
+import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
 import {
   isValidStoredWardFlowState,
   migrateStoredWardFlowState,

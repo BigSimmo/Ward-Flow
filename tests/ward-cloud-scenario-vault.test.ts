@@ -4,7 +4,7 @@ import {
   deleteCloudScenario,
   loadCloudScenario,
   saveCloudScenario,
-} from "@/lib/cloud-scenario-vault";
+} from "@/components/ward-management/cloud-scenario-vault";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WARD_FLOW_STORED_STATE_VERSION } from "@/components/ward-management/ward-flow-storage-validation";
 

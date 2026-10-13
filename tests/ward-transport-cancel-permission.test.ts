@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-events";
-import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+// Tests written before the strict ward-scope rule (12 Oct 2026): events gain the scope their record implies.
+import { scopedWardFlowReducer as wardFlowReducer } from "./helpers/ward-caller-scope";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
@@ -105,11 +107,50 @@ function withBookedTransport(): { state: WardFlowState; movementId: string } {
 const BOOKING_WARD = "rph-adult-secure";
 
 function withWardBookedTransport(): { state: WardFlowState; movementId: string } {
-  const movementId = "WF-001";
+  // Review finding S2-10 (fixed 13 Oct 2026): a ward may book transport only for a move into or out
+  // of its own ward. The booking ward is therefore the SENDING ward of a ward-to-ward move — a
+  // repatriation out of BOOKING_WARD's own synthetic stay — and still a different unit from
+  // ACCEPTING_UNIT, so "the receiving ward still may not cancel" is exercised exactly as before.
+  let state = seedWardFlowState();
+  const stay = state.admissions.find(
+    (admission) => admission.unitId === BOOKING_WARD && admission.state === "occupied",
+  );
+  expect(stay, "the seed must hold an occupied stay on the booking ward").toBeDefined();
+  state = wardFlowReducer(state, {
+    type: "RECORD_REPATRIATION",
+    role: "coordinator",
+    now: NOW,
+    admissionId: stay!.id,
+    homeHospital: "FSH",
+    receivingWardAgreed: true,
+    mode: "road",
+    provider: "Ambulance service",
+    cadNumber: "SYN-CAD-0002",
+    transportLegalStatus: "voluntary",
+    estimatedAt: NOW + 30,
+  } as never);
+  const movementId = state.movements.at(-1)!.id;
   const events = [
-    { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [ACCEPTING_UNIT] },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTING_UNIT, actingUnitId: ACCEPTING_UNIT },
-    { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTING_UNIT, actingUnitId: ACCEPTING_UNIT },
+    {
+      type: "REFER_TO_UNITS",
+      role: "coordinator",
+      unitIds: [ACCEPTING_UNIT],
+      overrideReason: "The receiving team has agreed despite the mismatch",
+    },
+    {
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      unitId: ACCEPTING_UNIT,
+      actingUnitId: ACCEPTING_UNIT,
+      overrideReason: "The receiving team has agreed despite the mismatch",
+    },
+    {
+      type: "PULL_PATIENT",
+      role: "ward",
+      unitId: ACCEPTING_UNIT,
+      actingUnitId: ACCEPTING_UNIT,
+      overrideReason: "The receiving team has agreed despite the mismatch",
+    },
     {
       type: "BOOK_TRANSPORT",
       role: "ward",
@@ -121,8 +162,6 @@ function withWardBookedTransport(): { state: WardFlowState; movementId: string }
       estimatedAt: NOW + 30,
     },
   ] as const;
-
-  let state = seedWardFlowState();
   for (const event of events) {
     state = wardFlowReducer(state, { ...event, now: NOW, movementId } as never);
   }

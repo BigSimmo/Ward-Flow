@@ -40,7 +40,8 @@ describe("canDispatch", () => {
   it("limits strictly: a role outside EVENT_ROLE and outside the list is refused with a short reason", () => {
     expect(dispatchPermission("officer", "SET_ARRIVAL_DETAILS")).toEqual({
       allowed: false,
-      reason: "Coordinator, ED, ward or community team only",
+      // A1-8 (13 Oct 2026): community may no longer set arrival details.
+      reason: "Coordinator, ED or ward only",
     });
     expect(dispatchPermission("ward", "REFER_TO_UNITS")).toEqual({ allowed: false, reason: "Coordinator only" });
     expect(dispatchPermission("ed", "CONFIRM_CAPACITY")).toEqual({

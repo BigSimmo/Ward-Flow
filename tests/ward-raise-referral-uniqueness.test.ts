@@ -14,11 +14,9 @@ import { describe, expect, it } from "vitest";
 import { movementUmrn } from "../src/components/ward-management/ward-patient-resolver";
 
 import { ED_DECLINE_REASONS } from "../src/components/ward-management/ward-model";
-import {
-  seedWardFlowState,
-  wardFlowReducer,
-  type WardFlowState,
-} from "../src/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, type WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+// Tests written before the strict ward-scope rule (12 Oct 2026): events gain the scope their record implies.
+import { scopedWardFlowReducer as wardFlowReducer } from "./helpers/ward-caller-scope";
 import { allEmergencyDepartments, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";

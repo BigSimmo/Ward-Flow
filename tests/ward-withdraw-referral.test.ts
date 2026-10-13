@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { WITHDRAWAL_REASONS } from "../src/components/ward-management/ward-change-reasons";
-import {
-  seedWardFlowState,
-  wardFlowReducer,
-  type WardFlowState,
-} from "../src/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, type WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+// Tests written before the strict ward-scope rule (12 Oct 2026): events gain the scope their record implies.
+import { scopedWardFlowReducer as wardFlowReducer } from "./helpers/ward-caller-scope";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
@@ -89,9 +87,11 @@ describe("a referrer taking its referral back", () => {
     const state = seeded();
     const open = anOpenReferral(state);
 
+    // Review finding A1-2 (fixed 13 Oct 2026): only the referrer or the coordinator withdraws. This
+    // referral came from an emergency department, so that department withdraws it.
     const next = wardFlowReducer(state, {
       type: "WITHDRAW_REFERRAL",
-      role: "ward",
+      role: "ed",
       now: NOW,
       movementId: open.id,
     });
@@ -160,7 +160,7 @@ describe("a referrer taking its referral back", () => {
         });
 
         expect(next.rejections, `${role} was not refused`).toHaveLength(1);
-        expect(next.rejections[0].reason).toMatch(/only the referrer or the coordinator/i);
+        expect(next.rejections[0].reason).toMatch(/only the referrer or the coordinator|cannot withdraw/i);
         expect(movement(next, open.id).acceptedUnitId).toBe(open.referredUnitIds[0]);
       }
     });
@@ -396,7 +396,7 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
     const next = wardFlowReducer(pulled, { type: "WITHDRAW_REFERRAL", role: "ward", now: NOW + 2, movementId });
 
     expect(next.rejections).toHaveLength(1);
-    expect(next.rejections[0]?.reason).toMatch(/only the referrer or the coordinator/i);
+    expect(next.rejections[0]?.reason).toMatch(/only the referrer or the coordinator|cannot withdraw/i);
     expect(movement(next, movementId).closure).toBeUndefined();
     expect(next.units.find((candidate) => candidate.id === unitId)?.allocatable.value).toBe(
       unitBefore.allocatable.value,

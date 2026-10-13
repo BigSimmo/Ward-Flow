@@ -1231,6 +1231,8 @@ function RaiseRefuseThenAcceptHarness({ acceptedBy }: { acceptedBy: "psychiatric
             // the reducer, which is the rule this board's own "the destination is the whole
             // answer" branch mirrors.
             unitId: acceptedBy === "psychiatric_ward" ? acceptingUnit?.id : undefined,
+            // S2-11 (13 Oct 2026): a ward answers only as itself.
+            ...(acceptedBy === "psychiatric_ward" ? { actingUnitId: acceptingUnit?.id } : {}),
           })
         }
       >

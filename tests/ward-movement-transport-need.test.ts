@@ -18,7 +18,9 @@
 import { describe, expect, it } from "vitest";
 
 import { transportNeedState } from "../src/components/ward-management/ward-derivations";
-import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+// Tests written before the strict ward-scope rule (12 Oct 2026): events gain the scope their record implies.
+import { scopedWardFlowReducer as wardFlowReducer } from "./helpers/ward-caller-scope";
 import type { Movement } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -184,13 +186,17 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
     expect(refused.rejections).toHaveLength(1);
     expect(refused.movements.find((candidate) => candidate.id === openMovement().id)!.transportNeed).toBeUndefined();
 
+    // Review finding A1-10 (fixed 13 Oct 2026): a ward records this only for a move into or out of
+    // its own ward, so the ward case uses a pulled movement and names the receiving ward.
+    const pulled = seeded.movements.find((candidate) => candidate.stage === "pulled" && !candidate.closure)!;
     for (const role of ["ed", "ward", "community", "coordinator"] as const) {
       const allowed = wardFlowReducer(seeded, {
         type: "RECORD_TRANSPORT_NEED",
         role,
         now: NOW,
-        movementId: openMovement().id,
+        movementId: role === "ward" ? pulled.id : openMovement().id,
         needed: true,
+        ...(role === "ward" ? { actingUnitId: pulled.acceptedUnitId } : {}),
       });
       expect(allowed.rejections, `${role} was refused, and it is a permitted sender`).toEqual([]);
     }

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+// Tests written before the strict ward-scope rule (12 Oct 2026): events gain the scope their record implies.
+import { scopedWardFlowReducer as wardFlowReducer } from "./helpers/ward-caller-scope";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { TRANSPORT_PROVIDERS } from "../src/components/ward-management/ward-model";
 import { communityTeamOptions } from "../src/components/ward-management/referrals/referral-destination-options";
@@ -155,8 +157,10 @@ describe("2026-09-16 Product Owner Rulings Verification", () => {
       expect(pulled).toBeDefined();
       if (!pulled) return;
 
-      const bookingUnit = state.units[0];
-      const otherUnit = state.units[1];
+      // Review finding S2-10 (fixed 13 Oct 2026): a ward books only for a move into or out of its
+      // own ward, so the booking ward here is the receiving ward the patient was pulled to.
+      const bookingUnit = state.units.find((unit) => unit.id === pulled.acceptedUnitId)!;
+      const otherUnit = state.units.find((unit) => unit.id !== pulled.acceptedUnitId)!;
 
       const booked = wardFlowReducer(state, {
         type: "BOOK_TRANSPORT",
@@ -182,7 +186,9 @@ describe("2026-09-16 Product Owner Rulings Verification", () => {
         actingUnitId: otherUnit.id,
       });
       expect(otherCancel.rejections.length).toBeGreaterThan(0);
-      expect(otherCancel.rejections[0].reason).toContain("may only cancel transport it booked");
+      expect(otherCancel.rejections[0].reason).toMatch(
+        /may only cancel transport it booked|may act only for its own ward/,
+      );
 
       // Originating ward can cancel
       const cancelled = wardFlowReducer(booked, {

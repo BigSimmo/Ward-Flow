@@ -44,7 +44,7 @@ describe("actions limited by the route's role (feature 11)", () => {
     navigation.pathname = "/mockups/ward-flow/transport/officer";
     const save = renderModal();
     expect(save).toBeDisabled();
-    const reason = screen.getByText("Coordinator, ED, ward or community team only");
+    const reason = screen.getByText("Coordinator, ED or ward only");
     expect(save.getAttribute("aria-describedby")).toBe(reason.closest("[id]")?.id);
     const before = screen.getByTestId("probe").textContent;
     fireEvent.submit(save.closest("form")!);
@@ -57,6 +57,6 @@ describe("actions limited by the route's role (feature 11)", () => {
     const save = renderModal();
     expect(save).toBeEnabled();
     expect(save.hasAttribute("aria-describedby")).toBe(false);
-    expect(screen.queryByText("Coordinator, ED, ward or community team only")).toBeNull();
+    expect(screen.queryByText("Coordinator, ED or ward only")).toBeNull();
   });
 });

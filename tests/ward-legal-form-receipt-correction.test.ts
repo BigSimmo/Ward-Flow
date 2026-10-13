@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
-import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+// Tests written before the strict ward-scope rule (12 Oct 2026): events gain the scope their record implies.
+import { scopedWardFlowReducer as wardFlowReducer } from "./helpers/ward-caller-scope";
 import type { ReferralDraft } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { LEGAL_FORM_RECEIPT_CORRECTION_REASONS } from "@/components/ward-management/ward-change-reasons";

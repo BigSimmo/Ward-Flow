@@ -11,7 +11,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+// Tests written before the strict ward-scope rule (12 Oct 2026): events gain the scope their record implies.
+import { scopedWardFlowReducer as wardFlowReducer } from "./helpers/ward-caller-scope";
 import { REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS, type Referral } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -50,9 +52,12 @@ describe("ADD_REFERRAL_CORRECTION — RB7, build plan item 27 (2026-09-17)", () 
     const state = seedWardFlowState();
     const referral = anyReferral(state);
 
+    // Review finding A1-14 (fixed 13 Oct 2026): only the sending side or the coordinator corrects a
+    // referral. The seed's first referral comes from a community service, so the two parties are
+    // that community team and the coordinator.
     const once = wardFlowReducer(state, {
       type: "ADD_REFERRAL_CORRECTION",
-      role: "ed",
+      role: "community",
       now: NOW,
       referralId: referral.id,
       note: "First correction.",
@@ -61,7 +66,7 @@ describe("ADD_REFERRAL_CORRECTION — RB7, build plan item 27 (2026-09-17)", () 
 
     const twice = wardFlowReducer(once, {
       type: "ADD_REFERRAL_CORRECTION",
-      role: "community",
+      role: "coordinator",
       now: NOW + 30,
       referralId: referral.id,
       note: "Second correction, from a different party.",
@@ -70,8 +75,8 @@ describe("ADD_REFERRAL_CORRECTION — RB7, build plan item 27 (2026-09-17)", () 
 
     const updated = twice.referrals.find((candidate) => candidate.id === referral.id)!;
     expect(updated.corrections).toEqual([
-      { at: NOW, by: "ed", note: "First correction." },
-      { at: NOW + 30, by: "community", note: "Second correction, from a different party." },
+      { at: NOW, by: "community", note: "First correction." },
+      { at: NOW + 30, by: "coordinator", note: "Second correction, from a different party." },
     ]);
   });
 

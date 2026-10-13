@@ -58,7 +58,8 @@ describe("who may raise which event", () => {
     ADD_PATIENT: ["ed", "community", "coordinator"],
     // RB7, build plan item 27 (2026-09-17): the referrer's own team and the coordinator, never a
     // ward — see EVENT_ROLE's own comment on this entry.
-    ADD_REFERRAL_CORRECTION: ["community", "ed", "coordinator"],
+    // A1-7/A1-14 (13 Oct 2026): a ward corrects only a referral its own ward raised.
+    ADD_REFERRAL_CORRECTION: ["community", "ed", "ward", "coordinator"],
     ADVANCE_CLOCK: ["demo"],
     BLOCK_BED_RELEASE: ["ward", "coordinator"],
     // CHANGED 2026-08-30 under TR-D6 (owner), and this row is a NARROWING plus a widening, not
@@ -173,7 +174,8 @@ describe("who may raise which event", () => {
     /* Widened to ["community", "ed"] by R9 (owner item 23, 2026-09-17): only `ed_medical` is
      * raised as `ed`, and the reducer's own `RECEIVE_REFERRAL` case refuses role `ed` paired with
      * any other source — a pairing this table cannot itself express. */
-    RECEIVE_REFERRAL: ["community", "ed", "coordinator"],
+    // A1-7 (13 Oct 2026): a ward raises its own referral as itself, not as a community team.
+    RECEIVE_REFERRAL: ["community", "ed", "ward", "coordinator"],
     RECORD_ESCALATION: ["coordinator"],
     RECORD_EXAMINATION: ["ed", "coordinator"],
     /* Ruling 1: ED marks Form 1A as received. CORRECTED 2026-09-17, T2r fix round, finding 10:
@@ -403,7 +405,8 @@ describe("who may raise which event", () => {
      * be named by it.
      */
     // Owner, 4 October 2026: the referrer's own side may record it too, scoped in the reducer.
-    RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed"],
+    // A1-2/A1-7 (owner decision 12 Oct 2026): a ward withdraws only a referral its own ward raised.
+    RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed", "ward"],
     // Q004 Task 3: ward-owned patient discharge; bounded record access; coordinator audit review.
     // Keep this independent of EVENT_ROLE so widening any domain role still fails here.
     RECORD_ADMISSION_CARE: ["ward", "coordinator", "community"],
@@ -420,13 +423,16 @@ describe("who may raise which event", () => {
     // RB3, item 19: the department holding the patient records the outcome — same reasoning as
     // RECORD_LEFT_DEPARTMENT above.
     RECORD_ED_OUTCOME: ["ed", "coordinator"],
-    SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
+    // A1-8 (13 Oct 2026): community may no longer set another ward's arrival details.
+    SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward"],
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
     RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
-    RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator", "ward", "community"],
+    // A1-9 (13 Oct 2026): the medical workup is recorded by the ED or the coordinator only.
+    RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
     UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
-    RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward", "community"],
+    // A1-5 (owner decision 12 Oct 2026): ED and coordinator only, every change audited.
+    RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator"],
     RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
     RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
     EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],
