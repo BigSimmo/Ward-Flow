@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { CHROME_ROLE_LABELS } from "../src/components/ward-management/ward-chrome-role";
@@ -106,5 +107,15 @@ describe("one role label map (shell-3)", () => {
     for (const role of ["coordinator", "ward", "ed", "community", "officer"] as const) {
       expect(deskRoleLabel(role)).toBe(CHROME_ROLE_LABELS[role]);
     }
+  });
+});
+
+describe("switcher words stay neutral (shell-13)", () => {
+  it("colours no text red; the danger glyph alone carries the tone", () => {
+    const source = readFileSync("src/components/ward-management/settings/operator-switcher-modal.tsx", "utf8");
+    const css = readFileSync("src/components/ward-management/settings/workstation-switcher.module.css", "utf8");
+    expect(source).not.toContain("styles.danger");
+    expect(css).not.toMatch(/color:\s*var\(--wf-danger-ink\)/u);
+    expect(source).toContain('<StatusGlyph tone="danger" />');
   });
 });

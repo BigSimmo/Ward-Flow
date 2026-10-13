@@ -495,7 +495,8 @@ function DeskFigure({ desk, now, accessTargetMinutes }: { desk: Desk; now: numbe
         <b className={styles.mono}>{desk.waiting ?? 0}</b>
         <span className={styles.unit}>waiting</span>
         {desk.pastTarget ? (
-          <span className={cx(styles.age, styles.danger)}>
+          // shell-13: words stay neutral; the red glyph before the figure carries the tone.
+          <span className={styles.age}>
             {desk.pastTarget} over {targetLabel(accessTargetMinutes)}
           </span>
         ) : null}
@@ -612,13 +613,7 @@ function DeskFacts({ desk, now, accessTargetMinutes }: { desk: Desk; now: number
       ["Waiting", desk.waiting ?? 0, "for a bed"],
       [
         "Longest",
-        desk.waiting ? (
-          <span className={desk.pastTarget ? styles.danger : undefined}>
-            {durMinutes(desk.longestWaitMinutes ?? 0)}
-          </span>
-        ) : (
-          "None"
-        ),
+        desk.waiting ? <span>{durMinutes(desk.longestWaitMinutes ?? 0)}</span> : "None",
         `target ${targetLabel(accessTargetMinutes)}`,
       ],
     ];

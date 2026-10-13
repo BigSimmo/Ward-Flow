@@ -454,10 +454,6 @@
   color: var(--wf-warning-ink);
 }
 
-.danger {
-  color: var(--wf-danger-ink);
-}
-
 /* Inline preview of a desk */
 .preview2 {
   display: flex;
