@@ -236,7 +236,9 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                   type="button"
                   className={styles.patientChipBtn}
                   aria-disabled={!reasons[entry.id] || roleRefusal !== undefined ? "true" : undefined}
-                  aria-describedby={roleRefusal ? declineReasonId : undefined}
+                  aria-describedby={
+                    roleRefusal ? declineReasonId : !reasons[entry.id] ? `${declineReasonId}-choose` : undefined
+                  }
                   onClick={(e) => {
                     const reason = reasons[entry.id];
                     if (!reason || roleRefusal) {
@@ -256,6 +258,11 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                   Decline referral
                 </button>
                 {roleRefusal ? <DisabledReason id={declineReasonId}>{roleRefusal}</DisabledReason> : null}
+                {!roleRefusal && !reasons[entry.id] ? (
+                  <span className="sr-only" id={`${declineReasonId}-choose`}>
+                    Choose a decline reason first.
+                  </span>
+                ) : null}
               </div>
             )}
           </article>

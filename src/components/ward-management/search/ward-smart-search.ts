@@ -33,7 +33,7 @@ import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-managem
 import type { EmergencyDepartment, LegalForm, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { findPatients, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
-import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES, type CommunityTeam } from "@/components/ward-management/community/community-derivations";
 import { teamHref, unitHref } from "../shell/ward-facade";
 
@@ -653,7 +653,7 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     input.precomputedTasks ??
     buildActionInbox(
       input.movements.filter(isOpen),
-      input.now ?? 0,
+      input.now ?? NOW_ANCHOR,
       input.units,
       input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
     );

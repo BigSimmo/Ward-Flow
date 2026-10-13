@@ -125,8 +125,11 @@ export function WardChromeSearch({
             referrals,
             limitPerGroup: MAX_RESULTS_PER_GROUP,
             plannedAdmissions: context?.plannedAdmissions,
+            // Without the ward clock, task derivation ran at epoch zero and dropped expired pulls
+            // and overdue arrivals from task results.
+            now: context?.now,
           }),
-    [debouncedTrimmed, patients, movements, units, referrals, context?.plannedAdmissions],
+    [debouncedTrimmed, patients, movements, units, referrals, context?.plannedAdmissions, context?.now],
   );
 
   const groups = useMemo(() => {

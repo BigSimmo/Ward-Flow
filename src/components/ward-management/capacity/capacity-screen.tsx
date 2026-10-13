@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Printer } from "lucide-react";
 import { LEAVING_DESTINATIONS } from "../ward-admissions";
@@ -347,19 +347,21 @@ export function CapacityScreen() {
    * `groupNetworkWardRowsByService` states as a sentence — the same case `bed-map.tsx` already
    * handles the same way, immediately above this table.
    */
+  // The controlled <select> updates synchronously; only the re-sort is deferred.
+  const deferredWardSort = useDeferredValue(wardSort);
   const networkServiceGroups = useMemo(
     () =>
       groupNetworkWardRowsByService(visibleNetworkRows).map((group) => ({
         ...group,
         wards: [...group.wards].sort((a, b) =>
-          wardSort === "ready"
+          deferredWardSort === "ready"
             ? b.ready - a.ready || a.unit.name.localeCompare(b.unit.name)
-            : wardSort === "confirmation"
+            : deferredWardSort === "confirmation"
               ? a.confirmedAt - b.confirmedAt || a.unit.name.localeCompare(b.unit.name)
               : a.unit.name.localeCompare(b.unit.name),
         ),
       })),
-    [visibleNetworkRows, wardSort],
+    [visibleNetworkRows, deferredWardSort],
   );
 
   // See the file-level warning above: `freeing` is only ever a real number on a row where the
@@ -429,10 +431,7 @@ export function CapacityScreen() {
                 name="wardSort"
                 aria-label="Sort wards"
                 value={wardSort}
-                onChange={(event) => {
-                  const nextSort = event.target.value;
-                  startTransition(() => setWardSort(nextSort));
-                }}
+                onChange={(event) => setWardSort(event.target.value)}
               >
                 <option value="name">Ward A–Z</option>
                 <option value="ready">Most ready</option>

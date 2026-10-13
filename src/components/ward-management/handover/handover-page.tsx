@@ -355,7 +355,9 @@ export function HandoverPage() {
     return handoverScopeValue(parseHandoverScope(requested));
   });
   const scope = useMemo(() => parseHandoverScope(scopeValue), [scopeValue]);
-  const scopeLabel = handoverScopeLabel(scope, units) ?? "Whole network";
+  // A scope that names nothing known (a stale deep link) filters out every row, so it must not be
+  // presented as the whole network.
+  const scopeLabel = handoverScopeLabel(scope, units) ?? (scope.kind === "network" ? "Whole network" : "Unknown scope");
 
   /* which handover */
   const [shift, setShift] = useState<HandoverShiftId>(() => defaultHandoverShift(now));

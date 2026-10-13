@@ -235,6 +235,11 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
           {isPulled ? <div className={styles.bedPatientName}>{bed.patientAlias}</div> : null}
           {cardMetaLine(bed) ? <div className={styles.bedPatientSub}>{cardMetaLine(bed)}</div> : null}
         </div>
+      ) : isReady && bed.preparing ? (
+        <div className={styles.bedCardBody}>
+          <div className={styles.bedPatientName}>Not offered yet</div>
+          <div className={styles.bedPatientSub}>Being made ready</div>
+        </div>
       ) : isReady ? (
         <div className={styles.bedCardBody}>
           <div className={styles.bedPatientName}>Offered</div>
