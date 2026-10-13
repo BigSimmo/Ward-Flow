@@ -93,7 +93,7 @@ describe("officer screen KPI captions match their populations", () => {
 
     // Before the 16 Sept fix the value was 2 (WF-005 and WF-015, both already accepted — a crew is
     // already assigned) under a caption that was no longer true of an accepted job.
-    expect(heroCount("Not accepted")).toBe(0);
+    expect(heroCount("To accept")).toBe(0);
   });
 
   it("keeps the on-board count exactly the collected-not-arrived jobs, unchanged", () => {

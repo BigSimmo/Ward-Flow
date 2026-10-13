@@ -65,7 +65,7 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { edById, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
@@ -242,6 +242,10 @@ export function arrivedBlockedReason(movement: Movement, unit: Unit | undefined,
   }
   if (movement.transport?.diversion) {
     return `${who ?? "This patient"} was diverted; release the held bed rather than recording delivery.`;
+  }
+  // A4-16: Delivered ends the transport leg once; the receiving ward then confirms arrival.
+  if (movement.transport?.arrivedAt !== undefined) {
+    return `${who ?? "This patient"} was already delivered. The receiving ward confirms arrival.`;
   }
   if (movement.stage !== "moving" || movement.transport?.collectedAt === undefined) {
     return `${who ?? "This patient"} cannot be marked arrived before the patient has been collected.`;
@@ -429,9 +433,15 @@ export function OfficerScreen() {
   const [historyTab, setHistoryTab] = useState<HistoryTab>("delivered");
 
   const late = (movement: Movement) => pastWardEta(movement, now);
+  // Audit round 2, S-14: "To accept" holds only jobs the officer can accept now. A job whose bed is
+  // not yet at handover is waiting on the sending team, not on the officer.
+  const readyToAccept = (movement: Movement) =>
+    movement.transport !== undefined &&
+    officerLeg(movement.transport) === "Requested" &&
+    acceptedBlockedReason(movement) === undefined;
   const matchesPill = (movement: Movement, which: HighlightPill): boolean => {
     const leg = movement.transport ? officerLeg(movement.transport) : undefined;
-    if (which === "requested") return leg === "Requested";
+    if (which === "requested") return readyToAccept(movement);
     if (which === "accepted") return leg === "Accepted";
     if (which === "en_route") return leg === "En route";
     if (which === "collected") return leg === "Collected";
@@ -474,6 +484,9 @@ export function OfficerScreen() {
 
   // Next action first: late, then forms still to upload, then the jobs furthest along.
   const priority = (movement: Movement) => {
+    // Audit round 2, A4-13 (phone): a job to accept is pinned to the top, oldest first, so a new
+    // booking is the Next action rather than the last row.
+    if (isPhone && readyToAccept(movement)) return -1;
     if (late(movement)) return 0;
     if (packOutstanding(movement)) return 1;
     const leg = movement.transport ? officerLeg(movement.transport) : undefined;
@@ -624,7 +637,7 @@ export function OfficerScreen() {
   const inCustody = jobs.filter(
     (job) => job.transport?.collectedAt !== undefined && job.transport?.arrivedAt === undefined,
   ).length;
-  const awaitingDeparture = jobs.filter((job) => job.transport?.acceptedAt === undefined).length;
+  const awaitingDeparture = jobs.filter(readyToAccept).length;
   const crewToSend = legCount("Accepted");
   const crewEnRoute = legCount("En route");
   const pastEta = jobs.filter(late).length;
@@ -785,7 +798,33 @@ export function OfficerScreen() {
     };
   };
 
-  const nextButton = (movement: Movement, testId: string, variant: "pri" | "sec", size: "sm" | "md" | "lg") => {
+  /**
+   * Audit round 2, S-14: why the next step cannot be taken yet, printed (not a hover title) on
+   * phone. A job still short of handover is waiting on the sending team, so it says so plainly.
+   */
+  const blockedNote = (movement: Movement): string | undefined => {
+    const step = nextStep(movement);
+    if (!step?.blocked) return undefined;
+    if (
+      step.leg === "Requested" &&
+      !movement.closure &&
+      movement.stage !== "handover_ready" &&
+      !revokedHoldingBedReason(movement, "accepted for transport")
+    ) {
+      const sender = edShortName(edById(movement.originEdId)) || "the sending team";
+      return `Waiting for ${sender} to mark handover ready.`;
+    }
+    return step.blocked;
+  };
+
+  const nextButton = (
+    movement: Movement,
+    testId: string,
+    variant: "pri" | "sec",
+    size: "sm" | "md" | "lg",
+    describedBy?: string,
+    openAfter = false,
+  ) => {
     const step = nextStep(movement);
     if (!step) return null;
     return (
@@ -794,12 +833,16 @@ export function OfficerScreen() {
         size={size}
         data-testid={`${testId}-${movement.id}`}
         aria-disabled={step.blocked ? "true" : undefined}
+        aria-describedby={step.blocked ? describedBy : undefined}
         title={step.blocked ?? undefined}
         aria-label={`${step.verb}, ${officerPatientName(movement)}`}
         onClick={(event) => {
           event.stopPropagation();
           if (step.blocked) return;
           step.run(movement);
+          // Audit round 2, S-15 (phone): after advancing from the Next action card, the job's sheet
+          // opens with its next milestone as the pinned primary, so the officer stays on this job.
+          if (openAfter) openJob(movement.id);
         }}
       >
         {step.verb}
@@ -948,6 +991,13 @@ export function OfficerScreen() {
         >
           Mark {step.label.toLowerCase()}
         </Button>
+        {/* Audit round 2, S-14: the reason is printed, since a touch user cannot see a title. */}
+        {blocked ? (
+          <p id={`${step.testId}-unavailable-${movement.id}`} className={styles.nextNote}>
+            <Icon icon={Lock} size={14} />
+            {blockedNote(movement) ?? blocked}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -1085,7 +1135,6 @@ export function OfficerScreen() {
                   <StatusGlyph tone={done ? "success" : current ? "info" : "neutral"} size={10} />
                   <span className={styles.phStepText}>
                     <span className={styles.phStepTitle}>{label}</span>
-                    {current && nextBlocked ? <span className={styles.phStepSub}>{nextBlocked}</span> : null}
                   </span>
                   {done ? <span className={styles.phStepDone}>Done</span> : null}
                 </li>
@@ -1140,22 +1189,24 @@ export function OfficerScreen() {
             {nextBlocked}
           </p>
         ) : null}
-        {acceptedBlocked ? (
+        {/* Audit round 2, A4-14: on phone only the pinned next step is a button, and it prints its
+            own reason, so these reasons for done and future steps are desktop only. */}
+        {acceptedBlocked && !isPhone ? (
           <span id={`ward-officer-accept-unavailable-${movement.id}`} className="sr-only">
             {acceptedBlocked}
           </span>
         ) : null}
-        {enRouteBlocked ? (
+        {enRouteBlocked && !isPhone ? (
           <span id={`ward-officer-enroute-unavailable-${movement.id}`} className="sr-only">
             {enRouteBlocked}
           </span>
         ) : null}
-        {collectedBlocked ? (
+        {collectedBlocked && !isPhone ? (
           <span id={`ward-officer-collect-unavailable-${movement.id}`} className="sr-only">
             {collectedBlocked}
           </span>
         ) : null}
-        {arrivedBlocked ? (
+        {arrivedBlocked && !isPhone ? (
           <span id={`ward-officer-arrive-unavailable-${movement.id}`} className="sr-only">
             {arrivedBlocked}
           </span>
@@ -1376,7 +1427,7 @@ export function OfficerScreen() {
 
   const heroPillStats = (
     <>
-      {pillStat("requested", awaitingDeparture, "Not accepted", "To accept", "neutral")}
+      {pillStat("requested", awaitingDeparture, "To accept", "To accept", "neutral")}
       {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
       {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
       {pillStat("collected", inCustody, "On board", "On board", "info")}
@@ -1516,8 +1567,21 @@ export function OfficerScreen() {
               <Button variant="sec" size="lg" onClick={() => openJob(topJob.id)}>
                 Open
               </Button>
-              {nextButton(topJob, "ward-officer-nextcard", "pri", "lg")}
+              {nextButton(
+                topJob,
+                "ward-officer-nextcard",
+                "pri",
+                "lg",
+                isPhone ? `ward-officer-nextcard-unavailable-${topJob.id}` : undefined,
+                isPhone,
+              )}
             </div>
+            {isPhone && blockedNote(topJob) ? (
+              <p id={`ward-officer-nextcard-unavailable-${topJob.id}`} className={styles.nextNote}>
+                <Icon icon={Lock} size={14} />
+                {blockedNote(topJob)}
+              </p>
+            ) : null}
           </Card>
         ) : null}
 
