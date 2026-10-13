@@ -20,7 +20,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState, type Dispatch } from "react";
+import { useRef, useState, type Dispatch } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
