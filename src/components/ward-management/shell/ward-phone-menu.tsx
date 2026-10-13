@@ -794,7 +794,6 @@ export function WardPhoneMenu({
   const [createOpen, setCreateOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const debouncedQuery = useDebouncedValue(query, 120);
 
   useEffect(
     () =>
@@ -817,7 +816,7 @@ export function WardPhoneMenu({
   const flow = useWardFlow();
   const actNowCount = useMemo(
     () => (wardTasksAreActionableForRole(shellRole) ? activeActNowItems(flow, flow.now).length : 0),
-    [shellRole, flow],
+    [shellRole, flow, flow.now],
   );
   const needs = [...actNowNeed(actNowCount), ...overdueNeeds];
 
@@ -880,7 +879,7 @@ export function WardPhoneMenu({
       >
         <MenuSearch query={query} onQuery={setQuery} />
         <MenuPages
-          query={debouncedQuery}
+          query={query}
           entries={entries}
           needs={needs}
           groups={groups}

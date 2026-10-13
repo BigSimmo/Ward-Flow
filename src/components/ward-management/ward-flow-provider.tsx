@@ -214,10 +214,12 @@ type WardFlowContextValue = {
 export type { WardFlowContextValue };
 export const WardFlowContext = createContext<WardFlowContextValue | null>(null);
 export const WardFlowClockContext = createContext<Instant | null>(null);
-export const WardClockContext = createContext<Instant>(NOW_ANCHOR);
+export const WardClockContext = createContext<Instant | null>(null);
 
 export function useWardClock(): Instant {
-  return useContext(WardClockContext);
+  const now = useContext(WardClockContext);
+  if (now === null) throw new Error("useWardClock must be used within WardFlowProvider");
+  return now;
 }
 
 const EMPTY_ARRAY = Object.freeze([]) as never[];
@@ -946,12 +948,7 @@ function WardFlowWorld({
             saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + mountedAtAbsolute - saved.savedAtAbsolute;
           // A saved day identical to the seed already on screen (nothing was changed before the
           // reload) only moves the clock; the screens keep their nodes and their state.
-          const isSameWorld =
-            saved.state.worldGeneration === current.world.worldGeneration &&
-            saved.state.movements.length === current.world.movements.length &&
-            saved.state.admissions.length === current.world.admissions.length &&
-            saved.state.patients.length === current.world.patients.length &&
-            saved.state.bedReleases.length === current.world.bedReleases.length;
+          const isSameWorld = JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
           if (isSameWorld) return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined };
           // Anything dispatched before adoption is replayed on the restored day through the same
           // tracker, so its log entry and typed-text lock survive, and a now-stale action is refused
@@ -1138,9 +1135,7 @@ function WardFlowWorld({
         }),
       patients: state.patients,
       admissions: state.admissions,
-      get now() {
-        return nowRef.current;
-      },
+      now,
       dayZero,
       scenario: state.scenario,
       configuration: state.configuration,
@@ -1177,6 +1172,7 @@ function WardFlowWorld({
       resetDemoState,
       saveScenarioFile,
       loadScenarioFile,
+      now,
     ],
   );
 

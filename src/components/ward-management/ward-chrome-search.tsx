@@ -104,6 +104,8 @@ export function WardChromeSearch({
   const debouncedQuery = useDebouncedValue(query, 120);
   const trimmed = query.trim();
   const debouncedTrimmed = debouncedQuery.trim();
+  const searchPending = debouncedTrimmed !== trimmed;
+  useEffect(() => setActiveIndex(-1), [trimmed]);
 
   const smartResults = useMemo(
     () =>
@@ -254,7 +256,7 @@ export function WardChromeSearch({
     return g;
   }, [smartResults, units]);
 
-  const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
+  const options = useMemo(() => (searchPending ? [] : groups.flatMap((g) => g.items)), [groups, searchPending]);
   const showPopup = open && trimmed.length > 0;
 
   const optionsKey = useMemo(() => options.map((option) => option.href).join("|"), [options]);
@@ -509,7 +511,7 @@ export function WardChromeSearch({
       </span>
 
       <p className="sr-only" role="status" aria-live="polite">
-        {trimmed.length === 0 ? "" : options.length === 0 ? "No matches." : `${options.length} invented results found.`}
+        {trimmed.length === 0 ? "" : searchPending ? "Searching…" : options.length === 0 ? "No matches." : `${options.length} invented results found.`}
       </p>
 
       {showPopup ? (
@@ -537,7 +539,9 @@ export function WardChromeSearch({
             fontVariantNumeric: "tabular-nums",
           }}
         >
-          {options.length === 0 ? (
+          {searchPending ? (
+            <p style={{ margin: 0, padding: "1rem 1.25rem" }}>Searching…</p>
+          ) : options.length === 0 ? (
             <p
               data-testid="ward-chrome-search-empty"
               style={{
