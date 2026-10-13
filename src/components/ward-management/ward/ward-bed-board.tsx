@@ -6,6 +6,12 @@ import type { CSSProperties } from "react";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone, durMinutes } from "@/components/wf";
 
+import {
+  patientInitials,
+  useDiscreetNamesOnPhone,
+  usePatientNameDisplay,
+} from "@/components/ward-management/settings/discreet-names";
+
 import { bedFits, bedNumberLabel, BOARD_RESTING_SAY, type BoardPick } from "./ward-bed-board-logic";
 import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
 import styles from "./ward-bed-board.module.css";
@@ -19,6 +25,8 @@ export type WaitingReferral = {
   kind?: "referral" | "movement";
   id: string;
   name: string;
+  /** For Discreet names on phone (A2-20): initials plus UMRN in place of the name. */
+  umrn?: string;
   /** "F", "M" or "Not recorded". */
   sex: string;
   waitedMinutes: number;
@@ -71,12 +79,17 @@ function occupantParts(name: string | undefined): { surname: string; initial: st
   return { surname: parts[parts.length - 1]!, initial: parts[0]!.charAt(0).toUpperCase() };
 }
 
-function CellWord({ bed }: { bed: BedItem }) {
+function CellWord({ bed, discreet }: { bed: BedItem; discreet: boolean }) {
   const occupant =
     bed.status === "ready" || bed.status === "closed" || bed.status === "incoming"
       ? null
       : occupantParts(bed.patientAlias);
   if (occupant === null) return <span className={styles.cellWord}>{cellWord(bed)}</span>;
+  // A2-20: Discreet names on phone. A bed cell is too narrow for a UMRN, so it shows initials; the
+  // bed number beside it and the bed panel still identify the person.
+  if (discreet) {
+    return <span className={styles.cellWord}>{patientInitials(bed.patientAlias ?? "")}</span>;
+  }
   return (
     <span className={styles.cellName}>
       <span className={styles.cellWord}>{occupant.surname}</span>
@@ -86,23 +99,32 @@ function CellWord({ bed }: { bed: BedItem }) {
 }
 
 function cellWord(bed: BedItem): string {
+  if (bed.status === "ready" && !bed.heldFor && bed.preparing) return "Making ready";
   if (bed.status === "ready") return bed.heldFor ? `Held, ${surname(bed.heldFor)}` : "Free";
   if (bed.status === "closed") return "Closed";
   if (bed.status === "incoming") return "Pulled";
   return surname(bed.patientAlias);
 }
 
-function cellLabel(bed: BedItem, fits: boolean): string {
+function cellLabel(
+  bed: BedItem,
+  fits: boolean,
+  nameFor: (name: string, umrn: string | undefined | null) => string,
+): string {
+  // A2-20: the accessible name follows Discreet names, as the visible cell does.
+  const alias = bed.patientAlias === undefined ? undefined : nameFor(bed.patientAlias, bed.umrn);
   const state =
     bed.status === "ready"
       ? bed.heldFor
         ? `free, held for ${bed.heldFor}`
-        : "free"
+        : bed.preparing
+          ? "being made ready"
+          : "free"
       : bed.status === "closed"
         ? "closed"
         : bed.status === "incoming"
-          ? `pulled${bed.patientAlias ? `, ${bed.patientAlias}` : ""}`
-          : `${bed.patientAlias ?? "occupant not recorded"}${bed.status === "leave" ? ", on leave" : ""}`;
+          ? `pulled${alias ? `, ${alias}` : ""}`
+          : `${alias ?? "occupant not recorded"}${bed.status === "leave" ? ", on leave" : ""}`;
   return `Bed ${bedNumberLabel(bed.bedNumber)}, ${state}${fits ? ", fits" : ""}`;
 }
 
@@ -134,8 +156,10 @@ export function WardBedBoard({
   onOpenList,
 }: WardBedBoardProps) {
   const isPhone = useIsPhone();
+  const nameFor = usePatientNameDisplay();
+  const discreet = useDiscreetNamesOnPhone();
   const pods = podsOf(beds, unit, isMixed);
-  const free = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined).length;
+  const free = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined && !bed.preparing).length;
   const leavingToday = beds.filter(
     (bed) =>
       bed.status !== "ready" &&
@@ -182,7 +206,7 @@ export function WardBedBoard({
               }}
             >
               <StatusGlyph tone={referral.waitedMinutes >= 240 ? "warning" : "neutral"} size={10} />
-              <span className={styles.chipName}>{referral.name}</span>
+              <span className={styles.chipName}>{nameFor(referral.name, referral.umrn)}</span>
               <span className={styles.chipMeta}>
                 {referral.sex} · {durMinutes(referral.waitedMinutes)}
               </span>
@@ -201,7 +225,9 @@ export function WardBedBoard({
           }}
         >
           <StatusGlyph tone="info" size={10} />
-          <span className={styles.chipName}>{picked.name}</span>
+          <span className={styles.chipName}>
+            {nameFor(picked.name, beds.find((bed) => Number(bed.bedNumber) === picked.fromBed)?.umrn)}
+          </span>
           <span className={styles.chipMeta}>from bed {bedNumberLabel(picked.fromBed)}</span>
         </button>
       ) : null}
@@ -237,7 +263,9 @@ export function WardBedBoard({
       data-testid="ward-bed-board-plan"
     >
       {pods.map((pod, index) => {
-        const podFree = pod.beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined).length;
+        const podFree = pod.beds.filter(
+          (bed) => bed.status === "ready" && bed.heldFor === undefined && !bed.preparing,
+        ).length;
         return (
           <div key={pod.id} className={styles.podSlot}>
             {index === 1 ? <div className={styles.corridor} aria-hidden="true" /> : null}
@@ -263,13 +291,13 @@ export function WardBedBoard({
                       key={bed.bedNumber}
                       type="button"
                       className={styles.cell}
-                      data-state={bed.heldFor ? "held" : String(bed.status)}
+                      data-state={bed.heldFor ? "held" : bed.preparing ? "preparing" : String(bed.status)}
                       data-fits={fits ? "true" : undefined}
                       data-act={glyph === "danger" ? "true" : undefined}
                       data-dim={dim ? "true" : undefined}
                       data-placed={placedBed === Number(bed.bedNumber) ? "true" : undefined}
                       aria-pressed={source ? true : undefined}
-                      aria-label={cellLabel(bed, fits)}
+                      aria-label={cellLabel(bed, fits, nameFor)}
                       data-testid={`ward-board-bed-${bed.bedNumber}`}
                       onClick={() => {
                         onBedPress(bed);
@@ -282,7 +310,7 @@ export function WardBedBoard({
                         ) : (
                           <span className={styles.swatch} aria-hidden="true" />
                         )}
-                        <CellWord bed={bed} />
+                        <CellWord bed={bed} discreet={discreet} />
                       </span>
                     </button>
                   );

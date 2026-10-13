@@ -1,0 +1,29 @@
+/* S-8: ward offers sent straight from Home, listed once below the referral queue. */
+.section {
+  border-top: 1px solid var(--wf-line);
+}
+
+.title {
+  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-1);
+}
+
+.list {
+  margin: 0;
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--ward-tap, 3rem);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  color: var(--wf-ink-2);
+}

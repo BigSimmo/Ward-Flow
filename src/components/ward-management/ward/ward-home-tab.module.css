@@ -636,6 +636,11 @@
   overflow-wrap: anywhere;
 }
 
+/* A1-8: the wait, origin and gates line sits under the meta line, beside the tier. */
+.awaitingSummary {
+  grid-column: 2;
+}
+
 .awaitingActions {
   display: flex;
   justify-content: flex-end;
@@ -1215,7 +1220,7 @@ label.todoMain:has(.todoTick:focus-visible) {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-1);
-  padding: var(--wf-s-3) var(--wf-s-4);
+  padding: var(--wf-s-2) var(--wf-s-4);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
@@ -1233,6 +1238,8 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 .phoneClearText {
   margin: 0;
+  font-weight: 400;
+  white-space: nowrap;
   font-size: var(--wf-fs-13);
   color: var(--wf-ink-2);
 }

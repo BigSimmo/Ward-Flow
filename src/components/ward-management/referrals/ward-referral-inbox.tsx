@@ -9,6 +9,7 @@ import { genderReviewNeeded, REFERRAL_DECLINE_REASONS, type ReferralDeclineReaso
 import { DECLINE_REASON_LABELS, wardTransferNeedsCoordinator } from "../ward-referrals";
 import { useRouteRole } from "../ward-role-gate";
 import { rolesOnlyReason } from "../ward-role-permissions";
+import { referralInboxName } from "./referral-inbox";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import styles from "./ward-referral-drawer.module.css";
@@ -95,7 +96,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
         return (
           <article className={styles.refCard} key={entry.id}>
             <h3 className={styles.refCardTitle}>
-              {patient.displayName} · {entry.id}
+              {referralInboxName(entry, patient.displayName)} · {entry.id}
             </h3>
             <p className={styles.refCardSubtitle}>
               {entry.withdrawnAt !== undefined

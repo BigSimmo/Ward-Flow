@@ -16,6 +16,7 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { perthCalendarDay } from "@/components/ward-management/ward-clock";
+import { EdInboxReferralFixture, openRaiseIntoMovementForm } from "./helpers/ed-raise-into-movement";
 
 /**
  * WHAT THE CLINICIAN TYPED IS WHAT THE MOVEMENT CARRIES — END TO END, THROUGH THE REAL FORM.
@@ -92,13 +93,14 @@ const REQUIRED = [
 function raiseTransportReferral(typed: { date: string; time: string } | undefined) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <EdInboxReferralFixture edId="jhc-ed" />
       <EdScreen edId="jhc-ed" />
       <DeadlineProbe />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
-  // A2-1: the form starts from a person; these cases raise for one not yet identified.
-  fireEvent.click(screen.getByTestId("ward-ed-referral-unidentified"));
+  // A2-1: the form starts from a person; the inbox referral has none, so it opens as not yet identified.
+  openRaiseIntoMovementForm();
+  expect(screen.getByTestId("ward-ed-referral-unidentified")).toBeChecked();
   for (const field of REQUIRED) {
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }

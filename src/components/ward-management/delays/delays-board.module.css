@@ -2746,6 +2746,15 @@ button.gLaneL:hover {
     font-size: var(--wf-phone-pill-count-fs);
     font-variant-numeric: tabular-nums;
   }
+
+  /* Phone taps (13 Oct 2026): `.tableCard > .chead` took this scroller's band away, so it clipped
+     the 32px chips' 48px hit areas to 32px. The band is back, taken back again by negative margins,
+     so the row does not move. */
+  .tableCard > .chead.fRow {
+    margin-top: calc(-1 * var(--wf-phone-pill-hit));
+    margin-bottom: calc(var(--wf-s-1) - var(--wf-phone-pill-hit));
+    padding-block: var(--wf-phone-pill-hit);
+  }
 }
 
 /*

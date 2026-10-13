@@ -450,7 +450,9 @@ export function HandoverPhone({
         data-testid="ward-handover-phone-hero"
         eyebrow={`${clock} ${current.label.toLowerCase()} · ${scopeLabel.toLowerCase()}`}
         chip={<span className={styles.heroCountdown}>{countdown}</span>}
-        title={`${dueCount} to hand over`}
+        // A4-29 (audit round 2): the title counts every row listed under Act now and Due, so it
+        // agrees with the two figures beneath it.
+        title={`${actCount + dueCount} to hand over`}
         sub={
           signedAt !== null
             ? `Signed ${formatInstantWithDay(signedAt, now)} · ${readyCount} beds ready across ${scopeLabel.toLowerCase()}`

@@ -127,7 +127,7 @@ const STEPS: { stage: Movement["stage"]; label: string }[] = [
 
 const LEG_WORD: Record<string, string> = {
   Requested: "Requested",
-  Accepted: "Booked",
+  Accepted: "Accepted",
   "En route": "En route",
   Collected: "Collected",
   Arrived: "Arrived",

@@ -11,8 +11,9 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
 
 /**
@@ -35,18 +36,47 @@ function asPhone() {
   );
 }
 
+/**
+ * Option B (Josh, 13 Oct 2026): the team's intake modal is retired; "Refer from team" opens the one
+ * referral slide-out instead, which lives in the shell and is not rendered here. A referral to this
+ * team is received through the same event the slide-out sends.
+ */
+function ReceiveForTeam() {
+  const { dispatch, now } = useWardFlow();
+  return (
+    <button
+      type="button"
+      hidden
+      data-testid="fixture-receive-for-team"
+      onClick={() =>
+        dispatch({
+          type: "RECEIVE_REFERRAL",
+          role: "community",
+          now,
+          ageBand: "Adult",
+          destinations: [{ kind: "community_team", teamName: communityTeamById("midland")!.name }],
+          homeRegion: "Perth Metropolitan",
+          suburb: { kind: "unknown", reason: "not_known" },
+          source: "community",
+          urgency: 2,
+          originSiteCode: "SCGH",
+          transportNeeded: false,
+          history: "",
+        })
+      }
+    />
+  );
+}
+
 function renderTeam() {
   return render(
     <ToastProvider>
       <WardFlowProvider>
+        <ReceiveForTeam />
         <CommunityScreen teamId="midland" />
       </WardFlowProvider>
     </ToastProvider>,
   );
-}
-
-function firstOption(select: HTMLElement): string {
-  return [...(select as HTMLSelectElement).options].map((option) => option.value).find(Boolean)!;
 }
 
 beforeEach(asPhone);
@@ -99,24 +129,10 @@ describe("Community team on a phone", () => {
     expect(screen.getByRole("searchbox", { name: "Find a team" })).toBeInTheDocument();
   });
 
-  it("an intake referral waits as a person row whose sheet declines only with a reason", () => {
+  it("offers Refer from team, and a referral to the team waits as a person row whose sheet declines only with a reason", () => {
     renderTeam();
-    fireEvent.click(screen.getByRole("button", { name: "Intake referral" }));
-    // A2-12: an intake names its person, or describes one not yet identified.
-    fireEvent.click(screen.getByTestId("ward-community-intake-unidentified"));
-    fireEvent.change(screen.getByTestId("ward-community-intake-description"), {
-      target: { value: "Adult man, about 30, at the drop-in centre" },
-    });
-    for (const id of [
-      "ward-community-intake-age-band",
-      "ward-community-intake-home-region",
-      "ward-community-intake-urgency",
-      "ward-community-intake-origin-site",
-    ]) {
-      const select = screen.getByTestId(id);
-      fireEvent.change(select, { target: { value: firstOption(select) } });
-    }
-    fireEvent.click(screen.getByTestId("ward-community-intake-submit"));
+    expect(screen.getByRole("button", { name: "Refer from team" })).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("fixture-receive-for-team"));
     // The page opened on the first list with someone in it; the new referral waits on Waiting.
     fireEvent.click(screen.getByRole("radio", { name: /^Waiting/u }));
 

@@ -461,6 +461,12 @@ export function MovementsScreen() {
   );
   const legs = transportLegs(openMovements, now);
   const counts = transportCounts(legs);
+  // Audit round 2, A4-18: only a pulled bed or later needs transport, so a referred-stage movement
+  // is not "without" a leg.
+  const legMovementIds = new Set(legs.map((leg) => leg.movement.id));
+  const withoutTransport = openMovements.filter(
+    (m) => (m.stage === "pulled" || m.stage === "handover_ready" || m.stage === "moving") && !legMovementIds.has(m.id),
+  ).length;
   const activeCorridorCount = new Set(
     corridors.map((corridor) => JSON.stringify([corridor.originEdId, corridor.acceptedUnitId])),
   ).size;
@@ -791,7 +797,7 @@ export function MovementsScreen() {
               {stateLabel}
             </span>
             <span className={flow.trWhen}>
-              <span className="sr-only">Booked </span>
+              <span className="sr-only">Accepted </span>
               {durMinutes(leg.minutesSinceBooked)}
               <span className="sr-only"> ago</span>
             </span>
@@ -1085,8 +1091,7 @@ export function MovementsScreen() {
               <span className={flow.phNavText}>
                 <strong>Transport now</strong>
                 <span>
-                  <b>{legs.length}</b> {legs.length === 1 ? "leg" : "legs"} ·{" "}
-                  <b>{openMovements.length - legs.length}</b> without
+                  <b>{legs.length}</b> {legs.length === 1 ? "leg" : "legs"} · <b>{withoutTransport}</b> without
                 </span>
               </span>
               <ChevronRight size={16} className={flow.phNavChevron} aria-hidden="true" />
@@ -1159,7 +1164,7 @@ export function MovementsScreen() {
               open={phoneSheet === "transport"}
               onClose={() => setPhoneSheet(null)}
               title="Transport now"
-              description={`${legs.length} ${legs.length === 1 ? "leg" : "legs"} · ${openMovements.length - legs.length} movements without one`}
+              description={`${legs.length} ${legs.length === 1 ? "leg" : "legs"} · ${withoutTransport} movements without one`}
               height="tall"
             >
               {legs.length === 0 ? (
@@ -1506,7 +1511,7 @@ export function MovementsScreen() {
                   </div>
                   <div className={flow.sideFigure} data-testid="movements-day-metric">
                     <span>No transport leg</span>
-                    <strong>{openMovements.length - legs.length}</strong>
+                    <strong>{withoutTransport}</strong>
                   </div>
                 </div>
               ) : null}
@@ -2256,13 +2261,10 @@ function StageRow({
  * `transportCounts` tally beside it can never disagree about which state a given leg is in. The
  * segment strip above reads its labels from this same map for the same reason.
  *
- * ⚠️ **`Accepted` STILL READS "Booked", DELIBERATELY.** The five-state collapse (Ward Lead,
- * 2026-09-05) was a ruling about the TYPE, not about the words on the board. This screen has always
- * called an accepted job "Booked" — the row's clock says "since booked" and `bookedAt` is the job's
- * `acceptedAt` — and the module's own comment defines "booked" as "a provider has accepted". Ward
- * vocabulary here is owner territory (pull-not-hold, discharged-not-released), so the collapse
- * changes no coordinator-facing word except by ADDING one: `Collected` was previously folded into
- * "En route" and had no word of its own.
+ * ⚠️ **`Accepted` READS "Accepted" (audit round 2, A4-18, 13 Oct 2026).** It used to read "Booked",
+ * while the officer page called the same leg "Accepted", so one leg had two names. One step
+ * vocabulary now runs across both screens: Requested, Accepted, En route, Collected, Delivered.
+ * `Collected` was previously folded into "En route" and had no word of its own.
  *
  * ⚠️ **THAT ADDITION MOVES A NUMBER A COORDINATOR MAY KNOW BY SIGHT.** In today's fixture the old
  * "En route" tile read 6; it now reads 0 with a "Collected" tile at 6, because those six patients
@@ -2311,7 +2313,7 @@ const LEG_STATE_TONE: Record<MovementLegState, WfTone> = {
 };
 
 const LEG_STATE_LABEL: Record<MovementLegState, string> = {
-  Accepted: "Booked",
+  Accepted: "Accepted",
   "En route": "En route",
   Collected: "Collected",
   Arrived: "Arrived",
@@ -2336,7 +2338,7 @@ function TransportRow({ leg, units, name }: { leg: TransportLegRow; units: Unit[
       recordKey={movement.id}
       tone={leg.state === "Cancelled" ? "danger" : leg.state === "Arrived" ? "good" : "neutral"}
       states={[{ level: LEG_STATE_LEVEL[leg.state], text: LEG_STATE_LABEL[leg.state] }]}
-      clock={{ value: splitDuration(Math.max(leg.minutesSinceBooked, 0)), sub: "since booked" }}
+      clock={{ value: splitDuration(Math.max(leg.minutesSinceBooked, 0)), sub: "since accepted" }}
       attributes={[`Provider: ${leg.provider}`, `From ${originLabel}`, `To ${destinationLabel}`]}
       actions={
         <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
