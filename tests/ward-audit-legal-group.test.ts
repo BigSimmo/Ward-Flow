@@ -8,6 +8,12 @@ import {
 } from "@/components/ward-management/legal-forms/act-periods-demo";
 import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
+import {
+  currentLegalDueAt,
+  isLegalDeadlineBreached,
+  legalFormGroupOf,
+} from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { delayGroups, legalDeadlineMinutes } from "@/components/ward-management/delays/delays-derivations";
 import { clockStanding, isActNow } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { bedGlyphTone } from "@/components/ward-management/ward/ward-beds-matrix";
 import { activeActNowItems, taskItems } from "@/components/ward-management/ward-act-now-items";
@@ -101,6 +107,29 @@ describe("form moves on after examination or arrival (S-6)", () => {
     expect(formProgression(arrived)?.endedWhen).toBe("at arrival");
     expect(formProgression({ ...arrived, legalForm: { code: "6A", kind: "detention" } } as Movement)).toBeUndefined();
     expect(formProgression({ ...arrived, legalStatus: "Voluntary" } as Movement)).toBeUndefined();
+  });
+
+  it("keeps an ended form's typed expiry as history on Forms and Delays, never in force or overdue", () => {
+    const ended = movement({
+      legalStatus: "Involuntary inpatient",
+      legalForm: { code: "4C", kind: "transport", dueAt: NOW - 30 },
+      examination: { at: NOW - 60, outcome: "inpatient_order" },
+    });
+    expect(ended.legalForm?.dueAt, "the record keeps the typed time").toBe(NOW - 30);
+    expect(currentLegalDueAt(ended)).toBeUndefined();
+    expect(isLegalDeadlineBreached(ended, NOW)).toBe(false);
+    expect(legalFormGroupOf(ended)).toBe("no-deadline");
+    expect(clockStanding(ended, NOW)).toBe("none");
+    expect(formTimeLeft(ended, NOW)).toBeUndefined();
+    expect(legalDeadlineMinutes(ended, NOW)).toBeUndefined();
+    const cause = delayGroups([ended], seedWardFlowStateAt(0).units, NOW).find((group) =>
+      group.movements.some((row) => row.id === ended.id),
+    )?.cause;
+    expect(cause).not.toBe("legal_breached");
+    // Without the examination the same typed time is overdue.
+    const live = { ...ended, examination: undefined } as Movement;
+    expect(isLegalDeadlineBreached(live, NOW)).toBe(true);
+    expect(legalDeadlineMinutes(live, NOW)).toBe(-30);
   });
 });
 

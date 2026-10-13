@@ -2,6 +2,7 @@ import type { WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 
+import { currentLegalDueAt } from "./legal-forms-derivations";
 import { STANDING_TONE, clockStanding, isActNow, leftText, type ClockStanding } from "./legal-forms-view";
 
 /**
@@ -25,13 +26,14 @@ export type FormTimeLeft = {
 
 export function formTimeLeft(movement: Movement | undefined, now: Instant): FormTimeLeft | undefined {
   const form = movement?.legalForm;
-  if (!movement || form?.dueAt === undefined) return undefined;
+  const dueAt = movement ? currentLegalDueAt(movement) : undefined;
+  if (!movement || !form || dueAt === undefined) return undefined;
   const standing = clockStanding(movement, now);
   const passed = standing === "passed";
   return {
     code: `Form ${form.code}`,
     text: passed ? `${leftText(movement, now).replace(/ ago$/, "")} past` : `${leftText(movement, now)} left`,
-    at: formatInstantWithDay(form.dueAt, now),
+    at: formatInstantWithDay(dueAt, now),
     standing,
     tone: STANDING_TONE[standing],
     actNow: isActNow(standing),

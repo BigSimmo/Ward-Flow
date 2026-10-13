@@ -92,6 +92,8 @@ export type SeatedStay = {
   arrivedAt: number | null;
   leftAt: number | null;
   bedKind?: "locked" | "open";
+  /** The bed the Bed board recorded for this stay (`Admission.bedNumber`), reserved for its span. */
+  bedNumber?: number;
 };
 
 /**
@@ -106,25 +108,40 @@ export type SeatedStay = {
  * the same beds (it survives a reload). A stay that took a locked bed (`bedKind`) on a mixed ward
  * is seated in the locked beds (1 to `lockedBeds`) first, an open one in the open beds first.
  * Waitlisted stays hold no bed. A stay that finds no free bed is left out, and the layout gives it
- * the lowest bed left over.
+ * the lowest bed left over. A current stay is never seated in a bed another overlapping stay has
+ * recorded (`bedNumber`): otherwise the layout pins the recorded stay there, moves the other to a
+ * leftover bed, and the other jumps back to its seat when the recorded one leaves. The recorded
+ * stay itself keeps its replay seat, so a Bed board move reflows nobody else's seat.
  */
 export function seatStays(beds: number, stays: readonly SeatedStay[], lockedBeds = 0): Map<string, number> {
-  type Span = { id: string; start: number; end: number; kind?: "locked" | "open" };
+  type Span = { id: string; start: number; end: number; kind?: "locked" | "open"; recorded?: number };
   const spans: Span[] = stays.flatMap((stay) => {
     if (stay.state === "waitlisted") return [];
     const start = stay.pulledAt ?? stay.arrivedAt ?? Number.NEGATIVE_INFINITY;
     const end =
       stay.state === "pulled" || stay.state === "occupied" ? Number.POSITIVE_INFINITY : (stay.leftAt ?? start);
-    return end > start || end === Number.POSITIVE_INFINITY ? [{ id: stay.id, start, end, kind: stay.bedKind }] : [];
+    const recorded =
+      stay.bedNumber !== undefined && Number.isInteger(stay.bedNumber) && stay.bedNumber >= 1 && stay.bedNumber <= beds
+        ? stay.bedNumber
+        : undefined;
+    return end > start || end === Number.POSITIVE_INFINITY
+      ? [{ id: stay.id, start, end, kind: stay.bedKind, recorded }]
+      : [];
   });
+  const reservations = spans.filter((span) => span.recorded !== undefined);
+  const reservedAgainst = (bed: number, span: Span) =>
+    span.end === Number.POSITIVE_INFINITY &&
+    reservations.some(
+      (other) => other !== span && other.recorded === bed && other.start < span.end && span.start < other.end,
+    );
   spans.sort((left, right) =>
     left.start === right.start ? (left.id < right.id ? -1 : left.id > right.id ? 1 : 0) : left.start - right.start,
   );
   const seats = new Map<string, number>();
   const taken: (Span | undefined)[] = new Array<Span | undefined>(beds + 1).fill(undefined);
   const mixed = lockedBeds > 0 && lockedBeds < beds;
-  const firstFree = (from: number, to: number) => {
-    for (let bed = from; bed <= to; bed += 1) if (taken[bed] === undefined) return bed;
+  const firstFree = (from: number, to: number, span: Span) => {
+    for (let bed = from; bed <= to; bed += 1) if (taken[bed] === undefined && !reservedAgainst(bed, span)) return bed;
     return 0;
   };
   for (const span of spans) {
@@ -133,9 +150,9 @@ export function seatStays(beds: number, stays: readonly SeatedStay[], lockedBeds
       if (holder !== undefined && holder.end <= span.start) taken[bed] = undefined;
     }
     let bed = 0;
-    if (mixed && span.kind === "locked") bed = firstFree(1, lockedBeds);
-    else if (mixed && span.kind === "open") bed = firstFree(lockedBeds + 1, beds);
-    if (bed === 0) bed = firstFree(1, beds);
+    if (mixed && span.kind === "locked") bed = firstFree(1, lockedBeds, span);
+    else if (mixed && span.kind === "open") bed = firstFree(lockedBeds + 1, beds, span);
+    if (bed === 0) bed = firstFree(1, beds, span);
     if (bed === 0) continue;
     taken[bed] = span;
     if (span.end === Number.POSITIVE_INFINITY) seats.set(span.id, bed);

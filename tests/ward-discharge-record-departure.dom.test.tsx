@@ -13,6 +13,7 @@ vi.mock("next/link", () => ({
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ToastProvider } from "@/components/ui/toast";
 
 /*
  * A4-21 (audit 13 Oct 2026): a confirmed release records the departure from the Discharges sheet,
@@ -60,6 +61,26 @@ describe("Record departure from the release sheet", () => {
     expect(probe()).toEqual([before - 1, 0]);
     // The departed release no longer offers the action.
     expect(screen.queryByTestId("ward-discharge-record-departure")).toBeNull();
+  });
+
+  it("offers Undo on the departure's toast, which puts the release back", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <Probe />
+          <DischargeBoard />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const row = firstRecordRow(screen.getByTestId("ward-discharge-group-confirmed"));
+    const [before] = probe();
+    fireEvent.click(row!);
+    fireEvent.click(screen.getByTestId("ward-discharge-record-departure"));
+    expect(probe()).toEqual([before - 1, 0]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(probe()).toEqual([before, 0]);
+    expect(screen.getByText(/^Undone\. .+ is back in their bed\.$/u)).toBeInTheDocument();
   });
 
   it("does not offer Record departure on an expected release", () => {

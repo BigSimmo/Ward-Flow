@@ -47,7 +47,21 @@ export type ToastProviderProps = {
 export type ToastApi = {
   push: (toast: ToastInput) => string;
   dismiss: (id: string) => void;
+  /**
+   * Whether an action recorded now is actually kept on this device (`ToastDeviceSaveContext`), for
+   * a caller that writes the provider's offline note into its own text.
+   */
+  savesOnDevice?: () => boolean;
 };
+
+/**
+ * Codex P1 (PR #267): the offline note says "Saved on this device", which is only true while the
+ * app around the toasts is still writing to this device. An app that can stop saving (the Ward Flow
+ * provider stops after typed text, or when storage fails) provides a getter here, read at push time
+ * so an action that has just stopped saving is not told it was saved. Outside such an app the
+ * provider's `offlineNote` is trusted as given.
+ */
+export const ToastDeviceSaveContext = createContext<() => boolean>(() => true);
 
 type ToastContextValue = {
   toasts: Toast[];
@@ -55,6 +69,7 @@ type ToastContextValue = {
   dismiss: (id: string) => void;
   /** Runs the caller's Undo then closes the toast, so its `onExpire` never runs. */
   undoAndDismiss: (id: string, onUndo: () => void) => void;
+  savesOnDevice: () => boolean;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -69,6 +84,7 @@ const MAX_VISIBLE_TOASTS = 5;
  */
 export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const savesOnDevice = useContext(ToastDeviceSaveContext);
   const toastsRef = useRef<Toast[]>([]);
   const counter = useRef(0);
 
@@ -115,6 +131,7 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
       const offline =
         offlineNote !== undefined &&
         !input.skipOfflineNote &&
+        savesOnDevice() &&
         (input.tone === "success" || input.tone === "info") &&
         typeof navigator !== "undefined" &&
         navigator.onLine === false;
@@ -158,10 +175,13 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
       }
       return id;
     },
-    [expire, offlineNote],
+    [expire, offlineNote, savesOnDevice],
   );
 
-  const value = useMemo(() => ({ toasts, push, dismiss, undoAndDismiss }), [toasts, push, dismiss, undoAndDismiss]);
+  const value = useMemo(
+    () => ({ toasts, push, dismiss, undoAndDismiss, savesOnDevice }),
+    [toasts, push, dismiss, undoAndDismiss, savesOnDevice],
+  );
 
   return (
     <ToastContext.Provider value={value}>
@@ -186,7 +206,8 @@ export function useOptionalToast(): ToastApi | null {
   const context = useContext(ToastContext);
   const push = context?.push;
   const dismiss = context?.dismiss;
-  return useMemo(() => (push && dismiss ? { push, dismiss } : null), [push, dismiss]);
+  const savesOnDevice = context?.savesOnDevice;
+  return useMemo(() => (push && dismiss ? { push, dismiss, savesOnDevice } : null), [push, dismiss, savesOnDevice]);
 }
 
 function ToastCard({

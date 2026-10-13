@@ -1,4 +1,5 @@
-import type { Referral, Unit } from "../ward-model";
+import type { Admission } from "../ward-admissions";
+import type { Movement, Referral, Unit } from "../ward-model";
 import { acceptedAddressing } from "../ward-referrals";
 
 /**
@@ -21,18 +22,32 @@ export function acceptedWardOf(
   return { unitId, unitName };
 }
 
-/** The newest referral for this person that a ward has accepted, and that ward. */
+/**
+ * The newest referral for this person that a ward has accepted and that still waits on the ward's
+ * next step: no bed held on the accepted arm yet, and no movement or admission raised from it. An
+ * acceptance with a held bed, or one whose placement already happened (even a stay that has since
+ * ended), is not "accepted, no bed held".
+ */
 export function acceptedWardReferralFor(
   patientId: string | undefined,
   referrals: readonly Referral[],
   units: readonly Pick<Unit, "id" | "name">[],
+  placements: {
+    movements?: readonly Pick<Movement, "referralId">[];
+    admissions?: readonly Pick<Admission, "referralId">[];
+  } = {},
 ): ({ referral: Referral } & NonNullable<ReturnType<typeof acceptedWardOf>>) | undefined {
   if (patientId === undefined) return undefined;
   for (let index = referrals.length - 1; index >= 0; index -= 1) {
     const referral = referrals[index]!;
     if (referral.patientId !== patientId) continue;
     const ward = acceptedWardOf(referral, units);
-    if (ward) return { referral, ...ward };
+    if (!ward) continue;
+    if (acceptedAddressing(referral)?.heldBedNumber !== undefined) return undefined;
+    const placed =
+      placements.movements?.some((movement) => movement.referralId === referral.id) === true ||
+      placements.admissions?.some((admission) => admission.referralId === referral.id) === true;
+    return placed ? undefined : { referral, ...ward };
   }
   return undefined;
 }

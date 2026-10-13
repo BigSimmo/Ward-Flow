@@ -117,6 +117,7 @@ import {
 import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
 import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
 import type { BedItem } from "./ward-beds-matrix";
+import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
@@ -255,6 +256,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     configuration,
     dayZero,
     wardReferralInbox,
+    patients,
   } = useWardFlow();
   const now = useWardFlowClock();
   // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
@@ -396,7 +398,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // Audit A1-12: "Has left" offers Undo like Move bed, through the same toast.
     // A1-18 (audit 13 Oct 2026): a departure recorded offline says it has not gone anywhere.
     const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-    const successText = offline ? `${check.success} ${WARD_OFFLINE_SAVED_NOTE}` : check.success;
+    const successText =
+      offline && toast?.savesOnDevice?.() ? `${check.success} ${WARD_OFFLINE_SAVED_NOTE}` : check.success;
     const undoAdmissionId = check.undoAdmissionId;
     if (!toast || undoAdmissionId === undefined) {
       setToastMessage(successText);
@@ -1898,7 +1901,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
+  // Audit A3-1: this ward's absences on an order, the same rows the shared task list raises.
+  const absencesOnOrder = absentOnOrder({ leaveBeds: unitLeaveBeds, admissions, movements, patients });
   const actNowCount = wardActNowCount({
+    absences: absencesOnOrder.length,
     alerts: liveFormAlerts.length,
     incoming: incoming.length,
     heldUp: blockedReleases.length,
@@ -2434,6 +2440,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           data-active={activeTab === "attn" || activeTab === "board"}
         >
           <WardHomeTab
+            absencesOnOrder={absencesOnOrder}
             phonePanel={isPhone ? phonePanel : undefined}
             onPhonePanelChange={setPhonePanel}
             onTodoCount={setPhoneTodoCount}

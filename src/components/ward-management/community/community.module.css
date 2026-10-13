@@ -2295,7 +2295,8 @@ button.searchBox:hover {
   gap: 1rem;
 }
 
-/* A2-12: the "Unidentified" choice beside the name or UMRN field; a 28px target. */
+/* A2-12: the "Unidentified" choice beside the name or UMRN field; a 28px target on desktop, the
+   48px tap target on phone. */
 .intakeCheck {
   display: flex;
   align-items: center;
@@ -2303,6 +2304,12 @@ button.searchBox:hover {
   min-height: 28px;
   font-size: var(--t-1);
   font-weight: 600;
+}
+
+@media (max-width: 40rem) {
+  .intakeCheck {
+    min-height: var(--ward-tap, 3rem);
+  }
 }
 
 .intakeField {

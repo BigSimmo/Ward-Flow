@@ -36,6 +36,8 @@ import type {
   WardRecordActor,
 } from "@/components/ward-management/ward-discharge-records";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
+import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { DUE_SORT_OPTIONS, sortDueFirst, type DueSortMode } from "@/components/ward-management/ward-due-sort";
@@ -475,18 +477,60 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     releaseId: null,
     destination: "discharged-to-the-community",
   });
-  const departureCheckRef = useRef<{ prior: number; who: string } | null>(null);
+  // `undoAdmissionId` is set for a recorded departure (its toast offers Undo, as on the ward's bed
+  // drawer); an undo itself carries none, so its own toast offers nothing further.
+  const departureCheckRef = useRef<{ prior: number; who: string; undoAdmissionId?: string } | null>(null);
   const [departureToken, setDepartureToken] = useState(0);
+  const departureNowRef = useRef(now);
+  const rejectionCountRef = useRef(rejections.length);
+  useEffect(() => {
+    departureNowRef.current = now;
+    rejectionCountRef.current = rejections.length;
+  }, [now, rejections.length]);
   useEffect(() => {
     const check = departureCheckRef.current;
     if (departureToken === 0 || check === null) return;
     departureCheckRef.current = null;
     const refused = rejections.length > check.prior ? rejections[rejections.length - 1] : undefined;
+    const undoAdmissionId = check.undoAdmissionId;
     const said = refused
       ? `Not recorded: ${refused.reason}. Nothing was changed.`
-      : `Recorded: ${check.who} has left the ward.`;
-    if (toast) toast.push({ tone: refused ? "warning" : "success", title: said });
-    else announceToWardShell(said);
+      : undoAdmissionId === undefined
+        ? `Undone. ${check.who} is back in their bed.`
+        : `Recorded: ${check.who} has left the ward.`;
+    if (!toast) {
+      announceToWardShell(said);
+      return;
+    }
+    if (refused || undoAdmissionId === undefined) {
+      toast.push({ tone: refused ? "warning" : "success", title: said });
+      return;
+    }
+    // Audit A1-12: a recorded departure offers Undo (`UNDO_DEPARTURE`), like the ward's bed drawer.
+    const undoLimit = roleLimitReason("coordinator", "UNDO_DEPARTURE");
+    toast.push({
+      tone: "success",
+      title: said,
+      ...(undoLimit
+        ? { body: `Undo: ${undoLimit}` }
+        : {
+            undo: {
+              durationMs: UNDO_TOAST_MS,
+              onUndo: () => {
+                departureCheckRef.current = { prior: rejectionCountRef.current, who: check.who };
+                dispatch({
+                  type: "UNDO_DEPARTURE",
+                  role: "coordinator",
+                  now: departureNowRef.current,
+                  admissionId: undoAdmissionId,
+                });
+                setDepartureToken((token) => token + 1);
+              },
+            },
+          }),
+    });
+    // `dispatch` is stable for the board's life; the token drives this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [departureToken, rejections, toast]);
   const guarded = readDischargeRecords(RECORD_ACTOR);
   const records = guarded.status === "allowed" ? guarded.value : [];
@@ -2481,6 +2525,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         departureCheckRef.current = {
                           prior: rejections.length,
                           who: linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person",
+                          undoAdmissionId: detailRelease.admissionId,
                         };
                         recordWardDeparture(detailRelease.admissionId, detailRelease.unitId, departureDestination);
                         setDepartureToken((token) => token + 1);

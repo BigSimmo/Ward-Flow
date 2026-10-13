@@ -1,6 +1,7 @@
 "use client";
 
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BedDouble, Car, Check, Clock, House, Plane } from "lucide-react";
@@ -419,7 +420,7 @@ export function ReturnPlan({
               />
               {patient.onOrder ? (
                 <p className={styles.legalNeed} data-testid="ward-out-of-area-plan-needs-form">
-                  On an order: needs Form 4C, transfer order
+                  On an order: needs {legalFormNameLabelFirst({ code: "4C" })}
                 </p>
               ) : null}
             </section>

@@ -13,6 +13,7 @@ import { withdrawalReasonLabels } from "@/components/ward-management/ward-change
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {
   restrictionNotice,
   eligibilityWarning,
@@ -75,6 +76,7 @@ export function wardActNowCount({
   heldUp,
   rollupOverdue,
   lapsedHolds = 0,
+  absences = 0,
 }: {
   alerts: number;
   incoming: number;
@@ -82,8 +84,17 @@ export function wardActNowCount({
   rollupOverdue: boolean;
   /** Audit A1-3: pulled beds whose hold has lapsed (one Act now row for all of them). */
   lapsedHolds?: number;
+  /** Audit A3-1: this ward's absences on an order (`absentOnOrder`), one Act now row each. */
+  absences?: number;
 }): number {
-  return alerts + (incoming > 0 ? 1 : 0) + (heldUp > 0 ? 1 : 0) + (rollupOverdue ? 1 : 0) + (lapsedHolds > 0 ? 1 : 0);
+  return (
+    absences +
+    alerts +
+    (incoming > 0 ? 1 : 0) +
+    (heldUp > 0 ? 1 : 0) +
+    (rollupOverdue ? 1 : 0) +
+    (lapsedHolds > 0 ? 1 : 0)
+  );
 }
 
 function wardSafeRejectionReason(reason: string): string {
@@ -142,6 +153,8 @@ interface WardHomeTabProps {
   onOpenDischarges?: () => void;
   /** The ward's beds, as the bed board draws them. Drives Every bed and Length of stay. */
   bedsList?: BedItem[];
+  /** Audit A3-1: this ward's absences on an order, from `absentOnOrder` (one Act now row each). */
+  absencesOnOrder?: ReturnType<typeof absentOnOrder>;
   /** Opens the bed's dossier. */
   onSelectBed?: (bedNumber: number) => void;
   /** The ward figures section, shown as the foot of Every bed. */
@@ -220,6 +233,7 @@ export function WardHomeTab({
   onOpenDischarges,
   onOpenDecisions,
   bedsList,
+  absencesOnOrder = [],
   onSelectBed,
   figures,
   bedFilter: bedFilterProp,
@@ -598,9 +612,12 @@ export function WardHomeTab({
       movementId: movement.id,
       title: displayName,
       when: eta === undefined ? undefined : `${late ? "Due" : "ETA"} ${formatInstantWithDay(eta, now)}`,
-      // A greyed Pull a bed says why in words on the row, not only on hover.
-      detail: blocked ?? (late ? "Late" : hold ? hold.label : stageCopy[movement.stage].label),
-      tone: late ? "warning" : hold?.state === "lapsed" ? "danger" : hold?.state === "at-risk" ? "warning" : "info",
+      // A greyed Pull a bed says why in words on the row, not only on hover. A lapsed hold
+      // outranks a late ETA (the coral overdue); the ETA stays in `when` as "Due".
+      detail:
+        blocked ??
+        (hold?.state === "lapsed" ? hold.label : late ? "Late" : hold ? hold.label : stageCopy[movement.stage].label),
+      tone: hold?.state === "lapsed" ? "danger" : late ? "warning" : hold?.state === "at-risk" ? "warning" : "info",
       action: canPull ? "Pull a bed" : "Open",
       primary: index === 0,
       blocked,
@@ -666,6 +683,17 @@ export function WardHomeTab({
     tick?: keyof typeof localChecks;
   };
   const actNow: TodoRow[] = [
+    // Audit A3-1: absent without leave on an order is the most urgent row, as on the task list.
+    ...absencesOnOrder.map(({ leaveBed, admission }): TodoRow => {
+      const bed = bedByAdmission(admission.id);
+      return {
+        key: `absent-${admission.id}`,
+        title: "Absent without leave on an order",
+        detail: `${bed?.bedLabel ?? "A bed"} missing since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}, order stays in force`,
+        tone: "danger",
+        action: bed ? { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) } : undefined,
+      };
+    }),
     ...liveFormAlerts.map((alert): TodoRow => ({
       key: alert.key,
       title: alert.title,

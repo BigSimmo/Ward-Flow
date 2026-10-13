@@ -98,14 +98,12 @@ import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-ma
  * unsaved draft. Drafts live in React state only and are never written to browser storage.
  */
 
+/**
+ * Only a resolved person gets a link. A UMRN is never put in a URL (it can be typed text, and the
+ * search page reads no query anyway), so a row with no person id shows its UMRN unlinked.
+ */
 function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
-  if (info.patient?.id) {
-    return `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}`;
-  }
-  if (info.umrn && info.umrn !== "UMRN not recorded") {
-    return `/mockups/ward-flow/search?q=${encodeURIComponent(info.umrn)}`;
-  }
-  return null;
+  return info.patient?.id ? `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}` : null;
 }
 
 type SortOrder = "ledger" | "days" | "patient";

@@ -54,6 +54,22 @@ describe("an accepted ward referral", () => {
     expect(acceptedWardReferralFor(undefined, referrals, units)).toBeUndefined();
   });
 
+  it("is not offered once the bed is held or the placement has happened", () => {
+    const held = referral("accepted");
+    held.destinations[0]!.heldBedNumber = 4;
+    expect(acceptedWardReferralFor("PT-1", [held], units)).toBeUndefined();
+    const accepted = referral("accepted");
+    expect(
+      acceptedWardReferralFor("PT-1", [accepted], units, { movements: [{ referralId: accepted.id }] }),
+    ).toBeUndefined();
+    expect(
+      acceptedWardReferralFor("PT-1", [accepted], units, { admissions: [{ referralId: accepted.id }] }),
+    ).toBeUndefined();
+    expect(acceptedWardReferralFor("PT-1", [accepted], units, { admissions: [{ referralId: null }] })?.unitName).toBe(
+      "Dabakarn",
+    );
+  });
+
   it("turns the patient card from Not active into the next step", () => {
     const status = buildPatientStatus(
       "idle",

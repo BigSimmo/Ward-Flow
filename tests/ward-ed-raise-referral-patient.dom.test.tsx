@@ -96,6 +96,14 @@ describe("ED Raise referral starts from a person", () => {
     expect(screen.getByTestId("movement-count").textContent).toBe(before);
   });
 
+  it("does not raise when Enter submits the form with no patient chosen", () => {
+    renderEd();
+    answerClinicalFields();
+    const before = screen.getByTestId("movement-count").textContent;
+    fireEvent.submit(screen.getByTestId("ward-ed-referral-form"));
+    expect(screen.getByTestId("movement-count").textContent).toBe(before);
+  });
+
   it("shows only the first sentence of a long reason beside the button", () => {
     renderEd();
     markNotYetIdentified();
