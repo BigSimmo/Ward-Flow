@@ -12,8 +12,7 @@ import {
   SUITABILITY_GATES,
 } from "@/components/ward-management/ward-flow-reducer";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
-import type { LucideIcon } from "lucide-react";
-import { CalendarClock, CircleAlert, Truck } from "lucide-react";
+import { CalendarClock, CircleAlert, Truck, type LucideIcon } from "lucide-react";
 
 import { plannedAdmissionIsOverdue, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
@@ -266,18 +265,6 @@ export function examinationRevokedWhileBedHeld(movement: Movement): boolean {
   const outcome = movement.examination?.outcome;
   if (outcome !== "community_order" && outcome !== "revoked") return false;
   return movement.admissionId !== undefined;
-}
-
-/**
- * A movement whose transport was stopped mid-journey but whose held bed has not yet been released.
- * Surfaced to clinicians so the held bed is visible and can be released.
- */
-export function isStoppedTransportAwaitingRelease(movement: Movement): boolean {
-  return (
-    movement.transport?.stoppedAt !== undefined &&
-    (movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||
-      movement.admissionId !== undefined)
-  );
 }
 
 /**
@@ -1535,6 +1522,18 @@ export type DeclineEntry = { movement: Movement; decline: Decline };
  */
 export function allDeclines(movements: Movement[]): DeclineEntry[] {
   return movements.flatMap((movement) => movement.declines.map((decline) => ({ movement, decline })));
+}
+
+/**
+ * A movement whose transport was stopped mid-journey but whose held bed has not yet been released.
+ * Surfaced to clinicians so the held bed is visible and can be released.
+ */
+export function isStoppedTransportAwaitingRelease(movement: Movement): boolean {
+  return (
+    movement.transport?.stoppedAt !== undefined &&
+    (movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||
+      movement.admissionId !== undefined)
+  );
 }
 
 export function handoverSnapshot(movements: Movement[], units: Unit[], now: Instant): HandoverSnapshot {
