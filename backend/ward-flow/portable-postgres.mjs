@@ -50,6 +50,13 @@ export function readDatabaseCA(certificateFile) {
   return ca;
 }
 
+// Schemas outside ward_flow where stock Supabase (and stock PostgreSQL) grant PUBLIC read access,
+// so every role inherits it: system catalogues, the information schema, extension views such as
+// extensions.pg_stat_statements, and pg_cron's RLS-scoped job tables. Checked against a Supabase
+// PostgreSQL 17 project's PUBLIC ACLs. Any other readable relation outside ward_flow refuses startup.
+export const FOREIGN_READ_SCHEMA_ALLOWLIST = Object.freeze(["pg_catalog", "information_schema", "extensions", "cron"]);
+const foreignReadAllowlistSql = FOREIGN_READ_SCHEMA_ALLOWLIST.map((schema) => `'${schema}'`).join(", ");
+
 // One bounded catalogue summary. No payload or credential is read. Missing schema,
 // migrations or permissions fail closed; administrators install migrations separately.
 export const RUNTIME_SUMMARY = `
@@ -73,6 +80,14 @@ SELECT current_user AS role,
     -- No CREATE on any schema (PostgreSQL 14 and earlier grant it on public to PUBLIC).
     AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace s
       WHERE pg_catalog.has_schema_privilege(r.oid, s.oid, 'CREATE')) AS schema_grants,
+  -- No read grant (table, column or sequence) outside ward_flow except the allow-listed schemas.
+  NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname <> 'ward_flow' AND n.nspname <> ALL (ARRAY[${foreignReadAllowlistSql}]::text[])
+      AND CASE WHEN c.relkind IN ('r', 'p', 'v', 'm', 'f') THEN
+          (pg_catalog.has_table_privilege(r.oid, c.oid, 'SELECT')
+          OR pg_catalog.has_any_column_privilege(r.oid, c.oid, 'SELECT'))
+        WHEN c.relkind = 'S' THEN pg_catalog.has_sequence_privilege(r.oid, c.oid, 'SELECT,USAGE')
+        ELSE false END) AS foreign_reads_denied,
   pg_catalog.has_table_privilege(r.oid, 'ward_flow.migrations', 'SELECT')
     AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspaces', 'SELECT')
     AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspaces', 'INSERT')
@@ -167,6 +182,7 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "no_memberships",
       "no_ownership",
       "schema_grants",
+      "foreign_reads_denied",
       "required_grants",
       "restricted_grants",
       "push_grants",
