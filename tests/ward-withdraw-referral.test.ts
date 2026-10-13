@@ -452,9 +452,6 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
     it("refuses withdrawal when caller.placeId does not match referral origin site and role is not coordinator", () => {
       const state = seedWardFlowState();
       const open = anOpenReferral(state);
-      const referral = state.referrals.find((r) => r.id === open.referralId);
-      const origin = referral?.originSiteId ?? referral?.originSiteCode ?? open.originEdId ?? "RPH";
-
       const refused = wardFlowReducer(state, {
         type: "WITHDRAW_REFERRAL",
         role: "ed",

@@ -298,7 +298,17 @@ export function maskDiagnosticMovement<
     [key: string]: unknown;
   },
 >(movement: T): T {
-  const allowed = ["id", "stage", "originEdId", "acceptedUnitId", "admissionId", "openedAt", "acceptedAt", "pulledAt", "arrivedAt"] as const;
+  const allowed = [
+    "id",
+    "stage",
+    "originEdId",
+    "acceptedUnitId",
+    "admissionId",
+    "openedAt",
+    "acceptedAt",
+    "pulledAt",
+    "arrivedAt",
+  ] as const;
   return Object.fromEntries(allowed.flatMap((key) => (movement[key] !== undefined ? [[key, movement[key]]] : []))) as T;
 }
 
