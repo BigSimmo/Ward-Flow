@@ -22,6 +22,7 @@ import {
 } from "react";
 
 import { refusalFor } from "@/components/ward-management/search/search-refusals";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
   CORE_SEARCH_VIEWS,
   searchGroupOrder,
@@ -34,7 +35,6 @@ import {
   type GlobalSearchPreviewItem,
 } from "@/components/ward-management/search/global-search-preview";
 import { StatusGlyph } from "@/components/wf";
-import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-management/ward-derivations";
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -261,23 +261,7 @@ export type SearchResultItem = GlobalSearchPreviewItem & {
   dateOfBirth?: string;
   readyBeds?: number;
   siteName?: string;
-  /** A movement row's patient UMRN, used only to show its title discreetly on a phone. */
-  subjectUmrn?: string;
 };
-
-/**
- * A result's title through the Discreet names setting: a person or movement row names a patient,
- * so on a phone with the setting on it reads initials plus UMRN. Every other row, and desktop, keeps
- * its title. `nameFor` is `usePatientNameDisplay()`.
- */
-export function patientResultTitle(
-  item: SearchResultItem,
-  nameFor: (name: string, umrn: string | undefined | null) => string,
-): string {
-  if (item.kind === "person") return nameFor(item.title, item.umrn);
-  if (item.kind === "movement") return nameFor(item.title, item.subjectUmrn);
-  return item.title;
-}
 
 export type SearchResultGroup = {
   key: string;
@@ -435,7 +419,6 @@ export function smartSearchGroups(
           kindLabel: "Movement",
           id: m.id,
           title: subject.displayName,
-          subjectUmrn: subject.umrn,
           meta: `${subject.umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
           href: movementHref(m.id),
         };
@@ -556,6 +539,7 @@ export function WardGlobalSearch({
   label = "Search",
   placeholder = "Search people and movements…",
 }: WardGlobalSearchProps) {
+  const nameFor = usePatientNameDisplay();
   const id = useId();
   const listId = `${id}-list`;
   const hintId = `${id}-hint`;
@@ -563,7 +547,6 @@ export function WardGlobalSearch({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const paletteRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
-  const nameFor = usePatientNameDisplay();
 
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -1105,7 +1088,11 @@ export function WardGlobalSearch({
                               )}
                             </span>
                             <span className={styles.resultContent}>
-                              <span className={styles.resultTitle}>{patientResultTitle(item, nameFor)}</span>
+                              <span className={styles.resultTitle}>
+                                  {item.kind === "person" || item.kind === "movement"
+                                    ? nameFor(item.title, item.umrn)
+                                    : item.title}
+                                </span>
                               <span className={styles.resultMeta}>
                                 {item.umrn ? (
                                   <>
