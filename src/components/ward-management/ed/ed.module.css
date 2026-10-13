@@ -4970,13 +4970,23 @@
 }
 
 .a2Facts > *,
-.a2Facts [class] {
+.a2Facts [class]:not(svg) {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-2);
+}
+
+/* A bed-hold or transit pill stays one line with its status glyph beside the words; the glyph
+ * keeps its own tone colour. */
+.a2Facts .transitBadge,
+.a2Facts .transitBadgeHold,
+.a2Facts .transitBadgeOverdue {
+  display: flex;
+  align-items: center;
+  max-width: 100%;
 }
 
 .a2Facts .sr-only,

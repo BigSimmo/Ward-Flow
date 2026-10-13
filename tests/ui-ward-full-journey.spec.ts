@@ -296,6 +296,8 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     );
 
     await page.getByTestId("ward-ed-raise-referral-toggle").click();
+    // A2-1 (audit 13 Oct 2026): the form starts from a person.
+    await page.getByTestId("ward-ed-referral-unidentified").check();
     await page.getByTestId("ward-ed-referral-cohort").selectOption("Adult");
     await page.getByTestId("ward-ed-referral-security").selectOption("Open");
     await page.getByTestId("ward-ed-referral-sex").selectOption("Male");
@@ -460,6 +462,18 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     const collected = jobPanel.getByTestId(`ward-officer-collect-${movementId}`);
     await expect(collected).not.toHaveAttribute("aria-disabled", "true");
     await collected.click();
+    // Audit A4-11 / S-2 (13 Oct 2026): with Form 4A or fit to travel not recorded, Collected warns
+    // and asks for a recorded reason instead of blocking. Answer it when it is asked.
+    const collectCheck = page.getByTestId("ward-officer-collect-check");
+    if (
+      await collectCheck
+        .waitFor({ state: "visible", timeout: 2000 })
+        .then(() => true)
+        .catch(() => false)
+    ) {
+      await page.getByTestId("ward-officer-collect-check-reason").selectOption("paper_sighted");
+      await collectCheck.getByRole("button", { name: "Collected, record reason" }).click();
+    }
 
     const arrived = jobPanel.getByTestId(`ward-officer-arrive-${movementId}`);
     await expect(arrived).not.toHaveAttribute("aria-disabled", "true");

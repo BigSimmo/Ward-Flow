@@ -473,6 +473,8 @@ describe("who may raise which event", () => {
     UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
     UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
+    UNDO_DEPARTURE: ["ward", "coordinator"],
+    UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
   };
 
   it("covers every event that exists, so a new event cannot arrive unpermissioned", () => {

@@ -2160,18 +2160,26 @@ details[open] > summary > .phoneFoldChevron {
     padding: var(--wf-s-2) var(--wf-s-3);
   }
 
-  /* Decline and Accept in principle stay at the bottom of the screen. */
+  /* Decline and Accept in principle stay at the bottom of the screen. A1-2 (audit 13 Oct 2026):
+     they sat under the phone dock, so taps hit Referrals and Tasks. The bar now seats on the dock's
+     flat edge, as Handover and Patient do, under the dock's layer so the + hump draws over it, and
+     its padding clears the hump. Without a dock it clears the home bar as before. */
   .decisionArea {
     position: fixed;
-    z-index: 20;
+    z-index: 29;
     right: 0;
-    bottom: 0;
+    bottom: var(--wf-dock-top, 0px);
     left: 0;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--wf-s-2);
     margin: 0;
-    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+    padding: var(--wf-s-3) var(--wf-s-4)
+      max(
+        var(--wf-s-3),
+        calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px) - var(--wf-dock-top, 0px)),
+        calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px))
+      );
     border-top: 1px solid var(--wf-line);
     /* Solid, not glass (device audit, 11 Oct 2026): the list showed through the pinned bar. */
     background: var(--wf-surface);
@@ -2179,6 +2187,11 @@ details[open] > summary > .phoneFoldChevron {
 
   .decisionArea > .askButton {
     display: none;
+  }
+
+  /* The page's last rows scroll clear of the pinned bar as well as the dock. */
+  .answerScreen:has(.decisionArea) {
+    padding-bottom: 5rem;
   }
 
   .answerGrid,

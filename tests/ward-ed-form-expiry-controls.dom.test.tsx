@@ -83,6 +83,8 @@ function openReferralForm() {
 }
 
 function fillRequiredFields() {
+  // A2-1: the form starts from a person; these cases raise for one not yet identified.
+  fireEvent.click(screen.getByTestId("ward-ed-referral-unidentified"));
   for (const field of REQUIRED) {
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }

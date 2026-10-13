@@ -104,7 +104,9 @@ import {
   keepReferralDraft,
   readKeptReferralDraft,
   readKeptReferralDraftAt,
+  readLastReferrerContact,
   referralDraftAgeText,
+  rememberReferrerContact,
   useReferralDraftAutosave,
 } from "./referral-draft-store";
 import { referralIsbarText, referralLetterText, type ReferralTextInput } from "./referral-letter";
@@ -251,6 +253,12 @@ const SAMPLE_PATIENTS: Record<string, { destType: string; transportVal: string }
   custom: { destType: "ward", transportVal: "mht" },
 };
 
+/**
+ * A2-3 (audit 13 Oct 2026): a sheet opened with no named person starts on nobody, never a demo
+ * person from another site. Sending stays blocked until a patient is found or added.
+ */
+const NO_PATIENT_KEY = "none";
+
 /** A registered person with no open movement is picked by this key, `patient:<id>`. */
 const PATIENT_KEY_PREFIX = "patient:";
 
@@ -300,6 +308,25 @@ function sampleProfile(
       cohort: NOT_RECORDED,
       suburb: registered.suburb ?? "",
       catchment: registered.catchmentCommunityTeam ?? "",
+      urgency: "",
+    };
+  }
+  if (!movement && key === NO_PATIENT_KEY) {
+    return {
+      ...blank,
+      name: "No patient chosen",
+      age: "",
+      gender: "",
+      umrn: NOT_RECORDED,
+      dob: NOT_RECORDED,
+      origin: NOT_RECORDED,
+      legalStatus: NOT_RECORDED,
+      recordedExpiry: "not recorded",
+      security: "Open",
+      initials: "",
+      cohort: NOT_RECORDED,
+      suburb: "",
+      catchment: "",
       urgency: "",
     };
   }
@@ -494,6 +521,9 @@ function documentationNeeded(draft: DocumentationDraft): number {
 function documentationItems(draft: DocumentationDraft): number {
   return 5 + (draft.medical === "no" ? 3 : 0) + (draft.additional === "yes" ? 1 : 0);
 }
+
+/** The contact fields asked at Send (`contactFieldErrors` checks each one), counted as items. */
+const CONTACT_FIELD_COUNT = 5;
 
 /** Per-field contact messages for display; `referralContactError` stays the gate. */
 function contactFieldErrors(contact: ReferralContact): Partial<Record<keyof ReferralContact, string>> {
@@ -764,10 +794,7 @@ function WardReferralDrawerContent({
       : null;
   // Another person's kept draft stays as it was: this sheet does not autosave over it.
   const keepsAnotherPersonsDraft = storedDraft !== null && kept === null;
-  const initialPatientKey =
-    kept?.activePatientKey ??
-    prefillKey ??
-    (initialCategory === "community" ? "WF-002" : initialCategory === "ed" ? "WF-004" : "WF-009");
+  const initialPatientKey = kept?.activePatientKey ?? prefillKey ?? NO_PATIENT_KEY;
 
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [extraPatientKeys, setExtraPatientKeys] = useState<string[]>(
@@ -775,6 +802,7 @@ function WardReferralDrawerContent({
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const noPatientChosen = activePatientKey === NO_PATIENT_KEY;
   const [activeSection, setActiveSection] = useState<DrawerSection>(kept?.activeSection ?? "patient");
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
@@ -834,7 +862,9 @@ function WardReferralDrawerContent({
   const [documentation, setDocumentation] = useState<DocumentationDraft>(kept?.documentation ?? EMPTY_DOCUMENTATION);
   const isMedicalCleared = documentation.medical === "yes";
   const [contact, setContact] = useState<ReferralContact>(
-    kept?.contact ?? { name: "", email: "", phone: "", role: "", location: "" },
+    // A2-6: the details last sent in this tab fill in, so the referrer types them once.
+    kept?.contact ??
+      readLastReferrerContact<ReferralContact>() ?? { name: "", email: "", phone: "", role: "", location: "" },
   );
   const initialLookup = lookupCatchment(defaultPatient.suburb);
   const initialTeams = catchmentRoutingDestinations(initialLookup);
@@ -1006,6 +1036,14 @@ function WardReferralDrawerContent({
   // when this drawer supplies its own backdrop.
   useWardModalFocus(withBackdrop, drawerRef, handleDrawerClose);
 
+  // A2-3: a sheet opened on nobody puts the cursor in the patient search.
+  useEffect(() => {
+    if (!noPatientChosen || activeSection !== "patient") return;
+    const frame = requestAnimationFrame(() => searchInputRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only on opening.
+  }, []);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "/" && document.activeElement !== searchInputRef.current) {
@@ -1094,7 +1132,7 @@ function WardReferralDrawerContent({
   // The sample patients first, then any other registered person whose name or UMRN matches.
   const filteredPatients = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const profiles = Object.values(sampleProfiles);
+    const profiles = Object.values(sampleProfiles).filter((p) => p.id !== NO_PATIENT_KEY);
     if (!q) return profiles;
     const matches = profiles.filter((p) => {
       return (
@@ -1241,8 +1279,10 @@ function WardReferralDrawerContent({
   // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed"
   // all count the same items, so the steps add up to the summary and four Complete steps read as
   // all ready. The checklist rows below are labels for the letter, not a second count.
-  const itemsTotal = 4 + (sourceKind === "community" ? 3 : 2) + documentationItems(documentation) + 1;
-  const itemsReady = itemsTotal - totalNeeded;
+  // A2-9 (audit 13 Oct 2026): the contact details asked at Send are items too, so the hero never
+  // reads "0 items left" while Confirm refuses for an empty contact field (`itemsLeft` below).
+  const itemsTotal =
+    4 + (sourceKind === "community" ? 3 : 2) + documentationItems(documentation) + 1 + CONTACT_FIELD_COUNT;
   function sectionFor(error: string | null): DrawerSection | null {
     if (!error) return null;
     if (patientError() === error) return "patient";
@@ -1366,6 +1406,7 @@ function WardReferralDrawerContent({
     if (created) {
       stopDraftAutosave();
       discardReferralDraft();
+      rememberReferrerContact(submitted.intake.referrer);
       setSentReferralId(created.id);
       setSentAt(now);
       setSendPending(false);
@@ -1401,6 +1442,8 @@ function WardReferralDrawerContent({
         : { label: "Not answered", tone: "neutral" };
   const contactErrors = attempted.contact ? contactFieldErrors(contact) : {};
   const contactNeeded = Object.keys(contactFieldErrors(contact)).length;
+  const itemsLeft = totalNeeded + contactNeeded;
+  const itemsReady = itemsTotal - itemsLeft;
   const patientShowErrors = attempted.patient && activeSection === "patient";
   // The sender's own submission, read back from the created referral.
   const sentDetails = sentReferralId ? referrals.find((referral) => referral.id === sentReferralId)?.intake : undefined;
@@ -1473,8 +1516,8 @@ function WardReferralDrawerContent({
     },
     {
       label: "Your contact",
-      value: contactNeeded ? "Asked at Send" : contact.name,
-      state: contactNeeded ? "follow" : "done",
+      value: contactNeeded ? `${contactNeeded} to fill at Send` : contact.name,
+      state: contactNeeded ? "needed" : "done",
     },
     { label: destination.places, value: placeRow, state: selectedDestinations.length ? "done" : "needed" },
   ];
@@ -1555,9 +1598,9 @@ function WardReferralDrawerContent({
       };
     }
     return {
-      tone: (totalNeeded ? "neutral" : "success") as WfTone,
+      tone: (itemsLeft ? "neutral" : "success") as WfTone,
       // Audit 11 Oct 2026: the same unit as Ready to send, so "4 of 9" and this line agree.
-      first: totalNeeded > 0 ? `${totalNeeded} of ${itemsTotal} items still needed` : "All items in",
+      first: itemsLeft > 0 ? `${itemsLeft} of ${itemsTotal} items still needed` : "All items in",
       second: recipientSummary(recipientLabels),
     };
   })();
@@ -1708,7 +1751,7 @@ function WardReferralDrawerContent({
                       {/* Audit 11 Oct 2026: one unit (items, as "N of M ready to send" counts), and no
                           decision time before anything is sent. */}
                       <span className={styles.phFigure}>
-                        <b className={styles.mono}>{totalNeeded}</b>
+                        <b className={styles.mono}>{itemsLeft}</b>
                         <span>Items left</span>
                       </span>
                       <span className={styles.phFigure}>
@@ -1768,7 +1811,7 @@ function WardReferralDrawerContent({
               {sentReferralId ? null : (
                 /* v10 phone: a compact answer line, how many items are ready to send. Phone only. */
                 <p className={styles.phReady} data-testid="ward-referral-phone-ready">
-                  <StatusGlyph tone={totalNeeded === 0 ? "success" : "neutral"} size={10} />
+                  <StatusGlyph tone={itemsLeft === 0 ? "success" : "neutral"} size={10} />
                   <span className={styles.phReadyText}>
                     <b>
                       {itemsReady} of {itemsTotal}
@@ -2393,7 +2436,12 @@ function WardReferralDrawerContent({
                         ) : null}
                       </div>
 
-                      <div className={styles.patientIdentity}>
+                      {noPatientChosen ? (
+                        <p className={styles.patientSub} data-testid="ward-referral-no-patient">
+                          No patient chosen. Find them by name or UMRN, or add a new patient.
+                        </p>
+                      ) : null}
+                      <div className={styles.patientIdentity} hidden={noPatientChosen}>
                         <span className={styles.patientAvatar} aria-hidden="true">
                           {currentPatient.initials}
                         </span>
@@ -2469,7 +2517,12 @@ function WardReferralDrawerContent({
                         </div>
                       ) : null}
 
-                      <div className={styles.priorityGrid} role="region" aria-label="Clinical Priority Grid">
+                      <div
+                        className={styles.priorityGrid}
+                        role="region"
+                        aria-label="Clinical Priority Grid"
+                        hidden={noPatientChosen}
+                      >
                         <div className={styles.priorityCell}>
                           <p className={styles.eyebrow}>Legal order</p>
                           <p className={styles.priorityValue}>{currentPatient.legalStatus}</p>
@@ -3133,7 +3186,9 @@ function WardReferralDrawerContent({
                     <section className={styles.refCard} data-testid="ward-referral-clearance-checklist">
                       <CardHead icon={Stethoscope} title="Medical clearance checklist">
                         <span className={styles.chip}>
-                          <span className={styles.mono}>{checksDone ?? 0}</span> of {CLEARANCE_CHECKS.length} done
+                          {/* A2-9: recorded for the letter, not counted in the items left. */}
+                          Optional · <span className={styles.mono}>{checksDone ?? 0}</span> of {CLEARANCE_CHECKS.length}{" "}
+                          done
                         </span>
                       </CardHead>
                       <div className={styles.cardBody} data-tight="true">
@@ -3153,13 +3208,7 @@ function WardReferralDrawerContent({
                       </div>
                     </section>
                   )}
-                  <DocumentationPanel
-                    key={activePatientKey}
-                    draft={documentation}
-                    onChange={setDocumentation}
-                    referrerName={contact.name}
-                    onReferrerNameChange={(name) => setContact((current) => ({ ...current, name }))}
-                  />
+                  <DocumentationPanel key={activePatientKey} draft={documentation} onChange={setDocumentation} />
                 </div>
 
                 <div
@@ -3532,7 +3581,7 @@ function WardReferralDrawerContent({
               <span className={styles.phChecklistText}>
                 <span className={styles.phChecklistTitle}>Send checklist</span>
                 <span className={styles.phChecklistMeta}>
-                  Every row the letter needs, <b>{readyRows.length}</b> in all
+                  <b>{itemsReady}</b> of {itemsTotal} items ready
                 </span>
               </span>
               <ChevronDown aria-hidden="true" data-open={summaryOpen ? "true" : undefined} />
@@ -3563,7 +3612,7 @@ function WardReferralDrawerContent({
                         done={itemsReady}
                         total={itemsTotal}
                         label="items ready to send"
-                        tone={totalNeeded === 0 ? "success" : undefined}
+                        tone={itemsLeft === 0 ? "success" : undefined}
                         className={styles.railFrac}
                       />
                       {kept || draftKeptAt !== null ? (

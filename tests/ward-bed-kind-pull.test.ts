@@ -227,6 +227,17 @@ describe("PULL_PATIENT decides bed kind from the request's own security (item 11
   });
 });
 
+describe("a pull never stamps the ward's figures as confirmed (audit A1-11)", () => {
+  it("moves allocatable but leaves the confirmed time where Confirm numbers put it", () => {
+    const before = bench();
+    const pulled = pull(before, "WF-BK-OPEN");
+    expect(pulled.rejections).toEqual([]);
+    expect(unitIn(pulled).allocatable.value).toBe(unitIn(before).allocatable.value - 1);
+    expect(unitIn(pulled).allocatable.confirmedAt).toBe(unitIn(before).allocatable.confirmedAt);
+    expect(unitIn(pulled).empty.confirmedAt).toBe(unitIn(before).empty.confirmedAt);
+  });
+});
+
 describe("every release path restores the bed kind PULL_PATIENT took", () => {
   it("RELEASE_PULL restores a locked bed", () => {
     const before = bench();

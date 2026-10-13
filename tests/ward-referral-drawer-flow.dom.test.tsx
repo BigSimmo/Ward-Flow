@@ -5,7 +5,11 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { WardReferralInbox } from "@/components/ward-management/referrals/ward-referral-inbox";
-import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
+import {
+  discardReferralDraft,
+  forgetReferrerContact,
+  readLastReferrerContact,
+} from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/link", () => ({
@@ -36,7 +40,7 @@ function Probe() {
 function setup(withBoard = false) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <WardReferralDrawer onClose={vi.fn()} />
+      <WardReferralDrawer onClose={vi.fn()} initialPatientId="PT-023" />
       <WardReferralInbox unitId="rph-adult-secure" />
       {withBoard && <ReferralBoard />}
       <Probe />
@@ -144,6 +148,9 @@ describe("approved four-tab referral drawer journey", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Referral sent" })).toBeVisible());
     expect(screen.getByTestId("submitted-count")).toHaveTextContent("1");
     expect(screen.getByTestId("referral-errors")).toBeEmptyDOMElement();
+    // A2-6: the details sent are kept in tab memory for the next referral, never browser storage.
+    expect(readLastReferrerContact()).toMatchObject({ name: "Demo Sender", role: "Nurse" });
+    forgetReferrerContact();
     expect(JSON.stringify(sessionStorage)).not.toContain("sender@example.com");
     fireEvent.submit(document.getElementById("referralConfirmForm")!);
     expect(screen.getByTestId("submitted-count")).toHaveTextContent("1");

@@ -10,6 +10,7 @@
 // second; nothing here re-derives what a stage or a transport leg IS — both borrow the real
 // vocabulary (`stageCopy`, `transportLeg`) so this screen can never quietly disagree with the
 // screens it replaces about what a given patient's state actually is.
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { clockState, dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -50,7 +51,7 @@ export type JourneyStage = {
   blurb: string;
   /** Every movement at this stage, longest-waiting first (design lock §5.4) — except a movement
    *  whose legal detention authority is breached or running out, which sorts first regardless of
-   *  wait. See `isExpiringLegalAuthority` below; that exception is what "outranks everything"
+   *  wait. See `legalUrgencyRank` below; that exception is what "outranks everything"
    *  means in the design lock and it is not scoped to the Delays screen alone. */
   movements: Movement[];
 };
@@ -69,20 +70,20 @@ export type JourneyStage = {
  * A movement with no `legalForm.dueAt` at all (every Form 1A and 3B in this model) has no legal
  * clock to be running out, so it never qualifies — absence is not urgency.
  */
-function isExpiringLegalAuthority(movement: Movement, now: Instant): boolean {
-  const dueAt = movement.legalForm?.dueAt;
-  if (dueAt === undefined) return false;
+/** 2 when the legal authority is already breached, 1 when it runs out within the hour, else 0. A
+ *  breached order outranks one with time left (audit 13 Oct 2026: exactly 60m left now counts). */
+function legalUrgencyRank(movement: Movement, now: Instant): number {
+  // A form that ended at the examination or on arrival is history, not a live deadline (S-6).
+  const dueAt = currentLegalDueAt(movement);
+  if (dueAt === undefined) return 0;
   const state = clockState(dueAt, now);
-  return state === "breached" || state === "critical";
+  return state === "breached" ? 2 : state === "critical" ? 1 : 0;
 }
 
 /** The shared ordering for both lists this file returns: an expiring legal authority first,
  *  regardless of anything else, then longest-waiting (earliest `openedAt`) first. */
 function byUrgencyThenWait(a: Movement, b: Movement, now: Instant): number {
-  const aUrgent = isExpiringLegalAuthority(a, now);
-  const bUrgent = isExpiringLegalAuthority(b, now);
-  if (aUrgent !== bUrgent) return aUrgent ? -1 : 1;
-  return a.openedAt - b.openedAt;
+  return legalUrgencyRank(b, now) - legalUrgencyRank(a, now) || a.openedAt - b.openedAt;
 }
 
 /**
@@ -447,7 +448,7 @@ export function waitedMinutes(movement: Movement, now: Instant): number {
 export function byLongestWait(movements: Movement[], now: Instant): Movement[] {
   return [...movements].sort(
     (a, b) =>
-      Number(isExpiringLegalAuthority(b, now)) - Number(isExpiringLegalAuthority(a, now)) ||
+      legalUrgencyRank(b, now) - legalUrgencyRank(a, now) ||
       waitedMinutes(b, now) - waitedMinutes(a, now) ||
       (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );

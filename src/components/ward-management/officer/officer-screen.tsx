@@ -83,8 +83,25 @@ import {
   UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
 
-import { FormsPack, PACK_SLOTS, packCount, packForm, packOutstanding, packRequired } from "./officer-forms-pack";
+import {
+  FormsPack,
+  PACK_SLOTS,
+  packCount,
+  packForm,
+  packNeedsForms,
+  packOutstanding,
+  packRequired,
+} from "./officer-forms-pack";
 import styles from "./officer.module.css";
+import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
+import type { TransportExceptionInput } from "@/components/ward-management/ward-flow-events";
+import {
+  collectionGaps,
+  holdEndsBeforeEta,
+  legalNowText,
+  transportExceptionText,
+  transportStatusClashes,
+} from "@/components/ward-management/ward-transport-checks";
 
 /**
  * `TRANSPORT_ACCEPTED`'s own preconditions (`ward-flow-reducer.ts`), named here so the Accepted
@@ -404,7 +421,9 @@ export function OfficerScreen() {
   };
   const now = useWardFlowClock();
 
+  const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
   const jobs = movements.filter(isOfficerJob);
+  const collectCheck = collectCheckId ? movements.find((movement) => movement.id === collectCheckId) : undefined;
   const unitFor = (movement: Movement): Unit | undefined =>
     movement.acceptedUnitId ? units.find((unit) => unit.id === movement.acceptedUnitId) : undefined;
   const destinationLabelFor = (movement: Movement) =>
@@ -436,7 +455,7 @@ export function OfficerScreen() {
     if (which === "en_route") return leg === "En route";
     if (which === "collected") return leg === "Collected";
     if (which === "late") return late(movement);
-    return packOutstanding(movement);
+    return packNeedsForms(movement);
   };
   const query = searchQuery.toLowerCase().trim();
   const matchesSearch = (movement: Movement) => {
@@ -628,7 +647,7 @@ export function OfficerScreen() {
   const crewToSend = legCount("Accepted");
   const crewEnRoute = legCount("En route");
   const pastEta = jobs.filter(late).length;
-  const formsOutstanding = jobs.filter(packOutstanding).length;
+  const formsOutstanding = jobs.filter(packNeedsForms).length;
 
   const nextArrival = jobs
     .map((movement) => ({ movement, at: expectedArrival(movement)?.at }))
@@ -743,8 +762,22 @@ export function OfficerScreen() {
       movement.id,
     );
   };
+  // Audit A4-11 / S-2: Collected with no Form 4A or no fit to travel warns and records a reason.
   const runCollected = (movement: Movement) => {
-    dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id });
+    if (collectionGaps(movement).length > 0) {
+      setCollectCheckId(movement.id);
+      return;
+    }
+    recordCollected(movement);
+  };
+  const recordCollected = (movement: Movement, exception?: TransportExceptionInput) => {
+    dispatch({
+      type: "PATIENT_COLLECTED",
+      role: "officer",
+      now,
+      movementId: movement.id,
+      ...(exception ? { exception } : {}),
+    });
     reportOutcome(
       `Patient collected for ${officerPatientName(movement)}. In transit.`,
       "Collection",
@@ -1203,7 +1236,15 @@ export function OfficerScreen() {
             )}
             <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
               <dt>Transport logged as</dt>
-              <dd>{transportLegalStatusLabel(transport)}</dd>
+              <dd>
+                {transportStatusClashes(movement, transport.transportLegalStatus) ? (
+                  <StatusGlyph tone="warning" size={9} />
+                ) : null}
+                {transportLegalStatusLabel(transport)}
+                {transportStatusClashes(movement, transport.transportLegalStatus)
+                  ? `, Legal now ${legalNowText(movement)}`
+                  : null}
+              </dd>
             </div>
             <div>
               <dt>Escort required</dt>
@@ -1217,6 +1258,28 @@ export function OfficerScreen() {
               <dt>Estimated time</dt>
               <dd>{estimatedTimeLabel(transport, now)}</dd>
             </div>
+            {/* Audit A4-2: the officer sees when the bed hold ends, and whether the ETA is after it. */}
+            {movement.pullExpiresAt !== undefined && transport.collectedAt === undefined ? (
+              <div data-testid={`ward-officer-hold-ends-${movement.id}`}>
+                <dt>Bed held until</dt>
+                <dd>
+                  {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? (
+                    <StatusGlyph tone="warning" size={9} />
+                  ) : null}
+                  {formatInstantWithDay(movement.pullExpiresAt, now)}
+                  {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? ", before the ETA" : null}
+                </dd>
+              </div>
+            ) : null}
+            {(transport.exceptions ?? []).map((exception) => (
+              <div key={`${exception.step}-${exception.at}`} data-testid={`ward-officer-exception-${movement.id}`}>
+                <dt>
+                  {exception.step === "collected" ? "Collected" : "Booked"} {formatInstantWithDay(exception.at, now)}{" "}
+                  with
+                </dt>
+                <dd>{transportExceptionText(exception)}</dd>
+              </div>
+            ))}
           </dl>
         </section>
 
@@ -1441,7 +1504,8 @@ export function OfficerScreen() {
           level={1}
           className={styles.dispatchHero}
           eyebrow="Transport dispatch"
-          title={`${inCustody} on board`}
+          // S-17 (audit 13 Oct 2026): the on-board figure is a part of the jobs count, so it says so.
+          title={`${inCustody} of ${jobs.length} ${jobs.length === 1 ? "job" : "jobs"} on board`}
           aside={isPhone ? <LiveChip state="live" onHero /> : heroTools}
           barAside={isPhone ? heroTools : undefined}
           bar={
@@ -2139,6 +2203,20 @@ export function OfficerScreen() {
         </div>
       ) : null}
 
+      {collectCheck ? (
+        <TransportExceptionDialog
+          open
+          who={officerPatientName(collectCheck)}
+          action="Collected"
+          gaps={collectionGaps(collectCheck)}
+          onClose={() => setCollectCheckId(null)}
+          onConfirm={(reason) => {
+            setCollectCheckId(null);
+            recordCollected(collectCheck, { gaps: collectionGaps(collectCheck), reason });
+          }}
+          testId="ward-officer-collect-check"
+        />
+      ) : null}
       {toastText ? (
         <div className={styles.toast}>
           <StatusLine tone="success" title={toastText} />
