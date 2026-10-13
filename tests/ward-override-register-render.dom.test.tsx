@@ -52,8 +52,10 @@ const REASON_A: OverrideReason = OVERRIDE_REASONS[1];
 const REASON_B: OverrideReason = OVERRIDE_REASONS[2];
 
 /** Two real units from the fixture, resolved rather than named, so this suite follows the seed. */
-const UNIT_A = allUnits()[0];
-const UNIT_B = allUnits().find((unit) => unit.id !== UNIT_A.id && !UNIT_A.name.includes(unit.name))!;
+// Review finding S1-6 (13 Oct 2026): an override is only recorded against wards that needed one, so
+// both fixture wards are older-adult wards the referable adult movement does not suit.
+const UNIT_A = allUnits().find((unit) => unit.id === "rph-older-adult")!;
+const UNIT_B = allUnits().find((unit) => unit.id === "scgh-older-adult")!;
 
 /** A movement the reducer will actually accept a referral for — `REFER_TO_UNITS` refuses any other
  *  stage, and a refused dispatch would leave the register empty while every assertion below still

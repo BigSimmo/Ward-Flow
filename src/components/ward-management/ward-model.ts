@@ -388,6 +388,14 @@ export const MORNING_ROLLUP_TIME_RANGE_MINUTES = { min: 480, max: 660, step: 15 
 export type LegalStatus =
   "Voluntary" | "Referred for psychiatric examination" | "Detained awaiting examination" | "Involuntary inpatient";
 
+/** The runtime list of `LegalStatus`, so a referral's legal status is checked against it (S1-13). */
+export const LEGAL_STATUSES = [
+  "Voluntary",
+  "Referred for psychiatric examination",
+  "Detained awaiting examination",
+  "Involuntary inpatient",
+] as const satisfies readonly LegalStatus[];
+
 /**
  * The legal clock and the ED clock are different clocks (spec "Model changes this phase
  * requires", `Movement.formedAt`). `dueAt`, when present, is the legal clock — never computed by
@@ -535,7 +543,7 @@ export const ED_ACCESS_TARGET_RANGE_MINUTES = { min: 720, max: 2160, step: 120 }
  * Expressed in HOURS because the owner expressed it in hours; converting it to minutes for
  * arithmetic convenience would put a second, unsourced number beside the sourced one.
  */
-export const ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS = 24;
+export const ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS = 48;
 
 /**
  * 🔴 **DELETED 2026-09-17, T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`).**
@@ -1257,6 +1265,25 @@ export type MovementId = `WF-${string}`;
  */
 export type ExaminationOutcome = "inpatient_order" | "community_order" | "revoked" | "further_examination_ordered";
 
+/**
+ * The runtime list of `ExaminationOutcome`, so `RECORD_EXAMINATION` can refuse an off-list value
+ * rather than handling it as a revocation (review finding S1-9, 8 October 2026). A type-only
+ * guarantee passes `vitest run` with no `tsc` involved.
+ */
+export const EXAMINATION_OUTCOMES = [
+  "inpatient_order",
+  "community_order",
+  "revoked",
+  "further_examination_ordered",
+] as const satisfies readonly ExaminationOutcome[];
+
+/**
+ * The outcomes `RECORD_ED_OUTCOME` may record, checked at runtime (review finding S1-10). The same
+ * two members as `Movement.edOutcome`.
+ */
+export const ED_OUTCOMES = ["for_discharge", "for_community_follow_up"] as const;
+export type EdOutcome = (typeof ED_OUTCOMES)[number];
+
 export type Movement = {
   id: MovementId;
   /**
@@ -1590,7 +1617,7 @@ export type Movement = {
   blocker: string;
   closure?: MovementClosure;
   /** Recorded outcome from the emergency department (Item 19, owner answers 2026-09-17). */
-  edOutcome?: "for_discharge" | "for_community_follow_up";
+  edOutcome?: EdOutcome;
   /** When the patient physically departed the emergency department. */
   leftDepartmentAt?: Instant;
   /** When the referral for examination was made. May precede `openedAt` for a community-formed
@@ -3133,6 +3160,10 @@ export type NoticeKind =
   // Item 48, Q3 (owner, 2026-09-17) — WITHDRAW_ACCEPTANCE, told to the ward whose acceptance was
   // withdrawn.
   | "acceptance_withdrawn_ward"
+  // Review finding S2-7 (8 October 2026) — RELEASE_AND_REOPEN_SEARCH from accepted-awaiting-bed,
+  // told to the referrer: an acceptance ended and no bed was ever pulled, so `bed_pull_released`
+  // would claim a release that never happened.
+  | "acceptance_withdrawn_referrer"
   // Item 48, Q3 (owner, 2026-09-17) — RECORD_EXAMINATION with outcome `"revoked"`, told to the
   // accepting ward. Never raised for `"community_order"` (the owner named "revoked" only), and
   // never raised when the movement holds no `acceptedUnitId` — there is nobody to tell.

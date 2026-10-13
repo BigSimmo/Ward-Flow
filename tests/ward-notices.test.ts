@@ -347,8 +347,11 @@ describe("assertion 2 — a decision NOT in the table produces none (the anti-va
     expect(after.notices).toEqual(state.notices);
   });
 
-  it("WITHDRAW_REFERRAL raises no notice, though it ends a movement's live referral", () => {
+  // Review finding S1-4 (fixed 13 Oct 2026): this used to pin that WITHDRAW_REFERRAL told nobody. The
+  // wards still deciding are now told their request was withdrawn, and nobody else is.
+  it("WITHDRAW_REFERRAL tells only the wards still deciding, though it ends a movement's live referral", () => {
     const state = referred(seeded());
+    const asked = state.movements.find((candidate) => candidate.id === MOVEMENT_ID)!.referredUnitIds;
     const after = wardFlowReducer(state, {
       type: "WITHDRAW_REFERRAL",
       role: "coordinator",
@@ -356,7 +359,9 @@ describe("assertion 2 — a decision NOT in the table produces none (the anti-va
       movementId: MOVEMENT_ID,
     });
     expect(after.rejections).toEqual([]);
-    expect(after.notices).toEqual(state.notices);
+    const added = after.notices.slice(state.notices.length);
+    expect(added.map((notice) => notice.kind)).toEqual(asked.map(() => "ward_request_withdrawn"));
+    expect(added.map((notice) => notice.about.unitId).sort()).toEqual([...asked].sort());
   });
 });
 
@@ -915,7 +920,9 @@ describe("Item 48, Q3 — WITHDRAW_ACCEPTANCE and a revoked examination each not
     expect(after.notices.some((notice) => notice.kind === "examination_revoked_ward")).toBe(false);
   });
 
-  it("a revoked examination with no accepting ward raises no notice — there is nobody to tell", () => {
+  // Review finding S1-5 (fixed 13 Oct 2026): the wards still deciding are told their request ended;
+  // there is still no accepting ward, so no examination_revoked_ward notice.
+  it("a revoked examination with no accepting ward raises no revoked-examination notice — there is nobody to tell", () => {
     const state = referred(seeded()); // destination_review: referred, never accepted
     expect(state.movements.find((candidate) => candidate.id === MOVEMENT_ID)?.acceptedUnitId).toBeUndefined();
     const before = state.notices.length;
@@ -927,7 +934,7 @@ describe("Item 48, Q3 — WITHDRAW_ACCEPTANCE and a revoked examination each not
       outcome: "revoked",
     });
     expect(after.rejections).toEqual([]);
-    expect(after.notices).toHaveLength(before);
+    expect(after.notices.slice(before).every((notice) => notice.kind === "ward_request_withdrawn")).toBe(true);
     expect(after.notices.some((notice) => notice.kind === "examination_revoked_ward")).toBe(false);
   });
 });

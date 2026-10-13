@@ -253,7 +253,8 @@ export function isOpen(movement: Movement): boolean {
  * `"further_examination_ordered"` — neither is a revocation) beside a bed the movement still
  * holds.
  *
- * `movement.admissionId !== undefined` is that "still holds a bed" signal.
+ * `movement.admissionId !== undefined` WAS that "still holds a bed" signal; since S2-2 an open
+ * movement at a bed-holding stage counts too (see the body).
  * `RECORD_EXAMINATION`'s own `handover_ready`/`moving` branch leaves it untouched;
  * `STEP_BACK_STAGE` touches only `stage` (its own doc comment: "touches NOTHING else — no bed is
  * released"); only `RELEASE_PULL` and the other bed-release paths (via the shared
@@ -264,6 +265,17 @@ export function isOpen(movement: Movement): boolean {
 export function examinationRevokedWhileBedHeld(movement: Movement): boolean {
   const outcome = movement.examination?.outcome;
   if (outcome !== "community_order" && outcome !== "revoked") return false;
+  // S2-2 (owner decision, 12 October 2026): an OPEN movement holds its bed by stage — `pulled`,
+  // `handover_ready` or `moving` — even with no `admissionId` (a seeded journey), so the flag
+  // cannot be lifted by anything but a real release. A closed movement keeps the record-based rule.
+  if (movement.closure === undefined) {
+    return (
+      movement.stage === "pulled" ||
+      movement.stage === "handover_ready" ||
+      movement.stage === "moving" ||
+      movement.admissionId !== undefined
+    );
+  }
   return movement.admissionId !== undefined;
 }
 

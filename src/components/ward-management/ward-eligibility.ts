@@ -598,7 +598,16 @@ export function referralEligibility(
   // is a suitability question and does not change between "can this ward take them in principle"
   // and "can this person come now", so both paths ask it identically. `ward.secureBedNeeded` is
   // this path's counterpart of `movement.security === "Secure"`.
-  const securityMet = ward.secureBedNeeded ? lockedBedsFree(unit) > 0 : unit.allocatable.value > 0;
+  //
+  // 🔴 Review finding S2-9 (8 October 2026): this used to test CAPACITY (a free locked bed) while
+  // `eligibility()` tests KIND (the ward has locked beds). Because `security` is a suitability gate,
+  // any override reason then bought past a capacity fact. Aligned with the movement path: this gate
+  // asks about kind only, and the free-locked-bed fact moved to `allocatable_bed` below, which no
+  // reason can override.
+  const securityMet = !ward.secureBedNeeded || unitHasLockedBeds(unit);
+  // Only a ward that HAS locked beds, all taken, fails here; a ward with no locked beds at all fails
+  // the overridable `security` (kind) gate above instead.
+  const lockedBedNeededButNoneFree = ward.secureBedNeeded && unitHasLockedBeds(unit) && lockedBedsFree(unit) <= 0;
   // See the `legal_status` gate's own comment below for why this is an accepts-rule, never an
   // equality: a referral that does not need an involuntary bed is accepted by ANY bed, including
   // an authorised one — `unit.authorised` is a capability a bed has, not a value to match against.
@@ -747,11 +756,16 @@ export function referralEligibility(
       // **One name, two pass conditions, on purpose.** Nobody had noticed until a 2026-09-04
       // census; the risk is the shared NAME inviting the assumption that they are one test.
       gate: "allocatable_bed",
-      pass: availableNow > 0,
+      // S2-9: a referral needing a locked bed needs a FREE locked bed — a physical fact, so it lives
+      // here, outside `SUITABILITY_GATES`, where an override reason cannot reach it.
+      pass: availableNow > 0 && !lockedBedNeededButNoneFree,
       // "ready" for the min, per the owner's 2026-09-04 one-word ruling. The two figures in
       // parentheses keep their own field names — they are DIFFERENT quantities and relabelling
       // either would put one number's name on another.
-      detail: `${availableNow} ready (${unit.allocatable.value} allocatable, ${unit.empty.value} empty)`,
+      detail:
+        availableNow > 0 && lockedBedNeededButNoneFree
+          ? bedKindGateDetail(true, unit)
+          : `${availableNow} ready (${unit.allocatable.value} allocatable, ${unit.empty.value} empty)`,
     },
   ];
 

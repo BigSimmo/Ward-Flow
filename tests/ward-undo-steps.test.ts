@@ -257,7 +257,19 @@ describe("override second sign-off", () => {
 
   it("is stored on the override and its audit entry, and marks the dispatch as typed text", () => {
     const state = seedWardFlowState();
-    const { event } = step(state, "REFER_TO_UNITS");
+    const { event: stepped } = step(state, "REFER_TO_UNITS");
+    // Review finding S1-6 (fixed 13 Oct 2026): an override is recorded only against a ward that
+    // needed one, so the sign-off is exercised on such a ward.
+    const referMovementId = (stepped as Extract<WardFlowEvent, { type: "REFER_TO_UNITS" }>).movementId;
+    const needsOverride = state.units.find(
+      (unit) =>
+        wardFlowReducer(state, { ...stepped, unitIds: [unit.id] } as WardFlowEvent).rejections.length >
+          state.rejections.length &&
+        wardFlowReducer(state, { ...stepped, unitIds: [unit.id], overrideReason: reason } as WardFlowEvent).rejections
+          .length === state.rejections.length,
+    )!;
+    expect(needsOverride, `no ward needs an override for ${referMovementId}`).toBeDefined();
+    const event = { ...stepped, unitIds: [needsOverride.id] } as WardFlowEvent;
     const withSignOff = {
       ...event,
       overrideReason: reason,

@@ -132,7 +132,11 @@ describe("PATIENT_COLLECTED — refused while examinationRevokedWhileBedHeld (T9
     expect(movement(collected, TARGET).stage).toBe("moving");
   });
 
-  it("allows collection once the flagged bed has actually been released", () => {
+  // Review finding S2-2, owner decision 12 Oct 2026 (stage-based hold): this test used to clear
+  // `admissionId` by hand and expect collection to go ahead. A movement still at `handover_ready`
+  // holds its bed by stage, so that splice is no longer a release; only the ordinary release path
+  // clears the flag (see "clears once STEP_BACK_STAGE then RELEASE_PULL" above).
+  it("does not treat a hand-cleared admission link as a release while the stage still holds the bed", () => {
     const TARGET = "WF-012";
     const enRoute = atEnRoute(TARGET);
     const flagged = wardFlowReducer(enRoute, {
@@ -144,25 +148,20 @@ describe("PATIENT_COLLECTED — refused while examinationRevokedWhileBedHeld (T9
     });
     expect(examinationRevokedWhileBedHeld(movement(flagged, TARGET))).toBe(true);
 
-    // The bed has been released (`admissionId` cleared) — the same fact
-    // `examinationRevokedWhileBedHeld`'s own "clears once STEP_BACK_STAGE then RELEASE_PULL"
-    // test above proves is reachable through the ordinary release path. Spliced directly here to
-    // isolate PATIENT_COLLECTED's own guard from the unrelated stage guard STEP_BACK_STAGE would
-    // otherwise also trip (stepping back leaves stage at `pulled`, not `handover_ready`).
-    const released = {
+    const spliced = {
       ...flagged,
       movements: flagged.movements.map((m) => (m.id === TARGET ? { ...m, admissionId: undefined } : m)),
     };
-    expect(examinationRevokedWhileBedHeld(movement(released, TARGET))).toBe(false);
+    expect(examinationRevokedWhileBedHeld(movement(spliced, TARGET))).toBe(true);
 
-    const collected = wardFlowReducer(released, {
+    const collected = wardFlowReducer(spliced, {
       type: "PATIENT_COLLECTED",
       role: "officer",
       now: NOW + 3,
       movementId: TARGET,
     });
-    expect(collected.rejections.slice(released.rejections.length)).toEqual([]);
-    expect(movement(collected, TARGET).stage).toBe("moving");
+    expect(collected.rejections.length).toBe(spliced.rejections.length + 1);
+    expect(movement(collected, TARGET).stage).toBe(movement(spliced, TARGET).stage);
   });
 });
 

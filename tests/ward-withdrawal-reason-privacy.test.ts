@@ -253,13 +253,19 @@ describe("a withdrawal reason cannot name the ward that won", () => {
      * 6 TO 7 ON 2026-09-25 (test fixer): RECORD_REPATRIATION (53105ca6ea) creates a return movement
      * initialised with `withdrawnReferrals: []` — a second EMPTY initialisation, recording no cause,
      * so no reason code is involved.
+     *
+     * 7 TO 5 ON 2026-10-13 (review findings S1-4, S1-5, S2-4): WITHDRAW_REFERRAL, RECORD_ED_OUTCOME,
+     * REFER_TO_COMMUNITY_TEAM, the revoked-examination closure and the referrer-withdrawal cascade now
+     * share ONE writer, `closedMovementReferralFields`, which takes the cause from its caller. Each
+     * caller still passes its own code (`referrer_withdrew`, `coordinator_withdrew` or
+     * `ed_outcome_recorded`), so no cause was collapsed; the copies were.
      */
     expect(
       writes.length,
       "a new write to withdrawnReferrals appeared. If it records a DIFFERENT cause then the existing " +
         "reason codes are no longer true of every entry: add a member to WITHDRAWAL_REASONS for it " +
         "rather than reusing one, and update this count.",
-    ).toBe(7);
+    ).toBe(5);
     expect(stripped, "one of the six writes is the empty initialisation, which records no cause").toContain(
       "withdrawnReferrals: []",
     );
