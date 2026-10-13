@@ -1071,3 +1071,15 @@ export function migrateStoredWardFlowState(state: unknown, fromVersion: unknown)
   if ("plannedAdmissions" in state || "plannedAdmissionSequence" in state) return null;
   return { ...state, plannedAdmissions: [], plannedAdmissionSequence: 0 };
 }
+
+/**
+ * Review finding A2-9: the Ward Flow world rules a cloud vault must enforce, in the shape
+ * `setCloudScenarioWorldCodec` (`src/lib/cloud-scenario-vault.ts`) takes. Declared here, beside the
+ * rules themselves, and handed over by whoever wires the vault, so neither side imports the other.
+ */
+export const WARD_FLOW_CLOUD_WORLD_CODEC = {
+  version: WARD_FLOW_STORED_STATE_VERSION,
+  isValid: (state: unknown): boolean => isValidStoredWardFlowState(state),
+  migrate: (state: unknown, fromVersion: unknown): unknown => migrateStoredWardFlowState(state, fromVersion),
+  withDefaults: (state: unknown): unknown => withInboxStreamADefaults(state as WardFlowState),
+} as const;

@@ -18,8 +18,11 @@ import {
   type SharedView,
 } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { saveCloudScenario } from "@/components/ward-management/cloud-scenario-vault";
-import { WARD_FLOW_STORED_STATE_VERSION } from "@/components/ward-management/ward-flow-storage-validation";
+import { saveCloudScenario, setCloudScenarioWorldCodec } from "@/lib/cloud-scenario-vault";
+import {
+  WARD_FLOW_CLOUD_WORLD_CODEC,
+  WARD_FLOW_STORED_STATE_VERSION,
+} from "@/components/ward-management/ward-flow-storage-validation";
 import { formatLogLine, redactLogContext } from "@/lib/logger";
 import { redactCaptionIdentifiers, redactLogValue } from "@/lib/privacy";
 import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf";
@@ -137,6 +140,7 @@ describe("A4-4: the guard runs on the live save paths", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("the cloud vault reports the backend's server-side refusal as an unsafe payload", async () => {
+    setCloudScenarioWorldCodec(WARD_FLOW_CLOUD_WORLD_CODEC);
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => Response.json({ error: "refused" }, { status: 422 })),

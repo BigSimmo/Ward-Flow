@@ -4,9 +4,13 @@ import {
   deleteCloudScenario,
   loadCloudScenario,
   saveCloudScenario,
-} from "@/components/ward-management/cloud-scenario-vault";
+  setCloudScenarioWorldCodec,
+} from "@/lib/cloud-scenario-vault";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { WARD_FLOW_STORED_STATE_VERSION } from "@/components/ward-management/ward-flow-storage-validation";
+import {
+  WARD_FLOW_CLOUD_WORLD_CODEC,
+  WARD_FLOW_STORED_STATE_VERSION,
+} from "@/components/ward-management/ward-flow-storage-validation";
 
 /** A stored synthetic world, the only thing the vault saves or loads (review finding A2-9). */
 const world = () => JSON.parse(JSON.stringify({ version: WARD_FLOW_STORED_STATE_VERSION, state: seedWardFlowState() }));
@@ -17,6 +21,7 @@ describe("cloud-scenario-vault", () => {
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
+    setCloudScenarioWorldCodec(WARD_FLOW_CLOUD_WORLD_CODEC);
     vi.stubGlobal("fetch", vi.fn());
   });
 
@@ -310,5 +315,23 @@ describe("cloud-scenario-vault", () => {
       method: "DELETE",
       body: JSON.stringify({ expectedRevision: 3 }),
     });
+  });
+});
+
+describe("cloud-scenario-vault with no Ward Flow rules registered", () => {
+  it("refuses a valid world rather than saving it unchecked", async () => {
+    setCloudScenarioWorldCodec(null);
+    vi.stubGlobal("fetch", vi.fn());
+    const result = await saveCloudScenario(
+      "https://example.com/api",
+      "token",
+      "11111111-1111-4111-8111-111111111111",
+      0,
+      world(),
+      unlocked,
+    );
+    expect(result.status).not.toBe("saved");
+    expect(fetch).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });

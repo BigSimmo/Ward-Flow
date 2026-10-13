@@ -11,13 +11,27 @@
  */
 
 import { z } from "zod";
-import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
-import {
-  isValidStoredWardFlowState,
-  migrateStoredWardFlowState,
-  WARD_FLOW_STORED_STATE_VERSION,
-  withInboxStreamADefaults,
-} from "@/components/ward-management/ward-flow-storage-validation";
+import { checkSyntheticPayload } from "./synthetic-data-guard";
+
+/**
+ * The Ward Flow world rules the vault enforces (review finding A2-9). Supplied by the caller rather
+ * than imported, because `src/lib` must not depend on Ward Flow code (library layering) and Ward
+ * Flow code must make no network call (offline boundary). Until a codec is registered, every save
+ * and load is refused as not a valid world — the safe default for a vault nothing has wired yet.
+ */
+export type CloudScenarioWorldCodec = {
+  version: number;
+  isValid: (state: unknown) => boolean;
+  migrate: (state: unknown, fromVersion: unknown) => unknown | null;
+  withDefaults: (state: unknown) => unknown;
+};
+
+let worldCodec: CloudScenarioWorldCodec | null = null;
+
+/** Registers the Ward Flow world rules; `null` returns the vault to refusing everything. */
+export function setCloudScenarioWorldCodec(codec: CloudScenarioWorldCodec | null): void {
+  worldCodec = codec;
+}
 
 const SaveResponseSchema = z.object({
   revision: z.number().int().min(1).max(2_147_483_646),
@@ -43,9 +57,11 @@ const INVALID_WORLD = "This scenario is not a valid Ward Flow world for this ver
 
 /** The payload as it will be stored, or null when it is not a valid world for this build. */
 function storableWorld(payload: unknown): CloudScenarioPayload | null {
+  const codec = worldCodec;
+  if (codec === null) return null;
   if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return null;
   const candidate = payload as Record<string, unknown>;
-  if (candidate.version !== WARD_FLOW_STORED_STATE_VERSION) return null;
+  if (candidate.version !== codec.version) return null;
   const state = candidate.state;
   if (typeof state !== "object" || state === null) return null;
   let roundTripped: CloudScenarioPayload;
@@ -54,17 +70,16 @@ function storableWorld(payload: unknown): CloudScenarioPayload | null {
   } catch {
     return null;
   }
-  return isValidStoredWardFlowState(roundTripped.state) ? roundTripped : null;
+  return codec.isValid(roundTripped.state) ? roundTripped : null;
 }
 
 /** A loaded payload brought to this build's version and checked, or null when it must be refused. */
 function loadedWorld(payload: Record<string, unknown>): CloudScenarioPayload | null {
-  const state =
-    payload.version === WARD_FLOW_STORED_STATE_VERSION
-      ? payload.state
-      : migrateStoredWardFlowState(payload.state, payload.version);
-  if (state === null || !isValidStoredWardFlowState(state)) return null;
-  return { ...payload, version: WARD_FLOW_STORED_STATE_VERSION, state: withInboxStreamADefaults(state) };
+  const codec = worldCodec;
+  if (codec === null) return null;
+  const state = payload.version === codec.version ? payload.state : codec.migrate(payload.state, payload.version);
+  if (state === null || !codec.isValid(state)) return null;
+  return { ...payload, version: codec.version, state: codec.withDefaults(state) };
 }
 
 export type CloudRequestOptions = {
