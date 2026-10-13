@@ -43,7 +43,7 @@ import { OperatorSwitcherModal } from "@/components/ward-management/settings/ope
 
 import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
-import { settingsHref } from "./ward-facade";
+import { settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
 import styles from "./ward-phone-menu.module.css";
@@ -509,7 +509,7 @@ function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => voi
       className={styles.who}
       onClick={onSwitch}
       aria-haspopup="dialog"
-      aria-label={`${CHROME_ROLE_LABELS[role]}. Switch workstation`}
+      aria-label={`${CHROME_ROLE_LABELS[role]}. Go to a desk`}
       data-testid="ward-phone-menu-switch-workstation"
     >
       {/* v10 Menu sheet: an initials avatar. The prototype has no signed-in person, so the
@@ -523,7 +523,9 @@ function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => voi
       </span>
       <span className={styles.whoText}>
         <span className={styles.whoName}>{CHROME_ROLE_LABELS[role]}</span>
-        <span className={styles.whoMeta}>Switch workstation</span>
+        {/* shell-2 (Josh, 13 Oct 2026): "Go to a desk", not "Switch workstation". Opening a desk
+            goes to that desk's page; the Menu, Needs you and Tasks stay this workstation's own. */}
+        <span className={styles.whoMeta}>Go to a desk</span>
       </span>
     </button>
   );
@@ -542,6 +544,8 @@ function CreateSheet({
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
 }) {
+  // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
+  const currentUnitId = /^\/mockups\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   return (
     <Sheet
       id="ward-phone-create"
@@ -575,7 +579,15 @@ function CreateSheet({
           return entry
             ? [
                 <li key={item.id}>
-                  <Link href={entry.href} className={styles.row} onClick={onClose}>
+                  <Link
+                    href={
+                      item.id === "wards" && currentUnitId !== undefined
+                        ? unitHref(decodeURIComponent(currentUnitId))
+                        : entry.href
+                    }
+                    className={styles.row}
+                    onClick={onClose}
+                  >
                     <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
                     <Chevron />
                   </Link>

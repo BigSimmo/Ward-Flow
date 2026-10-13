@@ -258,7 +258,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
     <Drawer
       open={isOpen}
       onClose={onClose}
-      title="Switch workstation"
+      title="Go to a desk"
       testId="ward-operator-switcher-modal"
       initialFocusRef={searchRef}
       contentClassName={styles.drawer}
