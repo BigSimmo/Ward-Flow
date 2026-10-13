@@ -24,15 +24,14 @@ export interface SettingsSearchEntry {
 export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   { id: "ed-target", label: "ED wait target", tab: "rules", keywords: "emergency access wait timing" },
   { id: "wards-asked", label: "Wards asked at once", tab: "rules", keywords: "parallel referral cap enquiry" },
-  { id: "pull-hold", label: "Pull hold", tab: "rules", keywords: "pulled held bed reservation return" },
+  { id: "pull-hold", label: "Pull hold", tab: "rules", keywords: "pulled held bed reservation return expires hold" },
   { id: "morning-count", label: "Morning count", tab: "rules", keywords: "rollup ward count deadline" },
   { id: "surge", label: "Standard or Surge timings", tab: "rules", keywords: "busy day preset surge ends" },
-  { id: "first-warning", label: "First warning", tab: "rules", keywords: "legal due time form urgent" },
-  { id: "second-warning", label: "Second warning", tab: "rules", keywords: "legal due time form due soon" },
+  { id: "second-warning", label: "Early warning", tab: "rules", keywords: "legal due time form due soon first" },
+  { id: "first-warning", label: "Final warning", tab: "rules", keywords: "legal due time form urgent last" },
   { id: "occupancy", label: "Occupancy alert", tab: "rules", keywords: "bed alerts threshold capacity" },
   { id: "tier-one", label: "Tier 1 overdue after", tab: "rules", keywords: "referral queue overdue" },
   { id: "ward-silent", label: "Ward not answering", tab: "rules", keywords: "reminder referral silent" },
-  { id: "bed-hold", label: "Bed hold expires", tab: "rules", keywords: "held bed flag review" },
   {
     id: "decision-targets",
     label: "Decision targets",

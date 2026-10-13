@@ -6,7 +6,13 @@ import { AlertTriangle, RotateCcw, X } from "lucide-react";
 import { useWardModalFocus } from "../ward-modal-focus";
 import { defaultWardConfiguration } from "../ward-configuration";
 import { MORNING_ROLLUP_TIME_MINUTES } from "../ward-model";
-import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "../ward-operational-defaults";
+import {
+  DUE_SOON_MINUTES,
+  DUE_SOON_URGENT_MINUTES,
+  TRANSFER_ACCEPTANCE_TARGET_MINUTES,
+  TRANSPORT_BOOKED_TARGET_MINUTES,
+  WARD_ANSWER_TARGET_MINUTES,
+} from "../ward-operational-defaults";
 import styles from "./settings-modals.module.css";
 
 function shortDuration(minutes: number): string {
@@ -27,9 +33,16 @@ function restoredValues(): readonly (readonly [string, string])[] {
     ["Wards asked at once", String(defaults.parallelReferralCap)],
     ["Pull hold", shortDuration(defaults.pullHoldMinutes)],
     ["Morning count", clock24(defaults.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES)],
-    ["First warning", shortDuration(defaults.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)],
-    ["Second warning", shortDuration(defaults.dueSoonMinutes ?? DUE_SOON_MINUTES)],
+    ["Early warning", shortDuration(defaults.dueSoonMinutes ?? DUE_SOON_MINUTES)],
+    ["Final warning", shortDuration(defaults.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)],
+    ["Referral decision", shortDuration(defaults.referralDecisionTargetMinutes ?? WARD_ANSWER_TARGET_MINUTES)],
+    [
+      "Transfer acceptance",
+      shortDuration(defaults.transferAcceptanceTargetMinutes ?? TRANSFER_ACCEPTANCE_TARGET_MINUTES),
+    ],
+    ["Transport booked", shortDuration(defaults.transportBookedTargetMinutes ?? TRANSPORT_BOOKED_TARGET_MINUTES)],
     ["Theme", "Auto"],
+    ["Glare", "Off"],
     ["Sidebar", "Full"],
     ["Buzz sound", "On"],
   ];
@@ -82,8 +95,8 @@ export function ResetBaselineModal({ isOpen, onClose, onConfirm }: ResetBaseline
 
         <div className={styles.modalBody}>
           <p id="reset-modal-desc">
-            This saves the six coordination rules at their defaults and records the change in the audit. It also resets
-            this browser&rsquo;s theme, sidebar and buzz sound.
+            This saves all nine rules at their defaults and records the change in the audit. It also resets this
+            browser&rsquo;s theme, glare, sidebar and buzz sound. You can undo it from the toast.
           </p>
 
           <div className={styles.baselineParametersCard}>

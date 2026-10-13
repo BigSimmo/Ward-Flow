@@ -202,13 +202,13 @@ export function AlertsPane({
               <RowSwitch name="Buzz sound" checked={buzz} onCheckedChange={onBuzzChange} />
             </SettingRow>
             <SettingRow setting="flash" title="Flash on urgent" sub="Screen edge flashes once" preview>
-              <RowSwitch name="Flash on urgent" checked onCheckedChange={() => onPreview("Flash on urgent")} />
+              <RowSwitch name="Flash on urgent" checked={false} onCheckedChange={() => onPreview("Flash on urgent")} />
             </SettingRow>
             <SettingRow setting="buzz-again" title="Buzz again if not seen" sub="Until someone acknowledges" preview>
               <PreviewSegmented
                 name="Buzz again if not seen"
                 items={["Off", "2m", "5m", "10m"]}
-                value="5m"
+                value="Off"
                 onPreview={onPreview}
               />
             </SettingRow>
@@ -224,7 +224,7 @@ export function AlertsPane({
             >
               <RowSwitch
                 name="Summary at shift start"
-                checked
+                checked={false}
                 onCheckedChange={() => onPreview("Summary at shift start")}
               />
             </SettingRow>
@@ -447,6 +447,8 @@ export function DisplayPane({
         </div>
 
         <div className={styles.column}>
+          {/* Audit settings-14: Preview controls that do not run read Off, never On. A protection
+              that is not running must not look as if it is. */}
           <Card aria-labelledby="privacy-title">
             <CardHead iconPlain id="privacy-title" icon={EyeOff} title="Privacy" aside={<PreviewTag />} />
             <SettingRow
@@ -457,7 +459,7 @@ export function DisplayPane({
             >
               <RowSwitch
                 name="Initials only on shared screens"
-                checked
+                checked={false}
                 onCheckedChange={() => onPreview("Initials only on shared screens")}
               />
             </SettingRow>
@@ -465,7 +467,7 @@ export function DisplayPane({
               <PreviewSegmented
                 name="Lock after idle"
                 items={["5m", "10m", "15m", "Off"]}
-                value="10m"
+                value="Off"
                 onPreview={onPreview}
               />
             </SettingRow>
@@ -477,7 +479,7 @@ export function DisplayPane({
             >
               <RowSwitch
                 name="Clear session on close"
-                checked
+                checked={false}
                 onCheckedChange={() => onPreview("Clear session on close")}
               />
             </SettingRow>

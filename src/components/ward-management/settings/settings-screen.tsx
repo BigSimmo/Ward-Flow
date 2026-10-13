@@ -59,7 +59,6 @@ import {
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
 import {
-  BED_HOLD_EXPIRY_MINUTES,
   DECISION_TARGET_RANGE_MINUTES,
   DUE_SOON_MINUTES,
   DUE_SOON_RANGE_MINUTES,
@@ -207,11 +206,11 @@ function ruleDiffs(before: WardConfiguration, after: WardConfiguration): string[
   if (a.cap !== b.cap) parts.push(`Wards asked ${a.cap} to ${b.cap}`);
   if (a.hold !== b.hold) parts.push(`Pull hold ${shortDuration(a.hold)} to ${shortDuration(b.hold)}`);
   if (a.morning !== b.morning) parts.push(`Morning count ${clock24(a.morning)} to ${clock24(b.morning)}`);
-  if (a.urgent !== b.urgent) {
-    parts.push(`First warning ${shortDuration(a.urgent)} to ${shortDuration(b.urgent)}`);
-  }
   if (a.soon !== b.soon) {
-    parts.push(`Second warning ${shortDuration(a.soon)} to ${shortDuration(b.soon)}`);
+    parts.push(`Early warning ${shortDuration(a.soon)} to ${shortDuration(b.soon)}`);
+  }
+  if (a.urgent !== b.urgent) {
+    parts.push(`Final warning ${shortDuration(a.urgent)} to ${shortDuration(b.urgent)}`);
   }
   if (a.referralTarget !== b.referralTarget) {
     parts.push(`Referral decision ${shortDuration(a.referralTarget)} to ${shortDuration(b.referralTarget)}`);
@@ -521,6 +520,15 @@ export function SettingsScreen() {
   };
 
   const handleConfirmReset = () => {
+    // Audit settings-18: everything a restore changes can come back from the toast, as a rule save
+    // can. Undo puts the rules back with a second recorded save, so the audit keeps both.
+    const before = {
+      configuration,
+      buzz: audioBuzz,
+      appearance,
+      glare,
+      railOpen,
+    };
     const defaults = defaultWardConfiguration();
     dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: defaults });
     setDraft({ ...defaults });
@@ -530,7 +538,23 @@ export function SettingsScreen() {
     applyGlare(false);
     setRailOpenPreference(true);
     setIsResetModalOpen(false);
-    showToast("Defaults restored and recorded.");
+    toast?.push({
+      tone: "success",
+      title: "Defaults restored and recorded.",
+      undo: {
+        durationMs: UNDO_TOAST_MS,
+        onUndo: () => {
+          dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: before.configuration });
+          setDraft({ ...before.configuration });
+          setAudioBuzz(before.buzz);
+          setAudioBuzzPreference(before.buzz);
+          applyAppearance(before.appearance);
+          applyGlare(before.glare);
+          setRailOpenPreference(before.railOpen);
+          showToast("Settings back as they were. Recorded in the audit.");
+        },
+      },
+    });
   };
 
   /* Find a setting ------------------------------------------------------------------------- */
@@ -792,38 +816,16 @@ export function SettingsScreen() {
               meta="Your defaults, not legal limits"
             />
             <RuleRow
-              setting="first-warning"
-              testId="setting-due-soon-urgent-row"
-              title="First warning"
-              sub="Before a legal due time"
-              subTestId="setting-due-soon-urgent-desc"
-              value={rules.urgent}
-              saved={saved.urgent}
-              display={shortDuration(rules.urgent)}
-              displayTestId="due-soon-urgent-display"
-              noun="first warning before a legal due time"
-              max={clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, rules.soon)}
-              range={{
-                id: "setting-due-soon-urgent",
-                ...DUE_SOON_URGENT_RANGE_MINUTES,
-                minLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.min),
-                maxLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.max),
-              }}
-              onChange={(minutes) => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(minutes, rules.soon) })}
-              onReset={() => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(saved.urgent, rules.soon) })}
-              usedBy="Home, every legal due time"
-            />
-            <RuleRow
               setting="second-warning"
               testId="setting-due-soon-row"
-              title="Second warning"
+              title="Early warning"
               sub="Shown as due soon"
               subTestId="setting-due-soon-desc"
               value={rules.soon}
               saved={saved.soon}
               display={shortDuration(rules.soon)}
               displayTestId="due-soon-display"
-              noun="second warning before a legal due time"
+              noun="early warning before a legal due time"
               range={{
                 id: "setting-due-soon",
                 ...DUE_SOON_RANGE_MINUTES,
@@ -844,7 +846,29 @@ export function SettingsScreen() {
               }
               usedBy="Home, every legal due time"
             />
-            {/* The two warnings on one window, read from the draft: calm, due soon, first warning. */}
+            <RuleRow
+              setting="first-warning"
+              testId="setting-due-soon-urgent-row"
+              title="Final warning"
+              sub="Before a legal due time"
+              subTestId="setting-due-soon-urgent-desc"
+              value={rules.urgent}
+              saved={saved.urgent}
+              display={shortDuration(rules.urgent)}
+              displayTestId="due-soon-urgent-display"
+              noun="final warning before a legal due time"
+              max={clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, rules.soon)}
+              range={{
+                id: "setting-due-soon-urgent",
+                ...DUE_SOON_URGENT_RANGE_MINUTES,
+                minLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.min),
+                maxLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.max),
+              }}
+              onChange={(minutes) => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(minutes, rules.soon) })}
+              onReset={() => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(saved.urgent, rules.soon) })}
+              usedBy="Home, every legal due time"
+            />
+            {/* The two warnings on one window, read from the draft: calm, early warning, final warning. */}
             <div className={styles.cascade} aria-hidden="true">
               <div className={styles.cascadeTrack}>
                 <span style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - rules.soon) }} />
@@ -976,19 +1000,6 @@ export function SettingsScreen() {
                 maxLabel: "4h",
               }}
               onChange={() => onPreview("Ward not answering")}
-              preview
-              previewTag={false}
-            />
-            <RuleRow
-              setting="bed-hold"
-              title="Bed hold expires"
-              sub="After a bed is held"
-              value={BED_HOLD_EXPIRY_MINUTES}
-              saved={BED_HOLD_EXPIRY_MINUTES}
-              display={shortDuration(BED_HOLD_EXPIRY_MINUTES)}
-              noun="bed hold expiry"
-              range={{ min: 60, max: 360, step: 30, minLabel: "1h", maxLabel: "6h" }}
-              onChange={() => onPreview("Bed hold expires")}
               preview
               previewTag={false}
             />
