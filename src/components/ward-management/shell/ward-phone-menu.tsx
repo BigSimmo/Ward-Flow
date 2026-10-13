@@ -663,12 +663,19 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
 
 function ResultRow({ item, onGo }: { item: SearchResultItem; onGo: (item: SearchResultItem) => void }) {
   const nameFor = usePatientNameDisplay();
+  const title = patientResultTitle(item, nameFor);
   return (
     <li>
-      <Link href={item.href} className={styles.row} onClick={() => onGo(item)} data-testid="ward-phone-menu-result">
+      {/* Announce the name as shown, so the discreet form is never read out in full. */}
+      <Link
+        href={item.href}
+        className={styles.row}
+        onClick={() => onGo({ ...item, title })}
+        data-testid="ward-phone-menu-result"
+      >
         <SearchResultIcon kind={item.kind} id={item.id} className={styles.rowIcon} />
         <span className={styles.rowText}>
-          <span className={styles.rowLabel}>{patientResultTitle(item, nameFor)}</span>
+          <span className={styles.rowLabel}>{title}</span>
           {item.meta ? <span className={styles.rowMeta}>{item.meta}</span> : null}
         </span>
         <Chevron />

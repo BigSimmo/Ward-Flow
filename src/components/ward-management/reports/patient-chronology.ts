@@ -8,7 +8,11 @@ import {
 import { formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import { eventHistoryWording, transportDeliveredWording } from "@/components/ward-management/ward-history";
+import {
+  eventHistoryWording,
+  isTransportDelivery,
+  transportDeliveredWording,
+} from "@/components/ward-management/ward-history";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { stepBackReasonLabels, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -461,6 +465,15 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
  * carries none (the session log shows when it was logged in this browser); every other row uses the
  * step's own recorded instant. A job replaced by CANCEL_TRANSPORT appears as its unwind row.
  */
+/*
+ * The officer's Delivered and the ward's arrival are both PATIENT_ARRIVED, often in the same minute.
+ * Keyed apart, a delivery is only ever folded into the delivery row and an arrival into the closure.
+ */
+const OFFICER_DELIVERY_KEY = "PATIENT_ARRIVED:officer";
+function dedupeType(type: string, role: string | null | undefined): string {
+  return isTransportDelivery(type, role) ? OFFICER_DELIVERY_KEY : type;
+}
+
 function transportRows(movement: Movement, record: string, dayZero: Date, wardName: string): RowDraft[] {
   const job = movement.transport;
   if (!job) return [];
@@ -488,7 +501,7 @@ function transportRows(movement: Movement, record: string, dayZero: Date, wardNa
   for (const [action, at] of steps) {
     if (finite(at) === null) continue;
     // The delivery row stands for the officer's PATIENT_ARRIVED, so that session-log entry is not repeated.
-    const eventTypes = officerDelivered && at === job.arrivedAt ? ["PATIENT_ARRIVED"] : undefined;
+    const eventTypes = officerDelivered && at === job.arrivedAt ? [OFFICER_DELIVERY_KEY] : undefined;
     rows.push({ record, recordedAt: finite(at), who: NOT_RECORDED, action, ...(eventTypes ? { eventTypes } : {}) });
   }
   if (job.diversion) {
@@ -673,7 +686,7 @@ function auditRows(
       recordedAt: finite(event.at),
       who: whoLabel(event.actor.role),
       action: `${wording}${outcome}`,
-      eventTypes: [event.action],
+      eventTypes: [dedupeType(event.action, event.actor.role)],
       ...auditBeforeAfter(event),
     });
   }
@@ -732,7 +745,7 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     const record = logRecord(entry, recordIds);
     const at = finite(entry.now);
     if (record === null) continue;
-    if (entry.accepted && seen.has(`${record}@${at}@${entry.type}`)) continue;
+    if (entry.accepted && seen.has(`${record}@${at}@${dedupeType(entry.type, entry.role)}`)) continue;
     const wording = eventHistoryWording(entry.type, entry.role, wardOfRecord(record)) ?? entry.type;
     const action = entry.accepted ? wording : `${wording} (refused)`;
     drafts.push({

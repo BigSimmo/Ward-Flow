@@ -72,6 +72,7 @@ import {
   type HealthService,
   type Movement,
   type Referral,
+  REFERRAL_HISTORY_LIMITS,
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import {
@@ -1332,17 +1333,25 @@ function WardReferralDrawerContent({
   // reads "0 items left" while Confirm refuses for an empty contact field (`itemsLeft` below).
   const itemsTotal =
     4 + (sourceKind === "community" ? 3 : 2) + documentationItems(documentation) + 1 + CONTACT_FIELD_COUNT;
+  // The saved history carries the unidentified label ahead of the patient story, so the two together
+  // must fit the history limit or the reducer refuses the referral with no visible reason.
+  function storyError() {
+    const label = unidentified?.trim();
+    const prefix = !patientRecord && label ? UNIDENTIFIED_REFERRAL_PREFIX.length + label.length + 1 : 0;
+    const room = REFERRAL_HISTORY_LIMITS.history - prefix;
+    return clinicalSummary.length > room ? `Shorten the patient story to ${room} characters or fewer.` : null;
+  }
   function sectionFor(error: string | null): DrawerSection | null {
     if (!error) return null;
     if (patientError() === error) return "patient";
-    if (referralError() === error) return "referral";
+    if (referralError() === error || storyError() === error) return "referral";
     if (documentationError(documentation) === error) return "documentation";
     return "placement";
   }
   function goNext(section: "patient" | "referral" | "documentation") {
     const error =
       patientError() ??
-      (section !== "patient" ? referralError() : null) ??
+      (section !== "patient" ? (referralError() ?? storyError()) : null) ??
       (section === "documentation" ? documentationError(documentation) : null);
     setFlowError(error);
     if (error) {
@@ -1364,6 +1373,7 @@ function WardReferralDrawerContent({
     const error =
       patientError() ??
       referralError() ??
+      storyError() ??
       documentationError(documentation) ??
       (selectedDestinations.length ? null : "Select at least one referral location.");
     setFlowError(error);
@@ -1380,7 +1390,11 @@ function WardReferralDrawerContent({
     event.preventDefault();
     if (sendPending || sentReferralId || !sendGate.allowed) return;
     const validation =
-      patientError() ?? referralError() ?? documentationError(documentation) ?? referralContactError(contact);
+      patientError() ??
+      referralError() ??
+      storyError() ??
+      documentationError(documentation) ??
+      referralContactError(contact);
     if (validation) {
       setFlowError(validation);
       setAttempted((current) => ({ ...current, contact: true }));

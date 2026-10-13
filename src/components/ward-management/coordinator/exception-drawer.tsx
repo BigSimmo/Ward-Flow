@@ -213,13 +213,20 @@ export function ExceptionDrawer({
                     (item.movementId ? { movementId: item.movementId } : { id: item.admissionId }),
                 );
                 const whoName = who.displayName === "Unknown Patient" ? null : nameFor(who.displayName, who.umrn);
+                const detailText = umrnText(item.detail);
+                // A planned admission's detail carries no movement id, so add the known UMRN here,
+                // unless the discreet form or the detail already shows it.
+                const whoText =
+                  whoName && who.umrn && !whoName.includes(who.umrn) && !detailText.includes(who.umrn)
+                    ? `${whoName} · ${who.umrn}`
+                    : whoName;
                 const content = (
                   <>
                     <span className={styles.registerMain}>
                       <span className={styles.registerTitle}>{commandInboxTitle(item)}</span>
                       <span className={styles.registerSub}>
-                        {whoName ? `${whoName} · ` : ""}
-                        {umrnText(item.detail)} · {item.owner}
+                        {whoText ? `${whoText} · ` : ""}
+                        {detailText} · {item.owner}
                       </span>
                       {silenceCopy !== undefined ? (
                         <span className={styles.registerNote} data-testid={`ward-exception-silence-${item.id}`}>
