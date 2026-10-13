@@ -31,7 +31,9 @@ import { activeActNowItems } from "@/components/ward-management/ward-act-now-ite
 import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
+  patientResultTitle,
   SearchResultIcon,
   smartSearchGroups,
   type SearchResultGroup,
@@ -660,12 +662,13 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
 }
 
 function ResultRow({ item, onGo }: { item: SearchResultItem; onGo: (item: SearchResultItem) => void }) {
+  const nameFor = usePatientNameDisplay();
   return (
     <li>
       <Link href={item.href} className={styles.row} onClick={() => onGo(item)} data-testid="ward-phone-menu-result">
         <SearchResultIcon kind={item.kind} id={item.id} className={styles.rowIcon} />
         <span className={styles.rowText}>
-          <span className={styles.rowLabel}>{item.title}</span>
+          <span className={styles.rowLabel}>{patientResultTitle(item, nameFor)}</span>
           {item.meta ? <span className={styles.rowMeta}>{item.meta}</span> : null}
         </span>
         <Chevron />
