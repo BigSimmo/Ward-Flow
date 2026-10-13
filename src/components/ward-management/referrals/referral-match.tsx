@@ -1605,6 +1605,7 @@ export function ReferralMatchView({
                 className={ph.pri}
                 data-testid="ward-referral-match-phone-accept"
                 aria-disabled={pick === undefined ? "true" : undefined}
+                aria-describedby={pick === undefined ? "ward-referral-match-phone-accept-hint" : undefined}
                 title={pick === undefined ? "No unit to accept at in this network." : undefined}
                 onClick={
                   pick === undefined
@@ -1616,6 +1617,11 @@ export function ReferralMatchView({
               >
                 <span className={ph.ell}>{pick ? `Accept at ${pick.unit.name}` : "Accept"}</span>
               </button>
+              {pick === undefined ? (
+                <span id="ward-referral-match-phone-accept-hint" className="sr-only">
+                  Choose a ward above to accept this referral.
+                </span>
+              ) : null}
             </>
           )}
         </div>

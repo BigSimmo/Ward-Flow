@@ -659,6 +659,22 @@ export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps
   );
 }
 
+let broadcastChannelSingleton: BroadcastChannel | null = null;
+
+function getBroadcastChannel(): BroadcastChannel | null {
+  if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") {
+    return null;
+  }
+  if (!broadcastChannelSingleton) {
+    try {
+      broadcastChannelSingleton = new BroadcastChannel("ward-flow-sync");
+    } catch {
+      broadcastChannelSingleton = null;
+    }
+  }
+  return broadcastChannelSingleton;
+}
+
 function WardFlowWorld({
   children,
   initialNow,
@@ -740,11 +756,10 @@ function WardFlowWorld({
         return;
       }
       dispatchContainer(event);
-      if (typeof window !== "undefined" && typeof window.BroadcastChannel !== "undefined") {
+      const channel = getBroadcastChannel();
+      if (channel) {
         try {
-          const channel = new BroadcastChannel("ward-flow-sync");
           channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType: event.type });
-          channel.close();
         } catch {
           // BroadcastChannel unavailable in this environment
         }
@@ -871,16 +886,17 @@ function WardFlowWorld({
   }, [initialNow, mountedAtAbsolute, shared.enabled]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
+    const channel = getBroadcastChannel();
+    if (!channel) return;
+    const handleMessage = (messageEvent: MessageEvent) => {
+      if (messageEvent.data?.type === "WARD_FLOW_DISPATCH") {
+        setTick((tick) => tick + 1);
+      }
+    };
     try {
-      const channel = new BroadcastChannel("ward-flow-sync");
-      channel.onmessage = (messageEvent) => {
-        if (messageEvent.data?.type === "WARD_FLOW_DISPATCH") {
-          setTick((tick) => tick + 1);
-        }
-      };
+      channel.addEventListener("message", handleMessage);
       return () => {
-        channel.close();
+        channel.removeEventListener("message", handleMessage);
       };
     } catch {
       return undefined;
@@ -962,7 +978,13 @@ function WardFlowWorld({
       return;
     }
     if (storageUnavailable) return;
-    if (!tryWriteDemoState(state, dayZero, now, mountedAtAbsolute + Math.max(0, elapsed))) setStorageUnavailable(true);
+    const timer = setTimeout(() => {
+      if (!tryWriteDemoState(state, dayZero, now, mountedAtAbsolute + Math.max(0, elapsed)))
+        setStorageUnavailable(true);
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [
     state,
     container.typedTextSeen,

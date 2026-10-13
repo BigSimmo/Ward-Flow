@@ -4,6 +4,12 @@ import { describe, expect, it } from "vitest";
 import { searchPatients } from "@/components/ward-management/ward-derivations";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import {
+  isReferralWithdrawnByReferrer,
+  referralStatusDisplay,
+  decidedReferrals,
+  referralDecidedAt,
+} from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -85,5 +91,43 @@ describe("WF-13 T11 — the patient-search referral figure drops when a referral
     expect(after.rejections.length, "the withdrawal itself was rejected").toBe(seed.rejections.length);
 
     expect(searchReferralCount(after)).toBe(before - 1);
+  });
+});
+
+describe("A3-8 & A3-9: referral status display badges and decided tracking", () => {
+  it("badges withdrawn referral as 'Withdrawn by Referrer' and includes in decidedReferrals", () => {
+    const seed = seedWardFlowState();
+    const beforeRef = seed.referrals.find((r) => r.id === REFERRAL_ID)!;
+    expect(isReferralWithdrawnByReferrer(beforeRef)).toBe(false);
+
+    const after = withdraw(seed, REFERRAL_ID);
+    const withdrawnRef = after.referrals.find((r) => r.id === REFERRAL_ID)!;
+    expect(isReferralWithdrawnByReferrer(withdrawnRef)).toBe(true);
+    expect(referralStatusDisplay(withdrawnRef)).toBe("Withdrawn by Referrer");
+
+    // Decided referrals includes withdrawn referrals
+    const decided = decidedReferrals(after.referrals);
+    expect(decided.some((r) => r.id === REFERRAL_ID)).toBe(true);
+
+    // referralDecidedAt falls back to withdrawnAt timestamp
+    const decidedAt = referralDecidedAt(withdrawnRef);
+    expect(decidedAt).toBe(NOW_ANCHOR);
+  });
+
+  it("badges declined referral as 'Declined by all receiving wards'", () => {
+    const seed = seedWardFlowState();
+    const mockDeclinedRef = {
+      ...seed.referrals[0],
+      destinations: [
+        {
+          ...seed.referrals[0].destinations[0],
+          state: "declined" as const,
+          declineReason: "no_suitable_bed" as const,
+          decidedAt: NOW_ANCHOR,
+        },
+      ],
+    };
+    expect(isReferralWithdrawnByReferrer(mockDeclinedRef)).toBe(false);
+    expect(referralStatusDisplay(mockDeclinedRef)).toBe("Declined by all receiving wards");
   });
 });

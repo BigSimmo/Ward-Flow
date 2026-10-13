@@ -37,7 +37,28 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/monochrome-192", type: "image/png", sizes: "192x192", purpose: "monochrome" },
       { src: "/icons/monochrome-512", type: "image/png", sizes: "512x512", purpose: "monochrome" },
     ],
-    // No install shortcuts: the four from the former clinical app (Ask, Documents, Medication, Differentials)
-    // pointed at pages that left with it on 25-26 September 2026 (Josh's go-ahead, 26 Sept).
+    shortcuts: [
+      {
+        name: "Coordinator Hub",
+        short_name: "Coordinator Hub",
+        description: "Coordinator Hub bed management",
+        url: "/mockups/ward-flow/coordinator",
+        icons: [{ src: "/icons/icon-192", sizes: "192x192" }],
+      },
+      {
+        name: "Capacity Matrix",
+        short_name: "Capacity Matrix",
+        description: "Capacity Matrix statewide bed overview",
+        url: "/mockups/ward-flow/capacity",
+        icons: [{ src: "/icons/icon-192", sizes: "192x192" }],
+      },
+      {
+        name: "ED Psychiatry",
+        short_name: "ED Psychiatry",
+        description: "ED Psychiatry emergency department flow",
+        url: "/mockups/ward-flow/ed",
+        icons: [{ src: "/icons/icon-192", sizes: "192x192" }],
+      },
+    ],
   };
 }

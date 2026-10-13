@@ -2203,5 +2203,66 @@ describe("bed release privacy", () => {
         expect(newNotices.some((n) => n.to.role === "ward" && n.to.placeId === previousUnit)).toBe(true);
       }
     });
+
+    it("S1-9 to S1-11: refuses CHANGE_URGENCY when urgency is not 1, 2, or 3", () => {
+      const seeded = seedWardFlowState();
+      const target = seeded.movements[0];
+      for (const invalidUrgency of [0, 4, -1, 99]) {
+        const after = wardFlowReducer(seeded, {
+          type: "CHANGE_URGENCY",
+          role: "coordinator",
+          now: NOW,
+          movementId: target.id,
+          urgency: invalidUrgency as unknown as 1 | 2 | 3,
+          reason: "reassessed",
+        });
+        expect(after.rejections).toHaveLength(1);
+        expect(after.rejections[0].reason).toBe("CHANGE_URGENCY urgency must be 1, 2 or 3");
+        expect(after.movements.find((m) => m.id === target.id)!.urgency).toBe(target.urgency);
+      }
+    });
+
+    it("S1-5: RECORD_EXAMINATION with outcome 'revoked' clears candidate target wards on attached referral and unlists intake queues", () => {
+      const seeded = seedWardFlowState();
+      const movement = seeded.movements.find(
+        (m) => m.stage === "destination_review" || m.stage === "placement_requested",
+      )!;
+      expect(movement).toBeDefined();
+
+      const stateWithAttachedReferral: ReturnType<typeof seedWardFlowState> = {
+        ...seeded,
+        movements: seeded.movements.map((m) =>
+          m.id === movement.id
+            ? {
+                ...m,
+                referredUnitIds: ["scgh-adult-open", "fsh-adult-open"],
+                acceptedUnitId: "scgh-adult-open",
+                referral: {
+                  targetUnitIds: ["scgh-adult-open", "fsh-adult-open"],
+                  notes: "Urgent psychiatric review",
+                },
+              }
+            : m,
+        ),
+      };
+
+      const after = wardFlowReducer(stateWithAttachedReferral, {
+        type: "RECORD_EXAMINATION",
+        role: "ed",
+        now: NOW,
+        movementId: movement.id,
+        outcome: "revoked",
+      });
+
+      expect(after.rejections).toHaveLength(0);
+      const updated = after.movements.find((m) => m.id === movement.id)!;
+      expect(updated.examination).toEqual({
+        at: NOW,
+        outcome: "revoked",
+      });
+      expect(updated.referral?.targetUnitIds).toEqual([]);
+      expect(updated.referredUnitIds).toEqual([]);
+      expect(updated.acceptedUnitId).toBeUndefined();
+    });
   });
 });

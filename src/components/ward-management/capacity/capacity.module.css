@@ -286,12 +286,15 @@
 }
 
 /* Bed map and side column */
-.capacityGrid {
+.capacityGrid,
+.matrixContainer,
+.bedSection {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 344px;
   align-items: start;
   gap: var(--wf-s-3);
   min-width: 0;
+  min-height: 480px;
 }
 
 .capacityPanelBody {
@@ -796,6 +799,10 @@
   color: var(--wf-ink-1);
   white-space: nowrap;
   cursor: pointer;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    background-color 150ms ease;
 }
 
 .fullscreenButton:hover,

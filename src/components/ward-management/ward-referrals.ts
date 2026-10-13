@@ -162,6 +162,35 @@ export function referralState(referral: Referral): ReferralState {
 }
 
 /**
+ * Whether every destination on this referral was withdrawn by the referring site (A3-8, A3-9).
+ * A referral whose destinations were all withdrawn by the referrer is settled rather than
+ * awaiting an answer.
+ */
+export function isReferralWithdrawnByReferrer(referral: Referral): boolean {
+  if (referral.destinations.length === 0) return false;
+  if (referral.destinations.some((addressing) => addressing.state === "accepted")) return false;
+  return referral.destinations.every((addressing) => addressing.withdrawnAt !== undefined);
+}
+
+/**
+ * Human-readable status badge text for a referral on tracking/decided boards (A3-8, A3-9).
+ * Distinguishes referrals withdrawn by the referring site from those declined by receiving wards.
+ */
+export function referralStatusDisplay(referral: Referral): string {
+  if (isReferralWithdrawnByReferrer(referral)) {
+    return "Withdrawn by Referrer";
+  }
+  const state = referralState(referral);
+  if (state === "declined") {
+    return "Declined by all receiving wards";
+  }
+  if (state === "accepted") {
+    return "Accepted";
+  }
+  return "Queued";
+}
+
+/**
  * WF-13 — ONE DESTINATION, STILL AWAITING AN ANSWER. `state === "queued"` alone is not enough.
  *
  * `RECORD_REFERRER_WITHDRAWAL` stamps `withdrawnAt` on every destination still `queued` at that
@@ -192,7 +221,7 @@ export function isAwaitingAnswer(addressing: ReferralAddressing): boolean {
  */
 export function referralDecidedAt(referral: Referral): Instant | undefined {
   const times = referral.destinations
-    .map((addressing) => addressing.decidedAt)
+    .map((addressing) => addressing.decidedAt ?? addressing.withdrawnAt)
     .filter((at): at is Instant => at !== undefined);
   return times.length > 0 ? Math.max(...times) : undefined;
 }
@@ -716,7 +745,9 @@ export function recentlyDecidedReferrals(referrals: Referral[]): Referral[] {
  * board the same day (census §8).
  */
 export function decidedReferrals(referrals: Referral[]): Referral[] {
-  return referrals.filter((referral) => referralState(referral) !== "queued");
+  return referrals.filter(
+    (referral) => referralState(referral) !== "queued" || isReferralWithdrawnByReferrer(referral),
+  );
 }
 
 /**

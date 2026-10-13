@@ -20,7 +20,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useRef, useState, type Dispatch } from "react";
+import { useEffect, useRef, useState, type Dispatch } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
@@ -186,7 +186,18 @@ export function WardTasksDrawer({
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
-  useWardModalFocus(true, drawerRef, onClose);
+  useWardModalFocus(Boolean(withBackdrop), drawerRef, onClose);
+  useEffect(() => {
+    if (withBackdrop) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented) return;
+      if (e.key === "Escape") {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [withBackdrop, onClose]);
   // Phone (v10 Tasks sheet): a plain list, due first. A row opens in place to show its actions.
   const isPhone = useIsPhone();
 

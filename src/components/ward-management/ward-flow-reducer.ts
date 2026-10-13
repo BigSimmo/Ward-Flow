@@ -3932,6 +3932,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // about. Cleared whenever we are on this auto-release branch (post-collection retains
         // above); stage alone must not keep a stale join after a step-back.
         admissionId: undefined,
+        // S1-5: When examination is revoked, clear candidate target wards on the attached
+        // referral and unlist referred wards so patient does not remain in intake queues.
+        ...(event.outcome === "revoked"
+          ? {
+              referredUnitIds: [],
+              acceptedUnitId: undefined,
+              referral: movement.referral ? { ...movement.referral, targetUnitIds: [] } : movement.referral,
+            }
+          : {}),
       };
       const next = replaceMovement(withoutPulledBed, movement.id, updated);
       // Item 48, Q3 (owner, 2026-09-17): the accepting ward's other branch — the bed has already
@@ -8188,6 +8197,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) {
         return reject(state, event, `cannot change urgency for a closed movement (${movement.closure.reason})`);
+      }
+      if (![1, 2, 3].includes(event.urgency)) {
+        return reject(state, event, `CHANGE_URGENCY urgency must be 1, 2 or 3`);
       }
       if (!URGENCY_CHANGE_REASONS.includes(event.reason)) {
         /*

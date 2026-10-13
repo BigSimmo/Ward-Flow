@@ -370,30 +370,38 @@ export function PatientTransitOperations({
       )}
       <div className={styles.cardFooter}>
         <span>{selectedTargets.length} wards selected</span>
-        <button
-          type="button"
-          className={styles.primary}
-          disabled={
-            !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
-          }
-          onClick={() => {
-            setOverrideUnitIds(selectedTargets);
-            noteAttempt();
-            dispatch({
-              type: "REFER_TO_UNITS",
-              role: "coordinator",
-              now,
-              movementId: movement.id,
-              unitIds: selectedTargets,
-              ...(needsGenderPlacement && genderReason && wardChecked
-                ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
-                : {}),
-            });
-            setSelected([]);
-          }}
-        >
-          Refer to selected wards <ArrowRight size={16} aria-hidden="true" />
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+          <button
+            type="button"
+            className={styles.primary}
+            aria-describedby={selectedTargets.length === 0 ? "ward-refer-selected-disabled-hint" : undefined}
+            disabled={
+              !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
+            }
+            onClick={() => {
+              setOverrideUnitIds(selectedTargets);
+              noteAttempt();
+              dispatch({
+                type: "REFER_TO_UNITS",
+                role: "coordinator",
+                now,
+                movementId: movement.id,
+                unitIds: selectedTargets,
+                ...(needsGenderPlacement && genderReason && wardChecked
+                  ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
+                  : {}),
+              });
+              setSelected([]);
+            }}
+          >
+            Refer to selected wards <ArrowRight size={16} aria-hidden="true" />
+          </button>
+          {selectedTargets.length === 0 && (
+            <span id="ward-refer-selected-disabled-hint" className={styles.deckHint} role="status">
+              Select at least one eligible ward above to refer.
+            </span>
+          )}
+        </div>
       </div>
     </section>
   );

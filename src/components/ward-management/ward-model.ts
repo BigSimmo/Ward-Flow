@@ -1328,6 +1328,10 @@ export type Movement = {
    */
   referralId?: string;
   /**
+   * Attached referral record or intake candidate targets (S1-5).
+   */
+  referral?: { targetUnitIds?: string[]; [key: string]: unknown };
+  /**
    * WHY THERE IS NO `referralId`, when somebody has said why — see `MovementReferralAbsence`.
    *
    * ⚠️ **MEANINGLESS BESIDE A SET `referralId`, AND THE TYPE CANNOT STOP THAT.** The two fields

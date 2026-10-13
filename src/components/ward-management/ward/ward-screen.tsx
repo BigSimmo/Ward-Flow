@@ -531,6 +531,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented) return;
       if (e.key === "Escape") {
         if (selectedBed !== null) {
           closeBedDrawer();
@@ -1114,7 +1115,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         : null;
     const expDays =
       admission?.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
-        ? Math.floor((admission.expectedDischargeAt - now) / 1440)
+        ? dayOf(admission.expectedDischargeAt) - dayOf(now)
         : null;
     const tentDiag = admission?.tentativeDiagnosis
       ? (tentativeDiagnosisPhrase(admission.tentativeDiagnosis) ?? undefined)
