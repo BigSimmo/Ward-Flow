@@ -41,9 +41,9 @@ export function redactLogValue(value: unknown): unknown {
       .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, "[email]")
       // Redact health record identifiers (UMRN/MRN), Medicare numbers, and Australian phone numbers (A4-10)
       .replace(/\b(?:UMRN|MRN|UR[N#]?)\s*[:#]?\s*\d{6,9}\b/gi, "[record-id]")
-      .replace(/\b[2-6]\d{3}[ -]?\d{5}[ -]?\d\b/g, "[medicare]")
+      .replace(/\b[2-6]\d{3}[ -]?\d{5}[ -]?\d(?:[ -]?\d)?\b/g, "[medicare]")
       .replace(
-        /\b(?:\+?61\s*4\d{2}[ -]?\d{3}[ -]?\d{3}|04\d{2}[ -]?\d{3}[ -]?\d{3}|\(?08\)?\s*\d{4}[ -]?\d{4})\b/g,
+        /(?:\+?61\s*\(?[2378]\)?\s*\d{4}[ -]?\d{4}|\(?0[2378]\)?\s*\d{4}[ -]?\d{4}|\+?61\s*4\d{2}[ -]?\d{3}[ -]?\d{3}|04\d{2}[ -]?\d{3}[ -]?\d{3})/g,
         "[phone]",
       )
       .slice(0, 500)
