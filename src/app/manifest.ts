@@ -42,7 +42,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: "Coordinator Hub",
         short_name: "Coordinator Hub",
         description: "Coordinator Hub bed management",
-        url: "/mockups/ward-flow/coordinator",
+        url: "/mockups/ward-flow",
         icons: [{ src: "/icons/icon-192", sizes: "192x192" }],
       },
       {
