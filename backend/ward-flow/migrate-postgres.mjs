@@ -53,7 +53,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       "Unsupported database migration version",
     ]);
     const reason = safeReasons.has(error?.message) ? `: ${error.message}` : "";
-    console.error(`PostgreSQL migration refused or unavailable; inspect the private administrator configuration${reason}`);
+    console.error(
+      `PostgreSQL migration refused or unavailable; inspect the private administrator configuration${reason}`,
+    );
     process.exitCode = 1;
   } finally {
     await pool?.end();
