@@ -633,7 +633,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   return (
     <div className={styles.screen} data-testid="ward-legal-forms-page" data-ward-design="v8">
       <main id="main-content" className={styles.main}>
-        <h1 className={styles.srOnly}>Forms</h1>
+        <h1 className={styles.srOnly}>Legal forms</h1>
         <p className={styles.srOnly}>Recorded forms and deadlines for open movements.</p>
         <span className={`${styles.prototypeBadge} ${styles.srOnly}`} data-ward-type-floor="badge">
           Synthetic prototype
@@ -797,7 +797,12 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               <Hero
                 className={styles.heroBand}
                 eyebrow="Mental Health Act forms"
-                title={`${rows.length} forms on open moves`}
+                title={
+                  <>
+                    <SrOnly>Legal forms, </SrOnly>
+                    {`${rows.length} forms on open moves`}
+                  </>
+                }
                 titleMeta={
                   voluntary > 0 ? <span className={styles.heroMeta}>{voluntary} voluntary, no form</span> : undefined
                 }

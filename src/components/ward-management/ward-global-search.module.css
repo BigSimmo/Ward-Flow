@@ -235,6 +235,16 @@
   animation: wgsFade var(--wf-m-base) var(--wf-ease);
 }
 
+/* Josh, 13 Oct 2026: opened from a header kept live over a sheet below it (phone New referral),
+   the palette sits above that sheet rather than behind it. */
+.scrim[data-above-sheets] {
+  z-index: calc(var(--z-modal, 100) + 1);
+}
+
+.popup[data-above-sheets] {
+  z-index: calc(var(--z-modal, 100) + 2);
+}
+
 .popup {
   position: fixed;
   z-index: 41;

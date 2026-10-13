@@ -1,0 +1,38 @@
+/* shell-10: the in-shell page placeholder while a route loads. Tokens only, no new colour. */
+.main {
+  display: grid;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+}
+
+.status {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: 0.8125rem;
+}
+
+.block {
+  min-height: 6rem;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}
+
+.blockTall {
+  min-height: 14rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .block {
+    animation: wf-loading-pulse 1.2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes wf-loading-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.55;
+  }
+}

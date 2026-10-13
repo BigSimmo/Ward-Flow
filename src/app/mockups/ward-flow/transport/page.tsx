@@ -12,7 +12,10 @@ import { redirect } from "next/navigation";
  * unaffected by this redirect — Next.js resolves it as its own page.tsx, not as a child of this
  * one. It is a different person doing four things on a phone; the design lock is explicit that
  * folding it in would ruin the one screen that must work one-handed.
+ *
+ * shell-19 (13 Oct 2026): Menu's "Transport" opens `/transport/officer`, so an old `/transport`
+ * link now lands there too, not on Movements.
  */
 export default function WardTransportRedirect() {
-  redirect("/mockups/ward-flow/movements");
+  redirect("/mockups/ward-flow/transport/officer");
 }

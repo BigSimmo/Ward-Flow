@@ -208,39 +208,40 @@ describe("the settings screen's appearance control", () => {
   });
 });
 
-describe("the settings screen's Glare mode switch", () => {
-  function glareSwitch() {
-    return within(screen.getByTestId("ward-settings-glare")).getByRole("switch", { name: "Glare mode" });
+// Audit settings-15 (Josh, 13 Oct 2026): Glare is a fourth Theme choice, so Theme never reads Dark
+// while the page is in Glare's light.
+describe("the settings screen's Glare theme choice", () => {
+  function themeRadio(name: string) {
+    return within(screen.getByTestId("ward-settings-appearance")).getByRole("radio", { name });
   }
 
-  it("sits beside the theme control with its plain hint", () => {
+  it("offers Auto, Light, Dark and Glare in one Theme control, with no separate Glare switch", () => {
     renderSettings();
-    const row = screen.getByTestId("ward-settings-glare");
-    expect(within(row).getAllByText("Glare mode").length, "no visible Glare mode label").toBeGreaterThan(0);
-    expect(within(row).getByText("Stronger contrast for bright rooms")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-settings-appearance").nextElementSibling).toBe(row);
-    expect(glareSwitch().getAttribute("aria-checked")).toBe("false");
+    const names = within(screen.getByTestId("ward-settings-appearance"))
+      .getAllByRole("radio")
+      .map((radio) => radio.textContent);
+    expect(names).toEqual(["Auto", "Light", "Dark", "Glare"]);
+    expect(screen.queryByRole("switch", { name: "Glare mode" })).toBeNull();
   });
 
-  it("turns Glare mode on and off through its own key, leaving the theme alone", () => {
+  it("turns Glare on through its own key and marks Glare, not Dark, as the theme", () => {
     renderSettings();
-    fireEvent.click(within(screen.getByTestId("ward-settings-appearance")).getByRole("radio", { name: "Dark" }));
-
-    fireEvent.click(glareSwitch());
+    fireEvent.click(themeRadio("Dark"));
+    fireEvent.click(themeRadio("Glare"));
     expect(document.documentElement.getAttribute("data-mode"), "Glare did not reach the root").toBe("glare");
     expect(window.localStorage.getItem(GLARE_STORAGE_KEY)).toBe("on");
-    expect(glareSwitch().getAttribute("aria-checked")).toBe("true");
-    expect(window.localStorage.getItem("clinical-kb-theme"), "Glare changed the theme choice").toBe("dark");
+    expect(themeRadio("Glare").getAttribute("aria-checked")).toBe("true");
+    expect(themeRadio("Dark").getAttribute("aria-checked")).toBe("false");
 
-    fireEvent.click(glareSwitch());
-    expect(document.documentElement.hasAttribute("data-mode"), "Glare stayed on after off").toBe(false);
+    fireEvent.click(themeRadio("Dark"));
+    expect(document.documentElement.hasAttribute("data-mode"), "Glare stayed on after Dark").toBe(false);
     expect(window.localStorage.getItem(GLARE_STORAGE_KEY)).toBeNull();
-    expect(glareSwitch().getAttribute("aria-checked")).toBe("false");
+    expect(themeRadio("Dark").getAttribute("aria-checked")).toBe("true");
   });
 
   it("follows a Glare change made from anywhere else", () => {
     renderSettings();
     act(() => applyGlare(true));
-    expect(glareSwitch().getAttribute("aria-checked"), "the switch did not follow the store").toBe("true");
+    expect(themeRadio("Glare").getAttribute("aria-checked"), "the theme did not follow the store").toBe("true");
   });
 });

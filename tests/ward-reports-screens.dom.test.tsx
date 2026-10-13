@@ -107,6 +107,8 @@ describe("read-only report screens", () => {
     );
     try {
       inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+      // Ops-19: the hero repeats no count the source tabs already carry.
+      expect(screen.queryByText("From records")).toBeNull();
       const filters = screen.getByTestId("ward-chronology-phone-filters");
       expect(filters).toHaveTextContent("Every record kind · Bed coordinator");
       fireEvent.click(within(filters).getByRole("button"));
@@ -120,6 +122,30 @@ describe("read-only report screens", () => {
       vi.unstubAllGlobals();
     }
   });
+
+  // Renders every synthetic patient's chronology in turn; slower CI runners need the headroom.
+  it("lists patients Family, Given in family-name order, and groups each board day once (ops-24, ops-18)", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    inProvider(<PatientChronologyScreen />);
+    const picker = screen.getByTestId("ward-chronology-patient") as HTMLSelectElement;
+    const options = [...picker.options].filter((option) => option.value !== "");
+    expect(options.length).toBeGreaterThan(1);
+    const names = options.map((option) => option.textContent!.split(" · ")[0]!);
+    for (const name of names) expect(name).toMatch(/^[^,]+, [^,]+$/u);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+    // Every day heading appears once per patient, whatever the device's time zone.
+    let headings = 0;
+    for (const option of options) {
+      fireEvent.change(picker, { target: { value: option.value } });
+      // A plain selector, not *ByRole: role queries over every patient's table took minutes in CI.
+      const days = Array.from(document.querySelectorAll('[scope="rowgroup"]')).map(
+        (cell) => cell.firstElementChild?.firstChild?.textContent ?? "",
+      );
+      expect(new Set(days).size, `${option.value}: ${days.join(" | ")}`).toBe(days.length);
+      headings += days.length;
+    }
+    expect(headings).toBeGreaterThan(options.length);
+  }, 90_000);
 
   it("asks for a patient before showing any chronology", () => {
     inProvider(<PatientChronologyScreen />);
@@ -143,6 +169,40 @@ describe("read-only report screens", () => {
     expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(/^Taken .* does not update while open$/u);
     expect(screen.getByTestId("ward-downtime-beds")).toBeTruthy();
     expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);
+  });
+
+  it("on a phone prints all four full tables, whichever section is open", () => {
+    route.pathname = "/mockups/ward-flow/reports/downtime";
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      inProvider(<DowntimePackScreen />);
+      // Ops-20: the counts sit once, in the section control, never repeated as hero figures.
+      expect(screen.queryByText("Still in ED")).toBeNull();
+      expect(screen.getByRole("radiogroup", { name: "Downtime pack section" })).toBeTruthy();
+      const printPack = within(screen.getByTestId("ward-downtime-print-pack"));
+      const pack = lastDowntimePack();
+      expect(pack).not.toBeNull();
+      expect(printPack.getByTestId("ward-downtime-beds")).toBeTruthy();
+      const ed = printPack.getByTestId("ward-downtime-ed");
+      expect(within(ed).getAllByRole("row")).toHaveLength(pack!.edQueue.length + 1);
+      expect(within(ed).getByRole("columnheader", { name: "Legal status" })).toBeTruthy();
+      expect(within(printPack.getByTestId("ward-downtime-moves")).getAllByRole("row")).toHaveLength(
+        pack!.pendingMoves.length + 1,
+      );
+      expect(within(printPack.getByTestId("ward-downtime-legal")).getAllByRole("row")).toHaveLength(
+        pack!.legalForms.length + 1,
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("reads the coordinator audit only on a coordinator route, and says so elsewhere", () => {

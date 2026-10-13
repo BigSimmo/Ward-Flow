@@ -1,4 +1,5 @@
 "use client";
+import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { queueWaitThresholds } from "@/components/ward-management/coordinator/priority-queue";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
@@ -1690,16 +1691,13 @@ export function EdScreen({ edId }: EdScreenProps) {
     return (
       <div className={styles.screen} data-testid="ward-ed-screen">
         <main id="main-content" className={styles.main}>
-          <h1 className={styles.notFoundHeading}>Emergency department not found</h1>
-          <p className={styles.notFoundBody} data-testid="ward-ed-unresolved">
-            No synthetic emergency department matches &ldquo;{edId}&rdquo;. It may have been renamed or removed, or the
-            id in the address is incorrect — this never falls back to a different department.
-          </p>
-          <div className={styles.recoveryContainer}>
-            <Link href="/mockups/ward-flow" className={styles.recoveryLink}>
-              Return to Ward Flow Dashboard
-            </Link>
-          </div>
+          <WardNotFoundBody
+            title="Emergency department not found"
+            testId="ward-ed-unresolved"
+            list={{ href: "/mockups/ward-flow/ed", label: "All emergency departments" }}
+          >
+            No emergency department matches this link. It never falls back to a different department.
+          </WardNotFoundBody>
         </main>
       </div>
     );
