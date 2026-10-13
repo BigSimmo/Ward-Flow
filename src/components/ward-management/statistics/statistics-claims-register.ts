@@ -977,7 +977,10 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
       // Re-read 17 Sept 2026: still true. The filter moved into a named const when the last-decline blocker
       // fix landed; the decline still removes the unit, appends to declines and stays at destination_review.
       "const remainingReferredUnitIds = movement.referredUnitIds.filter((unitId) => unitId !== event.unitId); " +
+      "// S1-7: a real decline ends this ward's waitlist entry too. " +
+      // Re-read 13 Oct 2026: still true. Review finding S1-7 added the waitlist line between them.
       "const updated: Movement = { ...movement, referredUnitIds: remainingReferredUnitIds, " +
+      "waitlistedUnitIds: waitlistWithout(movement, event.unitId), " +
       "declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }], " +
       'stage: "destination_review",',
     falsifiedBy: {

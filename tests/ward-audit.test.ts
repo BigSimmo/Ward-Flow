@@ -409,7 +409,21 @@ describe("session audit capture and review", () => {
       unitIds: ["rph-adult-secure"],
       overrideReason: OVERRIDE_REASONS[0],
     });
-    expect(referred.auditEvents[0]).toMatchObject({ outcome: "accepted", details: { overrideFactRecorded: true } });
+    // Review finding S1-6 (13 Oct 2026): rph-adult-secure passes every gate, so the supplied reason
+    // records no override fact; a ward that needs the reason (scgh-adult-open) does record one.
+    expect(referred.auditEvents[0]).toMatchObject({ outcome: "accepted", details: { overrideFactRecorded: false } });
+    const referredWithOverride = wardFlowReducer(state, {
+      type: "REFER_TO_UNITS",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      movementId: "WF-009",
+      unitIds: ["scgh-adult-open"],
+      overrideReason: OVERRIDE_REASONS[0],
+    });
+    expect(referredWithOverride.auditEvents[0]).toMatchObject({
+      outcome: "accepted",
+      details: { overrideFactRecorded: true },
+    });
     const accepted = wardFlowReducer(referred, {
       type: "ACCEPT_IN_PRINCIPLE",
       role: "ward",
@@ -418,9 +432,11 @@ describe("session audit capture and review", () => {
       unitId: "rph-adult-secure",
       overrideReason: OVERRIDE_REASONS[0],
     });
+    // S1-6: with no override filed at referral (rph-adult-secure needed none then), the acceptance
+    // into a ward that is not eligible now is the act that uses the reason, so it records the fact.
     expect(accepted.auditEvents.at(-1)).toMatchObject({
       outcome: "accepted",
-      details: { reason: OVERRIDE_REASONS[0], overrideFactRecorded: false },
+      details: { reason: OVERRIDE_REASONS[0], overrideFactRecorded: true },
     });
     // Fixture only: ensure the existing physical guards have resources; the test does not bypass them.
     const unit = accepted.units.find((row) => row.id === "rph-adult-secure")!;

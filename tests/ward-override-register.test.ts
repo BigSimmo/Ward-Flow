@@ -121,7 +121,8 @@ describe("an override reason survives the event that carried it", () => {
       role: "coordinator",
       now: NOW,
       movementId: movement.id,
-      unitIds: ["rph-adult-secure"],
+      // S1-6 (13 Oct 2026): an older-adult ward, which this adult movement genuinely needs a reason for.
+      unitIds: ["rph-older-adult"],
       overrideReason: "Closer to the person's home or family",
     });
     expect(after.rejections).toEqual([]);
@@ -131,7 +132,7 @@ describe("an override reason survives the event that carried it", () => {
       at: NOW,
       by: "Flow coordinator",
       reason: "Closer to the person's home or family",
-      unitIds: ["rph-adult-secure"],
+      unitIds: ["rph-older-adult"],
     });
   });
 

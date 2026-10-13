@@ -27,7 +27,8 @@ const REFERABLE_MOVEMENT = (() => {
   return movement.id;
 })();
 
-const OVERRIDE_UNIT = allUnits()[0];
+// Review finding S1-6 (13 Oct 2026): an override is only recorded against a ward that needed one.
+const OVERRIDE_UNIT = allUnits().find((unit) => unit.id === "rph-older-adult")!;
 
 /** Raises a real CHANGE_URGENCY event through the live reducer — mirrors `ClockAdvancer` in
  * ward-escalation.dom.test.tsx / ward-flow-provider.dom.test.tsx — so this suite proves the

@@ -28,7 +28,9 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
 const REASON: OverrideReason = OVERRIDE_REASONS[1];
-const UNIT_A = allUnits()[0];
+// Review finding S1-6 (13 Oct 2026): an override is only recorded against a ward that needed one,
+// so the fixture names a ward the referable movement does not suit (an older-adult ward).
+const UNIT_A = allUnits().find((unit) => unit.id === "rph-older-adult")!;
 
 /** A movement the reducer will actually accept a referral for, resolved from the real seed rather
  *  than hand-built — same technique as `tests/ward-override-register-render.dom.test.tsx`. */
