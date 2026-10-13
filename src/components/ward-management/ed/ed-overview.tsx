@@ -84,7 +84,7 @@ export function EdOverview({
   const raiseButton = (
     <button
       type="button"
-      className={buttonClass({ variant: "light", size: "sm" })}
+      className={buttonClass({ variant: "light", size: "sm", className: styles.raiseReferral })}
       data-testid="ward-ed-raise-referral-toggle"
       aria-expanded={referralOpen}
       aria-controls="ward-ed-referral-intake"

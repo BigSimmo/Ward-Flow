@@ -44,6 +44,8 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
+import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import {
   Badge,
   Button,
@@ -417,8 +419,16 @@ export function DischargeBoard({ initialAdmissionId }: { initialAdmissionId?: st
 }
 
 function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: string }) {
-  const { bedReleases, units, dayZero, readDischargeRecords, openDischargeRecord, readDischargeRecord, dispatch } =
-    useWardFlow();
+  const {
+    bedReleases,
+    units,
+    patients,
+    dayZero,
+    readDischargeRecords,
+    openDischargeRecord,
+    readDischargeRecord,
+    dispatch,
+  } = useWardFlow();
   const now = useWardFlowClock();
   const [population, setPopulation] = useState<Population>("releases");
   const [status, setStatus] = useState<WorkStatus | "all">("all");
@@ -584,6 +594,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const linkedReleaseRecord = detailRelease
     ? (records.find((record) => record.admissionId === detailRelease.admissionId) ?? null)
     : null;
+  const releasePatientId =
+    linkedReleaseRecord?.identity.kind === "linked" ? linkedReleaseRecord.identity.patient.id : null;
+  // S-29 (Josh, audit round 2): a person on a CTO gets the community team or GP handover line.
+  const releaseOnCto =
+    releasePatientId !== null &&
+    activeCommunityTreatmentOrder(patients.find((patient) => patient.id === releasePatientId)) !== undefined;
   const selectedUnitId = activeRecord?.unitId ?? detailRelease?.unitId;
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
   const shown = population === "records" ? visibleRecords.length : visibleReleaseIds.length;
@@ -1196,7 +1212,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 : "Bed release · all services"
               : "History · admission records"
           }
-          title={`${openCount} ${openCount === 1 ? "discharge" : "discharges"} open`}
+          // A4-22 (audit round 2): History counts admission records, not today's bed releases, so
+          // its title says so rather than reading as the same figure jumping.
+          title={
+            population === "records"
+              ? `${openCount} admission ${openCount === 1 ? "record" : "records"} open`
+              : `${openCount} ${openCount === 1 ? "discharge" : "discharges"} open`
+          }
           titleMeta={
             <span className={pageStyles.bedDaysPast} data-testid="ward-discharge-bed-days-past">
               <strong>{bedDaysPast}</strong> bed {bedDaysPast === 1 ? "day" : "days"} past the ward&rsquo;s date
@@ -2156,7 +2178,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       </>
                     )}
 
-                    {linkedReleaseRecord ? (
+                    {isPhone && linkedReleaseRecord?.identity.kind === "linked" ? (
+                      // A4-22 (audit round 2): on the phone the link opens the person's own page
+                      // rather than switching the board to History and losing the selection.
+                      <Link
+                        className={buttonClass({ variant: "ghost", size: "sm", className: pageStyles.bridgeButton })}
+                        href={patientHref(linkedReleaseRecord.identity.patient.id)}
+                      >
+                        Patient page →
+                      </Link>
+                    ) : linkedReleaseRecord ? (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -2186,11 +2217,17 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             state: detailRelease.state === "expected" ? "pending" : "complete",
                             detail: `${detailRelease.state} · ${recordedMoment(detailRelease.confirmedAt, dayZero)}`,
                           },
-                          {
-                            label: "Recorded discharge blocker",
-                            state: detailRelease.blocker ? "blocked" : "pending",
-                            detail: detailRelease.blocker ?? "No discharge blocker recorded",
-                          },
+                          // A4-23 (audit round 2): the phone shows the blocker panes together, so
+                          // the blocker is said once, in its own box below, not again as a milestone.
+                          ...(isPhone
+                            ? []
+                            : [
+                                {
+                                  label: "Recorded discharge blocker",
+                                  state: detailRelease.blocker ? ("blocked" as const) : ("pending" as const),
+                                  detail: detailRelease.blocker ?? "No discharge blocker recorded",
+                                },
+                              ]),
                           {
                             label: "Physical departure",
                             state: detailRelease.state === "discharged" ? "complete" : "pending",
@@ -2210,6 +2247,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         </p>
                       ) : null}
                       <ReadyToLeave
+                        onCto={releaseOnCto}
                         ticked={ticksFor(detailRelease.id)}
                         onToggle={(itemId) => {
                           const on = !ticksFor(detailRelease.id).includes(itemId);
