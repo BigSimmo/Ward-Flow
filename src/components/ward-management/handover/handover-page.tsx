@@ -32,7 +32,7 @@ import { announceToWardShell } from "@/components/ward-management/shell/ward-liv
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
@@ -341,7 +341,14 @@ const PILL_TONE: Record<Exclude<HandoverPill, "new">, "danger" | "warning" | "ne
   mov: "info",
 };
 
-const GROUP_TONE = { act: "danger", due: "warning", bed: "neutral", acc: "neutral", mov: "info" } as const;
+const GROUP_TONE = {
+  act: "danger",
+  due: "warning",
+  rel: "warning",
+  bed: "neutral",
+  acc: "neutral",
+  mov: "info",
+} as const;
 
 const KEYS: [string, string][] = [
   ["J K", "Step through patients"],
@@ -450,10 +457,12 @@ export function HandoverPage() {
   );
   const allRows = useMemo(
     () =>
-      movements.filter(isOpen).map((movement) => ({
-        ...toHandoverRow(movement, units, patients, referrals),
-        actNow: actNowMovementIds.has(movement.id),
-      })),
+      movements
+        .filter((movement) => isOpen(movement) || isStoppedTransportAwaitingRelease(movement))
+        .map((movement) => ({
+          ...toHandoverRow(movement, units, patients, referrals),
+          actNow: actNowMovementIds.has(movement.id),
+        })),
     [movements, units, patients, referrals, actNowMovementIds],
   );
   const rows = useMemo(

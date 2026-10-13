@@ -8,11 +8,11 @@
 import {
   INBOX_CATEGORIES,
   type InboxItemKind,
+  STAGE_TRANSITION_BLOCKERS,
   SUITABILITY_GATES,
 } from "@/components/ward-management/ward-flow-reducer";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
-import type { LucideIcon } from "lucide-react";
-import { CalendarClock, CircleAlert, Truck } from "lucide-react";
+import { CalendarClock, CircleAlert, Truck, type LucideIcon } from "lucide-react";
 
 import { plannedAdmissionIsOverdue, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
@@ -1399,7 +1399,7 @@ export function buildActionInbox(
  * 24-hour departmental access target, so a breach-led ranking would render this section empty.
  * Ranking by wait alone always has something to hand over.
  *
- * `placementGoneWrong` names exactly three situations, none of them a legal claim:
+ * `placementGoneWrong` names exactly four situations, none of them a legal claim:
  * - `"escalated"` — the movement carries a recorded `escalation`: a human already declared the
  *   referral network exhausted and rang the state bed coordination desk.
  * - `"declined_by_all"` — the movement has a decline on record, nothing still pending, and no
@@ -1427,6 +1427,9 @@ export function buildActionInbox(
  *   reads `"acceptance_withdrawn"`; a decline recorded after that withdrawal (a fresh referral
  *   that also said no) puts the movement back in front of a network that has since refused it
  *   again, and it reads `"declined_by_all"` once more.
+ * - `"transport_stopped_awaiting_release"` — transport was stopped while the movement still holds
+ *   its bed, and the journey remains visible until that bed is released.
+ *
  * A movement can satisfy more than one of these; the escalation check runs first, and the
  * decline/withdrawal ordering above is exactly what keeps the other two exclusive of each other,
  * so every movement is listed once.
@@ -1465,7 +1468,7 @@ export type HandoverSnapshot = {
   inTransit: { movement: Movement; leg: TransportLeg | "Cancelled" | undefined }[];
   placementGoneWrong: {
     movement: Movement;
-    kind: "escalated" | "declined_by_all" | "acceptance_withdrawn";
+    kind: "escalated" | "declined_by_all" | "acceptance_withdrawn" | "transport_stopped_awaiting_release";
   }[];
 };
 
@@ -1521,6 +1524,18 @@ export function allDeclines(movements: Movement[]): DeclineEntry[] {
   return movements.flatMap((movement) => movement.declines.map((decline) => ({ movement, decline })));
 }
 
+/**
+ * A movement whose transport was stopped mid-journey but whose held bed has not yet been released.
+ * Surfaced to clinicians so the held bed is visible and can be released.
+ */
+export function isStoppedTransportAwaitingRelease(movement: Movement): boolean {
+  return (
+    movement.transport?.stoppedAt !== undefined &&
+    (movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||
+      movement.admissionId !== undefined)
+  );
+}
+
 export function handoverSnapshot(movements: Movement[], units: Unit[], now: Instant): HandoverSnapshot {
   const open = movements.filter(isOpen);
 
@@ -1528,11 +1543,24 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
     .sort((a, b) => now - b.openedAt - (now - a.openedAt))
     .map((movement) => ({ movement }));
 
-  const pulledBeds = open
+  const stoppedAwaitingRelease = movements.filter(isStoppedTransportAwaitingRelease);
+
+  const pulledBedCandidates = [
+    ...open,
+    ...stoppedAwaitingRelease.filter((movement) => !open.some((openMovement) => openMovement.id === movement.id)),
+  ];
+  const pulledBeds = pulledBedCandidates
     .filter((movement) => movement.pullExpiresAt !== undefined)
     .map((movement) => {
       const pullExpiresAt = movement.pullExpiresAt as Instant;
-      return { movement, unit: destinationUnit(movement, units), expired: pullExpiresAt <= now };
+      // A stopped journey is no longer in transit, so its held bed can still lapse.
+      const stopped = movement.closure !== undefined || movement.transport?.cancelledAt !== undefined;
+      const isCollected = !stopped && (movement.stage === "moving" || movement.transport?.collectedAt !== undefined);
+      return {
+        movement,
+        unit: destinationUnit(movement, units),
+        expired: !isCollected && pullExpiresAt <= now,
+      };
     });
 
   const inTransit = open
@@ -1571,12 +1599,17 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
     }
   }
 
+  const stoppedGoneWrong = stoppedAwaitingRelease.map((movement) => ({
+    movement,
+    kind: "transport_stopped_awaiting_release" as const,
+  }));
+
   return {
     takenAt: now,
     longestWaits,
     pulledBeds,
     inTransit,
-    placementGoneWrong: [...escalated, ...declinedByAll, ...acceptanceWithdrawn],
+    placementGoneWrong: [...escalated, ...declinedByAll, ...acceptanceWithdrawn, ...stoppedGoneWrong],
   };
 }
 
@@ -1893,7 +1926,13 @@ export function changeAudit(movements: Movement[]): ChangeAuditEntry[] {
          * being true the honest outcome is the fact without the reason — which is what this falls
          * back to.
          */
-        const stepBackLabel = stepBackReasonLabels[unwind.reason as StepBackReason] as string | undefined;
+        // `RELEASE_AND_REOPEN_SEARCH` from `accepted_awaiting_bed` writes an "acceptance_withdrawn"
+        // entry carrying a `ReleasePullReason`, so fall back to that label list before the bare fact.
+        const stepBackLabel =
+          (stepBackReasonLabels[unwind.reason as StepBackReason] as string | undefined) ??
+          (unwind.kind === "acceptance_withdrawn"
+            ? (changeReasonLabels[unwind.reason as ReleasePullReason] as string | undefined)
+            : undefined);
         const fact = unwind.kind === "stage_corrected" ? "Stage corrected" : "Acceptance withdrawn";
         entries.push({
           at: unwind.at,
