@@ -223,6 +223,18 @@ describe("weeklyOperationsReport", () => {
     expect(weeklyOperationsReport(inputOf(f, { admissions: [earlier] }), week).delayedDischarge.recordedFrom).toBe(
       null,
     );
+    // A date set after the week on another stay does not hide the stays that were measured, and a
+    // future expected date set later does not count at all.
+    const notYetDue = {
+      ...stay,
+      id: "AD-FUTURE",
+      expectedDischargeAt: week.end + 3 * DAY,
+      dischargeDateSetAt: week.end + DAY,
+    };
+    expect(
+      weeklyOperationsReport(inputOf(f, { admissions: [earlier, later, notYetDue] }), week).delayedDischarge
+        .recordedFrom,
+    ).toBe(null);
   });
 
   it("counts an over-target wait only in the week its target crossing falls in", () => {

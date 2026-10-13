@@ -83,9 +83,9 @@ export type WeeklyReport = {
     bedDays: number;
     people: number;
     /**
-     * When the earliest expected date still held was set, if that falls after the week began: the
-     * week's figure only counts from then, so it reads low (audit stats-11). `null` when the week
-     * is fully covered. Equal to or after the week's counted end means nothing in the week is held.
+     * When the latest expected date behind the week's figure was set, if inside the week: the
+     * figure only counts from then, so it reads low (audit stats-11). `null` when the week is fully
+     * covered. Equal to or after the week's counted end means no stay in the week could be measured.
      */
     recordedFrom: Instant | null;
   };
@@ -123,20 +123,33 @@ function tally(reasons: string[]): ReasonCount[] {
 }
 
 /**
- * The instant the latest expected discharge date still held was set, when that is after the week
- * began: every stay is measured in full only from then. Earlier dates are not kept. A date with no
- * set time is treated as always known.
+ * When the week's delayed figure is only partly measured. Only stays that were past their expected
+ * date during the week matter; earlier dates are not kept, so a stay counts from when its current
+ * date was set. Returns the latest such set time inside the week, or `null` when the week is fully
+ * covered. A set time at or after the week's end is returned only when no stay in the week could be
+ * measured, so a date changed later does not hide the stays that were measured. A date with no set
+ * time is treated as always known.
  */
-function dischargeDatesRecordedFrom(admissions: readonly Admission[], week: ReportWeek): Instant | null {
-  let latest = -Infinity;
+function dischargeDatesRecordedFrom(admissions: readonly Admission[], week: ReportWeek, now: Instant): Instant | null {
+  let latestInWeek = -Infinity;
+  let earliestAfter = Infinity;
+  let measured = false;
   for (const admission of admissions) {
-    if (admission.expectedDischargeAt === null || !Number.isFinite(admission.expectedDischargeAt)) continue;
+    const expected = admission.expectedDischargeAt;
+    if (expected === null || !Number.isFinite(expected) || expected >= week.countedEnd) continue;
+    if (admission.arrivedAt === null || !Number.isFinite(admission.arrivedAt)) continue;
+    const to = admission.leftAt ?? (bedIsOccupied(admission) ? now : admission.arrivedAt);
+    if (overlapMinutes(Math.max(expected, admission.arrivedAt), to, week) <= 0) continue;
     const setAt = admission.dischargeDateSetAt;
-    if (typeof setAt !== "number" || !Number.isFinite(setAt)) continue;
-    latest = Math.max(latest, setAt);
+    if (typeof setAt !== "number" || !Number.isFinite(setAt) || setAt < week.countedEnd) {
+      measured = true;
+      if (typeof setAt === "number" && Number.isFinite(setAt)) latestInWeek = Math.max(latestInWeek, setAt);
+    } else {
+      earliestAfter = Math.min(earliestAfter, setAt);
+    }
   }
-  if (!Number.isFinite(latest)) return null;
-  return latest > week.start ? (latest as Instant) : null;
+  if (!measured) return Number.isFinite(earliestAfter) ? (earliestAfter as Instant) : null;
+  return latestInWeek > week.start ? (latestInWeek as Instant) : null;
 }
 
 export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWeek): WeeklyReport {
@@ -239,7 +252,7 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
     delayedDischarge: {
       bedDays: days(delayedMinutes),
       people: delayedPeople.size,
-      recordedFrom: dischargeDatesRecordedFrom(admissions, week),
+      recordedFrom: dischargeDatesRecordedFrom(admissions, week, now),
     },
     declines: {
       placement: placementDeclines.totalCount,

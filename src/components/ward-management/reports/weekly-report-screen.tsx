@@ -126,7 +126,7 @@ export function WeeklyReportScreen() {
       ? null
       : delayedUnknown
         ? "Not enough history. No expected date held for this week."
-        : `Counted from ${dateOf(delayedFrom, dayZero)}, when dates were first recorded`;
+        : `Counted from ${dateOf(delayedFrom, dayZero)}, when the latest date was set`;
   const delayedDays = delayedUnknown ? "Not known" : report.delayedDischarge.bedDays;
   const delayedPeople = delayedUnknown ? "Not known" : report.delayedDischarge.people;
 
