@@ -1234,11 +1234,12 @@ describe("P3-2 (Ward Lead audit, 2026-09-17): 'Under a form' counts a legal form
   });
 });
 
-describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No destination' exclude a recorded ED outcome", () => {
+// S-19 (audit 13 Oct 2026): the "No destination" chip became "No bed yet", counted by the hero's own rule.
+describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No bed yet' exclude a recorded ED outcome", () => {
   it("drops a freshly raised, unreviewed, destination-less patient out of both chips once its outcome is recorded", () => {
     renderEd();
     const notReviewedBefore = screen.getByRole("button", { name: /Not reviewed/ }).textContent;
-    const noDestBefore = screen.getByRole("button", { name: /No destination/ }).textContent;
+    const noDestBefore = within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ }).textContent;
 
     fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
     fillRequiredReferralFields();
@@ -1249,7 +1250,7 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No destination
     // Freshly raised: no examination, no destination — counted in both chips, proving the walk is
     // real before the fix under test can be observed at all.
     expect(screen.getByRole("button", { name: /Not reviewed/ }).textContent).not.toBe(notReviewedBefore);
-    expect(screen.getByRole("button", { name: /No destination/ }).textContent).not.toBe(noDestBefore);
+    expect(within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ }).textContent).not.toBe(noDestBefore);
 
     fireEvent.click(screen.getByTestId(`ward-ed-outcome-toggle-${id}`));
     fireEvent.click(screen.getByTestId(`ward-ed-outcome-discharge-${id}`));
@@ -1259,7 +1260,7 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No destination
       "P3-1: a settled ED outcome is not an unreviewed patient",
     ).toBe(notReviewedBefore);
     expect(
-      screen.getByRole("button", { name: /No destination/ }).textContent,
+      within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ }).textContent,
       "P3-1: a settled ED outcome is not a destination-less patient",
     ).toBe(noDestBefore);
   });
@@ -1296,3 +1297,15 @@ function seedPatientName(movementId: string): string {
     seed,
   ).displayName;
 }
+
+describe("S-19 (audit 13 Oct 2026): one 'No bed yet' rule for the hero and the board chip", () => {
+  it("shows the same No bed yet count on every control that names it", () => {
+    renderEd();
+    const counts = screen
+      .getAllByText(/No bed yet/u)
+      .map((node) => Number(/(\d+)/u.exec(node.closest("button")?.textContent ?? "")?.[1] ?? NaN))
+      .filter((value) => !Number.isNaN(value));
+    expect(counts.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(counts).size).toBe(1);
+  });
+});
