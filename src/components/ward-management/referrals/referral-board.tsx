@@ -1,7 +1,7 @@
 "use client";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { acceptedWardOf } from "./accepted-ward-referral";
 import {
@@ -91,6 +91,7 @@ import {
 import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
+import { WardOffersSection } from "./ward-offers-section";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import {
@@ -479,6 +480,14 @@ function isTyping(target: EventTarget | null): boolean {
   );
 }
 
+function subscribeToLocation(listener: () => void) {
+  window.addEventListener("popstate", listener);
+  return () => window.removeEventListener("popstate", listener);
+}
+function readLinkedReferralId(): string | null {
+  return new URLSearchParams(window.location.search).get("referral");
+}
+
 /**
  * Option A (Josh, 9 October 2026): the statewide referral queue as a dense table with a decision
  * panel beside it. The hero carries the page's own tools: highlight pills, the waiting runway,
@@ -508,11 +517,15 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   // A1-17: the shared phone query, so the server's phone guess draws the phone layout first.
   const phoneLayout = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<"axis" | "beds" | null>(null);
+  // A2-5: `?referral=<id>` (the ED row's "Referred to" link) opens that referral until someone chooses.
+  const linkedReferralId = useSyncExternalStore(subscribeToLocation, readLinkedReferralId, () => null);
   const selectedReferralId =
     chosenReferralId === undefined
-      ? defaultSelectFirst && splitDetailLayout
-        ? queued[0]?.id
-        : undefined
+      ? linkedReferralId !== null && referrals.some((referral) => referral.id === linkedReferralId)
+        ? linkedReferralId
+        : defaultSelectFirst && splitDetailLayout
+          ? queued[0]?.id
+          : undefined
       : (chosenReferralId ?? undefined);
   const [view, setView] = useState<"queue" | "history">("queue");
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);
@@ -1026,6 +1039,13 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   isDimmed={(referral) =>
                     anyHighlight && !phoneFiltered && !isHighlighted(referral) && !isOverdue(referral, now)
                   }
+                />
+                <WardOffersSection
+                  movements={movements}
+                  referrals={referrals}
+                  units={units}
+                  patients={patients}
+                  now={now}
                 />
               </TabPanel>
               <TabPanel idPrefix="ward-referral-view" id="history" className={a.history} hidden={view !== "history"}>

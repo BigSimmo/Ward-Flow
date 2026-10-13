@@ -143,7 +143,7 @@ import { edJourneyStages } from "./ed-journey";
 import styles from "./ed.module.css";
 import { EdReferralPatientField } from "./ed-referral-patient-field";
 import type { Patient } from "../ward-patients";
-import { edBedSearchStep, openWardReferralFor, referredToLabel } from "./ed-bed-search-step";
+import { edBedSearchStep, openWardReferralFor, referralBoardHref, referredToLabel } from "./ed-bed-search-step";
 import { edReferralSheetHref } from "../referrals/open-referral-sheet";
 import { EdOverview } from "./ed-overview";
 import { EdActionsMenu, EdPlanPicker, EdPresentation, EdReviewStatus } from "./ed-board-controls";
@@ -4199,7 +4199,18 @@ export function EdScreen({ edId }: EdScreenProps) {
                           : (referredTo ?? "In department");
                 const destinationContent = (
                   <>
-                    <span className={styles.dest}>{destinationLabel}</span>
+                    {openWardReferral && destinationLabel === referredTo ? (
+                      // A2-5: the sent referral opens on the Referrals board.
+                      <Link
+                        className={styles.dest}
+                        href={referralBoardHref(openWardReferral.referral.id)}
+                        data-testid={`ward-ed-referral-link-${movement.id}`}
+                      >
+                        {destinationLabel}
+                      </Link>
+                    ) : (
+                      <span className={styles.dest}>{destinationLabel}</span>
+                    )}
                     {acceptedUnit && !movement.closure && <span className={styles.acceptedLabel}>Accepted</span>}
                     {boardTable ? null : referredFact}
                   </>
