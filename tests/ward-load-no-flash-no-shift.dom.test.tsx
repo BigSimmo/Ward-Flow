@@ -112,6 +112,26 @@ describe("Governance: the server band sits where the measure will put it", () =>
   });
 });
 
+describe("phone Home: the hero paints as the band before it is measured", () => {
+  it("uses the Home page's phone insets and the phone band's own spacing", () => {
+    const home = strip(readFileSync("src/components/ward-management/coordinator/home.module.css", "utf8"));
+    const serverBand =
+      /:global\(\[data-wf-scroller\]\)\s*\.homeHero\[data-wf-hero="band"\]:not\(\[data-band\]\)\s*\{([^}]*)\}/u.exec(
+        home,
+      )?.[1];
+    // The Home body pads 12px on top and 16px at the sides on a phone; the measure pulls the band
+    // out by exactly that, so the server band does the same (layout shift 0.18 to 0.001, 390px).
+    expect(home).toMatch(/\.body\s*\{\s*padding:\s*var\(--wf-s-3\)\s+var\(--wf-s-4\);/u);
+    expect(serverBand).toMatch(/margin:\s*calc\(-1 \* var\(--wf-s-3\)\)\s+calc\(-1 \* var\(--wf-s-4\)\)\s+-10px;/u);
+    // The same padding as the phone `.hero[data-band="on"]` rule in hero.module.css.
+    expect(serverBand).toMatch(/padding:\s*6px var\(--wf-s-4\) calc\(18px \+ var\(--wf-band-lip\)\);/u);
+    const hero = strip(readFileSync("src/components/wf/hero.module.css", "utf8"));
+    expect(hero).toMatch(
+      /padding-top:\s*6px;\s*padding-right:\s*16px;\s*padding-bottom:\s*calc\(18px \+ var\(--wf-band-lip\)\);/u,
+    );
+  });
+});
+
 describe("desktop rail: the server render is the settled render", () => {
   function railItemClasses(container: ParentNode) {
     return [...container.querySelectorAll('[data-testid="ward-rail"] [aria-label="Ward Flow views"] li')].map(
