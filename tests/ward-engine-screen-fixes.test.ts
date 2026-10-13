@@ -256,8 +256,8 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
       expect(reminder).toBeDefined();
       expect(reminder).toContain("Ward silent 2 hours");
 
-      // Case 2: Psychiatric ward addressing answered/waitlisted, but movement still has silent referredUnitIds
-      const answeredReferral: Referral = {
+      // Case 2: Psychiatric ward addressing answered/waitlisted on referral -> should NOT show silent reminder
+      const waitlistedReferral: Referral = {
         ...baseReferral,
         id: "REF-WARD-1",
         patientId: mov.patientId,
@@ -277,13 +277,53 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
           },
         ],
       };
-      const linkedAnsweredMov: Movement = {
+      const linkedWaitlistedMov: Movement = {
         ...mov,
         referralId: "REF-WARD-1",
       };
-      const reminder2 = answerSilenceReminder(linkedAnsweredMov, [answeredReferral], NOW);
-      expect(reminder2).toBeDefined();
-      expect(reminder2).toContain("Ward silent 2 hours");
+      const reminder2 = answerSilenceReminder(linkedWaitlistedMov, [waitlistedReferral], NOW);
+      expect(reminder2).toBeUndefined();
+
+      // Case 3: Referral with both an answered ward and a silent ward -> derives from the silent ward
+      const mixedReferral: Referral = {
+        ...baseReferral,
+        id: "REF-WARD-2",
+        patientId: mov.patientId,
+        raisedAt: NOW - 200,
+        destinations: [
+          {
+            destination: {
+              kind: "psychiatric_ward",
+              unitId: "U2",
+              sex: "Female",
+              secureBedNeeded: false,
+              involuntaryBedNeeded: false,
+              highAcuityNursingNeeded: false,
+            },
+            state: "queued",
+            waitlistedAt: NOW - 190,
+          },
+          {
+            destination: {
+              kind: "psychiatric_ward",
+              unitId: "U3",
+              sex: "Female",
+              secureBedNeeded: false,
+              involuntaryBedNeeded: false,
+              highAcuityNursingNeeded: false,
+            },
+            state: "queued",
+            referredAt: NOW - 180,
+          },
+        ],
+      };
+      const linkedMixedMov: Movement = {
+        ...mov,
+        referralId: "REF-WARD-2",
+      };
+      const reminder3 = answerSilenceReminder(linkedMixedMov, [mixedReferral], NOW);
+      expect(reminder3).toBeDefined();
+      expect(reminder3).toContain("Ward silent 2 hours");
     });
   });
 
