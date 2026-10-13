@@ -1,4 +1,22 @@
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { isLeavingDestination } from "./ward-admissions";
+import {
+  BED_RELEASE_WAITING_ON,
+  COHORTS,
+  MOVEMENT_STAGES,
+  RECORDED_SEXES,
+  REFERRAL_GENDERS,
+  URGENCY_LEVELS,
+} from "./ward-model";
+import { WARD_SCENARIOS } from "./ward-scenarios";
+import {
+  isWardFlowRole,
+  STORED_ED_OUTCOMES,
+  STORED_EXAMINATION_OUTCOMES,
+  STORED_LEAVE_BED_KINDS,
+  STORED_LEGAL_STATUSES,
+  STORED_SECURITY_LEVELS,
+} from "./ward-flow-storage-validation";
 
 /**
  * 🔴 **D-11 — Ward Lead's delegated ruling D-11, 2026-09-11, not the owner's.** The owner released a
@@ -97,7 +115,7 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
 ]);
 
 /**
- * Every OTHER event type in the union — 57 of 62 (RA1, item 18, added `WITHDRAW_WARD_REQUEST`
+ * Every OTHER event type in the union (the count is the tuple below; "57 of 62" was the 2026-09-17 figure; RA1, item 18, added `WITHDRAW_WARD_REQUEST`
  * 2026-09-17). Each one is on this list because its payload,
  * read field by field in `ward-flow-events.ts`, is built only from ids, a value the reducer
  * membership-checks against a named constant, a boolean, an `Instant`/number, or the caller's own
@@ -121,6 +139,17 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
  * begin with. `RAISE_REFERRAL.draft.legalFormCode` looks like the same shape but is NOT the same
  * case: it is a genuine `string | null`, and IS resolved against `SELECTABLE_LEGAL_FORMS` at runtime
  * (`case "RAISE_REFERRAL"`) — reviewed and listed below for that reason instead.
+ * 🔴 **CORRECTED 12 Oct 2026, review finding A2-3: "safe anyway because union-typed" was wrong.**
+ * A union type stops nothing at run time, and the list above undercounted: `RECORD_ED_OUTCOME.outcome`,
+ * `RECORD_LEAVE_BED.kind`, `SET_STEP_DOWN_CANDIDATE.stepDownCandidate` and
+ * `STAND_DOWN_BROADCAST_ALERT.stoodDownByRole` were stored as supplied too, and a `RECORD_LEAVE_BED`
+ * with a typed `kind` was accepted and persisted. Each named field, plus `RECORD_TRANSPORT_NEED.needed`,
+ * `SET_BED_PREPARATION.preparing`, `DECLINE_REFERRAL.waitlist` and `REVERT_BED_RELEASE.waitingOn`, is now
+ * checked at dispatch by `eventCarriesTypedTextPayload` (below): an off-list value locks persistence
+ * like typed text. The reducer itself now refuses an off-list `RECORD_LEAVE_BED.kind` and a non-boolean
+ * `stepDownCandidate`, and the load validator refuses an off-list value of each stored field. Fields of
+ * other safe events not named here were not re-reviewed field by field on 12 Oct 2026; for them the
+ * compile-time check and the load validator remain the fences.
  * `RECORD_PATIENT_DISCHARGE.patientId` (`PatientId`, `` `PT-${string}` ``) is a DIFFERENT case again —
  * see `WardFlowReviewedStringOrUnknownKey`'s own comment for why a template-literal id is reviewed
  * and listed rather than exempted by its shape.
@@ -298,7 +327,7 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
 
 /** Runtime form of the tuple above — an O(1)-lookup `Set`, used by the reducer wrapper and by the
  *  coverage-gap helper. Derived from the SAME literal array the compile-time check reads, so the
- *  two can never silently disagree about which 57 types are on it. */
+ *  two can never silently disagree about which types are on it. */
 export const WARD_FLOW_TEXT_SAFE_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]> = new Set<WardFlowEvent["type"]>(
   WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE,
 );
@@ -540,7 +569,69 @@ export type _AssertNoUnreviewedRaiseReferralDraftFields = AssertNever<Unreviewed
  * whether or not the reducer accepts it.
  */
 export function eventCarriesTypedTextPayload(event: WardFlowEvent): boolean {
-  return "overrideSignOff" in event && event.overrideSignOff !== undefined;
+  if ("overrideSignOff" in event && event.overrideSignOff !== undefined) return true;
+  return eventCarriesOffListValue(event);
+}
+
+/**
+ * Review finding A2-3 (12 Oct 2026): the runtime half of "the type decides". The fields below are
+ * typed as closed unions, booleans or `1 | 2 | 3`, so the compile-time check above never sees them,
+ * and the reducer stores several of them as supplied. A dispatch whose value is not on its own list
+ * (a script, a malformed caller) is treated exactly like typed text: persistence locks, accepted or
+ * refused. Every list is the model's own constant, or a `tsc`-exhaustive map of the union.
+ */
+const isBool = (value: unknown) => typeof value === "boolean";
+const listed = (list: readonly unknown[], value: unknown) => list.includes(value);
+const optionalListed = (list: readonly unknown[], value: unknown) => value === undefined || list.includes(value);
+
+function eventCarriesOffListValue(event: WardFlowEvent): boolean {
+  switch (event.type) {
+    case "RECORD_ED_OUTCOME":
+      return !listed(STORED_ED_OUTCOMES, event.outcome);
+    case "RECORD_LEAVE_BED":
+      return !optionalListed(STORED_LEAVE_BED_KINDS, event.kind);
+    case "SET_STEP_DOWN_CANDIDATE":
+      return !isBool(event.stepDownCandidate);
+    case "STAND_DOWN_BROADCAST_ALERT":
+      return event.stoodDownByRole !== undefined && !isWardFlowRole(event.stoodDownByRole);
+    case "CHANGE_LEGAL_STATUS":
+      return !listed(STORED_LEGAL_STATUSES, event.legalStatus);
+    case "FLAG_BED_RELEASE":
+      return !listed(BED_RELEASE_WAITING_ON, event.waitingOn);
+    case "REVERT_BED_RELEASE":
+      return !listed(BED_RELEASE_WAITING_ON, event.waitingOn);
+    case "STEP_BACK_STAGE":
+      return !listed(MOVEMENT_STAGES, event.to);
+    case "SET_SCENARIO":
+      return !listed(WARD_SCENARIOS, event.scenario);
+    case "RECORD_EXAMINATION":
+      return !listed(STORED_EXAMINATION_OUTCOMES, event.outcome);
+    case "RECORD_LEAVING":
+      return !isLeavingDestination(event.leavingDestination);
+    case "CHANGE_URGENCY":
+      return !listed(URGENCY_LEVELS, event.urgency);
+    case "RECORD_TRANSPORT_NEED":
+      return !isBool(event.needed);
+    case "SET_BED_PREPARATION":
+      return !isBool(event.preparing);
+    case "DECLINE_REFERRAL":
+      return event.waitlist !== undefined && !isBool(event.waitlist);
+    case "RAISE_REFERRAL": {
+      const draft = event.draft;
+      return (
+        !listed(COHORTS, draft.cohort) ||
+        !listed(STORED_SECURITY_LEVELS, draft.security) ||
+        !listed(RECORDED_SEXES, draft.sex) ||
+        !optionalListed(REFERRAL_GENDERS, draft.gender) ||
+        !listed(STORED_LEGAL_STATUSES, draft.legalStatus) ||
+        !listed(URGENCY_LEVELS, draft.urgency) ||
+        !isBool(draft.specialling) ||
+        !isBool(draft.highAcuity)
+      );
+    }
+    default:
+      return false;
+  }
 }
 
 export function findWardFlowEventTypeCoverageGaps(types: readonly string[]): string[] {
