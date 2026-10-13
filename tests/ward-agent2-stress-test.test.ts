@@ -41,18 +41,20 @@ describe("Agent 2 Stress Test Suite", () => {
     });
 
     // Inconsistent feed: beds = 0, but empty = 2.
-    // WF-A3-14 / WF-FIX-10: available is clamped to 0 when beds === 0 or unit.isClosed.
+    // Clinical owner ruling 14 Oct 2026: main's R-B-09 rule stands (no clamp to nominal beds);
+    // only an explicitly closed unit counts as zero capacity.
     const inconsistentZero: Unit = {
       ...zeroUnit,
       empty: { value: 2, source: "feed", confirmedAt: 0, staleAfterMinutes: 60 },
       allocatable: { value: 2, source: "ward", confirmedAt: 0, staleAfterMinutes: 60 },
     };
     const capInc = unitCapacity(inconsistentZero, []);
-    expect(capInc.available).toBe(0);
-    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBe(0);
-    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBeLessThanOrEqual(
-      inconsistentZero.beds,
-    );
+    // R-B-09 preserves Ready = min(allocatable, empty), even when nominal beds disagree.
+    // These recorded observations report 2 Ready; they do not establish physical surge capacity.
+    expect(capInc.available).toBe(2);
+    expect(capInc.surge).toBe(0);
+    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBe(2);
+    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBeGreaterThan(inconsistentZero.beds);
 
     // Closed unit test (WF-A3-14 / WF-FIX-10)
     const closedUnit: Unit = {

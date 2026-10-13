@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { azInvocation, azResponse, executeAz, priorDeployment } from "./az-command.mjs";
 
 const [mode, settingsPath] = process.argv.slice(2);
 if (!["inspect", "provision", "configure", "verify"].includes(mode) || !settingsPath)
@@ -29,41 +29,43 @@ if (new URL(config.frontendOrigin).origin !== config.frontendOrigin || !config.f
   throw new Error("An exact HTTPS frontend origin is required");
 const apiClientId = "9b7b160d-9bc7-4712-b748-17ff3e70b706"; // gitleaks:allow -- public Entra client ID, not a credential
 
-function az(args, json = true) {
-  const result = spawnSync(
-    "az",
-    [...args, "--subscription", config.subscriptionId, ...(json ? ["--output", "json"] : ["--output", "none"])],
-    { encoding: "utf8", maxBuffer: 4 * 1024 * 1024 },
-  );
-  if (result.error || result.status !== 0)
-    throw new Error(
-      `Azure command failed (${args.slice(0, 3).join(" ")}). Use the selected Ward Flow identity and check Azure access. ${result.error?.code ?? ""}`,
-    );
-  return json ? JSON.parse(result.stdout) : null;
+async function az(args, json = true, shape = "object") {
+  const call = azInvocation([
+    ...args,
+    "--subscription",
+    config.subscriptionId,
+    ...(json ? ["--output", "json"] : ["--output", "none"]),
+  ]);
+  const result = await executeAz(call);
+  return azResponse(result, args, json ? shape : "none");
 }
 // Account/ad commands do not accept --subscription; retain the selected identity and verify its tenant.
-function directory(args) {
-  const result = spawnSync("az", [...args, "--output", "json"], { encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });
-  if (result.error || result.status !== 0) throw new Error("Azure identity/directory access unavailable");
-  return JSON.parse(result.stdout || "null");
+async function directory(args, shape = "object") {
+  const call = azInvocation([...args, "--output", shape === "none" ? "none" : "json"]);
+  const result = await executeAz(call);
+  return azResponse(result, args, shape, args[0] === "account" ? ["id", "tenantId"] : []);
 }
-const account = directory(["account", "show", "--subscription", config.subscriptionId]);
+const account = await directory(["account", "show", "--subscription", config.subscriptionId]);
 if (
   account.id.toLowerCase() !== config.subscriptionId.toLowerCase() ||
   account.tenantId.toLowerCase() !== config.tenantId.toLowerCase()
 )
   throw new Error("Azure subscription/tenant mismatch");
-if (directory(["account", "show"]).tenantId.toLowerCase() !== config.tenantId.toLowerCase())
+if ((await directory(["account", "show"])).tenantId.toLowerCase() !== config.tenantId.toLowerCase())
   throw new Error("Select the Ward Flow tenant for directory commands before running setup");
-const group = az(["group", "show", "--name", config.resourceGroup]);
-const app = az(["functionapp", "show", "--resource-group", config.resourceGroup, "--name", config.functionName]);
+const group = await az(["group", "show", "--name", config.resourceGroup]);
+const app = await az(["functionapp", "show", "--resource-group", config.resourceGroup, "--name", config.functionName]);
 if (
   !app.identity?.principalId ||
   app.identity.tenantId.toLowerCase() !== config.tenantId.toLowerCase() ||
   !["australiaeast", "australiasoutheast"].includes(app.location.toLowerCase().replaceAll(" ", ""))
 )
   throw new Error("Verify the Ward Flow Function's Australian location and managed identity before continuing");
-const candidates = az(["postgres", "flexible-server", "list", "--resource-group", config.resourceGroup]);
+const candidates = await az(
+  ["postgres", "flexible-server", "list", "--resource-group", config.resourceGroup],
+  true,
+  "array",
+);
 let server = config.serverName
   ? candidates.find((row) => row.name === config.serverName)
   : candidates.length === 1
@@ -89,32 +91,63 @@ if (mode === "provision" && !server) {
     throw new Error(
       "The existing Function has network integration. Reuse its reviewed network or provide a reviewed peering design before adding a new database network",
     );
-  const networks = az(["network", "vnet", "list", "--resource-group", config.resourceGroup]);
-  if (networks.some((row) => row.name === "vnet-wardflow-dev-aue"))
-    throw new Error("An existing Ward Flow network needs inspection before this template may manage it");
   const serverName = config.serverName || "wardflow-dev-pg-aue";
-  const deployment = az([
-    "deployment",
-    "group",
-    "create",
+  const networks = await az(["network", "vnet", "list", "--resource-group", config.resourceGroup], true, "array");
+  const hasNetwork = networks.some((row) => row.name === "vnet-wardflow-dev-aue");
+  // A previous run may have timed out locally while Azure finished (or is still running) this deployment,
+  // leaving its network behind; resume from that deployment rather than rejecting its own network.
+  const previous = hasNetwork
+    ? priorDeployment(
+        await az(["deployment", "group", "list", "--resource-group", config.resourceGroup], true, "array"),
+        "wardflow-shared-database",
+      )
+    : null;
+  if (hasNetwork && !previous)
+    throw new Error("An existing Ward Flow network needs inspection before this template may manage it");
+  const deployment =
+    previous ??
+    (await az([
+      "deployment",
+      "group",
+      "create",
+      "--resource-group",
+      config.resourceGroup,
+      "--name",
+      "wardflow-shared-database",
+      "--template-file",
+      fileURLToPath(new URL("./infra/database.bicep", import.meta.url)),
+      "--parameters",
+      `serverName=${serverName}`,
+      `tenantId=${config.tenantId}`,
+      `administratorObjectId=${config.administratorObjectId}`,
+      `administratorName=${config.administratorName}`,
+      `administratorType=${config.administratorType || "User"}`,
+      `location=${app.location.toLowerCase().replaceAll(" ", "")}`,
+    ]));
+  config.serverName = serverName;
+  config.functionSubnetId = deployment.properties.outputs.functionSubnetId.value;
+  server = await az([
+    "postgres",
+    "flexible-server",
+    "show",
     "--resource-group",
     config.resourceGroup,
     "--name",
-    "wardflow-shared-database",
-    "--template-file",
-    fileURLToPath(new URL("./infra/database.bicep", import.meta.url)),
-    "--parameters",
-    `serverName=${serverName}`,
-    `tenantId=${config.tenantId}`,
-    `administratorObjectId=${config.administratorObjectId}`,
-    `administratorName=${config.administratorName}`,
-    `administratorType=${config.administratorType || "User"}`,
-    `location=${app.location.toLowerCase().replaceAll(" ", "")}`,
+    serverName,
   ]);
-  config.serverName = serverName;
-  config.functionSubnetId = deployment.properties.outputs.functionSubnetId.value;
-  server = az(["postgres", "flexible-server", "show", "--resource-group", config.resourceGroup, "--name", serverName]);
   await writeFile(settingsPath, `${JSON.stringify(config, null, 2)}\n`);
+} else if (mode === "provision" && server && !requireExistingDatabase && !config.functionSubnetId) {
+  // A run that timed out locally after Azure finished the deployment has created the server but never
+  // saved the Function subnet. Recover it from that succeeded deployment instead of stopping later.
+  const previous = priorDeployment(
+    await az(["deployment", "group", "list", "--resource-group", config.resourceGroup], true, "array"),
+    "wardflow-shared-database",
+  );
+  if (previous) {
+    config.serverName ||= server.name;
+    config.functionSubnetId = previous.properties.outputs.functionSubnetId.value;
+    await writeFile(settingsPath, `${JSON.stringify(config, null, 2)}\n`);
+  }
 }
 if (server) {
   const location = server.location.toLowerCase().replaceAll(" ", "");
@@ -159,16 +192,20 @@ if (mode === "inspect") process.exit(0);
 if (!server) throw new Error("Provision a verified database first");
 let databaseInventory;
 if (requireExistingDatabase) {
-  databaseInventory = az([
-    "postgres",
-    "flexible-server",
-    "db",
-    "list",
-    "--resource-group",
-    config.resourceGroup,
-    "--server-name",
-    server.name,
-  ]);
+  databaseInventory = await az(
+    [
+      "postgres",
+      "flexible-server",
+      "db",
+      "list",
+      "--resource-group",
+      config.resourceGroup,
+      "--server-name",
+      server.name,
+    ],
+    true,
+    "array",
+  );
   if (!databaseInventory.some((row) => row.name === databaseName))
     throw new Error("Existing database required; no replacement database or resources were created");
 }
@@ -178,13 +215,13 @@ if (!config.workspaceId || !UUID.test(config.workspaceId)) config.workspaceId = 
 await writeFile(settingsPath, `${JSON.stringify(config, null, 2)}\n`);
 const output = new URL("./dist/setup/", import.meta.url);
 await mkdir(output, { recursive: true });
-const api = directory(["ad", "app", "show", "--id", apiClientId]);
+const api = await directory(["ad", "app", "show", "--id", apiClientId]);
 const scope = api.api?.oauth2PermissionScopes?.find((row) => row.value === "WardFlow.Access" && row.isEnabled);
 if (!scope || api.api.requestedAccessTokenVersion !== 2 || !api.identifierUris?.length)
   throw new Error(
     "Verify the existing Ward Flow v2 API registration and enabled WardFlow.Access scope; no identity policy was replaced",
   );
-const frontend = directory(["ad", "app", "show", "--id", config.frontendClientId]);
+const frontend = await directory(["ad", "app", "show", "--id", config.frontendClientId]);
 const redirect = `${config.frontendOrigin}/mockups/ward-flow`;
 const frontendValues = {
   NEXT_PUBLIC_WARD_SHARED_ENABLED: "true",
@@ -255,7 +292,7 @@ console.log(
 if (mode !== "configure") process.exit(0);
 
 const authUri = `https://management.azure.com${app.id}/config/authsettingsV2?api-version=2024-04-01`;
-const hostAuth = az(["rest", "--method", "get", "--uri", authUri]);
+const hostAuth = await az(["rest", "--method", "get", "--uri", authUri]);
 const aad = hostAuth.properties?.identityProviders?.azureActiveDirectory;
 if (
   !hostAuth.properties?.platform?.enabled ||
@@ -265,18 +302,22 @@ if (
   throw new Error(
     "Verify the existing Function host's enforced Ward Flow Entra authentication before enabling shared mode",
   );
-const backendSettings = az([
-  "functionapp",
-  "config",
-  "appsettings",
-  "list",
-  "--resource-group",
-  config.resourceGroup,
-  "--name",
-  config.functionName,
-  "--query",
-  "[?name=='AZURE_TENANT_ID' || name=='WARD_API_AUDIENCE' || name=='AzureWebJobsStorage__accountName'].{name:name,value:value}",
-]);
+const backendSettings = await az(
+  [
+    "functionapp",
+    "config",
+    "appsettings",
+    "list",
+    "--resource-group",
+    config.resourceGroup,
+    "--name",
+    config.functionName,
+    "--query",
+    "[?name=='AZURE_TENANT_ID' || name=='WARD_API_AUDIENCE' || name=='AzureWebJobsStorage__accountName'].{name:name,value:value}",
+  ],
+  true,
+  "array",
+);
 const currentSettings = Object.fromEntries(backendSettings.map((row) => [row.name, row.value]));
 if (
   currentSettings.AZURE_TENANT_ID?.toLowerCase() !== config.tenantId.toLowerCase() ||
@@ -297,19 +338,23 @@ if (app.virtualNetworkSubnetId && app.virtualNetworkSubnetId.toLowerCase() !== t
   );
 const databases =
   databaseInventory ??
-  az([
-    "postgres",
-    "flexible-server",
-    "db",
-    "list",
-    "--resource-group",
-    config.resourceGroup,
-    "--server-name",
-    server.name,
-  ]);
+  (await az(
+    [
+      "postgres",
+      "flexible-server",
+      "db",
+      "list",
+      "--resource-group",
+      config.resourceGroup,
+      "--server-name",
+      server.name,
+    ],
+    true,
+    "array",
+  ));
 const wardflowDatabase = databases.find((row) => row.name === databaseName);
 if (!wardflowDatabase)
-  az(
+  await az(
     [
       "postgres",
       "flexible-server",
@@ -349,7 +394,7 @@ try {
   await pool.end();
 }
 if (!app.virtualNetworkSubnetId)
-  az(
+  await az(
     [
       "functionapp",
       "vnet-integration",
@@ -366,15 +411,10 @@ if (!app.virtualNetworkSubnetId)
     false,
   );
 const redirects = [...new Set([...(frontend.spa?.redirectUris ?? []), redirect])];
-directory([
-  "ad",
-  "app",
-  "update",
-  "--id",
-  config.frontendClientId,
-  "--set",
-  `spa.redirectUris=${JSON.stringify(redirects)}`,
-]);
+await directory(
+  ["ad", "app", "update", "--id", config.frontendClientId, "--set", `spa.redirectUris=${JSON.stringify(redirects)}`],
+  "none",
+);
 const policy = aad.validation?.defaultAuthorizationPolicy;
 if (policy?.allowedPrincipals?.identities?.length) {
   policy.allowedPrincipals.identities = [
@@ -382,9 +422,9 @@ if (policy?.allowedPrincipals?.identities?.length) {
   ];
   const hostAuthPath = fileURLToPath(new URL("host-auth.json", output));
   await writeFile(hostAuthPath, JSON.stringify({ properties: hostAuth.properties }));
-  az(["rest", "--method", "put", "--uri", authUri, "--body", `@${hostAuthPath}`], false);
+  await az(["rest", "--method", "put", "--uri", authUri, "--body", `@${hostAuthPath}`], false);
 }
-az(
+await az(
   [
     "functionapp",
     "cors",
@@ -398,7 +438,7 @@ az(
   ],
   false,
 );
-az(
+await az(
   [
     "functionapp",
     "config",
