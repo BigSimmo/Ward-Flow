@@ -30,17 +30,6 @@ import { validateConfiguration, type WardConfiguration } from "./ward-configurat
 import { SELECTABLE_LEGAL_FORMS, CONTINUATION_LEGAL_FORMS } from "./ward-legal-forms";
 import { LEGAL_CLOCK_FORM_CODES } from "./ward-legal-clock";
 
-/**
- * Every form code the reducer accepts on a legal-form record (A1-4): intake forms, the continuation
- * list and the legal-clock codes (5B, 3C, 6B, 6C among them), so a continuation keeps its code.
- */
-export const AUDITABLE_FORM_CODES: readonly string[] = [
-  ...new Set([
-    ...SELECTABLE_LEGAL_FORMS.map((form) => form.code),
-    ...CONTINUATION_LEGAL_FORMS.map((form) => form.code),
-    ...LEGAL_CLOCK_FORM_CODES,
-  ]),
-];
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -64,6 +53,18 @@ import {
   type RecordRead,
   type WardRecordActor,
 } from "./ward-discharge-records";
+
+/**
+ * Every form code the reducer accepts on a legal-form record (A1-4): intake forms, the continuation
+ * list and the legal-clock codes (5B, 3C, 6B, 6C among them), so a continuation keeps its code.
+ */
+export const AUDITABLE_FORM_CODES: readonly string[] = [
+  ...new Set([
+    ...SELECTABLE_LEGAL_FORMS.map((form) => form.code),
+    ...CONTINUATION_LEGAL_FORMS.map((form) => form.code),
+    ...LEGAL_CLOCK_FORM_CODES,
+  ]),
+];
 
 export type AuditReason =
   | "none"
