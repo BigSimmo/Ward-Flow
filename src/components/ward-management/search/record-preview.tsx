@@ -292,7 +292,7 @@ export function RecordPreview({
     // With no open movement and no referral the record says nothing about where the person is or
     // what is planned, so this default says so. "NOT IN HOSPITAL · COMMUNITY OUTPATIENT", an
     // outpatient stage and "Tier 3" used to be assumed here (25 September 2026 audit, A5).
-    let presenceStatus: "live" | "community" = "community";
+    let presenceStatus: "live" | "community" | "past" = "community";
     let bannerTitle = "NO OPEN MOVEMENT OR REFERRAL";
     let bannerTag = "No open episode";
     let waitTimeHours = 0;
@@ -309,7 +309,7 @@ export function RecordPreview({
     if (linkedMovement && movementSummary) {
       const operational = movementSearchState(linkedMovement, admissions);
       presenceStatus = "live";
-      bannerTitle = "In hospital now";
+      bannerTitle = "On this board now";
       bannerTag = settingLabel(operational.setting);
       waitTimeHours = waitedHours(linkedMovement, now);
       disposition = operational.holdStatus;
@@ -332,9 +332,19 @@ export function RecordPreview({
         currentStage = "Outpatient";
         originSite = referral.originSiteCode;
         urgency = `Tier ${referral.urgency}`;
+      } else if (referralState(referral) === "declined") {
+        // Every destination declined and no movement is open: match the search row's Past status.
+        presenceStatus = "past";
+        bannerTitle = "Not on this board now";
+        bannerTag = "Referral declined";
+        disposition = "Declined";
+        targetWard = "Not admitted";
+        currentStage = "Declined";
+        originSite = `${referral.originSiteCode} ED`;
+        urgency = `Tier ${referral.urgency}`;
       } else {
         presenceStatus = "live";
-        bannerTitle = "In hospital now";
+        bannerTitle = "On this board now";
         bannerTag = "Emergency Dept";
         waitTimeHours = Math.max(0, (now - referral.raisedAt) / 60);
         disposition = "Unplaced";
@@ -872,7 +882,7 @@ export function RecordPreview({
   const operational = movementSearchState(movement, admissions);
 
   const presenceStatus: "live" | "past" = isOpen(movement) ? "live" : "past";
-  const bannerTitle = isOpen(movement) ? "In hospital now" : "Not in hospital now";
+  const bannerTitle = isOpen(movement) ? "On this board now" : "Not on this board now";
   const bannerTag = settingLabel(operational.setting);
   const waitTimeHours = waitedHours(movement, now);
   const isBreaching = waitTimeHours * 60 >= LONG_WAIT_MINUTES;
