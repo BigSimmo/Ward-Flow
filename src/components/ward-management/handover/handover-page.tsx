@@ -412,7 +412,7 @@ export function HandoverPage() {
         .filter((movement) => isOpen(movement) || isStoppedTransportAwaitingRelease(movement))
         .map((movement) => ({
           ...toHandoverRow(movement, units, patients, referrals),
-          actNow: actNowMovementIds.has(movement.id),
+          actNow: isStoppedTransportAwaitingRelease(movement) ? undefined : actNowMovementIds.has(movement.id),
         })),
     [movements, units, patients, referrals, actNowMovementIds],
   );

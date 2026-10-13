@@ -14,7 +14,11 @@ import {
   minuteOfDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { isStoppedTransportAwaitingRelease, transportLeg, unitCapacity } from "@/components/ward-management/ward-derivations";
+import {
+  isStoppedTransportAwaitingRelease,
+  transportLeg,
+  unitCapacity,
+} from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type {
@@ -214,8 +218,13 @@ export function toHandoverRow(
       at: decline.at,
     })),
     pullExpiresAt: movement.pullExpiresAt,
-    transport:
-      movement.transport === undefined
+    transport: isStoppedTransportAwaitingRelease(movement)
+      ? {
+          provider: movement.transport?.provider ?? "Transport stopped",
+          escort: movement.transport?.escortRequired ?? false,
+          leg: "Stopped",
+        }
+      : movement.transport === undefined || leg === "Cancelled"
         ? undefined
         : {
             provider: movement.transport.provider,
@@ -240,15 +249,20 @@ export function isCollected(row: HandoverRow): boolean {
   return row.stage === "moving" || transport?.collectedAt !== undefined;
 }
 
+export function isStoppedAwaitingRelease(row: HandoverRow): boolean {
+  return isStoppedTransportAwaitingRelease(row.movement);
+}
+
 export function pullHasLapsed(row: HandoverRow, now: Instant): boolean {
   return !isCollected(row) && bedHoldLapsed(row.pullExpiresAt, now);
 }
 
-/** Act-now rows include stopped transports so staff release their held bed. */
-function isStoppedAwaitingRelease(row: HandoverRow): boolean {
-  return isStoppedTransportAwaitingRelease(row.movement);
-}
-
+/**
+ * Act now on the sheet. L1 (site review, 12 Oct 2026): Handover read "Act now 3" while Alerts read
+ * 2, because the sheet kept its own list. With `actNow` set the sheet reads the shared act-now list
+ * (`activeActNowItems`), so a snoozed alert leaves both together. A journey flagged urgent by a
+ * person is always act now as well: that flag is a human safety call the sheet must not drop.
+ */
 export function isActNow(row: HandoverRow, now: Instant): boolean {
   if (isStoppedAwaitingRelease(row)) return true;
   if (row.actNow !== undefined) return row.actNow || row.urgent;
@@ -267,6 +281,7 @@ export const isMoving = (row: HandoverRow) => row.stage === "moving" || row.stag
 export function groupOf(row: HandoverRow, now: Instant, cutoff: Instant): HandoverGroupId {
   if (isActNow(row, now)) return "act";
   if (isDueBy(row, now, cutoff)) return "due";
+  if (isStoppedAwaitingRelease(row)) return "acc";
   if (isWaitingForBed(row)) return "bed";
   if (row.stage === "accepted_awaiting_bed" || row.stage === "pulled") return "acc";
   return "mov";
@@ -313,12 +328,13 @@ export function destinationText(row: HandoverRow): string {
 /** Short due text for the table: whichever comes first of a bed hold and a typed form time. */
 export function dueShort(row: HandoverRow, now: Instant): string | null {
   const collected = isCollected(row);
-  if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
-    const hold = bedHold(row.pullExpiresAt, now)!;
+  const pullConsidered = row.pullExpiresAt !== undefined && (!collected || row.formDueAt === undefined);
+  if (pullConsidered && (row.formDueAt === undefined || row.pullExpiresAt! <= row.formDueAt)) {
+    const hold = bedHold(row.pullExpiresAt!, now)!;
     if (hold.state === "lapsed") {
       return collected ? "In transit" : hold.label;
     }
-    return `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
+    return `Pull ends ${formatInstantWithDay(row.pullExpiresAt!, now)}`;
   }
   if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
   return null;
@@ -330,16 +346,17 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
  */
 export function dueParts(row: HandoverRow, now: Instant): { when: string; what: string; atRisk?: boolean } | null {
   const collected = isCollected(row);
-  if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
+  const pullConsidered = row.pullExpiresAt !== undefined && (!collected || row.formDueAt === undefined);
+  if (pullConsidered && (row.formDueAt === undefined || row.pullExpiresAt! <= row.formDueAt)) {
     // Audit A4-3: the one bed-hold rule. Under an hour left carries the amber at-risk dot (not Act now).
-    const hold = bedHold(row.pullExpiresAt, now)!;
+    const hold = bedHold(row.pullExpiresAt!, now)!;
     if (hold.state === "lapsed") {
       return collected
         ? { when: "In transit", what: "Pull active" }
         : { when: durMinutes(hold.minutes), what: "Pull expired" };
     }
     return {
-      when: formatInstantWithDay(row.pullExpiresAt, now),
+      when: formatInstantWithDay(row.pullExpiresAt!, now),
       what: "Pull ends",
       ...(hold.state === "at-risk" ? { atRisk: true } : {}),
     };

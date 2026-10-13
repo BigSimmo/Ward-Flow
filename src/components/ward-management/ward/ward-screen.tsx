@@ -96,16 +96,15 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import styles from "./ward.module.css";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
-import { openDecisionCount } from "./ward-decisions-cockpit";
+import { WardDecisionsCockpit, openDecisionCount } from "./ward-decisions-cockpit";
+import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
+import { WardDischargesMatrix } from "./ward-discharges-matrix";
+import { WardBedsMatrix, type BedItem } from "./ward-beds-matrix";
+import { WardBedBoard, type WaitingReferral } from "./ward-bed-board";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
-import { WardBedBoard } from "./ward-bed-board";
-import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
-import { WardDischargesMatrix } from "./ward-discharges-matrix";
-import { WardBedsMatrix, type BedItem } from "./ward-beds-matrix";
-import type { WaitingReferral } from "./ward-bed-board";
 import {
   bedFits,
   bedNumberLabel,
@@ -140,10 +139,6 @@ const WardNotificationCenter = dynamic(
 const WardAnswerView = dynamic(() => import("./ward-answer-view").then((m) => m.WardAnswerView), {
   ssr: false,
   loading: () => <p role="status">Loading ward answer…</p>,
-});
-const WardDecisionsCockpit = dynamic(() => import("./ward-decisions-cockpit").then((m) => m.WardDecisionsCockpit), {
-  ssr: false,
-  loading: () => <p role="status">Loading decisions…</p>,
 });
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
@@ -279,6 +274,23 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     patients,
   } = useWardFlow();
   const now = useWardFlowClock();
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("requestIdleCallback" in window)) return;
+    const handle = (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(
+      () => {
+        import("@/components/ward-management/board/ward-daily-sheet");
+        import("./ward-bed-dossier-drawer");
+        import("./ward-notification-center");
+        import("./ward-answer-view");
+      },
+    );
+    return () => {
+      if ("cancelIdleCallback" in window) {
+        (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(handle);
+      }
+    };
+  }, []);
   // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
   // listed cross-role pair in `ward-role-permissions.ts`.
   const raiseReferralGate = useRoleGate()("RECEIVE_REFERRAL");
@@ -1487,6 +1499,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId: pick.movementId,
         unitId: boardUnitId,
+        actingUnitId: boardUnitId,
         bedNumber,
       });
     } else {
@@ -1543,7 +1556,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!declineReason) return;
-    dispatch({ type: "DECLINE", role: "ward", now, movementId, unitId: wardUnitId, reason: declineReason });
+    dispatch({
+      type: "DECLINE",
+      role: "ward",
+      now,
+      movementId,
+      unitId: wardUnitId,
+      actingUnitId: wardUnitId,
+      reason: declineReason,
+    });
     setDeclineOpenFor(undefined);
     setDeclineReason(undefined);
   }
@@ -1566,6 +1587,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       now,
       movementId,
       unitId,
+      actingUnitId: unitId,
     });
     setCheckToken((token) => token + 1);
   }
@@ -1580,6 +1602,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       now,
       movementId,
       unitId,
+      actingUnitId: unitId,
     });
     setCheckToken((t) => t + 1);
   }
@@ -1610,6 +1633,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId,
         unitId: wardUnitId,
+        actingUnitId: wardUnitId,
         overrideReason,
       });
     } else {
@@ -1619,6 +1643,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId,
         unitId: wardUnitId,
+        actingUnitId: wardUnitId,
         overrideReason,
         // Absent, never `false`, when this refusal is not the one the tick answers — see
         // `Override.numConsulted`'s own doc comment on that discipline.
@@ -2763,21 +2788,21 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         >
           {activeTab === "return" ? (
             <WardDecisionsCockpit
-            unit={unit}
-            rollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
-            rollupConfirmed={isRollupConfirmedToday}
-            rollupTimeLabel={morningRollupTimeLabel}
-            plannedDischarges={rollupConfirmation?.expectedDischarges ?? releasesCountedToday.length}
-            onConfirmRollup={handleConfirmMorningRollup}
-            staffingFact={`${unit.allocatable.value} allocatable`}
-            intakes={intakeDecisions}
-            departures={departureDecisions}
-            leaves={leaveDecisions}
-            projection={{
-              freeNow: capacity.available,
-              freeBy: capacity.available + readyByShiftEnd,
-              byLabel: formatInstantWithDay(dayShiftEndInstant(now), now),
-            }}
+              unit={unit}
+              rollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
+              rollupConfirmed={isRollupConfirmedToday}
+              rollupTimeLabel={morningRollupTimeLabel}
+              plannedDischarges={rollupConfirmation?.expectedDischarges ?? releasesCountedToday.length}
+              onConfirmRollup={handleConfirmMorningRollup}
+              staffingFact={`${unit.allocatable.value} allocatable`}
+              intakes={intakeDecisions}
+              departures={departureDecisions}
+              leaves={leaveDecisions}
+              projection={{
+                freeNow: capacity.available,
+                freeBy: capacity.available + readyByShiftEnd,
+                byLabel: formatInstantWithDay(dayShiftEndInstant(now), now),
+              }}
             />
           ) : null}
           {/* U3: the page's prototype footer below carries this safety line; it is not repeated here. */}
@@ -2807,21 +2832,21 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           {activeTab === "coming" ? (
             <WardArrivalsCorridor
               unit={unit}
-            onPullPatient={handlePullPatient}
-            accepted={accepted}
-            heldAfterStop={heldAfterStop}
-            now={now}
-            resolvePatientIdentity={resolvePatientIdentity}
-            releaseOpenFor={releaseOpenFor}
-            toggleRelease={toggleRelease}
-            releaseReason={releaseReason}
-            setReleaseReason={setReleaseReason}
-            submitRelease={submitRelease}
-            lastActionRejection={lastActionRejection}
-            dispatch={dispatch}
-            setCheckToken={setCheckToken}
-            priorRejectionCountRef={priorRejectionCountRef}
-            rejections={rejections}
+              onPullPatient={handlePullPatient}
+              accepted={accepted}
+              heldAfterStop={heldAfterStop}
+              now={now}
+              resolvePatientIdentity={resolvePatientIdentity}
+              releaseOpenFor={releaseOpenFor}
+              toggleRelease={toggleRelease}
+              releaseReason={releaseReason}
+              setReleaseReason={setReleaseReason}
+              submitRelease={submitRelease}
+              lastActionRejection={lastActionRejection}
+              dispatch={dispatch}
+              setCheckToken={setCheckToken}
+              priorRejectionCountRef={priorRejectionCountRef}
+              rejections={rejections}
               overrideReasonForm={overrideReasonForm}
             />
           ) : null}
@@ -2851,12 +2876,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           {activeTab === "out" ? (
             <WardDischargesMatrix
               unit={unit}
-            releasesCountedToday={releasesCountedToday}
-            unitLeaveBeds={unitLeaveBeds}
-            blockedReleases={blockedReleases}
-            now={now}
-            confirmBedRelease={confirmBedRelease}
-            clearBedReleaseBlock={clearBedReleaseBlock}
+              releasesCountedToday={releasesCountedToday}
+              unitLeaveBeds={unitLeaveBeds}
+              blockedReleases={blockedReleases}
+              now={now}
+              confirmBedRelease={confirmBedRelease}
+              clearBedReleaseBlock={clearBedReleaseBlock}
               endLeaveBed={endLeaveBed}
             />
           ) : null}
@@ -2886,11 +2911,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           {activeTab === "beds" ? (
             <WardBedsMatrix
               unit={unit}
-            bedsList={bedsList}
-            selectedBed={selectedBed}
-            setSelectedBed={setSelectedBed}
-            selectedPod={selectedPod}
-            setSelectedPod={setSelectedPod}
+              bedsList={bedsList}
+              selectedBed={selectedBed}
+              setSelectedBed={setSelectedBed}
+              selectedPod={selectedPod}
+              setSelectedPod={setSelectedPod}
               isMixed={isMixed}
             />
           ) : null}

@@ -232,30 +232,37 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                     ))}
                   </select>
                 </label>
-                <button
-                  type="button"
-                  className={styles.patientChipBtn}
-                  aria-disabled={!reasons[entry.id] || roleRefusal !== undefined ? "true" : undefined}
-                  aria-describedby={roleRefusal ? declineReasonId : undefined}
-                  onClick={(e) => {
-                    const reason = reasons[entry.id];
-                    if (!reason || roleRefusal) {
-                      ignoreUnavailableActivation(e);
-                      return;
-                    }
-                    setAttempt({ id: entry.id, count: rejections.length });
-                    dispatch({
-                      type: "DECLINE_REFERRAL",
-                      ...decisionBase,
-                      referralId: entry.id,
-                      reason,
-                    });
-                    watchDecision(entry.id, "Referral declined");
-                  }}
-                >
-                  Decline referral
-                </button>
-                {roleRefusal ? <DisabledReason id={declineReasonId}>{roleRefusal}</DisabledReason> : null}
+                {(() => {
+                  const declineRefusal = roleRefusal ?? (!reasons[entry.id] ? "Choose a decline reason" : undefined);
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        className={styles.patientChipBtn}
+                        aria-disabled={declineRefusal !== undefined ? "true" : undefined}
+                        aria-describedby={declineRefusal ? declineReasonId : undefined}
+                        onClick={(e) => {
+                          const reason = reasons[entry.id];
+                          if (!reason || roleRefusal) {
+                            ignoreUnavailableActivation(e);
+                            return;
+                          }
+                          setAttempt({ id: entry.id, count: rejections.length });
+                          dispatch({
+                            type: "DECLINE_REFERRAL",
+                            ...decisionBase,
+                            referralId: entry.id,
+                            reason,
+                          });
+                          watchDecision(entry.id, "Referral declined");
+                        }}
+                      >
+                        Decline referral
+                      </button>
+                      {declineRefusal ? <DisabledReason id={declineReasonId}>{declineRefusal}</DisabledReason> : null}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </article>

@@ -23,7 +23,7 @@ import { movementHref, patientHref } from "@/components/ward-management/shell/wa
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { CHROME_ROLE_LABELS, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 
 export type WardChromeSearchProps = {
   movements?: Movement[];
@@ -104,16 +104,6 @@ export function WardChromeSearch({
   const debouncedQuery = useDebouncedValue(query, 120);
   const trimmed = query.trim();
   const debouncedTrimmed = debouncedQuery.trim();
-  const tasksInbox = useMemo(
-    () =>
-      buildActionInbox(
-        movements.filter(isOpen),
-        context?.now ?? 0,
-        units,
-        context?.plannedAdmissions ? { plannedAdmissions: context.plannedAdmissions } : undefined,
-      ),
-    [movements, units, context?.now, context?.plannedAdmissions],
-  );
   const searchPending = debouncedTrimmed !== trimmed;
   // Reset the highlighted option when the query changes, during render rather than in an
   // effect (react.dev: "Adjusting some state when a prop changes").
@@ -122,6 +112,14 @@ export function WardChromeSearch({
     setPrevTrimmed(trimmed);
     setActiveIndex(-1);
   }
+
+  const now = useWardFlowClock();
+  const plannedAdmissions = context?.plannedAdmissions;
+
+  const precomputedTasks = useMemo(
+    () => buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions ? { plannedAdmissions } : undefined),
+    [movements, now, plannedAdmissions, units],
+  );
 
   const smartResults = useMemo(
     () =>
@@ -133,11 +131,12 @@ export function WardChromeSearch({
             movements,
             units,
             referrals,
+            now,
             limitPerGroup: MAX_RESULTS_PER_GROUP,
             plannedAdmissions: context?.plannedAdmissions,
-            precomputedTasks: tasksInbox,
+            precomputedTasks,
           }),
-    [debouncedTrimmed, patients, movements, units, referrals, context?.plannedAdmissions],
+    [debouncedTrimmed, patients, movements, units, referrals, now, context?.plannedAdmissions, precomputedTasks],
   );
 
   const groups = useMemo(() => {
