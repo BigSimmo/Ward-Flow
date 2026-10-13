@@ -1262,12 +1262,14 @@ function AlertsWorkspace() {
               ]}
               actions={
                 <div className={styles.phoneHeroActions}>
-                  <Button variant="onHero" icon={ChevronRight} onClick={handleNext}>
+                  {/* Ops-14 (13 Oct 2026): working the next alert is the common action, so it is the
+                      one primary; a statewide broadcast stays one tap away as a secondary. */}
+                  <Button variant="light" icon={ChevronRight} onClick={handleNext} data-testid="ward-alerts-phone-next">
                     Next alert
                   </Button>
                   <Button
                     ref={broadcastTriggerRef}
-                    variant="light"
+                    variant="onHero"
                     icon={Radio}
                     onClick={(event) => openComposer(event.currentTarget)}
                   >

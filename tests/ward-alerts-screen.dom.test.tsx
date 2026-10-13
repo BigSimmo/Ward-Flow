@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { buttonClass } from "@/components/wf";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -223,6 +224,28 @@ describe("Alerts v10 pass (10 Oct 2026)", () => {
     renderScreen();
     expect(screen.getByText("Not checked: handover sheets")).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/All clear/i);
+  });
+});
+
+describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => {
+  it("makes Next alert the one primary and Broadcast a secondary", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      renderScreen();
+      const hero = within(screen.getByTestId("ward-alerts-phone-hero"));
+      expect(hero.getByRole("button", { name: /^Next alert/u }).className).toBe(buttonClass({ variant: "light" }));
+      expect(hero.getByRole("button", { name: /^Broadcast/u }).className).toBe(buttonClass({ variant: "onHero" }));
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 
