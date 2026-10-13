@@ -47,7 +47,7 @@ describe("the referral drawer shows only what the record holds", () => {
         </Sheet>
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Switch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
     const search = screen.getByRole("searchbox", { name: "Find a patient" });
     fireEvent.keyDown(search, { key: "Escape" });
     expect(close).not.toHaveBeenCalled();

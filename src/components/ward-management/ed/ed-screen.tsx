@@ -141,6 +141,8 @@ import styles from "./ed.module.css";
 import { EdOverview } from "./ed-overview";
 import { EdActionsMenu, EdPlanPicker, EdPresentation, EdReviewStatus } from "./ed-board-controls";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
+import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 
 const RECORDED_ED_FORMS = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
@@ -2802,35 +2804,32 @@ export function EdScreen({ edId }: EdScreenProps) {
             { id: "unreviewed", label: "Not reviewed", value: notReviewedCount },
             { id: "target", label: "Access target", value: waitLine(accessTarget) },
           ]}
-          referralOpen={referralOpen}
-          onRaiseReferral={() => {
-            setRaisingFromReferralId(undefined);
-            setReferralOpen(true);
-            requestAnimationFrame(() =>
-              document.querySelector<HTMLSelectElement>('[data-testid="ward-ed-referral-cohort"]')?.focus(),
-            );
-          }}
+          // Option B (Josh, 13 Oct 2026): one referral flow. Raise referral opens the referral
+          // slide-out from this department; the inline form below now only raises a movement from a
+          // referral already in this department's inbox.
+          onRaiseReferral={() =>
+            openReferralSheet(raiseReferralHref({ source: "ed_medical", originEdId: thisEdId, refer: "ward" }))
+          }
         />
 
         <section
           id="ward-ed-referral-intake"
-          aria-label="New referral"
+          aria-label="Raise into a movement"
           hidden={!referralOpen}
           className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.referralBarSection}`}
           tabIndex={0}
         >
           <div className={styles.ph}>
-            <h2>New referral</h2>
+            <h2>Raise into a movement</h2>
             <button
               type="button"
               className={styles.inboxBtn}
               onClick={() => {
                 setReferralOpen(false);
                 setRaisingFromReferralId(undefined);
-                document.querySelector<HTMLButtonElement>('[data-testid="ward-ed-raise-referral-toggle"]')?.focus();
               }}
             >
-              Close referral
+              Close
             </button>
           </div>
           {referralOpen && (
@@ -3112,7 +3111,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                         title={referralBlocked ?? undefined}
                         onClick={referralBlocked ? ignoreUnavailableActivation : undefined}
                       >
-                        Raise referral
+                        Raise into a movement
                       </button>
                       <button
                         type="button"

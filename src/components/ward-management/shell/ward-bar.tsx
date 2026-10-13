@@ -1008,10 +1008,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, [openPanel]);
 
   useEffect(() => {
-    const unsubOpen = subscribeWardDrawer((drawerId) => {
+    const unsubOpen = subscribeWardDrawer((drawerId, href) => {
       if (drawerId === "referral") {
         const opener = document.activeElement;
-        openReferral({ category: roleCategory }, opener instanceof HTMLElement ? opener : null);
+        // A button that raises a referral from where it sits (ED, community team, Home) passes the
+        // same link a Refer link would, so the slide-out opens prefilled from that place.
+        const request = href ? referralSheetRequestFromHref(href, window.location.origin) : null;
+        const search = href ? new URL(href, window.location.origin).searchParams : null;
+        openReferral(
+          request && search ? withRoleCategory(request, search, roleCategory) : { category: roleCategory },
+          opener instanceof HTMLElement ? opener : null,
+        );
         return;
       }
       openPopover(drawerId);
@@ -2190,6 +2197,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           initialDestination={referralRequest.destination}
           initialPatientId={referralRequest.personId}
           initialOriginSiteCode={referralRequest.originSiteCode}
+          initialSendingTeam={referralRequest.sendingTeam}
+          initialUnitIds={referralRequest.unitIds}
           closeRequestRef={referralCloseRef}
           onClose={closeReferral}
         />

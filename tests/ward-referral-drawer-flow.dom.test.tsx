@@ -91,7 +91,7 @@ describe("approved four-tab referral drawer journey", () => {
     tab("Referral");
     expect(screen.getByLabelText(/Patient story/)).toHaveValue("Synthetic story retained");
     tab("Patient");
-    fireEvent.click(screen.getByRole("button", { name: "Switch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
     const results = screen.getByRole("listbox");
     fireEvent.click(within(results).getAllByRole("option")[1]);
     expect(screen.getByRole("button", { name: "Confirm catchment" })).toBeInTheDocument();

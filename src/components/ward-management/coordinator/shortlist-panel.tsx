@@ -154,9 +154,10 @@ type ShortlistPanelProps = {
    *  existing direct-render tests keep their older prop set. */
   pullHoldMinutes?: number;
   /**
-   * Phone only (v10 Home "Refer to <ward>"): when given, Refer hands the chosen wards to the page,
-   * which records the same `REFER_TO_UNITS` through `useUndoableStep` so the toast says Offered
-   * with Undo. Absent (desktop, tablet, direct-render tests), Refer dispatches as before.
+   * Home (option B, Josh, 13 Oct 2026; D-30): when given, Refer hands the chosen wards (none is
+   * fine) to the page, which opens the referral slide-out for this person so the referral reaches
+   * the coordinator queue rather than offering the ward at once. Never greyed: the coordinator is
+   * never blocked. Absent (direct-render tests), Refer dispatches `REFER_TO_UNITS` as before.
    */
   onRefer?: (unitIds: string[], unitNames: string[]) => void;
 };
@@ -813,9 +814,13 @@ export function ShortlistPanel({
    * straight from the provider, never a value this function sets and then leaves behind.
    */
   function handleRefer() {
+    if (onRefer) {
+      onRefer([...referTargets], referTargetNames);
+      setOverrideOpen(false);
+      return;
+    }
     if (!canRefer) return;
-    if (onRefer) onRefer([...referTargets], referTargetNames);
-    else dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
+    dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
     setOverrideOpen(false);
   }
 
@@ -1632,7 +1637,7 @@ export function ShortlistPanel({
               {/* Phone (v10): with no ward picked yet, Refer is never shown greyed. It reads "Choose a
               ward to refer" and takes the person to the fits list; nothing is referred against a
               default (Critical 2), so the choice stays a human tap on a ward. */}
-              {isPhone && !hasReferSelection && referralBlocked === undefined ? (
+              {isPhone && !onRefer && !hasReferSelection && referralBlocked === undefined ? (
                 <button
                   type="button"
                   data-testid="ward-shortlist-refer"
@@ -1646,11 +1651,11 @@ export function ShortlistPanel({
                 <button
                   type="button"
                   data-testid="ward-shortlist-refer"
-                  aria-disabled={canRefer ? undefined : "true"}
-                  aria-describedby={canRefer ? undefined : "ward-shortlist-refer-unavailable"}
-                  title={canRefer ? undefined : referUnavailableReason}
+                  aria-disabled={canRefer || onRefer ? undefined : "true"}
+                  aria-describedby={canRefer || onRefer ? undefined : "ward-shortlist-refer-unavailable"}
+                  title={canRefer || onRefer ? undefined : referUnavailableReason}
                   className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
-                  onClick={canRefer ? handleRefer : ignoreUnavailableActivation}
+                  onClick={canRefer || onRefer ? handleRefer : ignoreUnavailableActivation}
                 >
                   {referTargetNames.length === 1 ? `Refer to ${referTargetNames[0]}` : "Refer"}
                 </button>

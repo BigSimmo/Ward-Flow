@@ -378,6 +378,8 @@ export type RaiseReferralTarget = {
   readonly originEdId?: string;
   /** The community team the person is being referred FROM, when the source is `"community"`. */
   readonly teamId?: string;
+  /** Wards already chosen where the referral starts (Home's placement shortlist), preselected. */
+  readonly unitIds?: readonly string[];
 };
 
 /**
@@ -396,9 +398,9 @@ export type RaiseReferralTarget = {
  * **WHO READS THEM (8 Oct 2026).** The full-page intake form is retired; the referral slide-out is
  * the one place a referral is written. `referrals/referral-sheet-link.ts` reads `patientId`,
  * `source`, `refer` and `originEdId` from this link, and the bar (`shell/ward-bar.tsx`) opens the
- * slide-out with them, in place, wherever the link is clicked. `teamId` is still never read: the
- * model holds a community team's NAME, not an id, so reading an id would either invent a registry or
- * silently store one as a name.
+ * slide-out with them, in place, wherever the link is clicked. `teamId` is read only as a key into
+ * the community team pages (`communityTeamById`), and the slide-out receives the team's NAME as the
+ * referring team; an id that names no team is dropped, never stored as a name.
  */
 export function raiseReferralHref(target: RaiseReferralTarget): string {
   const query = new URLSearchParams();
@@ -407,6 +409,7 @@ export function raiseReferralHref(target: RaiseReferralTarget): string {
   if (target.refer !== undefined) query.set("refer", target.refer);
   if (target.originEdId !== undefined) query.set("originEdId", target.originEdId);
   if (target.teamId !== undefined) query.set("teamId", target.teamId);
+  if (target.unitIds !== undefined && target.unitIds.length > 0) query.set("units", target.unitIds.join(","));
   return `/mockups/ward-flow/referrals/new?${query.toString()}`;
 }
 

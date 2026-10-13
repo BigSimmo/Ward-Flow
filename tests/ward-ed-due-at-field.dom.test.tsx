@@ -16,6 +16,7 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { EdInboxReferralFixture, openRaiseIntoMovementForm } from "./helpers/ed-raise-into-movement";
 
 /**
  * 🔴 **REWRITTEN, T3 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner
@@ -45,10 +46,11 @@ const PICKER = "ward-ed-referral-legal-form";
 function openReferralForm() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <EdInboxReferralFixture edId="jhc-ed" />
       <EdScreen edId="jhc-ed" />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+  openRaiseIntoMovementForm();
 }
 
 function chooseForm(code: string) {

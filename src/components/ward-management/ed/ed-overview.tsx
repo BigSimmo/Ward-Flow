@@ -47,8 +47,8 @@ type Props = {
   /** "N of M past 24h, everyone stays on the board" while a chip is pressed. */
   highlightNote?: ReactNode;
   checks: CheckingItem[];
+  /** Opens the one referral slide-out, from this department (option B, 13 Oct 2026). */
   onRaiseReferral: () => void;
-  referralOpen?: boolean;
 };
 
 const shortName = (name: string) => name.replace(/ Emergency Department$/, "");
@@ -74,7 +74,6 @@ export function EdOverview({
   highlightNote,
   checks,
   onRaiseReferral,
-  referralOpen = false,
 }: Props) {
   const isPhone = useIsPhone();
   const current = departments.find((department) => department.id === departmentId);
@@ -86,8 +85,6 @@ export function EdOverview({
       type="button"
       className={buttonClass({ variant: "light", size: "sm" })}
       data-testid="ward-ed-raise-referral-toggle"
-      aria-expanded={referralOpen}
-      aria-controls="ward-ed-referral-intake"
       onClick={onRaiseReferral}
     >
       <Plus size={14} aria-hidden="true" />
