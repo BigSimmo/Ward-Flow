@@ -41,7 +41,12 @@ function renderDrawer(props: Partial<Parameters<typeof WardReferralDrawer>[0]> =
   const onClose = vi.fn();
   const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <WardReferralDrawer onClose={onClose} {...props} />
+      <WardReferralDrawer
+        onClose={onClose}
+        // A2-3: the sheet no longer opens on a demo person; these tests name WF-009's person.
+        {...(props.initialCategory ? {} : { initialPatientId: "PT-023" })}
+        {...props}
+      />
     </WardFlowProvider>,
   );
   return { onClose, ...view };

@@ -32,7 +32,7 @@ const seed = seedWardFlowState();
 function renderDrawer() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <WardReferralDrawer onClose={() => {}} />
+      <WardReferralDrawer onClose={() => {}} initialPatientId="PT-023" />
     </WardFlowProvider>,
   );
 }
@@ -43,7 +43,7 @@ describe("the referral drawer shows only what the record holds", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <Sheet open title="Referrals" onClose={close} portal={false}>
-          <WardReferralDrawer onClose={close} />
+          <WardReferralDrawer onClose={close} initialPatientId="PT-023" />
         </Sheet>
       </WardFlowProvider>,
     );
