@@ -1100,8 +1100,9 @@ describe("the out-of-area ledger over the seeded wards", () => {
     // The seed author's own named examples. These ARE coupled to the placeholder band table, and
     // that coupling is declared rather than hidden: when somebody replaces those invented values
     // with measured ones, this list and the one in the not-recorded test below are what move. No
-    // band is named here, and no total is pinned.
-    for (const id of ["AD-RPHS-01", "AD-SCGA-03", "AD-ARMA-01"]) {
+    // band is named here, and no total is pinned. AD-ARMA-01 left this list in audit round 2
+    // (S-22), when the Perth Metropolitan to Armadale pair stopped reading "Reachable only by air".
+    for (const id of ["AD-RPHS-01", "AD-SCGA-03"]) {
       expect(entryIds, `${id} should be an occupied out-of-area bed in the seed`).toContain(id);
     }
   });
@@ -1119,7 +1120,9 @@ describe("the out-of-area ledger over the seeded wards", () => {
   });
 
   it("drops somebody who has LEFT an out-of-area bed, and that exclusion is doing work", () => {
-    for (const id of ["AD-LEFT-01", "AD-LEFT-04"]) {
+    // AD-LEFT-01 (Perth Metropolitan, at Armadale) is in area since audit round 2 (S-22), so it
+    // can no longer prove the departure check; AD-LEFT-04 carries the case alone.
+    for (const id of ["AD-LEFT-04"]) {
       const departed = admissionById(id);
       expect(departed, `${id} is missing from the seed`).toBeDefined();
       expect(departed!.state).toBe("departed");

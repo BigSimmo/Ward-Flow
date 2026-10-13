@@ -1159,7 +1159,6 @@ function WardReferralDrawerContent({
     const matchingRecords = capacityRecords.filter((r) => r.cohort === patientCohort && r.security === security);
     const readyBedsCount = matchingRecords.reduce((sum, r) => sum + r.readyBeds, 0);
     const pulledBedsCount = matchingRecords.reduce((sum, r) => sum + r.pulledBeds, 0);
-    const closedBedsCount = matchingRecords.reduce((sum, r) => sum + r.closedBeds, 0);
     // Owner ruling, 2026-09-05. `readyBedsCount` deliberately subtracts NOTHING for this:
     // a ward's figure must not lurch as cleaning starts and stops. The number stays; the
     // sentence beside it is what was missing here.
@@ -1170,7 +1169,7 @@ function WardReferralDrawerContent({
       if (aMatch !== bMatch) return bMatch - aMatch;
       return b.readyBeds - a.readyBeds;
     });
-    return { readyBedsCount, pulledBedsCount, closedBedsCount, pendingPreparationCount, sortedUnits };
+    return { readyBedsCount, pulledBedsCount, pendingPreparationCount, sortedUnits };
   })();
 
   const selectedDestinations: ReferralDestination[] =
@@ -2506,8 +2505,7 @@ function WardReferralDrawerContent({
                             {destType === "ward" ? (
                               <>
                                 <StatusGlyph tone={realTimeMatch.readyBedsCount > 0 ? "success" : "danger"} size={9} />
-                                {realTimeMatch.readyBedsCount} ready · {realTimeMatch.pulledBedsCount} pulled ·{" "}
-                                {realTimeMatch.closedBedsCount} closed
+                                {realTimeMatch.readyBedsCount} ready · {realTimeMatch.pulledBedsCount} pulled
                               </>
                             ) : destType === "community" ? (
                               <>
@@ -3185,10 +3183,8 @@ function WardReferralDrawerContent({
                             <StatusGlyph tone="info" size={9} />
                             <strong className={styles.mono}>{realTimeMatch.pulledBedsCount}</strong> pulled
                           </span>
-                          <span>
-                            <StatusGlyph tone="closed" size={9} />
-                            <strong className={styles.mono}>{realTimeMatch.closedBedsCount}</strong> closed
-                          </span>
+                          {/* Audit round 2 (A2-8): no closed total. No listed ward shows a closed bed,
+                              so the figure matched nothing on the step. */}
                           <span className={styles.legendAside}>
                             {currentPatient.cohort} · {security.toLowerCase()} · {realTimeMatch.sortedUnits.length}{" "}
                             {realTimeMatch.sortedUnits.length === 1 ? "ward" : "wards"}
@@ -3264,13 +3260,15 @@ function WardReferralDrawerContent({
                                     <span className={styles.fit} data-fit={unit.readyBeds > 0 ? "bed" : "none"}>
                                       <StatusGlyph tone={unit.readyBeds > 0 ? "success" : "warning"} size={9} />
                                       {unit.readyBeds > 0 ? "Bed ready" : "No bed now"}
-                                    </span>{" "}
-                                    ·{" "}
-                                    {inCatchment === null
-                                      ? "Catchment not confirmed"
-                                      : inCatchment
-                                        ? "In catchment"
-                                        : "Outside catchment"}
+                                    </span>
+                                    {/* Audit round 2 (A2-7): once the catchment is confirmed this never
+                                        says "not confirmed". With no service area given there is no
+                                        match to show, so the part is left out. */}
+                                    {inCatchment !== null
+                                      ? ` · ${inCatchment ? "In catchment" : "Outside catchment"}`
+                                      : catchmentConfirmed
+                                        ? null
+                                        : " · Catchment not confirmed"}
                                     <span className={styles.wardMetaMore}>
                                       {unit.healthService ? ` · ${unit.healthService}` : ""} ·{" "}
                                       <span className={styles.mono}>{unit.unitId}</span>
@@ -3279,6 +3277,8 @@ function WardReferralDrawerContent({
                                 </span>
                                 <span className={styles.wardFigure}>
                                   <strong className={styles.mono}>{unit.readyBeds}</strong>
+                                  {/* Audit round 2 (A2-8): the phone card has no column head either. */}
+                                  <small className={styles.wardFigureName}>ready</small>
                                   {(unit.pendingPreparation ?? 0) > 0 ? (
                                     <small>{unit.pendingPreparation} prep</small>
                                   ) : unit.pulledBeds > 0 ? (

@@ -37,6 +37,7 @@ import {
   type SearchResultGroup,
   type SearchResultItem,
 } from "@/components/ward-management/ward-global-search";
+import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
 
 import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
@@ -494,13 +495,19 @@ function DataModeRow({ onClose }: { onClose: () => void }) {
   );
 }
 
-function WhoLink({ role, onClose }: { role: WardChromeRole; onClose: () => void }) {
+/**
+ * Audit round 2 (S-34): the who-you-are row opens the Switch workstation drawer itself. It used to
+ * go to Settings, where a second Switch workstation button opened the same drawer.
+ */
+function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => void }) {
   return (
-    <Link
-      href={settingsHref()}
+    <button
+      type="button"
       className={styles.who}
-      onClick={onClose}
-      aria-label={`${CHROME_ROLE_LABELS[role]}. Switch workstation in Settings`}
+      onClick={onSwitch}
+      aria-haspopup="dialog"
+      aria-label={`${CHROME_ROLE_LABELS[role]}. Switch workstation`}
+      data-testid="ward-phone-menu-switch-workstation"
     >
       {/* v10 Menu sheet: an initials avatar. The prototype has no signed-in person, so the
           initials are the workstation's ("BC" for Bed coordinator), never an invented name. */}
@@ -515,7 +522,7 @@ function WhoLink({ role, onClose }: { role: WardChromeRole; onClose: () => void 
         <span className={styles.whoName}>{CHROME_ROLE_LABELS[role]}</span>
         <span className={styles.whoMeta}>Switch workstation</span>
       </span>
-    </Link>
+    </button>
   );
 }
 
@@ -601,6 +608,8 @@ function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string
 
 /** Records per kind in the menu, the same short list the header search shows under All. */
 const MENU_RESULTS_PER_GROUP = 6;
+/** Audit round 2 (S-33): what "Show all N" opens a group to, the header search's per-kind limit. */
+const MENU_RESULTS_FULL = 40;
 
 /**
  * The menu's search is the app's one smart search (`searchWardFlow`, grouped by
@@ -622,7 +631,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
       units,
       referrals,
       now,
-      limitPerGroup: MENU_RESULTS_PER_GROUP,
+      limitPerGroup: MENU_RESULTS_FULL,
       plannedAdmissions,
     });
     const viewHrefs = new Set(results.views.map((view) => view.href));
@@ -675,16 +684,41 @@ function MenuResults({
   onGo: (item: SearchResultItem) => void;
 }) {
   const { needle, refusal, pages, groups } = search;
+  // Audit round 2 (S-33): each group shows six, then "Show all N" opens the rest in place. A new
+  // query starts short again.
+  const [expanded, setExpanded] = useState<{ needle: string; keys: ReadonlySet<string> }>({
+    needle,
+    keys: new Set(),
+  });
+  const openKeys = expanded.needle === needle ? expanded.keys : new Set<string>();
   return (
     <>
       {pages.length > 0 ? <Section label="Pages">{pages.map((entry) => pageRow(entry))}</Section> : null}
-      {groups.map((group) => (
-        <Section key={group.key} label={group.heading}>
-          {group.items.map((item) => (
-            <ResultRow key={`${item.kind}-${item.id}`} item={item} onGo={onGo} />
-          ))}
-        </Section>
-      ))}
+      {groups.map((group) => {
+        const full = openKeys.has(group.key);
+        const shown = full ? group.items : group.items.slice(0, MENU_RESULTS_PER_GROUP);
+        return (
+          <Section key={group.key} label={group.heading}>
+            {shown.map((item) => (
+              <ResultRow key={`${item.kind}-${item.id}`} item={item} onGo={onGo} />
+            ))}
+            {shown.length < group.items.length ? (
+              <li>
+                <button
+                  type="button"
+                  className={styles.row}
+                  data-testid={`ward-phone-menu-show-all-${group.key}`}
+                  onClick={() => setExpanded({ needle, keys: new Set([...openKeys, group.key]) })}
+                >
+                  <span className={styles.rowText}>
+                    <span className={styles.rowLabel}>Show all {group.items.length}</span>
+                  </span>
+                </button>
+              </li>
+            ) : null}
+          </Section>
+        );
+      })}
       {refusal ? (
         <p className={styles.empty}>{refusal.sentence}</p>
       ) : pages.length === 0 && groups.length === 0 ? (
@@ -747,6 +781,7 @@ export function WardPhoneMenu({
   const { counts, shellRole, role: routeRole } = useWardNavCounts();
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   useEffect(
@@ -816,7 +851,15 @@ export function WardPhoneMenu({
         mobileSize="viewport"
         mobileBreakpoint="phone"
         returnFocusRef={returnFocusRef}
-        headerLeading={<WhoLink role={shellRole} onClose={close} />}
+        headerLeading={
+          <WhoLink
+            role={shellRole}
+            onSwitch={() => {
+              close();
+              setSwitcherOpen(true);
+            }}
+          />
+        }
         contentClassName={styles.sheet}
         headerClassName={styles.head}
         titleClassName="sr-only"
@@ -838,6 +881,8 @@ export function WardPhoneMenu({
           onClose={close}
         />
       </Sheet>
+
+      {switcherOpen ? <OperatorSwitcherModal isOpen onClose={() => setSwitcherOpen(false)} /> : null}
 
       <CreateSheet
         open={createOpen}
