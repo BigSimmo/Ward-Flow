@@ -99,7 +99,9 @@ function ageSex(row: CensusRow): string {
 }
 
 function initials(name: string): string {
-  return name
+  // shell-8: rows read "Family, Given", so the given name's initial leads.
+  const [family, given] = name.includes(",") ? name.split(",", 2) : [undefined, name];
+  return `${given} ${family ?? ""}`
     .split(/\s+/)
     .filter(Boolean)
     .map((word) => word[0])
@@ -294,7 +296,8 @@ export type CensusTableProps = {
   tab: "now" | "history";
   onTab: (tab: "now" | "history") => void;
   liveCount: number;
-  historyCount: number;
+  /** Absent while a search is on: History does not follow the search, so it shows no count (shell-16). */
+  historyCount: number | undefined;
   history: ReactNode;
   onCopyList: () => void;
   copyNote: string | null;
@@ -1033,7 +1036,8 @@ export type PhoneCensusProps = {
   tab: "now" | "history";
   onTab: (tab: "now" | "history") => void;
   history: ReactNode;
-  historyCount: number;
+  /** Absent while a search is on: History does not follow the search, so it shows no count (shell-16). */
+  historyCount: number | undefined;
   empty: ReactNode;
   /** Scrolls the list to a group's band. */
   onJump: (group: CensusGroup) => void;

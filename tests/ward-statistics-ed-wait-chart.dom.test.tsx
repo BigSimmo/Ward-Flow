@@ -105,15 +105,16 @@ describe("the elapsed-wait chart and its named longest waits", () => {
     expect(screen.getByTestId("ward-stat-ed-over-48h").textContent).toContain("1 of the 3");
   });
 
-  // Owner, 26 Sept 2026: the patient's name, never the WF journey number. These fixtures carry no
-  // `patientId`/`referralId`, so `resolveSubjectPatient` cannot attribute an identity and the screen
-  // falls back to the same "Unknown Patient" text it shows for any other unlinked movement.
-  it("names the longest wait by the resolved patient (Unknown Patient, unlinked) and formats it through splitDuration, never as raw minutes", () => {
+  // Owner, 13 Oct 2026: Statistics shows AD- admission numbers only, no patient name or UMRN, and
+  // D-39 never shows a WF- journey id. An ED wait has no admission yet, so it reads "not yet
+  // admitted"; the row links to the live page, which still shows the name.
+  it("labels the longest wait not yet admitted, never a name or WF id, and formats it through splitDuration, never as raw minutes", () => {
     renderEd([under, past24, past48, distractor]);
 
     const longest = screen.getByTestId("ward-stat-ed-longest-wait").textContent ?? "";
-    expect(longest).toContain("Unknown Patient");
+    expect(longest).toContain("not yet admitted");
     expect(longest).not.toMatch(/WF-/u);
+    expect(longest).not.toContain("Unknown Patient");
     expect(longest).toContain("2d 2h");
     // The regression this whole file exists to stop: a wait this long printed as a bare number of
     // minutes on a sibling screen while every other screen printed hours and minutes.
@@ -152,6 +153,10 @@ describe("the elapsed-wait chart and its named longest waits", () => {
     expect(rowUnder.textContent).toContain("30m");
     expect(rowPast24.textContent).toContain("1d 1h");
     expect(rowPast48.textContent).toContain("2d 2h");
+    // AD- numbers only on Statistics (Owner, 13 Oct 2026) and never a WF- id (D-39): no name, no UMRN.
+    expect(rowPast48.textContent).toContain("Not yet admitted");
+    expect(table.textContent).not.toMatch(/WF-/u);
+    expect(table.textContent).not.toContain("Unknown Patient");
 
     // Longest first: WF-past48's row precedes WF-under's in document order.
     const rows = within(table).getAllByRole("row");

@@ -157,7 +157,7 @@ describe("GovernanceView", () => {
     fireEvent.click(overrideEvent);
     const eventFacts = screen.getByRole("region", { name: "Event facts" });
     expect(eventFacts).toHaveTextContent("10:42");
-    expect(eventFacts).toHaveTextContent("Flow coordinator");
+    expect(eventFacts).toHaveTextContent("Bed coordinator");
     expect(screen.getByRole("region", { name: "Review history" })).toHaveTextContent(
       "No review recorded for this event.",
     );
@@ -172,7 +172,7 @@ describe("GovernanceView", () => {
     const history = within(reviewPanel).getByRole("region", { name: "Review history" });
     const recordedReview = within(history).getByRole("listitem");
     expect(recordedReview).toHaveTextContent("Reviewed");
-    expect(recordedReview).toHaveTextContent("10:42 · Flow coordinator");
+    expect(recordedReview).toHaveTextContent("10:42 · Bed coordinator");
 
     const reviewEvent = capturedRow(register, /Review event/i);
     expect(reviewEvent).toHaveTextContent("Accepted");

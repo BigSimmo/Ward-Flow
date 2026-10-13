@@ -4,6 +4,7 @@ import { isTierOverdue } from "../ward-shared-figures";
 import { scrollWardPageToTop, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import Link from "next/link";
+import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
 import {
   AlertCircle,
   BedDouble,
@@ -1762,16 +1763,25 @@ export function PatientNowScreen({
                 <span className={styles.v6HeroFacts} data-testid="ward-patient-phone-figures">
                   {(mode === "idle" || mode === "cto"
                     ? [
-                        {
-                          key: "discharged",
-                          value:
-                            lastStay?.leftAt != null
-                              ? now - lastStay.leftAt < 6 * 1440
-                                ? dayLabel(lastStay.leftAt, dayZero).replace(",", "").split(" ")[0]
-                                : dayLabel(lastStay.leftAt, dayZero).replace(",", "").split(" ").slice(1).join(" ")
-                              : "None",
-                          label: "Discharged",
-                        },
+                        // shell-24 (13 Oct 2026): no Discharged figure for someone never admitted.
+                        ...(lastStay == null
+                          ? []
+                          : [
+                              {
+                                key: "discharged",
+                                value:
+                                  lastStay?.leftAt != null
+                                    ? now - lastStay.leftAt < 6 * 1440
+                                      ? dayLabel(lastStay.leftAt, dayZero).replace(",", "").split(" ")[0]
+                                      : dayLabel(lastStay.leftAt, dayZero)
+                                          .replace(",", "")
+                                          .split(" ")
+                                          .slice(1)
+                                          .join(" ")
+                                    : "None",
+                                label: "Discharged",
+                              },
+                            ]),
                         { key: "orders", value: ctoInForce ? "1" : "0", label: "Orders" },
                         { key: "presentations", value: String(record.presentations.length), label: "Presentations" },
                       ]
@@ -2156,6 +2166,7 @@ export function PatientNowScreen({
                 stays={resolved.stays}
                 absence={stayLeaveBed?.absentWithoutLeave}
                 absenceVoluntary={voluntaryNow}
+                chronologyHref={livePatient ? patientChronologyHref(livePatient.id) : undefined}
                 open={!modeMeta.quiet}
                 onBackToNow={() => {
                   setActiveTab("now");

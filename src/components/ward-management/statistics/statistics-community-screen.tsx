@@ -24,7 +24,6 @@ import {
 } from "@/components/wf";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   admissionsWithNoCommunityTeam,
   communityHubLists,
@@ -45,7 +44,7 @@ import { figureText, isUnmeasured, type StatisticsFigure } from "./statistics-ab
 import { countAxisMax } from "./statistics-axis";
 import { communityFigures, type CommunityFigures } from "./statistics-community-figures";
 import { csvCell } from "./statistics-csv";
-import { dateOf, fromToday } from "./statistics-dates";
+import { dateOf, fromToday, isPastDate } from "./statistics-dates";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
@@ -138,6 +137,10 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
     (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),
   );
 
+  // Still in a bed past the planned date: counted on their own so the 7-day count hides nobody.
+  const pastDate = lists.expectedBack.filter(
+    (admission) => admission.expectedDischargeAt !== null && isPastDate(admission.expectedDischargeAt, now),
+  ).length;
   const dueOutWeek = lists.expectedBack.filter(
     (admission) =>
       admission.expectedDischargeAt !== null &&
@@ -260,6 +263,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
               : null
           }
           dueOutWeek={dueOutWeek}
+          pastDate={pastDate}
         />
       ) : (
         <>
@@ -446,10 +450,16 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                         {admission.expectedDischargeAt === null ? (
                           <span className={styles.muted}>No date</span>
                         ) : (
-                          <>
+                          <span className={styles.flagged}>
+                            {isPastDate(admission.expectedDischargeAt, now) ? (
+                              <StatusGlyph tone="warning" size={9} />
+                            ) : null}
                             {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
-                            <span className={styles.muted}>{fromToday(admission.expectedDischargeAt, now)}</span>
-                          </>
+                            <span className={styles.muted}>
+                              {fromToday(admission.expectedDischargeAt, now)}
+                              {isPastDate(admission.expectedDischargeAt, now) ? ", past date" : ""}
+                            </span>
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -477,6 +487,7 @@ function TeamPhone({
   inBedMeasured,
   followUp,
   dueOutWeek,
+  pastDate,
 }: {
   people: readonly Admission[];
   unitName: (unitId: string) => string;
@@ -486,8 +497,8 @@ function TeamPhone({
   inBedMeasured: boolean;
   followUp: { discharged: number; arranged: number; notArranged: number } | null;
   dueOutWeek: number;
+  pastDate: number;
 }) {
-  const patientOf = usePatientOf();
   const sorted = [...people].sort(
     (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),
   );
@@ -501,7 +512,6 @@ function TeamPhone({
         ) : (
           <PhoneList label="Referred to this team, in a bed now">
             {sorted.map((admission) => {
-              const person = patientOf(admission);
               const days =
                 admission.arrivedAt === null || admission.arrivedAt > now
                   ? null
@@ -510,12 +520,11 @@ function TeamPhone({
                 <PhoneListRow
                   key={admission.id}
                   as="li"
-                  name={person.formalName}
+                  name={admission.id}
                   meta={
-                    <>
-                      <span className={phone.mono}>{person.umrn}</span>
-                      {` · ${unitName(admission.unitId)}`}
-                    </>
+                    admission.expectedDischargeAt !== null && isPastDate(admission.expectedDischargeAt, now)
+                      ? `${unitName(admission.unitId)} · past date`
+                      : unitName(admission.unitId)
                   }
                   value={
                     days === null ? (
@@ -527,7 +536,16 @@ function TeamPhone({
                     )
                   }
                   time={
-                    admission.expectedDischargeAt === null ? "no date" : dateOf(admission.expectedDischargeAt, dayZero)
+                    admission.expectedDischargeAt === null ? (
+                      "no date"
+                    ) : isPastDate(admission.expectedDischargeAt, now) ? (
+                      <span className={phone.flagged}>
+                        <StatusGlyph tone="warning" size={9} />
+                        {dateOf(admission.expectedDischargeAt, dayZero)}
+                      </span>
+                    ) : (
+                      dateOf(admission.expectedDischargeAt, dayZero)
+                    )
                   }
                 />
               );
@@ -552,6 +570,17 @@ function TeamPhone({
               value: followUp?.notArranged ?? "none",
             },
             { id: "due", label: "Due out, 7d", value: dueOutWeek },
+            {
+              id: "past",
+              label: (
+                <>
+                  {pastDate > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                  Past date
+                </>
+              ),
+              value: pastDate,
+              testId: "ward-statistics-community-past-date",
+            },
           ]}
         />
       </PhoneGroup>

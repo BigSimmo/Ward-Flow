@@ -30,6 +30,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { ToastProvider } from "@/components/ui/toast";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import {
@@ -136,6 +137,22 @@ describe("AddPatientForm", () => {
     });
     const [target] = router.push.mock.calls[0] as [string];
     expect(target).toMatch(/^\/mockups\/ward-flow\/people\/PT-A\d+$/);
+  });
+
+  // shell-24 (13 Oct 2026): the save is confirmed by name and record number.
+  it("confirms the add with a toast naming the patient and their UMRN", async () => {
+    router.push.mockClear();
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <AddPatientForm />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    fillDraft();
+    fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+    await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
+    expect(await screen.findByTestId("toast")).toHaveTextContent("Testable Newcomer added, UM999999");
   });
 });
 

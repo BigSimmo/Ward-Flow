@@ -827,11 +827,12 @@
   color: var(--wf-dim);
 }
 
-.phoneSite {
-  display: grid;
-  gap: var(--wf-s-2);
+/* A quiet line inside a phone card, kept off the card edge (audit settings-8). */
+.phoneCardNote {
+  margin: 0;
   padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 .phoneMore {
@@ -874,53 +875,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The rail at rest: this session, then the next events to review (v10). */
+/* The rail at rest: what to do next (audit settings-12: the counts stay in the hero). */
 .restSummary {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
   min-width: 0;
-}
-
-.restHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-}
-
-.restCells {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 0;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-}
-
-.restCells > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
-}
-
-.restCells > div + div {
-  border-left: 1px solid var(--wf-line);
-}
-
-.restCells dt {
-  overflow: hidden;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.restCells dd {
-  margin: 0;
-  font: 600 var(--wf-fs-15) / 1.2 var(--wf-mono);
-  font-variant-numeric: tabular-nums;
 }
 
 .restClear {
@@ -985,55 +945,14 @@
   font-weight: 400;
 }
 
-/* v10 phone review sheet: "Your review" over two outlined choices, the picked one edged in the
- * accent. Rendered in the phone sheet alone. */
+/* v10 phone review sheet: the "Your review" heading. Reviewed and Follow-up sit in the sheet footer
+ * (audit settings-4). */
 .phoneDecisionHead {
   margin: 0;
   color: var(--wf-ink-2);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: var(--wf-tr-caps);
   text-transform: uppercase;
-}
-
-.phoneDecision {
-  width: 100%;
-  gap: var(--wf-s-2);
-  overflow: visible;
-  padding: 0;
-  border: 0;
-  background: none;
-  box-shadow: none;
-}
-
-.phoneDecision [role="radio"] {
-  flex: 1 1 0;
-  min-width: 0;
-  box-sizing: border-box;
-  justify-content: center;
-  min-height: var(--wf-touch);
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  box-shadow: none;
-}
-
-/* Audit trust item: the sheet opens with neither answer picked. Only a checked answer takes the
-   accent border and tint; a focus ring sits outside the box so it cannot read as a selection. */
-.phoneDecision [role="radio"][aria-checked="false"] {
-  border-color: var(--wf-line-2);
-  background: var(--wf-surface);
-  font-weight: 500;
-}
-
-.phoneDecision [role="radio"][aria-checked="true"] {
-  border: 2px solid var(--wf-accent);
-  background: var(--wf-accent-tint);
-}
-
-.phoneDecision [role="radio"]:focus-visible {
-  box-shadow: none;
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
 }
 
 /* Device audit 11 Oct 2026: the safety-incident line is a notice, so plain quiet text on the hero. */
