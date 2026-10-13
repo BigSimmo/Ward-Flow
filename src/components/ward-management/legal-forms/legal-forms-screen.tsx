@@ -46,6 +46,7 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import {
+  currentLegalDueAt,
   legalDeadlineText,
   legalExpiryReminderSummary,
   legalFormBreakdown,
@@ -54,6 +55,7 @@ import {
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
 import { orderByActPeriodShare } from "./act-periods-demo";
+import { formProgression } from "./legal-form-progression";
 import { FocusPanel, SummaryPanel, type FocusTab } from "./legal-forms-panel";
 import {
   ExtendSheet,
@@ -202,7 +204,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     const standing = clockStanding(movement, now);
     if (highlight.kind === "act") return isActNow(standing);
     if (highlight.kind === "soon") return standing === "soon";
-    if (highlight.kind === "none") return movement.legalForm?.dueAt === undefined;
+    if (highlight.kind === "none") return currentLegalDueAt(movement) === undefined;
     if (highlight.kind === "code") return movement.legalForm?.code === highlight.code;
     return offersGap(movement, highlight.gap);
   };
@@ -1107,6 +1109,9 @@ function FormRow({
   const done = facts.filter((fact) => fact.at !== undefined).length;
   const missing = facts.filter((fact) => fact.at === undefined).map((fact) => TO_RECORD_WORD[fact.gap]);
   const canAddTime = movement.formedAt === undefined && isOwnedLegalFormCode(legalForm.code);
+  // Audit S-6: an ended form's typed expiry is history, so the row shows it ended, not a countdown.
+  const progression = formProgression(movement);
+  const hasDue = currentLegalDueAt(movement) !== undefined;
 
   return (
     <DataRow
@@ -1146,7 +1151,15 @@ function FormRow({
         <span className={cx(styles.sub, styles.truncate)}>{wardName ? `to ${wardName}` : "No receiving ward"}</span>
       </span>
       <span className={styles.cellStack}>
-        {legalForm.dueAt !== undefined ? (
+        {progression ? (
+          <>
+            <span className={styles.leftLine}>
+              <StatusGlyph tone="closed" size={9} />
+              <span className={styles.sub}>Ended {progression.endedWhen}</span>
+            </span>
+            <span className={styles.sub}>Form {progression.nextCode} to record</span>
+          </>
+        ) : hasDue ? (
           <>
             <span className={styles.leftLine}>
               <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
@@ -1217,6 +1230,7 @@ function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onS
   const facts = recordedFacts(movement);
   const missing = facts.filter((fact) => fact.at === undefined).length;
   const where = wardName ? `${edName} to ${wardName}` : edName;
+  const hasDue = currentLegalDueAt(movement) !== undefined;
   return (
     <PhoneListRow
       as="li"
@@ -1235,17 +1249,21 @@ function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onS
           </span>
         </>
       }
+      // Josh's no-wrap rule: the time and its word sit on one line ("1h 00m left"), not stacked.
       value={
-        legalForm.dueAt !== undefined ? (
+        hasDue ? (
           <span className={styles.leftLine}>
             <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
             {leftText(movement, now)}
+            <span className={styles.phoneTimeWord}>{standing === "passed" ? "passed" : "left"}</span>
           </span>
         ) : (
-          <span className={styles.leftLine}>{durText(now - movement.openedAt)}</span>
+          <span className={styles.leftLine}>
+            {durText(now - movement.openedAt)}
+            <span className={styles.phoneTimeWord}>in ED</span>
+          </span>
         )
       }
-      time={legalForm.dueAt !== undefined ? (standing === "passed" ? "passed" : "left") : "in ED"}
       aria-label={`${name}, ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}`}
       onSelect={() => onSelect(movement)}
     />

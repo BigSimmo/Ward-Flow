@@ -667,41 +667,52 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
     };
   }
 
-  if ((mode === "idle" || mode === "cto") && ctx.acceptedReferral) {
-    const { unitName, boardHref } = ctx.acceptedReferral;
-    return {
-      tone: "info",
-      verdict: "Accepted, no bed held",
-      meta: `Accepted at ${unitName}. Next: hold the bed`,
-      cells: [
-        {
-          key: "bed",
-          icon: BedDouble,
-          label: "Bed",
-          owner: "Ward",
-          value: `Hold on ${unitName}`,
-          sub: "Accepted referral, no bed held yet",
-          href: boardHref,
-        },
-        {
-          key: "catchment",
-          icon: Users,
-          label: "Catchment team",
-          owner: "Community",
-          value: patient?.catchmentCommunityTeam ?? "Not recorded",
-          sub: "Recorded catchment",
-        },
-      ],
-    };
+  // An accepted ward referral with no bed held. On a CTO it sits beside the order (Qodo review,
+  // 13 Oct 2026), so the order's form details and "Record ended" stay on the card.
+  const acceptedBedCell: StatusCell | undefined = ctx.acceptedReferral
+    ? {
+        key: "bed",
+        icon: BedDouble,
+        label: "Bed",
+        owner: "Ward",
+        value: `Hold on ${ctx.acceptedReferral.unitName}`,
+        sub: "Accepted referral, no bed held yet",
+        href: ctx.acceptedReferral.boardHref,
+      }
+    : undefined;
+
+  const ctoOrder = mode === "cto" ? patient?.communityTreatmentOrder : undefined;
+  if (mode === "idle" || (mode === "cto" && !ctoOrder)) {
+    if (ctx.acceptedReferral && acceptedBedCell) {
+      return {
+        tone: "info",
+        verdict: "Accepted, no bed held",
+        meta: `Accepted at ${ctx.acceptedReferral.unitName}. Next: hold the bed`,
+        cells: [
+          acceptedBedCell,
+          {
+            key: "catchment",
+            icon: Users,
+            label: "Catchment team",
+            owner: "Community",
+            value: patient?.catchmentCommunityTeam ?? "Not recorded",
+            sub: "Recorded catchment",
+          },
+        ],
+      };
+    }
   }
 
-  if (mode === "cto" && patient?.communityTreatmentOrder) {
-    const order = patient.communityTreatmentOrder;
+  if (mode === "cto" && patient && ctoOrder) {
+    const order = ctoOrder;
     return {
-      tone: "neutral",
-      verdict: "Not active, on a CTO",
-      meta: "No open placement or stay",
+      tone: acceptedBedCell ? "info" : "neutral",
+      verdict: acceptedBedCell ? "Accepted, on a CTO" : "Not active, on a CTO",
+      meta: ctx.acceptedReferral
+        ? `Accepted at ${ctx.acceptedReferral.unitName}. Next: hold the bed`
+        : "No open placement or stay",
       cells: [
+        ...(acceptedBedCell ? [acceptedBedCell] : []),
         {
           key: "cto",
           icon: Scale,
@@ -891,6 +902,13 @@ export function PatientStatusCard({
             </span>
           ) : null}
           <span className={styles.meta}>{status.meta}</span>
+          {/* Qodo review (13 Oct 2026): with every gate clear, the next step (Mark handover ready)
+              is the card's one primary on desktop too; on a phone it is pinned in the bar. */}
+          {!isPhone && primaryKey === undefined && status.next ? (
+            <span className={styles.headAction} data-testid="ward-patient-status-next">
+              <CellAction action={status.next} primary />
+            </span>
+          ) : null}
         </div>
         {status.rows ? (
           <ul className={styles.rows} aria-label="Missing person steps">

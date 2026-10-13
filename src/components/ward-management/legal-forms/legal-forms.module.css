@@ -1403,6 +1403,13 @@ button.taskLabel[aria-pressed="true"] {
   gap: 6px;
 }
 
+/* The word after the phone row's time ("left", "passed", "in ED"), on the same line as it. */
+.phoneTimeWord {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
 .phoneRow[data-dim="true"],
 .phoneRow[data-dim="true"] * {
   color: var(--wf-dim);
