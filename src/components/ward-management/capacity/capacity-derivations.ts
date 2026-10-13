@@ -347,7 +347,7 @@ export function networkWardRows(
     return {
       unit,
       ready: cap.available,
-      lockedReady: lockedBedsFree(unit),
+      lockedReady: Math.min(lockedBedsFree(unit), cap.available),
       freeing: releases === undefined ? undefined : (freeingByUnit.get(unit.id) ?? 0),
       dischargesDueToday:
         admissions === undefined

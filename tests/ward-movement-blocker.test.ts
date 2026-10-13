@@ -826,7 +826,7 @@ describe("the transport legs restate what is holding a movement up", () => {
         movementId,
       });
       expect(cleared.rejections).toHaveLength(1);
-      expect(cleared.rejections[0]?.reason).toMatch(/cannot clear statutory examination revoked blocker/i);
+      expect(cleared.rejections[0]?.reason).toMatch(/cannot clear statutory hold/i);
       expect(movement(cleared, movementId).examRevoked).toBe(true);
       expect(movement(cleared, movementId).blocker).toBe(STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease);
     });

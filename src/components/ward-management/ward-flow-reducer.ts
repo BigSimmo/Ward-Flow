@@ -6127,7 +6127,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(
           state,
           event,
-          `cannot clear statutory examination revoked blocker on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
+          `cannot clear statutory hold on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
         );
       }
       // Refused rather than accepted as a no-op, the same discipline as the flag pair above: a
