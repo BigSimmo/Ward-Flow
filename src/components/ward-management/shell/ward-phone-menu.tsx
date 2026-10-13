@@ -187,7 +187,8 @@ function strictNeeds(byId: ReadonlyMap<string, RailEntry>, counts: CountMap): Ne
         label: entry.label,
         meta: count.noun,
         count: count.value,
-        href: entry.href,
+        // shell-9: Delays opens filtered to the severe causes this row counts.
+        href: id === "delays" ? `${entry.href}?show=severe` : entry.href,
         icon: entry.icon,
         actNow: false,
       });
