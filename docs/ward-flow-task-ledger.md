@@ -8557,3 +8557,54 @@ Branch: `feat/task-ledger-safety-fixes`.
 4. **WF-23 (Discharge Block Reason Mandatory Selector)**: Clinician reason requirement prior to discharge delay unblocking.
 5. **WF-33 / WF-29 / WF-57 (Azure Shared PostgreSQL / Authentication)**: Connect shared PostgreSQL backend once Azure Entra credentials / network permissions are provisioned.
 6. **WF-58 (Offline Emergency Downtime Pack PDF Export)**: PDF downtime printable packet compilation.
+
+## WF-AUDIT-TRIAGE-2026-10-13 — open audit issues sorted by complexity and risk
+
+Owner: Claude Code cloud session. Branch `claude/ward-flow-audit-review-k2x8ty`, base `origin/main` at `30b1803`. Documentation only; no behaviour changed and no provider was contacted.
+
+The 8 October issue list, the follow-up honesty and UI audits, and the design and unverified-item lists were checked against the code and re-sorted in [`ward-flow/audit-2026-10-13-issue-triage.md`](ward-flow/audit-2026-10-13-issue-triage.md). That file holds every item, its evidence level and its group. PRs #256 and #257 fixed about 20 items since the first triage on 11 October (all the "Live" and false-claim wording, the skip link, the community check, focus, the route test, the duplicate HTML and the PsychSift index text); they are listed there as fixed.
+
+Open work, easiest and safest first:
+
+1. **Quick, low risk:** stale `DeveloperAreaGate` comments (A4-5), "Live" leftovers in Settings and Sovereign, manifest `background_color` (R7), landmark test (R9), prefetch warning (R14), 48px touch target, M-WARD-ANSWER, D7, stale status and hosting docs, dead-module deletions through `check:dead-code-candidate`.
+2. **Contained, moderate:** S2-14, S2-15, the A3 screen figures, audit labels (A1-4, A1-6, A1-11, A1-12), storage and provider items (A2-4, A2-6, A2-7, A2-8, A2-10 to A2-13, A2-15), security plumbing (A4-1, A4-2, A4-6, A4-7, A4-9 to A4-15).
+3. **Reducer fixes with a failing test first:** S2-3, S2-5, S2-6, S2-7, S2-13, S1-3, S1-6, S1-8, S1-12, A1-7, A1-9.
+4. **Cross-cutting:** one shared close helper (S1-4, S2-4, S1-5, S1-7); a tighter load validator (A2-5, A2-3, closing S1-9 to S1-13 and S2-8); S2-9 eligibility; wiring the synthetic-data guard (A4-4, A2-9); A2-14; design-system migration and renames. Do not split the reducer as clean-up.
+5. **Owner decision first:** S2-2 option (a) or (b); full ward scope beyond #256's soft accept/decline check (A1-1, A1-3, S2-11, A1-8, A1-10, S2-10, A1-13, A1-14); A1-2 referrer; A1-5 legal form roles; S1-14 24 versus 48 hours (FD-19); A4-3; A4-5 stays public; A4-8; the "(not wired)" controls; M-QUEUE; M-DUALREF; D1, D3 to D6, D9; Discharges and placement-hub defaults.
+6. **Investigate or outside access:** the rendered visual checks and U1–U7, U9 need a browser check first; U8 (Railway), U10 and A4-8 testing (Azure) and U12 (another session's branch) need the owner's go-ahead.
+
+Dropped: the pre-push in-flight bypass (approved exemption), M-CONTACTS (correct labelling) and the PsychSift UX audit.
+
+Corrections recorded: autosave is every 30 seconds (not 60); the reducer is about 10,200 lines. Verification: source reads at `30b1803` only. No tests, lint or build were run; the five earlier engine fixes' regression tests were not re-run in this session.
+
+## WF-HONESTY-2026-10-13 — "Live" wording, not-wired honesty and the audit residuals
+
+Owner request (12 and 13 October 2026): resolve the still-open items from the 8 October full-repository audit and the 6 October visual review that can be settled from code, then confirm what remains. Local engineering is complete. The first change merged as PR [#258](https://github.com/BigSimmo/Ward-Flow/pull/258); a small follow-up was prepared on the same task branch. Synthetic data only; no provider, deployment or hosted check was run, and the hosted site was not compared with this commit.
+
+Fixed and merged (PR #258):
+
+- The shared Live chip says "Demo" and its pause control "Pause demo updates" (AUD-H03). Patient search uses "On this board" for its presence label, tag and filter chip (AUD-H01; an open movement can be in transit, so "In hospital" overstated it). Patient Now's screen-reader text says "Active bedflow" (AUD-H02). Statistics copy and the Discharges page metadata no longer say "live".
+- Not-wired honesty: the Community duress ping reads "(not wired)" and toasts "Not wired in this prototype." (AUD-H04). Delays "Record hold" and "Record" say "(not wired)" on the button and its empty state says recording is not wired (AUD-M-DELAYS-HOLD). The Alerts confirmation says the directive is shown in this prototype only and that no external notifications are sent (AUD-M-ALERTS).
+- Capacity "Request update" shows "Update requested" from the shared request record, is disabled while a request is outstanding, and re-enables after the ward confirms. A request and a confirmation in the same minute count as still outstanding (AUD-M-CAPACITY-ACK).
+- The Movements box is "Find" because it only highlights; the Referrals box narrows its list and is "Filter" (AUD-M-DUALSEARCH, partly). The duplicate Appearance control is removed from the Community Tools drawer (AUD-M-THEME).
+
+Confirmed already resolved on main before this task (13 October): Delays "Assign Recommended Bed", the Governance wrong-patient register, Handover "Copy to EMR" and the "LIVE SYNC" banner (AUD-H05 to AUD-H07), the sidebar New referral button (v10, owner-approved), the "Accept in Principle (Waitlist)" button, the Home footer separator, the stale ClinicalRail mount comment, and `governance-screen.tsx`.
+
+Small follow-up (same task, 13 October 2026):
+
+- The record preview banner said "In hospital now" for any open movement, which includes people in transit. It now says "On this board now" and "Not on this board now", matching Patient search.
+- The Community "How to reach" card is labelled "Published, not call-tested" so the published phone numbers are not read as a verified call list (AUD-M-CONTACTS). Referral and contact data are unchanged.
+- The record preview now follows the search row: a person with no open movement and no queued referral (across all their referrals) reads "Not on this board now", and a declined referral selected directly no longer says it is awaiting acceptance (`tests/ward-search-preview-closed-referral.dom.test.tsx`).
+- `STATUS.md` records that main has moved on since the audited baseline.
+
+Still open after this task, with the reason:
+
+- Owner decision: record the allocatable revision on each Capacity request so ordering does not rely on minute timestamps. Other bed events that stamp the ward's confirmed time can clear an outstanding request early. This changes the persisted request shape and needs the event-classification review. Queue ordering policy (SPEC-005) is also an owner decision.
+- Design choices: whether the top-bar search should filter the Delays worklist, and whether Discharges should open on Blocked rather than All. Blocked releases already sort first.
+- Owner approval: deleting the retired `ward-chrome-header` module (dead-code check). The reducer split and the `.btnPrimary` consolidation (5 modules remain) are larger refactors.
+- Documentation: the code-map says "All 42 routes" but `src/app/mockups/ward-flow` has 50 page entry points (plus the separately mapped sign-in page); eight routes (including `/command`, the Statistics eds/services/teams/wards/weekly pages and the two reports) are not listed in `code-map/shell-and-shared.md`. This needs a route-by-route refresh, not a count change.
+- Provider access needed: `docs/hosting.md` still says the Railway settings were not rechecked.
+- Rendered check needed on the v10 build: phone and compact chrome, the transport officer chrome, the Capacity Metro percentage, the Network placement default, the Referrals urgency colours and the Ward page action rows.
+- Backend, governance and clinical sign-off tasks stay as listed in `docs/ward-flow/reports/remediation-remaining-tasks-2026-10-08.md`.
+
+Evidence: PR #258 passed the repository's Ward Flow required gate on its head `b3e579f` (static checks, eight unit shards, three browser-journey groups, production build, coverage and secret scan), with CodeAnt, CodSpeed and GitGuardian also passing. The follow-up was first checked locally on Node 22; the search, preview and community suites were then re-run on Node 24 (19 files pass). Hosted CI remains the authoritative check.

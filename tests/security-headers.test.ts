@@ -170,6 +170,15 @@ describe("security headers", () => {
       expect(directive(csp, "img-src")).toBe("img-src 'self' data: blob:");
     });
 
+    it("treats a blank auth provider as the Entra default", () => {
+      vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "");
+      expect(resolveSharedWorkspaceOrigins("https://wardflow-dev-api-aue.azurewebsites.net/api/")).toEqual([
+        "https://wardflow-dev-api-aue.azurewebsites.net",
+        "https://login.microsoftonline.com",
+      ]);
+      vi.unstubAllEnvs();
+    });
+
     it("keeps connect-src same-origin when the Function is missing, invalid or not https", () => {
       // undefined reads the build's own setting, so pin it for this test.
       vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "");
@@ -206,5 +215,28 @@ describe("security headers", () => {
       vi.stubEnv("PLAYWRIGHT_BASE_URL", "https://staging.example.com");
       expect(resolveRuntimeFlags()).toEqual({ isDevelopment: false, isLocalHttpRuntime: false });
     });
+  });
+});
+
+describe("Supabase scoped auth origins", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("allows exact project and exact loopback API only in dev", () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "supabase");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://zakzoemeedfepxcstsou.supabase.co");
+    vi.stubEnv("NODE_ENV", "development");
+    expect(resolveSharedWorkspaceOrigins("http://127.0.0.1:4810")).toEqual([
+      "http://127.0.0.1:4810",
+      "https://zakzoemeedfepxcstsou.supabase.co",
+    ]);
+    vi.stubEnv("NODE_ENV", "production");
+    expect(resolveSharedWorkspaceOrigins("http://127.0.0.1:4810")).toEqual([]);
+  });
+  it("refuses a foreign project and remote http", () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "supabase");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://other.supabase.co");
+    expect(resolveSharedWorkspaceOrigins("https://api.example.test")).toEqual([]);
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://zakzoemeedfepxcstsou.supabase.co");
+    vi.stubEnv("NODE_ENV", "development");
+    expect(resolveSharedWorkspaceOrigins("http://remote.example.test:4810")).toEqual([]);
   });
 });
