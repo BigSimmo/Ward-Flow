@@ -234,6 +234,10 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
       document.body.appendChild(anchor);
       anchor.click();
     }, UNIT_ID);
+    await expect(
+      page.locator('div[hidden][id^="S:"]'),
+      "React's streamed content is still staged, so the whole screen is duplicated in the document",
+    ).toHaveCount(0, { timeout: 15_000 });
     // The board settles its layout just after it first paints, which can drop a click made in
     // that moment; choose the tile until the board shows it chosen.
     await expect(page.getByTestId("ward-board")).toBeVisible({ timeout: 15_000 });
