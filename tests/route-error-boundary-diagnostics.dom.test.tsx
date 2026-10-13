@@ -20,9 +20,6 @@ describe("RouteErrorBoundary Copy Diagnostics privacy", () => {
 
   it("redacts clinical query text from the clipboard payload", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
-    vi.spyOn(window, "location", "get").mockReturnValue({
-      href: "https://psychiatry.tools/dsm?q=clozapine%20ANC%20threshold",
-    } as Location);
 
     const user = userEvent.setup();
     render(<RouteErrorBoundary error={new Error("boom at /users/patient/source.pdf")} reset={() => undefined} />);
@@ -38,9 +35,6 @@ describe("RouteErrorBoundary Copy Diagnostics privacy", () => {
 
   it("A4-10: redacts hospital record numbers (UMRN), Medicare numbers, and phone numbers from diagnostic clipboard payload", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
-    vi.spyOn(window, "location", "get").mockReturnValue({
-      href: "https://prototype.health.wa.gov.au/patient?id=WF-001",
-    } as Location);
 
     const user = userEvent.setup();
     render(
@@ -61,7 +55,6 @@ describe("RouteErrorBoundary Copy Diagnostics privacy", () => {
 
   it("owner ruling 13 Oct: copies IDs only, never the error message (no patient names)", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
-    vi.spyOn(window, "location", "get").mockReturnValue({ href: "https://example.test/ward" } as Location);
     const error = Object.assign(new Error("Failed for Jane Smith in bed 4"), { digest: "DIGEST-123" });
 
     const user = userEvent.setup();

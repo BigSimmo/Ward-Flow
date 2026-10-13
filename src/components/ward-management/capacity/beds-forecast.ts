@@ -11,7 +11,7 @@
 //
 // Aggregate only, like the rest of the Capacity screen: nothing here ranks a ward for a person.
 // A pure function with no React, so the morning bed-meeting sheet can print the same figures.
-import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { boundedBedAvailability } from "@/components/ward-management/ward-bed-availability";
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -40,7 +40,7 @@ export type BedsForecastHorizon = {
   hours: number;
   /** The end of the window, `now + hours`. Releases due at or before it count, overdue ones included. */
   until: Instant;
-  /** Beds ready now across the network: the same `lockedBedsFree + openBedsFree` the Ready figure uses. */
+  /** Beds ready now across the network: bounded by each unit’s physical capacity. */
   readyNow: number;
   /** Confirmed discharges due in the window, from today onwards, that nothing is holding up. */
   confirmed: number;
@@ -99,11 +99,11 @@ export function bedsForecast(
   now: Instant,
   plannedAdmissions: readonly PlannedAdmission[] = [],
 ): BedsForecast {
-  const readyNow = units
-    .filter((unit) => !unit.isClosed)
-    .reduce((sum, unit) => sum + lockedBedsFree(unit) + openBedsFree(unit), 0);
+  const openUnits = units.filter((unit) => !unit.isClosed);
+  const readyNow = openUnits.reduce((sum, unit) => sum + boundedBedAvailability(unit).available, 0);
+  const openUnitIds = new Set(openUnits.map((unit) => unit.id));
   const unitIds = new Set(units.map((unit) => unit.id));
-  const pending = releases.filter((release) => release.state !== "discharged" && unitIds.has(release.unitId));
+  const pending = releases.filter((release) => release.state !== "discharged" && openUnitIds.has(release.unitId));
   const flaggedAdmissionIds = new Set(pending.map((release) => release.admissionId));
   const waitingMovements = movements.filter(
     (movement) => isOpen(movement) && STAGES_STILL_NEEDING_A_BED.includes(movement.stage),
@@ -125,7 +125,7 @@ export function bedsForecast(
     const overdue = clear.length - onTime.length;
     const plannedNotFlagged = admissions.filter(
       (admission) =>
-        unitIds.has(admission.unitId) &&
+        openUnitIds.has(admission.unitId) &&
         bedIsOccupied(admission) &&
         admission.expectedDischargeAt !== null &&
         admission.expectedDischargeAt <= until &&

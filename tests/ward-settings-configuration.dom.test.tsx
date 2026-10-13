@@ -1,6 +1,7 @@
 // tests/ward-settings-configuration.dom.test.tsx
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 // Same reason as every sibling settings dom suite: this screen renders next/link anchors and
@@ -92,6 +93,27 @@ describe("settings screen configuration draft", () => {
     // ...but the provider's real configuration, and the audit trail, do not.
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(beforeTarget);
     expect(screen.getByTestId("probe-audit-count").textContent).toBe(beforeAuditCount);
+  });
+
+  it("copies the saved rules in diagnostics while rule edits are still a draft", async () => {
+    const previousUrl = window.location.href;
+    userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+    try {
+      renderSettings();
+      const savedTarget = Number(screen.getByTestId("probe-ed-target").textContent);
+      setEdToMinimum();
+      expect(savedTarget).not.toBe(ED_ACCESS_TARGET_RANGE_MINUTES.min);
+      expect(edStepper()).toHaveAttribute("aria-valuenow", String(ED_ACCESS_TARGET_RANGE_MINUTES.min));
+      fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Copy diagnostics" }));
+      await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+      const payload = JSON.parse(writeText.mock.calls[0][0]);
+      expect(payload.configuration.edAccessTargetMinutes).toBe(savedTarget);
+    } finally {
+      writeText.mockRestore();
+      window.history.replaceState(null, "", previousUrl);
+    }
   });
 
   it("Save dispatches the edited draft and records exactly one audit event", () => {

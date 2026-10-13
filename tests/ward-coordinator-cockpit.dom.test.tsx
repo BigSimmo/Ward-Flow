@@ -16,7 +16,7 @@ function TestActionTrigger() {
         dispatch({
           type: "SET_CONFIGURATION",
           role: "ward" as never,
-          now: NOW_ANCHOR,
+          now: NOW_ANCHOR - 60,
           payload: { pullHoldMinutes: 45 } as never,
         });
       }}
@@ -58,5 +58,6 @@ describe("CoordinatorCockpit (WF-A1-15)", () => {
     const event = onDispatch.mock.calls[0][0] as WardFlowEvent;
     expect(event.role).toBe("ward");
     expect(event.type).toBe("SET_CONFIGURATION");
+    expect(event.now).toBe(NOW_ANCHOR - 60);
   });
 });

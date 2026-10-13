@@ -267,37 +267,24 @@ function readTabFromHash(): SettingsTab | null {
   return SETTINGS_TABS.some((tab) => tab.id === hash) ? (hash as SettingsTab) : null;
 }
 
-export function maskDiagnosticPatient<
-  T extends {
-    id?: string;
-    gender?: string;
-    addedAt?: string | number;
-    umrn?: string;
-    mrn?: string;
-    givenName?: string;
-    familyName?: string;
-    preferredName?: string;
-    displayName?: string;
-    name?: string;
-  },
->(patient: T): T {
+export function maskDiagnosticPatient(patient: DiagnosticPatientInput): { id?: string } {
   return {
     ...(patient.id !== undefined ? { id: patient.id } : {}),
-  } as T;
+  };
 }
 
-export function maskDiagnosticMovement<
-  T extends {
-    id: string;
-    patientName?: string;
-    patientUmrn?: string;
-    patientMrn?: string;
-    mrn?: string;
-    [key: string]: unknown;
-  },
->(movement: T): T {
+export function maskDiagnosticMovement(movement: DiagnosticMovementInput): {
+  id: string;
+  stage?: unknown;
+  originEdId?: unknown;
+  acceptedUnitId?: unknown;
+  admissionId?: unknown;
+  openedAt?: unknown;
+  acceptedAt?: unknown;
+  pulledAt?: unknown;
+  arrivedAt?: unknown;
+} {
   const allowed = [
-    "id",
     "stage",
     "originEdId",
     "acceptedUnitId",
@@ -307,7 +294,10 @@ export function maskDiagnosticMovement<
     "pulledAt",
     "arrivedAt",
   ] as const;
-  return Object.fromEntries(allowed.flatMap((key) => (movement[key] !== undefined ? [[key, movement[key]]] : []))) as T;
+  return {
+    id: movement.id,
+    ...Object.fromEntries(allowed.flatMap((key) => (movement[key] !== undefined ? [[key, movement[key]]] : []))),
+  };
 }
 
 export type DiagnosticPatientInput = {
@@ -572,7 +562,7 @@ export function SettingsScreen() {
   const handleCopyDiagnostics = async () => {
     try {
       await copySettingsDiagnostics({
-        configuration: draft,
+        configuration,
         movements,
         patients,
       });

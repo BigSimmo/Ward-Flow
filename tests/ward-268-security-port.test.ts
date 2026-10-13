@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+// Next.js 16.3.x exports the proxy matcher under its original middleware name.
+import { unstable_doesMiddlewareMatch as unstable_doesProxyMatch } from "next/experimental/testing/server";
 
 import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf";
 import { localProjectRequestIdentityPayload } from "@/lib/local-project-guard";
@@ -14,20 +16,22 @@ import { config as proxyConfig, proxy } from "../src/proxy";
 const read = (relativePath: string) => readFileSync(resolve(process.cwd(), relativePath), "utf8");
 
 describe("A4-6: only real static assets skip the proxy", () => {
-  const pageMatcher = new RegExp(`^${proxyConfig.matcher[1]}$`);
+  const matches = (url: string) => unstable_doesProxyMatch({ config: proxyConfig, nextConfig: {}, url });
   it("runs the proxy for page routes ending in an image extension", () => {
-    expect(pageMatcher.test("/mockups/ward-flow/board.png")).toBe(true);
-    expect(pageMatcher.test("/mockups/ward-flow/people/logo.svg")).toBe(true);
-    expect(pageMatcher.test("/report.jpg")).toBe(true);
+    expect(matches("/mockups/ward-flow/board.png")).toBe(true);
+    expect(matches("/mockups/ward-flow/people/logo.svg")).toBe(true);
+    expect(matches("/report.jpg")).toBe(true);
+    expect(matches("/api/health")).toBe(true);
   });
   it("still skips Next's build output and the root icons", () => {
-    expect(pageMatcher.test("/_next/static/chunks/main.js")).toBe(false);
-    expect(pageMatcher.test("/_next/image")).toBe(false);
-    expect(pageMatcher.test("/favicon.ico")).toBe(false);
-    expect(pageMatcher.test("/icon.svg")).toBe(false);
-    expect(pageMatcher.test("/api/health")).toBe(false);
+    expect(matches("/_next/static/chunks/main.js")).toBe(false);
+    expect(matches("/_next/static/media/logo.png")).toBe(false);
+    expect(matches("/_next/image")).toBe(false);
+    expect(matches("/favicon.ico")).toBe(false);
+    expect(matches("/icon.svg")).toBe(false);
   });
   it("strips a spoofed trust header on such a route", async () => {
+    expect(matches("/documents/x.png")).toBe(true);
     const request = new NextRequest(new URL("http://localhost/documents/x.png"));
     request.headers.set("x-developer-area", "1");
     const response = await proxy(request);

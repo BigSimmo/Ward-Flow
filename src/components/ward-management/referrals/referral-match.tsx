@@ -622,18 +622,18 @@ export function ReferralMatchView({
                   key={reason}
                   type="button"
                   role="radio"
-                  aria-checked={declineReason === reason}
+                  aria-checked={edDeclineReason === reason}
                   className={ph.cand}
                   data-testid={`ward-referral-match-phone-decline-${reason}`}
-                  onClick={() => setDeclineReason(reason)}
+                  onClick={() => setEdDeclineReason(reason)}
                 >
-                  <span className={declineReason === reason ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
+                  <span className={edDeclineReason === reason ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
                   <span className={ph.nm}>{DECLINE_REASON_LABELS[reason] ?? reason}</span>
                 </button>
               ))}
             </div>
             <p className={ph.matchHint} id="ward-referral-match-decline-blocked-emergency_department">
-              {declineReason === undefined ? "Choose a reason to decline." : "Decline records this reason."}
+              {edDeclineReason === undefined ? "Choose a reason to decline." : "Decline records this reason."}
             </p>
           </>
         ) : (
@@ -664,14 +664,14 @@ export function ReferralMatchView({
                 className={ph.pri}
                 data-tone="danger"
                 data-testid="ward-referral-match-decline-emergency_department"
-                aria-disabled={declineReason === undefined ? "true" : undefined}
+                aria-disabled={edDeclineReason === undefined ? "true" : undefined}
                 aria-describedby="ward-referral-match-decline-blocked-emergency_department"
-                title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
+                title={edDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
                 onClick={
-                  declineReason === undefined
+                  edDeclineReason === undefined
                     ? ignoreUnavailableActivation
                     : () => {
-                        handleDecline("emergency_department");
+                        handleDecline("emergency_department", edDeclineReason);
                         setPhoneDeclining(false);
                       }
                 }
@@ -757,11 +757,11 @@ export function ReferralMatchView({
                   id="ward-referral-match-decline-reason-emergency_department"
                   data-testid="ward-referral-match-decline-reason-emergency_department"
                   className={styles.select}
-                  value={declineReason ?? ""}
+                  value={edDeclineReason ?? ""}
                   onChange={(event) => {
                     const chosen = event.target.value;
                     // Membership, never truthiness — same discipline as the ward select above.
-                    setDeclineReason(
+                    setEdDeclineReason(
                       ED_DECLINE_REASONS.includes(chosen as ReferralDeclineReason)
                         ? (chosen as ReferralDeclineReason)
                         : undefined,
@@ -779,21 +779,23 @@ export function ReferralMatchView({
                   type="button"
                   className={styles.declineButton}
                   data-testid="ward-referral-match-decline-emergency_department"
-                  aria-disabled={declineReason === undefined ? "true" : undefined}
+                  aria-disabled={edDeclineReason === undefined ? "true" : undefined}
                   aria-describedby={
-                    declineReason === undefined ? "ward-referral-match-decline-blocked-emergency_department" : undefined
+                    edDeclineReason === undefined
+                      ? "ward-referral-match-decline-blocked-emergency_department"
+                      : undefined
                   }
-                  title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
+                  title={edDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
                   onClick={
-                    declineReason === undefined
+                    edDeclineReason === undefined
                       ? ignoreUnavailableActivation
-                      : () => handleDecline("emergency_department")
+                      : () => handleDecline("emergency_department", edDeclineReason)
                   }
                 >
                   Decline referral
                 </button>
               </div>
-              {declineReason === undefined ? (
+              {edDeclineReason === undefined ? (
                 <span id="ward-referral-match-decline-blocked-emergency_department" className="sr-only">
                   {DECLINE_REASON_UNCHOSEN_ED}
                 </span>

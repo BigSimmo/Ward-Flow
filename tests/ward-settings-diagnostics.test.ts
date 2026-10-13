@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   maskDiagnosticPatient,
   maskDiagnosticMovement,
@@ -22,6 +22,7 @@ describe("Settings Diagnostics Privacy Masking (WF-A4-10)", () => {
     const masked = maskDiagnosticPatient(rawPatient);
 
     expect(masked).toEqual({ id: "P-12345" });
+    expectTypeOf(masked).toEqualTypeOf<{ id?: string }>();
   });
 
   it("keeps only allowlisted movement fields: no patient name or UMRN", () => {
@@ -35,6 +36,9 @@ describe("Settings Diagnostics Privacy Masking (WF-A4-10)", () => {
     const masked = maskDiagnosticMovement(rawMovement);
 
     expect(masked).toEqual({ id: "M-101" });
+    expectTypeOf(masked).not.toHaveProperty("patientName");
+    expectTypeOf(masked).not.toHaveProperty("patientUmrn");
+    expectTypeOf(masked).not.toHaveProperty("status");
   });
 
   it("writes diagnostic JSON payload to navigator.clipboard with all patient names and MRNs masked", async () => {

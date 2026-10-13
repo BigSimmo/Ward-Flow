@@ -79,6 +79,21 @@ describe("synthetic-data-guard", () => {
     expect(result2.safe).toBe(false);
   });
 
+  it.each(["9876543210", 9876543210])("rejects ten-digit UMRN key-value identifiers (%s)", (umrn) => {
+    const result = checkSyntheticPayload({ UMRN: umrn });
+    expect(result.safe).toBe(false);
+    if (!result.safe) {
+      expect(result.reason).toContain("hospital record number");
+      expect(result.sample).not.toContain(String(umrn));
+    }
+  });
+
+  it("rejects ten-digit UMRNs embedded in text", () => {
+    const result = checkSyntheticPayload({ notes: "Record UMRN: 9876543210 found." });
+    expect(result.safe).toBe(false);
+    if (!result.safe) expect(result.reason).toContain("hospital record number");
+  });
+
   it("detects Australian mobile phone numbers", () => {
     const badPayload = {
       contact: "Next of kin phone 0412 345 678 called.",

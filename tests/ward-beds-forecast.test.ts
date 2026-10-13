@@ -19,7 +19,7 @@ import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
 import { bedReleases, wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
-import type { BedRelease, Movement } from "@/components/ward-management/ward-model";
+import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
 
 const NOW = NOW_ANCHOR;
 const unit = allUnits()[0];
@@ -130,6 +130,52 @@ describe("bedsForecast", () => {
       NOW,
     );
     expect(horizon(forecast, 24)).toMatchObject({ expected: 0, plannedNotFlagged: 0 });
+  });
+
+  it("excludes every projected supply bucket from closed wards", () => {
+    const closedUnit = { ...allUnits()[1], isClosed: true };
+    const releases = [
+      release({ unitId: closedUnit.id, state: "confirmed" }),
+      release({ unitId: closedUnit.id, state: "expected" }),
+      release({ unitId: closedUnit.id, blocker: BED_RELEASE_BLOCKERS[0] }),
+      release({ unitId: closedUnit.id, expectedAt: NOW - 2 * MINUTES_PER_DAY }),
+      release({ unitId: unit.id, state: "confirmed" }),
+    ];
+    const admissions = [
+      admission({ id: "AD-CLOSED-PLANNED", unitId: closedUnit.id, expectedDischargeAt: NOW + 60 }),
+      admission({ id: "AD-OPEN-PLANNED", expectedDischargeAt: NOW + 60 }),
+    ];
+    const forecast = bedsForecast([unit, closedUnit], releases, admissions, [], NOW);
+    for (const entry of forecast.horizons) {
+      expect(entry).toMatchObject({
+        readyNow: READY,
+        confirmed: 1,
+        expected: 0,
+        heldUp: 0,
+        overdue: 0,
+        plannedNotFlagged: 1,
+        low: READY + 1,
+        likely: READY + 1,
+        high: READY + 2,
+      });
+    }
+  });
+
+  it.each([
+    { beds: 4, empty: 8, allocatable: 10, ready: 4 },
+    { beds: 8, empty: 3, allocatable: 10, ready: 3 },
+    { beds: 8, empty: 6, allocatable: 2, ready: 2 },
+  ])("bounds Ready by physical, empty and allocatable capacity ($ready)", ({ beds, empty, allocatable, ready }) => {
+    const staleUnit: Unit = {
+      ...unit,
+      isClosed: false,
+      beds,
+      empty: { ...unit.empty, value: empty },
+      allocatable: { ...unit.allocatable, value: allocatable },
+    };
+    for (const entry of bedsForecast([staleUnit], [], [], [], NOW).horizons) {
+      expect(entry).toMatchObject({ readyNow: ready, low: ready, likely: ready, high: ready });
+    }
   });
 
   it("runs on the seeded network and keeps low <= likely <= high", () => {
