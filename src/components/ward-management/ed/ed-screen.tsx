@@ -2896,12 +2896,16 @@ export function EdScreen({ edId }: EdScreenProps) {
                             const record = registryPatients.find((candidate) => candidate.id === next.patientId);
                             const recordSex = SEX_OPTIONS.find((option) => option === record?.sex);
                             const recordGender = GENDER_OPTIONS.find((option) => option === record?.gender);
+                            // A value that still matches the previous person's record was prefilled, not
+                            // chosen, so it follows the person; a value the clinician changed is kept.
+                            const previous = registryPatients.find((candidate) => candidate.id === current.patientId);
+                            const sexPrefilled = current.sex === undefined || current.sex === previous?.sex;
+                            const genderPrefilled = current.gender === undefined || current.gender === previous?.gender;
                             return {
                               ...current,
                               ...next,
-                              // Prefill from the record only what the clinician has not yet answered.
-                              sex: current.sex ?? recordSex,
-                              gender: current.gender ?? recordGender,
+                              sex: sexPrefilled ? recordSex : current.sex,
+                              gender: genderPrefilled ? recordGender : current.gender,
                             };
                           })
                         }

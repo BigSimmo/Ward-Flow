@@ -96,4 +96,16 @@ describe("ED Raise referral starts from a person", () => {
     expect(screen.getByRole("button", { name: "Open row" })).toBeInTheDocument();
     expect(referralPatientLabel(person)).toContain(person.umrn);
   });
+
+  it("replaces sex prefilled from one person when the clinician changes to another", () => {
+    const patients = seedWardFlowState().patients.filter((patient) => patient.umrn !== "" && patient.sex);
+    const first = patients[0]!;
+    const second = patients.find((patient) => patient.sex !== first.sex)!;
+    renderEd();
+    const field = screen.getByTestId("ward-ed-referral-patient");
+    fireEvent.change(field, { target: { value: first.umrn } });
+    expect(screen.getByTestId("ward-ed-referral-sex")).toHaveValue(first.sex);
+    fireEvent.change(field, { target: { value: second.umrn } });
+    expect(screen.getByTestId("ward-ed-referral-sex")).toHaveValue(second.sex);
+  });
 });
