@@ -83,6 +83,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
     it("S1-6: only appends placement overrides when units actually received an override", () => {
       const state = seedWardFlowState();
       const mov = state.movements.find((m) => m.stage === "placement_requested" || m.stage === "destination_review");
+      expect(mov, "seed must contain a matching movement").toBeDefined();
       if (!mov) return;
 
       const initialOverridesCount = mov.overrides.length;
@@ -151,6 +152,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
     it("A3-4: does not categorize unreferred ED patients under no_eligible_bed", () => {
       const state = seedWardFlowState();
       const mov = state.movements.find((m) => m.referredUnitIds.length === 0 && !m.acceptedUnitId && !m.closure);
+      expect(mov, "seed must contain a matching movement").toBeDefined();
       if (!mov) return;
 
       const cause = causeOf(mov, state.units, NOW);

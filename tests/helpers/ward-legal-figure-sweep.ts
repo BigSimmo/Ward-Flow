@@ -1130,7 +1130,15 @@ export function candidateEvents(
     case "UPDATE_EXPECTED_DISCHARGE":
       return state.admissions
         .filter((admission) => admission.state !== "departed")
-        .map((admission) => ({ type, role, now, admissionId: admission.id, expectedDischargeAt: now + 24 * 60 }));
+        .map((admission) => ({
+          type,
+          role,
+          now,
+          // S1-12: a ward-role update must name the admission's own unit.
+          ...(role === "ward" ? { actingUnitId: admission.unitId } : {}),
+          admissionId: admission.id,
+          expectedDischargeAt: now + 24 * 60,
+        }));
     case "DISPATCH_BROADCAST_ALERT":
       return [
         {
