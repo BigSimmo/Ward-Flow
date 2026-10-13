@@ -30,7 +30,7 @@ import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpi
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { useUndoableStep } from "../use-undoable-step";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
-import { collectionGaps } from "@/components/ward-management/ward-transport-checks";
+import { arrivalGaps, collectionGaps } from "@/components/ward-management/ward-transport-checks";
 import { clock, dur } from "./patient-now-records";
 import styles from "./patient-transit-operations.module.css";
 
@@ -80,6 +80,7 @@ export function PatientTransitOperations({
   const [overrideUnitIds, setOverrideUnitIds] = useState<string[]>([]);
   const [booking, setBooking] = useState(false);
   const [collectCheck, setCollectCheck] = useState(false);
+  const [arriveCheck, setArriveCheck] = useState(false);
   const [provider, setProvider] = useState<TransportProvider | "">("");
   const [cad, setCad] = useState("");
   const [eta, setEta] = useState("");
@@ -672,6 +673,11 @@ export function PatientTransitOperations({
                   {...arrivedGate.buttonProps}
                   onClick={() => {
                     if (!arrivedGate.allowed) return;
+                    // Audit r1 item 4: no transport leg and fit to travel open warns, never blocks.
+                    if (arrivalGaps(movement).length > 0) {
+                      setArriveCheck(true);
+                      return;
+                    }
                     noteAttempt();
                     dispatch({
                       type: "PATIENT_ARRIVED",
@@ -684,6 +690,26 @@ export function PatientTransitOperations({
                 >
                   Confirm arrival · receiving ward
                 </button>
+                <TransportExceptionDialog
+                  open={arriveCheck}
+                  who="this patient"
+                  action="Confirm arrival"
+                  gaps={arrivalGaps(movement)}
+                  onClose={() => setArriveCheck(false)}
+                  onConfirm={(reason) => {
+                    setArriveCheck(false);
+                    noteAttempt();
+                    dispatch({
+                      type: "PATIENT_ARRIVED",
+                      role: routeRole,
+                      now,
+                      movementId: movement.id,
+                      ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
+                      exception: { gaps: arrivalGaps(movement), reason },
+                    });
+                  }}
+                  testId="ward-patient-arrive-check"
+                />
                 {arrivedGate.note}
               </>
             )}
@@ -875,7 +901,13 @@ export function PatientTransitOperations({
             <Truck size={18} aria-hidden="true" />
             <span>Transport</span>
             <strong>{activeJob ? job.provider : noTransport ? "Not required" : "Awaiting booking"}</strong>
-            <small>{activeJob ? `CAD ${job.cadNumber ?? "not recorded"}` : "Sending team records booking"}</small>
+            <small>
+              {activeJob
+                ? /^CAD/i.test(job.cadNumber ?? "")
+                  ? job.cadNumber
+                  : `CAD ${job.cadNumber ?? "not recorded"}`
+                : "Sending team records booking"}
+            </small>
           </div>
         </div>
       ) : null}

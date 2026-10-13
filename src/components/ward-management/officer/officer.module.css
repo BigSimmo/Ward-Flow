@@ -134,19 +134,6 @@
   text-overflow: ellipsis;
 }
 
-.preview {
-  display: inline-flex;
-  align-items: center;
-  height: 1.375rem;
-  padding: 0 var(--wf-s-2);
-  border: 1px dashed var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
 .eyebrow {
   color: var(--wf-ink-2);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
@@ -1761,6 +1748,10 @@
     border: 1px solid var(--wf-line);
     border-radius: var(--wf-r-pill);
     background: var(--wf-track);
+    /* Phone taps (13 Oct 2026): the shared tab row's edge-fade mask clipped the hit areas to the
+       34px track. The track never scrolls, so the fade never shows; dropping it changes nothing seen. */
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   .tabsRow [role="tab"] {
@@ -1997,7 +1988,6 @@
     font-weight: 600;
   }
 
-  .phStepSub,
   .phStepDone {
     color: var(--wf-ink-3);
     font-size: var(--wf-fs-12);

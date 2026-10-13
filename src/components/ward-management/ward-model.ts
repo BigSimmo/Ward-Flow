@@ -938,7 +938,7 @@ export type TransportExceptionReason = (typeof TRANSPORT_EXCEPTION_REASONS)[numb
 export type TransportException = {
   at: Instant;
   by: WardFlowRole;
-  step: "booked" | "collected";
+  step: "booked" | "collected" | "arrived";
   gaps: TransportExceptionGap[];
   reason: TransportExceptionReason;
 };
@@ -1731,6 +1731,11 @@ export type Movement = {
    */
   arrivalLateNotifiedAt?: Instant;
   medicalClearance?: { cleared: boolean; at: Instant };
+  /**
+   * Audit r1 item 4 (13 Oct 2026): a journey with no transport leg confirmed arrived while fit to
+   * travel was not recorded. Never blocks; records the open check and a coded reason.
+   */
+  arrivalException?: TransportException;
   /** D-34: explicit ED deterioration; ordinary unknown clearance is not this event.
    * The unwind/stage trails retain every occurrence, including after fresh re-clearance. */
   medicalDeterioration?: { at: Instant; by: "ed"; resumedAt?: Instant };
@@ -2014,6 +2019,14 @@ export const ABSENCE_STEPS = [
   "next_of_kin_told",
 ] as const;
 export type AbsenceStep = (typeof ABSENCE_STEPS)[number];
+
+/**
+ * A3-13 (Josh signed off): a voluntary patient who is not back from leave is not on an order, so
+ * no return order step is asked for. The one list the status card, step count and summary read.
+ */
+export function absenceStepsFor(voluntary: boolean): readonly AbsenceStep[] {
+  return voluntary ? ABSENCE_STEPS.filter((step) => step !== "return_order_made") : ABSENCE_STEPS;
+}
 
 export const ABSENCE_STEP_LABELS: Record<AbsenceStep, string> = {
   searched: "Ward and grounds searched",

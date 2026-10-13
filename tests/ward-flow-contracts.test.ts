@@ -64,7 +64,7 @@ const WALK_EVENTS = [
   { type: "TRANSPORT_ACCEPTED", role: "officer" },
   { type: "TRANSPORT_EN_ROUTE", role: "officer" },
   { type: "PATIENT_COLLECTED", role: "officer" },
-  { type: "PATIENT_ARRIVED", role: "officer" },
+  { type: "PATIENT_ARRIVED", role: "coordinator" },
 ] as const;
 
 function walk(): WardFlowState[] {

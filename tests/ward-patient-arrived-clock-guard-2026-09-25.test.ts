@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import {
+  seedWardFlowState,
+  wardFlowReducer,
+  type WardFlowState,
+} from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
@@ -12,7 +16,7 @@ const HAND_AUTHORED = "WF-014";
 function arrive(state: WardFlowState, now: number): WardFlowState {
   return wardFlowReducer(state, {
     type: "PATIENT_ARRIVED",
-    role: "officer",
+    role: "coordinator",
     now,
     movementId: HAND_AUTHORED,
   } as Parameters<typeof wardFlowReducer>[1]);

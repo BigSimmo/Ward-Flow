@@ -4,7 +4,13 @@ import { describe, expect, it } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { wardMovements } from "@/components/ward-management/ward-movements";
-import { allEmergencyDepartments, allUnits, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
+import {
+  allEmergencyDepartments,
+  allUnits,
+  edById,
+  NOW_ANCHOR,
+  wardSites,
+} from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { namesRealPlace } from "./helpers/ward-place-names";
 
@@ -164,8 +170,11 @@ describe("FD-23 on the ward page", () => {
 
           // Optional by design: 17 sites, 8 emergency departments. A site without one contributes
           // nothing here rather than throwing on an absent field.
+          // Owner's decision, 13 Oct 2026 (audit round 2, A1-8): the ward sees the ED the patient
+          // is in now on the request before accepting. That is where the patient IS, not where else
+          // they were referred, so the movement's own origin ED is exempt; every other ED is not.
           const ed = site.emergencyDepartment;
-          if (ed !== undefined) {
+          if (ed !== undefined && ed.id !== edById(parallel.originEdId)?.id) {
             expect(
               namesRealPlace(shown, ed.name),
               `the card for ${parallel.id} on ${unitId} names another emergency department — ` +

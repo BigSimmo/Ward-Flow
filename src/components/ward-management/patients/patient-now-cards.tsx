@@ -4,7 +4,7 @@ import { Clock, MapPin, MessageSquare, Phone, Scale } from "lucide-react";
 import { Button, Card, CardBody, CardHead, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { formTitleForCode } from "@/lib/form-register";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
@@ -105,7 +105,11 @@ export function PatientLegalNowCard({
     rows.push({
       tone: progression ? "neutral" : expiry && expiry.standing !== "later" ? expiry.tone : "success",
       code: `Form ${movement.legalForm.code}`,
-      name: progression ? `Ended ${progression.endedWhen}` : legalFormName(movement.legalForm),
+      // A3-8: the code is already in `code`, so the name is the register title alone, said once.
+      // Audit S-6: a form the examination or arrival moved on from reads as ended.
+      name: progression
+        ? `Ended ${progression.endedWhen}`
+        : (formTitleForCode(movement.legalForm.code) ?? "Title not in the forms register"),
       time: expiry ? expiry.at : recordedAt !== undefined ? clock(recordedAt) : undefined,
       left: expiry?.text,
       ended: progression !== undefined,
@@ -332,8 +336,18 @@ export function PatientContactsCard({ rows, framed = false }: { rows: ContactRow
  * On leave: what happens if they are not back by the time the ward typed. Contact details are not
  * held in this prototype, so the first two steps are said rather than offered as call buttons.
  */
-export function PatientLeaveCard({ dueBack, onMarkAbsent }: { dueBack: string; onMarkAbsent: () => void }) {
+export function PatientLeaveCard({
+  dueBack,
+  voluntary = false,
+  onMarkAbsent,
+}: {
+  dueBack: string;
+  /** A3-13: absent without leave applies to a person on an order; a voluntary patient is "not back". */
+  voluntary?: boolean;
+  onMarkAbsent: () => void;
+}) {
   const isPhone = useIsPhone();
+  const lastStep = voluntary ? "Treat as not back from leave" : "Treat as absent without leave";
   if (isPhone)
     /* v10 Patient, phone: the three steps under a page heading, numbered, the last with its action. */
     return (
@@ -358,7 +372,7 @@ export function PatientLeaveCard({ dueBack, onMarkAbsent }: { dueBack: string; o
           <li className={styles.phItem}>
             <span className={styles.phStep}>3</span>
             <span className={styles.phItemText}>
-              <strong>Treat as absent without leave</strong>
+              <strong>{lastStep}</strong>
               <span>Starts the missing person steps</span>
             </span>
             <Button size="sm" className={styles.phAction} onClick={onMarkAbsent}>
@@ -385,7 +399,7 @@ export function PatientLeaveCard({ dueBack, onMarkAbsent }: { dueBack: string; o
         </li>
         <li className={styles.item}>
           <span className={styles.itemText}>
-            <strong>3. Treat as absent without leave</strong>
+            <strong>3. {lastStep}</strong>
             <span>Starts the missing person steps</span>
           </span>
           <Button size="sm" onClick={onMarkAbsent}>
@@ -400,10 +414,13 @@ export function PatientLeaveCard({ dueBack, onMarkAbsent }: { dueBack: string; o
 /** Absent without leave: the ward's absence record. No sighting is held, so none is shown. */
 export function PatientLastSeenCard({
   wardName,
+  voluntary = false,
   since,
   onRecordReturn,
 }: {
   wardName?: string;
+  /** A3-13: a voluntary patient is not on an order, so no return order is prompted. */
+  voluntary?: boolean;
   since: string;
   onRecordReturn: () => void;
 }) {
@@ -415,6 +432,13 @@ export function PatientLastSeenCard({
         <Row label="Recorded">{since}, when the ward recorded the absence</Row>
         <Row label="Last seen">Where and when are not held in this prototype</Row>
         <Row label="Description">Recorded by the ward, not held in this prototype</Row>
+        {/* S-5: a prompt only. Whether an apprehension and return order is needed is the treating
+            psychiatrist's call; the order itself is not recorded in this prototype. */}
+        {voluntary ? null : (
+          <Row label="Return order">
+            Ask the treating psychiatrist whether an apprehension and return order is needed
+          </Row>
+        )}
       </div>
       <div className={styles.dock}>
         <strong>When found</strong>

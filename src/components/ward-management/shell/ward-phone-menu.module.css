@@ -28,9 +28,14 @@
   gap: 10px;
   min-height: var(--spacing-tap, 3rem);
   padding: 4px 10px 4px 0;
+  border: 0;
   border-radius: var(--wf-r-md);
+  background: transparent;
   color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .who:hover {

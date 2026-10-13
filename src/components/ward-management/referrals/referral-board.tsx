@@ -1,7 +1,7 @@
 "use client";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { acceptedWardOf } from "./accepted-ward-referral";
 import {
@@ -36,6 +36,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
@@ -90,6 +91,7 @@ import {
 import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
+import { WardOffersSection } from "./ward-offers-section";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import {
@@ -414,8 +416,8 @@ const useSplitDetailLayout = createBrowserStore<boolean>(
   false,
 );
 
-type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "community" | "refused";
-const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed", "community", "refused"];
+type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "both" | "community" | "refused";
+const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed", "both", "community", "refused"];
 type InspectorTab = "place" | "patient" | "timeline";
 type BoardSheet = "meeting" | "summary" | "keys" | null;
 
@@ -428,7 +430,27 @@ const HIGHLIGHT_LABELS: readonly (readonly [Exclude<HighlightKey, "refused">, st
   ["community", "Community"],
 ];
 
-function highlightTest(key: HighlightKey, referral: Referral, now: Instant): boolean {
+/**
+ * Audit round 2 (A2-13): the phone's type chips count each referral once. A referral that asks
+ * for more than one kind of place sits under Both, not under each kind, so the chips sum to the
+ * hero's "awaiting decision" count. Desktop pills keep their "asks for" meaning.
+ */
+function askedKinds(referral: Referral): Set<string> {
+  return new Set(openArms(referral).map((arm) => arm.destination.kind));
+}
+
+function phoneTypeTest(key: "ward" | "ed" | "both" | "community", referral: Referral): boolean {
+  const kinds = askedKinds(referral);
+  if (key === "both") return kinds.size > 1;
+  if (kinds.size !== 1) return false;
+  const kind = key === "ward" ? "psychiatric_ward" : key === "ed" ? "emergency_department" : "community_team";
+  return kinds.has(kind);
+}
+
+function highlightTest(key: HighlightKey, referral: Referral, now: Instant, phone = false): boolean {
+  if (phone && (key === "ward" || key === "ed" || key === "both" || key === "community")) {
+    return phoneTypeTest(key, referral);
+  }
   switch (key) {
     case "overdue":
       return isOverdue(referral, now);
@@ -440,6 +462,8 @@ function highlightTest(key: HighlightKey, referral: Referral, now: Instant): boo
       return openArms(referral).some((arm) => arm.destination.kind === "emergency_department");
     case "community":
       return openArms(referral).some((arm) => arm.destination.kind === "community_team");
+    case "both":
+      return askedKinds(referral).size > 1;
     case "refused":
       return declinedAddressings(referral).length > 0;
   }
@@ -454,6 +478,14 @@ function isTyping(target: EventTarget | null): boolean {
     element.tagName === "SELECT" ||
     element.isContentEditable === true
   );
+}
+
+function subscribeToLocation(listener: () => void) {
+  window.addEventListener("popstate", listener);
+  return () => window.removeEventListener("popstate", listener);
+}
+function readLinkedReferralId(): string | null {
+  return new URLSearchParams(window.location.search).get("referral");
 }
 
 /**
@@ -485,11 +517,15 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   // A1-17: the shared phone query, so the server's phone guess draws the phone layout first.
   const phoneLayout = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<"axis" | "beds" | null>(null);
+  // A2-5: `?referral=<id>` (the ED row's "Referred to" link) opens that referral until someone chooses.
+  const linkedReferralId = useSyncExternalStore(subscribeToLocation, readLinkedReferralId, () => null);
   const selectedReferralId =
     chosenReferralId === undefined
-      ? defaultSelectFirst && splitDetailLayout
-        ? queued[0]?.id
-        : undefined
+      ? linkedReferralId !== null && referrals.some((referral) => referral.id === linkedReferralId)
+        ? linkedReferralId
+        : defaultSelectFirst && splitDetailLayout
+          ? queued[0]?.id
+          : undefined
       : (chosenReferralId ?? undefined);
   const [view, setView] = useState<"queue" | "history">("queue");
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);
@@ -559,8 +595,16 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   const searching = searchQuery.trim() !== "";
   const shownQueued = searching ? queued.filter(matchesSearch) : queued;
   const anyHighlight = highlight !== null;
-  const isHighlighted = (referral: Referral) => highlight !== null && highlightTest(highlight, referral, now);
+  const isHighlighted = (referral: Referral) =>
+    highlight !== null && highlightTest(highlight, referral, now, phoneLayout);
   const highlightedCount = anyHighlight ? shownQueued.filter(isHighlighted).length : 0;
+  /*
+   * Audit round 2 (A2-14): on the phone a chip FILTERS. Dimming greyed the overdue row's act-now
+   * marker and left the match below the fold. Desktop keeps highlight-and-dim (Josh, 13 Oct 2026),
+   * but an overdue (act-now) row is never dimmed on either.
+   */
+  const phoneFiltered = phoneLayout && anyHighlight;
+  const listedQueued = phoneFiltered ? shownQueued.filter(isHighlighted) : shownQueued;
 
   const decided = recentlyDecidedReferrals(referrals);
   // The DENOMINATOR, uncapped. `decided` above is already truncated to the display limit, so its
@@ -783,10 +827,15 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               onMeeting={() => setSheet("meeting")}
             />
             <ReferralPhoneChips
-              chips={(["ward", "ed", "community", "refused"] as const).map((key) => ({
+              chips={(["ward", "ed", "both", "community", "refused"] as const).map((key) => ({
                 key,
-                label: key === "refused" ? "Refused once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
-                count: queued.filter((r) => highlightTest(key, r, now)).length,
+                label:
+                  key === "refused"
+                    ? "Refused once"
+                    : key === "both"
+                      ? "Both"
+                      : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
+                count: queued.filter((r) => highlightTest(key, r, now, true)).length,
               }))}
               highlight={highlight}
               onHighlight={(key) => {
@@ -953,7 +1002,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                           <b>
                             {highlightedCount} of {shownQueued.length}
                           </b>{" "}
-                          highlighted · all rows stay
+                          {phoneFiltered ? "shown" : "highlighted · all rows stay"}
                         </span>
                       ) : null}
                       <Button variant="ghost" size="sm" onClick={clearHighlights}>
@@ -975,8 +1024,9 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               </div>
               <TabPanel idPrefix="ward-referral-view" id="queue" hidden={view !== "queue"}>
                 <QueuedSection
-                  queued={shownQueued}
-                  searchMiss={searching && shownQueued.length === 0 && queued.length > 0}
+                  queued={listedQueued}
+                  searchMiss={(searching || phoneFiltered) && listedQueued.length === 0 && queued.length > 0}
+                  filterMiss={phoneFiltered && !searching}
                   now={now}
                   selectedId={selectedReferralId}
                   onSelect={handleSelect}
@@ -985,8 +1035,17 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   patients={patients}
                   allReferrals={referrals}
                   readmissionIndex={readmissionIndex}
-                  isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
-                  isDimmed={(referral) => anyHighlight && !isHighlighted(referral)}
+                  isHighlighted={(referral) => anyHighlight && !phoneFiltered && isHighlighted(referral)}
+                  isDimmed={(referral) =>
+                    anyHighlight && !phoneFiltered && !isHighlighted(referral) && !isOverdue(referral, now)
+                  }
+                />
+                <WardOffersSection
+                  movements={movements}
+                  referrals={referrals}
+                  units={units}
+                  patients={patients}
+                  now={now}
                 />
               </TabPanel>
               <TabPanel idPrefix="ward-referral-view" id="history" className={a.history} hidden={view !== "history"}>
@@ -1416,8 +1475,11 @@ function QueuedSection({
   isHighlighted = () => false,
   isDimmed = () => false,
   searchMiss = false,
+  filterMiss = false,
 }: {
   queued: Referral[];
+  /** The phone's chip filter, not the search, narrowed the queue to nothing. */
+  filterMiss?: boolean;
   /** The search narrowed an open queue to nothing: say so rather than "no referral is queued". */
   searchMiss?: boolean;
   /** Every referral, not just the queue: a prior stay links to its person through its own referral. */
@@ -1437,6 +1499,8 @@ function QueuedSection({
     () => ({ patients, referrals: allReferrals, movements }),
     [patients, allReferrals, movements],
   );
+  // A2-20: initials plus UMRN on a phone when Discreet names is on.
+  const nameFor = usePatientNameDisplay();
   return (
     <section className={styles.v6Section} data-testid="ward-referral-board-queued">
       <h2 className="sr-only">
@@ -1444,7 +1508,11 @@ function QueuedSection({
       </h2>
       {queued.length === 0 ? (
         <p className={styles.v6Empty} data-testid="ward-referral-board-queued-empty">
-          {searchMiss ? "No queued referral matches the search." : "None. No referral is currently queued."}
+          {searchMiss
+            ? filterMiss
+              ? "No queued referral matches this chip."
+              : "No queued referral matches the search."
+            : "None. No referral is currently queued."}
         </p>
       ) : (
         <>
@@ -1523,7 +1591,7 @@ function QueuedSection({
                             onSelect(referral.id);
                           }}
                         >
-                          {patientInfo.displayName}
+                          {nameFor(patientInfo.displayName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
                           <span className={a.mono}>{patientInfo.umrn}</span> · {demographicLabel(referral)}
@@ -1666,7 +1734,7 @@ function QueuedSection({
                     </span>
                     <span className={a.cardMain}>
                       <span className={a.cardName}>
-                        <strong>{patientInfo.displayName}</strong>
+                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong>
                         <ReadmissionFlag
                           flag={referralReadmissionFlag(referral, readmissionIndex)}
                           expandable={false}
@@ -1752,6 +1820,7 @@ function DecidedSection({
   onSelect: (id: string) => void;
   onResetFilters?: () => void;
 }) {
+  const nameFor = usePatientNameDisplay();
   return (
     <section className={cx(styles.v6Section, styles.v6Decided)} data-testid="ward-referral-board-decided">
       <CardHead
@@ -1821,7 +1890,7 @@ function DecidedSection({
                     <td>
                       <div>{outcomeLabel(referral)}</div>
                       <span style={{ display: "block", fontSize: "0.82rem", marginTop: "0.2rem" }}>
-                        <strong>{patientInfo.displayName}</strong>
+                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong>
                       </span>
                     </td>
                     <td data-testid={`ward-referral-board-decided-detail-${referral.id}`}>
@@ -1870,7 +1939,7 @@ function DecidedSection({
                       <span className={styles.v6RowLine}>
                         <StatusGlyph tone={accepted ? "success" : "closed"} size={10} />
                         <span className="sr-only">{outcomeLabel(referral)}, </span>
-                        <strong>{patientInfo.displayName}</strong> {accepted ? "to " : ""}
+                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong> {accepted ? "to " : ""}
                         <span
                           className={styles.v6RowOutcome}
                           data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}

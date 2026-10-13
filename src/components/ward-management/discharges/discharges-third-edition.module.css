@@ -1595,6 +1595,13 @@
   background: var(--wf-act-tint);
 }
 
+/* A4-23 (audit round 2): on the phone the act-now row keeps its thin edge without the tint. */
+@media screen and (max-width: 48rem) {
+  .workTable tr[data-act="true"] {
+    background: none;
+  }
+}
+
 .tabBadgeAlert {
   color: var(--wf-ink-1);
 }
