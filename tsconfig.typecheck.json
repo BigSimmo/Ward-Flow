@@ -38,6 +38,7 @@
     "node_modules",
     ".next/**",
     "next-env.d.ts",
+    "tmp/**",
     "scratch/**",
     "worktrees/**",
     "scripts/archive/**",

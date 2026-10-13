@@ -199,7 +199,7 @@ const OPENERS: ReadonlyArray<readonly [string, string, string]> = [
   ["ward-bar-tools-trigger", "ward-bar-tools-sheet", "the Tools drawer"],
 ];
 
-test.describe("@mockup Ward shell bar", () => {
+test.describe("Ward shell bar", () => {
   test.describe.configure({ timeout: 90_000 });
 
   /**
@@ -596,7 +596,7 @@ const UNWIRED_PRIMARY_ROUTES: ReadonlyArray<readonly [string, string, string]> =
   ["/mockups/ward-flow/statistics", "Export the figures", "Statistics"],
 ];
 
-test.describe("@mockup Ward shell bar — item 43: the unwired primary action's popover", () => {
+test.describe("Ward shell bar — item 43: the unwired primary action's popover", () => {
   test.describe.configure({ timeout: 90_000 });
 
   // Anti-vacuity: if a route stopped resolving one of these three kinds, every test below would
@@ -637,7 +637,7 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
   }
 });
 
-test("@mockup drawer workspace keeps Figures focus and every task reachable on a short phone", async ({ page }) => {
+test("drawer workspace keeps Figures focus and every task reachable on a short phone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 568 });
   await gotoWardChrome(page);
   const bar = page.getByTestId("ward-bar");
@@ -667,7 +667,7 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await expect(tasks).toHaveCount(0);
 });
 
-test("@mockup compact Referrals opens from Tools and retains a draft across sections", async ({ page }) => {
+test("compact Referrals opens from Tools and retains a draft across sections", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 568 });
   await gotoWardChrome(page, "/mockups/ward-flow/delays");
   const toolsTrigger = page.getByTestId("ward-bar-tools-trigger");

@@ -3,6 +3,24 @@
    Supports Occupied Inpatient Dossier (4 tabs) and Ready Bed Console
    ───────────────────────────────────────────────────────────── */
 
+@keyframes drawerSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes scrimFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .drawerScrim {
   position: fixed;
   inset: 0;
@@ -11,12 +29,13 @@
   z-index: 80;
   display: none;
   opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .drawerScrim.show {
   display: block;
   opacity: 1;
+  animation: scrimFadeIn 0.2s ease-out;
+  will-change: opacity;
 }
 
 .drawer {
@@ -30,7 +49,6 @@
   box-shadow: -8px 0 24px rgb(var(--ward-shadow-rgb) / 0.25);
   z-index: 90;
   transform: translateX(100%);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -38,6 +56,15 @@
 
 .drawer.show {
   transform: translateX(0);
+  animation: drawerSlideIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawerScrim.show,
+  .drawer.show {
+    animation: none !important;
+  }
 }
 
 /* Header */

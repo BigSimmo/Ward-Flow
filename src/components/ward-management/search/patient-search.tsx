@@ -266,7 +266,7 @@ export function PatientSearchPage() {
           const isComm =
             result.referral.originSiteCode.includes("CMHT") ||
             result.referral.originSiteCode.includes("Clinic") ||
-            (result.referral.homeRegion as unknown as string) === "Community";
+            result.referral.source === "community";
           if (isComm) return false;
         }
       }
@@ -280,7 +280,7 @@ export function PatientSearchPage() {
           const isComm =
             result.referral.originSiteCode.includes("CMHT") ||
             result.referral.originSiteCode.includes("Clinic") ||
-            (result.referral.homeRegion as unknown as string) === "Community";
+            result.referral.source === "community";
           if (!isComm) return false;
         }
       }
@@ -411,7 +411,7 @@ export function PatientSearchPage() {
         const isComm =
           ref.originSiteCode.includes("CMHT") ||
           ref.originSiteCode.includes("Clinic") ||
-          (ref.homeRegion as unknown as string) === "Community";
+          ref.source === "community";
         const acceptedDest = ref.destinations.find((d) => d.acceptedUnitId);
         const destUnit = acceptedDest ? units.find((u) => u.id === acceptedDest.acceptedUnitId) : null;
         const waitH = Math.max(0, (now - ref.raisedAt) / 60);
@@ -2003,7 +2003,7 @@ export function ResultsSection({
             const isComm =
               referral.originSiteCode.includes("CMHT") ||
               referral.originSiteCode.includes("Clinic") ||
-              (referral.homeRegion as unknown as string) === "Community";
+              referral.source === "community";
             const presenceKey = isComm ? "community" : "live";
             const presenceLabel = isComm ? "○ Not in Hosp" : "● Live";
             const isSelected = selectedReferralId === referral.id;

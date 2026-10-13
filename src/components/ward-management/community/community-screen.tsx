@@ -677,10 +677,19 @@ export function CommunityScreen({
           originSiteCode: "Fiona Stanley Hospital ED Resus",
           source: "ed_medical",
           homeRegion: "Perth Metropolitan",
+          suburb: { kind: "named", name: "Murdoch" },
+          ageBand: "Adult",
+          transportNeeded: false,
+          destinations: [
+            {
+              destination: { kind: "community_team", teamName: "ED Liaison Team" },
+              state: "queued",
+            },
+          ],
           history:
             "Acute behavioural disturbance, persecutory delusions regarding neighbours, severe sleep disturbance.",
-          provisionalDiagnosis: "Acute relapse of paranoid schizophrenia",
-        } as unknown as Referral);
+          tentativeDiagnosis: "F20–F29",
+        });
       }
       setActiveDrawer("referralDrawer");
     };

@@ -87,7 +87,7 @@ async function ensureToolsClosed(page: Page): Promise<void> {
   }
 }
 
-test.describe("@mockup Ward screen", () => {
+test.describe("Ward screen", () => {
   test.describe.configure({ timeout: 45_000 });
 
   test("shows one unit's own capacity and answers an incoming referral", async ({ page }) => {
@@ -234,7 +234,7 @@ test.describe("@mockup Ward screen", () => {
   });
 });
 
-test.describe("@mockup Transport officer screen", () => {
+test.describe("Transport officer screen", () => {
   test.describe.configure({ timeout: 45_000 });
 
   /**
@@ -341,7 +341,7 @@ test.describe("@mockup Transport officer screen", () => {
  * Scoped by the panel's accessible name rather than by a new test id: `WardPanel` already names
  * every panel via `aria-label`, so this needs no hook added to a screen for a test's benefit.
  */
-test.describe("@mockup Movements — transport panel", () => {
+test.describe("Movements — transport panel", () => {
   test.describe.configure({ timeout: 45_000 });
 
   /**
@@ -453,7 +453,7 @@ test.describe("@mockup Movements — transport panel", () => {
  * and the two panel headings that are its operating structure. As before, this makes no claim about
  * how anything looks — only that the structure is still there in each mode.
  */
-test.describe("@mockup Movements — operating structure in dark, forced-colours and print", () => {
+test.describe("Movements — operating structure in dark, forced-colours and print", () => {
   test.describe.configure({ timeout: 45_000 });
 
   test("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {
@@ -505,7 +505,7 @@ test.describe("@mockup Movements — operating structure in dark, forced-colours
   });
 });
 
-test.describe("@mockup Emergency department screen", () => {
+test.describe("Emergency department screen", () => {
   test.describe.configure({ timeout: 45_000 });
 
   /**
@@ -759,7 +759,7 @@ test.describe("@mockup Emergency department screen", () => {
    * one. A fixture added to make a screen demonstrable, and no browser ever opened the screen.
    *
    * ⚠️ **`peel-ed`'s inbox stopped being empty on 2026-09-03, and this test asserted the old state
-   * for eight days without anybody noticing** (no routine gate runs a `@mockup` spec). `RF-013` —
+   * for eight days without anybody noticing** (no routine gate runs a `` spec). `RF-013` —
    * the origin of `WF-009`, `police` arrival at `peel-ed` — carries a `triagedAt` and one
    * destination, `{ kind: "emergency_department", edId: "peel-ed", purpose: "psychiatric_review" }`,
    * `state: "accepted"`. `edArrivedFor` (`ward-referrals.ts`) admits `queued` AND `accepted` rows —
@@ -935,7 +935,7 @@ test.describe("@mockup Emergency department screen", () => {
    */
 });
 
-test.describe("@mockup Role switcher — the loop", () => {
+test.describe("Role switcher — the loop", () => {
   test.describe.configure({ timeout: 60_000 });
 
   /**
@@ -1162,7 +1162,7 @@ test.describe("@mockup Role switcher — the loop", () => {
  * whole-branch review found it was wrong for the entirety of Phase 3's development without a
  * single existing test noticing.
  */
-test.describe("@mockup Live capacity — a ward's own action reaches every screen that reads it", () => {
+test.describe("Live capacity — a ward's own action reaches every screen that reads it", () => {
   test.describe.configure({ timeout: 45_000 });
 
   test("a ward confirming zero allocatable beds updates its own screen, then the coordinator, without ever reloading", async ({
@@ -1320,7 +1320,7 @@ async function expectShowcaseNoPageOverflow(page: Page) {
   expect(amount, "the document must fit the viewport without horizontal page scrolling").toBeLessThanOrEqual(1);
 }
 
-test.describe("@mockup Ward Flow design system showcase", () => {
+test.describe("Ward Flow design system showcase", () => {
   test.describe.configure({ timeout: 60_000 });
 
   test("desktop anchors, local example states, and existing drawers are usable", async ({ page }) => {
@@ -1448,7 +1448,7 @@ test.describe("@mockup Ward Flow design system showcase", () => {
   });
 });
 
-test("@mockup on-call printing includes all coverage details and preserves screen expansion", async ({ page }) => {
+test("on-call printing includes all coverage details and preserves screen expansion", async ({ page }) => {
   await page.goto("/mockups/ward-flow/on-call");
   const rows = page.locator('tr[id^="ward-coverage-"]');
   const toggles = page.getByRole("button", { name: /^Coverage and handover for /, includeHidden: true });

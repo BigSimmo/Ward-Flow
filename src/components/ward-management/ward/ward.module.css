@@ -3176,6 +3176,26 @@
 }
 
 /* ─── Confirmation Modal Styles ───────────────────────────────── */
+@keyframes modalOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -3189,6 +3209,7 @@
 
 .modalOverlay.show {
   display: flex;
+  animation: modalOverlayFadeIn 0.18s ease-out;
 }
 
 .modalBox {
@@ -3202,6 +3223,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 
 .modalHead {
@@ -3256,7 +3279,10 @@
   z-index: 120;
   transform: translateY(120%);
   opacity: 0;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
   pointer-events: none;
   display: flex;
   align-items: center;
@@ -5414,6 +5440,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 
 .dailySheetModalHeader {

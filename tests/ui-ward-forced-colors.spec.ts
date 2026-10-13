@@ -112,13 +112,13 @@ async function open(page: Page, path: string): Promise<void> {
  * This project has been caught by exactly that shape repeatedly: a check whose scope does not
  * match the claim it is taken to support.
  */
-test("@mockup forced colours is actually active, or nothing below means anything", async ({ page }) => {
+test("forced colours is actually active, or nothing below means anything", async ({ page }) => {
   await open(page, "/mockups/ward-flow/ward/rph-adult-secure");
   const active = await page.evaluate(() => window.matchMedia("(forced-colors: active)").matches);
   expect(active, "forced-colors emulation did not apply; the assertions in this file are vacuous").toBe(true);
 });
 
-test("@mockup a panel's border survives forced colours", async ({ page }) => {
+test("a panel's border survives forced colours", async ({ page }) => {
   await open(page, "/mockups/ward-flow/ward/rph-adult-secure");
   const panel = await measure(page, '[data-ward-primitive="panel"]', "border");
 
@@ -130,7 +130,7 @@ test("@mockup a panel's border survives forced colours", async ({ page }) => {
   ).toBeGreaterThanOrEqual(MIN_NON_TEXT_CONTRAST);
 });
 
-test("@mockup a chip's border survives forced colours, and its words carry the state either way", async ({ page }) => {
+test("a chip's border survives forced colours, and its words carry the state either way", async ({ page }) => {
   await open(page, "/mockups/ward-flow/ward/rph-adult-secure");
   const chip = await measure(page, '[data-ward-primitive="chip"]', "border");
 
@@ -171,7 +171,7 @@ test("@mockup a chip's border survives forced colours, and its words carry the s
  * costs nothing on screen. A failure means we have SEEN the defect rather than deduced it — and
  * the message says which colours, so the fix arrives with evidence attached.
  */
-test("@mockup a panel's outline and its header rule agree under forced colours", async ({ page }) => {
+test("a panel's outline and its header rule agree under forced colours", async ({ page }) => {
   await open(page, "/mockups/ward-flow/ward/rph-adult-secure");
 
   const pair = await page.evaluate(() => {
@@ -303,7 +303,7 @@ test("@mockup a panel's outline and its header rule agree under forced colours",
  * downstream of custom-property resolution, every one of those blocks is inert and every adopter
  * has been preserving dead code. Nobody deletes a block on the strength of this being unanswered.
  */
-test.skip("@mockup does re-pointing --ward-border do anything under forced colours?", async ({ page }) => {
+test.skip("does re-pointing --ward-border do anything under forced colours?", async ({ page }) => {
   const probe = async () =>
     page.evaluate(() => {
       const panel = document.querySelector('[data-ward-primitive="panel"]') as HTMLElement | null;
@@ -389,7 +389,7 @@ test.skip("@mockup does re-pointing --ward-border do anything under forced colou
  * they passed while measuring nothing (a 1px clipped box, client width 0). The question is unchanged:
  * does anything a coordinator can see fall off the printed sheet?
  */
-test("@mockup printing the patient search keeps every caseload item on the sheet", async ({ page }) => {
+test("printing the patient search keeps every caseload item on the sheet", async ({ page }) => {
   await page.setViewportSize({ width: 794, height: 1123 }); // A4 portrait at 96dpi
   await page.goto("/mockups/ward-flow/search", { waitUntil: "load" });
   await page.waitForLoadState("networkidle");
@@ -474,7 +474,7 @@ test("@mockup printing the patient search keeps every caseload item on the sheet
   }
 });
 
-test("@mockup a figure's value is readable under forced colours", async ({ page }) => {
+test("a figure's value is readable under forced colours", async ({ page }) => {
   // ⚠️ **RETARGETED.** `/people/PT-001` used to render `PersonScreen`, which composed `WardFigure`.
   // That route now renders `PatientNowScreen` by default (the people/[patientId] route only falls
   // back to `PersonScreen` on `?view=governed`/`?view=legacy`), and the new screen carries no

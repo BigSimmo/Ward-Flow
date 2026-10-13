@@ -4,7 +4,7 @@ import { knownFailurePattern, knownFailureTitles } from "../scripts/ward-flow/kn
 const LIST = [
   "# Browser journeys excluded from the gate",
   "tests\\ui-ward-search.spec.ts:104 | no column of the results table escapes its scroll container, and the page never scrolls sideways, at 375/641/700/760/820px",
-  "tests\\ui-ward-forced-colors.spec.ts:395 | @mockup does repointing --ward-border under forced colours change what is painted?",
+  "tests\\ui-ward-forced-colors.spec.ts:395 | does repointing --ward-border under forced colours change what is painted?",
   "",
 ].join("\n");
 
@@ -18,13 +18,13 @@ describe("known-failing journeys list", () => {
     expect(pattern).not.toBeNull();
     expect(
       pattern!.test(
-        "@mockup Ward search › no column of the results table escapes its scroll container, and the page never scrolls sideways, at 375/641/700/760/820px",
+        "Ward search › no column of the results table escapes its scroll container, and the page never scrolls sideways, at 375/641/700/760/820px",
       ),
     ).toBe(true);
-    expect(pattern!.test("x @mockup does repointing --ward-border under forced colours change what is painted?")).toBe(
+    expect(pattern!.test("x does repointing --ward-border under forced colours change what is painted?")).toBe(
       true,
     );
-    expect(pattern!.test("@mockup does repointing --ward-border under forced colours change what is painted")).toBe(
+    expect(pattern!.test("does repointing --ward-border under forced colours change what is painted")).toBe(
       false,
     );
     expect(pattern!.test("CONTROL: the search screen renders its composer")).toBe(false);

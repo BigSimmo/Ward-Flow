@@ -53,6 +53,6 @@ export function eventLogEntryFor(event: WardFlowEvent, accepted: boolean): Event
  * event changed nothing, so it is not history. Reasons read as "Not recorded", because no free text
  * is kept.
  */
-export function acceptedEventsForHistory(log: readonly EventLogEntry[]): WardFlowEvent[] {
-  return log.filter((entry) => entry.accepted).map((entry) => entry as unknown as WardFlowEvent);
+export function acceptedEventsForHistory(log: readonly EventLogEntry[]): EventLogEntry[] {
+  return log.filter((entry) => entry.accepted);
 }

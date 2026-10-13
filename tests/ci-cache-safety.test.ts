@@ -44,8 +44,8 @@ describe("CI cache safety", () => {
     it("keeps the critical fail-fast subset disjoint from required PR shards", () => {
       expect(workflow).toContain("npm run test:e2e:critical");
       expect(workflow).toContain("--exclude-critical");
-      expect(prShardRunner).toContain('"@critical|@quarantine|@mockup"');
-      expect(prShardRunner).toContain('"@quarantine|@mockup"');
+      expect(prShardRunner).toContain('"@critical|@quarantine"');
+      expect(prShardRunner).toContain('"@quarantine"');
     });
 
     it("starts the critical subset and required shards concurrently", () => {

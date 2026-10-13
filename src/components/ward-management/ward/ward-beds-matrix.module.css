@@ -438,6 +438,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 520px;
+  contain: layout;
 }
 
 .bayContainer {
@@ -480,6 +482,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
+  min-height: 108px;
 }
 
 @media (max-width: 1024px) {
@@ -497,16 +500,22 @@
 /* ─── ENHANCED BED CARD ─── */
 .bedCard {
   background: var(--surface-2);
-  border: 1px solid var(--line-strong, var(--line));
+  border: 2px solid var(--line-strong, var(--line));
   border-radius: var(--r2, 8px);
-  padding: 11px 13px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-height: 108px;
   cursor: pointer;
   text-align: left;
-  transition: all 0.15s ease;
+  transition:
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+  contain: layout;
   position: relative;
   box-shadow: var(--lift-sm);
 }
@@ -567,7 +576,7 @@
 /* Pulled Bed */
 .bedCard.pulled {
   background: var(--surface);
-  border: 1px solid var(--line-strong, var(--line));
+  border: 2px solid var(--line-strong, var(--line));
 }
 
 /* Closed Bed: dashed border */

@@ -24,7 +24,7 @@ const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 // `tests/playwright-project-isolation.test.ts` asserts every such file on disk is
 // matched here.
 const productionSpecPattern =
-  /.*(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(smoke|stress|accessibility|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|tools|tools-show-all|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts/;
+  /.*(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(smoke|stress|accessibility|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|tools|tools-show-all|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration|ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|journey-[a-z0-9-]+)))\.spec\.ts/;
 const mockupSpecPattern =
   /.*ui-(accessible-table-mockup|answer-chat-perfected-mockup|care-plan-mockup|caring-contact-mockup|document-image-status-mockup|document-top-navigation-mockup|sidebar-live-mockup|therapy-navigation-mockup|tools|tools-collapse|tools-search-mode-mockup|tools-task-directory|ward-management|ward-chrome-header|ward-coordinator|ward-roles|ward-discharges|ward-capacity-morning-moved|ward-referrals|ward-forced-colors|ward-full-journey|ward-search|ward-statistics-compare|ward-statistics-journey|ward-table-thresholds)\.spec\.ts/;
 const mockupTag = /@mockup/;
@@ -38,9 +38,9 @@ const knownFailurePattern = knownFailurePatternFromEnvironment();
 export default defineConfig({
   testDir: "./tests",
   testMatch:
-    /.*(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(accessible-table-mockup|smoke|stress|accessibility|answer-chat-perfected-mockup|care-plan-mockup|caring-contact-mockup|caring-contacts-activation|caring-contacts-populated|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|document-image-status-mockup|document-top-navigation-mockup|sidebar-live-mockup|therapy-navigation-mockup|tools|tools-collapse|tools-show-all|tools-search-mode-mockup|tools-task-directory|ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds)|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts/,
+    /.*(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(accessible-table-mockup|smoke|stress|accessibility|answer-chat-perfected-mockup|care-plan-mockup|caring-contact-mockup|caring-contacts-activation|caring-contacts-populated|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|document-image-status-mockup|document-top-navigation-mockup|sidebar-live-mockup|therapy-navigation-mockup|tools|tools-collapse|tools-show-all|tools-search-mode-mockup|tools-task-directory|ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|journey-[a-z0-9-]+)|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts/,
   timeout: 60_000,
-  retries: 0,
+  retries: process.env.CI ? 1 : 0,
   // Fail the run if a stray `test.only` is committed: otherwise it silently
   // narrows CI to that one test (and skips the whole release matrix) while the
   // required check still reports green.
@@ -59,8 +59,10 @@ export default defineConfig({
     : "list",
   use: {
     baseURL,
-    trace: "retain-on-failure",
+    headless: process.env.HEADED ? false : !!process.env.CI,
+    trace: process.env.CI ? "on-first-retry" : "retain-on-failure",
     screenshot: "only-on-failure",
+    video: "retain-on-failure",
     // Dual-mode motion validation strategy (#75JA0P):
     // 1. Suite-wide baseline: set contextOptions: { reducedMotion: "reduce" } to
     //    disable CSS/web animations suite-wide so clicks cannot land mid-transition
@@ -89,7 +91,7 @@ export default defineConfig({
     {
       name: "chromium",
       testMatch: productionSpecPattern,
-      grepInvert: mockupTag,
+      ...(knownFailurePattern ? { grepInvert: knownFailurePattern } : {}),
       use: {
         ...devices["Desktop Chrome"],
         ...(chromiumExecutablePath ? { launchOptions: { executablePath: chromiumExecutablePath } } : {}),
@@ -98,7 +100,6 @@ export default defineConfig({
     {
       name: "chromium-mockups",
       testMatch: mockupSpecPattern,
-      grep: mockupTag,
       ...(knownFailurePattern ? { grepInvert: knownFailurePattern } : {}),
       use: {
         ...devices["Desktop Chrome"],

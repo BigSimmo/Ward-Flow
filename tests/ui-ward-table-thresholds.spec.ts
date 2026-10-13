@@ -182,7 +182,7 @@ type Measured = {
   readonly sentinelWidthPx: number;
 };
 
-test.describe("@mockup every ward table's threshold still describes the table it was measured for", () => {
+test.describe("every ward table's threshold still describes the table it was measured for", () => {
   test("sweeps the estate, holds the comparisons thresholds, and reports the rest", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
 
@@ -569,7 +569,7 @@ const TYPE_FLOOR_ROUTES = [
   { route: "/mockups/ward-flow/capacity", expect: ["banner", "badge"] },
 ] as const;
 
-test.describe("@mockup the ward type floor is met where it is painted, not where it is declared", () => {
+test.describe("the ward type floor is met where it is painted, not where it is declared", () => {
   test("every ruled element computes to its declared size on its own route", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
 
@@ -674,7 +674,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
   });
 });
 
-test("@mockup print-only referral tables have measurable thresholds", async ({ page }) => {
+test("print-only referral tables have measurable thresholds", async ({ page }) => {
   await page.goto("/mockups/ward-flow/referrals");
   await page.waitForLoadState("networkidle");
   await page.emulateMedia({ media: "print" });

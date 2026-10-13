@@ -332,7 +332,13 @@ export function Sheet({
         window.clearTimeout(restoreTimers.timeout);
         restoreTimers.timeout = null;
       }
-      if (unmountingRef.current) return;
+      if (unmountingRef.current) {
+        const restoreTarget = resolveConnectedRestoreTarget();
+        if (typeof document !== "undefined" && restoreTarget?.isConnected && canRestoreFocusTo(restoreTarget)) {
+          restoreTarget.focus({ preventScroll: true });
+        }
+        return;
+      }
       // Focus restore is best-effort. Under Vitest coverage workers the jsdom
       // `document` can be torn down before this rAF/setTimeout pair fires; bare
       // `document` access then becomes an unhandled ReferenceError that fails

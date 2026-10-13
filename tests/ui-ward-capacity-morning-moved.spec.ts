@@ -60,7 +60,7 @@ async function gotoCapacity(page: Page) {
   await page.waitForLoadState("networkidle");
 }
 
-test.describe("@mockup Ward capacity — rail navigates away from the absorbed morning board and back", () => {
+test.describe("Ward capacity — rail navigates away from the absorbed morning board and back", () => {
   test.describe.configure({ timeout: 60_000 });
 
   /**

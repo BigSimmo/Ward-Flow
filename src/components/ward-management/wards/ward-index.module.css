@@ -1418,6 +1418,8 @@
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr));
   gap: 16px;
   width: 100%;
+  min-height: 480px;
+  contain: layout;
 }
 
 .wardCard {
@@ -1430,10 +1432,13 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 220px;
+  contain: layout;
   transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    border-color 0.15s ease;
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
 }
 
 .wardCard:hover {
@@ -1940,6 +1945,26 @@
 }
 
 /* Modal Dossier */
+@keyframes modalOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalDialogScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -1949,6 +1974,7 @@
   justify-content: center;
   z-index: 120;
   padding: 16px;
+  animation: modalOverlayFadeIn 0.18s ease-out;
 }
 
 .modalDialog {
@@ -1961,6 +1987,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: modalDialogScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 
 .modalHead {

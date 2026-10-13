@@ -14,7 +14,7 @@ import { expect, test } from "playwright/test";
  *
  * ⚠️ **THIS FILE RUNS IN NEITHER DEFAULT LOOP, AND ITS NAME HAD TO BE ADDED TO TWO PATTERNS.**
  * `verify:ui` selects the `chromium` project (`productionSpecPattern`, which names no ward spec) and
- * then `--grep-invert`s `@mockup` — so it excludes this file twice over. It runs only under:
+ * then `--grep-invert`s `` — so it excludes this file twice over. It runs only under:
  *
  *     node scripts/run-playwright.mjs --project=chromium-mockups tests/ui-ward-statistics-journey.spec.ts
  *
@@ -98,7 +98,7 @@ async function expectNoPageOverflow(page: import("playwright/test").Page, where:
   ).toBeLessThanOrEqual(overflow.viewport);
 }
 
-test.describe("@mockup the statistics screens are reachable and readable on a phone", () => {
+test.describe("the statistics screens are reachable and readable on a phone", () => {
   test("every hub link arrives at a screen that rendered, and none scrolls the page sideways", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(HUB, { waitUntil: "load" });
@@ -194,7 +194,7 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
 });
 
 // These dynamic page families had no browser coverage. Exercise their actual scoped controls.
-test.describe("@mockup page-specific statistics insights", () => {
+test.describe("page-specific statistics insights", () => {
   test("service capacity stays in scope and its graph opens ward statistics", async ({ page }) => {
     await page.goto("/mockups/ward-flow/statistics/service/North%20Metro", { waitUntil: "networkidle" });
     const capacity = page.getByTestId("ward-statistics-capacity-chart");
@@ -238,7 +238,7 @@ test.describe("@mockup page-specific statistics insights", () => {
   });
 });
 
-test("@mockup ward disclosure rows stay inset and the chart data view preserves records", async ({ page }) => {
+test("ward disclosure rows stay inset and the chart data view preserves records", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/mockups/ward-flow/statistics/ward/scgh-adult-open", { waitUntil: "networkidle" });
   const beds = page.getByTestId("ward-statistics-ward-beds-now");

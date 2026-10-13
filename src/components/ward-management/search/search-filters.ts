@@ -126,7 +126,7 @@ export function matchesSetting(result: PatientSearchResult, setting: string): bo
       return (
         result.referral.originSiteCode.includes("CMHT") ||
         result.referral.originSiteCode.includes("Clinic") ||
-        (result.referral.homeRegion as unknown as string) === "Community"
+        result.referral.source === "community"
       );
     }
     if (setting === "transit" || setting === "inpatient" || setting === "scheduled" || setting === "discharged") {
@@ -153,7 +153,7 @@ export function matchesPresence(result: PatientSearchResult, presence: string): 
       return (
         result.referral.originSiteCode.includes("CMHT") ||
         result.referral.originSiteCode.includes("Clinic") ||
-        (result.referral.homeRegion as unknown as string) === "Community"
+        result.referral.source === "community"
       );
     }
     return false;
@@ -211,7 +211,7 @@ export function matchesQuickChip(result: PatientSearchResult, chipQuery: string,
       return (
         !result.referral.originSiteCode.includes("CMHT") &&
         !result.referral.originSiteCode.includes("Clinic") &&
-        (result.referral.homeRegion as unknown as string) !== "Community"
+        result.referral.source !== "community"
       );
     }
     return false;
@@ -221,7 +221,7 @@ export function matchesQuickChip(result: PatientSearchResult, chipQuery: string,
       return (
         result.referral.originSiteCode.includes("CMHT") ||
         result.referral.originSiteCode.includes("Clinic") ||
-        (result.referral.homeRegion as unknown as string) === "Community"
+        result.referral.source === "community"
       );
     }
     return false;

@@ -324,7 +324,7 @@ export function RecordPreview({
       const isComm =
         referral.originSiteCode.includes("CMHT") ||
         referral.originSiteCode.includes("Clinic") ||
-        (referral.homeRegion as unknown as string) === "Community";
+        referral.source === "community";
       if (isComm) {
         presenceStatus = "community";
         bannerTitle = "NOT IN HOSPITAL · COMMUNITY OUTPATIENT";
@@ -683,7 +683,7 @@ export function RecordPreview({
     const isComm =
       referral.originSiteCode.includes("CMHT") ||
       referral.originSiteCode.includes("Clinic") ||
-      (referral.homeRegion as unknown as string) === "Community";
+      referral.source === "community";
     const presenceStatus = isComm ? "community" : "live";
     const bannerTitle = isComm ? "NOT IN HOSPITAL · COMMUNITY REFERRAL" : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
     const bannerTag = isComm ? "Community Referral" : "Acute Referral";

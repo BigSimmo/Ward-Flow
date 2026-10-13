@@ -194,7 +194,7 @@ function releaseStateLabel(row: Locator) {
   return row.locator("strong").first();
 }
 
-test.describe("@mockup Ward discharges — a bed release's whole lifecycle reaches the coordinator live", () => {
+test.describe("Ward discharges — a bed release's whole lifecycle reaches the coordinator live", () => {
   test.describe.configure({ timeout: 60_000 });
 
   // 🔴 REWRITTEN 25 September 2026 for the bed-release model (a release names the stay it belongs to,
@@ -397,7 +397,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
   });
 });
 
-test.describe("@mockup WA disposition pathways", () => {
+test.describe("WA disposition pathways", () => {
   const seed = seedWardFlowState();
   const release = seed.bedReleases.find((row) => {
     const admission = seed.admissions.find((stay) => stay.id === row.admissionId);
@@ -452,7 +452,7 @@ test.describe("@mockup WA disposition pathways", () => {
   });
 });
 
-test.describe("@mockup complete care dossier", () => {
+test.describe("complete care dossier", () => {
   test("records planning, clinician responsibility and an appointment at phone width", async ({ page }) => {
     const seed = seedWardFlowState();
     const a = seed.admissions.find((a) => a.state === "occupied" && a.expectedDischargeAt !== null && a.patientId)!;

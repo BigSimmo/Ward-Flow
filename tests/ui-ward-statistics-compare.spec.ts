@@ -34,7 +34,7 @@ const TABLES = ["ward-statistics-compare-wards", "ward-statistics-compare-eds"] 
 /** Widths where the tables are narrower than they want to be. Above ~745px both fit and this is silent. */
 const NARROW_WIDTHS = [375, 641, 700] as const;
 
-test.describe("@mockup the comparisons screen keeps every row's identity on screen", () => {
+test.describe("the comparisons screen keeps every row's identity on screen", () => {
   test("no row header leaves its scroller, at rest or scrolled to the end", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(COMPARE, { waitUntil: "load" });

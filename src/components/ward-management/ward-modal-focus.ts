@@ -4,7 +4,12 @@ import { useEffect, useId, useRef, type RefObject } from "react";
 import { canRestoreFocusTo, isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
 
 /** Shared Ward dialog lifecycle using the existing overlay stack and background isolation. */
-export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | null>, onClose: () => void) {
+export function useWardModalFocus(
+  open: boolean,
+  ref: RefObject<HTMLElement | null>,
+  onClose: () => void,
+  returnFocusRef?: RefObject<HTMLElement | null>,
+) {
   const id = useId();
   const closeRef = useRef(onClose);
   useEffect(() => {
@@ -21,7 +26,11 @@ export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | nu
         ),
       ).filter((element) => !element.closest("[hidden], [inert]"));
     pushSheet(id, panel);
-    (focusables()[0] ?? panel).focus();
+    const initialTarget = focusables()[0] ?? panel;
+    if (initialTarget === panel && !panel.hasAttribute("tabindex")) {
+      panel.setAttribute("tabindex", "-1");
+    }
+    initialTarget.focus();
     const keydown = (event: KeyboardEvent) => {
       if (!isTopmostSheet(id)) return;
       if (event.key === "Escape") {
@@ -41,11 +50,20 @@ export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | nu
         }
       }
     };
+    const returnFocusElement = returnFocusRef?.current;
     window.addEventListener("keydown", keydown, true);
     return () => {
       window.removeEventListener("keydown", keydown, true);
       popSheet(id);
-      if (previous?.isConnected && canRestoreFocusTo(previous)) previous.focus();
+      const target =
+        returnFocusElement && returnFocusElement.isConnected && canRestoreFocusTo(returnFocusElement)
+          ? returnFocusElement
+          : previous && previous.isConnected && canRestoreFocusTo(previous)
+            ? previous
+            : null;
+      if (target?.isConnected && canRestoreFocusTo(target)) {
+        target.focus({ preventScroll: true });
+      }
     };
-  }, [open, ref, id]);
+  }, [open, ref, id, returnFocusRef]);
 }

@@ -148,10 +148,15 @@ describe("no file under tests/ is invisible to every runner", () => {
   const mainPatternNames = [...new Set(mainNamedTestMatchMatches.map((m) => m[1]!))];
   const playwrightMainPatterns = mainPatternNames.map((name) => configRegexConst(playwrightSource, name));
 
-  // playwright.visual.config.ts left with PsychSift (26 September 2026); if it comes back, read its
-  // pattern here again.
+  // playwright.visual.config.ts: read its top-level testMatch when present
+  let visualTestMatchPattern: RegExp | null = null;
   if (existsSync(resolve(process.cwd(), "playwright.visual.config.ts"))) {
-    throw new Error("playwright.visual.config.ts is back — read its testMatch here again.");
+    const visualSource = readConfigSource("playwright.visual.config.ts");
+    const visualMatch = visualSource.match(/testMatch:\s*(\/.*\/),/);
+    if (!visualMatch) {
+      throw new Error("playwright.visual.config.ts: could not read top-level testMatch regex");
+    }
+    visualTestMatchPattern = new RegExp(visualMatch[1]!.slice(1, -1));
   }
 
   function isVisible(relPath: string): boolean {
@@ -162,7 +167,8 @@ describe("no file under tests/ is invisible to every runner", () => {
       nodeDefaultVisible ||
       jsdomIncludeRes.some((pattern) => pattern.test(relPath)) ||
       nodeLiveIncludeRes.some((pattern) => pattern.test(relPath)) || // visible under ALLOW_PROVIDER_TESTS=true
-      playwrightMainPatterns.some((re) => re.test(relPath))
+      playwrightMainPatterns.some((re) => re.test(relPath)) ||
+      (visualTestMatchPattern !== null && visualTestMatchPattern.test(relPath))
     );
   }
 

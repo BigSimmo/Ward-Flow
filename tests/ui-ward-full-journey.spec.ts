@@ -150,7 +150,7 @@ async function switchView(page: Page, pick: (menu: Locator) => Locator, screenTe
   await waitForScreen(page, screenTestId);
 }
 
-test.describe("@mockup Ward Flow full journey — referral to discharge planning, one browser window", () => {
+test.describe("Ward Flow full journey — referral to discharge planning, one browser window", () => {
   test.describe.configure({ timeout: 120_000 });
 
   test("walks community intake, the ED bed request, coordinator placement, ward acceptance, transport and discharge planning without a dead end", async ({

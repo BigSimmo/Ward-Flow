@@ -201,7 +201,7 @@ export function projectsForPrUiShard(shard, groups = prUiShardGroups, profiles =
 }
 
 export function playwrightArgsForPrUiShard(shard, { excludeCritical = false } = {}) {
-  const grepInvert = excludeCritical ? "@critical|@quarantine|@mockup" : "@quarantine|@mockup";
+  const grepInvert = excludeCritical ? "@critical|@quarantine" : "@quarantine";
   return [
     "scripts/run-playwright.mjs",
     ...filesForPrUiShard(shard),

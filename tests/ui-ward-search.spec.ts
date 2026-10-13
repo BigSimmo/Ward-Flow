@@ -60,7 +60,7 @@ function typeaheadOptions(page: Page): Locator {
   return page.locator('[data-testid^="ward-patient-typeahead-option-"]');
 }
 
-test.describe("@mockup Ward patient search", () => {
+test.describe("Ward patient search", () => {
   test.describe.configure({ timeout: 60_000 });
 
   /**

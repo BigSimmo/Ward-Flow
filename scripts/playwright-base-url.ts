@@ -82,6 +82,17 @@ function findExistingLocalProjectUrl() {
 }
 
 export function getPlaywrightBaseUrl({ allowEnsure = true }: { allowEnsure?: boolean } = {}) {
+  const previewUrl =
+    process.env.PREVIEW_URL ||
+    (process.env.ALLOW_REMOTE_BASE_URL === "1" ? process.env.PLAYWRIGHT_BASE_URL : undefined);
+  if (previewUrl) {
+    const trimmed = previewUrl.trim().replace(/\/+$/, "");
+    if (!/^https?:\/\//i.test(trimmed)) {
+      throw new Error(`PREVIEW_URL must be a valid HTTP or HTTPS URL, received: ${previewUrl}`);
+    }
+    return trimmed;
+  }
+
   const configuredBaseUrl = process.env.PLAYWRIGHT_BASE_URL;
   if (configuredBaseUrl) {
     if (!localUrlPattern.test(configuredBaseUrl)) {

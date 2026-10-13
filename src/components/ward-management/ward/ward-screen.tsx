@@ -45,6 +45,7 @@ import type { ResolvedPatientInfo } from "@/components/ward-management/ward-pati
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardBoardHref } from "@/components/ward-management/shell/ward-facade";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 /**
  * ⚠️ **OWNER RULING, CLINICIAN CHECK R7 (2026-09-06), AND THE SCREEN IS OBLIGED TO SAY IT.**
  * He confirmed a ward is routinely waiting on more than one thing, and chose to keep recording
@@ -317,6 +318,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
   const capacityModalRef = useRef<HTMLDivElement | null>(null);
+  const dailySheetModalRef = useRef<HTMLDivElement | null>(null);
+  const dailySheetTriggerRef = useRef<HTMLButtonElement | null>(null);
   const bedDrawerRef = useRef<HTMLElement | null>(null);
   const notificationCenterRef = useRef<HTMLDivElement>(null);
   const notificationTriggerRef = useRef<HTMLButtonElement>(null);
@@ -386,27 +389,26 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       const bedNum = selectedBed;
       setSelectedBed(null);
       setTimeout(() => {
-        bedTriggerRefs.current.get(bedNum)?.focus();
+        const trigger =
+          bedTriggerRefs.current.get(bedNum) ??
+          document.querySelector<HTMLElement>(`[data-testid="ward-bed-card-${bedNum}"]`);
+        trigger?.focus({ preventScroll: true });
       }, 0);
     }
   }, [selectedBed]);
 
   const closeCapacityModal = useCallback(() => {
     setConfirmNumbersOpen(false);
-    setTimeout(() => {
-      confirmTriggerRef.current?.focus();
-    }, 0);
   }, []);
+
+  useWardModalFocus(confirmNumbersOpen, capacityModalRef, closeCapacityModal, confirmTriggerRef);
+  useWardModalFocus(dailySheetOpen, dailySheetModalRef, () => setDailySheetOpen(false), dailySheetTriggerRef);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         if (selectedBed !== null) {
           closeBedDrawer();
-        } else if (dailySheetOpen) {
-          setDailySheetOpen(false);
-        } else if (confirmNumbersOpen) {
-          closeCapacityModal();
         } else if (notificationCenterOpen) {
           setNotificationCenterOpen(false);
         }
@@ -414,7 +416,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedBed, dailySheetOpen, confirmNumbersOpen, notificationCenterOpen, closeBedDrawer, closeCapacityModal]);
+  }, [selectedBed, notificationCenterOpen, closeBedDrawer]);
 
   // Click-outside listener for floating notification center
   useEffect(() => {
@@ -448,18 +450,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       focusable[0]?.focus();
     }
   }, [selectedBed]);
-
-  // Initial focus and focus trapping for Capacity Confirmation Modal
-  useEffect(() => {
-    if (confirmNumbersOpen && capacityModalRef.current) {
-      const focusable = Array.from(
-        capacityModalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => !el.hasAttribute("disabled"));
-      focusable[0]?.focus();
-    }
-  }, [confirmNumbersOpen]);
 
   function handleBedDrawerKeyDown(event: React.KeyboardEvent<HTMLElement>) {
     if (event.key === "Escape") {
@@ -1801,6 +1791,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               </div>
 
               <button
+                ref={dailySheetTriggerRef}
                 type="button"
                 className={styles.btnDailySheet}
                 onClick={() => setDailySheetOpen(true)}
@@ -3838,7 +3829,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             aria-labelledby="modal-daily-sheet-title"
             data-testid="ward-daily-sheet-modal"
           >
-            <div className={styles.dailySheetModalContent} onClick={(e) => e.stopPropagation()}>
+            <div
+              ref={dailySheetModalRef}
+              className={styles.dailySheetModalContent}
+              onClick={(e) => e.stopPropagation()}
+            >
               <header className={styles.dailySheetModalHeader}>
                 <div>
                   <h2 id="modal-daily-sheet-title" className={styles.dailySheetModalTitle}>

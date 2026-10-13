@@ -23,27 +23,24 @@ function configPattern(source: string, name: string): RegExp {
 }
 
 describe("Playwright production-project isolation", () => {
-  it("excludes advisory mockup cases from every required browser project", () => {
+  it("configures the required chromium browser project without mockup tag exclusion", () => {
     const source = readFileSync(resolve(process.cwd(), "playwright.config.ts"), "utf8");
 
-    for (const project of ["chromium", "firefox", "webkit"]) {
-      expect(source).toMatch(
-        new RegExp(`name: ["']${project}["'],\\s+testMatch: productionSpecPattern,\\s+grepInvert: mockupTag,`, "m"),
-      );
-    }
-
-    expect(source).toMatch(/name: ["']chromium-mockups["'],\s+testMatch: mockupSpecPattern,\s+grep: mockupTag,/m);
+    expect(source).toMatch(
+      /name: ["']chromium["'],\s+testMatch: productionSpecPattern,/m,
+    );
+    expect(source).not.toMatch(
+      /name: ["']chromium["'],\s+testMatch: productionSpecPattern,\s+grepInvert: mockupTag,/m,
+    );
   });
 
   /**
-   * `run-playwright.mjs` owns both servers, and the primary one must stay EMPTY: the workspace
-   * spec's empty-caseload assertions (including its wizard count of 0) are observations of a real
-   * production state, and seeding that server would delete them rather than add anything.
+   * Ward Flow browser journeys are first-class production specs collected by the primary
+   * chromium project and top-level testMatch.
    */
-  it("collects every ui-ward-*.spec.ts on disk into the advisory mockup project, and none into the required ones", () => {
+  it("collects every ui-ward-*.spec.ts on disk into the required chromium production project", () => {
     const source = readFileSync(resolve(process.cwd(), "playwright.config.ts"), "utf8");
     const productionSpecPattern = configPattern(source, "productionSpecPattern");
-    const mockupSpecPattern = configPattern(source, "mockupSpecPattern");
     const testMatch = source.match(/testMatch:\s*(\/.*\/),/);
     expect(testMatch, "playwright.config.ts: could not read the top-level testMatch regex").not.toBeNull();
     const testMatchPattern = new RegExp(testMatch![1].slice(1, -1));
@@ -57,13 +54,9 @@ describe("Playwright production-project isolation", () => {
       const spec = `tests/${file}`;
       expect(testMatchPattern.test(spec), `${file} is not collected by testMatch, so it never runs at all`).toBe(true);
       expect(
-        mockupSpecPattern.test(spec),
-        `${file} is not collected by chromium-mockups, so the journey silently never runs`,
-      ).toBe(true);
-      expect(
         productionSpecPattern.test(spec),
-        `${file} leaked into the required production projects, where a red prototype would block a release`,
-      ).toBe(false);
+        `${file} is not collected by the required production projects`,
+      ).toBe(true);
     }
   });
 
