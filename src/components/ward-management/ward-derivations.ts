@@ -1554,7 +1554,9 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
     .filter((movement) => movement.pullExpiresAt !== undefined)
     .map((movement) => {
       const pullExpiresAt = movement.pullExpiresAt as Instant;
-      const isCollected = movement.stage === "moving" || movement.transport?.collectedAt !== undefined;
+      // A stopped journey is no longer in transit, so its held bed can still lapse.
+      const stopped = movement.closure !== undefined || movement.transport?.cancelledAt !== undefined;
+      const isCollected = !stopped && (movement.stage === "moving" || movement.transport?.collectedAt !== undefined);
       return {
         movement,
         unit: destinationUnit(movement, units),

@@ -252,6 +252,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         (p) => p.movement.id === movementId,
       );
       expect(heldEntry).toBeDefined();
+      expect(heldEntry?.expired).toBe(true);
       expect(inGoneWrong?.movement.acceptedUnitId).toBe(acceptingUnitId);
 
       // Now release the held bed
@@ -460,5 +461,20 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         }
       }
     });
+  });
+});
+
+describe("handover pullHasLapsed for stopped journeys", () => {
+  it("still lapses a held bed once the collected journey has been stopped, but not while in transit", async () => {
+    const { pullHasLapsed } = await import("@/components/ward-management/handover/handover-model");
+    type Row = Parameters<typeof pullHasLapsed>[0];
+    const base = { stage: "moving", pullExpiresAt: 100, urgent: false, asked: [], declines: [] };
+    const inTransit = { ...base, movement: { transport: { collectedAt: 50 } } } as unknown as Row;
+    const stopped = {
+      ...base,
+      movement: { transport: { collectedAt: 50, cancelledAt: 60 }, closure: { outcome: "did_not_proceed" } },
+    } as unknown as Row;
+    expect(pullHasLapsed(inTransit, 200)).toBe(false);
+    expect(pullHasLapsed(stopped, 200)).toBe(true);
   });
 });

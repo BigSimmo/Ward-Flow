@@ -236,7 +236,10 @@ export type HandoverTone = "act" | "due" | "calm";
  * person is always act now as well: that flag is a human safety call the sheet must not drop.
  */
 export function isCollected(row: HandoverRow): boolean {
-  return row.stage === "moving" || row.movement.transport?.collectedAt !== undefined;
+  // A stopped (or cancelled) journey is no longer in transit: its held bed must still be able to lapse.
+  const transport = row.movement?.transport;
+  if (row.movement?.closure !== undefined || transport?.cancelledAt !== undefined) return false;
+  return row.stage === "moving" || transport?.collectedAt !== undefined;
 }
 
 export function pullHasLapsed(row: HandoverRow, now: Instant): boolean {
@@ -250,10 +253,7 @@ export function isActNow(row: HandoverRow, now: Instant): boolean {
 
 export function isDueBy(row: HandoverRow, now: Instant, cutoff: Instant): boolean {
   if (isActNow(row, now)) return false;
-  return (
-    pullHasLapsed(row, cutoff) ||
-    (row.formDueAt !== undefined && row.formDueAt <= cutoff)
-  );
+  return pullHasLapsed(row, cutoff) || (row.formDueAt !== undefined && row.formDueAt <= cutoff);
 }
 
 export const isWaitingForBed = (row: HandoverRow) =>
