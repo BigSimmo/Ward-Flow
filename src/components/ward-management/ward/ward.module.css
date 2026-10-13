@@ -1405,7 +1405,9 @@
   white-space: normal;
 }
 
-.bedSection {
+.bedSection,
+.matrixContainer {
+  min-height: 480px;
   padding: 0;
   overflow: hidden;
 }
@@ -2469,7 +2471,13 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  transition: all 0.12s;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .drawerCloseBtn:hover {
@@ -2737,7 +2745,13 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.12s;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
   white-space: nowrap;
   text-decoration: none;
 }
@@ -2993,7 +3007,13 @@
   height: 42px;
   min-height: 42px;
   box-sizing: border-box;
-  transition: all 0.15s ease;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
   outline: none;
 }
 
@@ -3022,7 +3042,13 @@
   margin: 0;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: all 0.12s ease;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .btnLookupAction:hover {
@@ -3056,7 +3082,13 @@
   font-weight: 500;
   color: var(--ink-soft);
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .quickPillBtn:hover {
