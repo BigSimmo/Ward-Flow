@@ -1846,7 +1846,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
      * old falsifying edit deleted the message, which is not the change that makes the claim false.
      */
     evidence:
-      "if (event.actingUnitId !== release.unitId) { return reject( state, event, " +
+      "if (event.actingUnitId !== release.unitId) { return scopeReject( state, event, decision, " +
       "`SET_BED_PREPARATION was raised acting as unit ${event.actingUnitId} but release ${release.id} " +
       "belongs to unit ${release.unitId}`, ); }",
     falsifiedBy: {
@@ -1854,11 +1854,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
         "The acting-unit comparison is neutered so the guard can refuse nothing, while its rejection message is " +
         "left exactly where it is — an event raised by another unit is accepted.",
       find:
-        "if (event.actingUnitId !== release.unitId) { return reject( state, event, " +
+        "if (event.actingUnitId !== release.unitId) { return scopeReject( state, event, decision, " +
         "`SET_BED_PREPARATION was raised acting as unit ${event.actingUnitId} but release ${release.id} " +
         "belongs to unit ${release.unitId}`, ); }",
       replaceWith:
-        "if (false) { return reject( state, event, " +
+        "if (false) { return scopeReject( state, event, decision, " +
         "`SET_BED_PREPARATION was raised acting as unit ${event.actingUnitId} but release ${release.id} " +
         "belongs to unit ${release.unitId}`, ); }",
     },

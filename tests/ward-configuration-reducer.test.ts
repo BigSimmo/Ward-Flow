@@ -175,6 +175,7 @@ describe("engine read sites use configuration", () => {
       now: NOW_ANCHOR,
       movementId: "WF-009",
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     state = wardFlowReducer(state, {
       type: "PULL_PATIENT",
@@ -182,6 +183,7 @@ describe("engine read sites use configuration", () => {
       now: NOW_ANCHOR,
       movementId: "WF-009",
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     const earlierExpiry = movement(state, "WF-009").pullExpiresAt;
     expect(earlierExpiry).toBe(NOW_ANCHOR + 240);
@@ -203,6 +205,7 @@ describe("engine read sites use configuration", () => {
       now: NOW_ANCHOR,
       movementId: "WF-017",
       unitId: "fsh-adult-secure",
+      actingUnitId: "fsh-adult-secure",
     });
     state = wardFlowReducer(state, {
       type: "PULL_PATIENT",
@@ -210,6 +213,7 @@ describe("engine read sites use configuration", () => {
       now: NOW_ANCHOR,
       movementId: "WF-017",
       unitId: "fsh-adult-secure",
+      actingUnitId: "fsh-adult-secure",
     });
     expect(movement(state, "WF-017").pullExpiresAt).toBe(NOW_ANCHOR + 120);
 

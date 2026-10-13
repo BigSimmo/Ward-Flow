@@ -93,6 +93,7 @@ function declined(state: WardFlowState, now = NOW): WardFlowState {
     now,
     movementId: MOVEMENT_ID,
     unitId: DECLINED_UNIT_ID,
+    actingUnitId: DECLINED_UNIT_ID,
     // Owner ruling 2026-09-25: a "no bed" decline waitlists; capability_mismatch still declines.
     reason: "capability_mismatch",
   });
@@ -105,6 +106,7 @@ function acceptedInPrinciple(state: WardFlowState, now = NOW): WardFlowState {
     now,
     movementId: MOVEMENT_ID,
     unitId: ACCEPTED_UNIT_ID,
+    actingUnitId: ACCEPTED_UNIT_ID,
   });
 }
 
@@ -115,6 +117,7 @@ function pulled(state: WardFlowState, now = NOW): WardFlowState {
     now,
     movementId: MOVEMENT_ID,
     unitId: ACCEPTED_UNIT_ID,
+    actingUnitId: ACCEPTED_UNIT_ID,
   });
 }
 
@@ -597,6 +600,7 @@ describe("assertion 7 — reducer purity: the same (state, event) twice produces
       now: NOW,
       movementId: MOVEMENT_ID,
       unitId: DECLINED_UNIT_ID,
+      actingUnitId: DECLINED_UNIT_ID,
       // Owner ruling 2026-09-25: "no bed" waitlists; capability_mismatch still declines.
       reason: "capability_mismatch" as const,
     };

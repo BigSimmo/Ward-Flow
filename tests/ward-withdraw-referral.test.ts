@@ -147,6 +147,7 @@ describe("a referrer taking its referral back", () => {
         now: NOW,
         movementId: open.id,
         unitId: open.referredUnitIds[0],
+        actingUnitId: open.referredUnitIds[0],
       });
       expect(accepted.rejections).toHaveLength(0);
 
@@ -262,6 +263,7 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
       now: NOW,
       movementId: movement.id,
       unitId,
+      actingUnitId: unitId,
       overrideReason: "The bed information is known to be out of date",
     });
     expect(accepted.rejections, "ACCEPT_IN_PRINCIPLE was itself refused, so nothing below holds").toHaveLength(0);
@@ -280,6 +282,7 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
       now: NOW + 1,
       movementId,
       unitId,
+      actingUnitId: unitId,
     });
     expect(pulled.rejections, "PULL_PATIENT was itself refused, so nothing below holds").toHaveLength(0);
     return { state: pulled, movementId, unitId };

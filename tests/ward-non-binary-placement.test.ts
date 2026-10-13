@@ -140,6 +140,7 @@ describe("engine: a ward or ED role cannot bypass the coordinator's own record (
       referralId: referral.id,
       destinationKind: "psychiatric_ward",
       unitId: WARD_A,
+      actingUnitId: WARD_A,
       genderPlacementReason: REASON,
       genderPlacementChecked: true,
     });
@@ -200,6 +201,7 @@ describe("engine: the coordinator's own record places the patient, once, for tha
       now: NOW + 5,
       movementId: MOVEMENT_ID,
       unitId: WARD_A,
+      actingUnitId: WARD_A,
     });
     expect(
       after.rejections,
@@ -235,6 +237,7 @@ describe("engine: a record for ward A does not admit ward B (property 5, the nam
       now: NOW + 5,
       movementId: MOVEMENT_ID,
       unitId: WARD_B,
+      actingUnitId: WARD_B,
     });
     // ⚠️ THE MUTATION TARGET. A version of the read that drops `.unitIds.includes(unitId)` — for
     // example testing only `(movement.genderPlacements ?? []).length > 0` — passes this refusal
@@ -275,6 +278,7 @@ describe("engine: PULL_PATIENT refuses a non-binary placement with no coordinato
       now: NOW,
       movementId: MOVEMENT_ID,
       unitId: WARD_A,
+      actingUnitId: WARD_A,
     });
     expect(after.rejections).toHaveLength(1);
     // ⚠️ CHANGED PIN, P1-3 (Ward Lead ruling, 17 September 2026): was `GENDER_PLACEMENT_REFUSAL`.

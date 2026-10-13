@@ -1209,6 +1209,7 @@ function RaiseRefuseThenAcceptHarness({ acceptedBy }: { acceptedBy: "psychiatric
             now,
             referralId: created.id,
             destinationKind: "psychiatric_ward",
+            actingUnitId: "scgh-adult-open",
             reason: "no_suitable_bed",
           })
         }

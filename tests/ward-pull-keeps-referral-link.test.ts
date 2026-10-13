@@ -108,6 +108,7 @@ function pullToBed(state: WardFlowState, movementId: string): WardFlowState {
     now: NOW,
     movementId,
     unitId: UNIT_ID,
+    actingUnitId: UNIT_ID,
   });
   return wardFlowReducer(accepted, {
     type: "PULL_PATIENT",
@@ -115,6 +116,7 @@ function pullToBed(state: WardFlowState, movementId: string): WardFlowState {
     now: NOW,
     movementId,
     unitId: UNIT_ID,
+    actingUnitId: UNIT_ID,
   });
 }
 

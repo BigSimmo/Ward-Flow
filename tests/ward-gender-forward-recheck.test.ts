@@ -158,6 +158,7 @@ describe("P1-3: every named forward step refuses once the held ward no longer su
       now: NOW,
       movementId: "WF-P13-TEST",
       unitId: UNIT_ID,
+      actingUnitId: UNIT_ID,
     });
     expect(after.rejections).toHaveLength(1);
     expect(after.rejections[0]!.reason).toBe(GENDER_NO_LONGER_SUITS_REFUSAL);
@@ -316,6 +317,7 @@ describe("P1-3 scenario 3: PULL_PATIENT states the real route out for a non-bina
       now: NOW,
       movementId: "WF-P13-TEST",
       unitId: UNIT_ID,
+      actingUnitId: UNIT_ID,
     });
     expect(after.rejections).toHaveLength(1);
     // ⚠️ RED-TO-GREEN: was `GENDER_PLACEMENT_REFUSAL` ("A coordinator must record a reason…"),

@@ -164,14 +164,18 @@ describe("decision targets through the real event walk", () => {
   });
 
   it("moves to transfer acceptance on acceptance, then transport booked once the bed is pulled", () => {
-    const accepted = step(referred(), { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: UNIT }, NOW + 20);
+    const accepted = step(
+      referred(),
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: UNIT, actingUnitId: UNIT },
+      NOW + 20,
+    );
     expect(decisionTargetReading(movement(accepted), NOW + 30, defaults)).toMatchObject({
       step: "transfer_acceptance",
       startedAt: NOW + 20,
       dueAt: NOW + 20 + defaults.transferAcceptanceTargetMinutes,
     });
 
-    const pulled = step(accepted, { type: "PULL_PATIENT", role: "ward", unitId: UNIT }, NOW + 40);
+    const pulled = step(accepted, { type: "PULL_PATIENT", role: "ward", unitId: UNIT, actingUnitId: UNIT }, NOW + 40);
     const reading = decisionTargetReading(
       movement(pulled),
       NOW + 40 + defaults.transportBookedTargetMinutes + 1,
@@ -238,7 +242,7 @@ describe("decision targets through the real event walk", () => {
     // Use a hard decline reason (not waitlist-instead-of-decline) so the live set actually shrinks.
     const afterDecline = step(
       parallel,
-      { type: "DECLINE", role: "ward", unitId: UNIT, reason: "capability_mismatch" },
+      { type: "DECLINE", role: "ward", unitId: UNIT, actingUnitId: UNIT, reason: "capability_mismatch" },
       NOW + defaults.referralDecisionTargetMinutes + 30,
     );
     expect(movement(afterDecline).referralDecisionOpenedAt).toBe(NOW);
@@ -251,7 +255,7 @@ describe("decision targets through the real event walk", () => {
     // Re-refer after the last live ward declined opens a fresh wait at the REFER act.
     const cleared = step(
       afterDecline,
-      { type: "DECLINE", role: "ward", unitId: secondUnit, reason: "capability_mismatch" },
+      { type: "DECLINE", role: "ward", unitId: secondUnit, actingUnitId: secondUnit, reason: "capability_mismatch" },
       NOW + defaults.referralDecisionTargetMinutes + 40,
     );
     expect(movement(cleared).referredUnitIds).toEqual([]);
@@ -280,7 +284,11 @@ describe("decision targets through the real event walk", () => {
 
   it("keeps the original start when a ward waitlists instead of declining", () => {
     const state = referred();
-    const waitlisted = step(state, { type: "DECLINE", role: "ward", unitId: UNIT, reason: "no_bed" }, NOW + 90);
+    const waitlisted = step(
+      state,
+      { type: "DECLINE", role: "ward", unitId: UNIT, actingUnitId: UNIT, reason: "no_bed" },
+      NOW + 90,
+    );
     // No bed waitlists the ward: it stays live and the clock does not move.
     expect(movement(waitlisted).waitlistedUnitIds).toEqual([UNIT]);
     expect(movement(waitlisted).referredUnitIds).toEqual([UNIT]);

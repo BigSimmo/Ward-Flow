@@ -416,6 +416,7 @@ describe("session audit capture and review", () => {
       now: NOW_ANCHOR,
       movementId: "WF-009",
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       overrideReason: OVERRIDE_REASONS[0],
     });
     expect(accepted.auditEvents.at(-1)).toMatchObject({
@@ -431,6 +432,7 @@ describe("session audit capture and review", () => {
       now: NOW_ANCHOR,
       movementId: "WF-009",
       unitId: unit.id,
+      actingUnitId: unit.id,
       overrideReason: OVERRIDE_REASONS[0],
     });
     expect(pulled.auditEvents.at(-1)).toMatchObject({ outcome: "accepted", details: { overrideFactRecorded: false } });

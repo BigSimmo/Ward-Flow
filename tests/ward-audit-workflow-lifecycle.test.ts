@@ -62,8 +62,16 @@ function journey() {
       now: NOW_ANCHOR,
       movementId: movement.id,
       unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
     });
-    send({ type: "PULL_PATIENT", role: "ward", now: NOW_ANCHOR, movementId: movement.id, unitId: "scgh-adult-open" });
+    send({
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: NOW_ANCHOR,
+      movementId: movement.id,
+      unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
+    });
   };
   return {
     get state() {
@@ -81,7 +89,14 @@ describe("patient and movement routes share lifecycle truth", () => {
   it("both report departure after an actual arrival and discharge", () => {
     const f = journey();
     f.accept();
-    f.send({ type: "RECORD_TRANSPORT_NEED", role: "ward", now: NOW_ANCHOR, movementId: f.movement.id, needed: false });
+    f.send({
+      type: "RECORD_TRANSPORT_NEED",
+      actingUnitId: "scgh-adult-open",
+      role: "ward",
+      now: NOW_ANCHOR,
+      movementId: f.movement.id,
+      needed: false,
+    });
     f.send({
       type: "PATIENT_ARRIVED",
       role: "ward",

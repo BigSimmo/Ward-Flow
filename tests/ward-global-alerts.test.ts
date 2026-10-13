@@ -102,6 +102,7 @@ describe("Pull now (global alerts, 10 Oct 2026)", () => {
       now: NOW,
       movementId: "WF-003",
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     expect(pulled.movements.find((m) => m.id === "WF-003")?.stage).toBe("pulled");
     const released = wardFlowReducer(pulled, {

@@ -86,6 +86,7 @@ describe("waitlist and gender decline rules", () => {
       now: NOW,
       movementId,
       unitId: unit.id,
+      actingUnitId: unit.id,
       reason: "no_bed",
     });
     expect(after.rejections).toEqual([]);
@@ -123,6 +124,7 @@ describe("waitlist and gender decline rules", () => {
       now: NOW,
       movementId,
       unitId: unit.id,
+      actingUnitId: unit.id,
       reason: "sex_mix",
     });
     expect(after.rejections).toHaveLength(1);
@@ -220,6 +222,7 @@ describe("gender pull hard-stop", () => {
       now: NOW,
       movementId,
       unitId: femaleOnly!.id,
+      actingUnitId: femaleOnly!.id,
     });
     expect(after.rejections.length).toBeGreaterThan(0);
     expect(after.rejections[0]!.reason).toMatch(/bed designation|gender|no longer suits|Female only/i);

@@ -53,7 +53,15 @@ describe("DECLINE refuses to waitlist a movement at more wards than the cap", ()
     const steps: Array<Record<string, unknown>> = [];
     for (const unitId of ["rph-adult-secure", "scgh-adult-open"]) {
       steps.push({ type: "REFER_TO_UNITS", role: "coordinator", now: ++t, movementId: "WF-001", unitIds: [unitId] });
-      steps.push({ type: "DECLINE", role: "ward", now: ++t, movementId: "WF-001", unitId, reason: "no_bed" });
+      steps.push({
+        type: "DECLINE",
+        role: "ward",
+        now: ++t,
+        movementId: "WF-001",
+        unitId,
+        actingUnitId: unitId,
+        reason: "no_bed",
+      });
     }
     steps.push({
       type: "REFER_TO_UNITS",
@@ -71,6 +79,7 @@ describe("DECLINE refuses to waitlist a movement at more wards than the cap", ()
     now: NOW + 50,
     movementId: "WF-001",
     unitId: "arm-adult-open",
+    actingUnitId: "arm-adult-open",
     reason: "no_bed",
   } as never;
   const message = `movement ${movementUmrn("WF-001", seedWardFlowState())} is already waitlisted at 2 wards; release one before waitlisting another`;

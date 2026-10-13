@@ -489,6 +489,7 @@ describe("a refused pull says pull in the refusal a coordinator actually reads",
       now: NOW_ANCHOR,
       movementId: "WF-001",
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     state = wardFlowReducer(state, {
       type: "RELEASE_PULL",

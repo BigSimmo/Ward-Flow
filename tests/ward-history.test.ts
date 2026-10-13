@@ -79,6 +79,7 @@ describe("Ward Flow Read-Only Plain History", () => {
         movementId: "MOV-1",
         patientId: "P-101",
         unitId: "U-1",
+        actingUnitId: "U-1",
         declineReason: "No clinical staffing for specialling",
       } as unknown as WardFlowEvent,
       {
@@ -88,6 +89,7 @@ describe("Ward Flow Read-Only Plain History", () => {
         movementId: "MOV-2",
         patientId: "P-202",
         unitId: "U-2",
+        actingUnitId: "U-2",
       } as unknown as WardFlowEvent,
     ];
 

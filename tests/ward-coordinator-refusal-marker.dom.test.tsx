@@ -38,7 +38,14 @@ function RefusalHarness({ children }: { children: React.ReactNode }) {
         type="button"
         data-testid="raise-refusals"
         onClick={() => {
-          dispatch({ type: "PULL_PATIENT", role: "ward", now: NOW, movementId: "WF-001", unitId: "rph-adult-secure" });
+          dispatch({
+            type: "PULL_PATIENT",
+            role: "ward",
+            now: NOW,
+            movementId: "WF-001",
+            unitId: "rph-adult-secure",
+            actingUnitId: "rph-adult-secure",
+          });
           dispatch({
             type: "RELEASE_PULL",
             role: "coordinator",

@@ -48,6 +48,7 @@ function collectedState(): { state: WardFlowState; movementId: string } {
     now: NOW,
     movementId: open.id,
     unitId,
+    actingUnitId: unitId,
     overrideReason: "The bed information is known to be out of date",
   });
   state = wardFlowReducer(state, {
@@ -56,6 +57,7 @@ function collectedState(): { state: WardFlowState; movementId: string } {
     now: NOW + 1,
     movementId: open.id,
     unitId,
+    actingUnitId: unitId,
   });
   state = wardFlowReducer(state, {
     type: "BOOK_TRANSPORT",

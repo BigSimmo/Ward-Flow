@@ -138,6 +138,7 @@ function AcceptanceHarness() {
             now,
             movementId: movement.id,
             unitId: "scgh-adult-open",
+            actingUnitId: "scgh-adult-open",
           })
         }
       >

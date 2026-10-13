@@ -40,7 +40,16 @@ function WorkspaceTestControls({ movementId }: { movementId: MovementId }) {
     <button
       type="button"
       data-testid="test-pull-patient"
-      onClick={() => dispatch({ type: "PULL_PATIENT", role: "ward", now, movementId, unitId: acceptedUnitId ?? "" })}
+      onClick={() =>
+        dispatch({
+          type: "PULL_PATIENT",
+          role: "ward",
+          now,
+          movementId,
+          unitId: acceptedUnitId ?? "",
+          actingUnitId: acceptedUnitId ?? "",
+        })
+      }
     >
       pull
     </button>

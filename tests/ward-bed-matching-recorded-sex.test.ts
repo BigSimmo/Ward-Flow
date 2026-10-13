@@ -337,6 +337,7 @@ describe("R7: a held bed is re-checked when it is pulled", () => {
       now: NOW,
       movementId: held.id,
       unitId: R7_WARD_ID,
+      actingUnitId: R7_WARD_ID,
     });
   }
 

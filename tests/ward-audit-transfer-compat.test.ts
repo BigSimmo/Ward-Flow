@@ -32,11 +32,19 @@ it("allows a recorded ward-source referral to reserve a destination and depart i
     referredUnitIds: ["scgh-adult-open"],
   };
   s = { ...s, referrals: [...s.referrals, referral], movements: [...s.movements, m] };
-  s = wardFlowReducer(s, { type: "PULL_PATIENT", role: "ward", now: 642, movementId: m.id, unitId: "scgh-adult-open" });
+  s = wardFlowReducer(s, {
+    type: "PULL_PATIENT",
+    role: "ward",
+    now: 642,
+    movementId: m.id,
+    unitId: "scgh-adult-open",
+    actingUnitId: "scgh-adult-open",
+  });
   expect(s.rejections).toEqual([]);
   expect(s.admissions.find((row) => row.id === a.id)?.state).toBe("occupied");
   s = wardFlowReducer(s, {
     type: "RECORD_TRANSPORT_NEED",
+    actingUnitId: "scgh-adult-open",
     role: "ward",
     now: 642,
     movementId: m.id,

@@ -83,6 +83,7 @@ function buildAcceptedFixture(): WardFlowState {
     now: t(20),
     movementId: MOVEMENT_ID,
     unitId: UNIT_DECLINED,
+    actingUnitId: UNIT_DECLINED,
     reason: "no_bed",
   });
   assertStepAccepted(s1, s2, "DECLINE");
@@ -104,6 +105,7 @@ function buildAcceptedFixture(): WardFlowState {
     now: t(40),
     movementId: MOVEMENT_ID,
     unitId: UNIT_ACCEPTED,
+    actingUnitId: UNIT_ACCEPTED,
   });
   assertStepAccepted(s3, s4, "ACCEPT_IN_PRINCIPLE");
   return s4;
@@ -119,6 +121,7 @@ function buildPulledFixture(): WardFlowState {
     now: t(50),
     movementId: MOVEMENT_ID,
     unitId: UNIT_ACCEPTED,
+    actingUnitId: UNIT_ACCEPTED,
   });
   assertStepAccepted(accepted, pulled, "PULL_PATIENT");
   return pulled;
@@ -492,6 +495,7 @@ describe("PULL_PATIENT restores a movement that already holds a bed (owner rulin
       now: t(60),
       movementId: MOVEMENT_ID,
       unitId: UNIT_ACCEPTED,
+      actingUnitId: UNIT_ACCEPTED,
     });
 
     // Owner ruling 2026-09-15: pulling again restores the pull on the held bed without taking a second bed.

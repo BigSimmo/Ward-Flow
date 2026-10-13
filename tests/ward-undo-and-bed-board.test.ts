@@ -116,6 +116,7 @@ describe("UNDO_REFERRAL_DECISION", () => {
       now: NOW,
       referralId,
       destinationKind: "psychiatric_ward",
+      actingUnitId: UNIT,
       reason: REFERRAL_DECLINE_REASONS[0],
     });
     expect(declined.rejections).toEqual([]);

@@ -97,7 +97,7 @@ function TriggerDoubleAccept({ movementId, unitId }: { movementId: string; unitI
       type="button"
       data-testid="trigger-double-accept"
       onClick={() => {
-        dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId });
+        dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId, actingUnitId: unitId });
         (document.querySelector(`[data-testid="ward-accept-${movementId}"]`) as HTMLButtonElement | null)?.click();
       }}
     >

@@ -7,7 +7,10 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
 
-function dispatchAlert(state: ReturnType<typeof seedWardFlowState>, overrides: Partial<WardFlowEvent & { type: "DISPATCH_BROADCAST_ALERT" }> = {}) {
+function dispatchAlert(
+  state: ReturnType<typeof seedWardFlowState>,
+  overrides: Partial<WardFlowEvent & { type: "DISPATCH_BROADCAST_ALERT" }> = {},
+) {
   const event: WardFlowEvent = {
     type: "DISPATCH_BROADCAST_ALERT",
     role: "coordinator",
@@ -85,6 +88,7 @@ describe("ACKNOWLEDGE_BROADCAST_ALERT refuses invalid acknowledgements (audit fo
       now: NOW,
       alertId,
       unitId: "not-a-real-unit",
+      actingUnitId: "not-a-real-unit",
     });
     expect(next.broadcastAlerts[0].acknowledgedUnits).toEqual([]);
   });
@@ -113,6 +117,7 @@ describe("ACKNOWLEDGE_BROADCAST_ALERT refuses invalid acknowledgements (audit fo
       now: NOW,
       alertId,
       unitId: COORDINATOR_DESK_ACKNOWLEDGER_ID.toUpperCase(),
+      actingUnitId: COORDINATOR_DESK_ACKNOWLEDGER_ID.toUpperCase(),
     });
     expect(next.broadcastAlerts[0].acknowledgedUnits).toEqual([]);
   });
@@ -126,6 +131,7 @@ describe("ACKNOWLEDGE_BROADCAST_ALERT refuses invalid acknowledgements (audit fo
       now: NOW,
       alertId,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     expect(once.broadcastAlerts[0].acknowledgedUnits).toEqual(["rph-adult-secure"]);
 
@@ -135,6 +141,7 @@ describe("ACKNOWLEDGE_BROADCAST_ALERT refuses invalid acknowledgements (audit fo
       now: NOW,
       alertId,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     // Refused, not silently no-op'd: state is unchanged and the event was rejected.
     expect(twice.broadcastAlerts[0].acknowledgedUnits).toEqual(["rph-adult-secure"]);
@@ -155,6 +162,7 @@ describe("ACKNOWLEDGE_BROADCAST_ALERT refuses invalid acknowledgements (audit fo
       now: NOW,
       alertId,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     expect(next.broadcastAlerts[0].acknowledgedUnits).toEqual([]);
   });

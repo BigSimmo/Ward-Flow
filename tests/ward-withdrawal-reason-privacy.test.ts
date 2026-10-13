@@ -307,6 +307,7 @@ describe("a withdrawal reason cannot name the ward that won", () => {
       now: NOW_ANCHOR,
       movementId: movement!.id,
       unitId: ACCEPTING_UNIT,
+      actingUnitId: ACCEPTING_UNIT,
     } as never);
     expect(state.rejections, "the walk must be accepted, or nothing below is exercised").toEqual([]);
 
