@@ -188,6 +188,8 @@ type WardReferralDrawerProps = {
   initialPatientId?: string;
   /** A `wardSites` code from a Refer link, for the referring site. */
   initialOriginSiteCode?: string;
+  /** The ward whose page opened the slide-out, when it is a ward page. A ward acts only as itself (A1-8). */
+  actingUnitId?: string;
   /**
    * Filled with the slide-out's own close, which asks before discarding a draft. The sheet around
    * it calls this for Escape and its backdrop so those ask too.
@@ -708,6 +710,7 @@ function WardReferralDrawerContent({
   initialDestination,
   initialPatientId,
   initialOriginSiteCode,
+  actingUnitId,
   closeRequestRef,
   view,
   onViewChange,
@@ -3844,6 +3847,7 @@ function WardReferralDrawerContent({
           onClose={() => setArrivalPlanOpen(false)}
           movement={liveMovement}
           role={arrivalRole}
+          actingUnitId={actingUnitId}
         />
       ) : null}
     </>

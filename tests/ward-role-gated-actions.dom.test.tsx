@@ -19,21 +19,21 @@ afterEach(() => {
   navigation.pathname = "/mockups/ward-flow";
 });
 
-function RejectionCount() {
+function RejectionCount({ movementId }: { movementId: string }) {
   const { rejections, movements } = useWardFlow();
   return (
     <output data-testid="probe">
-      {rejections.length}:{movements[0]?.arrivalDetails ? "set" : "unset"}
+      {rejections.length}:{movements.find((m) => m.id === movementId)?.arrivalDetails ? "set" : "unset"}
     </output>
   );
 }
 
-function renderModal() {
-  const movement = seedWardFlowState().movements[0];
+function renderModal(actingUnitId?: string, movementIndex = 0) {
+  const movement = seedWardFlowState().movements[movementIndex];
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <ArrivalTimeModal isOpen onClose={vi.fn()} movement={movement} role="ward" />
-      <RejectionCount />
+      <ArrivalTimeModal isOpen onClose={vi.fn()} movement={movement} role="ward" actingUnitId={actingUnitId} />
+      <RejectionCount movementId={movement.id} />
     </WardFlowProvider>,
   );
   return screen.getByTestId("save-arrival-plan-button");
@@ -58,5 +58,27 @@ describe("actions limited by the route's role (feature 11)", () => {
     expect(save).toBeEnabled();
     expect(save.hasAttribute("aria-describedby")).toBe(false);
     expect(screen.queryByText("Coordinator, ED or ward only")).toBeNull();
+  });
+
+  // Review finding A1-8 (Gitar, 13 Oct 2026): the modal used to fill in the movement's own ward when
+  // the caller named none, so the reducer's scope check could never refuse it. It now sends only the
+  // ward the caller states.
+  it("does not invent the acting ward: a ward caller that names none is refused", () => {
+    navigation.pathname = "/mockups/ward-flow/ward/rph-adult-secure";
+    const index = seedWardFlowState().movements.findIndex(
+      (m) => m.acceptedUnitId && !m.closure && m.stage === "pulled",
+    );
+    const save = renderModal(undefined, index);
+    fireEvent.submit(save.closest("form")!);
+    expect(screen.getByTestId("probe").textContent).toBe("1:unset");
+  });
+
+  it("records the arrival plan when the caller names the receiving ward", () => {
+    navigation.pathname = "/mockups/ward-flow/ward/rph-adult-secure";
+    const seeded = seedWardFlowState().movements;
+    const index = seeded.findIndex((m) => m.acceptedUnitId && !m.closure && m.stage === "pulled");
+    const save = renderModal(seeded[index]!.acceptedUnitId, index);
+    fireEvent.submit(save.closest("form")!);
+    expect(screen.getByTestId("probe").textContent).toBe("0:set");
   });
 });

@@ -102,7 +102,9 @@ function ArrivalTimeModalContent({
       role,
       now,
       movementId: movement.id,
-      ...(role === "ward" ? { actingUnitId: actingUnitId ?? movement.acceptedUnitId } : {}),
+      // A1-8: only the ward the caller states. With none, the reducer refuses the event for missing
+      // scope; filling in the movement's own ward would make the scope check unable to refuse.
+      ...(role === "ward" && actingUnitId ? { actingUnitId } : {}),
       arrivalMode,
       trackingNumber: trackingNumber.trim() || undefined,
       estimatedArrivalAt: etaMinutes,

@@ -1164,6 +1164,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const publishedChecks = checksPublication.published ? checksPublication.checks : [];
   const reconciledCheckCount = publishedChecks.filter((check) => check.ok).length;
 
+  // The ward whose page this is, when it is a ward page: the referral slide-out acts only as that
+  // ward (review finding A1-8). Read from the address and checked against the real wards.
+  const routeWardUnitId = useMemo<string | undefined>(() => {
+    const match =
+      /^\/mockups\/ward-flow\/ward\/([^/]+)/.exec(pathname) ?? /^\/mockups\/ward-flow\/board\/([^/]+)/.exec(pathname);
+    const unitId = match ? decodeURIComponent(match[1]) : undefined;
+    return unitId && units.some((unit) => unit.id === unitId) ? unitId : undefined;
+  }, [pathname, units]);
+
   // Fixed jurisdiction resolution for place-specific views
   const fixedService = useMemo<HealthService | undefined>(() => {
     if (place) {
@@ -2198,6 +2207,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           initialDestination={referralRequest.destination}
           initialPatientId={referralRequest.personId}
           initialOriginSiteCode={referralRequest.originSiteCode}
+          actingUnitId={routeWardUnitId}
           closeRequestRef={referralCloseRef}
           onClose={closeReferral}
         />
