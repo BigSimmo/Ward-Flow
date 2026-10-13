@@ -461,7 +461,12 @@ test("runtime summary refuses read grants outside ward_flow except stock Supabas
   // "statements" must not match extensions.pg_stat_statements through string concatenation.
   assert.doesNotMatch(clause, /\|\|/);
   // The cron exception only holds while row-level security is on for those tables.
-  assert.match(clause, /AND \(n\.nspname <> 'cron' OR c\.relrowsecurity\)\)/);
+  // ...and only while every permissive SELECT policy is pg_cron's stock owner filter.
+  assert.match(clause, /AND \(n\.nspname <> 'cron' OR \(c\.relrowsecurity AND NOT EXISTS/);
+  assert.match(
+    clause,
+    /p\.polpermissive AND p\.polcmd IN \('\*', 'r'\)\s+AND pg_catalog\.pg_get_expr\(p\.polqual, p\.polrelid\) IS DISTINCT FROM '\(username = CURRENT_USER\)'\)\)\)\)/,
+  );
   assert.match(clause, /has_table_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
   assert.match(clause, /has_any_column_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
   assert.match(clause, /c\.relkind IN \('r', 'p', 'v', 'm', 'f'\)/);
