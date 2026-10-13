@@ -567,7 +567,11 @@ export function normaliseCommaNameQuery(query: string): string {
  * Prefix and word-start matches lead each group. No score, no provider calls.
  */
 export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
-  const trimmed = normaliseCommaNameQuery(input.query);
+  // S-33: the "Surname, Given" rewrite only ever helps a person's name. Non-patient groups (wards,
+  // sites, forms, views, tasks) search on the query exactly as typed, so "Ward A, Bed" still
+  // matches a ward or site whose text holds that original order.
+  const trimmed = input.query.trim();
+  const nameQuery = normaliseCommaNameQuery(trimmed);
   const intent = detectSearchIntent(trimmed);
   if (trimmed.length === 0) {
     return {
@@ -589,16 +593,16 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
   const names = movementDisplayNames(input.movements, input.patients, input.referrals);
 
   const people = rankAndLimit(
-    findPatients(input.patients, trimmed),
-    trimmed,
+    findPatients(input.patients, nameQuery),
+    nameQuery,
     (patient) => [patientDisplayName(patient), patient.givenName, patient.familyName, patient.umrn, patient.id],
     limit,
   );
 
-  const movementQuery: MovementSearchQuery = { text: trimmed, patientDisplayNames: names };
+  const movementQuery: MovementSearchQuery = { text: nameQuery, patientDisplayNames: names };
   const movements = rankAndLimit(
     searchMovements(input.movements, input.units, movementQuery),
-    trimmed,
+    nameQuery,
     (movement) => {
       const destination = destinationUnit(movement, input.units);
       return [
