@@ -797,7 +797,12 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               <Hero
                 className={styles.heroBand}
                 eyebrow="Mental Health Act forms"
-                title={`${rows.length} forms on open moves`}
+                title={
+                  <>
+                    <SrOnly>Legal forms, </SrOnly>
+                    {`${rows.length} forms on open moves`}
+                  </>
+                }
                 titleMeta={
                   voluntary > 0 ? <span className={styles.heroMeta}>{voluntary} voluntary, no form</span> : undefined
                 }

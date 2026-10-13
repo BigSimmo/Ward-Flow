@@ -372,7 +372,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * shortlist, the console and half a dozen other screens, each showing one movement's own form and
    * none of the others'.
    */
-  { id: "legal-forms", href: "/mockups/ward-flow/legal-forms", label: "Forms", group: "board" },
+  { id: "legal-forms", href: "/mockups/ward-flow/legal-forms", label: "Legal forms", group: "board" },
 ];
 
 /**
@@ -752,7 +752,7 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (normalized === "/mockups/ward-flow" || normalized === "/mockups/ward-flow/command") return "Home";
   if (normalized.startsWith("/mockups/ward-flow/board")) return "Bed Board";
   if (normalized.startsWith("/mockups/ward-flow/ward")) return "Ward";
-  if (normalized.startsWith("/mockups/ward-flow/ed")) return "Emergency";
+  if (normalized.startsWith("/mockups/ward-flow/ed")) return "All EDs";
   if (normalized.startsWith("/mockups/ward-flow/community")) return "Community";
   if (normalized.startsWith("/mockups/ward-flow/movements")) return "Movements";
   if (normalized.startsWith("/mockups/ward-flow/statistics")) return "Statistics";

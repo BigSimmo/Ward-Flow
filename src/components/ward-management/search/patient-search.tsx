@@ -955,7 +955,7 @@ export function PatientSearchPage() {
       data-ward-rebuilt-screen="patient-search"
     >
       <main id="main-content" className={styles.main}>
-        <h1 className="sr-only">Patient Search</h1>
+        <h1 className="sr-only">Patients</h1>
         <div data-testid="ward-patient-search-cockpit" className={styles.v6HeroWrap}>
           <Hero
             className={cx(cs.censusHero, isPhone && cs.heroPhone)}
