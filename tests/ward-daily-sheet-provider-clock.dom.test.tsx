@@ -3,7 +3,7 @@ import { useContext } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { WardDailySheet } from "@/components/ward-management/board/ward-daily-sheet";
-import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import {
   WardFlowClockContext,
   WardFlowContext,
@@ -13,7 +13,7 @@ import { allUnits } from "@/components/ward-management/ward-sites";
 
 const unit = allUnits()[0];
 afterEach(cleanup);
-function Fixture() {
+function Fixture({ now }: { now?: number }) {
   const flow = useContext(WardFlowContext)!;
   const admission = {
     ...wardAdmissions.find((item) => item.state === "occupied")!,
@@ -23,7 +23,7 @@ function Fixture() {
   };
   return (
     <WardFlowContext.Provider value={{ ...flow, admissions: [admission] }}>
-      <WardDailySheet unit={unit} />
+      <WardDailySheet unit={unit} now={now} />
     </WardFlowContext.Provider>
   );
 }
@@ -50,4 +50,52 @@ describe("daily sheet provider clock boundaries", () => {
     );
     expect(screen.getAllByText("Day 2", { exact: true }).length).toBeGreaterThan(0);
   });
+
+  it.each([Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    "uses the deterministic anchor for a %s provider clock",
+    (clock) => {
+      render(
+        <WardFlowProvider initialNow={0}>
+          <WardFlowClockContext.Provider value={clock}>
+            <Fixture />
+          </WardFlowClockContext.Provider>
+        </WardFlowProvider>,
+      );
+      expect(screen.getAllByText("Day 2", { exact: true }).length).toBeGreaterThan(0);
+    },
+  );
+
+  it("does not fall back to epoch 0 when now is omitted (AUD-04)", () => {
+    // The old `now ?? 0` read this stay as day 1; the provider clock at the anchor makes it day 2.
+    render(
+      <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+        <Fixture />
+      </WardFlowProvider>,
+    );
+    expect(screen.getAllByText("Day 2", { exact: true }).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Day 1", { exact: true })).toBeNull();
+  });
+
+  it("prefers a finite explicit now prop, including zero, over the provider clock", () => {
+    render(
+      <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+        <Fixture now={0} />
+      </WardFlowProvider>,
+    );
+    expect(screen.getAllByText("Day 1", { exact: true }).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Day 2", { exact: true })).toBeNull();
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY])(
+    "ignores an invalid explicit now prop (%s) and uses the provider",
+    (now) => {
+      render(
+        <WardFlowProvider initialNow={0}>
+          <Fixture now={now} />
+        </WardFlowProvider>,
+      );
+      expect(screen.getAllByText("Day 1", { exact: true }).length).toBeGreaterThan(0);
+      expect(screen.queryByText("Day 2", { exact: true })).toBeNull();
+    },
+  );
 });
