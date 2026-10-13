@@ -2,7 +2,8 @@
 
 **Source baseline audited 8 October 2026:** dedicated `BigSimmo/Ward-Flow` main
 `e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` (PR #121). Main has moved on since (checked
-12 October 2026 at `ee07fd6`, PR #254), including the v10 design system and phone layouts. This page
+13 October 2026 at `30b1803`, PR #264), including the v10 design system, phone layouts and the
+13 October honesty pass (PR #258). This page
 describes the audited baseline and the local remediation programme; it is not a statement about
 later commits or the hosted site. A later local change,
 publication and deployment each require separate evidence.

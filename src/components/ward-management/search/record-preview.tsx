@@ -292,7 +292,7 @@ export function RecordPreview({
     // With no open movement and no referral the record says nothing about where the person is or
     // what is planned, so this default says so. "NOT IN HOSPITAL · COMMUNITY OUTPATIENT", an
     // outpatient stage and "Tier 3" used to be assumed here (25 September 2026 audit, A5).
-    let presenceStatus: "live" | "community" = "community";
+    let presenceStatus: "live" | "community" | "past" = "community";
     let bannerTitle = "NO OPEN MOVEMENT OR REFERRAL";
     let bannerTag = "No open episode";
     let waitTimeHours = 0;
@@ -309,7 +309,7 @@ export function RecordPreview({
     if (linkedMovement && movementSummary) {
       const operational = movementSearchState(linkedMovement, admissions);
       presenceStatus = "live";
-      bannerTitle = "In hospital now";
+      bannerTitle = "On this board now";
       bannerTag = settingLabel(operational.setting);
       waitTimeHours = waitedHours(linkedMovement, now);
       disposition = operational.holdStatus;
@@ -321,6 +321,32 @@ export function RecordPreview({
       legalStatus = movementLegalStatus(linkedMovement);
       urgency = `Tier ${linkedMovement.urgency}`;
       recordOpenedAt = linkedMovement.openedAt;
+    } else if (
+      referral &&
+      !referrals.some((candidate) => {
+        if (candidate.patientId !== patient.id) return false;
+        const state = referralState(candidate);
+        if (state === "queued") return true;
+        // Accepted and still awaiting a movement, or arrived in a bed: on a ward, not past.
+        if (state !== "accepted") return false;
+        const admission = admissions.find((entry) => entry.referralId === candidate.id);
+        if (admission) return admission.state !== "departed";
+        // No bed yet: present only while no movement has been opened for it. A closed movement with
+        // no admission (for example did not proceed) reads as Past.
+        return !movements.some((movement) => movement.referralId === candidate.id);
+      }) &&
+      !movements.some((movement) => movement.patientId === patient.id && isOpen(movement))
+    ) {
+      // Same rule as the search row: no open movement and no queued referral means Past.
+      const declined = referralState(referral) === "declined";
+      presenceStatus = "past";
+      bannerTitle = "Not on this board now";
+      bannerTag = declined ? "Referral declined" : "Referral closed";
+      disposition = declined ? "Declined" : NOT_RECORDED;
+      targetWard = "Not admitted";
+      currentStage = declined ? "Declined" : "No open movement";
+      originSite = referral.originSiteCode;
+      urgency = `Tier ${referral.urgency}`;
     } else if (referral) {
       const isComm = isCommunityReferral(referral);
       if (isComm) {
@@ -334,7 +360,7 @@ export function RecordPreview({
         urgency = `Tier ${referral.urgency}`;
       } else {
         presenceStatus = "live";
-        bannerTitle = "In hospital now";
+        bannerTitle = "On this board now";
         bannerTag = "Emergency Dept";
         waitTimeHours = Math.max(0, (now - referral.raisedAt) / 60);
         disposition = "Unplaced";
@@ -679,8 +705,13 @@ export function RecordPreview({
     const linkedMovement = linkedOpenMovementFor(referral, movements);
 
     const isComm = isCommunityReferral(referral);
-    const presenceStatus = isComm ? "community" : "live";
-    const bannerTitle = isComm ? "NOT IN HOSPITAL · COMMUNITY REFERRAL" : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
+    const declined = referralState(referral) === "declined" && !linkedMovement;
+    const presenceStatus = declined ? "past" : isComm ? "community" : "live";
+    const bannerTitle = declined
+      ? "REFERRAL DECLINED · NO DESTINATION ACCEPTED"
+      : isComm
+        ? "NOT IN HOSPITAL · COMMUNITY REFERRAL"
+        : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
     const bannerTag = isComm ? "Community Referral" : "Acute Referral";
     const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : `Referral ${referral.id}`;
     const subjectSubtitle = linkedPatient
@@ -872,7 +903,7 @@ export function RecordPreview({
   const operational = movementSearchState(movement, admissions);
 
   const presenceStatus: "live" | "past" = isOpen(movement) ? "live" : "past";
-  const bannerTitle = isOpen(movement) ? "In hospital now" : "Not in hospital now";
+  const bannerTitle = isOpen(movement) ? "On this board now" : "Not on this board now";
   const bannerTag = settingLabel(operational.setting);
   const waitTimeHours = waitedHours(movement, now);
   const isBreaching = waitTimeHours * 60 >= LONG_WAIT_MINUTES;

@@ -1,5 +1,7 @@
 # Ward Flow development backend
 
+The shared synthetic workspace supports independent database (`azure`, `supabase`, `postgres`) and identity (`entra`, `supabase`) selectors. Node and Azure Functions use the same backend factory. See [PostgreSQL setup and recovery](SETUP-POSTGRES.md) and [Supabase/Azure presets](SETUP-SUPABASE.md). Runtime never auto-migrates or substitutes an administrator. **Every shared preset requires migration 4 before readiness**, including existing Azure installations. These source changes do not establish a current hosted connection or deployment. The Azure-only material below remains retained setup/history.
+
 This package stores synthetic Ward Flow demonstration sessions in the existing
 `wflowdev7273a083aue` Azure Storage account. It is a development service.
 Never enter or upload real patient information.
