@@ -106,7 +106,13 @@ function cellWord(bed: BedItem): string {
   return surname(bed.patientAlias);
 }
 
-function cellLabel(bed: BedItem, fits: boolean): string {
+function cellLabel(
+  bed: BedItem,
+  fits: boolean,
+  nameFor: (name: string, umrn: string | undefined | null) => string,
+): string {
+  // A2-20: the accessible name follows Discreet names, as the visible cell does.
+  const alias = bed.patientAlias === undefined ? undefined : nameFor(bed.patientAlias, bed.umrn);
   const state =
     bed.status === "ready"
       ? bed.heldFor
@@ -117,8 +123,8 @@ function cellLabel(bed: BedItem, fits: boolean): string {
       : bed.status === "closed"
         ? "closed"
         : bed.status === "incoming"
-          ? `pulled${bed.patientAlias ? `, ${bed.patientAlias}` : ""}`
-          : `${bed.patientAlias ?? "occupant not recorded"}${bed.status === "leave" ? ", on leave" : ""}`;
+          ? `pulled${alias ? `, ${alias}` : ""}`
+          : `${alias ?? "occupant not recorded"}${bed.status === "leave" ? ", on leave" : ""}`;
   return `Bed ${bedNumberLabel(bed.bedNumber)}, ${state}${fits ? ", fits" : ""}`;
 }
 
@@ -219,7 +225,9 @@ export function WardBedBoard({
           }}
         >
           <StatusGlyph tone="info" size={10} />
-          <span className={styles.chipName}>{picked.name}</span>
+          <span className={styles.chipName}>
+            {nameFor(picked.name, beds.find((bed) => Number(bed.bedNumber) === picked.fromBed)?.umrn)}
+          </span>
           <span className={styles.chipMeta}>from bed {bedNumberLabel(picked.fromBed)}</span>
         </button>
       ) : null}
@@ -289,7 +297,7 @@ export function WardBedBoard({
                       data-dim={dim ? "true" : undefined}
                       data-placed={placedBed === Number(bed.bedNumber) ? "true" : undefined}
                       aria-pressed={source ? true : undefined}
-                      aria-label={cellLabel(bed, fits)}
+                      aria-label={cellLabel(bed, fits, nameFor)}
                       data-testid={`ward-board-bed-${bed.bedNumber}`}
                       onClick={() => {
                         onBedPress(bed);

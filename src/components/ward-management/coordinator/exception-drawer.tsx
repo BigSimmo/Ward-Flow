@@ -10,6 +10,7 @@ import { OverrideRegister } from "@/components/ward-management/override-register
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DeclineEntry, InboxItem, OverrideEntry } from "@/components/ward-management/ward-derivations";
 import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { dischargeHref } from "@/components/ward-management/shell/ward-facade";
 import type { Rejection, Unit } from "@/components/ward-management/ward-model";
 
@@ -101,6 +102,8 @@ export function ExceptionDrawer({
   // Owner, 26 Sept 2026: resolves a silence reminder's bare movement id to the patient's name.
   const resolvePatientIdentity = usePatientOf();
   const umrnText = useUmrnText();
+  // A2-20: names here follow Discreet names on a phone (initials plus UMRN).
+  const nameFor = usePatientNameDisplay();
 
   // Newest first: a coordinator wants to see what just got refused.
   const refusalsNewestFirst = [...rejections].reverse();
@@ -209,7 +212,7 @@ export function ExceptionDrawer({
                   item.plannedAdmission ??
                     (item.movementId ? { movementId: item.movementId } : { id: item.admissionId }),
                 );
-                const whoName = who.displayName === "Unknown Patient" ? null : who.displayName;
+                const whoName = who.displayName === "Unknown Patient" ? null : nameFor(who.displayName, who.umrn);
                 const content = (
                   <>
                     <span className={styles.registerMain}>
@@ -284,7 +287,12 @@ export function ExceptionDrawer({
                     data-testid={`ward-silence-reminder-${movementId}`}
                   >
                     <span className={styles.registerMain}>
-                      <span className={styles.registerTitle}>{resolvePatientIdentity({ movementId }).displayName}</span>
+                      <span className={styles.registerTitle}>
+                        {nameFor(
+                          resolvePatientIdentity({ movementId }).displayName,
+                          resolvePatientIdentity({ movementId }).umrn,
+                        )}
+                      </span>
                       <span className={styles.registerSub}>{copy}</span>
                     </span>
                   </button>

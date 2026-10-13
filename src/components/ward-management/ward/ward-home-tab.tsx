@@ -46,6 +46,7 @@ import {
 } from "@/components/wf";
 import { edById } from "@/components/ward-management/ward-sites";
 import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
+import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { pullBlockedReason } from "./ward-arrivals-corridor";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 
@@ -410,15 +411,20 @@ export function WardHomeTab({
     releasesDueByShiftEnd(bedReleases, unit.id, now).map((release) => release.admissionId),
   );
   const bedRows = (bedsList ?? []).map((bed) => {
-    const free = bed.status === "ready";
-    const readyByShiftEnd = free || (bed.admissionId !== undefined && freeingByShiftEnd.has(bed.admissionId));
+    // A bed still being made ready is not free to offer, matching the Bed Board.
+    const preparing = bed.status === "ready" && bed.preparing === true;
+    const free = bed.status === "ready" && !preparing;
+    const readyByShiftEnd =
+      bed.status === "ready" || (bed.admissionId !== undefined && freeingByShiftEnd.has(bed.admissionId));
     const leaving = !free && (bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0));
     const awayAtEd = bed.awayAtEdHours != null;
     const look =
       !free && (bed.pastDate === true || awayAtEd || Boolean(bed.dischargeBarrier) || Boolean(bed.blockReason));
     const stateWord =
       bed.status === "ready"
-        ? "Ready"
+        ? preparing
+          ? BED_STATE_LABELS.beingMadeReady
+          : "Ready"
         : bed.status === "leave"
           ? bed.statusText === "Absent without leave"
             ? "Absent without leave"
@@ -562,6 +568,12 @@ export function WardHomeTab({
       // names that narrower set rather than repeating the Due out filter's wider count.
       { id: "leaving", title: "Due out, on track", tone: "info", rows: take((row) => row.leaving) },
       { id: "free", title: "Free", tone: "success", rows: take((row) => row.free) },
+      {
+        id: "preparing",
+        title: BED_STATE_LABELS.beingMadeReady,
+        tone: "neutral",
+        rows: take((row) => row.bed.status === "ready"),
+      },
       { id: "pulled", title: "Pulled", tone: "info", rows: take((row) => row.bed.status === "incoming") },
       { id: "leave", title: "On leave", tone: "neutral", rows: take((row) => row.bed.status === "leave") },
       // S-24 (audit round 2): a bed admitted today sorts to the top of Settled, so a new arrival is

@@ -25,6 +25,7 @@ import { useRef, useState, type Dispatch } from "react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { edById } from "./ward-sites";
 import { stageCopy } from "./ward-derivations";
 import type { Admission } from "./ward-admissions";
@@ -189,6 +190,8 @@ export function WardTasksDrawer({
   useWardModalFocus(true, drawerRef, onClose);
   // Phone (v10 Tasks sheet): a plain list, due first. A row opens in place to show its actions.
   const isPhone = useIsPhone();
+  // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
+  const nameFor = usePatientNameDisplay();
 
   /** A discharge notification row opens its stay on the discharges board; every other row opens
    *  its movement. */
@@ -413,6 +416,9 @@ export function WardTasksDrawer({
     const isExpanded = expanded === item.id;
     const severity: WfTone = item.tone === "danger" ? "danger" : "warning";
     const detail = rowDetail(item, movement, records?.units, now);
+    const phoneName = patient
+      ? nameFor(patient.displayName, patient.patient ? patient.umrn : null)
+      : "Patient not linked";
 
     return (
       <li
@@ -451,9 +457,10 @@ export function WardTasksDrawer({
             {isPhone ? (
               <p className={styles.rowMeta}>
                 <span className={styles.rowWho}>
-                  {patient?.displayName ?? "Patient not linked"}
-                  {/* Audit A1-15: name plus UMRN, matching the Exceptions sheet. */}
-                  {patient?.patient ? ` · ${patient.umrn}` : ""}
+                  {phoneName}
+                  {/* Audit A1-15: name plus UMRN, matching the Exceptions sheet. Discreet names
+                      already carry the UMRN, so it is not repeated. */}
+                  {patient?.patient && phoneName === patient.displayName ? ` · ${patient.umrn}` : ""}
                 </span>
               </p>
             ) : null}

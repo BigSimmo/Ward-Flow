@@ -1117,9 +1117,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const otherOccupants = unitOccupantAdmissions.filter((a) => !leaveAdmissionIds.has(a.id));
   const unitPulledAdmissions = admissions?.filter((a) => a.unitId === unit.id && a.state === "pulled") ?? [];
   let otherOccupantCursor = 0;
-  // A4-24: a vacated bed reads "Being made ready" until someone taps Ready. The count model has no
-  // bed-level record, so the first ready tiles carry the marker, one per bed still being made ready.
-  const preparingSlots = Math.min(pendingPreparation, states.ready);
+  // A4-24: a vacated bed reads "Being made ready" until someone taps Ready. Each marker belongs to
+  // one discharged release, oldest first; the tile it sits on is chosen once bed numbers are known
+  // (below), so Ready on a bed clears that bed's own release.
+  const preparingReleases = bedReleases
+    .filter((r) => r.unitId === unit.id && r.state === "discharged" && r.preparing)
+    .sort((left, right) => left.confirmedAt - right.confirmedAt);
 
   const rawBeds = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
@@ -1141,7 +1144,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     let statusText = "Inpatient";
     if (i < states.ready) {
       status = "ready";
-      statusText = i < preparingSlots ? BED_STATE_LABELS.beingMadeReady : "Ready Vacant";
+      statusText = "Ready Vacant";
     } else if (isLeaveSlot) {
       status = "leave";
       // D-38: a bed held for an absence without leave is never shown as approved leave.
@@ -1263,7 +1266,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         admission?.id ??
         (incomingMovement ? unitPulledAdmissions.find((a) => a.movementId === incomingMovement.id)?.id : undefined),
       heldFor: undefined as string | undefined,
-      preparing: status === "ready" && i < preparingSlots,
+      preparing: false,
+      /** The discharged release this bed is being made ready for, set once bed numbers are known. */
+      preparingReleaseId: undefined as string | undefined,
       age: patientAge,
       sex: patientSex,
       homeRegion: patientHomeRegion,
@@ -1316,9 +1321,28 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     heldBeds.map((held) => held.bed),
     (admissionId) => seatedBeds.get(admissionId),
   );
+  // A4-24: place each "Being made ready" marker on the bed its stay vacated when that bed is now a
+  // ready tile, then any remaining markers on the lowest-numbered ready beds, oldest release first.
+  // The tile then carries its own release, so Ready clears the bed the user opened.
+  const readyBedNumbers = rawBeds.flatMap((bed, index) => (bed.status === "ready" ? [bedNumbers[index]] : []));
+  const preparingByBed = new Map<number, string>();
+  const unplacedReleases: string[] = [];
+  for (const release of preparingReleases) {
+    const vacated = recordedBeds.get(release.admissionId) ?? seatedBeds.get(release.admissionId);
+    if (vacated !== undefined && readyBedNumbers.includes(vacated) && !preparingByBed.has(vacated)) {
+      preparingByBed.set(vacated, release.id);
+    } else {
+      unplacedReleases.push(release.id);
+    }
+  }
+  for (const bedNumber of [...readyBedNumbers].sort((left, right) => left - right)) {
+    const releaseId = preparingByBed.has(bedNumber) ? undefined : unplacedReleases.shift();
+    if (releaseId !== undefined) preparingByBed.set(bedNumber, releaseId);
+  }
   const bedsList = rawBeds
     .map((bed, index) => {
       const bedNumber = bedNumbers[index];
+      const preparingReleaseId = bed.status === "ready" ? preparingByBed.get(bedNumber) : undefined;
       const designation: "Locked" | "Open" | undefined = isMixed
         ? bedNumber <= lockedBeds
           ? "Locked"
@@ -1332,6 +1356,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         podId: isMixed ? (bedNumber <= lockedBeds ? "locked" : "open") : "all",
         podLabel: isMixed ? `${unit.name} ${designation} Beds` : unit.name,
         heldFor: bed.status === "ready" ? heldBeds.find((held) => held.bed === bedNumber)?.name : undefined,
+        preparing: preparingReleaseId !== undefined,
+        preparingReleaseId,
+        statusText: preparingReleaseId !== undefined ? BED_STATE_LABELS.beingMadeReady : bed.statusText,
       };
     })
     .sort((left, right) => left.bedNumber - right.bedNumber);
@@ -2909,16 +2936,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     setToastMessage(`Bed ${bedNum} patient marked returned to ward.`);
                   }}
                   onMarkReady={() => {
-                    // A4-24: one tap clears the oldest bed this ward still has being made ready.
-                    const preparing = bedReleases
-                      .filter((r) => r.unitId === unitId && r.state === "discharged" && r.preparing)
-                      .sort((left, right) => left.confirmedAt - right.confirmedAt)[0];
-                    if (!preparing) return;
+                    // A4-24: one tap clears the release this bed is being made ready for.
+                    const releaseId = selectedBedItem?.preparingReleaseId;
+                    if (!releaseId) return;
                     dispatch({
                       type: "SET_BED_PREPARATION",
                       role: "ward",
                       now,
-                      releaseId: preparing.id,
+                      releaseId,
                       actingUnitId: unitId,
                       preparing: false,
                     });
