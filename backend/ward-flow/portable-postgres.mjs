@@ -52,13 +52,21 @@ browser_roles AS (SELECT oid FROM pg_catalog.pg_roles WHERE rolname IN ('anon', 
 SELECT current_user AS role,
   NOT (r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication OR r.rolbypassrls OR r.rolinherit)
     AND r.rolcanlogin AS safe_flags,
-  NOT EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members WHERE member = r.oid) AS no_memberships,
+  -- Both directions: roles the runtime belongs to, and roles that can SET ROLE to it or
+  -- inherit it. PostgreSQL 16+ gives a non-superuser creator an ADMIN-only membership
+  -- (no SET, no INHERIT); older versions have no such columns, so any grant counts.
+  NOT EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members m WHERE m.member = r.oid
+    OR (m.roleid = r.oid AND (COALESCE((pg_catalog.to_jsonb(m) ->> 'set_option')::boolean, true)
+      OR COALESCE((pg_catalog.to_jsonb(m) ->> 'inherit_option')::boolean, true)))) AS no_memberships,
   NOT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE nspowner = r.oid)
     AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class WHERE relowner = r.oid)
     AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_proc WHERE proowner = r.oid)
     AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_database WHERE datname=current_database() AND datdba=r.oid) AS no_ownership,
   pg_catalog.has_schema_privilege(r.oid, 'ward_flow', 'USAGE')
-    AND NOT pg_catalog.has_schema_privilege(r.oid, 'ward_flow', 'CREATE') AS schema_grants,
+    AND NOT pg_catalog.has_schema_privilege(r.oid, 'ward_flow', 'CREATE')
+    -- No CREATE on any schema (PostgreSQL 14 and earlier grant it on public to PUBLIC).
+    AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace s
+      WHERE pg_catalog.has_schema_privilege(r.oid, s.oid, 'CREATE')) AS schema_grants,
   pg_catalog.has_table_privilege(r.oid, 'ward_flow.migrations', 'SELECT')
     AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspaces', 'SELECT')
     AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspaces', 'INSERT')
@@ -106,7 +114,12 @@ SELECT current_user AS role,
         AND CASE WHEN c.relkind = 'S' THEN pg_catalog.has_sequence_privilege(b.oid, c.oid, 'USAGE,SELECT,UPDATE') ELSE false END)
   ) AS browser_denied,
   (SELECT array_agg(version ORDER BY version) FROM ward_flow.migrations) AS versions,
+  -- Exactly two user triggers in the schema, whatever their state, and both are the guards.
   (SELECT count(*) = 2 FROM pg_catalog.pg_trigger t
+    JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
+    JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'ward_flow' AND NOT t.tgisinternal)
+  AND (SELECT count(*) = 2 FROM pg_catalog.pg_trigger t
     JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
     JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
     JOIN pg_catalog.pg_proc p ON p.oid = t.tgfoid

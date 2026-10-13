@@ -13,7 +13,9 @@ DO $$ BEGIN
   END IF;
 END $$;
 DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM pg_auth_members WHERE member = 'wardflow_backend'::regrole) THEN
+  IF EXISTS (SELECT 1 FROM pg_auth_members m WHERE m.member='wardflow_backend'::regrole
+    OR (m.roleid='wardflow_backend'::regrole AND (COALESCE((to_jsonb(m)->>'set_option')::boolean, true)
+      OR COALESCE((to_jsonb(m)->>'inherit_option')::boolean, true)))) THEN
     RAISE EXCEPTION 'Runtime role has unexpected membership; inspect before applying grants';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspowner = 'wardflow_backend'::regrole)

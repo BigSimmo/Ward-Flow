@@ -170,6 +170,15 @@ describe("security headers", () => {
       expect(directive(csp, "img-src")).toBe("img-src 'self' data: blob:");
     });
 
+    it("treats a blank auth provider as the Entra default", () => {
+      vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "");
+      expect(resolveSharedWorkspaceOrigins("https://wardflow-dev-api-aue.azurewebsites.net/api/")).toEqual([
+        "https://wardflow-dev-api-aue.azurewebsites.net",
+        "https://login.microsoftonline.com",
+      ]);
+      vi.unstubAllEnvs();
+    });
+
     it("keeps connect-src same-origin when the Function is missing, invalid or not https", () => {
       // undefined reads the build's own setting, so pin it for this test.
       vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "");

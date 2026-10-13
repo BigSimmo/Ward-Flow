@@ -8,7 +8,9 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='wardflow_backend') THEN
     CREATE ROLE wardflow_backend LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
   END IF;
-  IF EXISTS (SELECT 1 FROM pg_auth_members WHERE member='wardflow_backend'::regrole)
+  IF EXISTS (SELECT 1 FROM pg_auth_members m WHERE m.member='wardflow_backend'::regrole
+    OR (m.roleid='wardflow_backend'::regrole AND (COALESCE((to_jsonb(m)->>'set_option')::boolean, true)
+      OR COALESCE((to_jsonb(m)->>'inherit_option')::boolean, true))))
     OR EXISTS (SELECT 1 FROM pg_namespace WHERE nspowner='wardflow_backend'::regrole)
     OR EXISTS (SELECT 1 FROM pg_class WHERE relowner='wardflow_backend'::regrole)
     OR EXISTS (SELECT 1 FROM pg_proc WHERE proowner='wardflow_backend'::regrole)
@@ -31,6 +33,12 @@ DO $$ DECLARE column_grant record; browser_role text; BEGIN
   END LOOP;
 END $$;
 REVOKE ALL ON SCHEMA ward_flow FROM PUBLIC, wardflow_backend;
+-- PostgreSQL 14 and earlier grant CREATE on the public schema to PUBLIC.
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname='public') THEN
+    REVOKE CREATE ON SCHEMA public FROM PUBLIC, wardflow_backend;
+  END IF;
+END $$;
 REVOKE ALL ON ALL TABLES IN SCHEMA ward_flow FROM PUBLIC, wardflow_backend;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA ward_flow FROM PUBLIC, wardflow_backend;
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA ward_flow FROM PUBLIC, wardflow_backend;

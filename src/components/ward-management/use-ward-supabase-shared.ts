@@ -88,9 +88,17 @@ export function useWardSupabaseShared(enabled: boolean) {
       try {
         // Consume and erase the sensitive fragment before any asynchronous work or workspace render.
         const confirmation = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("type") === "signup";
-        const recovery = consumeRecoveryFragment(window.location, (url) =>
-          window.history.replaceState(window.history.state, "", url),
-        );
+        // An expired or malformed link is still erased, but its error is reported only after
+        // auth and the sign-in/recovery actions exist, so the user can request a new link.
+        let fragmentError: unknown = null;
+        let recovery: ReturnType<typeof consumeRecoveryFragment> = null;
+        try {
+          recovery = consumeRecoveryFragment(window.location, (url) =>
+            window.history.replaceState(window.history.state, "", url),
+          );
+        } catch (error) {
+          fragmentError = error;
+        }
         if (confirmation) window.sessionStorage.removeItem(WARD_AUTH_STORAGE_KEY);
         const base = new URL(process.env.NEXT_PUBLIC_WARD_API_BASE_URL ?? "");
         const loopback =
@@ -194,6 +202,10 @@ export function useWardSupabaseShared(enabled: boolean) {
               }
             }),
         };
+        if (fragmentError) {
+          fail(fragmentError);
+          return;
+        }
         await auth.restore(recovery);
         if (closed) return;
         if (auth.isRecovery) {

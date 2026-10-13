@@ -60,6 +60,19 @@ describe("Supabase shared sign-in", () => {
     expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
     expect(screen.queryByText("Workspace contents")).toBeNull();
   });
+  it("keeps sign-in usable after an expired recovery link", async () => {
+    window.history.replaceState({}, "", "/mockups/ward-flow#error=access_denied&error_code=otp_expired&type=recovery");
+    const fetcher = vi.fn(async () => Response.json({}, { status: 400 }));
+    vi.stubGlobal("fetch", fetcher);
+    render(<Probe />);
+    expect(await screen.findByText(/recovery link is invalid or expired/i)).toBeInTheDocument();
+    expect(window.location.hash).toBe("");
+    fireEvent.click(await screen.findByRole("button", { name: "Sign in with email" }));
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "synthetic@example.invalid" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "private-password" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Sign in$/ }));
+    await waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+  });
   it("erases recovery URL and cannot enter workspace before password update", async () => {
     window.history.replaceState(
       {},

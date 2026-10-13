@@ -87,15 +87,18 @@ test("Supabase verifies only through the pinned Auth service and ignores client 
       calls++;
       assert.equal(url, `${env.WARD_SUPABASE_URL}/auth/v1/user`);
       assert.equal(options.headers.apikey, env.WARD_SUPABASE_PUBLISHABLE_KEY);
-      assert.equal(options.headers.Authorization, "Bearer synthetic-token");
+      assert.match(options.headers.Authorization, /^Bearer synthetic-(?:coordinator|other)$/);
       assert.equal(options.redirect, "error");
       assert.ok(options.signal instanceof AbortSignal);
-      return Response.json({ id: other, app_metadata: { role: "coordinator" } });
+      // A client-controlled role never grants access; only the allowlisted user id does.
+      const id = options.headers.Authorization.endsWith("coordinator") ? coordinator : other;
+      return Response.json({ id, app_metadata: { role: "coordinator" } });
     },
   });
-  assert.equal(await authenticate("Bearer synthetic-token"), other);
+  assert.equal(await authenticate("Bearer synthetic-coordinator"), coordinator);
+  await assert.rejects(authenticate("Bearer synthetic-other"), /Unauthorised/);
   await assert.rejects(authenticate("Bearer bad token"));
-  assert.equal(calls, 1);
+  assert.equal(calls, 2);
 });
 
 test("Supabase credential rejection differs from verification outages and has a bounded deadline", async () => {
@@ -315,10 +318,44 @@ test("database selection never determines identity selection", async () => {
 
 test("startup verifies the actual runtime role and rejects administrator sessions", async () => {
   const { verifySupabaseRuntimeRole } = await import("./supabase-postgres.mjs");
-  await verifySupabaseRuntimeRole({ query: async () => ({ rows: [{ role: "wardflow_backend" }] }) });
+  const prepared = {
+    role: "wardflow_backend",
+    safe_flags: true,
+    no_memberships: true,
+    no_ownership: true,
+    schema_grants: true,
+    required_grants: true,
+    restricted_grants: true,
+    push_grants: true,
+    audit_append_only: true,
+    browser_denied: true,
+    guards_valid: true,
+    versions: [1, 2, 3, 4],
+  };
+  const unsafe = { message: "Unsafe or unprepared Supabase database runtime" };
+  await verifySupabaseRuntimeRole({ query: async () => ({ rows: [prepared] }) });
   for (const role of ["postgres", "supabase_admin", undefined]) {
-    await assert.rejects(verifySupabaseRuntimeRole({ query: async () => ({ rows: [{ role }] }) }), /runtime role/);
+    await assert.rejects(verifySupabaseRuntimeRole({ query: async () => ({ rows: [{ ...prepared, role }] }) }), unsafe);
   }
+  // A correctly named role is still refused when any privilege check fails.
+  for (const field of Object.keys(prepared).filter((key) => key !== "role" && key !== "versions")) {
+    await assert.rejects(
+      verifySupabaseRuntimeRole({ query: async () => ({ rows: [{ ...prepared, [field]: false }] }) }),
+      unsafe,
+    );
+  }
+  await assert.rejects(
+    verifySupabaseRuntimeRole({ query: async () => ({ rows: [{ ...prepared, versions: [1, 2, 3] }] }) }),
+    unsafe,
+  );
+  await assert.rejects(
+    verifySupabaseRuntimeRole({
+      query: async () => {
+        throw new Error("synthetic outage");
+      },
+    }),
+    { message: "Supabase database runtime verification unavailable" },
+  );
 });
 
 test("private-schema SQL gives the runtime no audit mutation, DDL or browser role access", async () => {
