@@ -1497,7 +1497,11 @@ export function isBedHoldExpired(
   if (transportStage === "in_transit" || transportStage === "arrived") {
     return false;
   }
-  if (transport && !transport.cancelledAt && (transport.enRouteAt !== undefined || transport.arrivedAt !== undefined)) {
+  if (
+    transport &&
+    (transport.cancelledAt === undefined || transport.cancelledAt === null) &&
+    (transport.enRouteAt !== undefined || transport.arrivedAt !== undefined)
+  ) {
     return false;
   }
   return now - pulledAt >= thresholdMinutes;

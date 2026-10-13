@@ -58,6 +58,12 @@ describe("isBedHoldExpired: in-transit patients (AUD-05)", () => {
     expect(bedHoldExpiryAlert(m, NOW).expired).toBe(true);
   });
 
+  it("still alarms when the job was cancelled at epoch zero", () => {
+    const m = movement({ enRouteAt: 0, cancelledAt: 0 });
+    expect(isBedHoldExpired(m, NOW)).toBe(true);
+    expect(bedHoldExpiryAlert(m, NOW).expired).toBe(true);
+  });
+
   it("keeps the threshold boundary for a hold without transport", () => {
     const fresh = { ...movement(), acceptedAt: NOW - BED_HOLD_EXPIRY_MINUTES + 1 } as Movement;
     const atLimit = { ...movement(), acceptedAt: NOW - BED_HOLD_EXPIRY_MINUTES } as Movement;
