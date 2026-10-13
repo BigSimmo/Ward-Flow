@@ -3932,23 +3932,38 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // about. Cleared whenever we are on this auto-release branch (post-collection retains
         // above); stage alone must not keep a stale join after a step-back.
         admissionId: undefined,
-        // S1-5: When examination is revoked, clear candidate target wards on the attached
-        // referral and unlist referred wards so patient does not remain in intake queues.
-        ...(event.outcome === "revoked"
-          ? {
-              referredUnitIds: [],
-              acceptedUnitId: undefined,
-              referral: movement.referral ? { ...movement.referral, targetUnitIds: [] } : movement.referral,
-            }
-          : {}),
+        ...(event.outcome === "revoked" ? { referredUnitIds: [], acceptedUnitId: undefined } : {}),
       };
       const next = replaceMovement(withoutPulledBed, movement.id, updated);
+      const nextWithReferral =
+        event.outcome === "revoked" && movement.referralId !== undefined
+          ? (() => {
+              const referral = next.referrals.find((candidate) => candidate.id === movement.referralId);
+              if (!referral) return next;
+              const destinations = referral.destinations.map((addressing) =>
+                addressing.state === "queued" && addressing.withdrawnAt === undefined
+                  ? {
+                      ...addressing,
+                      withdrawnAt: event.now,
+                      withdrawalRecordedBy: WARD_FLOW_ROLE_LABELS[event.role],
+                      withdrawalReason: "referred_in_error" as const,
+                    }
+                  : addressing,
+              );
+              return {
+                ...next,
+                referrals: next.referrals.map((candidate) =>
+                  candidate.id === referral.id ? { ...candidate, destinations } : candidate,
+                ),
+              };
+            })()
+          : next;
       // Item 48, Q3 (owner, 2026-09-17): the accepting ward's other branch — the bed has already
       // been given back by `releasePulledBedAndAdmission` above, so the sentence says so, rather
       // than reusing the "stays held" wording the `transportAlreadyCommitted` branch above sends.
       // Same "revoked" only, same "no accepting ward, no notice" guard as that branch.
-      if (event.outcome !== "revoked" || movement.acceptedUnitId === undefined) return next;
-      return appendNotices(next, [
+      if (event.outcome !== "revoked" || movement.acceptedUnitId === undefined) return nextWithReferral;
+      return appendNotices(nextWithReferral, [
         makeNotice(
           event.now,
           state.notices.length,
