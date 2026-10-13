@@ -99,7 +99,9 @@ export function bedsForecast(
   now: Instant,
   plannedAdmissions: readonly PlannedAdmission[] = [],
 ): BedsForecast {
-  const readyNow = units.reduce((sum, unit) => sum + lockedBedsFree(unit) + openBedsFree(unit), 0);
+  const readyNow = units
+    .filter((unit) => !unit.isClosed)
+    .reduce((sum, unit) => sum + lockedBedsFree(unit) + openBedsFree(unit), 0);
   const unitIds = new Set(units.map((unit) => unit.id));
   const pending = releases.filter((release) => release.state !== "discharged" && unitIds.has(release.unitId));
   const flaggedAdmissionIds = new Set(pending.map((release) => release.admissionId));

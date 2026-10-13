@@ -4360,7 +4360,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const callerPlaceId = caller.placeId ?? caller.actingPlaceId;
       const referral = movement.referralId ? state.referrals.find((r) => r.id === movement.referralId) : undefined;
       const originSiteId = referral?.originSiteId ?? referral?.originSiteCode ?? movement.originEdId;
-      if (callerPlaceId !== undefined && caller.role !== "coordinator" && callerPlaceId !== originSiteId) {
+      if (caller.role !== "coordinator" && (callerPlaceId === undefined || callerPlaceId !== originSiteId)) {
         return reject(
           state,
           event,
@@ -6011,7 +6011,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot clear the blocker on a closed movement (${movement.closure.reason})`);
       }
-      if (movement.examRevoked || movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease) {
+      if (movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease) {
         return reject(state, event, "cannot clear statutory examination revoked blocker");
       }
       // Refused rather than accepted as a no-op, the same discipline as the flag pair above: a
@@ -9898,6 +9898,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         acceptedUnitId: undefined,
         acceptedAt: undefined,
         admissionId: undefined,
+        allocatedBed: undefined,
         pullExpiresAt: undefined,
         waitlistedUnitIds: undefined,
         referredUnitIds: [],

@@ -2552,7 +2552,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   }
 
   function confirmWithdrawReferral(movementId: string) {
-    dispatch({ type: "WITHDRAW_REFERRAL", role: "ed", now, movementId });
+    dispatch({ type: "WITHDRAW_REFERRAL", role: "ed", now, movementId, actingPlaceId: thisEdId });
     setWithdrawOpenFor(undefined);
   }
 

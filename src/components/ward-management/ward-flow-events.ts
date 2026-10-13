@@ -1663,6 +1663,7 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       movementId: string;
+      actingPlaceId?: string;
     }
   | {
       /**

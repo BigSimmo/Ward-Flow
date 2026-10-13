@@ -580,7 +580,7 @@ export function transportLeg(transport: TransportJob | undefined): TransportLeg 
  */
 export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
   const rawAvailable = Math.min(unit.allocatable.value, unit.empty.value);
-  const held = Math.max(unit.empty.value - rawAvailable, 0);
+  let held = Math.max(unit.empty.value - rawAvailable, 0);
   const notEmpty = Math.max(unit.beds - unit.empty.value, 0);
   // Owner ruling 2026-09-25: out-of-service beds are not recorded anywhere in the model
   // (`Unit.blocked` is a typed count, not a record), so none is ever subtracted here and screens
@@ -594,6 +594,7 @@ export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
 
   let available = Math.min(rawAvailable, Math.max(0, unit.beds - occupied - held));
   if (unit.isClosed || unit.beds === 0) {
+    held += available;
     available = 0;
   }
 
