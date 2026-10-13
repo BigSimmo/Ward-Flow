@@ -90,6 +90,19 @@ describe("header: no light flash on load", () => {
     expect(arms.length).toBeGreaterThan(0);
     for (const arm of arms) expect(arm).toBe(':has([data-wf-hero="band"]:not([data-band="off"]))');
   });
+
+  // Batch 5 (13 Oct 2026): the phone bar flashed light on slow loads, because only desktop had the
+  // pre-band arm. The phone ink face now takes it too, except once the bar has scrolled.
+  it("paints the phone bar ink before it has its own data-band, but not once it has scrolled", () => {
+    const css = strip(readFileSync("src/components/ward-management/shell/ward-bar.module.css", "utf8"));
+    // The arm that skips a scrolled bar is the phone one; desktop has no data-scrolled face.
+    const inkRule =
+      /\.bar\.bar:is\(\s*\[data-band="ink"\],\s*:where\(([^{]*:not\(\[data-band\]\):not\(\[data-scrolled\]\))\s*\)\s*\)\s*\{[^}]*background:\s*var\(--wf-hero-1\)/u.exec(
+        css,
+      );
+    expect(inkRule, "the phone ink face has no pre-band arm").not.toBeNull();
+    expect(inkRule![1]).toContain(':has([data-wf-hero="band"]:not([data-band="off"]))');
+  });
 });
 
 describe("Governance: the server band sits where the measure will put it", () => {
