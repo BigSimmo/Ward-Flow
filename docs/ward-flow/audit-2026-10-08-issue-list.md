@@ -2,6 +2,8 @@
 
 Every bug and issue found in the core-engine review and the four follow-up area reviews, ranked. Synthetic data only. Five P1 items are fixed, each with a regression test in `tests/ward-review-2026-10-08-fixes.test.ts`; S2-12 is fixed with A2-2. Details, scenarios and evidence for each ID are in [`audit-2026-10-08-core-engine-review.md`](audit-2026-10-08-core-engine-review.md).
 
+> **Re-triaged on 13 October 2026** by complexity and risk, with the items fixed in PRs #256 and #257 marked: see [`audit-2026-10-13-issue-triage.md`](audit-2026-10-13-issue-triage.md). The list below is the 8 October record.
+
 **88 issues:** P1 13, P2 28, P3 31, P4 16. S2-12 is merged into A2-2.
 
 **Evidence levels.** _Reproduced_: replayed against the real reducer (slices 1–2 by the verification file; area items by the area reviewer). _Script-confirmed_: checked by running the code. _Code-confirmed_: plainly visible in the code. _Unverified_: found by one reviewer reading the code, not yet checked. Reproduced: 28; Script-confirmed: 7; Code-confirmed: 7; Unverified: 46.

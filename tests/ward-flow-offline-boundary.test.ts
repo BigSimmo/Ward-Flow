@@ -32,7 +32,8 @@ function importsAndCalls(file: string): { imports: string[]; networkCalls: strin
     }
     if (
       ts.isCallExpression(node) &&
-      ((ts.isIdentifier(node.expression) && node.expression.text === "fetch") ||
+      ((/\bfetch\b/u.test(node.expression.getText(source)) &&
+        (ts.isIdentifier(node.expression) || ts.isParenthesizedExpression(node.expression))) ||
         (ts.isPropertyAccessExpression(node.expression) &&
           ["send", "open"].includes(node.expression.name.text) &&
           ts.isIdentifier(node.expression.expression) &&
@@ -46,7 +47,7 @@ function importsAndCalls(file: string): { imports: string[]; networkCalls: strin
   return { imports, networkCalls };
 }
 
-describe("Ward Flow's database-free runtime boundary", () => {
+describe("Ward Flow's isolated demo and shared-adapter boundary", () => {
   it("matches the exact route subtree and exposes one trusted request marker", () => {
     expect(WARD_FLOW_PATH_PREFIX).toBe("/mockups/ward-flow");
     expect(WARD_FLOW_OFFLINE_HEADER).toBe("x-ward-flow-offline");
@@ -56,19 +57,30 @@ describe("Ward Flow's database-free runtime boundary", () => {
     expect(isWardFlowPath("/documents")).toBe(false);
   });
 
-  it("contains no database/provider import and makes no network call", () => {
+  it("confines provider imports and network calls to the exact shared adapters", () => {
     const violations: string[] = [];
     const files = sourceFiles();
     expect(files.length).toBeGreaterThan(50);
 
     for (const file of files) {
+      const relative = file.replaceAll("\\", "/").replace("src/components/ward-management/", "");
+      const allowedImports: Record<string, string> = {
+        "ward-shared-access.tsx": "./use-ward-supabase-shared",
+        "use-ward-supabase-shared.ts": "./ward-supabase-auth",
+        "ward-shared-client.ts": "./ward-supabase-auth",
+      };
       const { imports, networkCalls } = importsAndCalls(file);
       for (const specifier of imports) {
-        if (/supabase|site-content|clinical-registry|database/iu.test(specifier)) {
+        if (
+          /site-content|clinical-registry|database/iu.test(specifier) ||
+          (/supabase/iu.test(specifier) && allowedImports[relative] !== specifier)
+        ) {
           violations.push(`${file} imports ${specifier}`);
         }
       }
-      for (const call of networkCalls) violations.push(`${file} calls ${call}`);
+      if (!["ward-supabase-auth.ts", "ward-shared-client.ts"].includes(relative)) {
+        for (const call of networkCalls) violations.push(`${file} calls ${call}`);
+      }
     }
 
     expect(violations).toEqual([]);

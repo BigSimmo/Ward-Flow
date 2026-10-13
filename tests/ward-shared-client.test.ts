@@ -7,6 +7,7 @@ import {
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
+import { WardAuthError } from "../src/components/ward-management/ward-supabase-auth";
 
 const state = JSON.parse(JSON.stringify(seedWardFlowStateAt(0))) as SharedSnapshot["payload"]["state"];
 const snapshot = (revision: number): SharedSnapshot => ({
@@ -240,4 +241,63 @@ describe("phone alert calls", () => {
     await expect(failing.pushSubscribe({ endpoint })).rejects.toThrow();
     await expect(failing.pushUnsubscribe(endpoint)).rejects.toThrow();
   });
+});
+
+it("aborts disposed requests and suppresses late snapshots", async () => {
+  let finish!: (response: Response) => void;
+  let signal: AbortSignal | null | undefined;
+  const changed = vi.fn();
+  const client = new SharedWorkspaceClient({
+    baseUrl: "https://example.test",
+    token: async () => "token",
+    changed,
+    fetch: async (_url, init) => {
+      signal = init?.signal;
+      return new Promise((r) => {
+        finish = r;
+      });
+    },
+  });
+  const pending = client.refresh();
+  await vi.waitFor(() => expect(finish).toBeDefined());
+  client.dispose();
+  expect(signal?.aborted).toBe(true);
+  finish(Response.json({ snapshot: snapshot(1) }));
+  await pending;
+  expect(changed).not.toHaveBeenCalled();
+});
+
+it("drops an uncertain command and queued actions when token refresh detects an account change", async () => {
+  let changedAccount = false;
+  let view: SharedView | undefined;
+  const requests: string[] = [];
+  const client = new SharedWorkspaceClient({
+    baseUrl: "https://example.test",
+    token: async () => {
+      if (changedAccount) throw new WardAuthError("session", "The signed-in account changed. Sign in again.");
+      return "synthetic-token";
+    },
+    changed: (next) => {
+      view = next;
+    },
+    fetch: async (_url, init) => {
+      if (!init?.body) return Response.json({ snapshot: snapshot(1) });
+      requests.push(String(init.body));
+      throw new Error("Synthetic lost save response");
+    },
+  });
+  await client.refresh();
+  client.dispatch(event);
+  client.dispatch(event);
+  await vi.waitFor(() => expect(view?.status).toBe("unavailable"));
+  changedAccount = true;
+  await client.retry();
+  expect(view?.status).toBe("not-authorised");
+  expect(view?.snapshot).toBeNull();
+  expect(view?.eventLog).toEqual([]);
+  changedAccount = false;
+  await client.retry();
+  client.dispatch(event);
+  expect(requests).toHaveLength(1);
+  client.dispose();
 });
