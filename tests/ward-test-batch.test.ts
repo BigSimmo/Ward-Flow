@@ -127,7 +127,7 @@ describe("evidence safety", () => {
       root: realpathSync(root),
       scope: "focused batch; not full repository acceptance",
       batch: { tests },
-      summary: { files: 1, tests: 1, passed: 1, skipped: 0 },
+      summary: { files: 1, tests: 1, passed: 1, skipped: 0, todo: 0 },
       status: "passed",
       identity: "same",
       artifacts: {
@@ -267,6 +267,42 @@ describe("evidence safety", () => {
       testResults: [{ name: path.join(root, "tests/one.test.ts"), assertionResults: [{ status: "passed" }] }],
     };
     expect(() => verifyTestReport(report, ["tests/one.test.ts"], root)).toThrow("observed assertions");
+  });
+  it("reports partially TODO files honestly without treating TODO cases as passed", () => {
+    const root = fixture();
+    const report = {
+      success: true,
+      numFailedTests: 0,
+      numFailedTestSuites: 0,
+      numTotalTests: 2,
+      numPassedTests: 1,
+      numPendingTests: 0,
+      numTodoTests: 1,
+      testResults: [
+        { name: path.join(root, "tests/one.test.ts"), assertionResults: [{ status: "passed" }, { status: "todo" }] },
+      ],
+    };
+    expect(verifyTestReport(report, ["tests/one.test.ts"], root)).toMatchObject({ passed: 1, skipped: 0, todo: 1 });
+    expect(() => verifyTestReport({ ...report, numTodoTests: -1 }, ["tests/one.test.ts"], root)).toThrow();
+  });
+  it("refuses wholly TODO selected files beside a passing file", () => {
+    const root = fixture();
+    const report = {
+      success: true,
+      numFailedTests: 0,
+      numFailedTestSuites: 0,
+      numTotalTests: 2,
+      numPassedTests: 1,
+      numPendingTests: 0,
+      numTodoTests: 1,
+      testResults: [
+        { name: path.join(root, "tests/one.test.ts"), assertionResults: [{ status: "passed" }] },
+        { name: path.join(root, "tests/two.test.ts"), assertionResults: [{ status: "todo" }] },
+      ],
+    };
+    expect(() => verifyTestReport(report, ["tests/one.test.ts", "tests/two.test.ts"], root)).toThrow(
+      "Every selected file",
+    );
   });
   it("routes both focused and guarded batches through current normal admission", () => {
     const source = readFileSync(path.resolve("scripts/ward-flow/test-batch.mjs"), "utf8");

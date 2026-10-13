@@ -42,7 +42,8 @@ Every run produces separate log, JSON test report and result files. The runner
 requires a nonempty successful report containing exactly the selected files,
 with at least one passing assertion in every selected file. A wholly skipped
 file cannot become passing evidence beside another passing file. Partial skips
-remain explicitly reported, and the test counts must reconcile.
+remain explicitly reported. TODO cases have their own count, remain separate
+from passing and skipped assertions, and must reconcile with the actual report.
 Failures, deadlines, launch errors and inputs changed during a run never count as
 a valid pass. The deadline includes waiting for admission; it does not shorten
 individual test timeouts. Unknown child termination remains an explicit failure;
@@ -59,6 +60,11 @@ and a summary matching the revalidated test report. Unbound or historical receip
 without these fields are not reused. Missing, malformed, directory, alternate
 stream or linked artifacts cause a fresh run instead of a crash or false pass.
 CI never reuses a local result.
+
+The current normal selector conservatively chooses wide admission for the
+runner's explicit `--allowOnly=false` flag. A small batch can therefore wait on
+the existing wide lease or recovery exclusion. Keep the flag and the normal
+admission policy intact; a deadline during that wait is failed evidence.
 Full dependency hashing can cost more than a tiny test: leave reuse off for short
 checks. Declare ignored fixtures or artifact inputs in `extraInputs`; do not use
 reuse when any relevant input is unknown or externally mutable. Standard dotenv

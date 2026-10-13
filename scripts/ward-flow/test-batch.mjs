@@ -119,7 +119,9 @@ function requirePassingReport(report) {
   boundedInteger(report.numTotalTests, 1, Number.MAX_SAFE_INTEGER, "Total test cases");
   boundedInteger(report.numPassedTests, 1, report.numTotalTests, "Passed test cases");
   boundedInteger(report.numPendingTests, 0, report.numTotalTests, "Skipped test cases");
-  if (report.numPassedTests + report.numPendingTests !== report.numTotalTests)
+  const todo = report.numTodoTests === undefined ? 0 : report.numTodoTests;
+  boundedInteger(todo, 0, report.numTotalTests, "TODO test cases");
+  if (report.numPassedTests + report.numPendingTests + todo !== report.numTotalTests)
     throw new Error("Test case counts do not reconcile");
 }
 
@@ -138,10 +140,12 @@ export function verifyTestReport(report, tests, root = ROOT) {
   }
   const assertions = report.testResults.flatMap((result) => result.assertionResults);
   const passed = assertions.filter((assertion) => assertion.status === "passed").length;
+  const todo = assertions.filter((assertion) => assertion.status === "todo").length;
   if (
     assertions.length !== report.numTotalTests ||
     passed !== report.numPassedTests ||
-    assertions.length - passed !== report.numPendingTests
+    todo !== (report.numTodoTests === undefined ? 0 : report.numTodoTests) ||
+    assertions.length - passed - todo !== report.numPendingTests
   )
     throw new Error("Reported counts differ from observed assertions");
   const actual = report.testResults.map((result) => path.relative(root, result.name).replaceAll("\\", "/")).sort();
@@ -152,6 +156,7 @@ export function verifyTestReport(report, tests, root = ROOT) {
     tests: report.numTotalTests,
     passed: report.numPassedTests,
     skipped: report.numPendingTests,
+    todo,
   };
 }
 
