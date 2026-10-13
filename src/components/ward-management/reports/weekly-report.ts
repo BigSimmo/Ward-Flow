@@ -123,20 +123,20 @@ function tally(reasons: string[]): ReasonCount[] {
 }
 
 /**
- * The instant the earliest expected discharge date still held was set, when that is after the week
- * began. Earlier dates are not kept, so a week before it cannot be measured in full. A date with no
+ * The instant the latest expected discharge date still held was set, when that is after the week
+ * began: every stay is measured in full only from then. Earlier dates are not kept. A date with no
  * set time is treated as always known.
  */
 function dischargeDatesRecordedFrom(admissions: readonly Admission[], week: ReportWeek): Instant | null {
-  let earliest = Infinity;
+  let latest = -Infinity;
   for (const admission of admissions) {
     if (admission.expectedDischargeAt === null || !Number.isFinite(admission.expectedDischargeAt)) continue;
     const setAt = admission.dischargeDateSetAt;
-    if (typeof setAt !== "number" || !Number.isFinite(setAt)) return null;
-    earliest = Math.min(earliest, setAt);
+    if (typeof setAt !== "number" || !Number.isFinite(setAt)) continue;
+    latest = Math.max(latest, setAt);
   }
-  if (!Number.isFinite(earliest)) return null;
-  return earliest > week.start ? (earliest as Instant) : null;
+  if (!Number.isFinite(latest)) return null;
+  return latest > week.start ? (latest as Instant) : null;
 }
 
 export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWeek): WeeklyReport {

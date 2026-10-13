@@ -203,7 +203,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
     case "hold":
       return { kind: "release", label: "Release bed" };
     case "transport":
-      return { kind: "link", label: "Chase transport", href: "/mockups/ward-flow/transport" };
+      return { kind: "link", label: "Chase transport", href: "/mockups/ward-flow/movements" };
     case "planned":
       return { kind: "link", label: "Open bookings", href: item.href ?? "/mockups/ward-flow/capacity" };
     case "notify":
@@ -216,7 +216,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
         return { kind: "link", label: "Open referral", href: "/mockups/ward-flow/referrals" };
       }
       if (item.id.includes("transport-booked")) {
-        return { kind: "link", label: "Book transport", href: "/mockups/ward-flow/transport" };
+        return { kind: "link", label: "Book transport", href: "/mockups/ward-flow/movements" };
       }
       return { kind: "link", label: "Open patient", href: patientHref };
   }

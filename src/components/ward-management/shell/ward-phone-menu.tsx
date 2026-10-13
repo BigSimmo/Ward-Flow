@@ -14,7 +14,6 @@ import {
   Plus,
   Search,
   Settings,
-  Truck,
   UserPlus,
   Wrench,
 } from "lucide-react";
@@ -112,14 +111,14 @@ const OVERDUE_NEED_IDS = ["delays", "discharges"] as const;
  * the officer's job list, which cannot start a booking.
  */
 /*
- * shell-5 (13 Oct 2026): the Create items match the + button's name. Transport and Add patient join;
+ * shell-5 (13 Oct 2026): the Create items match the + button's name. Add patient joins (transport stays
+ * out until a phone booking entry exists, per A4-10);
  * a delay is logged on its patient, so the row says it starts by choosing them. `href` names a page
  * that is not a Menu entry.
  */
 const CREATE_LINKS: readonly { id: string; label: string; meta: string; icon: LucideIcon; href?: string }[] = [
   { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
   { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
-  { id: "officer", label: "Book transport", meta: "Transport jobs and bookings", icon: Truck },
   {
     id: "add-patient",
     label: "Add patient",
@@ -413,7 +412,7 @@ function PhoneDock({
         <button
           type="button"
           className={styles.rise}
-          aria-label="Create: new referral, delay, bed, transport or patient"
+          aria-label="Create: new referral, delay, bed or patient"
           aria-haspopup="dialog"
           data-testid="ward-phone-create"
           onClick={onCreate}
