@@ -413,18 +413,6 @@ const useSplitDetailLayout = createBrowserStore<boolean>(
   false,
 );
 
-/** v10 phone: its own design below 48rem. Desktop is the server value, so tests and SSR see it. */
-const PHONE_MEDIA_QUERY = "(max-width: 48rem)";
-const usePhoneLayout = createBrowserStore<boolean>(
-  (onStoreChange) => {
-    if (typeof window.matchMedia !== "function") return () => {};
-    const media = window.matchMedia(PHONE_MEDIA_QUERY);
-    media.addEventListener("change", onStoreChange);
-    return () => media.removeEventListener("change", onStoreChange);
-  },
-  () => (typeof window.matchMedia === "function" ? window.matchMedia(PHONE_MEDIA_QUERY).matches : false),
-  false,
-);
 
 type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "community" | "refused";
 const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed", "community", "refused"];
@@ -494,7 +482,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   // "New referral" and rail) before anyone had chosen anything (f997ac75a1 + 81553692fb).
   const [chosenReferralId, setSelectedReferralId] = useState<string | null | undefined>(undefined);
   const splitDetailLayout = useSplitDetailLayout();
-  const phoneLayout = usePhoneLayout();
+  // A1-17: the shared phone query, so the server's phone guess draws the phone layout first.
+  const phoneLayout = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<"axis" | "beds" | null>(null);
   const selectedReferralId =
     chosenReferralId === undefined

@@ -68,9 +68,31 @@ const WORD: Record<LiveState, string> = {
 /**
  * Live chip (rule 9: live and honest). Live pulses once as it turns live (none under reduced motion),
  * Paused shows a ring, Syncing a small spinner, Stale an amber circle with "as at HH:MM", and
- * Offline a triangle. A `role="status"` line announces state changes only, never the ticking age.
+ * Offline a grey dot (a live chip turns Offline by itself while the browser has no connection). A `role="status"` line announces state changes only, never the ticking age.
  */
-export function LiveChip({ state, age, asAt, onHero = false, onTogglePause, className }: LiveChipProps) {
+function subscribeOnline(onChange: () => void) {
+  window.addEventListener("online", onChange);
+  window.addEventListener("offline", onChange);
+  return () => {
+    window.removeEventListener("online", onChange);
+    window.removeEventListener("offline", onChange);
+  };
+}
+
+/** The browser's own connection flag; online on the server and at hydration. */
+function useBrowserOnline(): boolean {
+  return useSyncExternalStore(
+    subscribeOnline,
+    () => navigator.onLine !== false,
+    () => true,
+  );
+}
+
+export function LiveChip({ state: requested, age, asAt, onHero = false, onTogglePause, className }: LiveChipProps) {
+  // A1-18 (audit 13 Oct 2026): a chip asked to read live says Offline while the browser has no
+  // connection, so no page shows a live dot over a session that is not updating.
+  const online = useBrowserOnline();
+  const state: LiveState = requested === "live" && !online ? "offline" : requested;
   const word = WORD[state];
   const asAtText = state === "stale" && asAt != null ? `as at ${clk(asAt)}` : null;
   const paused = state === "paused";
@@ -85,7 +107,8 @@ export function LiveChip({ state, age, asAt, onHero = false, onTogglePause, clas
       {state === "paused" ? <span className={styles.ring} /> : null}
       {state === "syncing" ? <span className={styles.spin} /> : null}
       {state === "stale" ? <StatusGlyph tone="warning" size={9} /> : null}
-      {state === "offline" ? <StatusGlyph tone="danger" size={9} /> : null}
+      {/* A1-18: offline is not an act-now state, so its dot is neutral grey, not red. */}
+      {state === "offline" ? <StatusGlyph tone="neutral" size={9} /> : null}
       {word}
       {state === "live" && shownAge != null ? (
         <span className={cx(styles.u, phoneClock && styles.clk)}>{shownAge}</span>
