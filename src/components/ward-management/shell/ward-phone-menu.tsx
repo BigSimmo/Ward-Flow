@@ -14,7 +14,6 @@ import {
   Plus,
   Search,
   Settings,
-  Truck,
   Wrench,
 } from "lucide-react";
 
@@ -100,9 +99,12 @@ const DOCK_PLACES: Record<WardChromeRole, readonly [DockPlace, DockPlace]> = {
 /** Pages whose count joins Needs you, only while it is urgent (overdue). */
 const OVERDUE_NEED_IDS = ["delays", "discharges"] as const;
 
-/** What the + starts. New referral is real; the rest open the page where that work is done. */
+/**
+ * What the + starts. New referral is real; the rest open the page where that work is done.
+ * Book transport is left out (audit round 2, A4-10) until a phone booking entry is wired: it opened
+ * the officer's job list, which cannot start a booking.
+ */
 const CREATE_LINKS = [
-  { id: "officer", label: "Book transport", meta: "For an accepted patient", icon: Truck },
   { id: "delays", label: "Log a delay", meta: "Reason and who it waits on", icon: Clock3 },
   { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
 ] as const;
@@ -125,10 +127,10 @@ function countIn(counts: CountMap, id: string): WardNavCount | undefined {
 }
 
 /** What the menu lists, for this role and these counts. Pure, so the sheet only renders it. */
-function phoneMenuModel(role: WardChromeRole, counts: CountMap) {
+function phoneMenuModel(role: WardChromeRole, counts: CountMap, dockRole: WardChromeRole = role) {
   const entries = railEntries();
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
-  const dock = DOCK_PLACES[role].flatMap(([id, label]) => {
+  const dock = DOCK_PLACES[dockRole].flatMap(([id, label]) => {
     const entry = byId.get(id);
     return entry ? [{ entry, label }] : [];
   });
@@ -742,7 +744,7 @@ export function WardPhoneMenu({
   onNewReferral,
 }: WardPhoneMenuProps) {
   const pathname = usePathname() ?? "";
-  const { counts, shellRole } = useWardNavCounts();
+  const { counts, shellRole, role: routeRole } = useWardNavCounts();
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -760,7 +762,10 @@ export function WardPhoneMenu({
   );
 
   // One order for the signed-in person (device audit, 11 Oct 2026), as the desktop rail.
-  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts);
+  // The officer's phone is the officer's own (audit round 2, A4-15): on the officer route the dock
+  // holds Transport and Movements, not the coordinator's Home and Referrals.
+  const dockRole = routeRole === "officer" ? routeRole : shellRole;
+  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts, dockRole);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
   const flow = useWardFlow();
   const actNowCount = useMemo(

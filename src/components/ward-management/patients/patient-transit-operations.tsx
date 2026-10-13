@@ -848,7 +848,13 @@ export function PatientTransitOperations({
             <Truck size={18} aria-hidden="true" />
             <span>Transport</span>
             <strong>{activeJob ? job.provider : noTransport ? "Not required" : "Awaiting booking"}</strong>
-            <small>{activeJob ? `CAD ${job.cadNumber ?? "not recorded"}` : "Sending team records booking"}</small>
+            <small>
+              {activeJob
+                ? /^CAD/i.test(job.cadNumber ?? "")
+                  ? job.cadNumber
+                  : `CAD ${job.cadNumber ?? "not recorded"}`
+                : "Sending team records booking"}
+            </small>
           </div>
         </div>
       ) : null}

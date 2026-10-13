@@ -169,7 +169,7 @@ describe("RAISE_REFERRAL refuses a second journey while an earlier one is still 
       { type: "TRANSPORT_ACCEPTED", role: "officer" },
       { type: "TRANSPORT_EN_ROUTE", role: "officer" },
       { type: "PATIENT_COLLECTED", role: "officer" },
-      { type: "PATIENT_ARRIVED", role: "officer" },
+      { type: "PATIENT_ARRIVED", role: "coordinator" },
     ] as const) {
       state = wardFlowReducer(state, { ...event, now: NOW, movementId: firstMovement.id } as never);
     }

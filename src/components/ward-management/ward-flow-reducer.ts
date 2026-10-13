@@ -5475,6 +5475,27 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const unit = findUnit(state, movement.acceptedUnitId);
       if (!unit) return reject(state, event, `no unit found for id ${movement.acceptedUnitId}`);
 
+      /*
+       * Josh, 13 Oct 2026 (audit round 2, A4-16): the receiving ward closes the transfer on arrival
+       * and handover. The officer's Delivered ends the transport leg only: it records
+       * `transport.arrivedAt` and leaves the movement open at `moving`, with no bed, stay or closure
+       * written. The ward (or the coordinator) then confirms arrival with this same event, which
+       * completes the movement and keeps the officer's delivery time on the job.
+       */
+      if (event.role === "officer") {
+        if (movement.transport?.arrivedAt !== undefined) {
+          return reject(
+            state,
+            event,
+            `transport for movement ${movement.id} was already delivered; the receiving ward confirms arrival`,
+          );
+        }
+        return replaceMovement(state, movement.id, {
+          ...movement,
+          transport: movement.transport && { ...movement.transport, arrivedAt: event.now },
+        });
+      }
+
       const patientId =
         movement.patientId ??
         state.referrals.find((r) => r.id === movement.referralId)?.patientId ??
@@ -5588,7 +5609,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         transport:
           movement.transport === undefined || noTransportNeeded
             ? movement.transport
-            : { ...movement.transport, arrivedAt: event.now },
+            : { ...movement.transport, arrivedAt: movement.transport.arrivedAt ?? event.now },
         closure: {
           at: event.now,
           outcome: "arrived",
