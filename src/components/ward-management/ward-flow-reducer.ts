@@ -3685,6 +3685,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
               {
                 destination: { kind: "community_team", teamName: event.team },
                 state: "queued",
+                referredAt: event.now,
               },
             ],
             transportNeeded: false,
@@ -7294,7 +7295,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         patientId: event.patientId,
         ageBand: event.ageBand,
         // Every destination starts queued: the referrer chose them, nobody has answered yet.
-        destinations: event.destinations.map((destination) => ({ destination, state: "queued" as const })),
+        // Each addressing records its own referral moment (the silence reminder reads it per ward).
+        destinations: event.destinations.map((destination) => ({
+          destination,
+          state: "queued" as const,
+          referredAt: event.now,
+        })),
         homeRegion: event.homeRegion,
         suburb: event.suburb,
         source: event.source,
