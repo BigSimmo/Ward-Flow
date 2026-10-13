@@ -36,7 +36,6 @@ import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits
 import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
 
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
@@ -83,7 +82,7 @@ export function StatisticsEdScreen({
   movements?: Movement[];
 }) {
   const live = useStatisticsLive();
-  const { movements: liveMovements, patients, referrals, units } = live.state;
+  const { movements: liveMovements, units } = live.state;
   const isPhone = useIsPhone();
   const now = live.now;
   const movements = movementsOverride ?? liveMovements;
@@ -128,8 +127,9 @@ export function StatisticsEdScreen({
   const { onTheList, urgent, unplaced, waitingMovements, over24h, over48h, longestWait, allDepartmentMovements } =
     edWaitFigures(movements, department.id, now);
   const bands = edWaitBands(movements, department.id, now);
-  const nameOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals }).formalName;
-  const umrnOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals }).umrn;
+  // Statistics shows record ids only, no names or UMRN, on phone and desktop (Josh, 13 Oct 2026;
+  // D-39). Each row links to the live movement, where the name is shown.
+  const nameOf = (movement: Movement) => movement.id;
 
   const sortedWaits = [...waitingMovements].map((entry) => entry.waitMinutes).sort((a, b) => a - b);
   const middle = Math.floor(sortedWaits.length / 2);
@@ -284,7 +284,6 @@ export function StatisticsEdScreen({
         <EdPhone
           waiting={waitingMovements}
           nameOf={nameOf}
-          umrnOf={umrnOf}
           wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Ward accepted"}
           next={nextToCross[0] ?? null}
         />
@@ -302,7 +301,6 @@ export function StatisticsEdScreen({
                 onTheList={onTheList}
                 longestName={longestWait ? nameOf(longestWait.movement) : ""}
                 longestText={longestWait ? splitDuration(longestWait.waitMinutes) : ""}
-                umrnOf={umrnOf}
               />
             </Follow>
             <FlushStack>
@@ -537,13 +535,11 @@ type EdPhoneFilter = "all" | "unplaced" | "long";
 function EdPhone({
   waiting,
   nameOf,
-  umrnOf,
   wardName,
   next,
 }: {
   waiting: readonly { movement: Movement; waitMinutes: number }[];
   nameOf: (movement: Movement) => string;
-  umrnOf: (movement: Movement) => string;
   wardName: (unitId: string) => string;
   next: { movement: Movement; waitMinutes: number } | null;
 }) {
@@ -573,7 +569,7 @@ function EdPhone({
           <span className={phone.nextText}>
             <b>{`Next to cross ${longHours}h: ${nameOf(next.movement)}`}</b>
             <span>
-              <b>{splitDuration(LONG_WAIT_MINUTES - next.waitMinutes)}</b> left · {umrnOf(next.movement)}
+              <b>{splitDuration(LONG_WAIT_MINUTES - next.waitMinutes)}</b> left
             </span>
           </span>
         </div>
@@ -618,8 +614,6 @@ function EdPhone({
                     name={nameOf(movement)}
                     meta={
                       <span className={phone.dotName}>
-                        <span className={phone.mono}>{umrnOf(movement)}</span>
-                        {" · "}
                         <StatusGlyph tone={movement.acceptedUnitId === undefined ? "neutral" : "success"} size={9} />
                         {movement.acceptedUnitId === undefined ? "No ward yet" : wardName(movement.acceptedUnitId)}
                       </span>
@@ -696,7 +690,6 @@ function Waits({
   onTheList,
   longestName,
   longestText,
-  umrnOf,
 }: {
   waiting: readonly { movement: Movement; waitMinutes: number }[];
   nameOf: (movement: Movement) => string;
@@ -705,7 +698,6 @@ function Waits({
   onTheList: number;
   longestName: string;
   longestText: string;
-  umrnOf: (movement: Movement) => string;
 }) {
   const [filter, setFilter] = useState<WaitFilter>("all");
   const [sort, setSort] = useState<"longest" | "name">("longest");
@@ -829,7 +821,6 @@ function Waits({
                             <Link href={movementHref(movement.id)} className={styles.rowLink}>
                               {nameOf(movement)}
                             </Link>
-                            <span className={ed.umrn}>{umrnOf(movement)}</span>
                           </span>
                         </th>
                         <td>

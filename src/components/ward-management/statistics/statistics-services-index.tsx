@@ -22,6 +22,7 @@ import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
+import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 
 import { LONG_WAIT_HOURS, edWaitFigures } from "./statistics-ed-waits";
@@ -77,7 +78,9 @@ export function StatisticsServicesIndexScreen() {
     const serviceUnits = units.filter((unit) => siteCodes.has(unit.siteCode));
     const rows = serviceUnits.map((unit) => {
       const states = bedStates(unit, admissions, bedReleases, leaveBeds);
-      return { unit, states, rate: unit.beds > 0 ? Math.round((states.occupied / unit.beds) * 100) : 0 };
+      // The one occupancy count (Occupied + Pulled, ward-occupancy.ts), as Overview and Wards read it.
+      const inUse = wardBedsInUse(unit, admissions, bedReleases);
+      return { unit, states, inUse, rate: unit.beds > 0 ? Math.round((inUse / unit.beds) * 100) : 0 };
     });
     const sum = (pick: (row: (typeof rows)[number]) => number) => rows.reduce((total, row) => total + pick(row), 0);
     const waits = departments
@@ -85,12 +88,14 @@ export function StatisticsServicesIndexScreen() {
       .map((department) => edWaitFigures(movements, department.id, now));
     const beds = sum((row) => row.unit.beds);
     const occupied = sum((row) => row.states.occupied);
+    const inUse = sum((row) => row.inUse);
     return {
       service,
       wards: serviceUnits.length,
       beds,
       occupied,
-      share: beds > 0 ? occupied / beds : 0,
+      inUse,
+      share: beds > 0 ? inUse / beds : 0,
       ready: sum((row) => row.states.ready),
       pulled: sum((row) => row.states.pulled),
       closed: sum((row) => row.states.closed),
@@ -204,7 +209,7 @@ export function StatisticsServicesIndexScreen() {
                 meta={
                   entry.beds === 0
                     ? "No inpatient beds"
-                    : `${entry.occupied} of ${entry.beds} beds · ${entry.over === 0 ? "none" : entry.over} over ${BED_ALERT_THRESHOLD_PERCENT}%`
+                    : `${entry.inUse} of ${entry.beds} in use · ${entry.over === 0 ? "none" : entry.over} over ${BED_ALERT_THRESHOLD_PERCENT}%`
                 }
                 value={
                   <span className={phone.flagged}>
@@ -285,7 +290,7 @@ export function StatisticsServicesIndexScreen() {
                         <Donut value={entry.share} label={`${entry.service} occupancy`} />
                         <span className={index.svcText}>
                           <span className={index.svcBeds}>
-                            {entry.occupied} of {entry.beds} beds
+                            {entry.inUse} of {entry.beds} beds in use
                           </span>
                           <span className={index.svcLine}>
                             {entry.over > 0 ? (

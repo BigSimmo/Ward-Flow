@@ -87,7 +87,8 @@ export type WeeklyReport = {
     occupiedBedDays: number;
     /** Occupied bed days over available bed days, whole percent. `null` when no time was counted. */
     averagePercent: number | null;
-    now: { beds: number; occupied: number; pulled: number };
+    /** Right now. `inUse` is Occupied + Pulled, the one occupancy count every page prints. */
+    now: { beds: number; occupied: number; pulled: number; inUse: number };
   };
 };
 

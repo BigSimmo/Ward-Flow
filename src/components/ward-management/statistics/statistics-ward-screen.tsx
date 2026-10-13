@@ -49,7 +49,6 @@ import {
   STATISTICS_WARDS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -251,6 +250,7 @@ export function StatisticsWardScreen({
         figures: () => [
           ["Beds", unit.beds],
           ["Occupied", wardOccupancy.occupied],
+          ["In use (occupied or pulled)", wardOccupancy.inUse],
           ["Occupancy percent (occupied or pulled)", occupancyPct],
           ["Pulled, not arrived", wardOccupancy.pulled],
           ["Ready", capacity.available],
@@ -264,8 +264,8 @@ export function StatisticsWardScreen({
         stats: (
           <>
             <HeroStat
-              value={wardOccupancy.occupied}
-              label={`Occupied, ${occupancyPct}% in use`}
+              value={wardOccupancy.inUse}
+              label={`In use, ${occupancyPct}%`}
               tone={occupancyPct >= BED_ALERT_THRESHOLD_PERCENT ? "warning" : undefined}
             />
             <HeroStat value={capacity.available} label="Ready" />
@@ -277,7 +277,7 @@ export function StatisticsWardScreen({
         <>
           {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
               out; the export still carries it. */}
-          <HeroStat value={wardOccupancy.occupied} label={`Occupied, ${occupancyPct}% in use`} />
+          <HeroStat value={wardOccupancy.inUse} label={`In use, ${occupancyPct}%`} />
           <HeroStat
             value={wardOccupancy.pulled}
             label={
@@ -621,7 +621,6 @@ function WardPhone({
   dayZero: Date;
   leaveBeds: readonly { admissionId: string }[];
 }) {
-  const patientOf = usePatientOf();
   const [tab, setTab] = useState<"roster" | "discharges" | "blockers">("roster");
   const byStay = (a: Admission, b: Admission) => (stayDaysOf(b, now) ?? -1) - (stayDaysOf(a, now) ?? -1);
   const roster = [...current].sort(byStay);
@@ -687,7 +686,6 @@ function WardPhone({
           }
         >
           {shown.map((admission) => {
-            const person = patientOf(admission);
             const days = stayDaysOf(admission, now);
             const onLeave = leaveBeds.some((bed) => bed.admissionId === admission.id);
             const status = onLeave ? "On leave" : ADMISSION_STATE_LABELS[admission.state];
@@ -695,13 +693,8 @@ function WardPhone({
               <PhoneListRow
                 key={admission.id}
                 as="li"
-                name={person.formalName}
-                meta={
-                  <>
-                    <span className={phone.mono}>{person.umrn}</span>
-                    {` · ${tab === "blockers" && admission.blockReason ? admission.blockReason : status}`}
-                  </>
-                }
+                name={<span className={phone.mono}>{admission.id}</span>}
+                meta={tab === "blockers" && admission.blockReason ? admission.blockReason : status}
                 value={
                   days === null ? (
                     "none"

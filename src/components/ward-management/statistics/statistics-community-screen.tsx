@@ -24,7 +24,6 @@ import {
 } from "@/components/wf";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   admissionsWithNoCommunityTeam,
   communityHubLists,
@@ -487,7 +486,6 @@ function TeamPhone({
   followUp: { discharged: number; arranged: number; notArranged: number } | null;
   dueOutWeek: number;
 }) {
-  const patientOf = usePatientOf();
   const sorted = [...people].sort(
     (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),
   );
@@ -501,7 +499,6 @@ function TeamPhone({
         ) : (
           <PhoneList label="Referred to this team, in a bed now">
             {sorted.map((admission) => {
-              const person = patientOf(admission);
               const days =
                 admission.arrivedAt === null || admission.arrivedAt > now
                   ? null
@@ -510,13 +507,8 @@ function TeamPhone({
                 <PhoneListRow
                   key={admission.id}
                   as="li"
-                  name={person.formalName}
-                  meta={
-                    <>
-                      <span className={phone.mono}>{person.umrn}</span>
-                      {` · ${unitName(admission.unitId)}`}
-                    </>
-                  }
+                  name={admission.id}
+                  meta={unitName(admission.unitId)}
                   value={
                     days === null ? (
                       "none"

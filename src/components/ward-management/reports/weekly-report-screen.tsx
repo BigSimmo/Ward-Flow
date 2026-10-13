@@ -16,7 +16,6 @@ import {
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { edById } from "@/components/ward-management/ward-sites";
 import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
@@ -70,7 +69,6 @@ export function WeeklyReportScreen() {
   const { state, now, paused, togglePause } = useStatisticsLive();
   const { movements, referrals, admissions, patients, units, bedReleases, leaveBeds, configuration, dayZero } = state;
   const pickerId = useId();
-  const patientOf = usePatientOf();
   const [offset, setOffset] = useState<number>(0);
   const isPhone = useIsPhone();
 
@@ -237,7 +235,7 @@ export function WeeklyReportScreen() {
                 flush
                 facts={[
                   { id: "average", label: "Average in week", value: occupancyText, testId: "ward-weekly-occupancy" },
-                  { id: "now", label: "Occupied now", value: report.occupancy.now.occupied },
+                  { id: "now", label: "In use now", value: report.occupancy.now.inUse },
                 ]}
               />
             </PhoneCard>
@@ -247,13 +245,12 @@ export function WeeklyReportScreen() {
               ) : (
                 <PhoneList label={`ED waits ${phoneTargetText} in the week`}>
                   {report.edWaits.rows.map((row) => {
-                    const person = patientOf(row.movement);
                     return (
                       <PhoneListRow
                         key={row.movement.id}
                         as="li"
-                        name={person.formalName}
-                        meta={`${person.umrn} · ${edById(row.movement.originEdId)?.name ?? row.movement.originEdId}${row.stillWaiting ? " · still waiting" : ""}`}
+                        name={row.movement.id}
+                        meta={`${edById(row.movement.originEdId)?.name ?? row.movement.originEdId}${row.stillWaiting ? " · still waiting" : ""}`}
                         value={
                           <span className={phone.flagged}>
                             <StatusGlyph tone="warning" size={9} />
@@ -366,9 +363,9 @@ export function WeeklyReportScreen() {
                     <small>{report.occupancy.occupiedBedDays} occupied bed days</small>
                   </div>
                   <div className={styles.figure}>
-                    <dt>Occupied now</dt>
+                    <dt>In use now</dt>
                     <dd>
-                      {report.occupancy.now.occupied} of {report.occupancy.now.beds}
+                      {report.occupancy.now.inUse} of {report.occupancy.now.beds}
                     </dd>
                     <small>{report.occupancy.now.pulled} held for arrival</small>
                   </div>
@@ -389,7 +386,7 @@ export function WeeklyReportScreen() {
                     <caption className={styles.srOnly}>ED waits {targetText} in the week, synthetic</caption>
                     <thead>
                       <tr>
-                        <th scope="col">Patient</th>
+                        <th scope="col">Record</th>
                         <th scope="col">Emergency department</th>
                         <th scope="col">Opened</th>
                         <th scope="col" className={styles.num}>
@@ -401,7 +398,7 @@ export function WeeklyReportScreen() {
                     <tbody>
                       {report.edWaits.rows.map((row) => (
                         <tr key={row.movement.id}>
-                          <th scope="row">{patientOf(row.movement).displayName}</th>
+                          <th scope="row">{row.movement.id}</th>
                           <td>{edById(row.movement.originEdId)?.name ?? row.movement.originEdId}</td>
                           <td className={styles.time}>
                             {formatSheetMoment(row.movement.openedAt as Instant, dayZero)}
