@@ -883,6 +883,7 @@ export function CoordinatorScreen() {
               <div className={styles.side}>
                 <PriorityQueue
                   movements={queue}
+                  units={units}
                   referralQueue={referralQueue}
                   now={now}
                   selectedId={selectedMovementId}

@@ -1,7 +1,7 @@
 import { UserX } from "lucide-react";
 
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -46,7 +46,6 @@ export function absentOnOrder(source: AbsenceTaskSource): {
 }
 
 export function absenceInboxItems(source: AbsenceTaskSource, now: Instant): InboxItem[] {
-  void now;
   return absentOnOrder(source).map(({ leaveBed, admission }) => {
     const ward = source.units?.find((unit) => unit.id === leaveBed.unitId)?.name ?? "the ward";
     const patient = resolveSubjectPatient(admission, source).patient;
@@ -55,7 +54,7 @@ export function absenceInboxItems(source: AbsenceTaskSource, now: Instant): Inbo
       tone: "danger",
       icon: UserX,
       title: "Absent without leave on an order",
-      detail: `Missing from ${ward} since ${formatInstant(leaveBed.absentWithoutLeave.since)}, order stays in force`,
+      detail: `Missing from ${ward} since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}, order stays in force`,
       owner: "Nurse in charge",
       movementId: admission.movementId ?? "",
       ...(patient ? { href: patientHref(patient.id) } : {}),

@@ -1,4 +1,5 @@
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * ONE BED-HOLD RULE for every page that shows a pulled bed (audit A4-4, A4-1, A1-3, A1-4, A4-3;
@@ -12,7 +13,8 @@ import { splitDuration, type Instant } from "@/components/ward-management/ward-c
  *   Act now keeps to what genuinely needs doing now (alarm fatigue).
  * - `held`: more time than that left. Plain.
  */
-export const BED_HOLD_AT_RISK_MINUTES = 60;
+/** Josh's one-hour warning default, the same one the legal clocks use. */
+export const BED_HOLD_AT_RISK_MINUTES = DUE_SOON_URGENT_MINUTES;
 
 export type BedHoldState = "held" | "at-risk" | "lapsed";
 

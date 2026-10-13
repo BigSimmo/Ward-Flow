@@ -57,7 +57,7 @@ describe("an offer made from Home", () => {
   it("shows on the queue row with the ward and how long it has waited", () => {
     const { movementId, unitId } = offerFromHome();
     const mark = screen.getByTestId(`ward-queue-offered-${movementId}`);
-    expect(mark).toHaveTextContent(offeredToLabel([unitId]));
+    expect(mark).toHaveTextContent(offeredToLabel([unitId], seedWardFlowState().units));
     expect(mark).toHaveTextContent(/waiting \d/u);
   });
 

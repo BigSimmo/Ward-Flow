@@ -33,7 +33,7 @@ import {
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { allEmergencyDepartments, unitById } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -43,9 +43,9 @@ import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-
 import styles from "./home.module.css";
 
 /** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
-export function offeredToLabel(unitIds: readonly string[]): string {
+export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
   if (unitIds.length === 1) {
-    const name = unitById(unitIds[0]!)?.name;
+    const name = units.find((unit) => unit.id === unitIds[0])?.name;
     return `Offered to ${name ? name.split(" — ")[0] : "a ward"}`;
   }
   return `Offered to ${unitIds.length} wards`;
@@ -85,6 +85,8 @@ function isSoon(movement: Movement, now: Instant) {
 
 type PriorityQueueProps = {
   movements: Movement[];
+  /** Live units, to name the ward an offer went to (audit A1-14). */
+  units?: readonly { id: string; name: string }[];
   /**
    * Every referral this coordinator is still working, already filtered and ordered by
    * `referralQueueOrder` (`ward-referrals.ts`). Never re-filtered or re-sorted here. Optional only
@@ -153,6 +155,7 @@ export function PriorityQueue({
   rowCap,
   phone = false,
   pinnedIds,
+  units = [],
 }: PriorityQueueProps) {
   const [showAllRows, setShowAllRows] = useState(false);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
@@ -350,7 +353,7 @@ export function PriorityQueue({
                     {movement.referredUnitIds.length > 0 && !movement.acceptedUnitId && movement.stage !== "pulled" ? (
                       <span className={styles.queueMark} data-testid={`ward-queue-offered-${movement.id}`}>
                         <StatusGlyph tone="info" size={9} />
-                        {offeredToLabel(movement.referredUnitIds)}
+                        {offeredToLabel(movement.referredUnitIds, units)}
                         {movement.referredAt === undefined
                           ? ""
                           : ` · waiting ${durMinutes(Math.max(0, now - movement.referredAt))}`}
