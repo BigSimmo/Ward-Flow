@@ -614,7 +614,10 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
     });
     return {
       tone: "danger",
-      verdict: "Absent without leave",
+      // A3-13: absent without leave is for a person on an order; a voluntary patient is not back.
+      verdict: /^voluntary\b/i.test(legalValue(movement, patient).trim())
+        ? "Not back from leave"
+        : "Absent without leave",
       meter: { clear: rows.filter((r) => r.done).length, of: rows.length },
       meterWord: "steps done",
       meta: `Since ${clock(absence.since)}, owner nurse in charge`,
