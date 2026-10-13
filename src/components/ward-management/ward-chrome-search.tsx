@@ -18,7 +18,7 @@ import {
 
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 import { useDebouncedValue } from "./search/use-debounced-value";
-import { destinationUnit, stageCopy } from "@/components/ward-management/ward-derivations";
+import { buildActionInbox, destinationUnit, isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
@@ -104,6 +104,16 @@ export function WardChromeSearch({
   const debouncedQuery = useDebouncedValue(query, 120);
   const trimmed = query.trim();
   const debouncedTrimmed = debouncedQuery.trim();
+  const tasksInbox = useMemo(
+    () =>
+      buildActionInbox(
+        movements.filter(isOpen),
+        context?.now ?? 0,
+        units,
+        context?.plannedAdmissions ? { plannedAdmissions: context.plannedAdmissions } : undefined,
+      ),
+    [movements, units, context?.now, context?.plannedAdmissions],
+  );
   const searchPending = debouncedTrimmed !== trimmed;
   // Reset the highlighted option when the query changes, during render rather than in an
   // effect (react.dev: "Adjusting some state when a prop changes").
@@ -125,6 +135,7 @@ export function WardChromeSearch({
             referrals,
             limitPerGroup: MAX_RESULTS_PER_GROUP,
             plannedAdmissions: context?.plannedAdmissions,
+            precomputedTasks: tasksInbox,
           }),
     [debouncedTrimmed, patients, movements, units, referrals, context?.plannedAdmissions],
   );
