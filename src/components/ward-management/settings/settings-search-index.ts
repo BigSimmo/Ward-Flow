@@ -84,6 +84,13 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   { id: "clear-on-close", label: "Clear session on close", tab: "display", keywords: "privacy tab drafts" },
   { id: "shortcuts", label: "Shortcuts", tab: "display", keywords: "keyboard keys" },
   { id: "role", label: "Role", tab: "profile", keywords: "profile sign in account" },
+  // Audit settings-27: the desk drawer is findable here; choosing it opens the drawer.
+  {
+    id: "go-to-desk",
+    label: "Go to a desk",
+    tab: "profile",
+    keywords: "switch workstation role desk change view ward emergency department transport",
+  },
   { id: "service", label: "Service in view", tab: "profile", keywords: "default health service scope" },
   { id: "opens-on", label: "Opens on", tab: "profile", keywords: "start first screen home" },
   { id: "my-shift", label: "My shift", tab: "profile", keywords: "day evening night roster" },

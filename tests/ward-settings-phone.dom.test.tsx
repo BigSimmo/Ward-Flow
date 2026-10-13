@@ -61,7 +61,7 @@ describe("Settings: rule save answers with Undo in the wf toast", () => {
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent(String(ED_ACCESS_TARGET_RANGE_MINUTES.min));
 
     const region = screen.getByTestId("toast-region");
-    expect(region).toHaveTextContent("Rule saved and recorded.");
+    expect(region).toHaveTextContent(/ED target 24h to \d+h, saved and recorded\./);
     act(() => {
       fireEvent.click(within(region).getByRole("button", { name: "Undo" }));
     });
@@ -117,7 +117,7 @@ describe("Settings on a phone", () => {
     const bar = screen.getByRole("region", { name: "Unsaved rule changes" });
     fireEvent.click(within(bar).getByRole("button", { name: "Save 1 change" }));
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent(String(ED_ACCESS_TARGET_RANGE_MINUTES.min));
-    expect(screen.getByTestId("toast-region")).toHaveTextContent("Rule saved and recorded.");
+    expect(screen.getByTestId("toast-region")).toHaveTextContent(/ED target 24h to \d+h, saved and recorded\./);
   });
 
   // Audit settings-24: the five-column thresholds table is a desk job; the phone says so.

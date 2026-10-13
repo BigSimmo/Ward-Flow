@@ -169,6 +169,8 @@ export function AlertsPane({
                   >
                     Snooze 15m
                   </Button>
+                  {/* Audit settings-26: not wired, so it carries the Preview tag like every other. */}
+                  <PreviewTag />
                 </span>
               }
             />
@@ -515,7 +517,7 @@ export const HANDOVER_SHEET_SECTIONS = [
   "Handover signatures",
 ] as const;
 
-export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
+export function ProfilePane({ onPreview, onGoToDesk }: { onPreview: OnPreview; onGoToDesk: () => void }) {
   const service = useServiceScope();
   return (
     <>
@@ -526,6 +528,15 @@ export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
             <CardHead iconPlain id="profile-title" icon={UserRound} title="Profile" />
             <SettingRow setting="role" title="Role" sub="From sign-in once accounts exist">
               <span className={styles.readout}>{SETTINGS_DEMO_PROFILE.role}</span>
+              {/* Audit settings-27: the role row leads to the desk drawer, not a dead end. */}
+              <button
+                type="button"
+                className={buttonClass({ variant: "sec", size: "sm", className: styles.pill })}
+                onClick={onGoToDesk}
+                data-setting="go-to-desk"
+              >
+                Go to a desk
+              </button>
             </SettingRow>
             <SettingRow
               setting="service"

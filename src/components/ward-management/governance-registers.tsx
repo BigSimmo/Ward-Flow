@@ -141,7 +141,7 @@ export function GovernanceOverridesRegisterPanel({
       <CardBody>
         {sessionCount !== undefined ? (
           <p className={thirdEdition.quiet} data-testid="ward-governance-overrides-session">
-            {sessionOverrideSentence(sessionCount)}
+            {sessionOverrideSentence(sessionCount)} This register lists overrides saved on a referral.
           </p>
         ) : null}
         <OverrideRegister entries={entries} units={units} now={now} />
@@ -174,8 +174,8 @@ export function GovernanceOverridesRegisterPanel({
  *  figure that disagrees with itself (audit settings-2, 13 Oct 2026). */
 function sessionOverrideSentence(count: number): string {
   return count === 0
-    ? "No override event from this session waits in Review. This register lists overrides saved on a referral."
-    : `${count} override ${count === 1 ? "event" : "events"} from this session ${count === 1 ? "waits" : "wait"} in Review. This register lists overrides saved on a referral.`;
+    ? "No override event from this session waits in Review."
+    : `${count} override ${count === 1 ? "event" : "events"} from this session ${count === 1 ? "waits" : "wait"} in Review.`;
 }
 
 export function GovernanceAccessRecordPanel({ sessionCount }: { sessionCount?: number } = {}) {
@@ -1150,36 +1150,18 @@ function GovernanceSession({
     ) : null;
   const reviewedOf = reviewable.length;
 
-  // The rail at rest (v10): the session summary, then the next events to review. No ring here: the
-  // ring stays in the hero. Pressing a next event opens it in the rail.
+  // The rail at rest. Audit settings-12: the hero already carries the counts and the reviewed
+  // ring, so the rail no longer repeats them; it says what to do, or that everything is reviewed.
   const restSummary = (
     <div className={thirdEdition.restSummary} data-testid="ward-governance-rest-summary">
-      <div className={thirdEdition.restHead}>
-        <span className={thirdEdition.quietText}>Reviewed so far, captured since the session opened</span>
-        <Frac done={reviewedCount} total={reviewable.length} label="events reviewed" />
-      </div>
-      <dl className={thirdEdition.restCells}>
-        <div>
-          <dt>Overrides</dt>
-          <dd>{overrideCount}</dd>
-        </div>
-        <div>
-          <dt>Refused or stale</dt>
-          <dd>{refusedCount}</dd>
-        </div>
-        <div>
-          <dt>Record access</dt>
-          <dd>{accessCount}</dd>
-        </div>
-      </dl>
-      {/* "Next to review" was dropped from the rail: it repeated the first rows of the table beside
-          it (device audit 11 Oct 2026). */}
       {toReview.length === 0 ? (
         <p className={thirdEdition.restClear}>
           <StatusGlyph tone="success" size={9} />
           Every captured event is reviewed.
         </p>
-      ) : null}
+      ) : (
+        <p className={thirdEdition.quietText}>Choose an event from the list to review it.</p>
+      )}
     </div>
   );
 
@@ -1216,9 +1198,6 @@ function GovernanceSession({
   const placedDetail =
     isTabletPortrait && selected ? (
       <>
-        <Card className={thirdEdition.detailCard} aria-label="This session">
-          <div className={thirdEdition.detailBody}>{restSummary}</div>
-        </Card>
         <Drawer
           open
           onClose={() => choose(null)}
@@ -1278,6 +1257,7 @@ function GovernanceSession({
       />
     );
   };
+  const savedOverrideCount = allOverrides(movements).length;
   const phoneReviewed = [...reviewable].filter((event) => reviewState(event) === "reviewed").reverse();
   const phoneSubject = selected?.subject;
   const phoneMovementId =
@@ -1572,22 +1552,38 @@ function GovernanceSession({
         onClose={() => setPhoneMore(null)}
         title={phoneMore === "reports" ? "Reports" : "Registers"}
         description="The full registers and reports are laid out for a tablet or computer."
-        height="tall"
+        height="content"
       >
         {phoneMore === "registers" ? (
-          <div className={thirdEdition.stackGap}>
-            <GovernanceOverridesRegisterPanel
-              movements={movements}
-              units={units}
-              now={now}
-              sessionCount={overrideCount}
+          // Audit settings-11: one plain line per register; the full registers are a desk job.
+          <ul className={thirdEdition.phoneList}>
+            <PhoneListRow
+              as="li"
+              name="Overrides"
+              meta={
+                <span data-testid="ward-governance-overrides-session">
+                  {sessionOverrideSentence(overrideCount)} Saved on a referral: {savedOverrideCount}.
+                </span>
+              }
             />
-            <GovernanceAccessRecordPanel sessionCount={accessCount} />
-            <p className={thirdEdition.quiet}>
-              Seclusion, bodily restraint and notifiable incident registers are Preview: nothing is shown until Ward
-              Flow holds these records.
-            </p>
-          </div>
+            <PhoneListRow
+              as="li"
+              name="Access record"
+              meta={
+                <span data-testid="ward-governance-access-session">
+                  Searches this session only.{" "}
+                  {accessCount === 1
+                    ? "1 record opening waits in Review."
+                    : `${accessCount} record openings wait in Review.`}
+                </span>
+              }
+            />
+            <PhoneListRow
+              as="li"
+              name="Seclusion, restraint and incidents"
+              meta="Preview. Not held in Ward Flow yet."
+            />
+          </ul>
         ) : (
           <ul className={thirdEdition.phoneList}>
             <PhoneListRow

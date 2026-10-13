@@ -103,6 +103,14 @@ describe("settings screen: every Preview control says it is not wired", () => {
     expect(screen.getByRole("switch", { name })).toHaveAttribute("aria-checked", "false");
   });
 
+  // Audit settings-26: Snooze is not wired, so it carries the Preview tag.
+  it("tags Snooze 15m as Preview", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
+    const snooze = screen.getByRole("main").querySelector<HTMLElement>('[data-setting="snooze"]')!;
+    expect(snooze).toHaveTextContent("Preview");
+  });
+
   it("shows Lock after idle and Buzz again as Off while they are Preview", () => {
     renderSettings();
     fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));

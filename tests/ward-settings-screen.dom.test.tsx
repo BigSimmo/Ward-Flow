@@ -13,6 +13,12 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+// The Go to a desk drawer reads the route; jsdom has no App Router.
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/mockups/ward-flow/settings",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
@@ -140,6 +146,16 @@ describe("the settings screen", () => {
     expect(screen.queryByTestId("ward-settings-not-yet-here")).toBeNull();
     expect(screen.getByTestId("ward-settings-appearance")).toBeInTheDocument();
     expect(screen.getByTestId("ward-settings-rail")).toBeInTheDocument();
+  });
+
+  // Audit settings-27: "workstation" finds Go to a desk, and choosing it opens the desk drawer.
+  it("finds Go to a desk by the old word and opens the desk drawer", () => {
+    renderSettings();
+    fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
+      target: { value: "workstation" },
+    });
+    fireEvent.click(screen.getByRole("option", { name: /Go to a desk/ }));
+    expect(screen.getByRole("dialog", { name: "Go to a desk" })).toBeInTheDocument();
   });
 
   it("finding Fixed defaults opens the Data tab with that reference panel showing", () => {

@@ -295,7 +295,7 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
         "3 override events from this session wait in Review.",
       );
       expect(screen.getByTestId("ward-governance-access-session")).toHaveTextContent(
-        "1 record opening from this session waits in Review.",
+        "Searches this session only. 1 record opening waits in Review.",
       );
     });
   });

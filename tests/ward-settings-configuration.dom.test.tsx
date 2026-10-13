@@ -174,6 +174,18 @@ describe("settings screen configuration draft", () => {
     expect(Number(screen.getByTestId("probe-audit-count").textContent)).toBe(beforeAuditCount + 2);
   });
 
+  // Audit settings-25 and settings-28: a draft says its effect is "if saved", and the Changed word
+  // reads the saved value as the row shows it, not raw minutes.
+  it("labels a draft ED count as if saved and reads the saved value in hours", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    setEdToMinimum();
+    const row = screen.getByTestId("ward-settings-screen").querySelector<HTMLElement>('[data-setting="ed-target"]')!;
+    expect(row).toHaveTextContent(/over if saved/);
+    expect(row).toHaveTextContent("saved value 24h");
+    expect(row).not.toHaveTextContent("saved value 1440");
+  });
+
   it("names every value a restore resets and offers Undo, which puts the saved rules back on the record", () => {
     renderSettings();
     const beforeAuditCount = Number(screen.getByTestId("probe-audit-count").textContent);

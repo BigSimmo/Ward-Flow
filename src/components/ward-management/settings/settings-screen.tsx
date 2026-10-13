@@ -450,9 +450,15 @@ export function SettingsScreen() {
     if (configuration === pending.before) return;
     pendingSave.current = null;
     const { before, count } = pending;
+    const changed = ruleDiffs(before, configuration);
     toast?.push({
       tone: "success",
-      title: count === 1 ? "Rule saved and recorded." : `${count} rules saved and recorded.`,
+      title:
+        changed.length > 0
+          ? `${changed.join(", ")}, saved and recorded.`
+          : count === 1
+            ? "Rule saved and recorded."
+            : `${count} rules saved and recorded.`,
       // Undo puts the rules back with a second recorded save, so the audit keeps both.
       undo: {
         durationMs: UNDO_TOAST_MS,
@@ -623,6 +629,12 @@ export function SettingsScreen() {
   }, [highlight, reducedMotion]);
 
   const jumpTo = (entry: SettingsSearchEntry) => {
+    if (entry.id === "go-to-desk") {
+      setQuery("");
+      setFindOpen(false);
+      setIsOperatorModalOpen(true);
+      return;
+    }
     chooseTab(entry.tab);
     // Fixed defaults sits behind the reference card's second tab; show it before highlighting.
     if (entry.id === "fixed-defaults") setReference("defaults");
@@ -748,6 +760,7 @@ export function SettingsScreen() {
               sub="Access measure only"
               value={rules.ed}
               saved={saved.ed}
+              savedDisplay={`${saved.ed / 60}h`}
               display={`${rules.ed / 60}h`}
               noun="ED access target"
               range={edRange}
@@ -756,7 +769,14 @@ export function SettingsScreen() {
               effect={
                 <>
                   <StatusGlyph tone={draftEdOver > 0 ? "warning" : "success"} size={9} />
-                  {draftEdOver > 0 ? `${draftEdOver} over now` : "None over now"}
+                  {/* Audit settings-25: the count is read from the draft; a changed target says so. */}
+                  {rules.ed !== saved.ed
+                    ? draftEdOver > 0
+                      ? `${draftEdOver} over if saved`
+                      : "None over if saved"
+                    : draftEdOver > 0
+                      ? `${draftEdOver} over now`
+                      : "None over now"}
                   {edDelta !== 0 ? <span className={styles.delta}>{`${edDelta > 0 ? "+" : ""}${edDelta}`}</span> : null}
                 </>
               }
@@ -768,6 +788,7 @@ export function SettingsScreen() {
               sub="Per referral"
               value={rules.cap}
               saved={saved.cap}
+              savedDisplay={wardsText(saved.cap)}
               display={wardsText(rules.cap)}
               noun="parallel referral enquiry limit"
               range={{
@@ -786,6 +807,7 @@ export function SettingsScreen() {
               sub="Before a held bed returns"
               value={rules.hold}
               saved={saved.hold}
+              savedDisplay={shortDuration(saved.hold)}
               display={shortDuration(rules.hold)}
               noun="pulled bed hold duration"
               range={{
@@ -806,6 +828,7 @@ export function SettingsScreen() {
               subTestId="setting-morning-rollup-desc"
               value={rules.morning}
               saved={saved.morning}
+              savedDisplay={clock24(saved.morning)}
               display={clock24(rules.morning)}
               displayTestId="morning-rollup-display"
               noun="morning rollup deadline"
@@ -846,6 +869,7 @@ export function SettingsScreen() {
               subTestId="setting-due-soon-desc"
               value={rules.soon}
               saved={saved.soon}
+              savedDisplay={shortDuration(saved.soon)}
               display={shortDuration(rules.soon)}
               displayTestId="due-soon-display"
               noun="early warning before a legal due time"
@@ -877,6 +901,7 @@ export function SettingsScreen() {
               subTestId="setting-due-soon-urgent-desc"
               value={rules.urgent}
               saved={saved.urgent}
+              savedDisplay={shortDuration(saved.urgent)}
               display={shortDuration(rules.urgent)}
               displayTestId="due-soon-urgent-display"
               noun="final warning before a legal due time"
@@ -941,6 +966,7 @@ export function SettingsScreen() {
                   }
                   value={rules[ruleKey]}
                   saved={saved[ruleKey]}
+                  savedDisplay={shortDuration(saved[ruleKey])}
                   display={shortDuration(rules[ruleKey])}
                   noun={`${step.label.toLowerCase()} target`}
                   range={{
@@ -1161,7 +1187,7 @@ export function SettingsScreen() {
 
   const profileContent = (
     <>
-      <ProfilePane onPreview={onPreview} />
+      <ProfilePane onPreview={onPreview} onGoToDesk={() => setIsOperatorModalOpen(true)} />
     </>
   );
 

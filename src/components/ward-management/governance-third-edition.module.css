@@ -875,53 +875,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The rail at rest: this session, then the next events to review (v10). */
+/* The rail at rest: what to do next (audit settings-12: the counts stay in the hero). */
 .restSummary {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
   min-width: 0;
-}
-
-.restHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-}
-
-.restCells {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 0;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-}
-
-.restCells > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
-}
-
-.restCells > div + div {
-  border-left: 1px solid var(--wf-line);
-}
-
-.restCells dt {
-  overflow: hidden;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.restCells dd {
-  margin: 0;
-  font: 600 var(--wf-fs-15) / 1.2 var(--wf-mono);
-  font-variant-numeric: tabular-nums;
 }
 
 .restClear {
