@@ -178,7 +178,12 @@ function shiftLine(now: Instant): string {
   return `${name} ${clock(shift.startMinute)} to ${clock(shift.endMinute)}`;
 }
 
-type WardScreenProps = { departurePlanning?: boolean; unitId: string; presentation?: "overview" | "answer" };
+type WardScreenProps = {
+  departurePlanning?: boolean;
+  unitId: string;
+  presentation?: "overview" | "answer";
+  initialBed?: number;
+};
 
 function originPlaceLabel(originEdId: string): string {
   return edById(originEdId)?.name ?? originEdId;
@@ -213,7 +218,12 @@ function arrivalIsLate(movement: Movement, now: Instant): boolean {
  * anyone else reading it.
  */
 
-export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
+export function WardScreen({
+  unitId,
+  presentation = "overview",
+  departurePlanning = false,
+  initialBed,
+}: WardScreenProps) {
   if (presentation === "answer") {
     return <WardAnswerView unitId={unitId} />;
   }
@@ -324,7 +334,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [flowTab, setFlowTab] = useState<WardFlowTab>("referrals");
   const [shiftView, setShiftView] = useState<WardShiftView>("todo");
   const router = useOptionalRouter();
-  const [selectedBed, setSelectedBed] = useState<number | null>(null);
+  const [selectedBed, setSelectedBed] = useState<number | null>(initialBed ?? null);
+  useEffect(() => {
+    if (initialBed !== undefined && unit && initialBed >= 0 && initialBed < unit.beds) setSelectedBed(initialBed);
+  }, [initialBed, unit]);
   // v10 pass 3, Bed board: who is picked up, what the board says and the bed placed last.
   const [boardPick, setBoardPick] = useState<BoardPick | null>(null);
   const [boardSay, setBoardSay] = useState("");

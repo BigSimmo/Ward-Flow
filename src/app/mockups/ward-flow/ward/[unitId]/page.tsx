@@ -36,13 +36,17 @@ export default async function WardUnitPage({
   searchParams,
 }: {
   params: Promise<{ unitId: string }>;
-  searchParams: Promise<{ tab?: string | string[] }>;
+  searchParams: Promise<{ tab?: string | string[]; bed?: string | string[] }>;
 }) {
   const { unitId } = await params;
+  const query = await searchParams;
+  const bedValue = Array.isArray(query.bed) ? query.bed[0] : query.bed;
+  const bedIndex = bedValue !== undefined && /^\d+$/.test(bedValue) ? Number(bedValue) : undefined;
   return (
     <WardScreen
       unitId={safeDecodeURIComponent(unitId)}
-      departurePlanning={(await searchParams).tab === "departure-planning"}
+      departurePlanning={query.tab === "departure-planning"}
+      initialBed={bedIndex}
     />
   );
 }
