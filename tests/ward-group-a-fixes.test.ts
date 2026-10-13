@@ -513,6 +513,37 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       const short = dueShort(row, NOW);
       expect(short).toContain("1A due");
     });
+
+    it("identifies collected patients as in transit even when pullExpiresAt is undefined", () => {
+      const state = seedWardFlowState();
+      const inTransitMovementNoPull: Movement = {
+        ...state.movements[0],
+        id: "WF-INTRANSIT-NOPULL" as const,
+        stage: "moving" as const,
+        acceptedUnitId: "scgh-adult-open",
+        pullExpiresAt: undefined,
+        legalForm: undefined,
+        transport: {
+          id: "TJ-INTRANSIT-3",
+          provider: "Ambulance service" as const,
+          escortRequired: false,
+          cadNumber: "CAD-997",
+          transportLegalStatus: "voluntary" as const,
+          acceptedAt: NOW - 90,
+          enRouteAt: NOW - 80,
+          collectedAt: NOW - 30,
+        },
+      };
+
+      const row = toHandoverRow(inTransitMovementNoPull, state.units, state.patients, state.referrals);
+      expect(row.stage).toBe("moving");
+
+      const parts = dueParts(row, NOW);
+      expect(parts?.when).toBe("In transit");
+
+      const short = dueShort(row, NOW);
+      expect(short).toBe("In transit");
+    });
   });
 
   describe("Fix A1-4: Statutory continuation legal forms in audit trail", () => {

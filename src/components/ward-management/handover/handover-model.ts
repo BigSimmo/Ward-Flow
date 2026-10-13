@@ -343,7 +343,7 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
     return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
   if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
-  return collected && row.pullExpiresAt !== undefined ? "In transit" : null;
+  return collected ? "In transit" : null;
 }
 
 /**
@@ -369,7 +369,9 @@ export function dueParts(row: HandoverRow, now: Instant): { when: string; what: 
   }
   if (row.formDueAt !== undefined)
     return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };
-  return collected && row.pullExpiresAt !== undefined ? { when: "In transit", what: "Pull active" } : null;
+  return collected
+    ? { when: "In transit", what: row.pullExpiresAt !== undefined ? "Pull active" : "In transit" }
+    : null;
 }
 
 /** Long due text for the panel: the bed hold and the typed form time, both when both are held. */
