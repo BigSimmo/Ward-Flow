@@ -476,16 +476,19 @@ function transportRows(movement: Movement, record: string, dayZero: Date, wardNa
     action: "Transport booked",
     after: `${job.provider}${job.escortRequired ? ", escort required" : ""}${legal}${eta}`,
   });
+  // The ward's own arrival also stamps arrivedAt when no officer pressed Delivered; that instant is the
+  // closure itself, so only a different instant is the officer's delivery.
+  const officerDelivered = job.arrivedAt !== undefined && job.arrivedAt !== movement.closure?.at;
   const steps: [string, Instant | undefined][] = [
     ["Transport accepted", job.acceptedAt],
     ["Transport en route", job.enRouteAt],
     ["Patient collected by transport", job.collectedAt],
-    [transportDeliveredWording(wardName), job.arrivedAt],
+    [officerDelivered ? transportDeliveredWording(wardName) : "Transport arrived", job.arrivedAt],
   ];
   for (const [action, at] of steps) {
     if (finite(at) === null) continue;
     // The delivery row stands for the officer's PATIENT_ARRIVED, so that session-log entry is not repeated.
-    const eventTypes = at === job.arrivedAt ? ["PATIENT_ARRIVED"] : undefined;
+    const eventTypes = officerDelivered && at === job.arrivedAt ? ["PATIENT_ARRIVED"] : undefined;
     rows.push({ record, recordedAt: finite(at), who: NOT_RECORDED, action, ...(eventTypes ? { eventTypes } : {}) });
   }
   if (job.diversion) {
