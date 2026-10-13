@@ -63,6 +63,8 @@ export type CensusRow = {
   key: string;
   kind: "movement" | "referral" | "admission" | "person";
   group: CensusGroup;
+  unitId?: string;
+  bedNumber?: number;
   tier: 1 | 2 | 3 | null;
   name: string;
   umrn: string;
@@ -376,6 +378,8 @@ export function buildCensus(state: {
         key: `adm:${admission.id}`,
         kind: "admission",
         group: pulled ? "found" : "wait",
+        unitId: admission.unitId,
+        bedNumber: admission.bedNumber,
         tier: null,
         ...who,
         service: null,
@@ -428,6 +432,8 @@ export function buildCensus(state: {
       key: `adm:${admission.id}`,
       kind: "admission",
       group: "ward",
+      unitId: admission.unitId,
+      bedNumber: admission.bedNumber,
       tier: null,
       ...who,
       service: null,

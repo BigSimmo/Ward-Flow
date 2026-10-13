@@ -1,5 +1,13 @@
 # Data, seeds and domain rules
 
+PR262 review repair, 13 October 2026: `unitCapacity` follows R-B-09's existing
+Ready contract, `min(allocatable, empty)`, as do `capacityBreakdown` and the
+eligibility Ready helper. `openBedsNow` starts with that count, subtracts
+`bedsPendingPreparation`, and clamps the pullable result to zero. Nominal bed counts do not silently replace
+recorded observations. `tests/ward-ready-observation-boundaries.test.ts` covers
+zero, exact-capacity and conflicting observations above nominal capacity; it
+also verifies that those conflicts do not manufacture physical surge beds.
+
 Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
 
 ## WA remediation update — 3 October 2026

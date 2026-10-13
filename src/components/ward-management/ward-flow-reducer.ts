@@ -2427,6 +2427,25 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
   return appendAudit(state, next, event, decision);
 }
 
+/**
+ * The single writer for a referrer's own withdrawal (`WITHDRAW_REFERRAL` before acceptance and the
+ * `RECORD_REFERRER_WITHDRAWAL` cascade): every live ward request is recorded as `referrer_withdrew`
+ * and the movement no longer names an accepting or reviewing ward.
+ */
+function withdrawAllLiveRequestsForReferrer(
+  movement: Movement,
+  now: Instant,
+): Pick<Movement, "acceptedUnitId" | "referredUnitIds" | "withdrawnReferrals"> {
+  return {
+    acceptedUnitId: undefined,
+    referredUnitIds: [],
+    withdrawnReferrals: [
+      ...movement.withdrawnReferrals,
+      ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, reason: "referrer_withdrew" as const })),
+    ],
+  };
+}
+
 function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decision: AuditDecision): WardFlowState {
   // 1. Role check first, before the event's payload is inspected at all.
   const permittedRoles = EVENT_ROLE[event.type] ?? [];
@@ -4510,19 +4529,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `movement ${movement.id} holds no live referral to withdraw`);
       }
 
-      const withdrawn = movement.referredUnitIds.map((unitId) => ({
-        unitId,
-        at: event.now,
-        reason: "referrer_withdrew" as const,
-      }));
       const liveTransport =
         movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
       const hadLiveTransport = liveTransport !== undefined;
       const updated: Movement = {
         ...movement,
-        acceptedUnitId: undefined,
-        referredUnitIds: [],
-        withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawn],
+        ...withdrawAllLiveRequestsForReferrer(movement, event.now),
         transport: liveTransport ? { ...liveTransport, cancelledAt: event.now } : movement.transport,
         closure: {
           at: event.now,
@@ -8194,16 +8206,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           ? {
               ...m,
               admissionId: undefined,
-              acceptedUnitId: undefined,
-              referredUnitIds: [],
-              withdrawnReferrals: [
-                ...m.withdrawnReferrals,
-                ...m.referredUnitIds.map((unitId) => ({
-                  unitId,
-                  at: event.now,
-                  reason: "referrer_withdrew" as const,
-                })),
-              ],
+              ...withdrawAllLiveRequestsForReferrer(m, event.now),
               transport:
                 m.transport && m.transport.cancelledAt === undefined
                   ? { ...m.transport, cancelledAt: event.now }
@@ -10050,6 +10053,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
       const withoutPhantom = releasePulledBedAndAdmission(state, movement, event.now);
+      // A movement stepped back from `pulled` keeps its reserved bed and admission at
+      // `accepted_awaiting_bed`, so the stage alone cannot say whether a bed is being released
+      // (same rule as `releasePulledBedAndAdmission`).
+      const heldBed = movement.stage === "pulled" || movement.admissionId !== undefined;
+      const releasedUnitId = movement.acceptedUnitId;
       const updatedMovement: Movement = {
         ...movement,
         stage: "placement_requested",
@@ -10061,21 +10069,48 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         referredUnitIds: [],
         transport: undefined,
         blocker: STAGE_TRANSITION_BLOCKERS.wardRequestWithdrawn,
-        unwinds: [...movement.unwinds, { at: event.now, kind: "pull_released", by: event.role, reason: event.reason }],
+        unwinds: [
+          ...movement.unwinds,
+          // From accepted_awaiting_bed no bed was ever held: this undoes the ward's acceptance, not a pull.
+          {
+            at: event.now,
+            kind: heldBed ? "pull_released" : "acceptance_withdrawn",
+            by: event.role,
+            reason: event.reason,
+            // Name the former accepting ward: `acceptedUnitId` is cleared in this same update.
+            ...(releasedUnitId !== undefined ? { unitId: releasedUnitId } : {}),
+          },
+        ],
         stageChanges: [
           ...movement.stageChanges,
           { at: event.now, from: movement.stage, to: "placement_requested", by: event.role, reason: event.reason },
         ],
       };
       const next = replaceMovement(withoutPhantom, movement.id, updatedMovement);
+      const reasonText = event.reason.replace(/_/g, " ");
+      if (!heldBed) {
+        // No bed was held, so there is no bed release to announce. The accepting ward is told its
+        // acceptance was released when someone else (the coordinator) made that call.
+        if (event.role === "ward" || releasedUnitId === undefined) return next;
+        return appendNotices(next, [
+          makeNotice(
+            event.now,
+            state.notices.length,
+            "acceptance_withdrawn_ward",
+            { role: "ward", placeId: releasedUnitId },
+            { movementId: movement.id, unitId: releasedUnitId },
+            `The acceptance for ${movement.id} was released and the search reopened (${reasonText}).`,
+          ),
+        ]);
+      }
       return appendNotices(next, [
         makeNotice(
           event.now,
           state.notices.length,
           "bed_pull_released",
           { role: "ed", placeId: movement.originEdId },
-          { movementId: movement.id, unitId: event.actingUnitId },
-          `Bed released and search reopened for ${movement.id} (${event.reason.replace(/_/g, " ")}).`,
+          { movementId: movement.id, unitId: releasedUnitId },
+          `Bed released and search reopened for ${movement.id} (${reasonText}).`,
         ),
       ]);
     }

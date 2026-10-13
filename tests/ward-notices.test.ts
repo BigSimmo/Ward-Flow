@@ -346,7 +346,6 @@ describe("assertion 2 — a decision NOT in the table produces none (the anti-va
     expect(after.notices).toHaveLength(before);
     expect(after.notices).toEqual(state.notices);
   });
-
   it("WITHDRAW_REFERRAL notifies all referred wards when a live referral is withdrawn", () => {
     const state = referred(seeded());
     const before = state.notices.length;
@@ -973,5 +972,28 @@ describe("Item 18, RA1 — WITHDRAW_WARD_REQUEST notifies exactly the withdrawn 
     });
     expect(after.rejections.length).toBeGreaterThan(state.rejections.length);
     expect(after.notices).toHaveLength(before);
+  });
+});
+
+describe("§1.3 row added by owner ruling 2026-10-13 22:13 AWST — WITHDRAW_REFERRAL before acceptance", () => {
+  it("a coordinator's withdrawal tells exactly the wards still reviewing it, and nobody else", () => {
+    const state = referred(seeded());
+    const reviewing = state.movements.find((m) => m.id === MOVEMENT_ID)!.referredUnitIds;
+    expect(reviewing.length).toBeGreaterThan(0);
+    const after = wardFlowReducer(state, {
+      type: "WITHDRAW_REFERRAL",
+      role: "coordinator",
+      now: NOW,
+      movementId: MOVEMENT_ID,
+    });
+    expect(after.rejections).toEqual([]);
+    const added = after.notices.slice(state.notices.length);
+    expect(added).toHaveLength(reviewing.length);
+    for (const notice of added) {
+      expect(notice.kind).toBe("ward_request_withdrawn");
+      expect(notice.to.role).toBe("ward");
+      expect(notice.sentence).toContain("withdrawn by the coordinator");
+    }
+    expect(added.map((n) => n.to.placeId).sort()).toEqual([...reviewing].sort());
   });
 });

@@ -14,7 +14,11 @@ import {
   minuteOfDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { transportLeg, unitCapacity } from "@/components/ward-management/ward-derivations";
+import {
+  isStoppedTransportAwaitingRelease,
+  transportLeg,
+  unitCapacity,
+} from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type {
@@ -226,7 +230,7 @@ export function toHandoverRow(
 
 /* ------------------------------------------------------------------ groups */
 
-export type HandoverGroupId = "act" | "due" | "bed" | "acc" | "mov";
+export type HandoverGroupId = "act" | "due" | "rel" | "bed" | "acc" | "mov";
 export type HandoverTone = "act" | "due" | "calm";
 
 /**
@@ -242,6 +246,21 @@ export function isCollected(row: HandoverRow): boolean {
   return row.stage === "moving" || transport?.collectedAt !== undefined;
 }
 
+/**
+ * Owner ruling 2026-10-13 22:13 AWST (PR #279): a journey whose transport was stopped after
+ * collection, with its bed still held, is its own row state: "Transport stopped, release pulled bed".
+ */
+export function isStoppedAwaitingRelease(row: HandoverRow): boolean {
+  return row.movement !== undefined && isStoppedTransportAwaitingRelease(row.movement);
+}
+
+/**
+ * The bed hold the sheet may show. Owner ruling 2026-10-13 22:13 AWST: while the patient is collected
+ * and in a live vehicle no "Pull expired" is shown anywhere (table, print, copy, detail).
+ */
+export function shownBedHold(row: HandoverRow, now: Instant) {
+  return isCollected(row) ? null : bedHold(row.pullExpiresAt, now);
+}
 export function pullHasLapsed(row: HandoverRow, now: Instant): boolean {
   return !isCollected(row) && bedHoldLapsed(row.pullExpiresAt, now);
 }
@@ -263,6 +282,7 @@ export const isMoving = (row: HandoverRow) => row.stage === "moving" || row.stag
 export function groupOf(row: HandoverRow, now: Instant, cutoff: Instant): HandoverGroupId {
   if (isActNow(row, now)) return "act";
   if (isDueBy(row, now, cutoff)) return "due";
+  if (isStoppedAwaitingRelease(row)) return "rel";
   if (isWaitingForBed(row)) return "bed";
   if (row.stage === "accepted_awaiting_bed" || row.stage === "pulled") return "acc";
   return "mov";
@@ -275,6 +295,11 @@ export function handoverGroups(cutoff: Instant, now: Instant) {
       id: "due",
       title: `Due by ${formatInstantWithDay(cutoff, now)}`,
       why: "Bed pulls and typed form times before then",
+    },
+    {
+      id: "rel",
+      title: "Transport stopped, release pulled bed",
+      why: "Journey stopped after collection; the bed is still pulled",
     },
     { id: "bed", title: "Finding a ward", why: "Placement requested or a ward is reviewing" },
     { id: "acc", title: "Accepted, bed not ready", why: "Ward accepted, bed not yet free" },
@@ -348,7 +373,7 @@ export function dueParts(row: HandoverRow, now: Instant): { when: string; what: 
 /** Long due text for the panel: the bed hold and the typed form time, both when both are held. */
 export function dueLong(row: HandoverRow, now: Instant): string | null {
   const parts: string[] = [];
-  const hold = bedHold(row.pullExpiresAt, now);
+  const hold = shownBedHold(row, now);
   if (hold) {
     parts.push(
       hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(hold.expiresAt, now)}, ${hold.short}`,
@@ -373,8 +398,10 @@ export function nextStep(
 ): { text: string; tone: HandoverTone } {
   const tone: HandoverTone = isActNow(row, now) ? "act" : isDueBy(row, now, cutoff) ? "due" : "calm";
   let text: string;
-  const hold = bedHold(row.pullExpiresAt, now);
-  if (row.stage === "pulled") {
+  const hold = shownBedHold(row, now);
+  if (isStoppedAwaitingRelease(row)) {
+    text = `Transport stopped. Release the pulled bed at ${row.to?.name ?? "the ward"}`;
+  } else if (row.stage === "pulled") {
     text =
       hold?.state === "lapsed"
         ? `${hold.label}. ${hold.nextStep}`
@@ -425,6 +452,7 @@ function backgroundLine(row: HandoverRow, now: Instant): string {
  */
 export function situationState(row: HandoverRow, now: Instant): string {
   const to = row.to?.name ?? "the ward";
+  if (isStoppedAwaitingRelease(row)) return `Transport stopped, bed pulled at ${to} awaiting release`;
   if (row.stage === "pulled") {
     if (row.pullExpiresAt === undefined) return `Bed pulled at ${to}`;
     return row.pullExpiresAt <= now
