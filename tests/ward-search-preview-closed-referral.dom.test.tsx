@@ -95,4 +95,23 @@ describe("a declined referral with nothing open reads as Past, like the search r
     );
     expect(screen.queryByText("Not on this board now")).not.toBeInTheDocument();
   });
+
+  it("does not mark the person Past while their accepted referral holds a ward bed", () => {
+    const admission = seed.admissions.find((entry) => entry.referralId !== null && entry.state === "occupied");
+    const accepted = seed.referrals.find((r) => r.id === admission?.referralId && referralState(r) === "accepted");
+    expect(accepted).toBeDefined();
+    render(
+      <RecordPreview
+        selection={{ kind: "person", patient: patient! }}
+        referrals={[{ ...accepted!, patientId: patient!.id }]}
+        movements={[]}
+        admissions={[admission!]}
+        patients={[patient!]}
+        units={allUnits()}
+        now={NOW_ANCHOR}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.queryByText("Not on this board now")).not.toBeInTheDocument();
+  });
 });

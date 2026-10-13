@@ -323,7 +323,15 @@ export function RecordPreview({
       recordOpenedAt = linkedMovement.openedAt;
     } else if (
       referral &&
-      !referrals.some((candidate) => candidate.patientId === patient.id && referralState(candidate) === "queued") &&
+      !referrals.some((candidate) => {
+        if (candidate.patientId !== patient.id) return false;
+        const state = referralState(candidate);
+        if (state === "queued") return true;
+        // Accepted and still awaiting a movement, or arrived in a bed: on a ward, not past.
+        if (state !== "accepted") return false;
+        const admission = admissions.find((entry) => entry.referralId === candidate.id);
+        return admission === undefined || admission.state !== "departed";
+      }) &&
       !movements.some((movement) => movement.patientId === patient.id && isOpen(movement))
     ) {
       // Same rule as the search row: no open movement and no queued referral means Past.
