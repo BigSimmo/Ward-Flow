@@ -8530,3 +8530,22 @@ New evidence under `/workspace/scratch/ward-scroll-site-`: `integrated-dom.log`,
 Publication checkpoint: commit `04c1584` preserves the integrated main layouts and navigation fixes. The remaining 13 phone-page visits passed, confirming consistent 56px bands / 64px controls with painted 8px canvas collars. Scoped ESLint passed on all 14 owned TypeScript files. Preserve the next remote task-branch commit `79ad287` as well: it relocates the unchanged scroll helper into the Ward namespace and registry, removes unused phone imports, and applies the same pending-close announcement fix. Resolve the equivalent naming conflict in favour of its `closing` variable; retain the stronger history regression modelling a shorter destination. Reuse unchanged browser/CSS evidence, run the four affected helper/history/service/Tools DOM files, and let normal push guards check the final published source. The task-owned server has been stopped, and the original checkout remains intact.
 
 Final overlap verification: all 34 checks in the four affected DOM files passed, and the refreshed organisation check passed with the same 226 pre-existing findings. The last merge contains no unresolved paths. Publication remains an additive push to PR #248; no rewrite, main merge, deployment or CI observation is requested. Final publication evidence is retained in `ward-scroll-site-publication-dom.log`, `ward-scroll-site-publication-organisation.log`, `ward-scroll-site-publication-commit.log` and `ward-scroll-site-publication-push.log`.
+
+## WF-AUDIT-TRIAGE-2026-10-13 — open audit issues sorted by complexity and risk
+
+Owner: Claude Code cloud session. Branch `claude/ward-flow-audit-review-k2x8ty`, base `origin/main` at `30b1803`. Documentation only; no behaviour changed and no provider was contacted.
+
+The 8 October issue list, the follow-up honesty and UI audits, and the design and unverified-item lists were checked against the code and re-sorted in [`ward-flow/audit-2026-10-13-issue-triage.md`](ward-flow/audit-2026-10-13-issue-triage.md). That file holds every item, its evidence level and its group. PRs #256 and #257 fixed about 20 items since the first triage on 11 October (all the "Live" and false-claim wording, the skip link, the community check, focus, the route test, the duplicate HTML and the PsychSift index text); they are listed there as fixed.
+
+Open work, easiest and safest first:
+
+1. **Quick, low risk:** stale `DeveloperAreaGate` comments (A4-5), "Live" leftovers in Settings and Sovereign, manifest `background_color` (R7), landmark test (R9), prefetch warning (R14), 48px touch target, M-WARD-ANSWER, D7, stale status and hosting docs, dead-module deletions through `check:dead-code-candidate`.
+2. **Contained, moderate:** S2-14, S2-15, the A3 screen figures, audit labels (A1-4, A1-6, A1-11, A1-12), storage and provider items (A2-4, A2-6, A2-7, A2-8, A2-10 to A2-13, A2-15), security plumbing (A4-1, A4-2, A4-6, A4-7, A4-9 to A4-15).
+3. **Reducer fixes with a failing test first:** S2-3, S2-5, S2-6, S2-7, S2-13, S1-3, S1-6, S1-8, S1-12, A1-7, A1-9.
+4. **Cross-cutting:** one shared close helper (S1-4, S2-4, S1-5, S1-7); a tighter load validator (A2-5, A2-3, closing S1-9 to S1-13 and S2-8); S2-9 eligibility; wiring the synthetic-data guard (A4-4, A2-9); A2-14; design-system migration and renames. Do not split the reducer as clean-up.
+5. **Owner decision first:** S2-2 option (a) or (b); full ward scope beyond #256's soft accept/decline check (A1-1, A1-3, S2-11, A1-8, A1-10, S2-10, A1-13, A1-14); A1-2 referrer; A1-5 legal form roles; S1-14 24 versus 48 hours (FD-19); A4-3; A4-5 stays public; A4-8; the "(not wired)" controls; M-QUEUE; M-DUALREF; D1, D3 to D6, D9; Discharges and placement-hub defaults.
+6. **Investigate or outside access:** the rendered visual checks and U1–U7, U9 need a browser check first; U8 (Railway), U10 and A4-8 testing (Azure) and U12 (another session's branch) need the owner's go-ahead.
+
+Dropped: the pre-push in-flight bypass (approved exemption), M-CONTACTS (correct labelling) and the PsychSift UX audit.
+
+Corrections recorded: autosave is every 30 seconds (not 60); the reducer is about 10,200 lines. Verification: source reads at `30b1803` only. No tests, lint or build were run; the five earlier engine fixes' regression tests were not re-run in this session.
