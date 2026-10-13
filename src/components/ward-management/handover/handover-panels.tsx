@@ -17,6 +17,7 @@ import {
   legalLong,
   nextStep,
   obsLong,
+  pullHasLapsed,
   STAGE_LABEL,
   wardIsStale,
   type HandoverRow,
@@ -105,7 +106,7 @@ export function HandoverFlowPanel({
         ? row.stage === "pulled"
           ? "No pull time recorded"
           : "None"
-        : hold !== null && hold <= 0
+        : hold !== null && pullHasLapsed(row, now)
           ? `${bedHold(row.pullExpiresAt, now)!.label}, at ${formatInstantWithDay(row.pullExpiresAt, now)}`
           : `Until ${formatInstantWithDay(row.pullExpiresAt, now)}, ${bedHold(row.pullExpiresAt, now)!.short}`,
     ],

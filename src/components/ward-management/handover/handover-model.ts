@@ -235,15 +235,23 @@ export type HandoverTone = "act" | "due" | "calm";
  * (`activeActNowItems`), so a snoozed alert leaves both together. A journey flagged urgent by a
  * person is always act now as well: that flag is a human safety call the sheet must not drop.
  */
+export function isCollected(row: HandoverRow): boolean {
+  return row.stage === "moving" || row.movement.transport?.collectedAt !== undefined;
+}
+
+export function pullHasLapsed(row: HandoverRow, now: Instant): boolean {
+  return !isCollected(row) && bedHoldLapsed(row.pullExpiresAt, now);
+}
+
 export function isActNow(row: HandoverRow, now: Instant): boolean {
   if (row.actNow !== undefined) return row.actNow || row.urgent;
-  return row.urgent || bedHoldLapsed(row.pullExpiresAt, now) || (row.formDueAt !== undefined && row.formDueAt <= now);
+  return row.urgent || pullHasLapsed(row, now) || (row.formDueAt !== undefined && row.formDueAt <= now);
 }
 
 export function isDueBy(row: HandoverRow, now: Instant, cutoff: Instant): boolean {
   if (isActNow(row, now)) return false;
   return (
-    (row.pullExpiresAt !== undefined && row.pullExpiresAt <= cutoff) ||
+    pullHasLapsed(row, cutoff) ||
     (row.formDueAt !== undefined && row.formDueAt <= cutoff)
   );
 }
