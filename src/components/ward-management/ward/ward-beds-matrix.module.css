@@ -1,8 +1,11 @@
 /* Ward Beds Matrix Styles */
-.matrixWrap {
+.matrixWrap,
+.matrixContainer,
+.bedSection {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 480px;
 }
 
 .matrixHead {
@@ -235,7 +238,10 @@
   background: var(--surface);
   color: var(--ink);
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    background-color 150ms ease;
 }
 
 .btnShiftAction::after {
