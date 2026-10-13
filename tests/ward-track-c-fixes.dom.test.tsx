@@ -188,6 +188,26 @@ describe("Track C Referral Matching fixes", () => {
     expect(screen.getByTestId("ward-referral-match-accept-controls-emergency_department")).toBeInTheDocument();
     expect(screen.getByTestId("ward-referral-match-decline-controls-emergency_department")).toBeInTheDocument();
   });
+
+  it("the ED decline reason is its own draft: choosing a ward reason does not arm the ED decline", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <MatchHarness referral={DUAL_DESTINATION_ED_REFERRAL} units={allUnits()} />
+      </WardFlowProvider>,
+    );
+    const edSelect = screen.getByTestId("ward-referral-match-decline-reason-emergency_department") as HTMLSelectElement;
+    expect(edSelect.value).toBe("");
+    fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason"), {
+      target: { value: "no_suitable_bed" },
+    });
+    expect(
+      (screen.getByTestId("ward-referral-match-decline-reason-emergency_department") as HTMLSelectElement).value,
+    ).toBe("");
+    expect(screen.getByTestId("ward-referral-match-decline-emergency_department")).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
 });
 
 describe("Track C Referral Board fixes", () => {

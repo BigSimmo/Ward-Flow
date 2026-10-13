@@ -468,13 +468,13 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
     it("permits withdrawal when caller.placeId matches referral origin site", () => {
       const state = seedWardFlowState();
       const open = anOpenReferral(state);
-      const referral = state.referrals.find((r) => r.id === open.referralId);
-      const origin = referral?.originSiteId ?? referral?.originSiteCode ?? open.originEdId ?? "RPH";
+      // The ED screen sends its own ED id as actingPlaceId; it is compared with originEdId.
+      const origin = open.originEdId;
 
       const accepted = wardFlowReducer(state, {
         type: "WITHDRAW_REFERRAL",
         role: "ed",
-        placeId: origin,
+        actingPlaceId: origin,
         now: NOW,
         movementId: open.id,
       } as never);

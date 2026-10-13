@@ -4401,18 +4401,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `movement ${movement.id} has already closed and cannot be withdrawn`);
       }
+      // WF-A1-02: an ED that states which department it is acting as may only withdraw a referral
+      // that began there. The ED screen sends its ED id, so it is compared with movement.originEdId
+      // (an ED id), never with the referral's site code. Other roles carry no place identity yet.
       const caller = event as { role: WardFlowRole; placeId?: string; actingPlaceId?: string };
       const callerPlaceId = caller.placeId ?? caller.actingPlaceId;
-      const referral = movement.referralId ? state.referrals.find((r) => r.id === movement.referralId) : undefined;
-      const originSiteId = referral?.originSiteId ?? referral?.originSiteCode ?? movement.originEdId;
-      // A stated place that is not the referral's origin is refused. No event surface states one
-      // yet (claim-not-proof, the same discipline as BOOK_TRANSPORT's actingPlaceId), so an absent
-      // place falls through to the role rules below rather than refusing every ED/community withdrawal.
-      if (caller.role !== "coordinator" && callerPlaceId !== undefined && callerPlaceId !== originSiteId) {
+      if (caller.role === "ed" && callerPlaceId !== undefined && callerPlaceId !== movement.originEdId) {
         return reject(
           state,
           event,
-          `caller ${callerPlaceId} is not the referral origin site (${originSiteId}) or coordinator`,
+          `caller ${callerPlaceId} is not the referral origin site (${movement.originEdId}) or coordinator`,
         );
       }
 
