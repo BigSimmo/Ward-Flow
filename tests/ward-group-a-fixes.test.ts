@@ -118,7 +118,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
 
       const addedNotices = state.notices.slice(beforeNotices);
       expect(addedNotices).toHaveLength(2);
-      expect(addedNotices.every((n) => n.kind === "referral_revoked_ward")).toBe(true);
+      expect(addedNotices.every((n) => n.kind === "ward_request_withdrawn")).toBe(true);
       expect(addedNotices.map((n) => n.to.placeId).sort()).toEqual(unitIds.sort());
     });
 
@@ -198,7 +198,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       );
 
       const addedNotices = afterWithdrawal.notices.slice(beforeNotices);
-      expect(addedNotices.some((n) => n.kind === "referral_revoked_ward" && n.to.placeId === "scgh-adult-open")).toBe(
+      expect(addedNotices.some((n) => n.kind === "ward_request_withdrawn" && n.to.placeId === "scgh-adult-open")).toBe(
         true,
       );
     });
@@ -245,7 +245,13 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       const snapshot = handoverSnapshot(state.movements, state.units, NOW + 25);
       const inGoneWrong = snapshot.placementGoneWrong.find((p) => p.movement.id === movementId);
       expect(inGoneWrong).toBeDefined();
-      expect(inGoneWrong?.kind).toBe("acceptance_withdrawn");
+      expect(inGoneWrong?.kind).toBe("transport_stopped_awaiting_release");
+      // With a pull deadline on the held bed, the stopped journey must surface in pulledBeds and still lapse.
+      const withHold = state.movements.map((m) => (m.id === movementId ? { ...m, pullExpiresAt: NOW + 30 } : m));
+      const heldEntry = handoverSnapshot(withHold, state.units, NOW + 60).pulledBeds.find(
+        (p) => p.movement.id === movementId,
+      );
+      expect(heldEntry).toBeDefined();
       expect(inGoneWrong?.movement.acceptedUnitId).toBe(acceptingUnitId);
 
       // Now release the held bed
