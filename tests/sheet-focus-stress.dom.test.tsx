@@ -3,9 +3,10 @@ import { StrictMode, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Sheet } from "@/components/ui/sheet";
-import { popSheet, pushSheet, SHEET_INERT_MARKER } from "@/components/ui/sheet-focus";
+import { popSheet, pushSheet, SHEET_FOCUS_SETTLE_MS, SHEET_INERT_MARKER } from "@/components/ui/sheet-focus";
 
 afterEach(() => {
+  vi.useRealTimers();
   if (typeof document !== "undefined" && document.body) {
     document.body.style.overflow = "";
   }
@@ -67,9 +68,10 @@ describe("Sheet focus stress", () => {
     expect(background).not.toHaveAttribute("inert");
 
     unmount();
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    expect(document.body.style.overflow).toBe("scroll");
-    expect(markerCount()).toBe(0);
+    await waitFor(() => {
+      expect(document.body.style.overflow).toBe("scroll");
+      expect(markerCount()).toBe(0);
+    });
     background.remove();
     document.body.style.overflow = "";
   });
@@ -145,10 +147,10 @@ describe("Sheet focus stress", () => {
 
     // The lower sheet closes underneath the open one.
     rerender(<Pair lower={false} upper />);
-    await new Promise((resolve) => setTimeout(resolve, 80));
-
-    expect(document.activeElement).toBe(upperFocus);
-    expect(panelOf("Upper")?.contains(document.activeElement)).toBe(true);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(upperFocus);
+      expect(panelOf("Upper")?.contains(document.activeElement)).toBe(true);
+    });
   });
 
   it("stays balanced under StrictMode double-invoked effects", async () => {
@@ -185,12 +187,14 @@ describe("Sheet focus stress", () => {
       </Sheet>,
     );
 
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+    await waitFor(() => {
+      expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+    });
 
     unmount();
-    await new Promise((resolve) => setTimeout(resolve, 40));
-    expect(markerCount()).toBe(0);
+    await waitFor(() => {
+      expect(markerCount()).toBe(0);
+    });
     timeoutSpy.mockRestore();
   });
 
@@ -218,13 +222,15 @@ describe("Sheet focus stress", () => {
         <p>Body</p>
       </Sheet>,
     );
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await waitFor(() => {
+      expect(added.size).toBeGreaterThan(0);
+    });
     unmount();
-    await new Promise((resolve) => setTimeout(resolve, 40));
-
-    for (const type of ["focusin", "pointerdown", "keydown"]) {
-      expect(removed.get(type) ?? 0).toBeGreaterThanOrEqual(added.get(type) ?? 0);
-    }
+    await waitFor(() => {
+      for (const type of ["focusin", "pointerdown", "keydown"]) {
+        expect(removed.get(type) ?? 0).toBeGreaterThanOrEqual(added.get(type) ?? 0);
+      }
+    });
     addSpy.mockRestore();
     removeSpy.mockRestore();
   });
@@ -271,22 +277,29 @@ describe("Sheet focus stress", () => {
     };
     greedy.addEventListener("focusout", steal);
 
+    vi.useFakeTimers();
     render(
       <Sheet open onClose={() => {}} title="Contested" portal>
         <p>Body</p>
       </Sheet>,
     );
-    await waitFor(() => {
-      expect(panelOf("Contested")?.contains(document.activeElement)).toBe(true);
-    });
+    await act(async () => vi.advanceTimersByTimeAsync(20));
+    expect(panelOf("Contested")?.contains(document.activeElement)).toBe(true);
 
-    act(() => {
-      greedy.focus();
-    });
-    await new Promise((resolve) => setTimeout(resolve, 120));
-
-    // The war ends: bounded reclaims, no stack overflow, focus left alone.
-    expect(steals).toBeLessThan(200);
+    try {
+      act(() => {
+        greedy.focus();
+        vi.advanceTimersByTime(SHEET_FOCUS_SETTLE_MS + 1);
+      });
+      // Observe the entire opening-focus window, rather than its first bounded count.
+      expect(steals).toBeGreaterThan(0);
+      expect(steals).toBeLessThan(200);
+      const settledSteals = steals;
+      act(() => vi.advanceTimersByTime(SHEET_FOCUS_SETTLE_MS));
+      expect(steals).toBe(settledSteals);
+    } finally {
+      vi.useRealTimers();
+    }
     greedy.removeEventListener("focusout", steal);
     background.remove();
   });

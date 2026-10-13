@@ -119,6 +119,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
         role="dialog"
         aria-modal="true"
         aria-labelledby="arrival-modal-title"
+        tabIndex={-1}
         className={styles.dialog}
       >
         <div className={styles.head}>

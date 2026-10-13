@@ -79,6 +79,7 @@ export function ResetBaselineModal({ isOpen, onClose, onConfirm }: ResetBaseline
         aria-modal="true"
         aria-labelledby="reset-modal-title"
         aria-describedby="reset-modal-desc"
+        tabIndex={-1}
       >
         <header className={styles.modalHeader}>
           <div className={styles.resetHeaderMeta}>

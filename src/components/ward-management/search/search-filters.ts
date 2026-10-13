@@ -118,7 +118,12 @@ export function matchesSetting(
 
   if (result.kind === "referral") {
     if (setting === "ed") {
-      return !result.referral.originSiteCode.includes("CMHT") && !result.referral.originSiteCode.includes("Clinic");
+      // The recorded ED medical source and an ED-bearing origin site establish ED origin.
+      // Other referring channels do not establish a patient's physical location.
+      return (
+        result.referral.source === "ed_medical" &&
+        Boolean(siteByCode.get(result.referral.originSiteCode)?.emergencyDepartment)
+      );
     }
     if (setting === "community") {
       return isCommunityReferral(result.referral);
@@ -137,7 +142,11 @@ export function matchesPresence(result: PatientSearchResult, presence: string): 
   if (presence === "live") {
     if (result.kind === "movement") return true;
     if (result.kind === "referral") {
-      return !result.referral.originSiteCode.includes("CMHT") && !result.referral.originSiteCode.includes("Clinic");
+      return (
+        result.referral.source !== "community" &&
+        !result.referral.originSiteCode.includes("CMHT") &&
+        !result.referral.originSiteCode.includes("Clinic")
+      );
     }
     return false;
   }
