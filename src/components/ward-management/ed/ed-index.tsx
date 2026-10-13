@@ -408,7 +408,7 @@ export function EdIndex() {
           level={1}
           title={
             <>
-              <SrOnly>All emergency departments, </SrOnly>
+              <SrOnly>All EDs, </SrOnly>
               {waiting} waiting in {withWaiting.length} EDs
             </>
           }

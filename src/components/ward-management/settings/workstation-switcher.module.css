@@ -454,10 +454,6 @@
   color: var(--wf-warning-ink);
 }
 
-.danger {
-  color: var(--wf-danger-ink);
-}
-
 /* Inline preview of a desk */
 .preview2 {
   display: flex;
@@ -538,6 +534,16 @@
 
 .cannot {
   color: var(--wf-ink-3);
+}
+
+/* Phone only (audit settings-23): what a desk can do, folded under one line. */
+.canFold > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--wf-touch);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  cursor: pointer;
 }
 
 .cannot > span:nth-child(2) {

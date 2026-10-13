@@ -151,6 +151,18 @@ export function runwayGapPercent(trackPx: number | undefined, compact: boolean):
   return (RUNWAY_MARKER_GAP_PX / trackPx) * 100;
 }
 
+/** Half the widest marker ("T2" pill), in px. A marker is centred on its wait, so one at the 72h
+ *  end stuck out of the track by this much until it was held inside (13 Oct 2026). */
+export const RUNWAY_MARKER_HALF_PX = 12;
+
+/** A marker's left edge as a share of the track, held so the whole marker stays inside the track.
+ *  Before the track is measured it uses the same fallback width as `runwayGapPercent`. */
+export function runwayMarkerPercent(x: number, trackPx: number | undefined, compact: boolean): number {
+  const edge = runwayGapPercent(trackPx, compact) * (RUNWAY_MARKER_HALF_PX / RUNWAY_MARKER_GAP_PX);
+  if (edge >= 50) return 50;
+  return Math.min(100 - edge, Math.max(edge, x));
+}
+
 /** Lane per marker, for positions already sorted shortest wait first: each marker takes the
  *  lowest lane whose last marker is at least `gapPercent` to its left. Positions never move. */
 export function runwayLanes(positions: readonly number[], gapPercent: number): number[] {
@@ -202,7 +214,7 @@ export function WaitRunway({
     .sort((a, b) => b.raisedAt - a.raisedAt)
     .map((referral) => {
       const minutes = referralClocks(referral, now).sinceReferral;
-      return { referral, minutes, x: runwayPercent(minutes) };
+      return { referral, minutes, x: runwayMarkerPercent(runwayPercent(minutes), trackPx, compact) };
     });
   const laneOf = runwayLanes(
     sorted.map((entry) => entry.x),

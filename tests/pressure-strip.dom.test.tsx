@@ -5,6 +5,8 @@ import { PressureStrip } from "@/components/ward-management/coordinator/pressure
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ED_ACCESS_TARGET_MINUTES } from "@/components/ward-management/ward-model";
+import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward-pressure";
 
 /**
  * `edPressure` clamps `longestWaitMinutes` to 0 for a department with nobody waiting — a
@@ -81,5 +83,18 @@ describe("PressureStrip", () => {
     // at a re-anchored clock inflates every wait by the offset.
     const stale = baseline.map((minutes) => (minutes > 0 ? minutes + offset : minutes));
     expect(stale).not.toEqual(baseline);
+  });
+
+  it("marks a department past the ED access target red, by the rule Home's ED strip uses (ops-16)", () => {
+    render(<PressureStrip now={NOW_ANCHOR} selectedEdId={undefined} onSelectEd={() => {}} movements={wardMovements} />);
+    const rows = edPressure(NOW_ANCHOR, wardMovements);
+    const longWait = rows.filter((row) => row.waiting > 0 && row.longestWaitMinutes >= ED_ACCESS_TARGET_MINUTES);
+    expect(longWait.length, "the seed has an ED wait past the access target").toBeGreaterThan(0);
+    for (const row of rows) {
+      const tone = screen.getByTestId(`ward-ed-${row.ed.id}`).getAttribute("data-pressure-tone");
+      const waitTone = edLongestWaitTone(row.waiting, row.longestWaitMinutes, ED_ACCESS_TARGET_MINUTES);
+      if (waitTone === "danger") expect(tone, row.ed.name).toBe("danger");
+      if (waitTone === "warning") expect(["danger", "warn"], row.ed.name).toContain(tone);
+    }
   });
 });

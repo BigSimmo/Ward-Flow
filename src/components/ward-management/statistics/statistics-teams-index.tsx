@@ -175,7 +175,6 @@ export function StatisticsTeamsIndexScreen() {
                     name={entry.team.name}
                     meta={
                       <span className={phone.dotName}>
-                        <ServiceDot service={CODE_SERVICE[entry.code]} />
                         {`${group?.label ?? "Service not mapped"} · ${entry.withDate ?? "none"} with a date`}
                       </span>
                     }

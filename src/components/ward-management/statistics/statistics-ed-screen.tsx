@@ -36,7 +36,6 @@ import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits
 import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
 
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
@@ -48,6 +47,9 @@ import { PhoneBody, PhoneList, phoneBodyStyles as phone } from "./statistics-pho
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 import ed from "./statistics-ed-third-edition.module.css";
+
+/** The row label for a person waiting in ED: no AD- number exists yet, and a WF- id is never shown (D-39). */
+const NOT_YET_ADMITTED = "Not yet admitted";
 
 /**
  * ONE EMERGENCY DEPARTMENT IN DETAIL — the per-department statistics page.
@@ -83,7 +85,7 @@ export function StatisticsEdScreen({
   movements?: Movement[];
 }) {
   const live = useStatisticsLive();
-  const { movements: liveMovements, patients, referrals, units } = live.state;
+  const { movements: liveMovements, units } = live.state;
   const isPhone = useIsPhone();
   const now = live.now;
   const movements = movementsOverride ?? liveMovements;
@@ -128,8 +130,10 @@ export function StatisticsEdScreen({
   const { onTheList, urgent, unplaced, waitingMovements, over24h, over48h, longestWait, allDepartmentMovements } =
     edWaitFigures(movements, department.id, now);
   const bands = edWaitBands(movements, department.id, now);
-  const nameOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals }).formalName;
-  const umrnOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals }).umrn;
+  // Statistics shows AD- admission numbers only, no names or UMRN (Josh, 13 Oct 2026), and never a
+  // WF- journey id (D-39). A person waiting in ED has no admission yet, so the row says so and
+  // links to the live movement, where the name is shown.
+  const nameOf: (movement: Movement) => string = () => NOT_YET_ADMITTED;
 
   const sortedWaits = [...waitingMovements].map((entry) => entry.waitMinutes).sort((a, b) => a - b);
   const middle = Math.floor(sortedWaits.length / 2);
@@ -284,7 +288,6 @@ export function StatisticsEdScreen({
         <EdPhone
           waiting={waitingMovements}
           nameOf={nameOf}
-          umrnOf={umrnOf}
           wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Ward accepted"}
           next={nextToCross[0] ?? null}
         />
@@ -302,7 +305,6 @@ export function StatisticsEdScreen({
                 onTheList={onTheList}
                 longestName={longestWait ? nameOf(longestWait.movement) : ""}
                 longestText={longestWait ? splitDuration(longestWait.waitMinutes) : ""}
-                umrnOf={umrnOf}
               />
             </Follow>
             <FlushStack>
@@ -537,13 +539,11 @@ type EdPhoneFilter = "all" | "unplaced" | "long";
 function EdPhone({
   waiting,
   nameOf,
-  umrnOf,
   wardName,
   next,
 }: {
   waiting: readonly { movement: Movement; waitMinutes: number }[];
   nameOf: (movement: Movement) => string;
-  umrnOf: (movement: Movement) => string;
   wardName: (unitId: string) => string;
   next: { movement: Movement; waitMinutes: number } | null;
 }) {
@@ -571,9 +571,9 @@ function EdPhone({
         <div className={phone.next} data-testid="ward-statistics-ed-phone-next">
           <span className={phone.ring0} aria-hidden="true" />
           <span className={phone.nextText}>
-            <b>{`Next to cross ${longHours}h: ${nameOf(next.movement)}`}</b>
+            <b>{`Next to cross ${longHours}h`}</b>
             <span>
-              <b>{splitDuration(LONG_WAIT_MINUTES - next.waitMinutes)}</b> left · {umrnOf(next.movement)}
+              <b>{splitDuration(LONG_WAIT_MINUTES - next.waitMinutes)}</b> left
             </span>
           </span>
         </div>
@@ -609,7 +609,7 @@ function EdPhone({
                   <PhoneListRow
                     key={movement.id}
                     as="li"
-                    actNow={tone === "danger"}
+                    // No stripe or tinted fill (audit stats-8): the red triangle on the wait carries the tone.
                     leading={
                       movement.atsCategory === undefined ? undefined : (
                         <span className={phone.tier}>{`T${movement.atsCategory}`}</span>
@@ -618,8 +618,6 @@ function EdPhone({
                     name={nameOf(movement)}
                     meta={
                       <span className={phone.dotName}>
-                        <span className={phone.mono}>{umrnOf(movement)}</span>
-                        {" · "}
                         <StatusGlyph tone={movement.acceptedUnitId === undefined ? "neutral" : "success"} size={9} />
                         {movement.acceptedUnitId === undefined ? "No ward yet" : wardName(movement.acceptedUnitId)}
                       </span>
@@ -696,7 +694,6 @@ function Waits({
   onTheList,
   longestName,
   longestText,
-  umrnOf,
 }: {
   waiting: readonly { movement: Movement; waitMinutes: number }[];
   nameOf: (movement: Movement) => string;
@@ -705,7 +702,6 @@ function Waits({
   onTheList: number;
   longestName: string;
   longestText: string;
-  umrnOf: (movement: Movement) => string;
 }) {
   const [filter, setFilter] = useState<WaitFilter>("all");
   const [sort, setSort] = useState<"longest" | "name">("longest");
@@ -778,7 +774,7 @@ function Waits({
               {veryLongHours} hours, your default, not a legal limit.
             </p>
             <p data-testid="ward-stat-ed-longest-wait">
-              Longest wait, {longestName}, {longestText} waiting.
+              Longest wait, {longestName.toLowerCase()}, {longestText} waiting.
             </p>
           </SrOnly>
           <div className={ed.waitChart} data-testid="ward-stat-ed-wait-chart" data-ward-primitive="wait-chart">
@@ -829,7 +825,6 @@ function Waits({
                             <Link href={movementHref(movement.id)} className={styles.rowLink}>
                               {nameOf(movement)}
                             </Link>
-                            <span className={ed.umrn}>{umrnOf(movement)}</span>
                           </span>
                         </th>
                         <td>

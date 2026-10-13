@@ -278,6 +278,10 @@ export function handoverHref(): string {
   return "/mockups/ward-flow/handover";
 }
 
+export function patientSearchHref(): string {
+  return "/mockups/ward-flow/search";
+}
+
 export function settingsHref(): string {
   return "/mockups/ward-flow/settings";
 }

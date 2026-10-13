@@ -3032,34 +3032,117 @@
 }
 
 /* Phone band (v10 Home mockup, Josh 11 Oct 2026): at rest the lean bar sits on the hero's top
- * colour, so Menu, title, service line, Search and Tasks read as part of the band. */
+ * colour, so Menu, title, service line, Search and Tasks read as part of the band.
+ * Batch 5 (13 Oct 2026): the same `:has()` arm as desktop paints the bar ink before it has its own
+ * `data-band`, so a slow load never shows the light bar for a moment before the hero is measured.
+ * A scrolled bar (`data-scrolled`) keeps its own solid face. */
 @media (max-width: 48rem) {
-  .bar.bar[data-band="ink"] {
+  .bar.bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    ) {
     --wf-focus-ring: var(--wf-hero-ink);
     background: var(--wf-hero-1);
     border-bottom-color: var(--wf-hero-1);
     color: var(--wf-hero-ink);
   }
 
-  .bar[data-band="ink"] .place,
-  .bar[data-band="ink"] .phoneOnly,
-  .bar[data-band="ink"] .drawerTrigger,
-  .bar[data-band="ink"] .triggerIcon,
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type > svg {
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .place,
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .phoneOnly,
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .drawerTrigger,
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .triggerIcon,
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search"])
+    > div:first-of-type
+    > svg {
     color: var(--wf-hero-ink);
   }
 
-  .bar[data-band="ink"] .scopeBadgeBtn,
-  .bar[data-band="ink"] .scopeCaret {
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .scopeBadgeBtn,
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .scopeCaret {
     color: var(--wf-hero-ink-2);
   }
 
-  .bar[data-band="ink"] .phoneOnly:hover::before,
-  .bar[data-band="ink"] .drawerTrigger:hover::before {
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .phoneOnly:hover::before,
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .drawerTrigger:hover::before {
     background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
   }
 
-  .bar[data-band="ink"] .drawerTrigger[data-bar-mode="tasks"] .badge {
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .drawerTrigger[data-bar-mode="tasks"]
+    .badge {
     background: var(--wf-hero-1);
     box-shadow:
       inset 0 0 0 1px var(--wf-on-hero-line),
@@ -3067,12 +3150,31 @@
     color: var(--wf-hero-ink);
   }
   /* The open search field is the light face even over the band: dark icon, accent focus edge. */
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open])
+    > div:first-of-type {
     --wf-focus-ring: var(--wf-accent);
     color: var(--wf-ink-1);
   }
 
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg {
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open])
+    > div:first-of-type
+    > svg {
     color: var(--wf-ink-3);
   }
 }

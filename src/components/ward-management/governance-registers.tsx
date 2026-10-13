@@ -18,6 +18,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { ACCESS_RECORD_NOTE } from "@/components/ward-management/search/access-record";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import type { WardConfiguration } from "./ward-configuration";
 import { WardFlowContext, type useWardFlow, type WardFlowContextValue } from "./ward-flow-provider";
@@ -31,7 +32,7 @@ import type {
 import { LEAVING_DESTINATIONS } from "./ward-admissions";
 import { legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { snoozeReasonLabel } from "./ward-inbox-snooze";
-import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { deskRoleLabel } from "./settings/workstation-desks";
 import { UNDO_TOAST_MS } from "./ward-operational-defaults";
 import { movementHref, unitHref } from "./shell/ward-facade";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF, WEEKLY_REPORT_HREF } from "./reports/report-routes";
@@ -116,10 +117,13 @@ export function GovernanceOverridesRegisterPanel({
   movements,
   units,
   now,
+  sessionCount,
 }: {
   movements: Movement[];
   units: Unit[];
   now: Instant;
+  /** The override events this session's Review holds: the same figure as the hero's Overrides. */
+  sessionCount?: number;
 }) {
   const entries = allOverrides(movements);
   return (
@@ -135,6 +139,11 @@ export function GovernanceOverridesRegisterPanel({
         </div>
       </header>
       <CardBody>
+        {sessionCount !== undefined ? (
+          <p className={thirdEdition.quiet} data-testid="ward-governance-overrides-session">
+            {sessionOverrideSentence(sessionCount)} This register lists overrides saved on a referral.
+          </p>
+        ) : null}
         <OverrideRegister entries={entries} units={units} now={now} />
       </CardBody>
     </Card>
@@ -160,7 +169,16 @@ export function GovernanceOverridesRegisterPanel({
  * this exact shape of over-claim; this panel is written to pass it by being true, not by working
  * around it.
  */
-export function GovernanceAccessRecordPanel() {
+/** The hero's Overrides figure counts this session's override events waiting in Review; the register
+ *  below lists overrides saved on a movement. Say so in the register, so the two never read as one
+ *  figure that disagrees with itself (audit settings-2, 13 Oct 2026). */
+function sessionOverrideSentence(count: number): string {
+  return count === 0
+    ? "No override event from this session waits in Review."
+    : `${count} override ${count === 1 ? "event" : "events"} from this session ${count === 1 ? "waits" : "wait"} in Review.`;
+}
+
+export function GovernanceAccessRecordPanel({ sessionCount }: { sessionCount?: number } = {}) {
   return (
     <Card as="div" role="complementary" data-testid="ward-governance-access-record">
       <header className={thirdEdition.panelHead}>
@@ -170,6 +188,13 @@ export function GovernanceAccessRecordPanel() {
         </div>
       </header>
       <CardBody className={thirdEdition.noticeStack}>
+        {sessionCount !== undefined ? (
+          <p className={thirdEdition.quiet} data-testid="ward-governance-access-session">
+            {sessionCount === 0
+              ? "No record opening from this session waits in Review."
+              : `${sessionCount} record ${sessionCount === 1 ? "opening" : "openings"} from this session ${sessionCount === 1 ? "waits" : "wait"} in Review.`}
+          </p>
+        ) : null}
         <p className={thirdEdition.notice}>
           <History aria-hidden="true" size={16} /> {ACCESS_RECORD_NOTE}
         </p>
@@ -423,9 +448,7 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
                     [
                       "Second sign-off",
                       `${event.details.secondSignOff.name}${
-                        event.details.secondSignOff.role
-                          ? `, ${WARD_FLOW_ROLE_LABELS[event.details.secondSignOff.role]}`
-                          : ""
+                        event.details.secondSignOff.role ? `, ${deskRoleLabel(event.details.secondSignOff.role)}` : ""
                       }`,
                     ],
                   ] as const)
@@ -834,10 +857,19 @@ function GovernanceSession({
   const [announcement, setAnnouncement] = useState<string>("");
   const [chip, setChip] = useState<ReviewChip | null>(null);
   const [phoneSheet, setPhoneSheet] = useState(false);
-  // Starts empty: a pre-picked answer invites one-tap reviews (device audit 11 Oct 2026).
-  const [phoneDecision, setPhoneDecision] = useState<AuditReview["decision"] | null>(null);
+  // Audit settings-4: after a phone review is confirmed, the sheet moves on to the next waiting event.
+  const [phoneAdvance, setPhoneAdvance] = useState(false);
   const [phoneMore, setPhoneMore] = useState<"registers" | "reports" | null>(null);
   const isPhone = useIsPhone();
+  // Discreet names on phone (audit settings-9): initials plus UMRN in the phone rows and sheet.
+  const nameFor = usePatientNameDisplay();
+  const phoneSubjectLabel = (event: AuditEvent) => {
+    const person = subjectPerson(event, patientOf);
+    if (!person) return subjectLabel(event, patientOf);
+    // Audit settings-5: the UMRN rides with the name, as on desktop.
+    const shown = nameFor(person.name, person.umrn);
+    return shown.includes(person.umrn) ? shown : `${shown} · ${person.umrn}`;
+  };
   const isTabletPortrait = useIsTabletPortrait();
   const gate = useRoleGate();
   const reviewGate = gate("REVIEW_AUDIT_EVENT");
@@ -884,7 +916,13 @@ function GovernanceSession({
             event.details.decision === pending.decision,
         )
     : undefined;
-  const savedReview = pending ? history[pending.count] : undefined;
+  // Read from the reviewed event itself, not the selection, so a phone sheet that has moved on to
+  // the next event still confirms (and toasts) the review it just recorded (audit settings-4).
+  const savedReview = pending
+    ? reviews.filter((review) => review.eventId === pending.eventId && review.generation === pending.generation)[
+        pending.count
+      ]
+    : undefined;
   const confirmed =
     reviewAttempt?.outcome === "accepted" &&
     savedReview?.decision === pending?.decision &&
@@ -974,6 +1012,24 @@ function GovernanceSession({
     if (event) setAnnouncement(`Selected ${actionLabels[event.action]}.`);
   };
 
+  // Audit settings-4: once the phone review is settled, the sheet loads the next event still
+  // waiting, or closes when none is left. A refused review stays put. Adjusted while rendering
+  // (React's pattern for state that follows other state), so no effect sets state.
+  if (phoneAdvance && reviewAttempt !== undefined) {
+    setPhoneAdvance(false);
+    const nextWaiting = toReview.find(
+      (event) => reviewState(event) === "unreviewed" && !(selected && event.id === selected.id),
+    );
+    if (confirmed && nextWaiting) setSelection(nextWaiting);
+    else if (confirmed) setPhoneSheet(false);
+    // Announce only the settled outcome, never before the review is confirmed.
+    setAnnouncement(
+      confirmed && pending
+        ? `${reviewLabels[pending.decision]} recorded.`
+        : "Review not recorded. The record may have changed; select it again.",
+    );
+  }
+
   function changeTab(next: GovernanceTab) {
     setTab(next);
     setAnnouncement(`${TAB_LABEL[next]} shown.`);
@@ -999,8 +1055,8 @@ function GovernanceSession({
     choose(list[next] ?? null);
   }
 
-  function recordReview(decision: AuditReview["decision"]) {
-    if (!api || !canReview || !selected || selected.generation !== api.worldGeneration) return;
+  function recordReview(decision: AuditReview["decision"]): boolean {
+    if (!api || !canReview || !selected || selected.generation !== api.worldGeneration) return false;
     const count = history.length;
     setPending({
       eventId: selected.id,
@@ -1019,6 +1075,7 @@ function GovernanceSession({
       expectedReviewCount: count,
       decision,
     });
+    return true;
   }
 
   function closeEndorse() {
@@ -1035,11 +1092,16 @@ function GovernanceSession({
     registers: "Registers",
     reports: "Reports",
   };
+  // Audit settings-7: the hero reads the Waiting count the list shows, with follow-ups named apart.
+  const reviewTitle =
+    toReview.length === 0
+      ? "Nothing to review"
+      : followUp > 0
+        ? `${unreviewed} to review · ${followUp} follow-up`
+        : `${unreviewed} to review`;
   const heroTitle =
     tab === "review"
-      ? toReview.length === 0
-        ? "Nothing to review"
-        : `${toReview.length} to review`
+      ? reviewTitle
       : tab === "gaps"
         ? totalGaps === 0
           ? "No gaps recorded"
@@ -1095,36 +1157,18 @@ function GovernanceSession({
     ) : null;
   const reviewedOf = reviewable.length;
 
-  // The rail at rest (v10): the session summary, then the next events to review. No ring here: the
-  // ring stays in the hero. Pressing a next event opens it in the rail.
+  // The rail at rest. Audit settings-12: the hero already carries the counts and the reviewed
+  // ring, so the rail no longer repeats them; it says what to do, or that everything is reviewed.
   const restSummary = (
     <div className={thirdEdition.restSummary} data-testid="ward-governance-rest-summary">
-      <div className={thirdEdition.restHead}>
-        <span className={thirdEdition.quietText}>Reviewed so far, captured since the session opened</span>
-        <Frac done={reviewedCount} total={reviewable.length} label="events reviewed" />
-      </div>
-      <dl className={thirdEdition.restCells}>
-        <div>
-          <dt>Overrides</dt>
-          <dd>{overrideCount}</dd>
-        </div>
-        <div>
-          <dt>Refused or stale</dt>
-          <dd>{refusedCount}</dd>
-        </div>
-        <div>
-          <dt>Record access</dt>
-          <dd>{accessCount}</dd>
-        </div>
-      </dl>
-      {/* "Next to review" was dropped from the rail: it repeated the first rows of the table beside
-          it (device audit 11 Oct 2026). */}
       {toReview.length === 0 ? (
         <p className={thirdEdition.restClear}>
           <StatusGlyph tone="success" size={9} />
           Every captured event is reviewed.
         </p>
-      ) : null}
+      ) : (
+        <p className={thirdEdition.quietText}>Choose an event from the list to review it.</p>
+      )}
     </div>
   );
 
@@ -1161,9 +1205,6 @@ function GovernanceSession({
   const placedDetail =
     isTabletPortrait && selected ? (
       <>
-        <Card className={thirdEdition.detailCard} aria-label="This session">
-          <div className={thirdEdition.detailBody}>{restSummary}</div>
-        </Card>
         <Drawer
           open
           onClose={() => choose(null)}
@@ -1186,8 +1227,13 @@ function GovernanceSession({
   const phoneSites = [...sites].sort((a, b) => b.gaps - a.gaps).slice(0, 3);
   const openPhoneEvent = (event: AuditEvent) => {
     choose(event);
-    setPhoneDecision(null);
     setPhoneSheet(true);
+  };
+  const phoneReviewReason = !reviewGate.allowed ? reviewGate.reason : !canReview ? "Recording review…" : undefined;
+  const recordPhoneReview = (decision: AuditReview["decision"]) => {
+    if (!recordReview(decision)) return;
+    setPhoneAdvance(true);
+    setAnnouncement("Recording review…");
   };
   // v10 phone row: the action, the person, then the outcome and who; the clock time and how long
   // ago at the end. The whole row opens the review sheet, so it carries no separate button.
@@ -1204,11 +1250,11 @@ function GovernanceSession({
         name={actionLabels[event.action]}
         meta={
           <>
-            <span className={thirdEdition.phoneMetaLine}>{subjectLabel(event, patientOf)}</span>
+            <span className={thirdEdition.phoneMetaLine}>{phoneSubjectLabel(event)}</span>
             <span className={thirdEdition.phoneMetaLine}>
               <StatusGlyph tone={tone} size={9} />
-              {outcomeLabels[event.outcome]} ·{" "}
-              {event.actor.role ? WARD_FLOW_ROLE_LABELS[event.actor.role] : categoryLabels[event.category]}
+              {categoryLabels[event.category]} · {outcomeLabels[event.outcome]}
+              {event.actor.role ? ` · ${deskRoleLabel(event.actor.role)}` : ""}
             </span>
           </>
         }
@@ -1218,16 +1264,41 @@ function GovernanceSession({
       />
     );
   };
+  const savedOverrideCount = allOverrides(movements).length;
+  const phoneReviewed = [...reviewable].filter((event) => reviewState(event) === "reviewed").reverse();
+  const phoneSubject = selected?.subject;
+  const phoneMovementId =
+    phoneSubject?.kind === "movement" && movements.some((entry) => entry.id === phoneSubject.movementId)
+      ? phoneSubject.movementId
+      : null;
   const phoneTree = (
     <div className={thirdEdition.phoneScreen} data-testid="ward-governance-phone">
       <PhoneHero
         eyebrow="Governance · This session"
-        title={toReview.length === 0 ? "Nothing to review" : `${toReview.length} to review`}
+        title={reviewTitle}
         sub={`${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`}
         figures={[
-          { id: "override", value: overrideCount, label: "Overrides" },
-          { id: "refused", value: refusedCount, label: "Refused" },
-          { id: "access", value: accessCount, label: "Record access" },
+          {
+            id: "override",
+            value: overrideCount,
+            label: "Overrides",
+            onPress: () => toggleChip("override"),
+            pressed: chip === "override",
+          },
+          {
+            id: "refused",
+            value: refusedCount,
+            label: "Refused",
+            onPress: () => toggleChip("refused"),
+            pressed: chip === "refused",
+          },
+          {
+            id: "access",
+            value: accessCount,
+            label: "Record access",
+            onPress: () => toggleChip("access"),
+            pressed: chip === "access",
+          },
         ]}
         actions={
           <Button
@@ -1253,7 +1324,7 @@ function GovernanceSession({
         items={[
           { id: "review", label: "Review" },
           { id: "gaps", label: "Gaps", count: totalGaps },
-          { id: "audit", label: "Audit" },
+          { id: "audit", label: "Reviewed", count: reviewedCount },
         ]}
       />
       {phoneTab === "review" ? (
@@ -1296,6 +1367,9 @@ function GovernanceSession({
       ) : null}
       {phoneTab === "gaps" ? (
         <Card aria-label="Gaps by site">
+          <p className={thirdEdition.phoneCardNote}>
+            A gap is a form step, examination or carer, PSP or MHAS notice not yet recorded.
+          </p>
           {sites.length === 0 ? (
             <p className={thirdEdition.emptyCell}>No open form or recent move to check.</p>
           ) : (
@@ -1308,45 +1382,59 @@ function GovernanceSession({
                   meta={entry.kind === "ed" ? "Emergency department" : "Ward"}
                   value={entry.gaps}
                   time={entry.gaps === 1 ? "gap" : "gaps"}
-                  onSelect={() => setSiteId(entry.id === siteId ? null : entry.id)}
+                  onSelect={() => setSiteId(entry.id)}
                 />
               ))}
             </ul>
           )}
           {sites.length > phoneSites.length ? (
-            <p className={thirdEdition.quiet}>
+            <p className={thirdEdition.phoneCardNote}>
               {sites.length - phoneSites.length} more sites. Open on a tablet or computer for every site.
             </p>
           ) : null}
-          {site ? (
-            <div className={thirdEdition.phoneSite}>
-              <h3 className={thirdEdition.eyebrow}>{site.name}: patients with a gap</h3>
-              {site.people.length > 0 ? (
-                <ul className={thirdEdition.phoneList}>
-                  {site.people.map((person) => (
+        </Card>
+      ) : null}
+      {/* Audit settings-8: a site row opens its gaps in a sheet, so the tap visibly does something. */}
+      <PhoneSheet
+        open={phoneTab === "gaps" && site !== null}
+        onClose={() => setSiteId(null)}
+        title={site ? site.name : "Site"}
+        description="Patients with a gap"
+        height="content"
+      >
+        {site ? (
+          <div className={thirdEdition.stackGap}>
+            {site.people.length > 0 ? (
+              <ul className={thirdEdition.phoneList}>
+                {site.people.map((person) => {
+                  const shown = nameFor(person.name, person.umrn);
+                  const missing = person.missing.join(", ");
+                  return (
                     <PhoneListRow
                       key={person.key}
                       as="li"
-                      name={person.name}
-                      meta={`${person.umrn} · ${person.missing.join(", ")}`}
+                      name={shown}
+                      meta={shown.includes(person.umrn) ? missing : `${person.umrn} · ${missing}`}
                       href={person.href}
                     />
-                  ))}
-                </ul>
-              ) : (
-                <p className={thirdEdition.quiet}>Everything that applies here is recorded.</p>
-              )}
-            </div>
-          ) : null}
-        </Card>
-      ) : null}
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className={thirdEdition.quiet}>Everything that applies here is recorded.</p>
+            )}
+          </div>
+        ) : null}
+      </PhoneSheet>
+      {/* Audit settings-6: Review already lists what waits, so the phone's third view lists only
+          what has been reviewed, newest first. The full captured trail is on a tablet or computer. */}
       {phoneTab === "audit" ? (
-        <Card aria-label="Captured this session">
-          {allowed && visible.length > 0 ? (
-            <ul className={thirdEdition.phoneList}>{visible.map(phoneEventRow)}</ul>
+        <Card aria-label="Reviewed this session">
+          {allowed && phoneReviewed.length > 0 ? (
+            <ul className={thirdEdition.phoneList}>{phoneReviewed.map(phoneEventRow)}</ul>
           ) : (
             <p className={thirdEdition.emptyCell}>
-              {allowed ? "Recorded actions and record opens will appear here." : "Record access unavailable"}
+              {allowed ? "No event has been reviewed yet." : "Record access unavailable"}
             </p>
           )}
         </Card>
@@ -1383,24 +1471,25 @@ function GovernanceSession({
         open={phoneSheet && selected !== null}
         onClose={() => setPhoneSheet(false)}
         title={selected ? actionLabels[selected.action] : "Review"}
-        description={selected ? subjectLabel(selected, patientOf) : undefined}
+        description={selected ? phoneSubjectLabel(selected) : undefined}
         height="content"
+        // Audit settings-4 and settings-10: Reviewed and Follow-up record the review in one tap (the
+        // toast offers Undo), then the next waiting event loads in the same sheet. No greyed button.
         primary={
           selected && selected.category !== "review"
             ? {
-                label: "Record review",
-                disabledReason: !reviewGate.allowed
-                  ? reviewGate.reason
-                  : !canReview
-                    ? "Recording review…"
-                    : phoneDecision === null
-                      ? "Choose Reviewed or Follow-up first"
-                      : undefined,
-                onAction: () => {
-                  if (phoneDecision === null) return;
-                  recordReview(phoneDecision);
-                  setAnnouncement(`${reviewLabels[phoneDecision]} recorded.`);
-                },
+                label: "Reviewed",
+                disabledReason: phoneReviewReason,
+                onAction: () => recordPhoneReview("reviewed"),
+              }
+            : undefined
+        }
+        secondary={
+          selected && selected.category !== "review"
+            ? {
+                label: "Follow-up",
+                disabledReason: phoneReviewReason,
+                onAction: () => recordPhoneReview("follow-up-required"),
               }
             : undefined
         }
@@ -1423,7 +1512,7 @@ function GovernanceSession({
                 {
                   id: "role",
                   label: "Role recorded",
-                  value: selected.actor.role ? WARD_FLOW_ROLE_LABELS[selected.actor.role] : "Not recorded",
+                  value: selected.actor.role ? deskRoleLabel(selected.actor.role) : "Not recorded",
                 },
                 { id: "when", label: "Recorded", value: when(selected.at, now) },
                 {
@@ -1433,19 +1522,25 @@ function GovernanceSession({
                 },
               ]}
             />
+            {/* The same recorded facts the desktop detail shows (before, requested, after for a legal
+                status change), so a phone review is never signed off blind. */}
+            <div className={thirdEdition.operationFacts} data-testid="ward-governance-phone-facts">
+              <h3 className={thirdEdition.subheading}>Recorded facts</h3>
+              <EventFacts event={selected} units={units} now={now} />
+            </div>
+            {phoneMovementId ? (
+              <div className={thirdEdition.entityLinks}>
+                <Link href={movementHref(phoneMovementId)} className={buttonClass({ size: "sm" })}>
+                  Open movement <ChevronRight aria-hidden="true" size={14} />
+                </Link>
+              </div>
+            ) : null}
             {selected.category !== "review" ? (
               <div className={thirdEdition.stackGap}>
                 <h3 className={thirdEdition.phoneDecisionHead}>Your review</h3>
-                <Segmented<AuditReview["decision"] | "none">
-                  className={thirdEdition.phoneDecision}
-                  label="Review decision"
-                  value={phoneDecision ?? "none"}
-                  onChange={(next) => setPhoneDecision(next === "none" ? null : next)}
-                  items={[
-                    { id: "reviewed", label: "Reviewed" },
-                    { id: "follow-up-required", label: "Follow-up" },
-                  ]}
-                />
+                <p className={thirdEdition.quiet}>
+                  Reviewed or Follow-up records it now and opens the next event. You can undo it.
+                </p>
               </div>
             ) : (
               <p className={thirdEdition.quiet}>Review attempts cannot be reviewed.</p>
@@ -1464,17 +1559,38 @@ function GovernanceSession({
         onClose={() => setPhoneMore(null)}
         title={phoneMore === "reports" ? "Reports" : "Registers"}
         description="The full registers and reports are laid out for a tablet or computer."
-        height="tall"
+        height="content"
       >
         {phoneMore === "registers" ? (
-          <div className={thirdEdition.stackGap}>
-            <GovernanceOverridesRegisterPanel movements={movements} units={units} now={now} />
-            <GovernanceAccessRecordPanel />
-            <p className={thirdEdition.quiet}>
-              Seclusion, bodily restraint and notifiable incident registers are Preview: nothing is shown until Ward
-              Flow holds these records.
-            </p>
-          </div>
+          // Audit settings-11: one plain line per register; the full registers are a desk job.
+          <ul className={thirdEdition.phoneList}>
+            <PhoneListRow
+              as="li"
+              name="Overrides"
+              meta={
+                <span data-testid="ward-governance-overrides-session">
+                  {sessionOverrideSentence(overrideCount)} Saved on a referral: {savedOverrideCount}.
+                </span>
+              }
+            />
+            <PhoneListRow
+              as="li"
+              name="Access record"
+              meta={
+                <span data-testid="ward-governance-access-session">
+                  Searches this session only.{" "}
+                  {accessCount === 1
+                    ? "1 record opening waits in Review."
+                    : `${accessCount} record openings wait in Review.`}
+                </span>
+              }
+            />
+            <PhoneListRow
+              as="li"
+              name="Seclusion, restraint and incidents"
+              meta="Preview. Not held in Ward Flow yet."
+            />
+          </ul>
         ) : (
           <ul className={thirdEdition.phoneList}>
             <PhoneListRow
@@ -1907,8 +2023,13 @@ function GovernanceSession({
             ))}
           </div>
           <div className={thirdEdition.previewGrid} data-columns="2">
-            <GovernanceOverridesRegisterPanel movements={movements} units={units} now={now} />
-            <GovernanceAccessRecordPanel />
+            <GovernanceOverridesRegisterPanel
+              movements={movements}
+              units={units}
+              now={now}
+              sessionCount={overrideCount}
+            />
+            <GovernanceAccessRecordPanel sessionCount={accessCount} />
           </div>
         </div>
       ) : null}
@@ -2159,7 +2280,7 @@ function EventTable({
                   ) : null}
                 </span>
                 <span className={thirdEdition.clip}>
-                  {event.actor.role ? shortRoleLabel(WARD_FLOW_ROLE_LABELS[event.actor.role]) : "Role unavailable"}
+                  {event.actor.role ? shortRoleLabel(deskRoleLabel(event.actor.role)) : "Role unavailable"}
                 </span>
                 <span className={thirdEdition.statusText}>
                   <StatusGlyph tone={OUTCOME_TONE[event.outcome]} size={9} />
@@ -2185,9 +2306,9 @@ function EventTable({
   );
 }
 
-/** The By column is narrow: "Flow coordinator" reads as "Coordinator" so it never truncates. */
+/** The By column is narrow: "Bed coordinator" reads as "Coordinator" so it never truncates. */
 function shortRoleLabel(label: string): string {
-  return label === "Flow coordinator" ? "Coordinator" : label;
+  return label === "Bed coordinator" ? "Coordinator" : label;
 }
 
 /** The side panel for one captured event: its facts, links to the record, and the review. */
@@ -2285,7 +2406,7 @@ function EventDetail({
               facts={[
                 ["Record", subjectLabel(selected, patientOf)],
                 ["Recorded", when(selected.at, now)],
-                ["Role recorded", selected.actor.role ? WARD_FLOW_ROLE_LABELS[selected.actor.role] : "Not recorded"],
+                ["Role recorded", selected.actor.role ? deskRoleLabel(selected.actor.role) : "Not recorded"],
                 ...(selected.actor.actingUnitId
                   ? [
                       [
@@ -2349,7 +2470,9 @@ function EventDetail({
                   <StatusGlyph tone={review.decision === "reviewed" ? "success" : "warning"} size={9} />
                   <span className={thirdEdition.stack}>
                     <strong>{reviewLabels[review.decision]}</strong>
-                    <span className={thirdEdition.quietText}>{when(review.at, now)} · Flow coordinator</span>
+                    <span className={thirdEdition.quietText}>
+                      {when(review.at, now)} · {deskRoleLabel(review.byRole)}
+                    </span>
                   </span>
                 </li>
               ))}

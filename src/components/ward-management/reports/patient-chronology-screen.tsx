@@ -39,9 +39,9 @@ import {
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { calendarDateOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { patientDisplayName } from "@/components/ward-management/ward-patients";
+import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 
 import {
   chronologyCsv,
@@ -102,14 +102,22 @@ function dayGroups(rows: readonly ChronologyRow[], dayZero: Date) {
   const groups: Array<{ key: string; label: string; rows: ChronologyRow[] }> = [];
   for (const row of rows) {
     const at = row.occurredAt ?? row.recordedAt;
-    const key = at === null ? "none" : calendarDateOf(at, dayZero).toDateString();
+    // Ops-18 (13 Oct 2026): keyed by the board-clock day it is labelled with, never the device's
+    // time zone, so one Perth day is one group on any device and the server and browser agree.
     const label = at === null ? "No time recorded" : reportDay(at, dayZero);
+    const key = at === null ? "none" : label;
     const last = groups[groups.length - 1];
     if (last && last.key === key) last.rows.push(row);
     else groups.push({ key, label, rows: [row] });
   }
   return groups;
 }
+
+/**
+ * Ops-24 (13 Oct 2026): the picker sorts by family name, so it shows "Family, Given" as the queue
+ * does, and the list reads in order.
+ */
+const pickerName = (patient: Patient) => `${patient.familyName}, ${patient.givenName}`;
 
 const clockOrMissing = (instant: Instant | null) => (instant === null ? NOT_RECORDED : formatInstant(instant));
 
@@ -285,7 +293,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
       <option value="">Choose a patient</option>
       {people.map((patient) => (
         <option key={patient.id} value={patient.id}>
-          {patientDisplayName(patient)} · {patient.umrn || "UMRN not recorded"}
+          {pickerName(patient)} · {patient.umrn || "UMRN not recorded"}
         </option>
       ))}
     </Select>
@@ -376,15 +384,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 "Synthetic demo data · choose a patient to read their events"
               )
             }
-            figures={
-              chronology
-                ? [
-                    { id: "events", value: rows.length, label: rows.length === 1 ? "Event" : "Events" },
-                    { id: "records", value: count("Record"), label: "From records" },
-                    { id: "audit", value: count("Audit"), label: "Audit" },
-                  ]
-                : undefined
-            }
+            // Ops-19 (13 Oct 2026): the counts sit once, in the source tabs below.
           />
           {chronology ? (
             <>
@@ -488,8 +488,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   key={patient.id}
                   as="li"
                   leading={patient.id === patientId ? <Check size={16} aria-hidden="true" /> : undefined}
-                  name={patientDisplayName(patient)}
-                  aria-label={`${patientDisplayName(patient)}${patient.id === patientId ? ", chosen" : ""}`}
+                  name={pickerName(patient)}
+                  aria-label={`${pickerName(patient)}${patient.id === patientId ? ", chosen" : ""}`}
                   value={<span className={phone.mono}>{patient.umrn || "UMRN not recorded"}</span>}
                   onSelect={() => {
                     choosePatient(patient.id);

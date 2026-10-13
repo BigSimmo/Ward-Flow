@@ -216,6 +216,8 @@ export type BoardFilters = {
   silent: boolean;
   dueSoon: boolean;
   breached: boolean;
+  /** shell-9: only the severe causes (at a time limit or with nowhere to go), the Menu's figure. */
+  severe: boolean;
   bin: number | null;
   search: string;
 };
@@ -229,6 +231,7 @@ export const NO_FILTERS: BoardFilters = {
   silent: false,
   dueSoon: false,
   breached: false,
+  severe: false,
   bin: null,
   search: "",
 };
@@ -243,6 +246,7 @@ export function hasFilters(filters: BoardFilters): boolean {
     filters.silent ||
     filters.dueSoon ||
     filters.breached ||
+    filters.severe ||
     filters.bin !== null ||
     filters.search.trim() !== ""
   );
@@ -278,6 +282,7 @@ export function rowMatchesFilters(
     (!filters.silent || row.silent) &&
     (!filters.dueSoon || isDueSoon(row)) &&
     (!filters.breached || isBreached(row)) &&
+    (!filters.severe || row.severe) &&
     (binIds === null || binIds.has(row.movement.id)) &&
     (needle === "" ||
       nameOf(row.movement).toLowerCase().includes(needle) ||

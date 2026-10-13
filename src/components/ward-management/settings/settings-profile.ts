@@ -20,7 +20,7 @@ export type WorkspaceProfile = {
 export const SETTINGS_DEMO_PROFILE: WorkspaceProfile = {
   name: "Dr S. Chen",
   initials: "SC",
-  role: "State bed coordinator",
+  role: CHROME_ROLE_LABELS.coordinator,
   location: "Perth Central Desk",
   phone: "08 5550 0142",
   email: "s.chen@example.org",
