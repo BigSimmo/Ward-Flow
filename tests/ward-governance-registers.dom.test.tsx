@@ -246,3 +246,75 @@ describe("Governance phone review sheet (device audit 11 Oct 2026)", () => {
     }
   });
 });
+
+describe("Governance phone audit fixes (13 Oct 2026)", () => {
+  function withPhone(run: () => void) {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(max-width: 48rem)",
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as unknown as typeof window.matchMedia;
+    try {
+      function Harness() {
+        const flow = useWardFlow();
+        return <GovernanceWorkbench movements={flow.movements} units={flow.units} now={NOW} api={flow} />;
+      }
+      render(
+        <WardFlowProvider initialNow={NOW}>
+          <Harness />
+        </WardFlowProvider>,
+      );
+      run();
+    } finally {
+      window.matchMedia = original;
+      window.localStorage.removeItem("ward-flow-discreet-names");
+    }
+  }
+
+  it("shows the recorded before, requested and after facts and an Open movement link in the review sheet", () => {
+    withPhone(() => {
+      fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
+      const facts = screen.getByTestId("ward-governance-phone-facts");
+      expect(facts).toHaveTextContent("Before");
+      expect(facts).toHaveTextContent("Requested");
+      expect(facts).toHaveTextContent("After");
+      expect(facts).toHaveTextContent("Voluntary");
+      expect(screen.getByRole("link", { name: /Open movement/ })).toBeInTheDocument();
+    });
+  });
+
+  it("states the register's relation to the hero's session counts, so the two agree", () => {
+    withPhone(() => {
+      const hero = screen.getByTestId("ward-governance-phone");
+      expect(hero).toHaveTextContent(/3\s*Overrides/);
+      fireEvent.click(screen.getByRole("button", { name: /Registers/ }));
+      expect(screen.getByTestId("ward-governance-overrides-session")).toHaveTextContent(
+        "3 override events from this session wait in Review.",
+      );
+      expect(screen.getByTestId("ward-governance-access-session")).toHaveTextContent(
+        "1 record opening from this session waits in Review.",
+      );
+    });
+  });
+
+  it("reads the hero title from the Waiting count and names follow-ups apart", () => {
+    withPhone(() => {
+      const hero = screen.getByTestId("ward-governance-phone");
+      expect(hero).toHaveTextContent("6 to review");
+      fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
+      fireEvent.click(screen.getByRole("radio", { name: "Follow-up" }));
+      fireEvent.click(screen.getByRole("button", { name: /Record review/ }));
+      expect(hero).toHaveTextContent("5 to review · 1 follow-up");
+    });
+  });
+
+  it("shows initials and UMRN in the phone rows when Discreet names is on", () => {
+    window.localStorage.setItem("ward-flow-discreet-names", "on");
+    withPhone(() => {
+      const list = screen.getByRole("region", { name: "Waiting for review" });
+      expect(list.textContent ?? "").toMatch(/\b[A-Z]{2} · UM\d+/);
+    });
+  });
+});

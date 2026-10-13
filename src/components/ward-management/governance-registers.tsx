@@ -18,6 +18,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { ACCESS_RECORD_NOTE } from "@/components/ward-management/search/access-record";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import type { WardConfiguration } from "./ward-configuration";
 import { WardFlowContext, type useWardFlow, type WardFlowContextValue } from "./ward-flow-provider";
@@ -116,10 +117,13 @@ export function GovernanceOverridesRegisterPanel({
   movements,
   units,
   now,
+  sessionCount,
 }: {
   movements: Movement[];
   units: Unit[];
   now: Instant;
+  /** The override events this session's Review holds: the same figure as the hero's Overrides. */
+  sessionCount?: number;
 }) {
   const entries = allOverrides(movements);
   return (
@@ -135,6 +139,11 @@ export function GovernanceOverridesRegisterPanel({
         </div>
       </header>
       <CardBody>
+        {sessionCount !== undefined ? (
+          <p className={thirdEdition.quiet} data-testid="ward-governance-overrides-session">
+            {sessionOverrideSentence(sessionCount)}
+          </p>
+        ) : null}
         <OverrideRegister entries={entries} units={units} now={now} />
       </CardBody>
     </Card>
@@ -160,7 +169,16 @@ export function GovernanceOverridesRegisterPanel({
  * this exact shape of over-claim; this panel is written to pass it by being true, not by working
  * around it.
  */
-export function GovernanceAccessRecordPanel() {
+/** The hero's Overrides figure counts this session's override events waiting in Review; the register
+ *  below lists overrides saved on a movement. Say so in the register, so the two never read as one
+ *  figure that disagrees with itself (audit settings-2, 13 Oct 2026). */
+function sessionOverrideSentence(count: number): string {
+  return count === 0
+    ? "No override event from this session waits in Review. This register lists overrides saved on a referral."
+    : `${count} override ${count === 1 ? "event" : "events"} from this session ${count === 1 ? "waits" : "wait"} in Review. This register lists overrides saved on a referral.`;
+}
+
+export function GovernanceAccessRecordPanel({ sessionCount }: { sessionCount?: number } = {}) {
   return (
     <Card as="div" role="complementary" data-testid="ward-governance-access-record">
       <header className={thirdEdition.panelHead}>
@@ -170,6 +188,13 @@ export function GovernanceAccessRecordPanel() {
         </div>
       </header>
       <CardBody className={thirdEdition.noticeStack}>
+        {sessionCount !== undefined ? (
+          <p className={thirdEdition.quiet} data-testid="ward-governance-access-session">
+            {sessionCount === 0
+              ? "No record opening from this session waits in Review."
+              : `${sessionCount} record ${sessionCount === 1 ? "opening" : "openings"} from this session ${sessionCount === 1 ? "waits" : "wait"} in Review.`}
+          </p>
+        ) : null}
         <p className={thirdEdition.notice}>
           <History aria-hidden="true" size={16} /> {ACCESS_RECORD_NOTE}
         </p>
@@ -838,6 +863,12 @@ function GovernanceSession({
   const [phoneDecision, setPhoneDecision] = useState<AuditReview["decision"] | null>(null);
   const [phoneMore, setPhoneMore] = useState<"registers" | "reports" | null>(null);
   const isPhone = useIsPhone();
+  // Discreet names on phone (audit settings-9): initials plus UMRN in the phone rows and sheet.
+  const nameFor = usePatientNameDisplay();
+  const phoneSubjectLabel = (event: AuditEvent) => {
+    const person = subjectPerson(event, patientOf);
+    return person ? nameFor(person.name, person.umrn) : subjectLabel(event, patientOf);
+  };
   const isTabletPortrait = useIsTabletPortrait();
   const gate = useRoleGate();
   const reviewGate = gate("REVIEW_AUDIT_EVENT");
@@ -1035,11 +1066,16 @@ function GovernanceSession({
     registers: "Registers",
     reports: "Reports",
   };
+  // Audit settings-7: the hero reads the Waiting count the list shows, with follow-ups named apart.
+  const reviewTitle =
+    toReview.length === 0
+      ? "Nothing to review"
+      : followUp > 0
+        ? `${unreviewed} to review · ${followUp} follow-up`
+        : `${unreviewed} to review`;
   const heroTitle =
     tab === "review"
-      ? toReview.length === 0
-        ? "Nothing to review"
-        : `${toReview.length} to review`
+      ? reviewTitle
       : tab === "gaps"
         ? totalGaps === 0
           ? "No gaps recorded"
@@ -1204,7 +1240,7 @@ function GovernanceSession({
         name={actionLabels[event.action]}
         meta={
           <>
-            <span className={thirdEdition.phoneMetaLine}>{subjectLabel(event, patientOf)}</span>
+            <span className={thirdEdition.phoneMetaLine}>{phoneSubjectLabel(event)}</span>
             <span className={thirdEdition.phoneMetaLine}>
               <StatusGlyph tone={tone} size={9} />
               {outcomeLabels[event.outcome]} ·{" "}
@@ -1218,11 +1254,16 @@ function GovernanceSession({
       />
     );
   };
+  const phoneSubject = selected?.subject;
+  const phoneMovementId =
+    phoneSubject?.kind === "movement" && movements.some((entry) => entry.id === phoneSubject.movementId)
+      ? phoneSubject.movementId
+      : null;
   const phoneTree = (
     <div className={thirdEdition.phoneScreen} data-testid="ward-governance-phone">
       <PhoneHero
         eyebrow="Governance · This session"
-        title={toReview.length === 0 ? "Nothing to review" : `${toReview.length} to review`}
+        title={reviewTitle}
         sub={`${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`}
         figures={[
           { id: "override", value: overrideCount, label: "Overrides" },
@@ -1323,15 +1364,19 @@ function GovernanceSession({
               <h3 className={thirdEdition.eyebrow}>{site.name}: patients with a gap</h3>
               {site.people.length > 0 ? (
                 <ul className={thirdEdition.phoneList}>
-                  {site.people.map((person) => (
-                    <PhoneListRow
-                      key={person.key}
-                      as="li"
-                      name={person.name}
-                      meta={`${person.umrn} · ${person.missing.join(", ")}`}
-                      href={person.href}
-                    />
-                  ))}
+                  {site.people.map((person) => {
+                    const shown = nameFor(person.name, person.umrn);
+                    const missing = person.missing.join(", ");
+                    return (
+                      <PhoneListRow
+                        key={person.key}
+                        as="li"
+                        name={shown}
+                        meta={shown.includes(person.umrn) ? missing : `${person.umrn} · ${missing}`}
+                        href={person.href}
+                      />
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className={thirdEdition.quiet}>Everything that applies here is recorded.</p>
@@ -1383,7 +1428,7 @@ function GovernanceSession({
         open={phoneSheet && selected !== null}
         onClose={() => setPhoneSheet(false)}
         title={selected ? actionLabels[selected.action] : "Review"}
-        description={selected ? subjectLabel(selected, patientOf) : undefined}
+        description={selected ? phoneSubjectLabel(selected) : undefined}
         height="content"
         primary={
           selected && selected.category !== "review"
@@ -1433,6 +1478,19 @@ function GovernanceSession({
                 },
               ]}
             />
+            {/* The same recorded facts the desktop detail shows (before, requested, after for a legal
+                status change), so a phone review is never signed off blind. */}
+            <div className={thirdEdition.operationFacts} data-testid="ward-governance-phone-facts">
+              <h3 className={thirdEdition.subheading}>Recorded facts</h3>
+              <EventFacts event={selected} units={units} now={now} />
+            </div>
+            {phoneMovementId ? (
+              <div className={thirdEdition.entityLinks}>
+                <Link href={movementHref(phoneMovementId)} className={buttonClass({ size: "sm" })}>
+                  Open movement <ChevronRight aria-hidden="true" size={14} />
+                </Link>
+              </div>
+            ) : null}
             {selected.category !== "review" ? (
               <div className={thirdEdition.stackGap}>
                 <h3 className={thirdEdition.phoneDecisionHead}>Your review</h3>
@@ -1468,8 +1526,13 @@ function GovernanceSession({
       >
         {phoneMore === "registers" ? (
           <div className={thirdEdition.stackGap}>
-            <GovernanceOverridesRegisterPanel movements={movements} units={units} now={now} />
-            <GovernanceAccessRecordPanel />
+            <GovernanceOverridesRegisterPanel
+              movements={movements}
+              units={units}
+              now={now}
+              sessionCount={overrideCount}
+            />
+            <GovernanceAccessRecordPanel sessionCount={accessCount} />
             <p className={thirdEdition.quiet}>
               Seclusion, bodily restraint and notifiable incident registers are Preview: nothing is shown until Ward
               Flow holds these records.
@@ -1907,8 +1970,13 @@ function GovernanceSession({
             ))}
           </div>
           <div className={thirdEdition.previewGrid} data-columns="2">
-            <GovernanceOverridesRegisterPanel movements={movements} units={units} now={now} />
-            <GovernanceAccessRecordPanel />
+            <GovernanceOverridesRegisterPanel
+              movements={movements}
+              units={units}
+              now={now}
+              sessionCount={overrideCount}
+            />
+            <GovernanceAccessRecordPanel sessionCount={accessCount} />
           </div>
         </div>
       ) : null}
