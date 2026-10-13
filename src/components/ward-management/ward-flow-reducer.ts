@@ -753,6 +753,7 @@ function subjectId(event: WardFlowEvent): string {
       return event.admissionId;
     // v10 pass 3: a step undo is filed against the subject it names; a handover sign-off has none.
     case "UNDO_REPATRIATION":
+    case "UNDO_ABSENT_WITHOUT_LEAVE":
     case "UNDO_ED_STEP":
     case "UNDO_SUPPORT_NOTIFICATION":
       return undoStepSubjectId(event);
@@ -2299,6 +2300,7 @@ const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_HANDOVER_SIGN_OFF: "There is no handover sign-off to undo",
   UNDO_ED_STEP: "There is no ED step on this patient to undo",
   UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
+  UNDO_ABSENT_WITHOUT_LEAVE: "There is no absence on this stay to undo",
 };
 
 /**
@@ -2565,7 +2567,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "UNDO_REPATRIATION":
     case "UNDO_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
-    case "UNDO_TRANSPORT_STEP": {
+    case "UNDO_TRANSPORT_STEP":
+    case "UNDO_ABSENT_WITHOUT_LEAVE": {
       // v10 pass 3: takes back the newest step of this kind on this subject, exactly (`ward-undo.ts`).
       const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
       if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);

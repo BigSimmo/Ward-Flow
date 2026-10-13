@@ -674,6 +674,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     UNDO_HANDOVER_SIGN_OFF: false,
     UNDO_ED_STEP: false,
     UNDO_TRANSPORT_STEP: false,
+    UNDO_ABSENT_WITHOUT_LEAVE: false,
   };
 
   /**

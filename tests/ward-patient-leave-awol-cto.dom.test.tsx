@@ -68,7 +68,7 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
     fireEvent.click(within(screen.getByTestId("ward-patient-leave-card")).getByRole("button", { name: "Mark absent" }));
     expect(root).toHaveAttribute("data-patient-mode", "awol");
     expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Absent without leave");
-    expect(screen.getByRole("img", { name: "0 of 5 steps done" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "0 of 6 steps done" })).toBeInTheDocument();
 
     fireEvent.click(
       within(screen.getByTestId("ward-patient-step-searched")).getByRole("button", {
@@ -80,7 +80,7 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
         name: "Record Police notified",
       }),
     );
-    expect(screen.getByRole("img", { name: "2 of 5 steps done" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "2 of 6 steps done" })).toBeInTheDocument();
     expect(within(screen.getByTestId("ward-patient-step-searched")).queryByRole("button")).not.toBeInTheDocument();
     expect(within(screen.getByTestId("ward-patient-who-to-call")).getByText("Police")).toBeVisible();
 

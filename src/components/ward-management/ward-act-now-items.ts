@@ -13,6 +13,7 @@
  * `tests/ward-shared-figures.test.ts` pins that they agree on the seed.
  */
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { absenceInboxItems } from "@/components/ward-management/ward-absence-tasks";
 import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
 import {
   buildActionInbox,
@@ -29,7 +30,10 @@ import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze
  * pass them to get the notification and planned-arrival rows too.
  */
 export type TaskSource = Pick<WardFlowState, "movements" | "units" | "configuration" | "inboxSnoozes"> &
-  Omit<ActionInboxRecords, "movements">;
+  Omit<ActionInboxRecords, "movements"> & {
+    /** Audit A3-1: leave beds, for the act-now row when a person on an order is absent. */
+    leaveBeds?: WardFlowState["leaveBeds"];
+  };
 
 /** @deprecated name kept for existing callers; the same shape as `TaskSource`. */
 export type ActNowSource = TaskSource;
@@ -38,6 +42,8 @@ export type ActNowSource = TaskSource;
 export function taskItems(source: TaskSource, now: Instant): InboxItem[] {
   const open = source.movements.filter(isOpen);
   return [
+    // Audit A3-1: absent without leave on an order sits first; it is the most urgent row there is.
+    ...absenceInboxItems(source, now),
     ...buildActionInbox(open, now, source.units, {
       movements: source.movements,
       admissions: source.admissions,

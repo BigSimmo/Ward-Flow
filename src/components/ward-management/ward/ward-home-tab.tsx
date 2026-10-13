@@ -520,6 +520,13 @@ export function WardHomeTab({
         return true;
       });
     const groups: { id: string; title: string; tone: WfTone | null; rows: typeof bedRows }[] = [
+      // Audit A3-1: absent without leave is its own red group at the top, never under On leave.
+      {
+        id: "awol",
+        title: "Absent without leave",
+        tone: "danger",
+        rows: take((row) => row.bed.statusText === "Absent without leave"),
+      },
       { id: "act", title: "Act now", tone: "danger", rows: take((row) => row.glyph === "danger") },
       { id: "risk", title: "At risk", tone: "warning", rows: take((row) => row.glyph === "warning") },
       // Beds due out today that are not already listed under Act now or At risk, so the heading

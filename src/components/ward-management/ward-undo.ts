@@ -70,6 +70,8 @@ export const UNDO_STEP_ACTIONS = {
     "HANDOVER_READY",
   ],
   UNDO_TRANSPORT_STEP: ["TRANSPORT_ACCEPTED", "TRANSPORT_EN_ROUTE", "PATIENT_COLLECTED", "PATIENT_ARRIVED"],
+  // Audit A3-10 (13 Oct 2026): Mark absent starts the police steps on one tap, so it offers Undo.
+  UNDO_ABSENT_WITHOUT_LEAVE: ["RECORD_ABSENT_WITHOUT_LEAVE"],
 } as const;
 export type UndoStepType = keyof typeof UNDO_STEP_ACTIONS;
 export type UndoableStepAction = (typeof UNDO_STEP_ACTIONS)[UndoStepType][number];

@@ -275,6 +275,7 @@ const actionLabels: Record<AuditEvent["action"], string> = {
   UNDO_HANDOVER_SIGN_OFF: "Undo handover sign-off",
   UNDO_ED_STEP: "Undo ED step",
   UNDO_TRANSPORT_STEP: "Undo transport step",
+  UNDO_ABSENT_WITHOUT_LEAVE: "Undo mark absent",
 };
 /** v10 pass 3: the step an undo took back, in words. */
 const UNDONE_STEP_LABELS: Partial<Record<string, string>> = {
@@ -283,6 +284,7 @@ const UNDONE_STEP_LABELS: Partial<Record<string, string>> = {
   RECORD_LEGAL_FORM_WRITTEN: "Record form written",
   RECORD_LEGAL_FORM_RECEIVED: "Mark form received",
   RECORD_SUPPORT_NOTIFICATION: "Carer, PSP or MHAS record",
+  RECORD_ABSENT_WITHOUT_LEAVE: "Mark absent",
   RECORD_REPATRIATION: "Repatriation record",
   RECORD_HANDOVER_SIGN_OFF: "Handover sign-off",
   RECORD_ARRIVED_IN_DEPARTMENT: "Arrived in the department",
