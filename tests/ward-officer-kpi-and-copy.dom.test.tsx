@@ -106,7 +106,8 @@ describe("officer screen KPI captions match their populations", () => {
     // v6: the on-board count is the hero title ("8 on board").
     const title = screen.getByRole("heading", { level: 1 });
     // 6 → 8: the 17 Sept sample-data addition, WF-026/WF-031 (collected-not-arrived).
-    expect(title.textContent).toBe("8 on board");
+    // S-17 (audit 13 Oct 2026): named as a part of the 13 jobs, so it agrees with the Jobs count.
+    expect(title.textContent).toBe("8 of 13 jobs on board");
   });
 });
 
