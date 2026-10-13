@@ -1417,7 +1417,7 @@ export function CommunityScreen({
           <section className={v6.sideCard} aria-label="How to reach this team" data-testid="ward-community-contact">
             <div className={v6.sideHead}>
               <h3 className={v6.sideTitle}>How to reach</h3>
-              <span className={v6.sideMeta}>Published contacts</span>
+              <span className={v6.sideMeta}>Published, not call-tested</span>
             </div>
             <div className={v6.sideBody} role="region" aria-label="How to reach this team details">
               {contact === null ? (

@@ -8530,3 +8530,34 @@ New evidence under `/workspace/scratch/ward-scroll-site-`: `integrated-dom.log`,
 Publication checkpoint: commit `04c1584` preserves the integrated main layouts and navigation fixes. The remaining 13 phone-page visits passed, confirming consistent 56px bands / 64px controls with painted 8px canvas collars. Scoped ESLint passed on all 14 owned TypeScript files. Preserve the next remote task-branch commit `79ad287` as well: it relocates the unchanged scroll helper into the Ward namespace and registry, removes unused phone imports, and applies the same pending-close announcement fix. Resolve the equivalent naming conflict in favour of its `closing` variable; retain the stronger history regression modelling a shorter destination. Reuse unchanged browser/CSS evidence, run the four affected helper/history/service/Tools DOM files, and let normal push guards check the final published source. The task-owned server has been stopped, and the original checkout remains intact.
 
 Final overlap verification: all 34 checks in the four affected DOM files passed, and the refreshed organisation check passed with the same 226 pre-existing findings. The last merge contains no unresolved paths. Publication remains an additive push to PR #248; no rewrite, main merge, deployment or CI observation is requested. Final publication evidence is retained in `ward-scroll-site-publication-dom.log`, `ward-scroll-site-publication-organisation.log`, `ward-scroll-site-publication-commit.log` and `ward-scroll-site-publication-push.log`.
+
+## WF-HONESTY-2026-10-13 — "Live" wording, not-wired honesty and the audit residuals
+
+Owner request (12 and 13 October 2026): resolve the still-open items from the 8 October full-repository audit and the 6 October visual review that can be settled from code, then confirm what remains. Local engineering is complete. The first change merged as PR [#258](https://github.com/BigSimmo/Ward-Flow/pull/258); a small follow-up was prepared on the same task branch. Synthetic data only; no provider, deployment or hosted check was run, and the hosted site was not compared with this commit.
+
+Fixed and merged (PR #258):
+
+- The shared Live chip says "Demo" and its pause control "Pause demo updates" (AUD-H03). Patient search uses "On this board" for its presence label, tag and filter chip (AUD-H01; an open movement can be in transit, so "In hospital" overstated it). Patient Now's screen-reader text says "Active bedflow" (AUD-H02). Statistics copy and the Discharges page metadata no longer say "live".
+- Not-wired honesty: the Community duress ping reads "(not wired)" and toasts "Not wired in this prototype." (AUD-H04). Delays "Record hold" and "Record" say "(not wired)" on the button and its empty state says recording is not wired (AUD-M-DELAYS-HOLD). The Alerts confirmation says the directive is shown in this prototype only and that no external notifications are sent (AUD-M-ALERTS).
+- Capacity "Request update" shows "Update requested" from the shared request record, is disabled while a request is outstanding, and re-enables after the ward confirms. A request and a confirmation in the same minute count as still outstanding (AUD-M-CAPACITY-ACK).
+- The Movements box is "Find" because it only highlights; the Referrals box narrows its list and is "Filter" (AUD-M-DUALSEARCH, partly). The duplicate Appearance control is removed from the Community Tools drawer (AUD-M-THEME).
+
+Confirmed already resolved on main before this task (13 October): Delays "Assign Recommended Bed", the Governance wrong-patient register, Handover "Copy to EMR" and the "LIVE SYNC" banner (AUD-H05 to AUD-H07), the sidebar New referral button (v10, owner-approved), the "Accept in Principle (Waitlist)" button, the Home footer separator, the stale ClinicalRail mount comment, and `governance-screen.tsx`.
+
+Small follow-up (same task, 13 October 2026):
+
+- The record preview banner said "In hospital now" for any open movement, which includes people in transit. It now says "On this board now" and "Not on this board now", matching Patient search.
+- The Community "How to reach" card is labelled "Published, not call-tested" so the published phone numbers are not read as a verified call list (AUD-M-CONTACTS). Referral and contact data are unchanged.
+- `STATUS.md` records that main has moved on since the audited baseline.
+
+Still open after this task, with the reason:
+
+- Owner decision: record the allocatable revision on each Capacity request so ordering does not rely on minute timestamps. Other bed events that stamp the ward's confirmed time can clear an outstanding request early. This changes the persisted request shape and needs the event-classification review. Queue ordering policy (SPEC-005) is also an owner decision.
+- Design choices: whether the top-bar search should filter the Delays worklist, and whether Discharges should open on Blocked rather than All. Blocked releases already sort first.
+- Owner approval: deleting the retired `ward-chrome-header` module (dead-code check). The reducer split and the `.btnPrimary` consolidation (5 modules remain) are larger refactors.
+- Documentation: the code-map says "All 42 routes" but the app has 53 page entry points; nine routes (including `/command`, the Statistics eds/services/teams/wards/weekly pages and the two reports) are not listed in `code-map/shell-and-shared.md`. This needs a route-by-route refresh, not a count change.
+- Provider access needed: `docs/hosting.md` still says the Railway settings were not rechecked.
+- Rendered check needed on the v10 build: phone and compact chrome, the transport officer chrome, the Capacity Metro percentage, the Network placement default, the Referrals urgency colours and the Ward page action rows.
+- Backend, governance and clinical sign-off tasks stay as listed in `docs/ward-flow/reports/remediation-remaining-tasks-2026-10-08.md`.
+
+Evidence: PR #258 passed the repository's Ward Flow required gate on its head `b3e579f` (static checks, eight unit shards, three browser-journey groups, production build, coverage and secret scan), with CodeAnt, CodSpeed and GitGuardian also passing. The follow-up was checked locally only, on Node 22 rather than the required Node 24, so hosted CI remains the authoritative check for it.

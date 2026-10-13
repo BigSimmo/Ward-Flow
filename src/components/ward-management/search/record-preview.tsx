@@ -309,7 +309,7 @@ export function RecordPreview({
     if (linkedMovement && movementSummary) {
       const operational = movementSearchState(linkedMovement, admissions);
       presenceStatus = "live";
-      bannerTitle = "In hospital now";
+      bannerTitle = "On this board now";
       bannerTag = settingLabel(operational.setting);
       waitTimeHours = waitedHours(linkedMovement, now);
       disposition = operational.holdStatus;
@@ -334,7 +334,7 @@ export function RecordPreview({
         urgency = `Tier ${referral.urgency}`;
       } else {
         presenceStatus = "live";
-        bannerTitle = "In hospital now";
+        bannerTitle = "On this board now";
         bannerTag = "Emergency Dept";
         waitTimeHours = Math.max(0, (now - referral.raisedAt) / 60);
         disposition = "Unplaced";
@@ -872,7 +872,7 @@ export function RecordPreview({
   const operational = movementSearchState(movement, admissions);
 
   const presenceStatus: "live" | "past" = isOpen(movement) ? "live" : "past";
-  const bannerTitle = isOpen(movement) ? "In hospital now" : "Not in hospital now";
+  const bannerTitle = isOpen(movement) ? "On this board now" : "Not on this board now";
   const bannerTag = settingLabel(operational.setting);
   const waitTimeHours = waitedHours(movement, now);
   const isBreaching = waitTimeHours * 60 >= LONG_WAIT_MINUTES;
