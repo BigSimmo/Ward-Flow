@@ -5,7 +5,9 @@
 export { cx } from "./cx";
 export { dur, durMinutes, clk, durParts } from "./format";
 export { useMinuteNow } from "./use-minute-now";
+export { guessPhoneFromRequest } from "./phone-guess";
 export {
+  WfServerPhoneProvider,
   useIsPhone,
   useIsTabletLandscape,
   useIsTabletPortrait,
@@ -114,7 +116,14 @@ export { Menu, Popover, type MenuItem, type MenuProps, type MenuTriggerProps, ty
 export { ToastView, type ToastViewProps, type ToastUndo } from "./toast";
 export { Dialog, type DialogProps, type DialogAction } from "./dialog";
 export { StateLine, type StateLineProps, type StateKind, type StateAction } from "./state";
-export { ToastProvider, useOptionalToast, useToast, type ToastApi, type ToastInput } from "@/components/ui/toast";
+export {
+  ToastDeviceSaveContext,
+  ToastProvider,
+  useOptionalToast,
+  useToast,
+  type ToastApi,
+  type ToastInput,
+} from "@/components/ui/toast";
 export { Tooltip, type TooltipProps } from "@/components/ui/tooltip";
 export {
   LiveChip,

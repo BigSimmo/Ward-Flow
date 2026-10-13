@@ -26,12 +26,19 @@ import {
   Wrench,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
-import { StatusGlyph, WF_BAND_SCROLLED_PX, publishLiveClock, useWfBandActive, type WfTone } from "@/components/wf";
+import {
+  StatusGlyph,
+  WF_BAND_SCROLLED_PX,
+  publishLiveClock,
+  useIsPhone,
+  useWfBandActive,
+  type WfTone,
+} from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   readStoredGlarePreference,
@@ -100,7 +107,7 @@ const WardMhaCalculator = dynamic(
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
-import { openWardMenu, PHONE_QUERY, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
+import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import {
   digestHref,
   dischargeHref,
@@ -432,21 +439,6 @@ function useBandScrolled(barRef: RefObject<HTMLElement | null>, enabled: boolean
   return enabled && scrolled;
 }
 
-function subscribePhone(onChange: () => void) {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
-  const query = window.matchMedia(PHONE_QUERY);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-function usePhoneViewport(): boolean {
-  return useSyncExternalStore(
-    subscribePhone,
-    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
-    () => false,
-  );
-}
-
 /** The desktop bar keeps each page's own primary action; phone actions live in the phone menu. */
 const NEW_REFERRAL_ACTION: WardPrimaryAction = {
   kind: "new-referral",
@@ -544,7 +536,8 @@ function isReferralSheetPath(pathname: string): boolean {
 export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
-  const isPhone = usePhoneViewport();
+  // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
+  const isPhone = useIsPhone();
   const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
   const {
     movements,
@@ -715,6 +708,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         referrals,
         supportNotifications,
         plannedAdmissions,
+        leaveBeds,
       },
       now,
     );
@@ -730,6 +724,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     supportNotifications,
     configuration,
     inboxSnoozes,
+    leaveBeds,
   ]);
   // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
   const tasksActiveCount = useMemo(
@@ -1008,10 +1003,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, [openPanel]);
 
   useEffect(() => {
-    const unsubOpen = subscribeWardDrawer((drawerId) => {
+    const unsubOpen = subscribeWardDrawer((drawerId, href) => {
       if (drawerId === "referral") {
         const opener = document.activeElement;
-        openReferral({ category: roleCategory }, opener instanceof HTMLElement ? opener : null);
+        // A button that raises a referral from where it sits (ED, community team, Home) passes the
+        // same link a Refer link would, so the slide-out opens prefilled from that place.
+        const request = href ? referralSheetRequestFromHref(href, window.location.origin) : null;
+        const search = href ? new URL(href, window.location.origin).searchParams : null;
+        openReferral(
+          request && search ? withRoleCategory(request, search, roleCategory) : { category: roleCategory },
+          opener instanceof HTMLElement ? opener : null,
+        );
         return;
       }
       openPopover(drawerId);
@@ -2190,6 +2192,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           initialDestination={referralRequest.destination}
           initialPatientId={referralRequest.personId}
           initialOriginSiteCode={referralRequest.originSiteCode}
+          initialSendingTeam={referralRequest.sendingTeam}
+          initialUnitIds={referralRequest.unitIds}
           closeRequestRef={referralCloseRef}
           onClose={closeReferral}
         />

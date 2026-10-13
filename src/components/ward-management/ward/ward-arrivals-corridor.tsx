@@ -2,7 +2,13 @@
 
 import React from "react";
 import styles from "./ward-arrivals-corridor.module.css";
-import type { Unit, Movement, Rejection } from "@/components/ward-management/ward-model";
+import type {
+  Unit,
+  Movement,
+  Rejection,
+  TransportExceptionGap,
+  TransportExceptionReason,
+} from "@/components/ward-management/ward-model";
 import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import {
@@ -24,6 +30,8 @@ const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
 };
 import { edById } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
+import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 
 function originPlaceLabel(originEdId: string): string {
@@ -40,7 +48,7 @@ function wardSafeRejectionReason(reason: string): string {
   return reason;
 }
 
-function pullBlockedReason(movement: Movement, unit: Unit, who?: string): string | undefined {
+export function pullBlockedReason(movement: Movement, unit: Unit, who?: string): string | undefined {
   if (movement.acceptedUnitId !== unit.id) {
     return `${who ?? "This patient"} was accepted at a different unit, not ${unit.name}.`;
   }
@@ -89,6 +97,24 @@ export function WardArrivalsCorridor({
   overrideReasonForm,
   onPullPatient,
 }: WardArrivalsCorridorProps) {
+  // Audit r1 item 4: the journey whose arrival is waiting on the fit to travel warning.
+  const [arriveCheckId, setArriveCheckId] = React.useState<string | null>(null);
+  const arriveCheckMovement = accepted.find((movement) => movement.id === arriveCheckId);
+  const confirmArrival = (
+    movement: Movement,
+    exception?: { gaps: TransportExceptionGap[]; reason: TransportExceptionReason },
+  ) => {
+    priorRejectionCountRef.current = rejections.length;
+    dispatch({
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      now,
+      movementId: movement.id,
+      actingUnitId: unit.id,
+      ...(exception ? { exception } : {}),
+    });
+    setCheckToken((t) => t + 1);
+  };
   return (
     <section aria-label="Coming in" className={styles.corridorWrap} tabIndex={0}>
       <div className={styles.panelHead}>
@@ -180,9 +206,15 @@ export function WardArrivalsCorridor({
                         {movement.legalStatus}
                       </span>
                     ) : null}
-                    {movement.security === "Secure" ? (
+                    {/* Audit A1-5: only an observation level somebody recorded, never one read from
+                        the bed's security. */}
+                    {movement.specialling ? (
                       <span className={styles.statusTag} data-type="acuity">
-                        HDU / Close Observation
+                        1:1 specialling
+                      </span>
+                    ) : movement.highAcuity ? (
+                      <span className={styles.statusTag} data-type="acuity">
+                        High-acuity nursing
                       </span>
                     ) : null}
                     <span className={styles.statusTag} data-type="mode">
@@ -322,15 +354,9 @@ export function WardArrivalsCorridor({
                           arriveBlocked
                             ? ignoreUnavailableActivation
                             : () => {
-                                priorRejectionCountRef.current = rejections.length;
-                                dispatch({
-                                  type: "PATIENT_ARRIVED",
-                                  role: "ward",
-                                  now,
-                                  movementId: movement.id,
-                                  actingUnitId: unit.id,
-                                });
-                                setCheckToken((t) => t + 1);
+                                // Audit r1 item 4: no transport leg and fit to travel open warns, never blocks.
+                                if (arrivalGaps(movement).length > 0) setArriveCheckId(movement.id);
+                                else confirmArrival(movement);
                               }
                         }
                       >
@@ -457,6 +483,19 @@ export function WardArrivalsCorridor({
         <strong>Operational Note:</strong> Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but
         not offered; it is separate from a bed pulled for a patient, which is allocated and waiting for them to arrive.
       </div>
+      <TransportExceptionDialog
+        open={arriveCheckMovement !== undefined}
+        who={arriveCheckMovement ? resolvePatientIdentity(arriveCheckMovement).displayName : "this patient"}
+        action="Confirm arrival"
+        gaps={arriveCheckMovement ? arrivalGaps(arriveCheckMovement) : []}
+        onClose={() => setArriveCheckId(null)}
+        onConfirm={(reason) => {
+          setArriveCheckId(null);
+          if (arriveCheckMovement)
+            confirmArrival(arriveCheckMovement, { gaps: arrivalGaps(arriveCheckMovement), reason });
+        }}
+        testId="ward-arrive-check"
+      />
     </section>
   );
 }

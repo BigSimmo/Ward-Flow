@@ -1,5 +1,7 @@
 "use client";
 
+import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
+import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
@@ -748,6 +750,12 @@ function WardFlowWorld({
   );
   const state = container.world;
   const { enabled: sharedEnabled, dispatch: dispatchShared } = shared;
+  // Codex P1 (PR #267): whether an action recorded now is really kept on this device, for the
+  // offline toast note ("Saved on this device"). A ref read through a stable getter at push time:
+  // the committed value is copied in after each render (below), and `dispatch` clears it at once
+  // for a typed-text event, before the toast that follows that dispatch is pushed.
+  const savesOnDeviceRef = useRef(false);
+  const savesOnDevice = useCallback(() => savesOnDeviceRef.current, []);
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
   const dispatch = useCallback<Dispatch<WardFlowEvent>>(
     (event: WardFlowEvent) => {
@@ -755,6 +763,10 @@ function WardFlowWorld({
         dispatchShared(event);
         return;
       }
+      // A typed-text event stops saving on this device (the persistence effect below). Say so at once,
+      // so a toast pushed straight after this dispatch does not claim the action was saved.
+      if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
+        savesOnDeviceRef.current = false;
       dispatchContainer(event);
       const channel = getBroadcastChannel();
       if (channel) {
@@ -903,6 +915,12 @@ function WardFlowWorld({
     }
   }, []);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
+  // Local saving runs only in the unpinned local demonstration, until typed text is dispatched or
+  // storage fails. Shared mode does not save actions on this device.
+  const savingOnDevice = !shared.enabled && initialNow === undefined && !container.typedTextSeen && !storageUnavailable;
+  useEffect(() => {
+    savesOnDeviceRef.current = savingOnDevice;
+  }, [savingOnDevice, state]);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
@@ -1187,26 +1205,30 @@ function WardFlowWorld({
       {(storageUnavailable || container.recoveryNotice) && (
         <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
       )}
-      <WardFlowClockContext.Provider value={now}>
-        {/*
-         * Remounts the screens once, and only when a saved day that differs from the seed was
-         * restored: screens initialise drafts and selections from provider data once
-         * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
-         * must start again from the restored world rather than keep the seed's. A first visit, or a
-         * reload with nothing changed, never takes this path, so its tree is never rebuilt.
-         */}
-        <WardSharedAccess
-          connection={
-            shared.enabled && container.sharedRevision === undefined
-              ? { ...shared, snapshot: null }
-              : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
-                ? { ...shared, status: "saving" }
-                : shared
-          }
-        >
-          <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
-        </WardSharedAccess>
-      </WardFlowClockContext.Provider>
+      <WardDemoNotSavedContext.Provider value={!shared.enabled && initialNow === undefined && container.typedTextSeen}>
+        <ToastDeviceSaveContext.Provider value={savesOnDevice}>
+          <WardFlowClockContext.Provider value={now}>
+            {/*
+             * Remounts the screens once, and only when a saved day that differs from the seed was
+             * restored: screens initialise drafts and selections from provider data once
+             * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
+             * must start again from the restored world rather than keep the seed's. A first visit, or a
+             * reload with nothing changed, never takes this path, so its tree is never rebuilt.
+             */}
+            <WardSharedAccess
+              connection={
+                shared.enabled && container.sharedRevision === undefined
+                  ? { ...shared, snapshot: null }
+                  : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
+                    ? { ...shared, status: "saving" }
+                    : shared
+              }
+            >
+              <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+            </WardSharedAccess>
+          </WardFlowClockContext.Provider>
+        </ToastDeviceSaveContext.Provider>
+      </WardDemoNotSavedContext.Provider>
     </WardFlowContext.Provider>
   );
 }

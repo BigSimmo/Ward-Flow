@@ -25,7 +25,9 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Stream D planned admissions (book, change, cancel, convert).
       // Global alerts (10 Oct 2026) add RAISE_PULL_NOW and REPLY_BROADCAST_ALERT.
       // v10 pass 3 (10 Oct 2026) adds eight step undos (UNDO_REFER_TO_UNITS … UNDO_TRANSPORT_STEP).
-      expect(allEventTypes.length).toBe(125);
+      // Audit A1-12 (13 Oct 2026) adds UNDO_DEPARTURE ("Has left" from its toast).
+      // Audit A3-10 (13 Oct 2026) adds UNDO_ABSENT_WITHOUT_LEAVE.
+      expect(allEventTypes.length).toBe(127);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
@@ -49,6 +51,14 @@ describe("Ward Flow Read-Only Plain History", () => {
     expect(entry.reason).toBe("Medical Deterioration - ED Resuscitation Required");
     expect(entry.relatedLinks.movementId).toBe(event.movementId);
     expect(EVENT_HISTORY_TABLE[event.type].category).toBe("both");
+  });
+
+  it("words the officer's Delivered as a transport delivery and the ward's confirmation as arrival", () => {
+    const base = { type: "PATIENT_ARRIVED", movementId: "WF-001", now: 600 } as const;
+    const delivered = buildHistoryEntry({ ...base, role: "officer" } as WardFlowEvent, NOW);
+    const arrived = buildHistoryEntry({ ...base, role: "ward", actingUnitId: "U-1" } as WardFlowEvent, NOW);
+    expect(delivered.summary).toBe("Transport delivered to the receiving ward");
+    expect(arrived.summary).toBe("Patient arrived at ward bed");
   });
 
   describe("selectPatientHistory", () => {

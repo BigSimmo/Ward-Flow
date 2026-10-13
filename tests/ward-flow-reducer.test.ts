@@ -299,7 +299,7 @@ describe("arrival", () => {
       { type: "TRANSPORT_ACCEPTED", role: "officer" },
       { type: "TRANSPORT_EN_ROUTE", role: "officer" },
       { type: "PATIENT_COLLECTED", role: "officer" },
-      { type: "PATIENT_ARRIVED", role: "officer" },
+      { type: "PATIENT_ARRIVED", role: "coordinator" },
     ] as const) {
       state = wardFlowReducer(state, { ...event, now: NOW, movementId: "WF-009" } as never);
     }
@@ -346,7 +346,7 @@ describe("arrival", () => {
       { type: "TRANSPORT_ACCEPTED", role: "officer" },
       { type: "TRANSPORT_EN_ROUTE", role: "officer" },
       { type: "PATIENT_COLLECTED", role: "officer" },
-      { type: "PATIENT_ARRIVED", role: "officer" },
+      { type: "PATIENT_ARRIVED", role: "coordinator" },
     ] as const) {
       state = wardFlowReducer(state, { ...event, now: NOW, movementId: "WF-009" } as never);
     }
@@ -705,7 +705,7 @@ describe("examination", () => {
       { type: "TRANSPORT_ACCEPTED", role: "officer" },
       { type: "TRANSPORT_EN_ROUTE", role: "officer" },
       { type: "PATIENT_COLLECTED", role: "officer" },
-      { type: "PATIENT_ARRIVED", role: "officer" },
+      { type: "PATIENT_ARRIVED", role: "coordinator" },
     ] as const;
     let state = seeded();
     for (const step of steps) {
@@ -1411,7 +1411,7 @@ describe("arrival capacity floor", () => {
         { type: "TRANSPORT_ACCEPTED", role: "officer" },
         { type: "TRANSPORT_EN_ROUTE", role: "officer" },
         { type: "PATIENT_COLLECTED", role: "officer" },
-        { type: "PATIENT_ARRIVED", role: "officer" },
+        { type: "PATIENT_ARRIVED", role: "coordinator" },
       ] as const;
       let next = state;
       for (const step of steps) {
@@ -1815,7 +1815,7 @@ describe("release and cancel", () => {
 
     const arrived = wardFlowReducer(cancelled, {
       type: "PATIENT_ARRIVED",
-      role: "officer",
+      role: "coordinator",
       now: NOW_ANCHOR + 2,
       movementId,
     });

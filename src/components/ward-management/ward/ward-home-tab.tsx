@@ -12,12 +12,15 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {
   restrictionNotice,
   eligibilityWarning,
   stageCopy,
   type OverrideEntry,
 } from "@/components/ward-management/ward-derivations";
+import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
@@ -43,6 +46,8 @@ import {
 } from "@/components/wf";
 import { edById } from "@/components/ward-management/ward-sites";
 import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
+import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
+import { pullBlockedReason } from "./ward-arrivals-corridor";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 
 function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {
@@ -71,13 +76,26 @@ export function wardActNowCount({
   incoming,
   heldUp,
   rollupOverdue,
+  lapsedHolds = 0,
+  absences = 0,
 }: {
   alerts: number;
   incoming: number;
   heldUp: number;
   rollupOverdue: boolean;
+  /** Audit A1-3: pulled beds whose hold has lapsed (one Act now row for all of them). */
+  lapsedHolds?: number;
+  /** Audit A3-1: this ward's absences on an order (`absentOnOrder`), one Act now row each. */
+  absences?: number;
 }): number {
-  return alerts + (incoming > 0 ? 1 : 0) + (heldUp > 0 ? 1 : 0) + (rollupOverdue ? 1 : 0);
+  return (
+    absences +
+    alerts +
+    (incoming > 0 ? 1 : 0) +
+    (heldUp > 0 ? 1 : 0) +
+    (rollupOverdue ? 1 : 0) +
+    (lapsedHolds > 0 ? 1 : 0)
+  );
 }
 
 function wardSafeRejectionReason(reason: string): string {
@@ -131,9 +149,13 @@ interface WardHomeTabProps {
   onConfirmMorningRollup?: () => void;
   onOpenConfirmNumbers?: () => void;
   onOpenArrival?: (movementId: string) => void;
+  /** Pull a bed for an accepted patient from the Ward flow Admissions list (A1-6). */
+  onPullPatient?: (movementId: string, unitId: string) => void;
   onOpenDischarges?: () => void;
   /** The ward's beds, as the bed board draws them. Drives Every bed and Length of stay. */
   bedsList?: BedItem[];
+  /** Audit A3-1: this ward's absences on an order, from `absentOnOrder` (one Act now row each). */
+  absencesOnOrder?: ReturnType<typeof absentOnOrder>;
   /** Opens the bed's dossier. */
   onSelectBed?: (bedNumber: number) => void;
   /** The ward figures section, shown as the foot of Every bed. */
@@ -208,9 +230,11 @@ export function WardHomeTab({
   onConfirmMorningRollup,
   onOpenConfirmNumbers,
   onOpenArrival,
+  onPullPatient,
   onOpenDischarges,
   onOpenDecisions,
   bedsList,
+  absencesOnOrder = [],
   onSelectBed,
   figures,
   bedFilter: bedFilterProp,
@@ -387,15 +411,20 @@ export function WardHomeTab({
     releasesDueByShiftEnd(bedReleases, unit.id, now).map((release) => release.admissionId),
   );
   const bedRows = (bedsList ?? []).map((bed) => {
-    const free = bed.status === "ready";
-    const readyByShiftEnd = free || (bed.admissionId !== undefined && freeingByShiftEnd.has(bed.admissionId));
+    // A bed still being made ready is not free to offer, matching the Bed Board.
+    const preparing = bed.status === "ready" && bed.preparing === true;
+    const free = bed.status === "ready" && !preparing;
+    const readyByShiftEnd =
+      bed.status === "ready" || (bed.admissionId !== undefined && freeingByShiftEnd.has(bed.admissionId));
     const leaving = !free && (bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0));
     const awayAtEd = bed.awayAtEdHours != null;
     const look =
       !free && (bed.pastDate === true || awayAtEd || Boolean(bed.dischargeBarrier) || Boolean(bed.blockReason));
     const stateWord =
       bed.status === "ready"
-        ? "Ready"
+        ? preparing
+          ? BED_STATE_LABELS.beingMadeReady
+          : "Ready"
         : bed.status === "leave"
           ? bed.statusText === "Absent without leave"
             ? "Absent without leave"
@@ -406,39 +435,45 @@ export function WardHomeTab({
               ? "Closed"
               : "Occupied";
     const days = typeof bed.stayDays === "number" ? `${bed.stayDays}d` : "";
-    const note = awayAtEd
-      ? `Away at an ED ${bed.awayAtEdHours}h`
-      : bed.blockReason
-        ? `Held up, ${String(bed.blockReason)}`
-        : bed.pastDate
-          ? "Past expected date"
-          : bed.dischargeBarrier
-            ? String(bed.dischargeBarrier)
-            : leaving
-              ? bed.dischargeConfirmed
-                ? "Discharge confirmed"
-                : "Expected out today"
-              : bed.isSpecialling
-                ? "1:1 specialling"
-                : free
-                  ? "Free to offer"
-                  : stateWord;
+    // Audit A1-3: every pulled bed shows its hold time, from the one bed-hold rule.
+    const hold = bed.status === "incoming" ? (bed.bedHold ?? null) : null;
+    const note = hold
+      ? hold.label
+      : awayAtEd
+        ? `Away at an ED ${bed.awayAtEdHours}h`
+        : bed.blockReason
+          ? `Held up, ${String(bed.blockReason)}`
+          : bed.pastDate
+            ? "Past expected date"
+            : bed.dischargeBarrier
+              ? String(bed.dischargeBarrier)
+              : leaving
+                ? bed.dischargeConfirmed
+                  ? "Discharge confirmed"
+                  : "Expected out today"
+                : bed.isSpecialling
+                  ? "1:1 specialling"
+                  : free
+                    ? "Free to offer"
+                    : stateWord;
     // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
     // list view and the bed panel.
-    const tileNote = awayAtEd
-      ? `At ED ${bed.awayAtEdHours}h`
-      : bed.blockReason
-        ? "Held up"
-        : bed.pastDate
-          ? "Past date"
-          : bed.dischargeBarrier
-            ? "Barrier"
-            : leaving
-              ? bed.dischargeConfirmed
-                ? "Confirmed out"
-                : "Due out"
-              : note;
+    const tileNote = hold
+      ? hold.short
+      : awayAtEd
+        ? `At ED ${bed.awayAtEdHours}h`
+        : bed.blockReason
+          ? "Held up"
+          : bed.pastDate
+            ? "Past date"
+            : bed.dischargeBarrier
+              ? "Barrier"
+              : leaving
+                ? bed.dischargeConfirmed
+                  ? "Confirmed out"
+                  : "Due out"
+                : note;
     const glyph = bedGlyphTone(bed);
     const number = String(bed.bedNumber).padStart(2, "0");
     const name = free ? "Free to offer" : (bed.patientAlias ?? stateWord);
@@ -520,15 +555,37 @@ export function WardHomeTab({
         return true;
       });
     const groups: { id: string; title: string; tone: WfTone | null; rows: typeof bedRows }[] = [
+      // Audit A3-1: absent without leave is its own red group at the top, never under On leave.
+      {
+        id: "awol",
+        title: "Absent without leave",
+        tone: "danger",
+        rows: take((row) => row.bed.statusText === "Absent without leave"),
+      },
       { id: "act", title: "Act now", tone: "danger", rows: take((row) => row.glyph === "danger") },
       { id: "risk", title: "At risk", tone: "warning", rows: take((row) => row.glyph === "warning") },
       // Beds due out today that are not already listed under Act now or At risk, so the heading
       // names that narrower set rather than repeating the Due out filter's wider count.
       { id: "leaving", title: "Due out, on track", tone: "info", rows: take((row) => row.leaving) },
       { id: "free", title: "Free", tone: "success", rows: take((row) => row.free) },
+      {
+        id: "preparing",
+        title: BED_STATE_LABELS.beingMadeReady,
+        tone: "neutral",
+        rows: take((row) => row.bed.status === "ready"),
+      },
       { id: "pulled", title: "Pulled", tone: "info", rows: take((row) => row.bed.status === "incoming") },
       { id: "leave", title: "On leave", tone: "neutral", rows: take((row) => row.bed.status === "leave") },
-      { id: "settled", title: "Settled", tone: null, rows: take((row) => row.bed.status === "occupied") },
+      // S-24 (audit round 2): a bed admitted today sorts to the top of Settled, so a new arrival is
+      // never folded away behind Show all. The sort is stable, so the rest keep bed order.
+      {
+        id: "settled",
+        title: "Settled",
+        tone: null,
+        rows: take((row) => row.bed.status === "occupied").sort(
+          (left, right) => Number(right.bed.stayDays === 0) - Number(left.bed.stayDays === 0),
+        ),
+      },
       { id: "closed", title: "Closed", tone: "closed", rows: take(() => true) },
     ];
     return groups.filter((group) => group.rows.length > 0);
@@ -546,20 +603,44 @@ export function WardHomeTab({
     tone: WfTone;
     action: string;
     primary?: boolean;
+    /** Why the action cannot run now; the button stays visible, greyed, with this reason. */
+    blocked?: string;
+    /** The movement this row acts on, so an engine refusal shows under its own row. */
+    movementId?: string;
     run: () => void;
   };
   const expectedRows: FlowRow[] = accepted.map((movement, index): FlowRow => {
     const eta = movement.arrivalDetails?.estimatedArrivalAt;
     const late = eta !== undefined && eta < now;
+    const displayName = resolvePatientIdentity(movement).displayName;
+    // A1-6 (audit round 2): an accepted patient waiting for a bed is pulled from this row, the
+    // same action and the same check as All arrivals, so the sheet is no longer a detour.
+    const canPull = movement.stage === "accepted_awaiting_bed" && onPullPatient !== undefined;
+    const blocked = canPull ? pullBlockedReason(movement, unit, displayName) : undefined;
+    // Audit A1-3: a pulled arrival names its hold, from the one bed-hold rule.
+    const hold = movement.stage === "pulled" ? bedHold(movement.pullExpiresAt, now) : null;
     return {
       key: movement.id,
-      title: resolvePatientIdentity(movement).displayName,
+      movementId: movement.id,
+      title: displayName,
       when: eta === undefined ? undefined : `${late ? "Due" : "ETA"} ${formatInstantWithDay(eta, now)}`,
-      detail: late ? "Late" : stageCopy[movement.stage].label,
-      tone: late ? "warning" : "info",
-      action: "Open",
+      // A greyed Pull a bed says why in words on the row, not only on hover. A lapsed hold
+      // outranks a late ETA (the coral overdue); the ETA stays in `when` as "Due".
+      detail:
+        blocked ??
+        (hold?.state === "lapsed" ? hold.label : late ? "Late" : hold ? hold.label : stageCopy[movement.stage].label),
+      tone: hold?.state === "lapsed" ? "danger" : late ? "warning" : hold?.state === "at-risk" ? "warning" : "info",
+      action: canPull ? "Pull a bed" : "Open",
       primary: index === 0,
-      run: () => onOpenArrival?.(movement.id),
+      blocked,
+      run: canPull
+        ? () => onPullPatient?.(movement.id, unit.id)
+        : () => {
+            // A1-7 (audit round 2): on a phone, close the sheet first so the patient's card in
+            // All arrivals is what the person lands on, not a page moving behind the sheet.
+            if (phoneSheets) onPhonePanelChange?.(null);
+            onOpenArrival?.(movement.id);
+          },
     };
   });
   const leaveRows: FlowRow[] = unitLeaveBeds.map((leaveBed): FlowRow => {
@@ -614,6 +695,17 @@ export function WardHomeTab({
     tick?: keyof typeof localChecks;
   };
   const actNow: TodoRow[] = [
+    // Audit A3-1: absent without leave on an order is the most urgent row, as on the task list.
+    ...absencesOnOrder.map(({ leaveBed, admission }): TodoRow => {
+      const bed = bedByAdmission(admission.id);
+      return {
+        key: `absent-${admission.id}`,
+        title: "Absent without leave on an order",
+        detail: `${bed?.bedLabel ?? "A bed"} missing since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}, order stays in force`,
+        tone: "danger",
+        action: bed ? { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) } : undefined,
+      };
+    }),
     ...liveFormAlerts.map((alert): TodoRow => ({
       key: alert.key,
       title: alert.title,
@@ -650,6 +742,23 @@ export function WardHomeTab({
       meta: String(heldUp.length),
       tone: "danger",
       action: { label: "Review", run: () => onOpenDischarges?.() },
+    });
+  }
+  // Audit A1-3: a lapsed bed hold is act now on its ward, the same rule Handover and Tasks use.
+  const lapsedHolds = (bedsList ?? []).filter((bed) => bed.status === "incoming" && bed.bedHold?.state === "lapsed");
+  if (lapsedHolds.length > 0) {
+    actNow.push({
+      key: "holds",
+      title: lapsedHolds.length === 1 ? "Bed pull expired" : "Bed pulls expired",
+      detail: lapsedHolds
+        .map(
+          (bed) =>
+            `${bed.bedLabel}${bed.patientAlias ? ` ${bed.patientAlias}` : ""}, ${bed.bedHold!.short.toLowerCase()}`,
+        )
+        .join("; "),
+      meta: String(lapsedHolds.length),
+      tone: "danger",
+      action: { label: "Move or release", run: () => onSelectBed?.(Number(lapsedHolds[0]!.bedNumber)) },
     });
   }
   if (morningRollupOverdue && !morningRollupConfirmed) {
@@ -755,15 +864,27 @@ export function WardHomeTab({
         <span className={styles.flowMain}>
           <span className={styles.flowTitle}>{row.title}</span>
           <span className={styles.flowDetail}>{row.detail}</span>
+          {row.movementId && lastActionRejection?.movementId === row.movementId ? (
+            <span className={styles.noticeProminent} role="alert">
+              {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ?? lastActionRejection.attempted} not
+              recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
+            </span>
+          ) : null}
         </span>
         {row.when ? <span className={styles.flowWhen}>{row.when}</span> : null}
         <button
           type="button"
           className={buttonClass({ variant: row.primary ? "pri" : "sec", size: "sm" })}
-          onClick={row.run}
+          aria-disabled={row.blocked ? "true" : undefined}
+          title={row.blocked}
+          onClick={row.blocked ? ignoreUnavailableActivation : row.run}
         >
           {row.action}
-          <SrOnly> {row.title}</SrOnly>
+          <SrOnly>
+            {" "}
+            {row.title}
+            {row.blocked ? `. ${row.blocked}` : ""}
+          </SrOnly>
         </button>
       </li>
     );
@@ -932,6 +1053,24 @@ export function WardHomeTab({
                             {movement.cohort} &middot; {movement.security} &middot; {movement.sex} &middot;{" "}
                             {movement.legalStatus}
                           </span>
+                          {/* A1-8 (audit round 2): the wait, origin and gate result the Ward answer
+                              view shows, in one line, so an accept from this list is not blind. */}
+                          <span
+                            className={`${styles.awaitingMeta} ${styles.awaitingSummary}`}
+                            data-testid={`ward-incoming-summary-${movement.id}`}
+                          >
+                            {(() => {
+                              const verdict = eligibility(movement, unit, now);
+                              const pass = verdict.gates.filter((gate) => gate.pass).length;
+                              return [
+                                `Waiting ${durMinutes(Math.max(0, now - movement.openedAt))}`,
+                                edById(movement.originEdId) ? `Now at ${edById(movement.originEdId)?.name}` : undefined,
+                                `${pass} of ${verdict.gates.length} gates pass`,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ");
+                            })()}
+                          </span>
                         </div>
 
                         {notice ? (
@@ -1078,8 +1217,12 @@ export function WardHomeTab({
                       <StatusGlyph tone={answer.reason ? "closed" : "success"} size={9} />
                       <span className={styles.flowMain}>
                         <span className={styles.flowTitle}>{answer.outcome}</span>
+                        {/* S-23 (audit round 2): an accepted row names who this ward took by UMRN. A
+                            declined referral was never this ward's patient, so it stays anonymous. */}
                         <span className={styles.flowDetail}>
-                          {answer.reason ? answer.reason.replace(/_/g, " ") : "Accepted by this ward"}
+                          {answer.reason
+                            ? answer.reason.replace(/_/g, " ")
+                            : `UMRN ${resolvePatientIdentity({ movementId: answer.movementId }).umrn}`}
                         </span>
                       </span>
                       <span className={styles.flowWhen}>
@@ -1318,13 +1461,14 @@ export function WardHomeTab({
           </h2>
           {incoming.length === 0 ? (
             <div className={styles.phoneClear} data-testid="ward-phone-all-clear">
+              {/* A1-22 (audit round 2): one line when nothing is waiting, so Act now sits higher. */}
               <p className={styles.phoneClearTitle}>
                 <StatusGlyph tone="success" size={12} />
                 All clear
-              </p>
-              <p className={styles.phoneClearText}>
-                Answered {recentAnswers.length}
-                {expectedRows.length > 0 ? ` · ${expectedRows.length} coming in` : ""}
+                <span className={styles.phoneClearText}>
+                  · Answered {recentAnswers.length}
+                  {expectedRows.length > 0 ? ` · ${expectedRows.length} coming in` : ""}
+                </span>
               </p>
             </div>
           ) : (
@@ -1465,7 +1609,8 @@ export function WardHomeTab({
             <div className={styles.phoneGroups} data-testid="ward-phone-bed-groups">
               {phoneGroups.map((group) => {
                 const settledFolded = group.id === "settled" && !showSettled && !highlighting;
-                const rows = settledFolded ? group.rows.slice(0, 3) : group.rows;
+                const arrivedToday = group.rows.filter((row) => row.bed.stayDays === 0).length;
+                const rows = settledFolded ? group.rows.slice(0, Math.max(3, arrivedToday)) : group.rows;
                 return (
                   <section key={group.id} aria-label={`${group.title}, ${group.rows.length}`}>
                     <h3 className={styles.phoneGroupHead}>
@@ -1496,13 +1641,15 @@ export function WardHomeTab({
                               <span className={styles.phoneRowNote}>
                                 {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : null}
                                 <span>
-                                  {row.note === row.name
-                                    ? row.free
-                                      ? "Ready"
-                                      : row.bed.status === "closed"
-                                        ? "Not offered"
-                                        : row.stateWord
-                                    : row.note}
+                                  {group.id === "settled" && row.bed.stayDays === 0 && row.note === row.stateWord
+                                    ? "Arrived today"
+                                    : row.note === row.name
+                                      ? row.free
+                                        ? "Ready"
+                                        : row.bed.status === "closed"
+                                          ? "Not offered"
+                                          : row.stateWord
+                                      : row.note}
                                 </span>
                               </span>
                             </span>

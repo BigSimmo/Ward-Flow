@@ -28,13 +28,16 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { parseReleaseDayInstant } from "@/components/ward-management/ward/release-day";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
-import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
+import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import type {
   DischargeRecord,
   DischargeOpenHandle,
   WardRecordActor,
 } from "@/components/ward-management/ward-discharge-records";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
+import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { DUE_SORT_OPTIONS, sortDueFirst, type DueSortMode } from "@/components/ward-management/ward-due-sort";
@@ -44,6 +47,8 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
+import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import {
   Badge,
   Button,
@@ -58,6 +63,7 @@ import {
   buttonClass,
   durMinutes,
   useIsPhone,
+  useOptionalToast,
   type WfTone,
 } from "@/components/wf";
 
@@ -417,8 +423,19 @@ export function DischargeBoard({ initialAdmissionId }: { initialAdmissionId?: st
 }
 
 function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: string }) {
-  const { bedReleases, units, dayZero, readDischargeRecords, openDischargeRecord, readDischargeRecord, dispatch } =
-    useWardFlow();
+  const {
+    bedReleases,
+    units,
+    patients,
+    dayZero,
+    readDischargeRecords,
+    openDischargeRecord,
+    readDischargeRecord,
+    dispatch,
+    recordWardDeparture,
+    rejections,
+  } = useWardFlow();
+  const toast = useOptionalToast();
   const now = useWardFlowClock();
   const [population, setPopulation] = useState<Population>("releases");
   const [status, setStatus] = useState<WorkStatus | "all">("all");
@@ -453,6 +470,68 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const listRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const restoreFocusRef = useRef(false);
+  // A4-21 (audit 13 Oct 2026): a confirmed release records the departure from this sheet, with the
+  // destination, through the same shared action the ward's bed drawer uses. The destination starts
+  // from the default for each release, so one person's choice is never recorded against the next.
+  const [departure, setDeparture] = useState<{ releaseId: string | null; destination: LeavingDestination }>({
+    releaseId: null,
+    destination: "discharged-to-the-community",
+  });
+  // `undoAdmissionId` is set for a recorded departure (its toast offers Undo, as on the ward's bed
+  // drawer); an undo itself carries none, so its own toast offers nothing further.
+  const departureCheckRef = useRef<{ prior: number; who: string; undoAdmissionId?: string } | null>(null);
+  const [departureToken, setDepartureToken] = useState(0);
+  const departureNowRef = useRef(now);
+  const rejectionCountRef = useRef(rejections.length);
+  useEffect(() => {
+    departureNowRef.current = now;
+    rejectionCountRef.current = rejections.length;
+  }, [now, rejections.length]);
+  useEffect(() => {
+    const check = departureCheckRef.current;
+    if (departureToken === 0 || check === null) return;
+    departureCheckRef.current = null;
+    const refused = rejections.length > check.prior ? rejections[rejections.length - 1] : undefined;
+    const undoAdmissionId = check.undoAdmissionId;
+    const said = refused
+      ? `Not recorded: ${refused.reason}. Nothing was changed.`
+      : undoAdmissionId === undefined
+        ? `Undone. ${check.who} is back in their bed.`
+        : `Recorded: ${check.who} has left the ward.`;
+    if (!toast) {
+      announceToWardShell(said);
+      return;
+    }
+    if (refused || undoAdmissionId === undefined) {
+      toast.push({ tone: refused ? "warning" : "success", title: said });
+      return;
+    }
+    // Audit A1-12: a recorded departure offers Undo (`UNDO_DEPARTURE`), like the ward's bed drawer.
+    const undoLimit = roleLimitReason("coordinator", "UNDO_DEPARTURE");
+    toast.push({
+      tone: "success",
+      title: said,
+      ...(undoLimit
+        ? { body: `Undo: ${undoLimit}` }
+        : {
+            undo: {
+              durationMs: UNDO_TOAST_MS,
+              onUndo: () => {
+                departureCheckRef.current = { prior: rejectionCountRef.current, who: check.who };
+                dispatch({
+                  type: "UNDO_DEPARTURE",
+                  role: "coordinator",
+                  now: departureNowRef.current,
+                  admissionId: undoAdmissionId,
+                });
+                setDepartureToken((token) => token + 1);
+              },
+            },
+          }),
+    });
+    // `dispatch` is stable for the board's life; the token drives this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [departureToken, rejections, toast]);
   const guarded = readDischargeRecords(RECORD_ACTOR);
   const records = guarded.status === "allowed" ? guarded.value : [];
   // Opens the linked stay once, on arrival; after that the coordinator's own choices stand.
@@ -584,7 +663,18 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const linkedReleaseRecord = detailRelease
     ? (records.find((record) => record.admissionId === detailRelease.admissionId) ?? null)
     : null;
+  const releasePatientId =
+    linkedReleaseRecord?.identity.kind === "linked" ? linkedReleaseRecord.identity.patient.id : null;
+  // S-29 (Josh, audit round 2): a person on a CTO gets the community team or GP handover line.
+  const releaseOnCto =
+    releasePatientId !== null &&
+    activeCommunityTreatmentOrder(patients.find((patient) => patient.id === releasePatientId)) !== undefined;
   const selectedUnitId = activeRecord?.unitId ?? detailRelease?.unitId;
+  const canRecordDeparture = detailRelease?.state === "confirmed";
+  const departureDestination: LeavingDestination =
+    departure.releaseId === detailRelease?.id ? departure.destination : "discharged-to-the-community";
+  // One primary per area: on a phone a blocked release keeps Clear blocker as the primary.
+  const phoneClearBlocker = isPhone && !!detailRelease?.blocker && detailRelease.state !== "discharged";
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
   const shown = population === "records" ? visibleRecords.length : visibleReleaseIds.length;
   const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
@@ -1196,7 +1286,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 : "Bed release · all services"
               : "History · admission records"
           }
-          title={`${openCount} ${openCount === 1 ? "discharge" : "discharges"} open`}
+          // A4-22 (audit round 2): History counts admission records, not today's bed releases, so
+          // its title says so rather than reading as the same figure jumping.
+          title={
+            population === "records"
+              ? `${openCount} admission ${openCount === 1 ? "record" : "records"} open`
+              : `${openCount} ${openCount === 1 ? "discharge" : "discharges"} open`
+          }
           titleMeta={
             <span className={pageStyles.bedDaysPast} data-testid="ward-discharge-bed-days-past">
               <strong>{bedDaysPast}</strong> bed {bedDaysPast === 1 ? "day" : "days"} past the ward&rsquo;s date
@@ -2156,7 +2252,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       </>
                     )}
 
-                    {linkedReleaseRecord ? (
+                    {isPhone && linkedReleaseRecord?.identity.kind === "linked" ? (
+                      // A4-22 (audit round 2): on the phone the link opens the person's own page
+                      // rather than switching the board to History and losing the selection.
+                      <Link
+                        className={buttonClass({ variant: "ghost", size: "sm", className: pageStyles.bridgeButton })}
+                        href={patientHref(linkedReleaseRecord.identity.patient.id)}
+                      >
+                        Patient page →
+                      </Link>
+                    ) : linkedReleaseRecord ? (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -2186,11 +2291,17 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             state: detailRelease.state === "expected" ? "pending" : "complete",
                             detail: `${detailRelease.state} · ${recordedMoment(detailRelease.confirmedAt, dayZero)}`,
                           },
-                          {
-                            label: "Recorded discharge blocker",
-                            state: detailRelease.blocker ? "blocked" : "pending",
-                            detail: detailRelease.blocker ?? "No discharge blocker recorded",
-                          },
+                          // A4-23 (audit round 2): the phone shows the blocker panes together, so
+                          // the blocker is said once, in its own box below, not again as a milestone.
+                          ...(isPhone
+                            ? []
+                            : [
+                                {
+                                  label: "Recorded discharge blocker",
+                                  state: detailRelease.blocker ? ("blocked" as const) : ("pending" as const),
+                                  detail: detailRelease.blocker ?? "No discharge blocker recorded",
+                                },
+                              ]),
                           {
                             label: "Physical departure",
                             state: detailRelease.state === "discharged" ? "complete" : "pending",
@@ -2210,6 +2321,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         </p>
                       ) : null}
                       <ReadyToLeave
+                        onCto={releaseOnCto}
                         ticked={ticksFor(detailRelease.id)}
                         onToggle={(itemId) => {
                           const on = !ticksFor(detailRelease.id).includes(itemId);
@@ -2375,13 +2487,54 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               </div>
               {selectedUnitId && (
                 <footer className={pageStyles.detailFooter}>
+                  {canRecordDeparture ? (
+                    <label className={pageStyles.departDest}>
+                      <span>Going to</span>
+                      <Select
+                        aria-label="Where are they going?"
+                        data-testid="ward-discharge-departure-destination"
+                        value={departureDestination}
+                        onChange={(event) =>
+                          setDeparture({
+                            releaseId: detailRelease?.id ?? null,
+                            destination: event.target.value as LeavingDestination,
+                          })
+                        }
+                      >
+                        {LEAVING_DESTINATIONS.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </label>
+                  ) : null}
                   <Link
                     href={`/mockups/ward-flow/ward/${selectedUnitId}`}
                     className={buttonClass({ size: "sm", variant: "sec" })}
                   >
                     Open ward
                   </Link>
-                  {isPhone && detailRelease?.blocker && detailRelease.state !== "discharged" ? (
+                  {canRecordDeparture && detailRelease ? (
+                    <Button
+                      variant={phoneClearBlocker ? "sec" : "pri"}
+                      size="sm"
+                      className={phoneClearBlocker ? undefined : pageStyles.departPri}
+                      data-testid="ward-discharge-record-departure"
+                      onClick={() => {
+                        departureCheckRef.current = {
+                          prior: rejections.length,
+                          who: linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person",
+                          undoAdmissionId: detailRelease.admissionId,
+                        };
+                        recordWardDeparture(detailRelease.admissionId, detailRelease.unitId, departureDestination);
+                        setDepartureToken((token) => token + 1);
+                      }}
+                    >
+                      Record departure
+                    </Button>
+                  ) : null}
+                  {phoneClearBlocker && detailRelease ? (
                     <Button
                       variant="pri"
                       className={pageStyles.phFootPri}

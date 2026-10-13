@@ -34,6 +34,7 @@ import {
   type GlobalSearchPreviewItem,
 } from "@/components/ward-management/search/global-search-preview";
 import { StatusGlyph } from "@/components/wf";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-management/ward-derivations";
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -260,7 +261,23 @@ export type SearchResultItem = GlobalSearchPreviewItem & {
   dateOfBirth?: string;
   readyBeds?: number;
   siteName?: string;
+  /** A movement row's patient UMRN, used only to show its title discreetly on a phone. */
+  subjectUmrn?: string;
 };
+
+/**
+ * A result's title through the Discreet names setting: a person or movement row names a patient,
+ * so on a phone with the setting on it reads initials plus UMRN. Every other row, and desktop, keeps
+ * its title. `nameFor` is `usePatientNameDisplay()`.
+ */
+export function patientResultTitle(
+  item: SearchResultItem,
+  nameFor: (name: string, umrn: string | undefined | null) => string,
+): string {
+  if (item.kind === "person") return nameFor(item.title, item.umrn);
+  if (item.kind === "movement") return nameFor(item.title, item.subjectUmrn);
+  return item.title;
+}
 
 export type SearchResultGroup = {
   key: string;
@@ -418,6 +435,7 @@ export function smartSearchGroups(
           kindLabel: "Movement",
           id: m.id,
           title: subject.displayName,
+          subjectUmrn: subject.umrn,
           meta: `${subject.umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
           href: movementHref(m.id),
         };
@@ -545,6 +563,7 @@ export function WardGlobalSearch({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const paletteRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+  const nameFor = usePatientNameDisplay();
 
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -660,6 +679,11 @@ export function WardGlobalSearch({
   }, [isStart, startGroups, allGroups, activeKind]);
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
+  /** Audit round 2 (S-33): how many each group really matched, so a cut group can offer the rest. */
+  const fullGroupCounts = useMemo(
+    () => new Map(allGroups.map((group) => [group.key, group.items.length] as const)),
+    [allGroups],
+  );
 
   /*
    * The popup stays mounted while React catches up with the typed text. Hiding it for that one
@@ -1011,7 +1035,28 @@ export function WardGlobalSearch({
                     <li role="presentation" className={styles.groupItem}>
                       <span className={styles.group} data-testid={`ward-global-search-group-${group.key}`}>
                         <span>{group.heading}</span>
-                        {isStart ? null : <span className={styles.groupCount}>{group.items.length}</span>}
+                        {isStart ? null : (
+                          <span className={styles.groupCount}>
+                            {fullGroupCounts.get(group.key) ?? group.items.length}
+                          </span>
+                        )}
+                        {(() => {
+                          // Audit round 2 (S-33): All cuts each group at six; offer the rest through
+                          // that group's kind chip rather than stopping silently.
+                          const full = fullGroupCounts.get(group.key) ?? 0;
+                          const kind = KIND_FILTERS.find((filter) => filter.groups.includes(group.key));
+                          if (isStart || activeKind !== "all" || !kind || full <= group.items.length) return null;
+                          return (
+                            <button
+                              type="button"
+                              className={styles.showAll}
+                              onClick={() => chooseKind(kind.key)}
+                              data-testid={`ward-global-search-show-all-${group.key}`}
+                            >
+                              Show all {full}
+                            </button>
+                          );
+                        })()}
                       </span>
                     </li>
                     {group.items.map((item) => {
@@ -1060,7 +1105,7 @@ export function WardGlobalSearch({
                               )}
                             </span>
                             <span className={styles.resultContent}>
-                              <span className={styles.resultTitle}>{item.title}</span>
+                              <span className={styles.resultTitle}>{patientResultTitle(item, nameFor)}</span>
                               <span className={styles.resultMeta}>
                                 {item.umrn ? (
                                   <>

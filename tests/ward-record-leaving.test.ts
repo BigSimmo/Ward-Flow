@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { mixSexOf } from "../src/components/ward-management/ward-eligibility";
+import { bedsPendingPreparation, openBedsNow } from "../src/components/ward-management/ward-bed-availability";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
@@ -86,7 +87,45 @@ describe("recording that a patient has left", () => {
 
     expect(next.rejections).toHaveLength(0);
     expect(unit(next, person.unitId).empty.value).toBe(before + 1);
-    expect(unit(next, person.unitId).empty.confirmedAt).toBe(NOW);
+    // Audit A1-11 (13 Oct 2026): the count moves, but only Confirm numbers stamps it confirmed.
+    expect(unit(next, person.unitId).empty.confirmedAt).toBe(unit(state, person.unitId).empty.confirmedAt);
+  });
+
+  it("puts the vacated bed into Being made ready, and one Ready tap makes it offerable (A4-24)", () => {
+    // Owner decision, Josh, 13 October 2026: a vacated bed is not instantly Ready. The figures
+    // still move once for the leaving, but the bed is not offered until someone taps Ready.
+    const state = seeded();
+    const person = anOccupant(state);
+    const unitId = person.unitId;
+    const pendingBefore = bedsPendingPreparation(unitId, state.bedReleases);
+    const openBefore = openBedsNow(unit(state, unitId), state.bedReleases);
+
+    const left = wardFlowReducer(state, {
+      type: "RECORD_LEAVING",
+      role: "ward",
+      now: NOW,
+      admissionId: person.id,
+      actingUnitId: unitId,
+      leavingDestination: "discharged-to-the-community",
+    });
+    expect(left.rejections).toHaveLength(0);
+    expect(bedsPendingPreparation(unitId, left.bedReleases)).toBe(pendingBefore + 1);
+    expect(openBedsNow(unit(left, unitId), left.bedReleases)).toBe(openBefore);
+    const vacated = left.bedReleases.find((r) => r.admissionId === person.id);
+    expect(vacated).toMatchObject({ state: "discharged", preparing: true, unitId });
+
+    // The coordinator can always mark it Ready.
+    const ready = wardFlowReducer(left, {
+      type: "SET_BED_PREPARATION",
+      role: "coordinator",
+      now: NOW + 5,
+      releaseId: vacated!.id,
+      actingUnitId: unitId,
+      preparing: false,
+    });
+    expect(ready.rejections).toHaveLength(0);
+    expect(bedsPendingPreparation(unitId, ready.bedReleases)).toBe(pendingBefore);
+    expect(openBedsNow(unit(ready, unitId), ready.bedReleases)).toBe(openBefore + 1);
   });
 
   it("raises allocatable alongside empty so the vacated bed becomes allocatable immediately", () => {
@@ -149,6 +188,8 @@ describe("recording that a patient has left", () => {
     expect(unit(afterLeaving, unitId).allocatable.value).toBe(allocatableBefore + 1);
     const completed = afterLeaving.bedReleases.find((r) => r.id === release.id);
     expect(completed?.state).toBe("discharged");
+    // A4-24: and the vacated bed is being made ready, not instantly Ready.
+    expect(completed?.preparing).toBe(true);
 
     // A subsequent RELEASE_BED against the now-completed release moves nothing further: it is
     // refused as already discharged.

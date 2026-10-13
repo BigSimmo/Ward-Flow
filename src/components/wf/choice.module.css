@@ -574,3 +574,13 @@
     inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 }
+
+/* Phone taps (13 Oct 2026): the edge fade's mask also clipped presses to the tab row's own box, so
+ * a 28px pill tab lost the top and bottom of its 48px hit area. `no-clip` keeps the fade as drawn
+ * and lets the transparent hit area outside the row take the press. Nothing here applies above 48rem. */
+@media (max-width: 48rem) {
+  .tabs {
+    -webkit-mask-clip: no-clip;
+    mask-clip: no-clip;
+  }
+}

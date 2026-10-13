@@ -29,9 +29,14 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { callRows, type CallTarget } from "./patient-call-list";
 import { PatientNowLayout, PatientSheetRow, PatientSheetRows } from "./patient-now-layouts";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import type { Movement, TransportProvider, TransportLegalStatus } from "@/components/ward-management/ward-model";
+import type {
+  Movement,
+  TransportExceptionReason,
+  TransportProvider,
+  TransportLegalStatus,
+} from "@/components/ward-management/ward-model";
 import {
-  ABSENCE_STEPS,
+  absenceStepsFor,
   ABSENCE_STEP_LABELS,
   TRANSPORT_PROVIDERS,
   ARRIVAL_MODE_LABELS,
@@ -39,6 +44,7 @@ import {
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
 import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
+import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
 import {
   activeCommunityTreatmentOrder,
   type Patient,
@@ -50,12 +56,23 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { PersonScreen } from "./person-screen";
 import { PatientTransitOperations } from "./patient-transit-operations";
+import { useUndoableStep } from "../use-undoable-step";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode, type PatientMode } from "./patient-mode";
 import { buildPatientStatus, dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import {
+  TRANSPORT_EXCEPTION_REASON_LABELS,
+  holdEndsBeforeEta,
+  legalNowText,
+  legalNowTransportStatus,
+  transportExceptionText,
+  transportStatusClashes,
+} from "@/components/ward-management/ward-transport-checks";
+import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { usePathname } from "next/navigation";
 import {
@@ -83,6 +100,8 @@ import {
   useIsPhone,
 } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
+import { isOnOrder } from "../ward-stay-legal";
+import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -218,6 +237,8 @@ export function PatientNowScreen({
   const routeRole = useRouteRole();
   const pathname = usePathname() ?? "";
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
+  // Audit A3-10 (13 Oct 2026): Mark absent offers the standard toast with Undo, as other moves do.
+  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
   // timestamp, so the calendar date used to derive a patient's age must be rebuilt from `dayZero`.
@@ -272,7 +293,14 @@ export function PatientNowScreen({
   const [transportCadDraft, setTransportCadDraft] = useState("");
   const [transportEtaDraft, setTransportEtaDraft] = useState("");
   const [transportProviderDraft, setTransportProviderDraft] = useState<TransportProvider>("Ambulance service");
-  const [transportLegalDraft, setTransportLegalDraft] = useState<TransportLegalStatus>("involuntary");
+  // Audit A4-7: the transport status starts from Legal now (the form in force), never a fixed
+  // default. Undefined means "as Legal now"; Change opens the choice, and a status that differs from
+  // Legal now asks for a recorded reason.
+  const [transportLegalDraft, setTransportLegalDraft] = useState<TransportLegalStatus | undefined>(undefined);
+  const [transportLegalChanging, setTransportLegalChanging] = useState(false);
+  const [transportLegalReason, setTransportLegalReason] = useState<TransportExceptionReason | "">("");
+  // Audit A4-6: a Save that cannot go through says why beside the field, never silently.
+  const [transportFormErrors, setTransportFormErrors] = useState<{ cad?: string; eta?: string; legal?: string }>({});
   const [transportEscortDraft, setTransportEscortDraft] = useState(false);
   const [bookingRejectionStart, setBookingRejectionStart] = useState<number>();
 
@@ -364,7 +392,16 @@ export function PatientNowScreen({
     leaveBed: stayLeaveBed,
     patient: livePatient,
   });
-  const modeMeta = PATIENT_MODES[mode];
+  /* A3-13: absent without leave is the involuntary term under the Act. A voluntary patient who is
+   * not back reads "Not back from leave"; the missing person steps stay the same. Either source
+   * reading involuntary wins, as in the reducer's guards, so the return-order step is kept. */
+  const voluntaryNow =
+    /^voluntary\b/i.test((liveMovement?.legalStatus ?? livePatient?.legalStatus ?? "").trim()) &&
+    !legalStatusTextIsInvoluntary(livePatient?.legalStatus);
+  const modeMeta =
+    mode === "awol" && voluntaryNow
+      ? { ...PATIENT_MODES.awol, label: "Not back from leave", pill: "Not back from leave" }
+      : PATIENT_MODES[mode];
   const isLiveBedflow = modeMeta.placing;
   // A movement's forms are the authority in force only while it is open or its stay is current.
   const stayCurrent = mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed";
@@ -402,13 +439,13 @@ export function PatientNowScreen({
     const absence = mode === "awol" ? stayLeaveBed?.absentWithoutLeave : undefined;
     if (absence) {
       // The missing person summary is the absence record only: when, where the bed is held, the steps.
-      const steps = ABSENCE_STEPS.map((step) => {
+      const steps = absenceStepsFor(voluntaryNow).map((step) => {
         const at = absence.steps.find((done) => done.step === step)?.at;
         return `${ABSENCE_STEP_LABELS[step]}: ${at === undefined ? "not recorded" : `done ${clock(at)}`}`;
       });
       const text = [
         `Ward Flow missing person summary — ${displayName}`,
-        `Absent without leave, recorded ${clock(absence.since)}`,
+        `${voluntaryNow ? "Not back from leave" : "Absent without leave"}, recorded ${clock(absence.since)}`,
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
         ...steps,
       ].join("\n");
@@ -471,12 +508,39 @@ export function PatientNowScreen({
           .find((rejection) => rejection.attempted === "BOOK_TRANSPORT" && rejection.movementId === selectedId)
       : undefined;
 
+  const legalNowStatus = liveMovement ? legalNowTransportStatus(liveMovement) : undefined;
+  const transportLegalChoice = transportLegalDraft ?? legalNowStatus;
+  const transportLegalClash = liveMovement !== undefined && transportStatusClashes(liveMovement, transportLegalChoice);
+  const draftEtaAt = parseEtaToInstant(transportEtaDraft.trim(), now);
+  // Audit A4-2: a quoted ETA after the bed hold ends is warned at once (never blocked).
+  const draftHoldEnd = liveMovement ? holdEndsBeforeEta(liveMovement, draftEtaAt) : undefined;
+
+  function openTransportForm() {
+    setTransportCadDraft(displayCadNumber ?? "");
+    setTransportEtaDraft(
+      liveMovement?.transport?.estimatedAt !== undefined ? clock(liveMovement.transport.estimatedAt) : "",
+    );
+    setTransportLegalDraft(liveMovement?.transport?.transportLegalStatus);
+    setTransportLegalChanging(false);
+    setTransportLegalReason("");
+    setTransportFormErrors({});
+    setShowTransportForm(true);
+  }
+
   function handleSaveTransportBooking(e: React.FormEvent) {
     e.preventDefault();
     const cleanCad = transportCadDraft.trim();
     const cleanEta = transportEtaDraft.trim();
     const estimatedAt = parseEtaToInstant(cleanEta, now);
-    if (!cleanCad || estimatedAt === undefined) return;
+    const errors: { cad?: string; eta?: string; legal?: string } = {};
+    if (!cleanCad) errors.cad = "Enter the CAD number from the call";
+    if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
+    else if (estimatedAt === undefined) errors.eta = "Enter the ETA as HH:MM or minutes, for example 11:15 or 45m";
+    if (transportLegalChoice === undefined) errors.legal = "Choose voluntary or involuntary";
+    else if (transportLegalClash && transportLegalReason === "") errors.legal = "Choose why it differs from Legal now";
+    setTransportFormErrors(errors);
+    if (errors.cad || errors.eta || errors.legal || estimatedAt === undefined || transportLegalChoice === undefined)
+      return;
 
     if (!liveMovement || !gate("BOOK_TRANSPORT").allowed) return;
     setBookingRejectionStart(rejections.length);
@@ -490,8 +554,11 @@ export function PatientNowScreen({
         provider: transportProviderDraft,
         escortRequired: transportEscortDraft,
         cadNumber: cleanCad,
-        transportLegalStatus: transportLegalDraft,
+        transportLegalStatus: transportLegalChoice,
         estimatedAt,
+        ...(transportLegalClash && transportLegalReason !== ""
+          ? { exception: { gaps: ["legal_status_differs" as const], reason: transportLegalReason } }
+          : {}),
       });
     }
 
@@ -563,6 +630,8 @@ export function PatientNowScreen({
           : undefined;
   const phoneStayStages: JourneyStage[] | undefined = (() => {
     if (!isPhone || isLiveBedflow || !heroStay || heroStay.arrivedAt === null) return undefined;
+    // Audit A3-12: a missing person is not "On ward"; the absence card and figures carry the story.
+    if (mode === "awol") return undefined;
     const arrivedAt = heroStay.arrivedAt;
     const before = heroStayMovement
       ? patientJourneyStages(heroStayMovement, arrivedAt).map((stage) => ({ ...stage, now: undefined }))
@@ -580,7 +649,7 @@ export function PatientNowScreen({
     if (heroStay.leftAt === null && awaySince !== undefined)
       stages.push({
         id: "away",
-        label: mode === "leave" ? "On leave" : mode === "awol" ? "Absent" : "At ED",
+        label: mode === "leave" ? "On leave" : "At ED",
         minutes: Math.max(0, now - awaySince),
         now: true,
       });
@@ -588,19 +657,47 @@ export function PatientNowScreen({
   })();
   const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
   const ctoInForce = activeCommunityTreatmentOrder(livePatient);
+  // Audit A3-3: one time left for a typed expiry, the same the Forms and Delays pages show.
+  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now);
+  const movementTimeLeft =
+    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now) : undefined;
+  // Audit S-6: an ended form with Form 6A still to record says so, never "In force".
+  const formMovementNext = formProgression(formMovement);
   const phoneLegal = ctoInForce
     ? { value: ctoInForce.form, label: "In force" }
-    : formMovement?.legalForm
-      ? { value: formMovement.legalForm.code, label: "In force" }
-      : {
-          // A figure, so the status's first word ("Voluntary"); the full words are on Legal now.
-          value:
-            (
-              (mode === "idle" ? livePatient?.legalStatus : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ??
-              "Not recorded"
-            ).split(" ")[0] ?? "Not recorded",
-          label: "Legal status",
-        };
+    : formMovementNext
+      ? { value: formMovementNext.nextCode, label: "To record", tone: "warning" as const }
+      : formMovement?.legalForm
+        ? {
+            value: formMovement.legalForm.code,
+            label: formMovementLeft ? formMovementLeft.text : "In force",
+            ...(formMovementLeft && formMovementLeft.standing !== "later"
+              ? { tone: formMovementLeft.actNow ? ("danger" as const) : ("warning" as const) }
+              : {}),
+          }
+        : {
+            // A figure, so the status's first word ("Voluntary"); the full words are on Legal now.
+            value:
+              (
+                (mode === "idle"
+                  ? livePatient?.legalStatus
+                  : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ?? "Not recorded"
+              ).split(" ")[0] ?? "Not recorded",
+            label: "Legal status",
+          };
+  // Audit S-32: the leave sheet names the form in force and says when the person is on an order.
+  const stayLegalStatusNow = liveMovement?.legalStatus ?? livePatient?.legalStatus;
+  const leaveLegal = {
+    form: [
+      ctoInForce
+        ? `Form ${ctoInForce.form}`
+        : formMovement?.legalForm
+          ? `Form ${formMovement.legalForm.code}`
+          : "No form recorded",
+      stayLegalStatusNow ?? "legal status not recorded",
+    ].join(" · "),
+    onOrder: isOnOrder(stayLegalStatusNow),
+  };
   const heroStayOrigin = heroStayMovement ? edById(heroStayMovement.originEdId)?.name : undefined;
   const phoneStatusFoot =
     mode === "ward" && heroStay?.arrivedAt != null
@@ -624,13 +721,26 @@ export function PatientNowScreen({
   function markAbsent() {
     const stay = resolved?.liveAdmission;
     if (stay && gate("RECORD_ABSENT_WITHOUT_LEAVE").allowed)
-      dispatch({
-        type: "RECORD_ABSENT_WITHOUT_LEAVE",
-        role: routeRole,
-        now,
-        admissionId: stay.id,
-        actingUnitId: stay.unitId,
-      });
+      runStep(
+        {
+          type: "RECORD_ABSENT_WITHOUT_LEAVE",
+          role: routeRole,
+          now,
+          admissionId: stay.id,
+          actingUnitId: stay.unitId,
+        },
+        {
+          success: "Marked absent without leave",
+          undo: (at) => ({
+            type: "UNDO_ABSENT_WITHOUT_LEAVE",
+            role: routeRole,
+            now: at,
+            admissionId: stay.id,
+            ...(routeRole === "ward" ? { actingUnitId: stay.unitId } : {}),
+          }),
+          undone: "Undone. Back on leave.",
+        },
+      );
   }
   const wardForm: WardChangeForm = wardFormFor.admissionId === resolved?.liveAdmission?.id ? wardFormFor.form : "none";
   function setWardForm(form: WardChangeForm) {
@@ -712,6 +822,7 @@ export function PatientNowScreen({
     wardRejection?.attempted === "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT" ? wardRejection.reason : undefined;
   const wardRefusal = edReturnRefusal ? undefined : wardRejection?.reason;
 
+  const acceptedWardFor = acceptedWardReferralFor(livePatient?.id, referrals, units, { movements, admissions });
   const statusContext: PatientStatusContext = {
     movement: liveMovement,
     admission: resolved.liveAdmission,
@@ -723,6 +834,12 @@ export function PatientNowScreen({
       (acceptingUnit ?? stayUnit) !== undefined
         ? `/mockups/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
         : undefined,
+    acceptedReferral: acceptedWardFor
+      ? {
+          unitName: acceptedWardFor.unitName,
+          boardHref: `/mockups/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}`,
+        }
+      : undefined,
     transportHref:
       liveMovement && !pathname.includes(`/movements/${encodeURIComponent(liveMovement.id)}`)
         ? `/mockups/ward-flow/movements/${encodeURIComponent(liveMovement.id)}`
@@ -738,9 +855,7 @@ export function PatientNowScreen({
       setShowClearanceModal(true);
     },
     onBookTransport: () => {
-      setTransportCadDraft(displayCadNumber ?? "");
-      setTransportEtaDraft(displayEta ?? "");
-      setShowTransportForm(true);
+      openTransportForm();
       setNowSheet("transport");
     },
     onArrivalTime: () => {
@@ -781,6 +896,18 @@ export function PatientNowScreen({
     roleLimit: (eventType) => gate(eventType).reason,
     handoverRefusal:
       mode === "held" && liveMovement ? (heldUnitGenderRefusal({ units }, liveMovement, now) ?? undefined) : undefined,
+    // Audit A4-9: once every gate is clear the next step is pinned (phone), with Undo on its toast.
+    onHandoverReady: () => {
+      if (!liveMovement || !gate("HANDOVER_READY").allowed) return;
+      runStep(
+        { type: "HANDOVER_READY", role: routeRole, now, movementId: liveMovement.id },
+        {
+          success: "Handover ready. The transport officer can now accept the job.",
+          undo: (at) => ({ type: "UNDO_ED_STEP", role: routeRole, now: at, movementId: liveMovement.id }),
+          undone: "Undone. Back as it was.",
+        },
+      );
+    },
   };
 
   // Who to call now, from the record only. Phone numbers are not held in this prototype.
@@ -886,11 +1013,7 @@ export function PatientNowScreen({
                 <button
                   type="button"
                   className={isTransportBooked ? styles.transportActionBtnSecondary : styles.transportActionBtn}
-                  onClick={() => {
-                    setTransportCadDraft(displayCadNumber ?? "");
-                    setTransportEtaDraft(displayEta ?? "");
-                    setShowTransportForm(true);
-                  }}
+                  onClick={openTransportForm}
                   data-testid="ward-patient-book-transport-btn"
                 >
                   {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
@@ -911,7 +1034,7 @@ export function PatientNowScreen({
             <div className={styles.transportFormGrid}>
               <div className={styles.transportFormField}>
                 <label htmlFor="transport-cad" className={styles.transportFormLabel}>
-                  CAD (dispatch) number <span style={{ color: "var(--danger)" }}>*</span>
+                  CAD (dispatch) number <span aria-hidden="true">*</span>
                 </label>
                 <input
                   id="transport-cad"
@@ -919,15 +1042,26 @@ export function PatientNowScreen({
                   className={styles.transportInput}
                   placeholder="e.g. CAD-84920"
                   value={transportCadDraft}
-                  onChange={(e) => setTransportCadDraft(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setTransportCadDraft(e.target.value);
+                    setTransportFormErrors((errors) => ({ ...errors, cad: undefined }));
+                  }}
+                  aria-required="true"
+                  aria-invalid={transportFormErrors.cad ? "true" : undefined}
+                  aria-describedby={transportFormErrors.cad ? "transport-cad-error" : undefined}
                   data-testid="ward-patient-input-cad"
                 />
+                {transportFormErrors.cad ? (
+                  <span id="transport-cad-error" className={styles.transportFieldNote}>
+                    <StatusGlyph tone="danger" size={9} />
+                    {transportFormErrors.cad}
+                  </span>
+                ) : null}
               </div>
 
               <div className={styles.transportFormField}>
                 <label htmlFor="transport-eta" className={styles.transportFormLabel}>
-                  Quoted ETA by Transport Company
+                  Quoted ETA by Transport Company <span aria-hidden="true">*</span>
                 </label>
                 <input
                   id="transport-eta"
@@ -935,9 +1069,36 @@ export function PatientNowScreen({
                   className={styles.transportInput}
                   placeholder="e.g. 11:15 or ~45m"
                   value={transportEtaDraft}
-                  onChange={(e) => setTransportEtaDraft(e.target.value)}
+                  onChange={(e) => {
+                    setTransportEtaDraft(e.target.value);
+                    setTransportFormErrors((errors) => ({ ...errors, eta: undefined }));
+                  }}
+                  aria-required="true"
+                  aria-invalid={transportFormErrors.eta ? "true" : undefined}
+                  aria-describedby={
+                    transportFormErrors.eta
+                      ? "transport-eta-error"
+                      : draftHoldEnd !== undefined
+                        ? "transport-eta-hold"
+                        : undefined
+                  }
                   data-testid="ward-patient-input-eta"
                 />
+                {transportFormErrors.eta ? (
+                  <span id="transport-eta-error" className={styles.transportFieldNote}>
+                    <StatusGlyph tone="danger" size={9} />
+                    {transportFormErrors.eta}
+                  </span>
+                ) : draftHoldEnd !== undefined ? (
+                  <span
+                    id="transport-eta-hold"
+                    className={styles.transportFieldNote}
+                    data-testid="ward-patient-eta-after-hold"
+                  >
+                    <StatusGlyph tone="warning" size={9} />
+                    Arrives after the hold ends at {clock(draftHoldEnd)}. Extend the hold or rebook.
+                  </span>
+                ) : null}
               </div>
 
               <div className={styles.transportFormField}>
@@ -959,22 +1120,78 @@ export function PatientNowScreen({
                 </select>
               </div>
 
-              <div className={styles.transportFormField}>
-                <label htmlFor="transport-legal" className={styles.transportFormLabel}>
-                  Transport Legal Status
-                </label>
-                <select
-                  id="transport-legal"
-                  className={styles.transportSelect}
-                  value={transportLegalDraft}
-                  onChange={(e) => setTransportLegalDraft(e.target.value as TransportLegalStatus)}
-                  data-testid="ward-patient-select-legal"
-                >
-                  <option value="involuntary">Involuntary</option>
-                  <option value="voluntary">Voluntary</option>
-                </select>
+              <div className={styles.transportFormField} data-testid="ward-patient-transport-legal">
+                {transportLegalChanging || legalNowStatus === undefined ? (
+                  <>
+                    <label htmlFor="transport-legal" className={styles.transportFormLabel}>
+                      Transport legal status
+                    </label>
+                    <select
+                      id="transport-legal"
+                      className={styles.transportSelect}
+                      value={transportLegalChoice ?? ""}
+                      onChange={(e) => setTransportLegalDraft((e.target.value || undefined) as TransportLegalStatus)}
+                      aria-invalid={transportFormErrors.legal ? "true" : undefined}
+                      data-testid="ward-patient-select-legal"
+                    >
+                      {transportLegalChoice === undefined ? <option value="">Choose</option> : null}
+                      <option value="involuntary">Involuntary</option>
+                      <option value="voluntary">Voluntary</option>
+                    </select>
+                  </>
+                ) : (
+                  <>
+                    <span className={styles.transportFormLabel}>Transport legal status</span>
+                    <span className={styles.transportLegalRead} data-testid="ward-patient-legal-from-form">
+                      <span>{formatTransportLegalStatus(transportLegalChoice)}, from Legal now</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setTransportLegalChanging(true)}
+                        data-testid="ward-patient-change-legal"
+                      >
+                        Change
+                      </Button>
+                    </span>
+                  </>
+                )}
+                <span className={styles.transportFieldNote}>Legal now: {legalNowText(liveMovement)}</span>
               </div>
             </div>
+
+            {transportLegalClash ? (
+              <div className={styles.transportFormField} data-testid="ward-patient-legal-clash">
+                <span className={styles.transportFieldNote}>
+                  <StatusGlyph tone="warning" size={9} />
+                  Differs from Legal now ({legalNowText(liveMovement)}). Record why.
+                </span>
+                <label htmlFor="transport-legal-reason" className={styles.transportFormLabel}>
+                  Reason
+                </label>
+                <select
+                  id="transport-legal-reason"
+                  className={styles.transportSelect}
+                  value={transportLegalReason}
+                  onChange={(e) => setTransportLegalReason(e.target.value as TransportExceptionReason | "")}
+                  aria-invalid={transportFormErrors.legal ? "true" : undefined}
+                  data-testid="ward-patient-legal-reason"
+                >
+                  <option value="">Choose a reason</option>
+                  {(Object.keys(TRANSPORT_EXCEPTION_REASON_LABELS) as TransportExceptionReason[]).map((value) => (
+                    <option key={value} value={value}>
+                      {TRANSPORT_EXCEPTION_REASON_LABELS[value]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {transportFormErrors.legal ? (
+              <span className={styles.transportFieldNote} data-testid="ward-patient-legal-error">
+                <StatusGlyph tone="danger" size={9} />
+                {transportFormErrors.legal}
+              </span>
+            ) : null}
 
             <div className={styles.transportCheckboxRow}>
               <input
@@ -988,21 +1205,20 @@ export function PatientNowScreen({
             </div>
 
             <div className={styles.transportFormActions}>
-              <button
-                type="button"
-                className={styles.transportActionBtnSecondary}
-                onClick={() => setShowTransportForm(false)}
-              >
+              {/* Audit A4-5: the shared Button carries its own colours, so Save is visible in the
+                  sheet, which renders outside this page's token scope. */}
+              <Button type="button" variant="sec" size="sm" onClick={() => setShowTransportForm(false)}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className={styles.transportActionBtn}
+                variant="pri"
+                size="sm"
                 data-testid="ward-patient-confirm-transport-btn"
                 {...gate("BOOK_TRANSPORT").buttonProps}
               >
-                Save Transport Booking
-              </button>
+                Save transport booking
+              </Button>
               {gate("BOOK_TRANSPORT").note}
             </div>
           </form>
@@ -1040,6 +1256,37 @@ export function PatientNowScreen({
                     : "· No escort"}
               </span>
             </div>
+            {liveMovement.transport &&
+            transportStatusClashes(liveMovement, liveMovement.transport.transportLegalStatus) ? (
+              <div className={styles.transportFact} data-testid="ward-patient-transport-legal-clash">
+                <span className={styles.transportFactLabel}>Legal now</span>
+                <span className={styles.transportFieldNote}>
+                  <StatusGlyph tone="warning" size={9} />
+                  {legalNowText(liveMovement)}, differs from the booking
+                </span>
+              </div>
+            ) : null}
+            {holdEndsBeforeEta(liveMovement, liveMovement.transport?.estimatedAt) !== undefined ? (
+              <div className={styles.transportFact} data-testid="ward-patient-transport-hold-before-eta">
+                <span className={styles.transportFactLabel}>Bed hold</span>
+                <span className={styles.transportFieldNote}>
+                  <StatusGlyph tone="warning" size={9} />
+                  Ends {clock(liveMovement.pullExpiresAt!)}, before the ETA. Extend the hold or rebook.
+                </span>
+              </div>
+            ) : null}
+            {(liveMovement.transport?.exceptions ?? []).map((exception) => (
+              <div
+                key={`${exception.step}-${exception.at}`}
+                className={styles.transportFact}
+                data-testid="ward-patient-transport-exception"
+              >
+                <span className={styles.transportFactLabel}>
+                  {exception.step === "collected" ? "Collected" : "Booked"} {clock(exception.at)} with
+                </span>
+                <span className={styles.transportFieldNote}>{transportExceptionText(exception)}</span>
+              </div>
+            ))}
           </div>
         )}
 
@@ -1235,6 +1482,8 @@ export function PatientNowScreen({
             movement={movementInForce ? liveMovement : undefined}
             patient={livePatient}
             onAllForms={() => openTab("documents")}
+            now={now}
+            absent={mode === "awol"}
           />
         ) : null
       }
@@ -1273,17 +1522,20 @@ export function PatientNowScreen({
               dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
               refusal={wardRefusal}
               roleLimit={(eventType) => gate(eventType).reason}
+              leaveLegal={leaveLegal}
             />
           ) : null}
           {mode === "leave" && stayLeaveBed ? (
             <PatientLeaveCard
               dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
+              voluntary={voluntaryNow}
               onMarkAbsent={markAbsent}
             />
           ) : null}
           {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
             <PatientLastSeenCard
               wardName={stayUnit?.name}
+              voluntary={voluntaryNow}
               since={clock(stayLeaveBed.absentWithoutLeave.since)}
               onRecordReturn={recordReturn}
             />
@@ -1360,8 +1612,12 @@ export function PatientNowScreen({
                   sub={
                     tab.key === "community"
                       ? record.community.teams.length > 0
-                        ? `${record.community.teams.length} team on record`
-                        : "No community team on record"
+                        ? `${record.community.teams.length} ${record.community.teams.length === 1 ? "team" : "teams"} on record`
+                        : // A4-20, S-27: Who to call lists the catchment team from the patient record, so
+                          // this row reads the same field rather than denying a team that list shows.
+                          livePatient?.catchmentCommunityTeam
+                          ? "Catchment team, care not confirmed"
+                          : "No community team on record"
                       : "UMRN, date of birth, where they live"
                   }
                   onOpen={() => {
@@ -1438,7 +1694,8 @@ export function PatientNowScreen({
             }
             phoneEyebrow={
               phoneMovement ? (
-                `Movement · Tier ${urgencyTier ?? "not recorded"}`
+                // A3-20: the phone hero keeps the desktop's tier, bed type and specialling on one line.
+                `Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}${liveMovement?.specialling ? " · 1:1 specialling" : ""}`
               ) : (
                 <span className={styles.phEyebrow}>
                   <StatusGlyph tone={modeMeta.tone} size={10} />
@@ -1488,6 +1745,17 @@ export function PatientNowScreen({
                     <span>Stage</span>
                   </span>
                   <PhoneClearFact mode={mode} context={statusContext} />
+                  {movementTimeLeft ? (
+                    <span className={styles.v6HeroFact} data-testid="ward-patient-hero-form-left">
+                      <strong className={styles.v6HeroWait}>{movementTimeLeft.text}</strong>
+                      <span className={styles.phFigLabel}>
+                        {movementTimeLeft.standing !== "later" ? (
+                          <StatusGlyph tone={movementTimeLeft.tone} size={9} />
+                        ) : null}
+                        {movementTimeLeft.code}
+                      </span>
+                    </span>
+                  ) : null}
                 </span>
               ) : isPhone && !isLiveBedflow ? (
                 /* v10 Patient, phone: three figures, the value over its label, from the record. */
@@ -1530,7 +1798,8 @@ export function PatientNowScreen({
                             },
                             {
                               key: "steps",
-                              value: `${stayLeaveBed.absentWithoutLeave.steps.length}/${ABSENCE_STEPS.length}`,
+                              // A3-13: the same step list the status card counts.
+                              value: `${absenceStepsFor(voluntaryNow).filter((step) => stayLeaveBed.absentWithoutLeave!.steps.some((done) => done.step === step)).length}/${absenceStepsFor(voluntaryNow).length}`,
                               label: "Steps done",
                             },
                             { key: "legal", ...phoneLegal },
@@ -1610,6 +1879,16 @@ export function PatientNowScreen({
                     <strong className={styles.v6HeroWait}>{waitedStr}</strong>
                     since opened
                   </span>
+                  {movementTimeLeft ? (
+                    <span className={styles.v6HeroFact} data-testid="ward-patient-hero-form-left">
+                      {movementTimeLeft.standing !== "later" ? (
+                        <StatusGlyph tone={movementTimeLeft.tone} size={9} />
+                      ) : (
+                        <Scale size={14} aria-hidden="true" />
+                      )}
+                      {movementTimeLeft.code} · <strong className={styles.v6HeroWait}>{movementTimeLeft.text}</strong>
+                    </span>
+                  ) : null}
                 </span>
               ) : (
                 <span className={styles.v6HeroFacts}>
@@ -1875,6 +2154,8 @@ export function PatientNowScreen({
                 dayZero={dayZero}
                 unitName={(id) => units.find((u) => u.id === id)?.name}
                 stays={resolved.stays}
+                absence={stayLeaveBed?.absentWithoutLeave}
+                absenceVoluntary={voluntaryNow}
                 open={!modeMeta.quiet}
                 onBackToNow={() => {
                   setActiveTab("now");
@@ -2008,6 +2289,12 @@ export function PatientNowScreen({
               <p>No notification is sent. This records the stated outcome in the shared synthetic journey.</p>
             </div>
             <div className={styles.clearanceModalFoot}>
+              {/* A4-32: say why Save is not yet available, beside it. */}
+              {clearanceGate.allowed && (!clearanceDraft || !clearanceAttested) ? (
+                <p id="clearanceSaveReason" className={styles.clearanceReason}>
+                  {!clearanceDraft ? "Choose the outcome to save" : "Tick the statement to save"}
+                </p>
+              ) : null}
               <button type="button" className={styles.ctl} onClick={closeClearanceModal}>
                 Close
               </button>
@@ -2015,7 +2302,11 @@ export function PatientNowScreen({
                 type="button"
                 className={`${styles.ctl} ${styles.ctlPrimary}`}
                 disabled={!clearanceDraft || !clearanceAttested || !liveMovement || !clearanceGate.allowed}
-                aria-describedby={clearanceGate.buttonProps["aria-describedby"]}
+                aria-describedby={
+                  clearanceGate.allowed && (!clearanceDraft || !clearanceAttested)
+                    ? "clearanceSaveReason"
+                    : clearanceGate.buttonProps["aria-describedby"]
+                }
                 onClick={() => {
                   if (!liveMovement || !clearanceDraft || !clearanceAttested || !clearanceGate.allowed) return;
                   dispatch({

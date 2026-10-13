@@ -221,7 +221,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           </p>
           <div>
             <Link href="/mockups/ward-flow/wards" className={styles.backLink}>
-              &larr; View all 23 available wards
+              &larr; View all {units.length} available wards
             </Link>
           </div>
         </main>
@@ -244,10 +244,15 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   // reading a bare "ready" count and being refused at the moment of pulling a patient.
   const pendingPreparation = bedsPendingPreparation(currentUnit.id, bedReleases);
 
-  const incoming = movements.filter(
-    (movement) =>
-      isOpen(movement) && movement.stage === "destination_review" && movement.referredUnitIds.includes(currentUnit.id),
-  );
+  // A1-9 (audit round 2): longest wait first, as the Referrals board orders its queue.
+  const incoming = movements
+    .filter(
+      (movement) =>
+        isOpen(movement) &&
+        movement.stage === "destination_review" &&
+        movement.referredUnitIds.includes(currentUnit.id),
+    )
+    .sort((left, right) => left.openedAt - right.openedAt);
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
   const activeMovement = incoming[activeAnswerIndex];
   const activeReferral = activeMovement ?? null;
@@ -1265,8 +1270,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         {pendingPreparation} of the {states.ready} ready {states.ready === 1 ? "bed" : "beds"} at{" "}
                         {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
                       </strong>{" "}
-                      The bed stays offered and stays counted — pulling the next patient takes hours anyway — but the
-                      ward cannot admit into it yet.
+                      It is not offered until someone opens the bed and taps Ready.
                     </p>
                   ) : null}
                   <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">

@@ -21,7 +21,18 @@ export function WardActNowNotifier() {
   const router = useRouter();
   // Same gate as the Tasks drawer (shell/ward-bar.tsx): the signed-in person's list, on every page.
   const actionable = wardTasksAreActionableForRole(WARD_SHELL_ROLE);
-  const { movements, units, configuration, inboxSnoozes, sessionAdopted, worldGeneration } = useWardFlow();
+  const {
+    movements,
+    units,
+    configuration,
+    inboxSnoozes,
+    sessionAdopted,
+    worldGeneration,
+    leaveBeds,
+    admissions,
+    patients,
+    referrals,
+  } = useWardFlow();
   const now = useWardFlowClock();
   const [enabled] = useActNowNotificationPreference();
   // The baseline belongs to one adopted world: the seed shown before a saved session is restored,
@@ -30,8 +41,12 @@ export function WardActNowNotifier() {
 
   const actNow = useMemo(() => {
     if (!actionable) return [];
-    return activeActNowItems({ movements, units, configuration, inboxSnoozes }, now);
-  }, [actionable, movements, units, configuration, inboxSnoozes, now]);
+    // Audit A3-1: with the stays and leave beds, so an absence on an order is pushed too.
+    return activeActNowItems(
+      { movements, units, configuration, inboxSnoozes, leaveBeds, admissions, patients, referrals },
+      now,
+    );
+  }, [actionable, movements, units, configuration, inboxSnoozes, leaveBeds, admissions, patients, referrals, now]);
 
   useEffect(() => {
     if (!sessionAdopted) {

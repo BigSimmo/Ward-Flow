@@ -257,7 +257,7 @@ describe("the Movements screen", () => {
       expect(row, `elapsed booking time missing for ${leg.movement.id}`).toHaveTextContent(
         splitDuration(Math.max(leg.minutesSinceBooked, 0)),
       );
-      expect(row, `booking-time meaning missing for ${leg.movement.id}`).toHaveTextContent(/since booked/iu);
+      expect(row, `booking-time meaning missing for ${leg.movement.id}`).toHaveTextContent(/since accepted/iu);
 
       expect(within(row).getByRole("link", { name: /Review patient/u })).toBeInTheDocument();
     }
@@ -269,11 +269,12 @@ describe("the Movements screen", () => {
     // ⚠️ RESTATED HERE ON PURPOSE, NOT IMPORTED FROM THE SCREEN. Reading the screen's own
     // `LEG_STATE_LABEL` would make this a tautology — it would pass whatever the map said. These
     // are the words a coordinator reads, and ward vocabulary is the owner's to change, so they are
-    // pinned. `Accepted` reads "Booked" because that is the word this board has always used for a
+    // pinned. `Accepted` reads "Accepted" (audit round 2, A4-18: one step vocabulary with the officer
+    // page; it read "Booked" before). Earlier note: the word this board had used for a
     // job a provider has accepted; the five-state collapse (Ward Lead, 2026-09-05) was a ruling
     // about the type, and the only word it adds is "Collected", which previously had none.
     const labels: Record<(typeof legs)[number]["state"], string> = {
-      Accepted: "Booked",
+      Accepted: "Accepted",
       "En route": "En route",
       Collected: "Collected",
       Arrived: "Arrived",
@@ -355,7 +356,7 @@ describe("the Movements screen", () => {
     expect(
       screen.getByRole("img", {
         name: new RegExp(
-          `Booked ${counts.Accepted}\\b.*En route ${counts["En route"]}\\b.*Collected ${counts.Collected}\\b.*Arrived ${counts.Arrived}\\b.*Cancelled ${counts.Cancelled}\\b`,
+          `Accepted ${counts.Accepted}\\b.*En route ${counts["En route"]}\\b.*Collected ${counts.Collected}\\b.*Arrived ${counts.Arrived}\\b.*Cancelled ${counts.Cancelled}\\b`,
           "su",
         ),
       }),

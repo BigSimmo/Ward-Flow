@@ -375,18 +375,33 @@ describe("urgent-outside-service names literal movements per HealthService, over
   // (flaggedUrgent; belongs to East Metro + Private via origin rph-ed and acceptedUnitId
   // sjgs-adult-open). Each is added to every OTHER service's list.
   it("names exactly these movements as urgent-outside each service", () => {
+    // WF-014 (Form 4A due in exactly 60 minutes; South Metro origin, East Metro ward) joined every
+    // list outside those two on 13 Oct 2026, when the legal clock became inclusive at the hour
+    // (audit A3-4: exactly 60m left reads act now on every page, as Delays already did).
     // WF-RD11 and WF-RD12 (`ward-rulings-demo.ts`'s overlay, appended after seeding) are urgent and
     // outside every service except East Metro — verified against the real seed's
     // `urgentMovementsOutsideService` output directly, not re-derived here.
     const expected: Record<HealthService, string[]> = {
-      "North Metro": ["WF-009", "WF-019", "WF-020", "WF-022", "WF-030", "WF-308", "WF-RD11", "WF-RD12"],
+      "North Metro": ["WF-009", "WF-014", "WF-019", "WF-020", "WF-022", "WF-030", "WF-308", "WF-RD11", "WF-RD12"],
       "South Metro": ["WF-018", "WF-022", "WF-023", "WF-030", "WF-308", "WF-RD11", "WF-RD12"],
       "East Metro": ["WF-009", "WF-018", "WF-019", "WF-020", "WF-023"],
-      WACHS: ["WF-009", "WF-018", "WF-019", "WF-020", "WF-030", "WF-308", "WF-RD11", "WF-RD12"],
-      Private: ["WF-009", "WF-018", "WF-019", "WF-020", "WF-022", "WF-023", "WF-308", "WF-RD11", "WF-RD12"],
+      WACHS: ["WF-009", "WF-014", "WF-018", "WF-019", "WF-020", "WF-030", "WF-308", "WF-RD11", "WF-RD12"],
+      Private: ["WF-009", "WF-014", "WF-018", "WF-019", "WF-020", "WF-022", "WF-023", "WF-308", "WF-RD11", "WF-RD12"],
       // Perth Children's (CAHS, owner ruling 2026-09-25) has no ward and no movement, so every
       // urgent movement is outside it.
-      CAHS: ["WF-009", "WF-018", "WF-019", "WF-020", "WF-022", "WF-023", "WF-030", "WF-308", "WF-RD11", "WF-RD12"],
+      CAHS: [
+        "WF-009",
+        "WF-014",
+        "WF-018",
+        "WF-019",
+        "WF-020",
+        "WF-022",
+        "WF-023",
+        "WF-030",
+        "WF-308",
+        "WF-RD11",
+        "WF-RD12",
+      ],
     };
     for (const service of HEALTH_SERVICES) {
       const actual = urgentMovementsOutsideService(openMovements, service, units, NOW_ANCHOR, CONFIG)

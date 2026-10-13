@@ -31,14 +31,37 @@ export type Toast = {
    * polite region re-announces and the dismiss timer restarts.
    */
   announceKey?: number;
+  /** Leaves out the provider's `offlineNote`: for a toast that is itself about being offline. */
+  skipOfflineNote?: boolean;
 };
 
 export type ToastInput = Omit<Toast, "id">;
-export type ToastProviderProps = { children: ReactNode };
+export type ToastProviderProps = {
+  children: ReactNode;
+  /**
+   * A2-21 / A3-22 / A1-18 (audit 13 Oct 2026): added to a success or info toast pushed while the
+   * browser reports no connection, so an action recorded offline says it has not gone anywhere.
+   */
+  offlineNote?: string;
+};
 export type ToastApi = {
   push: (toast: ToastInput) => string;
   dismiss: (id: string) => void;
+  /**
+   * Whether an action recorded now is actually kept on this device (`ToastDeviceSaveContext`), for
+   * a caller that writes the provider's offline note into its own text.
+   */
+  savesOnDevice?: () => boolean;
 };
+
+/**
+ * Codex P1 (PR #267): the offline note says "Saved on this device", which is only true while the
+ * app around the toasts is still writing to this device. An app that can stop saving (the Ward Flow
+ * provider stops after typed text, or when storage fails) provides a getter here, read at push time
+ * so an action that has just stopped saving is not told it was saved. Outside such an app the
+ * provider's `offlineNote` is trusted as given.
+ */
+export const ToastDeviceSaveContext = createContext<() => boolean>(() => true);
 
 type ToastContextValue = {
   toasts: Toast[];
@@ -46,6 +69,7 @@ type ToastContextValue = {
   dismiss: (id: string) => void;
   /** Runs the caller's Undo then closes the toast, so its `onExpire` never runs. */
   undoAndDismiss: (id: string, onUndo: () => void) => void;
+  savesOnDevice: () => boolean;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -58,8 +82,9 @@ const MAX_VISIBLE_TOASTS = 5;
  * background left no trace once its panel scrolled away. Wrap the surface (or the
  * app shell) in `ToastProvider` and call `useToast().push(...)` from the handler.
  */
-export function ToastProvider({ children }: ToastProviderProps) {
+export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const savesOnDevice = useContext(ToastDeviceSaveContext);
   const toastsRef = useRef<Toast[]>([]);
   const counter = useRef(0);
 
@@ -102,7 +127,17 @@ export function ToastProvider({ children }: ToastProviderProps) {
   );
 
   const push = useCallback(
-    (toast: ToastInput) => {
+    (input: ToastInput) => {
+      const offline =
+        offlineNote !== undefined &&
+        !input.skipOfflineNote &&
+        savesOnDevice() &&
+        (input.tone === "success" || input.tone === "info") &&
+        typeof navigator !== "undefined" &&
+        navigator.onLine === false;
+      const toast: ToastInput = offline
+        ? { ...input, body: input.body ? `${input.body} ${offlineNote}` : offlineNote }
+        : input;
       // An Undo toast is never folded into another: each action keeps its own window and callbacks.
       const duplicateIndex = toast.undo
         ? -1
@@ -140,10 +175,13 @@ export function ToastProvider({ children }: ToastProviderProps) {
       }
       return id;
     },
-    [expire],
+    [expire, offlineNote, savesOnDevice],
   );
 
-  const value = useMemo(() => ({ toasts, push, dismiss, undoAndDismiss }), [toasts, push, dismiss, undoAndDismiss]);
+  const value = useMemo(
+    () => ({ toasts, push, dismiss, undoAndDismiss, savesOnDevice }),
+    [toasts, push, dismiss, undoAndDismiss, savesOnDevice],
+  );
 
   return (
     <ToastContext.Provider value={value}>
@@ -168,7 +206,8 @@ export function useOptionalToast(): ToastApi | null {
   const context = useContext(ToastContext);
   const push = context?.push;
   const dismiss = context?.dismiss;
-  return useMemo(() => (push && dismiss ? { push, dismiss } : null), [push, dismiss]);
+  const savesOnDevice = context?.savesOnDevice;
+  return useMemo(() => (push && dismiss ? { push, dismiss, savesOnDevice } : null), [push, dismiss, savesOnDevice]);
 }
 
 function ToastCard({

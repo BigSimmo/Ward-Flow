@@ -82,6 +82,7 @@ function nested(value: unknown, depth = 0): boolean {
     "referralAbsence",
     "transportNeed",
     "arrivalDetails",
+    "arrivalException",
     "legalMismatch",
     "escalation",
     "destination",

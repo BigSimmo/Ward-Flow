@@ -32,6 +32,7 @@ import {
 } from "@/components/ward-management/ward-priority";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
@@ -41,6 +42,15 @@ import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits
 import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-management/ward-shared-figures";
 
 import styles from "./home.module.css";
+
+/** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
+export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
+  if (unitIds.length === 1) {
+    const name = units.find((unit) => unit.id === unitIds[0])?.name;
+    return `Offered to ${name ? name.split(" — ")[0] : "a ward"}`;
+  }
+  return `Offered to ${unitIds.length} wards`;
+}
 
 type QueueTab = "patients" | "referrals";
 
@@ -76,6 +86,8 @@ function isSoon(movement: Movement, now: Instant) {
 
 type PriorityQueueProps = {
   movements: Movement[];
+  /** Live units, to name the ward an offer went to (audit A1-14). */
+  units?: readonly { id: string; name: string }[];
   /**
    * Every referral this coordinator is still working, already filtered and ordered by
    * `referralQueueOrder` (`ward-referrals.ts`). Never re-filtered or re-sorted here. Optional only
@@ -144,19 +156,22 @@ export function PriorityQueue({
   rowCap,
   phone = false,
   pinnedIds,
+  units = [],
 }: PriorityQueueProps) {
   const [showAllRows, setShowAllRows] = useState(false);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
   const [soonOnly, setSoonOnly] = useState(false);
   const patientOf = usePatientOf();
+  // A2-20: initials plus UMRN on a phone when Discreet names is on; the name everywhere else.
+  const nameFor = usePatientNameDisplay();
 
   const edsById = new Map(allEmergencyDepartments().map((ed) => [ed.id, ed]));
   const filterEd = filterEdId ? edsById.get(filterEdId) : undefined;
 
   const soonCount = movements.filter((movement) => isSoon(movement, now)).length;
-  // Soon is not offered on the phone, so a filter set on a wider screen does not carry over.
-  const rows = soonOnly && !phone ? movements.filter((movement) => isSoon(movement, now)) : movements;
+  // Form due is offered on the phone too, so the count stays visible there (audit A1-16).
+  const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now)) : movements;
   const total = totalMovements ?? movements.length;
   const isOverdue = (movement: Movement) =>
     Math.max(0, now - movement.openedAt) >= queueWaitThresholds(movement.urgency).overdue;
@@ -193,8 +208,8 @@ export function PriorityQueue({
           value={activeTab}
           onChange={setActiveTab}
         />
-        {/* The phone queue (v10 Home phone A) is the switch alone; Soon stays on the larger screens. */}
-        {activeTab === "patients" && !phone ? (
+        {/* Shown on the phone as well so the form-due count is not lost there (audit A1-16). */}
+        {activeTab === "patients" ? (
           <FilterChip
             pressed={soonOnly}
             onPressedChange={setSoonOnly}
@@ -295,7 +310,7 @@ export function PriorityQueue({
                 </span>
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
-                    <strong>{who.formalName}</strong>
+                    <strong>{nameFor(who.formalName, who.umrn)}</strong>
                   </span>
                   <span className={styles.queueSub}>
                     {/* v10 Home: "▲ Flagged · Adult open · RPH · UM827674". The word stays neutral and
@@ -334,6 +349,17 @@ export function PriorityQueue({
                         <StatusGlyph tone="danger" size={9} />
                         {legalFactor ? legalFactor.detail : "Form due time passed"}
                         <LegalLimitsNotChecked variant="tag" />
+                      </span>
+                    ) : null}
+                    {/* A1-14 (audit 13 Oct 2026): an offer made from Home shows on the row, so the
+                        coordinator sees it is out and how long the ward has had it. */}
+                    {movement.referredUnitIds.length > 0 && !movement.acceptedUnitId && movement.stage !== "pulled" ? (
+                      <span className={styles.queueMark} data-testid={`ward-queue-offered-${movement.id}`}>
+                        <StatusGlyph tone="info" size={9} />
+                        {offeredToLabel(movement.referredUnitIds, units)}
+                        {movement.referredAt === undefined
+                          ? ""
+                          : ` · waiting ${durMinutes(Math.max(0, now - movement.referredAt))}`}
                       </span>
                     ) : null}
                     {arrival ? (
@@ -436,7 +462,7 @@ export function PriorityQueue({
                 <TierTile tier={referral.urgency} className={styles.queueTier} />
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
-                    <strong>{patientOf(referral).formalName}</strong>
+                    <strong>{nameFor(patientOf(referral).formalName, patientOf(referral).umrn)}</strong>
                   </span>
                   <span className={styles.queueSub}>
                     <span className={styles.queueSubText}>
