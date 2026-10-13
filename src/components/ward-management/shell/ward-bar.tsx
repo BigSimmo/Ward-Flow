@@ -31,6 +31,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
+import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import {
   StatusGlyph,
   WF_BAND_SCROLLED_PX,
@@ -1134,6 +1135,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [closePopover, openPanel]);
 
+  // shell-23 (13 Oct 2026): on a phone the service sheet is a real popup like Menu and Create. It
+  // joins the shared sheet stack, so the page behind is inert, and focus moves to the chosen service.
+  // Its scrim opts out of that inert so a tap on it still closes the sheet. Desktop keeps its menu.
+  useEffect(() => {
+    if (!isPhone || openPanel !== "service") return;
+    const sheetId = "ward-bar-service-sheet";
+    pushSheet(sheetId, servicePanelRef.current);
+    servicePanelRef.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
+    return () => popSheet(sheetId);
+  }, [isPhone, openPanel]);
+
   // The one Escape order — see the file header for the full reasoning behind each branch. The
   // "New referral" popover joins the Service selector's branch rather than getting its own: both
   // are the drawing's own "menu" shape (`command-third-edition.html`'s `escape()`: any open menu
@@ -1155,9 +1167,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       if (service !== null) {
         // Exact wording, build plan §3 "Escape": now that S2 wires the choice to a real store, the
         // old "not wired" clause is false — the fixed alternative is telling the owner what widening
-        // the lists actually takes (choose All services), not that the feature does not exist yet.
+        // the lists actually takes (choose Statewide), not that the feature does not exist yet.
         announceToWardShell(
-          `Nothing more to clear. The service stays ${service}. Choose All services in the selector to widen the lists.`,
+          `Nothing more to clear. The service stays ${service}. Choose Statewide in the selector to widen the lists.`,
         );
       }
     }
@@ -1276,12 +1288,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             data-testid="ward-bar-service-trigger"
             data-service={activeSwatchKey}
             data-locked={isFixedJurisdiction ? "true" : undefined}
-            aria-haspopup={isFixedJurisdiction ? undefined : "true"}
+            aria-haspopup={isFixedJurisdiction ? undefined : isPhone ? "dialog" : "true"}
             aria-expanded={isFixedJurisdiction ? undefined : openPanel === "service"}
             aria-controls={isFixedJurisdiction ? undefined : "ward-bar-service-panel"}
-            aria-label={
-              isFixedJurisdiction ? `Jurisdiction: ${activeService}` : `Service: ${activeService ?? "All services"}`
-            }
+            aria-label={isFixedJurisdiction ? `Jurisdiction: ${activeService}` : `Service: ${activeServiceBadgeLabel}`}
             onClick={() => {
               if (isFixedJurisdiction) {
                 announceToWardShell(`${routeTitle} is in ${activeService}.`);
@@ -1299,7 +1309,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             {!isFixedJurisdiction && (
               <ChevronDown className={styles.scopeCaret} aria-hidden="true" strokeWidth={1.75} />
             )}
-            <span className="sr-only">{activeService ?? "All services"}</span>
+            <span className="sr-only">{activeServiceBadgeLabel}</span>
           </button>
           {isPhone ? (
             <span className={styles.scopeLive} aria-hidden="true">
@@ -1311,6 +1321,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             <div
               className={styles.serviceScrim}
               data-ward-service-scrim=""
+              data-sheet-inert-skip=""
               aria-hidden="true"
               onClick={() => closePopover("service", false)}
             />
@@ -1320,7 +1331,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               id="ward-bar-service-panel"
               ref={servicePanelRef}
               className={styles.servicePanel}
-              role="group"
+              role={isPhone ? "dialog" : "group"}
+              aria-modal={isPhone ? true : undefined}
               aria-label="Choose a health service"
               data-testid="ward-bar-service-panel"
             >
@@ -1337,7 +1349,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                 onClick={() => selectService(null)}
               >
                 <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
-                <span className={styles.serviceName}>All services</span>
+                {/* shell-23 (13 Oct 2026): one word. The header says Statewide, so the option does too. */}
+                <span className={styles.serviceName}>Statewide</span>
                 <span className={`${styles.serviceOptionCount} ${styles.serviceAllCount}`} aria-hidden="true">
                   {waitingText(allWaitingCount)}
                 </span>
