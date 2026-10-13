@@ -732,10 +732,8 @@ export function appendAudit(
           operation: "written-recorded",
           dueAt: finiteInstant(nextDueAt ?? null),
           previousDueAt: finiteInstant(priorDueAt ?? null),
-          formCode: enumValue(
-            SELECTABLE_LEGAL_FORMS.map((f) => f.code),
-            event.formCode,
-          ),
+          // Every code the reducer accepts for a written form, continuation forms included (A1-4).
+          formCode: enumValue(AUDITABLE_FORM_CODES, event.formCode),
         },
       };
       break;

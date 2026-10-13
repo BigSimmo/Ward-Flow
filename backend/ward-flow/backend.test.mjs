@@ -890,6 +890,27 @@ test("A4-8: a new session is refused once the owner reaches the session cap", as
   );
   assert.equal((await handlerFor(MAX_SESSIONS_PER_OWNER - 1)(request("PUT", body))).status, 200);
 
+  // Concurrent first saves can all pass the first count; the recount after writing gives the new
+  // session back when the owner ended up over the cap (Codex, #268).
+  const deleted = [];
+  const counts = [MAX_SESSIONS_PER_OWNER - 1, MAX_SESSIONS_PER_OWNER + 1];
+  const racing = createHandler({
+    config,
+    store: {
+      save: async () => 1,
+      delete: async (...args) => {
+        deleted.push(args);
+        return 2;
+      },
+    },
+    authenticate: async () => environment.WARD_ALLOWED_OBJECT_ID,
+    countSessions: async () => counts.shift(),
+    log: () => {},
+  });
+  assert.equal((await racing(request("PUT", body))).status, 409);
+  assert.equal(deleted.length, 1);
+  assert.equal(deleted[0][2], 1);
+
   // The counter reads the owner's prefix in the Blob list API and follows continuation markers.
   const urls = [];
   const pages = ["<Blob></Blob><Blob></Blob><NextMarker>m1</NextMarker>", "<Blob></Blob><NextMarker></NextMarker>"];

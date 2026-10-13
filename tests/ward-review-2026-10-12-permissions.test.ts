@@ -447,6 +447,26 @@ describe("A1-5: the written legal form and its expiry", () => {
       1645, 651,
     ]);
   });
+
+  // Codex on #268: the written-form audit row kept only selectable codes, so an accepted
+  // continuation form was audited with no code (A1-4's rule, applied to this branch too).
+  it("keeps a continuation form's code in the audit row", () => {
+    const h = harness();
+    const movementId = referredMovement(h, "SYN-SCOPE-062");
+    const refusal = h.send({
+      type: "RECORD_LEGAL_FORM_WRITTEN",
+      role: "coordinator",
+      movementId,
+      formCode: "5B",
+      writtenAt: 600,
+      paperExpiresAt: 1645,
+    });
+    expect(refusal, "fixture premise: the reducer accepts a 5B written form").toBeNull();
+    expect(h.state.auditEvents.at(-1)).toMatchObject({
+      action: "RECORD_LEGAL_FORM_WRITTEN",
+      details: { operation: "written-recorded", formCode: "5B" },
+    });
+  });
 });
 
 describe("A1-9: the medical workup is recorded by the ED or the coordinator only", () => {

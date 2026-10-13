@@ -183,9 +183,22 @@ export function createHandler({
         body.payload,
         body.requestId?.toLowerCase(),
       );
-      return revision === null
-        ? respond(409, { error: "Session changed; reload before saving" }, "conflict")
-        : respond(200, { revision });
+      if (revision === null) return respond(409, { error: "Session changed; reload before saving" }, "conflict");
+      // The check above can race: concurrent first saves can each see room before any is written.
+      // Recount after writing and give the new session back if the owner is now over the cap, so a
+      // burst cannot keep full snapshots past it (only the small retired-ID record remains).
+      if (body.expectedRevision === 0 && countSessions) {
+        const after = await countSessions(owner, MAX_SESSIONS_PER_OWNER + 1);
+        if (after > MAX_SESSIONS_PER_OWNER) {
+          await store.delete(owner, sessionId, revision);
+          return respond(
+            409,
+            { error: `This account already has ${MAX_SESSIONS_PER_OWNER} sessions; no new session was created` },
+            "session_limit",
+          );
+        }
+      }
+      return respond(200, { revision });
     } catch {
       return respond(503, { error: "Storage unavailable; changes were not confirmed" }, "storage_unavailable");
     }
