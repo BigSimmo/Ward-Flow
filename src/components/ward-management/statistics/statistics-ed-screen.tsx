@@ -605,7 +605,7 @@ function EdPhone({
                   <PhoneListRow
                     key={movement.id}
                     as="li"
-                    actNow={tone === "danger"}
+                    // No stripe or tinted fill (audit stats-8): the red triangle on the wait carries the tone.
                     leading={
                       movement.atsCategory === undefined ? undefined : (
                         <span className={phone.tier}>{`T${movement.atsCategory}`}</span>

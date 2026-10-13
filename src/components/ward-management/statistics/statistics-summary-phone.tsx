@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, Building2, CalendarRange, Check, ChevronRight, Clock, Layers } from "lucide-react";
+import { Activity, Building2, Check, ChevronRight, Clock, Layers } from "lucide-react";
 
 import {
   GroupHead,
@@ -12,12 +12,11 @@ import {
   PhoneListRow,
   PhoneSheet,
   Segmented,
-  SrOnly,
   StatusGlyph,
   cx,
   durMinutes,
 } from "@/components/wf";
-import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -117,7 +116,6 @@ export function StatisticsSummaryPhone({
     })
     .sort((a, b) => b.ready - a.ready || b.percent - a.percent || a.name.localeCompare(b.name));
   const byReady = [...wards].sort((a, b) => b.ready - a.ready || b.percent - a.percent || a.name.localeCompare(b.name));
-  const pressure = [...wards].sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name));
   const overCount = wards.filter((ward) => overLine(ward.percent)).length;
   const edsWaiting = eds.filter((ed) => ed.waiting > 0);
   const longestEd = eds.reduce<number | null>(
@@ -125,11 +123,6 @@ export function StatisticsSummaryPhone({
     null,
   );
   const listLength = group === "hospital" ? hospitals.length : wards.length;
-  const rangeSheet: Sheet = {
-    title: "Time range",
-    description: "Figures are current on the demo clock. History needs the metrics store.",
-    body: <RangeChoices onNow={() => setSheet(null)} />,
-  };
 
   const wardRow = (ward: PhoneWard) => (
     <PhoneListRow
@@ -163,22 +156,6 @@ export function StatisticsSummaryPhone({
               age={formatInstant(now)}
               onTogglePause={onTogglePause}
             />
-          }
-          actions={
-            <span className={styles.heroActions}>
-              <button
-                type="button"
-                className={styles.rangeButton}
-                aria-haspopup="dialog"
-                onClick={() => setSheet(rangeSheet)}
-                data-testid="ward-statistics-range"
-              >
-                <CalendarRange size={16} aria-hidden="true" />
-                <SrOnly>Time range: </SrOnly>
-                <b>Now</b>
-                <span className={styles.rangeMore}>· Shift, 7 and 30 days Preview</span>
-              </button>
-            </span>
           }
         />
 
@@ -269,23 +246,8 @@ export function StatisticsSummaryPhone({
         </section>
 
         <nav className={styles.navRows} aria-label="More figures">
-          <button
-            type="button"
-            className={styles.navRow}
-            onClick={() =>
-              setSheet({
-                title: "Where the pressure is",
-                body: (
-                  <>
-                    <p className={styles.note}>
-                      Amber dot: at or over {BED_ALERT_THRESHOLD_PERCENT}%. Every ward is listed, fullest first.
-                    </p>
-                    <ul className={styles.list}>{pressure.map(wardRow)}</ul>
-                  </>
-                ),
-              })
-            }
-          >
+          {/* Audit stats-18: the one fullest-first ward list lives on Overview; this row opens it. */}
+          <Link className={styles.navRow} href={STATISTICS_OVERVIEW_HREF} data-testid="ward-statistics-pressure-link">
             <IconTile icon={Activity} />
             <span className={styles.navText}>
               <b>Where the pressure is</b>
@@ -295,7 +257,7 @@ export function StatisticsSummaryPhone({
               </span>
             </span>
             <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
-          </button>
+          </Link>
           <button
             type="button"
             className={styles.navRow}
@@ -312,6 +274,7 @@ export function StatisticsSummaryPhone({
                         meta={ed.longest === null ? "Nobody waiting" : `Longest ${durMinutes(ed.longest)}`}
                         value={ed.waiting}
                         time="waiting"
+                        href={edStatisticsHref(ed.id)}
                       />
                     ))}
                   </ul>
@@ -369,6 +332,9 @@ export function StatisticsSummaryPhone({
 /**
  * The time range choices in their sheet. Only Now is backed: the prototype keeps no history, so
  * Shift, 7 days and 30 days are Preview and say so when pressed.
+ *
+ * Not shown on phone for now (audit stats-5, 13 Oct 2026): the pill that opened it is removed until
+ * history exists. Kept, not deleted, so it returns with the metrics store.
  */
 export function RangeChoices({ onNow }: { onNow: () => void }) {
   const [said, setSaid] = useState(false);

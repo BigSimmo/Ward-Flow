@@ -478,10 +478,17 @@
 /* The pinned primary action at the foot of the phone screen. */
 .pinned {
   position: sticky;
-  bottom: 0;
+  /* Flush on the phone dock, as Handover and Patient (audit stats-6, 13 Oct 2026): the sticky bar
+     stops above the scroller's dock padding, so it steps back down to the dock's flat edge. */
+  bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px));
   z-index: 3;
   margin: 0 calc(-1 * var(--wf-s-3));
-  padding: var(--wf-s-2) var(--wf-s-3) calc(var(--wf-s-2) + env(safe-area-inset-bottom, 0px));
+  /* Without a dock it clears the home bar; with one it clears the + hump instead. */
+  padding: var(--wf-s-2) var(--wf-s-3)
+    max(
+      calc(var(--wf-s-2) + env(safe-area-inset-bottom, 0px) - var(--wf-dock-top, 0px)),
+      calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px))
+    );
   border-top: 1px solid var(--wf-line);
   background: var(--wf-canvas);
 }

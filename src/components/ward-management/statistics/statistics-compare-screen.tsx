@@ -225,6 +225,7 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
     return value === null ? [] : [value];
   });
   const wardMean = wardValues.length > 0 ? mean(wardValues) : null;
+  const wardLabels = shortWardLabels(wardRows.map((row) => row.unit));
   const flagAbove = wardMean === null ? null : wardMean + standardDeviation(wardValues);
   const wardSorted = sortRows(
     wardRows.map((row) => ({ row, name: row.unit.name, value: wardMetricValue(row.statistics, wardMetric) })),
@@ -276,7 +277,7 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
               <BarList
                 rows={wardSorted.map(({ row, value }) => ({
                   id: row.unit.id,
-                  label: row.unit.name,
+                  label: wardLabels.get(row.unit.id) ?? row.unit.name,
                   labelText: row.unit.name,
                   value: value!,
                   display: wardMetric === "stay" ? value!.toFixed(1) : undefined,
@@ -575,6 +576,27 @@ const ED_METRICS: Record<EdMetric, { label: string; chart: string }> = {
 };
 
 type EdCompareRow = { department: EmergencyDepartment; row: EdRow; longestMinutes: number };
+
+/**
+ * A ward's chart label on a phone: site code and cohort ("GRY Secure", "ALB Adult", "RPH Older"),
+ * so no name is clipped at the label width (audit stats-13). Where two wards would read the same,
+ * both keep their full name. The full name always stays in the accessible list (`labelText`).
+ */
+export function shortWardLabels(units: readonly Pick<Unit, "id" | "name" | "siteCode" | "cohort" | "lockedBeds">[]) {
+  const short = (unit: (typeof units)[number]) =>
+    `${unit.siteCode} ${
+      unit.cohort === "Adult"
+        ? unit.lockedBeds > 0
+          ? "Secure"
+          : "Adult"
+        : unit.cohort === "Older adult"
+          ? "Older"
+          : unit.cohort
+    }`;
+  const counts = new Map<string, number>();
+  for (const unit of units) counts.set(short(unit), (counts.get(short(unit)) ?? 0) + 1);
+  return new Map(units.map((unit) => [unit.id, counts.get(short(unit)) === 1 ? short(unit) : unit.name]));
+}
 
 /** "Armadale Hospital Emergency Department" reads "Armadale ED" on the chart; the full name stays in the accessible list. */
 const shortDepartmentName = (name: string) =>
