@@ -35,6 +35,7 @@ import {
   type HandoverRow,
   type HandoverWard,
   type HeldDischarge,
+  isStoppedAwaitingRelease,
 } from "./handover-model";
 import styles from "./handover-beds.module.css";
 
@@ -198,7 +199,7 @@ function WardPanel({
 }) {
   const age = now - ward.confirmedAt;
   const stale = wardIsStale(ward, now);
-  const heading = rows.filter((row) => row.to?.unitId === ward.id);
+  const heading = rows.filter((row) => row.to?.unitId === ward.id && !isStoppedAwaitingRelease(row));
   const reviewing = rows.filter((row) => row.asked.some((asked) => asked.unitId === ward.id));
   const holds = held.filter((item) => item.admission.unitId === ward.id);
   const facts: { label: string; value: string; warn?: boolean }[] = [
@@ -379,25 +380,29 @@ function HeldList({ held }: { held: HeldDischarge[] }) {
   );
 }
 
+/** Incoming per ward: accepted journeys heading there and wards still reviewing a request. */
+export function incomingCounts(rows: readonly HandoverRow[]): Map<string, { accepted: number; reviewing: number }> {
+  const map = new Map<string, { accepted: number; reviewing: number }>();
+  const bump = (unitId: string, key: "accepted" | "reviewing") => {
+    const entry = map.get(unitId) ?? { accepted: 0, reviewing: 0 };
+    entry[key] += 1;
+    map.set(unitId, entry);
+  };
+  for (const row of rows) {
+    // Owner ruling 2026-10-13 22:13 AWST (PR #279): a stopped journey is not coming; keep it out of incoming.
+    if (row.to && !isStoppedAwaitingRelease(row)) bump(row.to.unitId, "accepted");
+    for (const asked of row.asked) bump(asked.unitId, "reviewing");
+  }
+  return map;
+}
+
 export function HandoverBeds({ rows, wards, held, now, waitingForBed, onOpenPatient }: HandoverBedsProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [chips, setChips] = useState<ReadonlySet<BedChip>>(() => new Set());
 
   const selected = selectedId === null ? undefined : wards.find((ward) => ward.id === selectedId);
 
-  const incoming = useMemo(() => {
-    const map = new Map<string, { accepted: number; reviewing: number }>();
-    const bump = (unitId: string, key: "accepted" | "reviewing") => {
-      const entry = map.get(unitId) ?? { accepted: 0, reviewing: 0 };
-      entry[key] += 1;
-      map.set(unitId, entry);
-    };
-    for (const row of rows) {
-      if (row.to) bump(row.to.unitId, "accepted");
-      for (const asked of row.asked) bump(asked.unitId, "reviewing");
-    }
-    return map;
-  }, [rows]);
+  const incoming = useMemo(() => incomingCounts(rows), [rows]);
 
   const groups = useMemo(() => {
     const services = [...new Set(wards.map((ward) => ward.service))];
