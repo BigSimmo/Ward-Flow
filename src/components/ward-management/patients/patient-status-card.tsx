@@ -5,7 +5,7 @@ import { BedDouble, CalendarDays, Clock, DoorOpen, Eye, Scale, Stethoscope, Truc
 import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
-  ABSENCE_STEPS,
+  absenceStepsFor,
   ABSENCE_STEP_BAR_LABELS,
   ABSENCE_STEP_LABELS,
   type AbsenceStep,
@@ -15,6 +15,7 @@ import {
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { legalStatusTextIsInvoluntary } from "@/components/ward-management/ward-support-notifications";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
 import type { PatientMode } from "./patient-mode";
@@ -168,7 +169,8 @@ function transportCell(
       owner: "ED nurse in charge",
       tone: "success",
       value: job.provider,
-      sub: job.cadNumber ? `CAD ${job.cadNumber}` : "CAD not recorded",
+      // Audit round 2, A4-19: a number recorded as "CAD-11111" is not prefixed again.
+      sub: job.cadNumber ? (/^CAD/i.test(job.cadNumber) ? job.cadNumber : `CAD ${job.cadNumber}`) : "CAD not recorded",
       time: job.estimatedAt !== undefined ? `ETA ${clock(job.estimatedAt)}, typed by the booker` : undefined,
       clear: true,
       action: bookingInCard
@@ -633,7 +635,13 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
 
   if (mode === "awol" && ctx.leaveBed?.absentWithoutLeave) {
     const absence = ctx.leaveBed.absentWithoutLeave;
-    const rows: StatusRow[] = ABSENCE_STEPS.map((step) => {
+    // A3-13: a voluntary patient is not on an order, so no return order is asked for (A3-2's step
+    // is for a person on one); the other missing person steps are the same.
+    // Either source reading involuntary wins, as in the reducer's guards.
+    const voluntary =
+      /^voluntary\b/i.test(legalValue(movement, patient).trim()) && !legalStatusTextIsInvoluntary(patient?.legalStatus);
+    const steps = absenceStepsFor(voluntary);
+    const rows: StatusRow[] = steps.map((step) => {
       const at = absence.steps.find((done) => done.step === step)?.at;
       return {
         key: step,
@@ -658,7 +666,8 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
     });
     return {
       tone: "danger",
-      verdict: "Absent without leave",
+      // A3-13: absent without leave is for a person on an order; a voluntary patient is not back.
+      verdict: voluntary ? "Not back from leave" : "Absent without leave",
       meter: { clear: rows.filter((r) => r.done).length, of: rows.length },
       meterWord: "steps done",
       meta: `Since ${clock(absence.since)}, owner nurse in charge`,

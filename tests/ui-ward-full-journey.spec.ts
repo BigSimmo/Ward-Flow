@@ -274,12 +274,18 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expect(page.getByTestId("ward-referral-board-queued-table")).toBeVisible();
 
     // --- Step 2: the ED raises the bed request — the referral that continues through every
-    // remaining step. The rail's Emergency entry opens the All EDs page (9 Oct 2026), and Peel
-    // Health Campus ED is opened from its card there, so both are real `<Link>` jumps, not a typed id. ---
+    // remaining step. The rail's Emergency entry opens the All EDs page (9 Oct 2026), and Royal
+    // Perth's ED is opened from its card there, so both are real `<Link>` jumps, not a typed id.
+    //
+    // Audit round 2 (option B, Josh 13 Oct 2026): the ED's "Raise referral" now opens the one
+    // referral slide-out (a referral for the coordinator's queue, not a movement), and the inline
+    // ED form that raises the movement is reached only from an inbox referral's "Raise into a
+    // movement". Royal Perth is used because its inbox holds RF-009, queued and not yet raised
+    // (Peel's RF-013 is already the origin of WF-009, so it offers no raise). ---
     await goViaRail(page, "/mockups/ward-flow/ed", "ward-ed-index");
-    await page.getByTestId("ed-index-link-peel-ed").click();
+    await page.getByTestId("ed-index-link-rph-ed").click();
     await waitForScreen(page, "ward-ed-screen");
-    await expectNoReloadSince(page, "referral board -> Peel ED");
+    await expectNoReloadSince(page, "referral board -> Royal Perth ED");
 
     // `ward-ed-outbox-row-*` is the WRONG list to watch here: `outbox` is `patients.filter((m) =>
     // m.acceptedUnitId !== undefined)` (`ed-screen.tsx`), so a movement only appears there once a
@@ -295,9 +301,12 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
         .evaluateAll((rows) => rows.map((row) => row.getAttribute("data-testid") ?? "")),
     );
 
-    await page.getByTestId("ward-ed-raise-referral-toggle").click();
-    // A2-1 (audit 13 Oct 2026): the form starts from a person.
-    await page.getByTestId("ward-ed-referral-unidentified").check();
+    await page
+      .getByTestId("ward-ed-inbox-row-RF-009")
+      .getByRole("button", { name: /View referral/u })
+      .click();
+    await page.getByTestId("ward-ed-inbox-raise-RF-009").click();
+    await expect(page.getByRole("region", { name: "Raise into a movement" })).toBeVisible();
     await page.getByTestId("ward-ed-referral-cohort").selectOption("Adult");
     await page.getByTestId("ward-ed-referral-security").selectOption("Open");
     await page.getByTestId("ward-ed-referral-sex").selectOption("Male");
@@ -342,9 +351,16 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     expect(unitId, "could not recover the candidate unit id from its testid").not.toBe("");
 
     await eligibleCandidate.click();
-    const referButton = shortlist.getByTestId("ward-shortlist-refer");
-    await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
-    await referButton.click();
+    // Option B (Josh, 13 Oct 2026; D-30): Home's Refer now opens the referral slide-out (a referral
+    // for the coordinator queue) rather than offering the ward at once. Override still offers the
+    // chosen ward directly, with a reason and a second sign-off, so the journey offers through it.
+    const overrideToggle = shortlist.getByTestId("ward-shortlist-override-toggle");
+    await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
+    await overrideToggle.click();
+    await shortlist.getByLabel(/Reason for overriding/).selectOption("Clinical urgency outweighs the mismatch");
+    await shortlist.getByTestId("ward-shortlist-override-second-sign-off").check();
+    await shortlist.getByTestId("ward-shortlist-override-sign-off-name").fill("JS");
+    await shortlist.getByRole("button", { name: "Record override" }).click();
     await expect(shortlist).toContainText(`Parallel referral:`);
     await expectNoReloadSince(page, "referring to a ward");
 
@@ -502,6 +518,12 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expectNoReloadSince(page, "officer -> ward for admission");
 
     const wardScreenAfterArrival = page.getByTestId("ward-unit-screen");
+    // Audit round 2, A4-16 (Josh, 13 Oct 2026): the officer's Delivered ends the transport leg only;
+    // the receiving ward closes the movement by confirming arrival, then the Home tab is reopened.
+    await openAllArrivals(page);
+    await wardScreenAfterArrival.getByTestId(`ward-confirm-arrival-${movementId}`).click();
+    await expect(wardScreenAfterArrival.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
+    await page.locator("#tabBtn-attn").click();
     await expect(wardScreenAfterArrival.getByTestId(`ward-pull-${movementId}`)).toHaveCount(0);
     await expect(wardScreenAfterArrival.getByTestId("ward-unit-beds")).toContainText(
       `Occupied ${occupiedBeforeCount + 1}`,

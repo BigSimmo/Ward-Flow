@@ -681,7 +681,9 @@ describe("ward override-surface guard", () => {
       // 1 -> 2, 11 Oct 2026: the phone patient sheet's "Refer to <ward>" runs the same plain
       // REFER_TO_UNITS through the Undo step (the panel's canRefer gate already passed), as the v10
       // mockup toasts "Offered ... " with Undo there.
-      "src/components/ward-management/coordinator/coordinator-screen.tsx::REFER_TO_UNITS": 2,
+      // 2 -> 1, 13 Oct 2026 (round 2, option B): that phone sheet Refer now opens the referral
+      // slide-out instead of offering at once, so only the bedflow Offer remains.
+      "src/components/ward-management/coordinator/coordinator-screen.tsx::REFER_TO_UNITS": 1,
       "src/components/ward-management/referrals/ward-referral-inbox.tsx::ACCEPT_REFERRAL": 1,
       // 2 -> 3, T12 (item 9, 2026-09-17): the non-binary placement form dispatches the same
       // REFER_TO_UNITS with genderPlacementReason and genderPlacementChecked. Verified by reading

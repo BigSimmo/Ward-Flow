@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { seedWardFlowStateAt, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
-import { ABSENCE_STEPS } from "@/components/ward-management/ward-model";
+import { ABSENCE_STEPS, absenceStepsFor } from "@/components/ward-management/ward-model";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 
 /**
@@ -423,5 +423,13 @@ describe("community treatment order (D-38)", () => {
     });
     expect(refused.patients[0]!.communityTreatmentOrder).toBeUndefined();
     expect(refused.rejections.length).toBeGreaterThan(state.rejections.length);
+  });
+});
+
+describe("absence steps by legal status (A3-13, audit r1 item 5)", () => {
+  it("drops the return order step for a voluntary patient and keeps it for a person on an order", () => {
+    expect(absenceStepsFor(true)).not.toContain("return_order_made");
+    expect(absenceStepsFor(true)).toHaveLength(ABSENCE_STEPS.length - 1);
+    expect(absenceStepsFor(false)).toEqual(ABSENCE_STEPS);
   });
 });

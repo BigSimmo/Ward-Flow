@@ -271,6 +271,43 @@ describe("PIR chronology: one person's records", () => {
     });
   });
 
+  it("reads the officer's Delivered as a transport delivery, never as the patient's arrival", () => {
+    const seed = seedWardFlowState();
+    const unitId = seed.units[0]!.id;
+    const wardName = seed.units[0]!.name;
+    const state: WardFlowState = {
+      ...seed,
+      movements: seed.movements.map((movement) =>
+        movement.id === MOVEMENT
+          ? {
+              ...movement,
+              acceptedUnitId: unitId,
+              closure: undefined,
+              transport: {
+                id: `${MOVEMENT}-transport`,
+                provider: "Patient transport service" as const,
+                escortRequired: false,
+                collectedAt: NOW_ANCHOR - 20,
+                arrivedAt: NOW_ANCHOR - 10,
+              },
+            }
+          : movement,
+      ),
+    };
+    const delivered = { type: "PATIENT_ARRIVED" as const, role: "officer" as const, movementId: MOVEMENT };
+    const log = [
+      { ...delivered, now: NOW_ANCHOR - 10, accepted: true },
+      { ...delivered, now: NOW_ANCHOR - 5, accepted: false },
+    ];
+    const rows = patientChronology(inputFor(state, { auditEvents: null, eventLog: log })).rows;
+    const actions = rows.map((row) => row.action);
+    expect(actions).toContain(`Transport delivered to ${wardName}`);
+    expect(actions).toContain(`Transport delivered to ${wardName} (refused)`);
+    expect(actions.some((action) => action.includes("Patient arrived"))).toBe(false);
+    // The recorded delivery already says it, so only the refused attempt comes from the session log.
+    expect(rows.filter((row) => row.source === "Session log")).toHaveLength(1);
+  });
+
   it("lists the transport job's recorded steps, the transport need and recorded documents", () => {
     const seed = seedWardFlowState();
     const state: WardFlowState = {

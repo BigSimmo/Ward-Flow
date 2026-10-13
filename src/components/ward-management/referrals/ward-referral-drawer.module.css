@@ -2634,6 +2634,16 @@ details.refCard > summary {
     content: "";
   }
 
+  /* Phone taps (13 Oct 2026): 48px tall; Close reaches 44px wide, and the two meet in the 8px gap
+     between them instead of overlapping. */
+  .phHeroChip::after {
+    inset: -8px -4px;
+  }
+
+  .phHeroClose::after {
+    inset: -8px -8px -8px -4px;
+  }
+
   .phHeroClose {
     width: 32px;
     padding: 0;

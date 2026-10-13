@@ -113,6 +113,7 @@ import type { WardAppearance } from "@/components/ward-management/shell/ward-she
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
 import { AlertsPane, DataPane, DisplayPane, ProfilePane, type ReferenceTab } from "./settings-panes";
+import { useDiscreetNamesSetting } from "./discreet-names";
 import { useRowDensity, type RowDensity } from "./row-density";
 import { NOT_WIRED, PreviewTag, RuleRow, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_TABS, findSettings, type SettingsSearchEntry, type SettingsTab } from "./settings-search-index";
@@ -372,6 +373,7 @@ export function SettingsScreen() {
   const [reducedMotion, setReducedMotion] = useWardAccessibilityPreference("reduced-motion");
   const [highContrast, setHighContrast] = useWardAccessibilityPreference("high-contrast");
   const [rowDensity, setRowDensity] = useRowDensity();
+  const [discreetNames, setDiscreetNames] = useDiscreetNamesSetting();
   const [audioBuzz, setAudioBuzz] = useAudioBuzzPreference();
   const [actNowNotifications] = useActNowNotificationPreference();
   const [notificationPermission, setNotificationPermission] = useState<NotificationSupport>("default");
@@ -409,6 +411,13 @@ export function SettingsScreen() {
       showToast(`Row density set to ${next === "compact" ? "Compact" : "Comfortable"}.`);
     },
     [setRowDensity, showToast],
+  );
+  const chooseDiscreetNames = useCallback(
+    (next: boolean) => {
+      setDiscreetNames(next);
+      showToast(`Discreet names on phone ${next ? "on" : "off"}.`);
+    },
+    [setDiscreetNames, showToast],
   );
 
   // Open the tab named in the address (#alerts), and keep the address in step.
@@ -1213,6 +1222,8 @@ export function SettingsScreen() {
         }}
         rowDensity={rowDensity}
         onRowDensityChange={chooseRowDensity}
+        discreetNames={discreetNames}
+        onDiscreetNamesChange={chooseDiscreetNames}
         onPreview={onPreview}
       />
     </>
@@ -1412,6 +1423,14 @@ export function SettingsScreen() {
                   ]}
                   value={rowDensity}
                   onChange={chooseRowDensity}
+                />
+              </SettingRow>
+              <SettingRow setting="discreet-names" title="Discreet names on phone" sub="Initials and UMRN in lists">
+                <Switch
+                  checked={discreetNames}
+                  onCheckedChange={chooseDiscreetNames}
+                  label={<SrOnly>Discreet names on phone</SrOnly>}
+                  className={styles.phoneSwitch}
                 />
               </SettingRow>
               <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz">

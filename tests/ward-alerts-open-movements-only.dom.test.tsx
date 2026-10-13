@@ -43,7 +43,7 @@ function Controls() {
       <button
         type="button"
         data-testid="test-patient-arrived"
-        onClick={() => dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId: "WF-014" })}
+        onClick={() => dispatch({ type: "PATIENT_ARRIVED", role: "coordinator", now, movementId: "WF-014" })}
       >
         mark arrived
       </button>

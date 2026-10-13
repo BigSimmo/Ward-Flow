@@ -94,7 +94,7 @@ function ArrivalDriverHarness({ movementId, unitId }: { movementId: string; unit
         onClick={() => {
           dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId });
           dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId });
-          dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId, actingUnitId: unitId });
+          dispatch({ type: "PATIENT_ARRIVED", role: "coordinator", now, movementId, actingUnitId: unitId });
         }}
       >
         drive to arrival

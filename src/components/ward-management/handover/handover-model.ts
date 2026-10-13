@@ -137,6 +137,13 @@ export type HandoverRow = {
   formCode?: string;
   formDueAt?: Instant;
   obs: HandoverObs;
+  /**
+   * Audit r1 item 3: the risk flags recorded on this journey's referral intake, read as recorded.
+   * `undefined` when no referral intake is linked, so the Assessment says "not recorded".
+   */
+  riskFlags?: readonly string[];
+  /** The referring clinician's high-acuity nursing mark, carried on the movement. */
+  highAcuity?: boolean;
   to?: { unitId: string; name: string };
   asked: { unitId: string; name: string }[];
   declines: { unitId: string; name: string; reason: string; at: Instant }[];
@@ -192,6 +199,11 @@ export function toHandoverRow(
     formCode: movement.legalForm?.code,
     formDueAt: movement.legalForm?.dueAt,
     obs: movement.flaggedUrgent ? "Urgent" : movement.specialling ? "1:1 specialling" : "Standard",
+    riskFlags:
+      movement.referralId === undefined
+        ? undefined
+        : referrals.find((referral) => referral.id === movement.referralId)?.intake?.riskFlags,
+    highAcuity: movement.highAcuity,
     to: accepted === undefined ? undefined : { unitId: accepted, name: unitName(units, accepted) },
     asked:
       accepted === undefined ? movement.referredUnitIds.map((id) => ({ unitId: id, name: unitName(units, id) })) : [],
@@ -411,6 +423,17 @@ export function situationState(row: HandoverRow, now: Instant): string {
   return STAGE_LABEL[row.stage];
 }
 
+/**
+ * Audit r1 item 3 (wording for Josh's sign-off): the Assessment names the recorded risk flags and
+ * high-acuity mark in neutral words, never a derived score.
+ */
+export function riskWords(row: HandoverRow): string {
+  const acuity = row.highAcuity ? ", high acuity nursing" : "";
+  if (row.riskFlags === undefined) return `${acuity}, risk flags not recorded`;
+  if (row.riskFlags.length === 0) return `${acuity}, no risk flags recorded`;
+  return `${acuity}, risk flags ${row.riskFlags.join(", ")}`;
+}
+
 /** Audit A4-26: the Recommendation is the owner and the one next step, from the same rule as the sheet. */
 function recommendationLine(row: HandoverRow, now: Instant, readyBeds: (unitId: string) => number): string {
   return `${row.ownerShort}: ${nextStep(row, now, now, readyBeds).text}`;
@@ -437,7 +460,7 @@ export function isbarLines(
       text: `${row.edShort} since ${formatInstantWithDay(row.openedAt, now)}, ${situationState(row, now)}`,
     },
     { key: "B", label: "Background", text: backgroundLine(row, now) },
-    { key: "A", label: "Assessment", text: `${obsLong(row)}${form}` },
+    { key: "A", label: "Assessment", text: `${obsLong(row)}${riskWords(row)}${form}` },
     { key: "R", label: "Recommendation", text: recommendationLine(row, now, readyBeds) },
   ];
 }

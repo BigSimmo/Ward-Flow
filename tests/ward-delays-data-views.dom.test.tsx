@@ -101,6 +101,19 @@ describe("the Delays board's data views", () => {
     expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${listed().length} of ${OPEN.length}`);
   });
 
+  it("opens on Longest wait and remembers the viewer's choice (audit A3-14)", () => {
+    const first = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DelaysScreen />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Longest wait" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "By blocker" }));
+    first.unmount();
+    renderDelays();
+    expect(screen.getByRole("button", { name: "By blocker" })).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("Longest wait lists pinned recorded legal times first, then everyone else longest first", () => {
     renderDelays();
     fireEvent.click(screen.getByRole("button", { name: "Longest wait" }));
@@ -149,6 +162,8 @@ describe("the Delays board's data views", () => {
 
   it("keeps the table's column headers and cell roles, which the phone card layout relies on", () => {
     renderDelays();
+    // The grouped view names its fourth column Wards; Longest wait (the default) names it Blocker.
+    fireEvent.click(screen.getByRole("button", { name: "By blocker" }));
     const table = within(waiting()).getByRole("table");
     expect(
       within(table)
@@ -195,6 +210,8 @@ describe("the Delays board's data views", () => {
 
   it("a dot on the spread graph opens that person's row and panel", () => {
     renderDelays();
+    // Groups fold only in the By blocker view; Longest wait (the default) is one flat list.
+    fireEvent.click(screen.getByRole("button", { name: "By blocker" }));
     const target = ROWS.find((row) => row.cause === "awaiting_transport")!;
     expect(target, "nobody is awaiting transport").toBeDefined();
     const dots = within(graphs()).getAllByRole("button", { pressed: false });

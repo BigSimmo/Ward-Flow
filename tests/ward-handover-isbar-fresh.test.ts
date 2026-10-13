@@ -48,3 +48,19 @@ describe("ISBAR from the latest state", () => {
     );
   });
 });
+
+describe("ISBAR Assessment names recorded risk (audit r1 item 3)", () => {
+  const assessment = (fields: Partial<HandoverRow>) =>
+    isbarLines(row(fields), 0).find((line) => line.key === "A")!.text;
+
+  it("lists the referral's recorded risk flags and the high-acuity mark", () => {
+    expect(assessment({ riskFlags: ["absconding", "aggression"], highAcuity: true })).toBe(
+      "Standard obs, high acuity nursing, risk flags absconding, aggression, Form 4C, no due time typed",
+    );
+  });
+
+  it("says when none were recorded and when no referral intake is linked", () => {
+    expect(assessment({ riskFlags: [] })).toBe("Standard obs, no risk flags recorded, Form 4C, no due time typed");
+    expect(assessment({})).toBe("Standard obs, risk flags not recorded, Form 4C, no due time typed");
+  });
+});

@@ -14,7 +14,6 @@ import Link from "next/link";
 import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import {
-  DisabledReason,
   Badge,
   Button,
   CheckingFoot,
@@ -56,7 +55,8 @@ import {
   communityTeamSuburbCounts,
   nearDuplicateSpellingsOf,
 } from "@/components/ward-management/community/community-vocabulary";
-import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
+import { communityTeamHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { elapsedDaysPhrase } from "@/components/ward-management/community/community-elapsed";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
@@ -74,16 +74,10 @@ import { transportEtaRemainingLabel } from "@/components/ward-management/ward-bo
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import {
-  COHORTS,
   COMMUNITY_DECLINE_REASONS,
-  HOME_REGIONS,
-  REFERRAL_HISTORY_LIMITS,
   TRANSPORT_LEGAL_STATUSES,
   TRANSPORT_PROVIDERS,
-  URGENCY_LEVELS,
-  type Cohort,
   type CommunityDeclineReason,
-  type HomeRegion,
   type LegalForm,
   type Movement,
   type Referral,
@@ -102,7 +96,7 @@ import {
 } from "@/components/ward-management/community/community-team-contact-mapping";
 import { REFERENCE_TEAM_CAVEAT } from "@/components/ward-management/reference/ward-reference-teams";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import {
@@ -123,7 +117,6 @@ import {
 } from "./community-team-phone";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import v6 from "./community-team-v6.module.css";
-import { matchReferralPatient } from "@/components/ward-management/referrals/referral-patient-match";
 import {
   DEMO_COMMUNITY_REFERRALS,
   DEMO_COMMUNITY_INPATIENTS,
@@ -290,7 +283,7 @@ type DrawerType =
   | "tools"
   | "toolsDrawer"
   | null;
-type ModalType = "intake" | "contact" | "handover" | "crisis" | null;
+type ModalType = "contact" | "handover" | "crisis" | null;
 
 /**
  * Clinical contact is the contact itself, not a sent message — team, time, and role only. Wired only
@@ -325,37 +318,6 @@ type CaseloadRow = {
   ageBand: string;
   legalForm: LegalForm | undefined;
   addressingState: ReferralAddressing["state"] | undefined;
-};
-
-/** The history sent: an unidentified person's description leads, so the referral says who it is for. */
-function intakeHistory(draft: Pick<IntakeDraft, "unidentified" | "description" | "history">): string {
-  if (!draft.unidentified) return draft.history;
-  const described = `Unidentified person: ${draft.description.trim()}`;
-  return draft.history.trim() === "" ? described : `${described}\n\n${draft.history}`;
-}
-
-type IntakeDraft = {
-  /** A2-12 (audit 13 Oct 2026): the person's name or UMRN, matched to a registered patient. */
-  umrn: string;
-  /** The clinician's explicit "Unidentified" path; `description` then says who the person is. */
-  unidentified: boolean;
-  description: string;
-  ageBand: Cohort | "";
-  homeRegion: HomeRegion | "";
-  urgency: "" | "1" | "2" | "3";
-  originSiteCode: string;
-  history: string;
-};
-
-const BLANK_INTAKE_DRAFT: IntakeDraft = {
-  umrn: "",
-  unidentified: false,
-  description: "",
-  ageBand: "",
-  homeRegion: "",
-  urgency: "",
-  originSiteCode: "",
-  history: "",
 };
 
 /**
@@ -577,6 +539,10 @@ export function CommunityScreen({
   const team =
     communityTeamById(teamId) ??
     (teamId === "fremantle" || teamId === "alma-street" ? communityTeamById("alma-street-fremantle") : null);
+  // Option B (Josh, 13 Oct 2026): one referral flow. New referral opens the referral slide-out
+  // from this team; the retired intake modal asked the same questions with no person named.
+  const referFromTeamHref = raiseReferralHref({ source: "community", teamId: team?.id ?? teamId });
+  const openNewReferral = useCallback(() => openReferralSheet(referFromTeamHref), [referFromTeamHref]);
   const [followUpFilter, setFollowUpFilter] = useState("all");
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineDraft, setDeclineDraft] = useState<CommunityDeclineReason | undefined>(undefined);
@@ -703,7 +669,6 @@ export function CommunityScreen({
   // tier and review date belonged to nobody's record.
   const searchResults = findPatients(patients, searchQuery);
   const selectedPatient: Patient | undefined = patients.find((patient) => patient.id === selectedPatientId);
-  const [intakeDraft, setIntakeDraft] = useState<IntakeDraft>(BLANK_INTAKE_DRAFT);
   const [contactRecord, setContactRecord] = useState<{ role: WardFlowRole; at: Instant; teamId: string } | null>(null);
   const [dismissedTaskIds, setDismissedTaskIds] = useState<Set<string>>(new Set());
   const [uiState, setUiState] = useState<"populated" | "skeleton" | "empty" | "error">("populated");
@@ -926,7 +891,7 @@ export function CommunityScreen({
       setActiveModalType("crisis");
     };
     win.openModal = (modalId: string) => {
-      if (modalId === "newReferralModal") setActiveModalType("intake");
+      if (modalId === "newReferralModal") openNewReferral();
       else if (modalId === "handoverModal") setActiveModalType("handover");
       else if (modalId === "contactModal") setActiveModalType("contact");
       else if (modalId === "crisisModal") setActiveModalType("crisis");
@@ -940,56 +905,16 @@ export function CommunityScreen({
         window.location.href = communityTeamHref(target);
       }
     };
-  }, [referrals, liveReferrals, handleCompleteContact, handleConfirmAccept, handleConfirmDecline, now, setActiveTab]);
-
-  function intakeBlockedReason(draft: IntakeDraft): string | undefined {
-    // A2-12 (audit 13 Oct 2026): a referral nobody can name cannot be actioned. A registered
-    // person by name or UMRN, or "Unidentified" with a description, comes first.
-    if (draft.unidentified) {
-      if (draft.description.trim() === "") return "Describe the unidentified person before sending.";
-    } else if (draft.umrn.trim() === "") {
-      return "Enter the patient's name or UMRN, or choose Unidentified.";
-    } else if (!matchReferralPatient(patients, draft.umrn)) {
-      return "No one on file matches that name or UMRN. Check it, or choose Unidentified.";
-    }
-    if (draft.ageBand === "") return "Choose an age band before sending this follow-up referral.";
-    if (draft.homeRegion === "") return "Choose a home region before sending this follow-up referral.";
-    if (draft.urgency === "") return "Choose urgency before sending this follow-up referral.";
-    if (!siteByCode(draft.originSiteCode)) {
-      return "Choose the originating site before sending this follow-up referral.";
-    }
-    const history = intakeHistory(draft);
-    if (history.length > REFERRAL_HISTORY_LIMITS.history) {
-      return `The history is ${history.length} characters and the limit is ${REFERRAL_HISTORY_LIMITS.history}.`;
-    }
-    return undefined;
-  }
-
-  function submitCommunityFollowUp(teamName: string) {
-    const blocked = intakeBlockedReason(intakeDraft);
-    if (blocked !== undefined) return;
-    const { ageBand, homeRegion, urgency, originSiteCode } = intakeDraft;
-    if (ageBand === "" || homeRegion === "" || urgency === "") return;
-    const history = intakeHistory(intakeDraft);
-    const patient = intakeDraft.unidentified ? undefined : matchReferralPatient(patients, intakeDraft.umrn);
-    dispatch({
-      type: "RECEIVE_REFERRAL",
-      role: "community",
-      now,
-      patientId: patient?.id,
-      ageBand,
-      destinations: [{ kind: "community_team", teamName }],
-      homeRegion,
-      suburb: { kind: "unknown", reason: "not_known" },
-      source: "community",
-      urgency: Number(urgency) as 1 | 2 | 3,
-      originSiteCode,
-      transportNeeded: false,
-      history,
-    });
-    setIntakeDraft(BLANK_INTAKE_DRAFT);
-    setActiveModalType(null);
-  }
+  }, [
+    referrals,
+    liveReferrals,
+    handleCompleteContact,
+    handleConfirmAccept,
+    handleConfirmDecline,
+    now,
+    setActiveTab,
+    openNewReferral,
+  ]);
 
   function handleSaveClinicalContact() {
     const recorded = recordClinicalContact(dispatch, now, teamId);
@@ -1212,7 +1137,6 @@ export function CommunityScreen({
     caseloadFilter === "all"
       ? caseloadRows
       : caseloadRows.filter((row) => caseloadStatutoryFormCode(row) === caseloadFilter);
-  const intakeBlocked = intakeBlockedReason(intakeDraft);
   /**
    * F10 (Opus adversarial review, 2026-09-17) / item 48: `community_referral_received` notices
    * have nowhere else to be seen. `WardChromeRole` (`ward-chrome-role.ts`) has no "community"
@@ -1881,7 +1805,7 @@ export function CommunityScreen({
   /*
    * PHONE (v10 all-pages mockup, "Community team", Phone, 11 Oct 2026). Its own tree under 48rem,
    * built from the same data and handlers as the desktop page: the band hero with three figures,
-   * Switch team and Intake referral; Since you looked as one row; tool chips (How to reach, On duty
+   * Switch team and Refer from team; Since you looked as one row; tool chips (How to reach, On duty
    * and Coverage open sheets holding the desktop side panels); Worth attention; then Waiting, In
    * bed, Back and CTOs as person rows. Every coordinator action on desktop stays reachable here.
    */
@@ -2064,6 +1988,17 @@ export function CommunityScreen({
                 const person = phonePerson(admission.patientId);
                 const stayDays = daysInBed(admission, now);
                 const patientId = admission.patientId;
+                // A2-16 (audit round 2): the phone folds "accepted before the bed" into this row
+                // rather than listing the same people again in a second group.
+                const acceptedBefore = admittedWhileAlreadyWithTeam.find(
+                  (category) => category.admission.id === admission.id,
+                );
+                const acceptedNote =
+                  acceptedBefore === undefined
+                    ? undefined
+                    : `With the team ${elapsedSinceOrUnderADay(
+                        daysBetween(acceptedBefore.acceptedAt, acceptedBefore.arrivedAt),
+                      )} before the bed`;
                 return {
                   id: admission.id,
                   testId: `ward-community-phone-in-bed-${admission.id}`,
@@ -2079,35 +2014,17 @@ export function CommunityScreen({
                       : undefined,
                   note:
                     transport === undefined
-                      ? undefined
+                      ? acceptedNote
                       : `${ownBooking ? "This team booked transport" : "Transport already booked"}${
                           transport.estimatedAt !== undefined
                             ? ` · ${transportEtaRemainingLabel(transport.estimatedAt, now)}`
                             : ""
-                        }`,
+                        }${acceptedNote === undefined ? "" : ` · ${acceptedNote}`}`,
                 };
               }),
               empty: cannotResolve
                 ? `A bed carries no link back to the referral that named this team, so this list cannot be built for ${team.name}.`
                 : "Nobody referred to this team is currently in a bed.",
-            },
-            {
-              id: "accepted-before",
-              title: "Admitted while already with the team",
-              count: admittedWhileAlreadyWithTeam.length,
-              rows: admittedWhileAlreadyWithTeam.map(({ admission, acceptedAt, arrivedAt }) => {
-                const person = phonePerson(admission.patientId);
-                const patientId = admission.patientId;
-                return {
-                  id: admission.id,
-                  name: phoneName(person, "No person on file"),
-                  meta: `${unitName(admission.unitId, units)} · ${stayLabel(admission, now)}`,
-                  value: elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt)),
-                  time: "before the bed",
-                  onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
-                };
-              }),
-              empty: "Nobody in a bed was accepted by this team before that bed began.",
             },
           ],
         },
@@ -2390,10 +2307,7 @@ export function CommunityScreen({
         ]}
         list={phoneList}
         onList={(id) => setActiveTab(phoneListTab[id])}
-        onIntake={() => {
-          setIntakeDraft(BLANK_INTAKE_DRAFT);
-          setActiveModalType("intake");
-        }}
+        onIntake={openNewReferral}
         onSwitchTeam={() => setSwitchOpen(true)}
         switchTriggerRef={switchTriggerRef}
         since={sinceElement}
@@ -2600,17 +2514,8 @@ export function CommunityScreen({
                       Catchment MDT
                     </Button>
                     {/* New referral in the header is the page's one primary (device audit option A). */}
-                    <Button
-                      variant="onHero"
-                      size="sm"
-                      icon={Plus}
-                      id="btnMainIntake"
-                      onClick={() => {
-                        setIntakeDraft(BLANK_INTAKE_DRAFT);
-                        setActiveModalType("intake");
-                      }}
-                    >
-                      Intake referral
+                    <Button variant="onHero" size="sm" icon={Plus} id="btnMainIntake" onClick={openNewReferral}>
+                      Refer from team
                     </Button>
                   </div>
                 }
@@ -5402,46 +5307,39 @@ export function CommunityScreen({
             <div
               className={styles.modalBox}
               id={
-                activeModalType === "intake"
-                  ? "newReferralModal"
-                  : activeModalType === "contact"
-                    ? "contactModal"
-                    : activeModalType === "handover"
-                      ? "handoverModal"
-                      : activeModalType === "crisis"
-                        ? "crisisModal"
-                        : undefined
+                activeModalType === "contact"
+                  ? "contactModal"
+                  : activeModalType === "handover"
+                    ? "handoverModal"
+                    : activeModalType === "crisis"
+                      ? "crisisModal"
+                      : undefined
               }
               role="dialog"
               aria-labelledby={
-                activeModalType === "intake"
-                  ? "newRefModalTitle"
-                  : activeModalType === "contact"
-                    ? "contactModalTitle"
-                    : activeModalType === "handover"
-                      ? "handoverModalTitle"
-                      : activeModalType === "crisis"
-                        ? "crisisModalTitle"
-                        : "modal-heading"
+                activeModalType === "contact"
+                  ? "contactModalTitle"
+                  : activeModalType === "handover"
+                    ? "handoverModalTitle"
+                    : activeModalType === "crisis"
+                      ? "crisisModalTitle"
+                      : "modal-heading"
               }
               onClick={(e) => e.stopPropagation()}
             >
               <div className={styles.modalHead}>
                 <h3
                   id={
-                    activeModalType === "intake"
-                      ? "newRefModalTitle"
-                      : activeModalType === "contact"
-                        ? "contactModalTitle"
-                        : activeModalType === "handover"
-                          ? "handoverModalTitle"
-                          : activeModalType === "crisis"
-                            ? "crisisModalTitle"
-                            : "modal-heading"
+                    activeModalType === "contact"
+                      ? "contactModalTitle"
+                      : activeModalType === "handover"
+                        ? "handoverModalTitle"
+                        : activeModalType === "crisis"
+                          ? "crisisModalTitle"
+                          : "modal-heading"
                   }
                   className={styles.modalTitle}
                 >
-                  {activeModalType === "intake" && "New Catchment Referral Intake"}
                   {activeModalType === "contact" && "Record Clinical Contact"}
                   {activeModalType === "handover" && "Print Catchment MDT Summary"}
                   {activeModalType === "crisis" && "Catchment Crisis Response & Outreach Duty"}
@@ -5456,190 +5354,6 @@ export function CommunityScreen({
                 </button>
               </div>
               <div className={styles.modalBody}>
-                {activeModalType === "intake" && (
-                  <form
-                    data-testid="ward-community-intake-form"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      submitCommunityFollowUp(team.name);
-                    }}
-                    className={styles.intakeForm}
-                  >
-                    <p className={styles.footnote}>
-                      For community follow-up with {team.name}. This names the team and opens a real referral. It does
-                      not invent a statutory duration.
-                    </p>
-                    <label className={styles.intakeField}>
-                      <span>Team</span>
-                      <input
-                        type="text"
-                        readOnly
-                        value={team.name}
-                        className={styles.searchInput}
-                        data-testid="ward-community-intake-team"
-                      />
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>Patient name or UMRN</span>
-                      <input
-                        type="text"
-                        value={intakeDraft.umrn}
-                        disabled={intakeDraft.unidentified}
-                        onChange={(event) => setIntakeDraft((current) => ({ ...current, umrn: event.target.value }))}
-                        placeholder="For example Smith, Jo or UM100046"
-                        autoComplete="off"
-                        className={styles.searchInput}
-                        data-testid="ward-community-intake-umrn"
-                      />
-                    </label>
-                    <label className={styles.intakeCheck}>
-                      <input
-                        type="checkbox"
-                        checked={intakeDraft.unidentified}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({ ...current, unidentified: event.target.checked, umrn: "" }))
-                        }
-                        data-testid="ward-community-intake-unidentified"
-                      />
-                      Unidentified
-                    </label>
-                    {intakeDraft.unidentified ? (
-                      <label className={styles.intakeField}>
-                        <span>Describe the person</span>
-                        <input
-                          type="text"
-                          value={intakeDraft.description}
-                          maxLength={200}
-                          onChange={(event) =>
-                            setIntakeDraft((current) => ({ ...current, description: event.target.value }))
-                          }
-                          placeholder="Age, appearance, where they are"
-                          autoComplete="off"
-                          className={styles.searchInput}
-                          data-testid="ward-community-intake-description"
-                        />
-                      </label>
-                    ) : null}
-                    <label className={styles.intakeField}>
-                      <span>Age band</span>
-                      <select
-                        className={styles.declineSelect}
-                        value={intakeDraft.ageBand}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({
-                            ...current,
-                            ageBand: event.target.value as IntakeDraft["ageBand"],
-                          }))
-                        }
-                        data-testid="ward-community-intake-age-band"
-                      >
-                        <option value="">Choose one</option>
-                        {COHORTS.map((cohort) => (
-                          <option key={cohort} value={cohort}>
-                            {cohort}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>Home region</span>
-                      <select
-                        className={styles.declineSelect}
-                        value={intakeDraft.homeRegion}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({
-                            ...current,
-                            homeRegion: event.target.value as IntakeDraft["homeRegion"],
-                          }))
-                        }
-                        data-testid="ward-community-intake-home-region"
-                      >
-                        <option value="">Choose one</option>
-                        {HOME_REGIONS.map((region) => (
-                          <option key={region} value={region}>
-                            {region}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>Urgency</span>
-                      <select
-                        className={styles.declineSelect}
-                        value={intakeDraft.urgency}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({
-                            ...current,
-                            urgency: event.target.value as IntakeDraft["urgency"],
-                          }))
-                        }
-                        data-testid="ward-community-intake-urgency"
-                      >
-                        <option value="">Choose one</option>
-                        {URGENCY_LEVELS.map((level) => (
-                          <option key={level} value={String(level)}>
-                            {urgencyTierLabel(level)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>Originating site</span>
-                      <select
-                        className={styles.declineSelect}
-                        value={intakeDraft.originSiteCode}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({ ...current, originSiteCode: event.target.value }))
-                        }
-                        data-testid="ward-community-intake-origin-site"
-                      >
-                        <option value="">Choose one</option>
-                        {wardSites.map((site) => (
-                          <option key={site.code} value={site.code}>
-                            {site.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>History (optional)</span>
-                      <textarea
-                        value={intakeDraft.history}
-                        onChange={(event) => setIntakeDraft((current) => ({ ...current, history: event.target.value }))}
-                        className={styles.intakeHistory}
-                        rows={4}
-                        maxLength={REFERRAL_HISTORY_LIMITS.history}
-                        data-testid="ward-community-intake-history"
-                        data-gramm="false"
-                        data-enable-grammarly="false"
-                        spellCheck={false}
-                        autoComplete="off"
-                      />
-                    </label>
-                    <div className={styles.modalFoot}>
-                      <button type="button" className={styles.btnSmSec} onClick={() => setActiveModalType(null)}>
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className={styles.btnSmPrimary}
-                        data-testid="ward-community-intake-submit"
-                        aria-disabled={intakeBlocked === undefined ? undefined : "true"}
-                        aria-describedby={intakeBlocked === undefined ? undefined : "ward-community-intake-blocked"}
-                        title={intakeBlocked}
-                        onClick={intakeBlocked === undefined ? undefined : ignoreUnavailableActivation}
-                      >
-                        Send for community follow-up
-                      </button>
-                      {intakeBlocked === undefined ? null : (
-                        // A2-10 (audit 13 Oct 2026): visible beside the greyed button, not only to a
-                        // screen reader or on hover.
-                        <DisabledReason id="ward-community-intake-blocked">{intakeBlocked}</DisabledReason>
-                      )}
-                    </div>
-                  </form>
-                )}
-
                 {activeModalType === "contact" && (
                   <form
                     onSubmit={(e) => {

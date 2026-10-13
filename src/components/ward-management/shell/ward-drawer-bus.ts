@@ -11,17 +11,26 @@ export function openWardDrawer(drawerId: WardDrawerId) {
   window.dispatchEvent(new CustomEvent(WARD_DRAWER_EVENT, { detail: { drawerId } }));
 }
 
+/**
+ * Opens the referral slide-out with what a referral link (`raiseReferralHref`) asks for: the same
+ * request a click on that link opens, for a control that is a button rather than a link.
+ */
+export function openReferralSheet(href: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(WARD_DRAWER_EVENT, { detail: { drawerId: "referral", href } }));
+}
+
 export function closeWardDrawer() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(WARD_DRAWER_CLOSE_EVENT));
 }
 
-export function subscribeWardDrawer(onOpen: (drawerId: WardDrawerId) => void) {
+export function subscribeWardDrawer(onOpen: (drawerId: WardDrawerId, href?: string) => void) {
   if (typeof window === "undefined") return () => {};
   function handler(event: Event) {
-    const custom = event as CustomEvent<{ drawerId: WardDrawerId }>;
+    const custom = event as CustomEvent<{ drawerId: WardDrawerId; href?: string }>;
     if (custom.detail?.drawerId) {
-      onOpen(custom.detail.drawerId);
+      onOpen(custom.detail.drawerId, custom.detail.href);
     }
   }
   window.addEventListener(WARD_DRAWER_EVENT, handler);

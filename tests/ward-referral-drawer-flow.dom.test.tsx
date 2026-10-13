@@ -11,6 +11,7 @@ import {
   readLastReferrerContact,
 } from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -38,14 +39,17 @@ function Probe() {
 }
 
 function setup(withBoard = false) {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <WardReferralDrawer onClose={vi.fn()} initialPatientId="PT-023" />
+      <WardReferralDrawer onClose={vi.fn()} />
       <WardReferralInbox unitId="rph-adult-secure" />
       {withBoard && <ReferralBoard />}
       <Probe />
     </WardFlowProvider>,
   );
+  // Opened plainly the sheet starts on nobody (A2-3); these cases walk step 1 for WF-009's person.
+  chooseSampleReferralPerson();
+  return view;
 }
 function tab(name: string) {
   fireEvent.click(within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name }));
@@ -95,7 +99,7 @@ describe("approved four-tab referral drawer journey", () => {
     tab("Referral");
     expect(screen.getByLabelText(/Patient story/)).toHaveValue("Synthetic story retained");
     tab("Patient");
-    fireEvent.click(screen.getByRole("button", { name: "Switch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
     const results = screen.getByRole("listbox");
     fireEvent.click(within(results).getAllByRole("option")[1]);
     expect(screen.getByRole("button", { name: "Confirm catchment" })).toBeInTheDocument();

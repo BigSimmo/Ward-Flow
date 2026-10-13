@@ -66,13 +66,20 @@ export const TRAVEL_BANDS_ARE_INVENTED: boolean = true;
  *  as obviously wrong for the real places named. That is the point, and it is safer than a table
  *  that reads as though somebody checked it.
  *
- *  Replacing these values with checked ones is a change to this object and nothing else. */
+ *  Replacing these values with checked ones is a change to this object and nothing else.
+ *
+ *  ONE EXCEPTION to the list-position rule (clinical audit round 2, S-22): the Perth
+ *  Metropolitan row. The mechanical rule told an Armadale patient that Armadale's own unit was
+ *  "Reachable only by air", which read to a clinical auditor as a defect, not a placeholder. ARM
+ *  and SCGH are now Under an hour. FSH keeps its mechanical value only because the out-of-area
+ *  ledger tests need one recorded out-of-area pair at an FSH unit; it is the same kind of oddity
+ *  and waits on the owner's call. The values are still invented. */
 export const SYNTHETIC_TRAVEL_BANDS: TravelBandTable = {
   "Perth Metropolitan": {
     RPH: "under_an_hour",
-    SCGH: "one_to_three_hours",
+    SCGH: "under_an_hour",
     FSH: "three_hours_or_more",
-    ARM: "air_transport_only",
+    ARM: "under_an_hour",
     FRE: "under_an_hour",
   },
   "South West": {

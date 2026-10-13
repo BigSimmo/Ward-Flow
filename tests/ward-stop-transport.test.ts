@@ -195,7 +195,7 @@ describe("stopping a collected transport — WLQ-38 (owner, 2026-09-15)", () => 
         // comment on `arrivedAt`/`cancelledAt`), proven rather than assumed.
         const arrived = wardFlowReducer(stopped, {
           type: "PATIENT_ARRIVED",
-          role: "officer",
+          role: "coordinator",
           now: NOW + 9,
           movementId,
         });
@@ -289,7 +289,7 @@ describe("stopping a collected transport — WLQ-38 (owner, 2026-09-15)", () => 
     const { state: withCollected, movementId } = collected(seedWardFlowState());
     const arrived = wardFlowReducer(withCollected, {
       type: "PATIENT_ARRIVED",
-      role: "officer",
+      role: "coordinator",
       now: NOW + 7,
       movementId,
     });

@@ -8,7 +8,11 @@ import {
 import { formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import { EVENT_HISTORY_TABLE } from "@/components/ward-management/ward-history";
+import {
+  eventHistoryWording,
+  isTransportDelivery,
+  transportDeliveredWording,
+} from "@/components/ward-management/ward-history";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { stepBackReasonLabels, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -224,7 +228,6 @@ const ACTION_EVENT_TYPES: ReadonlyMap<string, readonly string[]> = new Map<strin
     "Transport accepted": ["TRANSPORT_ACCEPTED"],
     "Transport en route": ["TRANSPORT_EN_ROUTE"],
     "Patient collected by transport": ["PATIENT_COLLECTED"],
-    "Transport arrived": ["PATIENT_ARRIVED"],
     "Transport diverted": ["RECORD_DIVERSION"],
     "Transport stopped": ["STOP_TRANSPORT"],
     "Transport job closed": ["WITHDRAW_REFERRAL", "RECORD_EXAMINATION", "STOP_TRANSPORT", "RELEASE_DIVERTED_BED"],
@@ -434,7 +437,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       after: movement.transportNeed.needed ? "Needed" : "Not needed",
     });
   }
-  rows.push(...transportRows(movement, record, dayZero));
+  rows.push(...transportRows(movement, record, dayZero, unitName(movement.acceptedUnitId)));
   for (const form of movement.uploadedForms ?? []) {
     add({
       recordedAt: finite(form.uploadedAt),
@@ -462,7 +465,16 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
  * carries none (the session log shows when it was logged in this browser); every other row uses the
  * step's own recorded instant. A job replaced by CANCEL_TRANSPORT appears as its unwind row.
  */
-function transportRows(movement: Movement, record: string, dayZero: Date): RowDraft[] {
+/*
+ * The officer's Delivered and the ward's arrival are both PATIENT_ARRIVED, often in the same minute.
+ * Keyed apart, a delivery is only ever folded into the delivery row and an arrival into the closure.
+ */
+const OFFICER_DELIVERY_KEY = "PATIENT_ARRIVED:officer";
+function dedupeType(type: string, role: string | null | undefined): string {
+  return isTransportDelivery(type, role) ? OFFICER_DELIVERY_KEY : type;
+}
+
+function transportRows(movement: Movement, record: string, dayZero: Date, wardName: string): RowDraft[] {
   const job = movement.transport;
   if (!job) return [];
   const rows: RowDraft[] = [];
@@ -477,14 +489,20 @@ function transportRows(movement: Movement, record: string, dayZero: Date): RowDr
     action: "Transport booked",
     after: `${job.provider}${job.escortRequired ? ", escort required" : ""}${legal}${eta}`,
   });
+  // The ward's own arrival also stamps arrivedAt when no officer pressed Delivered; that instant is the
+  // closure itself, so only a different instant is the officer's delivery.
+  const officerDelivered = job.arrivedAt !== undefined && job.arrivedAt !== movement.closure?.at;
   const steps: [string, Instant | undefined][] = [
     ["Transport accepted", job.acceptedAt],
     ["Transport en route", job.enRouteAt],
     ["Patient collected by transport", job.collectedAt],
-    ["Transport arrived", job.arrivedAt],
+    [officerDelivered ? transportDeliveredWording(wardName) : "Transport arrived", job.arrivedAt],
   ];
   for (const [action, at] of steps) {
-    if (finite(at) !== null) rows.push({ record, recordedAt: finite(at), who: NOT_RECORDED, action });
+    if (finite(at) === null) continue;
+    // The delivery row stands for the officer's PATIENT_ARRIVED, so that session-log entry is not repeated.
+    const eventTypes = officerDelivered && at === job.arrivedAt ? [OFFICER_DELIVERY_KEY] : undefined;
+    rows.push({ record, recordedAt: finite(at), who: NOT_RECORDED, action, ...(eventTypes ? { eventTypes } : {}) });
   }
   if (job.diversion) {
     rows.push({
@@ -649,12 +667,16 @@ function auditBeforeAfter(event: AuditEvent): Pick<ChronologyRow, "before" | "af
   }
 }
 
-function auditRows(events: readonly AuditEvent[], recordKeys: Set<string>): RowDraft[] {
+function auditRows(
+  events: readonly AuditEvent[],
+  recordKeys: Set<string>,
+  wardOfRecord: (record: string) => string | undefined,
+): RowDraft[] {
   const rows: RowDraft[] = [];
   for (const event of events) {
     const record = auditRecord(event);
     if (record === null || !recordKeys.has(record)) continue;
-    const wording = EVENT_HISTORY_TABLE[event.action as keyof typeof EVENT_HISTORY_TABLE]?.plainWording ?? event.action;
+    const wording = eventHistoryWording(event.action, event.actor.role, wardOfRecord(record)) ?? event.action;
     const outcome =
       event.outcome === "accepted"
         ? ""
@@ -664,7 +686,7 @@ function auditRows(events: readonly AuditEvent[], recordKeys: Set<string>): RowD
       recordedAt: finite(event.at),
       who: whoLabel(event.actor.role),
       action: `${wording}${outcome}`,
-      eventTypes: [event.action],
+      eventTypes: [dedupeType(event.action, event.actor.role)],
       ...auditBeforeAfter(event),
     });
   }
@@ -688,6 +710,12 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
   const recordIds = patientRecordIds(personId, input.patients, input.movements, input.referrals, input.admissions);
   const pick = <T extends { id: string }>(list: readonly T[], ids: string[]) =>
     list.filter((item) => ids.includes(item.id));
+  // The receiving ward of a movement record, for the officer's "Transport delivered to <ward>" row.
+  const wardOfRecord = (record: string): string | undefined => {
+    if (!record.startsWith("Movement ")) return undefined;
+    const unitId = input.movements.find((movement) => `Movement ${movement.id}` === record)?.acceptedUnitId;
+    return unitId ? (units.find((unit) => unit.id === unitId)?.name ?? unitId) : undefined;
+  };
 
   const drafts: { draft: RowDraft; source: ChronologySource }[] = [
     ...pick(input.referrals, recordIds.referrals).flatMap((referral) => referralRows(referral, units)),
@@ -701,7 +729,7 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     ...recordIds.admissions.map((id) => `Admission ${id}`),
   ]);
   if (input.auditEvents) {
-    for (const draft of auditRows(input.auditEvents, recordKeys)) drafts.push({ draft, source: "Audit" });
+    for (const draft of auditRows(input.auditEvents, recordKeys, wardOfRecord)) drafts.push({ draft, source: "Audit" });
   }
 
   // A session act already shown on the same record, at the same moment, as the same act is not
@@ -717,8 +745,8 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     const record = logRecord(entry, recordIds);
     const at = finite(entry.now);
     if (record === null) continue;
-    if (entry.accepted && seen.has(`${record}@${at}@${entry.type}`)) continue;
-    const wording = EVENT_HISTORY_TABLE[entry.type]?.plainWording ?? entry.type;
+    if (entry.accepted && seen.has(`${record}@${at}@${dedupeType(entry.type, entry.role)}`)) continue;
+    const wording = eventHistoryWording(entry.type, entry.role, wardOfRecord(record)) ?? entry.type;
     const action = entry.accepted ? wording : `${wording} (refused)`;
     drafts.push({
       draft: {

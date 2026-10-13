@@ -21,6 +21,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
   Avatar,
   Button,
@@ -1064,6 +1065,8 @@ const TIME_WORD: Record<CensusGroup, string> = {
  */
 export function PhoneCensus(props: PhoneCensusProps) {
   const [allShown, setAllShown] = useState<ReadonlySet<CensusGroup>>(() => new Set());
+  // A2-20: initials plus UMRN when Discreet names on phone is on.
+  const nameFor = usePatientNameDisplay();
   const openLink = useRef<HTMLAnchorElement>(null);
   const { rows, searching, highlight } = props;
   const open = props.expandedKey === null ? null : (rows.find((row) => row.key === props.expandedKey) ?? null);
@@ -1171,7 +1174,7 @@ export function PhoneCensus(props: PhoneCensusProps) {
                           <span className={styles.phoneText}>
                             <b className={styles.phoneName}>
                               <span className={styles.truncate}>
-                                <Marked text={row.name} needle={props.needle} />
+                                <Marked text={nameFor(row.name, row.umrn)} needle={props.needle} />
                               </span>
                               {row.confidential ? <span className={styles.restricted}>Restricted</span> : null}
                             </b>
