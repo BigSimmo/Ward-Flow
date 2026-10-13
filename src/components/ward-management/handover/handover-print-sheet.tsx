@@ -171,6 +171,7 @@ function paginateExtra(streams: ExtraEntry[][], orientation: PrintOptions["orien
 const GROUP_TONE: Record<HandoverGroupId, WfTone> = {
   act: "danger",
   due: "warning",
+  rel: "warning",
   bed: "neutral",
   acc: "neutral",
   mov: "info",

@@ -408,7 +408,7 @@ function RequestedBedFacts({ request, now }: { request: BedReleaseAuditRequest; 
   }
   return <FactList facts={facts} />;
 }
-function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; now: Instant }) {
+export function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; now: Instant }) {
   switch (event.category) {
     case "referral":
     case "override":
@@ -509,6 +509,10 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
               "Expiry typed",
               event.details.dueAt === null ? "Not recorded" : formatInstantWithDay(event.details.dueAt, now),
             ],
+            // Owner ruling 2026-10-13 22:13 AWST (PR #279): a continuation names the form it continued.
+            ...(event.details.operation === "continuation-recorded"
+              ? ([["Form continued", display(event.details.formCode)]] as [string, string][])
+              : []),
           ]}
         />
       );

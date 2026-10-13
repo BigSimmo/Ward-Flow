@@ -95,6 +95,7 @@ type PhoneTab = "pts" | "beds" | "hist";
 const GROUP_TONE: Record<string, WfTone> = {
   act: "danger",
   due: "warning",
+  rel: "warning",
   bed: "neutral",
   acc: "neutral",
   mov: "info",
