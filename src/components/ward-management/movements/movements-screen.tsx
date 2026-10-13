@@ -1,5 +1,6 @@
 "use client";
 
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import Link from "next/link";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -104,8 +105,9 @@ function meaningfulBlocker(movement: Movement): string | null {
  */
 function legalActNowReason(movement: Movement, now: Instant): string | null {
   const form = movement.legalForm;
-  if (form?.dueAt === undefined) return null;
-  const state = clockState(form.dueAt, now);
+  const dueAt = currentLegalDueAt(movement);
+  if (!form || dueAt === undefined) return null;
+  const state = clockState(dueAt, now);
   if (state === "breached") return `Form ${form.code} · legal due time passed`;
   if (state === "critical") return `Form ${form.code} · expiry approaching`;
   return null;

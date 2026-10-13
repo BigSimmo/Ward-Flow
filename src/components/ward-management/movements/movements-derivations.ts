@@ -10,6 +10,7 @@
 // second; nothing here re-derives what a stage or a transport leg IS — both borrow the real
 // vocabulary (`stageCopy`, `transportLeg`) so this screen can never quietly disagree with the
 // screens it replaces about what a given patient's state actually is.
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { clockState, dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -72,7 +73,8 @@ export type JourneyStage = {
 /** 2 when the legal authority is already breached, 1 when it runs out within the hour, else 0. A
  *  breached order outranks one with time left (audit 13 Oct 2026: exactly 60m left now counts). */
 function legalUrgencyRank(movement: Movement, now: Instant): number {
-  const dueAt = movement.legalForm?.dueAt;
+  // A form that ended at the examination or on arrival is history, not a live deadline (S-6).
+  const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) return 0;
   const state = clockState(dueAt, now);
   return state === "breached" ? 2 : state === "critical" ? 1 : 0;
