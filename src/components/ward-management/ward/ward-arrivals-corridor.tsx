@@ -61,6 +61,7 @@ export function pullBlockedReason(movement: Movement, unit: Unit, who?: string):
 interface WardArrivalsCorridorProps {
   unit: Unit;
   accepted: Movement[];
+  heldAfterStop?: Movement[];
   now: Instant;
   resolvePatientIdentity: (movementOrAdmission: Parameters<typeof resolveSubjectPatient>[0]) => ResolvedPatientInfo;
   releaseOpenFor: string | null | undefined;
