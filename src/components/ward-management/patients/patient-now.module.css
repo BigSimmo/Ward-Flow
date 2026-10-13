@@ -848,8 +848,10 @@
   font-size: var(--t-0);
   font-weight: 600;
   border-radius: var(--r2);
-  background: var(--accent);
-  color: var(--surface);
+  /* Audit A4-5: the booking sheet portals outside the page's token scope, where --accent is not
+     defined, so this read as white on nothing. Fall back to the shared primary's tokens. */
+  background: var(--accent, var(--wf-pri-2));
+  color: var(--wf-on-accent, #ffffff);
   border: none;
   cursor: pointer;
   transition: opacity 0.12s ease;
@@ -868,9 +870,9 @@
   font-size: var(--t-0);
   font-weight: 600;
   border-radius: var(--r2);
-  background: var(--surface-2);
-  color: var(--ink);
-  border: 1px solid var(--line);
+  background: var(--surface-2, var(--wf-surface-2));
+  color: var(--ink, var(--wf-ink-1));
+  border: 1px solid var(--line-strong, var(--wf-line-2));
   cursor: pointer;
 }
 
@@ -949,18 +951,40 @@
 .transportSelect {
   min-height: 32px;
   padding: 4px 8px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-strong, var(--wf-line-2));
   border-radius: var(--r2);
-  background: var(--surface);
-  color: var(--ink);
+  background: var(--surface, var(--wf-surface-1));
+  color: var(--ink, var(--wf-ink-1));
   font-family: inherit;
   font-size: var(--t-0);
 }
 
 .transportInput:focus,
 .transportSelect:focus {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent, var(--wf-accent));
   outline-offset: 1px;
+}
+
+/* Audit A4-6, A4-2, A4-7: a note under a booking field. Words stay neutral; the glyph carries tone. */
+.transportFieldNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--t-0);
+  color: var(--muted, var(--wf-ink-2));
+  line-height: 1.4;
+}
+
+.transportLegalRead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink, var(--wf-ink-1));
 }
 
 .transportCheckboxRow {

@@ -178,10 +178,20 @@ describe("officer screen's empty state names both exclusions isOfficerJob applie
       if (selectButton) fireEvent.click(selectButton);
     }
 
+    // Audit A4-11 / S-2 (13 Oct 2026): Collected with no Form 4A or no fit to travel asks for a
+    // recorded reason first; it never blocks. Answer it the way an officer would.
+    function confirmCollectCheckIfAsked() {
+      const reason = screen.queryByTestId("ward-officer-collect-check-reason");
+      if (!reason) return;
+      fireEvent.change(reason.querySelector("select") ?? reason, { target: { value: "paper_sighted" } });
+      fireEvent.click(screen.getByRole("button", { name: "Collected, record reason" }));
+    }
+
     for (const id of acceptedOnly) {
       selectIfNeeded(id);
       fireEvent.click(screen.getByTestId(`ward-officer-enroute-${id}`));
       fireEvent.click(screen.getByTestId(`ward-officer-collect-${id}`));
+      confirmCollectCheckIfAsked();
       fireEvent.click(screen.getByTestId(`ward-officer-arrive-${id}`));
     }
     for (const id of collectedOnly) {

@@ -393,21 +393,38 @@ function backgroundLine(row: HandoverRow, now: Instant): string {
   return row.escalated ? "Escalated to state desk" : "No ward asked yet";
 }
 
-function recommendationLine(row: HandoverRow, now: Instant): string {
-  const due = dueLong(row, now);
-  if (row.stage === "moving") {
-    return `${row.ownerShort} receives, ${row.transport?.leg === "Collected" ? "collected" : "transport accepted"}${
-      row.transport ? ` by ${row.transport.provider}` : ""
-    }`;
+/**
+ * Audit A4-26: the Situation from the journey's latest state, never the bare stage label, which
+ * went stale ("Ward reviewing" with every ward declined, "Bed pulled" after the pull expired).
+ */
+export function situationState(row: HandoverRow, now: Instant): string {
+  const to = row.to?.name ?? "the ward";
+  if (row.stage === "pulled") {
+    if (row.pullExpiresAt === undefined) return `Bed pulled at ${to}`;
+    return row.pullExpiresAt <= now
+      ? `Bed pull at ${to} expired ${durMinutes(now - row.pullExpiresAt)} ago`
+      : `Bed held at ${to} until ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
-  if (row.stage === "handover_ready")
-    return `${row.ownerShort} hands over on arrival${due ? `, ${due.toLowerCase()}` : ""}`;
-  return `${row.ownerShort}, ${STAGE_LABEL[row.stage].toLowerCase()}${due ? `, ${due.charAt(0).toLowerCase()}${due.slice(1)}` : ""}`;
+  if (row.stage === "placement_requested" || row.stage === "destination_review") return destinationText(row);
+  if (row.stage === "accepted_awaiting_bed") return `Accepted by ${to}, awaiting a bed`;
+  if (row.stage === "moving")
+    return row.transport?.leg === "Collected" ? `Collected, on the way to ${to}` : `Awaiting collection for ${to}`;
+  if (row.stage === "handover_ready") return `Ready to hand over to ${to}`;
+  return STAGE_LABEL[row.stage];
+}
+
+/** Audit A4-26: the Recommendation is the owner and the one next step, from the same rule as the sheet. */
+function recommendationLine(row: HandoverRow, now: Instant, readyBeds: (unitId: string) => number): string {
+  return `${row.ownerShort}: ${nextStep(row, now, now, readyBeds).text}`;
 }
 
 export type IsbarLine = { key: "I" | "S" | "B" | "A" | "R"; label: string; text: string };
 
-export function isbarLines(row: HandoverRow, now: Instant): IsbarLine[] {
+export function isbarLines(
+  row: HandoverRow,
+  now: Instant,
+  readyBeds: (unitId: string) => number = () => 0,
+): IsbarLine[] {
   const form =
     row.formCode && row.formDueAt !== undefined
       ? `, Form ${row.formCode} due ${formatInstantWithDay(row.formDueAt, now)} as typed`
@@ -419,16 +436,19 @@ export function isbarLines(row: HandoverRow, now: Instant): IsbarLine[] {
     {
       key: "S",
       label: "Situation",
-      text: `${row.edShort} since ${formatInstantWithDay(row.openedAt, now)}, ${STAGE_LABEL[row.stage]}`,
+      text: `${row.edShort} since ${formatInstantWithDay(row.openedAt, now)}, ${situationState(row, now)}`,
     },
     { key: "B", label: "Background", text: backgroundLine(row, now) },
     { key: "A", label: "Assessment", text: `${obsLong(row)}${form}` },
-    { key: "R", label: "Recommendation", text: recommendationLine(row, now) },
+    { key: "R", label: "Recommendation", text: recommendationLine(row, now, readyBeds) },
   ];
 }
 
-export function isbarText(row: HandoverRow, now: Instant): string {
-  return [`${row.name} ${row.umrn}`, ...isbarLines(row, now).map((line) => `${line.label}: ${line.text}`)].join("\n");
+export function isbarText(row: HandoverRow, now: Instant, readyBeds: (unitId: string) => number = () => 0): string {
+  return [
+    `${row.name} ${row.umrn}`,
+    ...isbarLines(row, now, readyBeds).map((line) => `${line.label}: ${line.text}`),
+  ].join("\n");
 }
 
 /* ------------------------------------------------------------------ highlight, sort, group */

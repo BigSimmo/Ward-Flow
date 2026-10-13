@@ -63,6 +63,11 @@ export interface PatientStatus {
   cells: StatusCell[];
   /** A checklist in place of the three cells (absent without leave). */
   rows?: StatusRow[];
+  /**
+   * Audit A4-9: the next step once every gate is clear (Mark handover ready). It takes the page's
+   * one primary only when no gate holds it, and on a phone it is pinned in the action bar.
+   */
+  next?: StatusAction;
 }
 
 /** One checklist row: done or not, when, and at most one action. */
@@ -105,6 +110,8 @@ export interface PatientStatusContext {
   onEndCto: () => void;
   /** Why the next forward step would be refused (the held ward no longer suits), or undefined. */
   handoverRefusal?: string;
+  /** Audit A4-9: records handover ready once every gate is clear. */
+  onHandoverReady?: () => void;
   /** Feature 11: why the route's role may not dispatch this event ("Ward only"), or undefined. */
   roleLimit?: (eventType: WardFlowEventType) => string | undefined;
   /** Decision 2: the accepted ward's page, linked from the Bed cell's value. */
@@ -249,6 +256,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
     ...status,
     cells: status.cells.map((cell) => ({ ...cell, action: limited(cell.action) })),
     rows: status.rows?.map((row) => ({ ...row, action: limited(row.action) })),
+    next: limited(status.next),
   };
 }
 
@@ -330,7 +338,18 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       status.tone = "danger";
       status.verdict = "Cannot move";
       status.meta = ctx.handoverRefusal;
-    } else if (status.meter && status.meter.clear === status.meter.of) status.verdict = "Ready to move";
+    } else if (status.meter && status.meter.clear === status.meter.of) {
+      status.verdict = "Ready to move";
+      if (movement.stage === "pulled" && ctx.onHandoverReady) {
+        const onHandoverReady = ctx.onHandoverReady;
+        status.next = {
+          kind: "button",
+          label: "Mark handover ready",
+          onClick: () => onHandoverReady(),
+          event: "HANDOVER_READY",
+        };
+      }
+    }
     return status;
   }
 
@@ -779,7 +798,9 @@ export function PatientStatusCard({
    */
   const isPhone = useIsPhone();
   const pinned = isPhone
-    ? (status.rows?.find((r) => r.key === primaryKey)?.action ?? status.cells.find((c) => c.key === primaryKey)?.action)
+    ? (status.rows?.find((r) => r.key === primaryKey)?.action ??
+      status.cells.find((c) => c.key === primaryKey)?.action ??
+      (primaryKey === undefined ? status.next : undefined))
     : undefined;
   const inList = (key: string) => !(pinned && key === primaryKey);
   /* v10 Patient, phone: outside a placement the card has no verdict row unless it counts steps

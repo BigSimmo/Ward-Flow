@@ -248,7 +248,7 @@ export function HandoverFlowPanel({
           </Button>
         </span>
         <dl className={styles.isbar}>
-          {isbarLines(row, now).map((line) => (
+          {isbarLines(row, now, ctx.readyBeds).map((line) => (
             <div key={line.key}>
               <dt title={line.label}>{line.key}</dt>
               <dd title={line.text}>{line.text}</dd>
