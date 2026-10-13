@@ -407,9 +407,6 @@
 .colNumber {
   width: 22%;
 }
-.colUntil {
-  width: 21%;
-}
 .colActions {
   width: 88px;
 }
@@ -1517,24 +1514,6 @@
   flex: 0 0 auto;
   min-height: 44px;
   border-radius: var(--wf-r-pill);
-}
-
-.phoneAction {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 14px 0 12px;
-  border: 1px solid var(--wf-line-2);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.phoneAction:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
 }
 
 /* The directory tabs stay under the header while the list scrolls (v10 phone). */

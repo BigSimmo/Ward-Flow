@@ -495,7 +495,7 @@ export function DisplayPane({
 export const HANDOVER_SHEET_SECTIONS = [
   "Act now",
   "Due by the handover",
-  "Waiting for a bed",
+  "Finding a ward",
   "Accepted, bed not ready",
   "Moving",
   "Beds by ward",

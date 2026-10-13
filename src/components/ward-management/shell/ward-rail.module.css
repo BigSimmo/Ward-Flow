@@ -1775,12 +1775,6 @@
   color: var(--wf-ink-off);
 }
 
-.sheetUtility {
-  margin-top: 0.75rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--wf-line);
-}
-
 .sheetUtilityLink {
   display: flex;
   align-items: center;
@@ -1922,10 +1916,6 @@
 /* ── Desktop: the open rail and the closed strip (collapsed rail board) ────────────────────── */
 
 @media (min-width: 1001px) {
-  .rail[data-rail="open"] .compactExtra {
-    display: none;
-  }
-
   /* Appearance and Settings share one row in the open rail (8 October 2026). */
   .rail[data-rail="open"] .utilityLinks {
     flex-direction: row;
@@ -1935,10 +1925,6 @@
   .rail[data-rail="open"] .utilityLinks > * {
     flex: 1 1 0;
     min-width: 0;
-  }
-
-  .rail[data-rail="open"] .railGroup:not(:has(li:not(.compactExtra))) {
-    display: none;
   }
 
   .rail[data-rail="closed"] {

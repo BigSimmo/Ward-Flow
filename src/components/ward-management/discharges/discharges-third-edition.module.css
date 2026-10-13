@@ -142,21 +142,6 @@
   outline-offset: 2px;
 }
 
-.popCount {
-  padding: 1px 5px;
-  border-radius: var(--wf-r-xs);
-  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-}
-
-.populationSwitch button[aria-pressed="true"] .popCount {
-  background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
-}
-
-.planActionWrapper {
-  position: relative;
-}
-
 .planActionDropdown {
   position: absolute;
   top: calc(100% + var(--wf-s-2));
@@ -173,12 +158,6 @@
   box-shadow: var(--wf-e2);
   color: var(--wf-ink-1);
   --wf-focus-ring: var(--wf-accent-strong);
-}
-
-.planActionNote {
-  margin: 0;
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 /* Filter bar. */
@@ -218,18 +197,6 @@
 }
 
 .clearButton {
-  flex: none;
-}
-
-.quickFilterBar {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.quickChip {
   flex: none;
 }
 
@@ -412,40 +379,6 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
-.statusFilters {
-  display: flex;
-  align-items: stretch;
-  gap: var(--wf-s-4);
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.statusFilters button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 3rem;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.statusFilters button:hover {
-  color: var(--wf-ink-1);
-}
-
-.statusFilters button[aria-pressed="true"] {
-  color: var(--wf-ink-1);
-  font-weight: 600;
-  box-shadow: inset 0 -2px 0 var(--wf-ink-1);
-}
-
-.statusFilters button:focus-visible,
 .drawerTab:focus-visible,
 .recordButton:focus-visible,
 .restingItem:focus-visible {
@@ -453,7 +386,6 @@
   outline-offset: 2px;
 }
 
-.tabCountBadge,
 .groupCount {
   display: inline-block;
   min-width: 1.25rem;
@@ -816,29 +748,25 @@
   margin: 0;
 }
 
-.detailStats > div,
-.freeingStats > div {
+.detailStats > div {
   display: flex;
   flex-direction: column-reverse;
   gap: 2px;
   min-width: 0;
 }
 
-.detailStats > div + div,
-.freeingStats > div + div {
+.detailStats > div + div {
   padding-left: var(--wf-s-4);
   border-left: 1px solid var(--wf-line);
 }
 
-.detailStats dt,
-.freeingStats dt {
+.detailStats dt {
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   white-space: nowrap;
 }
 
-.detailStats dd,
-.freeingStats dd {
+.detailStats dd {
   margin: 0;
   font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
   white-space: nowrap;
@@ -1084,25 +1012,6 @@
   border-top: 1px solid var(--wf-line);
 }
 
-.freeingCard {
-  min-width: 0;
-}
-
-.freeingBody {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  padding: 0 var(--wf-s-4) var(--wf-s-4);
-}
-
-.freeingStats {
-  display: flex;
-  gap: var(--wf-s-4);
-  margin: 0;
-  padding-top: var(--wf-s-3);
-  border-top: 1px solid var(--wf-line);
-}
-
 /* Follow-up and care-journey sections inside the dossier tab. */
 .drawerSection {
   display: flex;
@@ -1230,11 +1139,9 @@
 @media (max-width: 62.5rem) {
   .kpi,
   .populationSwitch button,
-  .statusFilters button,
   .drawerTab,
   .recordButton,
   .restingItem,
-  .quickChip,
   .quietButton,
   .viewSwitch button {
     min-height: var(--ward-tap, 3rem);
@@ -1320,12 +1227,10 @@
 @media (forced-colors: active) {
   .detail,
   .barrierBox,
-  .tabCountBadge,
   .groupCount {
     border-color: CanvasText;
   }
 
-  .statusFilters button[aria-pressed="true"],
   .drawerTabActive {
     text-decoration: underline;
   }
@@ -1342,12 +1247,10 @@
   .filterCard,
   .flowCharts,
   .heroTools button,
-  .planActionWrapper,
   .viewSwitch,
   .highlightNote,
   .rightRail,
   .scrim,
-  .statusFilters,
   .shownCountBadge {
     display: none !important;
   }
@@ -1493,29 +1396,8 @@
     min-height: var(--spacing-tap, 3rem);
   }
 
-  .quickFilterBar {
-    display: none;
-  }
-
   .panelHeader {
     padding: 0 var(--wf-s-3);
-  }
-
-  /* Five status tabs fit the width once their counts move off screen; the counts stay in the
-   * accessible name and show on the hero and the group headings. */
-  .statusFilters {
-    flex: 1 1 auto;
-    justify-content: space-between;
-    gap: var(--wf-s-2);
-  }
-
-  .statusFilters .tabCountBadge {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 
   /* Row card: place and stage share the top line, the timing runs underneath. */
@@ -1613,11 +1495,6 @@
 }
 
 /* Narrow phones (360px): the five status tabs still fit on one line. */
-@media (max-width: 24rem) {
-  .statusFilters button {
-    font-size: var(--wf-fs-12);
-  }
-}
 
 /* ── v10 Discharges ─────────────────────────────────────────────────────────────────────────
  * Hero chips are pills in one row that highlight (never filter). Highlighted rows keep an accent
@@ -1949,7 +1826,6 @@
     border: 0;
   }
 
-  .register .statusFilters,
   .register .viewSwitch,
   .register .shownCountBadge {
     display: none;

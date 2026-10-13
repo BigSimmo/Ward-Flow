@@ -147,11 +147,6 @@
   white-space: nowrap;
 }
 
-.onHeroPreview {
-  border-color: var(--wf-hero-ink-2);
-  color: var(--wf-hero-ink-2);
-}
-
 .eyebrow {
   color: var(--wf-ink-2);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
@@ -1075,23 +1070,6 @@
 
 .modalLead {
   margin: 0;
-}
-
-.modalFields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-3);
-}
-
-.modalField {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-1);
-  min-width: 0;
-}
-
-.modalLabel {
-  font-weight: 600;
 }
 
 .checklist {

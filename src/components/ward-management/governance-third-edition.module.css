@@ -31,16 +31,14 @@
 }
 
 .registerCard,
-.detailCard,
-.capturedCard {
+.detailCard {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
 /* Side by side cards sit flush at equal heights (v10): the register stretches to the rail. */
-.govLayout > .registerCard,
-.govLayout > .capturedCard {
+.govLayout > .registerCard {
   align-self: stretch;
 }
 
@@ -110,35 +108,11 @@
   border-radius: var(--wf-r-sm);
 }
 
-.typeCell {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  max-width: 100%;
-  min-width: 0;
-}
-
-.typeTile {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-sm);
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-}
-
 .clip {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.quietCell {
-  color: var(--wf-ink-2);
 }
 
 .statusText {
@@ -159,21 +133,6 @@
 .quietText {
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.typeBlock {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  border-top: 1px solid var(--wf-line);
-}
-
-.typeHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  flex-wrap: wrap;
 }
 
 .blockTitle {
@@ -271,46 +230,6 @@
 .reasonText {
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.reviewForm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  min-width: 0;
-}
-
-.verdictSet {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.verdictSet legend {
-  padding: 0;
-  margin-bottom: var(--wf-s-2);
-}
-
-.verdictRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-1) var(--wf-s-4);
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface-2);
-}
-
-.inlineError {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--wf-ink-1);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 .formActions {
@@ -443,13 +362,6 @@
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   white-space: nowrap;
-}
-
-.capturedGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 18.75rem);
-  min-width: 0;
-  border-top: 1px solid var(--wf-line);
 }
 
 .capturedList {
@@ -829,10 +741,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .capturedGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .recordPane {
     border-left: 0;
     border-top: 1px solid var(--wf-line);
@@ -860,7 +768,6 @@
 
 @media print {
   .heroActions,
-  .reviewForm,
   .reviewActions,
   .filterRow,
   .modal,
@@ -1014,44 +921,6 @@
   margin: 0;
   font: 600 var(--wf-fs-15) / 1.2 var(--wf-mono);
   font-variant-numeric: tabular-nums;
-}
-
-.restNext {
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  list-style: none;
-}
-
-.restNext > li + li {
-  border-top: 1px solid var(--wf-line);
-}
-
-.restNextRow {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-height: 44px;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 0;
-  background: none;
-  color: var(--wf-ink-1);
-  font: inherit;
-  font-size: var(--wf-fs-13);
-  text-align: left;
-  cursor: pointer;
-}
-
-.restNextRow:hover {
-  background: var(--wf-hover);
-}
-
-.restNextRow:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
 }
 
 .restClear {

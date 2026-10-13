@@ -7,11 +7,6 @@
   padding: var(--wf-s-3) var(--wf-s-4);
 }
 
-.stripScroll {
-  max-width: 100%;
-  overflow-x: auto;
-}
-
 .strip {
   width: 100%;
   border-collapse: collapse;

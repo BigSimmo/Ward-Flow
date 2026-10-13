@@ -111,10 +111,6 @@
   white-space: nowrap;
 }
 
-.homeLink {
-  flex: none;
-}
-
 /* The plan: pods side by side across a corridor on a mixed ward. */
 .plan {
   display: grid;

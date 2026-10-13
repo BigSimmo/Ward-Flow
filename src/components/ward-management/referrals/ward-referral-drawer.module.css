@@ -113,8 +113,7 @@
 
 /* Option groups are equal columns that never wrap: a long label shortens, it never breaks the row. */
 .categoryTrack,
-.segmented,
-.segmentedFull {
+.segmented {
   display: grid;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
@@ -1198,11 +1197,6 @@
     float: none;
     width: 100%;
   }
-}
-
-.segmentedFull {
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .tierGrid {

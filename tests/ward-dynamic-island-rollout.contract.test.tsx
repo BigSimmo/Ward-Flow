@@ -1741,7 +1741,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
     // Refined Handover A (9 Oct 2026): the hero counts are the meeting-order groups.
     expect(source).toContain("ward-handover-kpi-strip");
     expect(source).toContain("Act now");
-    expect(source).toContain("Waiting for a bed");
+    expect(source).toContain("Finding a ward");
     expect(source).toContain("Moving");
   });
 

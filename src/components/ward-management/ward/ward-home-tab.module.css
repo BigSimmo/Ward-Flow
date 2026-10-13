@@ -398,13 +398,6 @@
   white-space: nowrap;
 }
 
-.keyTally {
-  margin-left: auto;
-  font-family: var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 .bedKey > .keyLink {
   margin-left: auto;
 }
@@ -1004,10 +997,6 @@ label.todoMain:has(.todoTick:focus-visible) {
 
   .keyItems {
     display: none;
-  }
-
-  .keyTally {
-    margin-left: 0;
   }
 
   .todoGrid {

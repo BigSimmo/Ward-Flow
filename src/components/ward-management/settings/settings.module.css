@@ -76,12 +76,6 @@
   flex: 0 0 auto;
 }
 
-/* Words on the band are set in the body face; mono stays for numbers and times. */
-.wordStat > span:first-child > span:first-child {
-  font-family: var(--wf-font);
-  letter-spacing: -0.01em;
-}
-
 .tabs {
   border-radius: var(--wf-r-pill);
 }
