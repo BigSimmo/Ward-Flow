@@ -1272,7 +1272,11 @@ test.describe("@mockup Role switcher — the loop", () => {
 
     // --- Step 10b: Ward — confirm arrival. Audit round 2 (A4-16, Josh 13 Oct 2026): the officer's
     // Delivered ends the transport leg only and leaves the movement open; the receiving ward closes
-    // it by confirming arrival. ---
+    // it by confirming arrival. The Patient in focus ward chips show only from a coordinator page,
+    // so the switch goes through the coordinator, as step 4 did. ---
+    await switchTo("Flow coordinator");
+    await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
+    await page.waitForLoadState("networkidle");
     await switchTo("Dabakarn");
     await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
