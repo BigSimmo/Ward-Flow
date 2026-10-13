@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ExternalLink } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 import { Button, StatusGlyph, buttonClass, durMinutes, type WfTone } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -256,7 +256,7 @@ function BannerBody({
 
           <Link href={WARD_ALERTS_HREF} className={buttonClass({ size: "sm", variant: "ghost" })}>
             {more > 0 ? `Alerts, ${more} more` : "Alerts"}
-            <ExternalLink size={14} aria-hidden="true" />
+            <ChevronRight size={14} aria-hidden="true" />
           </Link>
         </div>
       </div>

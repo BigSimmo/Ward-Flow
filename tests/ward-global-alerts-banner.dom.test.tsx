@@ -32,6 +32,10 @@ describe("Global alert banner, Pull now on the asked ward's desk", () => {
     expect(banner).toHaveAttribute("data-tone", "act_now");
     expect(banner).toHaveAttribute("role", "alert");
     expect(banner).toHaveTextContent("Pull now");
+    // Ops-23: the in-app Alerts link carries a chevron, never an external-link glyph.
+    const alertsLink = within(banner).getByRole("link", { name: /^Alerts/u });
+    expect(alertsLink.querySelector(".lucide-chevron-right")).not.toBeNull();
+    expect(alertsLink.querySelector(".lucide-external-link")).toBeNull();
 
     fireEvent.click(within(banner).getByRole("button", { name: "Can't" }));
     fireEvent.click(within(banner).getByRole("button", { name: "No suitable bed" }));
