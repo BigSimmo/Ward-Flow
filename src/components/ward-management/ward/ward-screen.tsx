@@ -2787,25 +2787,23 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           aria-labelledby="tabBtn-return"
           data-active={activeTab === "return"}
         >
-          {activeTab === "return" ? (
-            <WardDecisionsCockpit
-              unit={unit}
-              rollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
-              rollupConfirmed={isRollupConfirmedToday}
-              rollupTimeLabel={morningRollupTimeLabel}
-              plannedDischarges={rollupConfirmation?.expectedDischarges ?? releasesCountedToday.length}
-              onConfirmRollup={handleConfirmMorningRollup}
-              staffingFact={`${unit.allocatable.value} allocatable`}
-              intakes={intakeDecisions}
-              departures={departureDecisions}
-              leaves={leaveDecisions}
-              projection={{
-                freeNow: capacity.available,
-                freeBy: capacity.available + readyByShiftEnd,
-                byLabel: formatInstantWithDay(dayShiftEndInstant(now), now),
-              }}
-            />
-          ) : null}
+          <WardDecisionsCockpit
+            unit={unit}
+            rollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
+            rollupConfirmed={isRollupConfirmedToday}
+            rollupTimeLabel={morningRollupTimeLabel}
+            plannedDischarges={rollupConfirmation?.expectedDischarges ?? releasesCountedToday.length}
+            onConfirmRollup={handleConfirmMorningRollup}
+            staffingFact={`${unit.allocatable.value} allocatable`}
+            intakes={intakeDecisions}
+            departures={departureDecisions}
+            leaves={leaveDecisions}
+            projection={{
+              freeNow: capacity.available,
+              freeBy: capacity.available + readyByShiftEnd,
+              byLabel: formatInstantWithDay(dayShiftEndInstant(now), now),
+            }}
+          />
           {/* U3: the page's prototype footer below carries this safety line; it is not repeated here. */}
         </section>
 
@@ -2830,27 +2828,25 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             </button>
             <h2 className={styles.subViewTitle}>All arrivals</h2>
           </div>
-          {activeTab === "coming" ? (
-            <WardArrivalsCorridor
-              unit={unit}
-              onPullPatient={handlePullPatient}
-              accepted={accepted}
-              heldAfterStop={heldAfterStop}
-              now={now}
-              resolvePatientIdentity={resolvePatientIdentity}
-              releaseOpenFor={releaseOpenFor}
-              toggleRelease={toggleRelease}
-              releaseReason={releaseReason}
-              setReleaseReason={setReleaseReason}
-              submitRelease={submitRelease}
-              lastActionRejection={lastActionRejection}
-              dispatch={dispatch}
-              setCheckToken={setCheckToken}
-              priorRejectionCountRef={priorRejectionCountRef}
-              rejections={rejections}
-              overrideReasonForm={overrideReasonForm}
-            />
-          ) : null}
+          <WardArrivalsCorridor
+            unit={unit}
+            onPullPatient={handlePullPatient}
+            accepted={accepted}
+            heldAfterStop={heldAfterStop}
+            now={now}
+            resolvePatientIdentity={resolvePatientIdentity}
+            releaseOpenFor={releaseOpenFor}
+            toggleRelease={toggleRelease}
+            releaseReason={releaseReason}
+            setReleaseReason={setReleaseReason}
+            submitRelease={submitRelease}
+            lastActionRejection={lastActionRejection}
+            dispatch={dispatch}
+            setCheckToken={setCheckToken}
+            priorRejectionCountRef={priorRejectionCountRef}
+            rejections={rejections}
+            overrideReasonForm={overrideReasonForm}
+          />
         </section>
 
         {/* ───────── TAB 3: ON THE WAY OUT ───────── */}
@@ -2874,18 +2870,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             </button>
             <h2 className={styles.subViewTitle}>All discharges</h2>
           </div>
-          {activeTab === "out" ? (
-            <WardDischargesMatrix
-              unit={unit}
-              releasesCountedToday={releasesCountedToday}
-              unitLeaveBeds={unitLeaveBeds}
-              blockedReleases={blockedReleases}
-              now={now}
-              confirmBedRelease={confirmBedRelease}
-              clearBedReleaseBlock={clearBedReleaseBlock}
-              endLeaveBed={endLeaveBed}
-            />
-          ) : null}
+          <WardDischargesMatrix
+            unit={unit}
+            releasesCountedToday={releasesCountedToday}
+            unitLeaveBeds={unitLeaveBeds}
+            blockedReleases={blockedReleases}
+            now={now}
+            confirmBedRelease={confirmBedRelease}
+            clearBedReleaseBlock={clearBedReleaseBlock}
+            endLeaveBed={endLeaveBed}
+          />
         </section>
 
         {/* ───────── TAB 4: BED BOARD & ROSTER ───────── */}
@@ -2909,17 +2903,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             </button>
             <h2 className={styles.subViewTitle}>Full bed list</h2>
           </div>
-          {activeTab === "beds" ? (
-            <WardBedsMatrix
-              unit={unit}
-              bedsList={bedsList}
-              selectedBed={selectedBed}
-              setSelectedBed={setSelectedBed}
-              selectedPod={selectedPod}
-              setSelectedPod={setSelectedPod}
-              isMixed={isMixed}
-            />
-          ) : null}
+          <WardBedsMatrix
+            unit={unit}
+            bedsList={bedsList}
+            selectedBed={selectedBed}
+            setSelectedBed={setSelectedBed}
+            selectedPod={selectedPod}
+            setSelectedPod={setSelectedPod}
+            isMixed={isMixed}
+          />
         </section>
 
         {/* ───────── BED TELEMETRY & CLINICAL DOSSIER DRAWER ───────── */}
