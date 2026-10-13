@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { azInvocation } from "./az-command.mjs";
+import { azInvocation, azResponse } from "./az-command.mjs";
 
 const [mode, settingsPath] = process.argv.slice(2);
 if (!["inspect", "provision", "configure", "verify"].includes(mode) || !settingsPath)
@@ -30,7 +30,7 @@ if (new URL(config.frontendOrigin).origin !== config.frontendOrigin || !config.f
   throw new Error("An exact HTTPS frontend origin is required");
 const apiClientId = "9b7b160d-9bc7-4712-b748-17ff3e70b706"; // gitleaks:allow -- public Entra client ID, not a credential
 
-function az(args, json = true) {
+function az(args, json = true, shape = "object") {
   const call = azInvocation([
     ...args,
     "--subscription",
@@ -38,18 +38,13 @@ function az(args, json = true) {
     ...(json ? ["--output", "json"] : ["--output", "none"]),
   ]);
   const result = spawnSync(call.command, call.args, call.options);
-  if (result.error || result.status !== 0)
-    throw new Error(
-      `Azure command failed (${args.slice(0, 3).join(" ")}). Use the selected Ward Flow identity and check Azure access. ${result.error?.code ?? ""}`,
-    );
-  return json ? JSON.parse(result.stdout) : null;
+  return azResponse(result, args, json ? shape : "none");
 }
 // Account/ad commands do not accept --subscription; retain the selected identity and verify its tenant.
-function directory(args) {
-  const call = azInvocation([...args, "--output", "json"]);
+function directory(args, shape = "object") {
+  const call = azInvocation([...args, "--output", shape === "none" ? "none" : "json"]);
   const result = spawnSync(call.command, call.args, call.options);
-  if (result.error || result.status !== 0) throw new Error("Azure identity/directory access unavailable");
-  return JSON.parse(result.stdout || "null");
+  return azResponse(result, args, shape, args[0] === "account" ? ["id", "tenantId"] : []);
 }
 const account = directory(["account", "show", "--subscription", config.subscriptionId]);
 if (
@@ -67,7 +62,7 @@ if (
   !["australiaeast", "australiasoutheast"].includes(app.location.toLowerCase().replaceAll(" ", ""))
 )
   throw new Error("Verify the Ward Flow Function's Australian location and managed identity before continuing");
-const candidates = az(["postgres", "flexible-server", "list", "--resource-group", config.resourceGroup]);
+const candidates = az(["postgres", "flexible-server", "list", "--resource-group", config.resourceGroup], true, "array");
 let server = config.serverName
   ? candidates.find((row) => row.name === config.serverName)
   : candidates.length === 1
@@ -93,7 +88,7 @@ if (mode === "provision" && !server) {
     throw new Error(
       "The existing Function has network integration. Reuse its reviewed network or provide a reviewed peering design before adding a new database network",
     );
-  const networks = az(["network", "vnet", "list", "--resource-group", config.resourceGroup]);
+  const networks = az(["network", "vnet", "list", "--resource-group", config.resourceGroup], true, "array");
   if (networks.some((row) => row.name === "vnet-wardflow-dev-aue"))
     throw new Error("An existing Ward Flow network needs inspection before this template may manage it");
   const serverName = config.serverName || "wardflow-dev-pg-aue";
@@ -163,16 +158,20 @@ if (mode === "inspect") process.exit(0);
 if (!server) throw new Error("Provision a verified database first");
 let databaseInventory;
 if (requireExistingDatabase) {
-  databaseInventory = az([
-    "postgres",
-    "flexible-server",
-    "db",
-    "list",
-    "--resource-group",
-    config.resourceGroup,
-    "--server-name",
-    server.name,
-  ]);
+  databaseInventory = az(
+    [
+      "postgres",
+      "flexible-server",
+      "db",
+      "list",
+      "--resource-group",
+      config.resourceGroup,
+      "--server-name",
+      server.name,
+    ],
+    true,
+    "array",
+  );
   if (!databaseInventory.some((row) => row.name === databaseName))
     throw new Error("Existing database required; no replacement database or resources were created");
 }
@@ -269,18 +268,22 @@ if (
   throw new Error(
     "Verify the existing Function host's enforced Ward Flow Entra authentication before enabling shared mode",
   );
-const backendSettings = az([
-  "functionapp",
-  "config",
-  "appsettings",
-  "list",
-  "--resource-group",
-  config.resourceGroup,
-  "--name",
-  config.functionName,
-  "--query",
-  "[?name=='AZURE_TENANT_ID' || name=='WARD_API_AUDIENCE' || name=='AzureWebJobsStorage__accountName'].{name:name,value:value}",
-]);
+const backendSettings = az(
+  [
+    "functionapp",
+    "config",
+    "appsettings",
+    "list",
+    "--resource-group",
+    config.resourceGroup,
+    "--name",
+    config.functionName,
+    "--query",
+    "[?name=='AZURE_TENANT_ID' || name=='WARD_API_AUDIENCE' || name=='AzureWebJobsStorage__accountName'].{name:name,value:value}",
+  ],
+  true,
+  "array",
+);
 const currentSettings = Object.fromEntries(backendSettings.map((row) => [row.name, row.value]));
 if (
   currentSettings.AZURE_TENANT_ID?.toLowerCase() !== config.tenantId.toLowerCase() ||
@@ -301,16 +304,20 @@ if (app.virtualNetworkSubnetId && app.virtualNetworkSubnetId.toLowerCase() !== t
   );
 const databases =
   databaseInventory ??
-  az([
-    "postgres",
-    "flexible-server",
-    "db",
-    "list",
-    "--resource-group",
-    config.resourceGroup,
-    "--server-name",
-    server.name,
-  ]);
+  az(
+    [
+      "postgres",
+      "flexible-server",
+      "db",
+      "list",
+      "--resource-group",
+      config.resourceGroup,
+      "--server-name",
+      server.name,
+    ],
+    true,
+    "array",
+  );
 const wardflowDatabase = databases.find((row) => row.name === databaseName);
 if (!wardflowDatabase)
   az(
@@ -370,15 +377,10 @@ if (!app.virtualNetworkSubnetId)
     false,
   );
 const redirects = [...new Set([...(frontend.spa?.redirectUris ?? []), redirect])];
-directory([
-  "ad",
-  "app",
-  "update",
-  "--id",
-  config.frontendClientId,
-  "--set",
-  `spa.redirectUris=${JSON.stringify(redirects)}`,
-]);
+directory(
+  ["ad", "app", "update", "--id", config.frontendClientId, "--set", `spa.redirectUris=${JSON.stringify(redirects)}`],
+  "none",
+);
 const policy = aad.validation?.defaultAuthorizationPolicy;
 if (policy?.allowedPrincipals?.identities?.length) {
   policy.allowedPrincipals.identities = [

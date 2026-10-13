@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { azInvocation, escapeWindowsArgument } from "./az-command.mjs";
+import { azInvocation, azResponse, escapeWindowsArgument } from "./az-command.mjs";
 
 // Real values azure-setup passes: a JMESPath query with `||`, JSON for `--set`, a path with spaces,
 // and a hostile administrator name that would run `calc` if cmd.exe saw its `&`.
@@ -19,6 +19,72 @@ const hostile = [
   "trailing\\",
   "100%PATH%!x!",
 ];
+
+test("every platform bounds CLI execution and preserves a longer deployment budget", () => {
+  for (const platform of ["linux", "win32"]) {
+    assert.equal(azInvocation(["account", "show"], platform).options.timeout, 120_000);
+    assert.equal(azInvocation(["account", "show"], platform).options.killSignal, "SIGKILL");
+    assert.equal(azInvocation(["deployment", "group", "create"], platform).options.timeout, 600_000);
+  }
+});
+
+test("a hanging local child times out using the shared spawn options", () => {
+  const { options } = azInvocation(["account", "show"]);
+  const started = performance.now();
+  // A small test budget exercises the actual spawnSync timeout without running Azure or waiting
+  // for the production budget. The child has no descendants or external effects.
+  const result = spawnSync(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { ...options, timeout: 100 });
+  assert.equal(result.error?.code, "ETIMEDOUT");
+  assert.ok(performance.now() - started < 5_000, "the hanging child must not hold the caller indefinitely");
+  assert.throws(
+    () => azResponse(result, ["account", "show"]),
+    /timed out; the provider operation may still be running/,
+  );
+});
+
+test("process failure paths are explicit and do not expose provider output", () => {
+  for (const [failure, reason] of [
+    [{ error: { code: "ETIMEDOUT" } }, /timed out/],
+    [{ error: { code: "ENOENT" } }, /execution error ENOENT/],
+    [{ signal: "SIGTERM" }, /terminated by signal SIGTERM/],
+    [{ status: null }, /missing exit status/],
+    [{ status: 2 }, /exit status 2/],
+  ]) {
+    assert.throws(
+      () =>
+        azResponse(
+          { status: 0, stdout: "synthetic-sensitive-output", stderr: "synthetic-sensitive-output", ...failure },
+          ["account", "show"],
+        ),
+      (error) => {
+        assert.match(error.message, /Azure command failed \(account show\)/);
+        assert.match(error.message, reason);
+        assert.doesNotMatch(error.message, /synthetic-sensitive-output/);
+        return true;
+      },
+    );
+  }
+});
+
+test("response validation accepts declared shapes and refuses missing directory fields", () => {
+  const result = (stdout) => ({ status: 0, stdout });
+  assert.deepEqual(
+    azResponse(result('{"id":"synthetic","tenantId":"synthetic"}'), ["account", "show"], "object", ["id", "tenantId"]),
+    { id: "synthetic", tenantId: "synthetic" },
+  );
+  assert.deepEqual(azResponse(result("[]"), ["postgres", "flexible-server", "list"], "array"), []);
+  assert.deepEqual(azResponse(result('[{"name":"synthetic"}]'), ["postgres", "flexible-server", "list"], "array"), [
+    { name: "synthetic" },
+  ]);
+  assert.equal(azResponse(result(""), ["functionapp", "cors", "add"], "none"), null);
+  assert.throws(
+    () => azResponse(result('{"id":42}'), ["account", "show"], "object", ["id", "tenantId"]),
+    /missing required string fields/,
+  );
+  for (const output of ["", "  ", "not-json", "null", "[]", "42"]) {
+    assert.throws(() => azResponse(result(output), ["account", "show"]), /Azure response invalid \(account show\)/);
+  }
+});
 
 test("POSIX runs az directly with the argument array unchanged and no shell", () => {
   const call = azInvocation(hostile, "linux");
