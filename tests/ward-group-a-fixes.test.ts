@@ -64,6 +64,8 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         role: "ed",
         now: NOW + 20,
         movementId,
+        // #269: an ED withdrawal must name the originating ED (WF-001 originates at arm-ed).
+        actingPlaceId: state.movements.find((m) => m.id === movementId)!.originEdId,
       });
 
       expect(state.rejections).toHaveLength(0);
@@ -104,6 +106,8 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         role: "ed",
         now: NOW + 10,
         movementId,
+        // #269: an ED withdrawal must name the originating ED (WF-001 originates at arm-ed).
+        actingPlaceId: state.movements.find((m) => m.id === movementId)!.originEdId,
       });
 
       expect(state.rejections).toHaveLength(0);
@@ -505,7 +509,7 @@ describe("handover pullHasLapsed for stopped journeys", () => {
   });
 });
 
-describe("S2-7: RELEASE_AND_REOPEN_SEARCH from accepted_awaiting_bed (owner ruling 2026-10-13 22:13 AWST)", () => {
+describe("S2-7: RELEASE_AND_REOPEN_SEARCH from accepted_awaiting_bed (owner rulings 2026-10-13 22:13 and 2026-10-14 06:24 AWST)", () => {
   it("records an acceptance unwind, not a bed release, and tells the accepting ward", () => {
     let state = seedWardFlowState();
     let movement = state.movements.find((m) => m.stage === "accepted_awaiting_bed" && !m.closure && !m.transport);
@@ -535,12 +539,22 @@ describe("S2-7: RELEASE_AND_REOPEN_SEARCH from accepted_awaiting_bed (owner ruli
     expect(audit?.detail).toBe(`Acceptance withdrawn · ${changeReasonLabels.patient_no_longer_coming}`);
     const added = after.notices.slice(before);
     expect(added.some((n) => n.kind === "bed_pull_released")).toBe(false);
-    expect(added).toHaveLength(1);
-    expect(added[0]).toMatchObject({
-      kind: "acceptance_withdrawn_ward",
-      to: { role: "ward", placeId: acceptedUnitId },
-      about: { movementId: movement.id, unitId: acceptedUnitId },
-    });
+    // Clinical owner ruling, 14 Oct 2026: the ED is ALWAYS notified, as well as the accepting ward.
+    expect(added).toHaveLength(2);
+    expect(added).toContainEqual(
+      expect.objectContaining({
+        kind: "acceptance_withdrawn_referrer",
+        to: { role: "ed", placeId: movement.originEdId },
+        about: { movementId: movement.id, unitId: acceptedUnitId },
+      }),
+    );
+    expect(added).toContainEqual(
+      expect.objectContaining({
+        kind: "acceptance_withdrawn_ward",
+        to: { role: "ward", placeId: acceptedUnitId },
+        about: { movementId: movement.id, unitId: acceptedUnitId },
+      }),
+    );
   });
 
   it("treats a movement stepped back from pulled (bed still reserved) as a bed release", () => {

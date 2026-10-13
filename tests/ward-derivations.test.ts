@@ -525,11 +525,18 @@ describe("destinationNoLongerLawful", () => {
 });
 
 describe("unitCapacity clamping and closed unit protection", () => {
-  it("WF-FIX-10 / A3-14: clamps effectiveEmpty to unit.beds and pins available to 0 for closed or zero-bed units", () => {
+  // Clinical owner ruling, 14 Oct 2026: main's capacity rule stands — Ready = min(allocatable,
+  // empty), not clamped to the nominal bed count — and a closed unit counts as zero capacity.
+  it("WF-FIX-10 / A3-14: keeps main's Ready rule and pins available to 0 for a closed unit", () => {
     const baseUnit = allUnits()[0];
-    const zeroBedUnit = { ...baseUnit, beds: 0, empty: { ...baseUnit.empty, value: 5 } };
+    const zeroBedUnit = {
+      ...baseUnit,
+      beds: 0,
+      empty: { ...baseUnit.empty, value: 5 },
+      allocatable: { ...baseUnit.allocatable, value: 5 },
+    };
     const zeroCap = unitCapacity(zeroBedUnit, []);
-    expect(zeroCap.available).toBe(0);
+    expect(zeroCap.available).toBe(5);
     expect(zeroCap.held).toBe(0);
 
     const closedUnit = { ...baseUnit, isClosed: true } as unknown as typeof baseUnit & { isClosed?: boolean };
@@ -537,7 +544,7 @@ describe("unitCapacity clamping and closed unit protection", () => {
     expect(closedCap.available).toBe(0);
     // A closed ward's empty beds are still physically empty: they move from available to held
     // (not offered) so the five-state grid still partitions unit.beds exactly.
-    expect(closedCap.held).toBe(Math.min(Math.max(0, baseUnit.empty.value), baseUnit.beds));
+    expect(closedCap.held).toBe(Math.max(0, baseUnit.empty.value));
     expect(closedCap.available + closedCap.held + closedCap.blocked + closedCap.occupied).toBe(baseUnit.beds);
 
     const overEmptyUnit = {
@@ -547,6 +554,6 @@ describe("unitCapacity clamping and closed unit protection", () => {
       allocatable: { ...baseUnit.allocatable, value: 15 },
     };
     const overEmptyCap = unitCapacity(overEmptyUnit, []);
-    expect(overEmptyCap.available).toBe(10);
+    expect(overEmptyCap.available).toBe(15);
   });
 });

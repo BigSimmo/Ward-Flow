@@ -17,11 +17,11 @@ describe("#269 qodo review, 13 Oct 2026", () => {
     }
   });
 
-  it("a zero-bed ward adds no projected supply: the forecast equals one without that ward", () => {
+  it("a closed ward adds no projected supply: the forecast equals one without that ward", () => {
     const state = seedWardFlowState();
     const releasing = new Set(state.bedReleases.map((release) => release.unitId));
     const target = state.units.find((unit) => releasing.has(unit.id)) ?? state.units[0]!;
-    const zeroBed = state.units.map((unit) => (unit.id === target.id ? { ...unit, beds: 0 } : unit));
+    const zeroBed = state.units.map((unit) => (unit.id === target.id ? { ...unit, isClosed: true } : unit));
     const without = state.units.filter((unit) => unit.id !== target.id);
     const withZero = bedsForecast(zeroBed, state.bedReleases, state.admissions, state.movements, NOW);
     const withoutWard = bedsForecast(without, state.bedReleases, state.admissions, state.movements, NOW);

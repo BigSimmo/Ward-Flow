@@ -59,7 +59,7 @@ export type BedsForecastHorizon = {
    * has said is coming.
    */
   plannedNotFlagged: number;
-  /** People waiting for a bed now (open journeys not yet pulled into one). */
+  /** People waiting for a bed now (open journeys not yet pulled into one; pulled movements excluded). */
   waitingForBed: number;
   /**
    * Planned admissions (stream D) still booked whose expected arrival falls at or before the end of
@@ -99,9 +99,9 @@ export function bedsForecast(
   now: Instant,
   plannedAdmissions: readonly PlannedAdmission[] = [],
 ): BedsForecast {
-  // The same closure rule as `boundedBedAvailability`: a closed or zero-bed ward supplies nothing,
-  // now or projected (qodo, 13 Oct).
-  const openUnits = units.filter((unit) => !unit.isClosed && unit.beds > 0);
+  // Clinical owner ruling, 14 Oct 2026: main's capacity rule stands, and a closed unit counts as
+  // zero capacity, now or projected.
+  const openUnits = units.filter((unit) => !unit.isClosed);
   const readyNow = openUnits.reduce((sum, unit) => sum + boundedBedAvailability(unit).available, 0);
   const openUnitIds = new Set(openUnits.map((unit) => unit.id));
   const unitIds = new Set(units.map((unit) => unit.id));
@@ -110,9 +110,10 @@ export function bedsForecast(
   const waitingMovements = movements.filter(
     (movement) => isOpen(movement) && STAGES_STILL_NEEDING_A_BED.includes(movement.stage),
   );
-  const waitingForBed = waitingMovements.length;
-  const alreadyPulled = waitingMovements.filter(
-    (movement) => movement.admissionId !== undefined || movement.allocatedBed !== undefined,
+  // Clinical owner ruling, 14 Oct 2026: a movement already pulled into a bed (an admission or an
+  // allocated bed) is left out of the bed-wait count, and so out of `bedsNeeded` too.
+  const waitingForBed = waitingMovements.filter(
+    (movement) => movement.admissionId === undefined && movement.allocatedBed === undefined,
   ).length;
 
   const horizons = BEDS_FORECAST_HORIZON_DAYS.map((days): BedsForecastHorizon => {
@@ -134,7 +135,7 @@ export function bedsForecast(
         !flaggedAdmissionIds.has(admission.id),
     ).length;
     const planned = plannedAdmissionsStillNeedingABed(plannedAdmissions, unitIds, until, waitingMovements).length;
-    const bedsNeeded = Math.max(0, waitingForBed + planned - alreadyPulled);
+    const bedsNeeded = waitingForBed + planned;
     const low = readyNow + confirmed - bedsNeeded;
     const likely = low + expected;
     const high = likely + heldUp + overdue + plannedNotFlagged;

@@ -96,7 +96,8 @@ describe("bedsForecast", () => {
     ];
     const forecast = bedsForecast([unit], releases, [], movements, NOW);
     const day = horizon(forecast, 24);
-    // waitingForBed is 2, but 1 is already pulled/allocated, so bedsNeeded is 2 - 1 = 1
+    // Clinical owner ruling 14 Oct 2026: the pulled/allocated movement is left out of the bed-wait count.
+    expect(day.waitingForBed).toBe(1);
     expect(day.bedsNeeded).toBe(1);
     expect(day.low).toBe(READY + 1 - 1);
   });
@@ -162,7 +163,8 @@ describe("bedsForecast", () => {
   });
 
   it.each([
-    { beds: 4, empty: 8, allocatable: 10, ready: 4 },
+    // Clinical owner ruling 14 Oct 2026: main's R-B-09 rule, min(allocatable, empty), unclamped.
+    { beds: 4, empty: 8, allocatable: 10, ready: 8 },
     { beds: 8, empty: 3, allocatable: 10, ready: 3 },
     { beds: 8, empty: 6, allocatable: 2, ready: 2 },
   ])("bounds Ready by physical, empty and allocatable capacity ($ready)", ({ beds, empty, allocatable, ready }) => {
