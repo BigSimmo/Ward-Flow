@@ -501,14 +501,22 @@ export function ReferralMatchView({
     (candidate) => candidate.destination.kind === "community_team",
   );
   const senderRole = referralSenderRole(referral);
-  const senderLabel = senderRole === "ed" ? "The referring emergency department" : "The referring community team";
+  const senderLabel =
+    senderRole === "ed"
+      ? "The referring emergency department"
+      : senderRole === "ward"
+        ? "The referring ward"
+        : "The referring community team";
   function handleWholeWithdraw() {
     priorRejectionCountRef.current = rejections.length;
+    const bySender = withdrawRecorder === "sender";
     dispatch({
       type: "RECORD_REFERRER_WITHDRAWAL",
-      role: withdrawRecorder === "sender" ? senderRole : "coordinator",
+      role: bySender ? senderRole : "coordinator",
       now,
       referralId: referral.id,
+      // A1-7: a ward withdraws its own transfer referral as that ward.
+      ...(bySender && senderRole === "ward" ? { actingUnitId: referral.originUnitId } : {}),
     });
     setWithdrawConfirmOpen(false);
     setCheckToken((token) => token + 1);

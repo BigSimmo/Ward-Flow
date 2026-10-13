@@ -32,6 +32,7 @@ import {
 import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -176,6 +177,8 @@ function AlertsWorkspace() {
   } = state;
   // Events carry the engine clock; what the page shows follows the Live chip, which can pause.
   const clockNow = useWardFlowClock();
+  // S2-15 (12 Oct 2026): a stand-down is recorded against the viewer's real role, never a fixed one.
+  const viewerRole = useRouteRole();
   const live = usePageLive();
   const now = live.now;
   // Phone layout: the selected alert opens in a sheet instead of the side panel.
@@ -849,10 +852,9 @@ function AlertsWorkspace() {
     });
     dispatch({
       type: "STAND_DOWN_BROADCAST_ALERT",
-      role: "coordinator",
+      role: viewerRole,
       now: clockNow,
       alertId,
-      stoodDownByRole: "coordinator",
     });
   };
 

@@ -107,13 +107,15 @@ export function wardTransferNeedsCoordinator(
  * "if they are cancelling their referral").
  *
  * Mirrors the one pairing `RECEIVE_REFERRAL` enforces (R9, owner item 23): only `ed_medical` is
- * raised as `ed`; every other source, GP and ward transfer included, is raised as `community`. The
- * referral records no team or department identity beyond that, so this answers at role level only.
- * The one source raised either way (`ed_medical`, which a community intake may also raise) resolves
- * to `ed`; the coordinator can still record that withdrawal for them.
+ * raised as `ed`. A ward transfer (`psychiatric_ward`, sending ward on `originUnitId`) is the
+ * sending ward's own referral (review finding A1-7, 12 Oct 2026), so it resolves to `ward`, and the
+ * reducer further checks that ward is the one acting. Every other source, GP included, is
+ * `community`. The one source raised either way (`ed_medical`, which a community intake may also
+ * raise) resolves to `ed`; the coordinator can still record that withdrawal for them.
  */
-export function referralSenderRole(referral: Referral): "ed" | "community" {
-  return referral.source === "ed_medical" ? "ed" : "community";
+export function referralSenderRole(referral: Referral): "ed" | "community" | "ward" {
+  if (referral.source === "ed_medical") return "ed";
+  return referral.source === "psychiatric_ward" ? "ward" : "community";
 }
 
 /**

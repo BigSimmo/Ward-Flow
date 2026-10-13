@@ -149,7 +149,15 @@ function BannerBody({
 
   const acknowledge = () => {
     if (!desk.id) return;
-    onDispatch({ type: "ACKNOWLEDGE_BROADCAST_ALERT", role: actingRole, now, alertId: alert.id, unitId: desk.id });
+    // A1-13: a ward acknowledges as its own ward, naming itself.
+    onDispatch({
+      type: "ACKNOWLEDGE_BROADCAST_ALERT",
+      role: actingRole,
+      now,
+      alertId: alert.id,
+      unitId: desk.id,
+      ...(actingRole === "ward" ? { actingUnitId: desk.id } : {}),
+    });
   };
 
   const movement = alert.movementId ? lookup.movements?.find((m) => m.id === alert.movementId) : undefined;

@@ -47,7 +47,7 @@ export const CROSS_ROLE_ALLOWED: readonly CrossRoleAllowance[] = [
   {
     routeRole: "ward",
     event: "RECEIVE_REFERRAL",
-    reason: "Ward screen Raise referral and the New referral sheet dispatch as community",
+    reason: "The New referral sheet dispatches as community or ED (the ward's own Raise referral is ward, A1-7)",
   },
   // New referral sheet (`ward-referral-drawer.tsx`), on routes whose role `EVENT_ROLE` omits.
   { routeRole: "officer", event: "RECEIVE_REFERRAL", reason: REFERRAL_SHEET },

@@ -251,8 +251,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     wardReferralInbox,
   } = useWardFlow();
   const now = useWardFlowClock();
-  // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
-  // listed cross-role pair in `ward-role-permissions.ts`.
+  // A1-7 (12 Oct 2026): Raise referral dispatches as this `ward`, so the referral is recorded as
+  // from this ward and the ward can withdraw or correct it.
   const raiseReferralGate = useRoleGate()("RECEIVE_REFERRAL");
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   // Phone (v10): This shift and Ward flow sit behind a chip and open as bottom sheets.
@@ -469,7 +469,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!unit || !raiseReferralGate.allowed) return;
     dispatch({
       type: "RECEIVE_REFERRAL",
-      role: "community",
+      role: "ward",
+      actingUnitId: unit.id,
       now,
       ageBand: unit.cohort,
       destinations: [
@@ -1311,6 +1312,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId: pick.movementId,
         unitId: boardUnitId,
+        actingUnitId: boardUnitId,
         bedNumber,
       });
     } else {
@@ -1327,6 +1329,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         referralId: pick.referralId,
         destinationKind: "psychiatric_ward",
         unitId: boardUnitId,
+        actingUnitId: boardUnitId,
         bedNumber,
       });
     }
@@ -1366,7 +1369,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!declineReason) return;
-    dispatch({ type: "DECLINE", role: "ward", now, movementId, unitId: wardUnitId, reason: declineReason });
+    dispatch({
+      type: "DECLINE",
+      role: "ward",
+      now,
+      movementId,
+      unitId: wardUnitId,
+      actingUnitId: wardUnitId,
+      reason: declineReason,
+    });
     setDeclineOpenFor(undefined);
     setDeclineReason(undefined);
   }
@@ -1388,6 +1399,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       now,
       movementId,
       unitId,
+      actingUnitId: unitId,
     });
     setCheckToken((token) => token + 1);
   }
@@ -1402,6 +1414,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       now,
       movementId,
       unitId,
+      actingUnitId: unitId,
     });
     setCheckToken((t) => t + 1);
   }
@@ -1432,6 +1445,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId,
         unitId: wardUnitId,
+        actingUnitId: wardUnitId,
         overrideReason,
       });
     } else {
@@ -1441,6 +1455,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId,
         unitId: wardUnitId,
+        actingUnitId: wardUnitId,
         overrideReason,
         // Absent, never `false`, when this refusal is not the one the tick answers — see
         // `Override.numConsulted`'s own doc comment on that discipline.

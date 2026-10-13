@@ -335,6 +335,8 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       movementId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
       needed: boolean;
     }
   | {
@@ -430,6 +432,8 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       unitId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
       overrideReason?: OverrideReason;
       /** v10 pass 3: the second sign-off on an override (see `REFER_TO_UNITS.overrideSignOff`). */
       overrideSignOff?: OverrideSignOff;
@@ -446,6 +450,8 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       unitId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
       overrideReason?: OverrideReason;
       /** v10 pass 3: the second sign-off on an override (see `REFER_TO_UNITS.overrideSignOff`). */
       overrideSignOff?: OverrideSignOff;
@@ -466,6 +472,8 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       unitId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
       /** From `DECLINE_REASONS`, and nothing beside it — see `Decline`'s own doc comment (PD-6). */
       reason: DeclineReason;
     }
@@ -1196,6 +1204,8 @@ export type WardFlowEvent =
       intake?: import("./referrals/referral-submission").ReferralIntakeDetails;
       role: WardFlowRole;
       now: Instant;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
       /**
        * ⚠️ WHICH PERSON, AS A POINTER. Owner ruling 2026-09-02: a referral may remember its
        * patient. OPTIONAL, because a referral raised outside the patient flow legitimately has
@@ -1309,6 +1319,8 @@ export type WardFlowEvent =
       now: Instant;
       /** The referral being decided. */
       referralId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
       /**
        * WHICH of the referral's destinations is answering (FD-21). A referral may be addressed to
        * several at once, so "accept this referral" is no longer a complete instruction — without
@@ -1381,6 +1393,8 @@ export type WardFlowEvent =
       now: Instant;
       /** The referral being decided. */
       referralId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
       /** WHICH destination is declining — see `ACCEPT_REFERRAL`'s own comment. A decline locks
        *  nobody out and leaves every other destination live (FD-24), so it must say which one. */
       destinationKind: ReferralDestinationKind;
@@ -1453,6 +1467,8 @@ export type WardFlowEvent =
       now: Instant;
       /** The referral the referrer took back. */
       referralId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
       /** Owner ruling 11 — see the doc comment above. Omitted, this is the original whole-referral
        *  act. `"community_team"` scopes it to that one arm alone. */
       destinationKind?: "community_team";
@@ -1485,6 +1501,8 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       referralId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
       /** Refused blank or over `REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS` characters. Never truncated. */
       note: string;
     }
@@ -1658,6 +1676,13 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       movementId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
+      /**
+       * Review finding A1-2 (Josh, 12 Oct 2026): an `ed` caller names its own department, which must
+       * be the movement's `originEdId`. The same claim-not-proof discipline as `actingUnitId`.
+       */
+      actingPlaceId?: string;
     }
   | {
       /**
@@ -1916,6 +1941,8 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       movementId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
       arrivalMode: ArrivalMode;
       trackingNumber?: string;
       estimatedArrivalAt: Instant;
@@ -2119,6 +2146,8 @@ export type WardFlowEvent =
       now: Instant;
       alertId: string;
       unitId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
     }
   | {
       /**
@@ -2336,6 +2365,8 @@ export type WardFlowEvent =
       /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
       recordSeq?: number;
       movementId: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
     }
   | {
       /** Takes back the newest Tell record (`RECORD_SUPPORT_NOTIFICATION`) on this move or stay. */
@@ -2346,6 +2377,8 @@ export type WardFlowEvent =
       recordSeq?: number;
       movementId?: string;
       admissionId?: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
     }
   | {
       /** Takes back the newest `RECORD_REPATRIATION` on this stay. */
@@ -2363,6 +2396,8 @@ export type WardFlowEvent =
       now: Instant;
       /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
       recordSeq?: number;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
     }
   | {
       /**
@@ -2376,6 +2411,8 @@ export type WardFlowEvent =
       recordSeq?: number;
       movementId?: string;
       referralId?: string;
+      /** Strict ward scoping (Josh, 12 Oct 2026): required from a `ward` caller, naming the ward it acts for. */
+      actingUnitId?: string;
     }
   | {
       /** Takes back the newest transport stage step (accepted, en route, collected, arrived). */
@@ -2728,7 +2765,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // including GP, stays `community`." `ed` widens the table here; the reducer's own
   // `case "RECEIVE_REFERRAL"` couples it back to `source` — this list alone cannot express "only
   // when the source is ed_medical".
-  RECEIVE_REFERRAL: ["community", "ed", "coordinator"],
+  //
+  // Review finding A1-7 (Josh, 12 Oct 2026): a ward raising its own transfer referral raises it as
+  // `ward`, with source `psychiatric_ward` and `actingUnitId` equal to `originUnitId`, so the
+  // referral is recorded as from that ward and the ward can withdraw or correct it.
+  RECEIVE_REFERRAL: ["community", "ed", "ward", "coordinator"],
   // Anyone at the front door may add a patient who is not yet known - that IS the front door.
   ADD_PATIENT: ["ed", "community", "coordinator"],
   /**
@@ -2809,14 +2850,18 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * team cannot withdraw an ED's referral, nor an ED a community one. The coordinator keeps the
    * role for any referral.
    */
-  RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed"],
+  // A1-7 (12 Oct 2026): a ward withdraws a referral its own ward raised (`actingUnitId` equal to
+  // `Referral.originUnitId`), never another side's.
+  RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed", "ward"],
   /**
    * RB7, build plan item 27 (2026-09-17): the three parties who could plausibly need to correct a
    * referral after the fact — the referrer's own team (`community` or `ed`, whichever raised it),
-   * and the coordinator who may be handling it. `ward` is excluded: a ward answers a referral, it
-   * does not author or amend the referrer's own account of it.
+   * and the coordinator who may be handling it. A ward answering a referral does not amend the
+   * referrer's own account of it; review findings A1-7 and A1-14 (12 Oct 2026): a ward that SENT
+   * the referral (`Referral.originUnitId`) corrects its own, and the reducer refuses every caller
+   * but the sending side (`referralSenderRole`) and the coordinator.
    */
-  ADD_REFERRAL_CORRECTION: ["community", "ed", "coordinator"],
+  ADD_REFERRAL_CORRECTION: ["community", "ed", "ward", "coordinator"],
   /**
    * F1 (Task 5, 2026-09-04): only the coordinator may raise either event. This table entry is the
    * ENTIRE enforcement — the generic role check in `wardFlowReducer`'s switch preamble rejects any
@@ -2865,13 +2910,19 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   TAKE_INBOX_ITEM_OWNERSHIP: ["coordinator"],
   SNOOZE_INBOX_ITEM: ["coordinator"],
   UNSNOOZE_INBOX_ITEM: ["coordinator"],
-  SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
+  // Review finding A1-8 (Josh, 12 Oct 2026): a community team may not set arrival details, and a
+  // ward only as the destination ward (checked in the reducer).
+  SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward"],
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
-  RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator", "ward", "community"],
+  // Review finding A1-9 (12 Oct 2026): the medical workup is the ED's answer, as on
+  // `RECORD_MEDICAL_CLEARANCE`, which this copies onto the referral.
+  RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
   UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
-  RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward", "community"],
+  // Review finding A1-5 (Josh, 12 Oct 2026): the written form and its expiry are recorded by the
+  // ED or the coordinator only, as `RECORD_LEGAL_FORM_EXPIRY` is; every write is audited.
+  RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator"],
   RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
   RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
   EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],

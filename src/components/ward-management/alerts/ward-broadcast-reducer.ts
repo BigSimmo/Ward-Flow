@@ -39,6 +39,31 @@ function isRealDesk(state: WardFlowState, unitId: string): boolean {
   return Boolean(findUnit(state, unitId) || edById(unitId));
 }
 
+/** Why this role may not acknowledge as `deskId` (A1-13), or `null` to allow. */
+function acknowledgeDeskRefusal(
+  state: WardFlowState,
+  role: WardFlowRole,
+  deskId: string,
+  actingUnitId: string | undefined,
+): string | null {
+  if (deskId === COORDINATOR_DESK_ACKNOWLEDGER_ID) {
+    return role === "coordinator"
+      ? null
+      : `Only the coordinator may acknowledge as the coordinator desk, not role ${role}`;
+  }
+  if (role === "coordinator") return null;
+  if (role === "ward") {
+    if (!actingUnitId)
+      return "ACKNOWLEDGE_BROADCAST_ALERT raised as ward must state its actingUnitId, and it has no default";
+    return actingUnitId === deskId && findUnit(state, deskId)
+      ? null
+      : `ward ${actingUnitId} may acknowledge only as its own ward, not ${deskId}`;
+  }
+  if (role === "ed")
+    return edById(deskId) ? null : `An emergency department may acknowledge only as its own desk, not ${deskId}`;
+  return `Role ${role} has no desk of its own, so it cannot acknowledge as ${deskId}`;
+}
+
 const METRO_SERVICES = ["East Metro", "North Metro", "South Metro"];
 
 /** The wards a bed call's chosen target covers. ED liaison names no ward, so it asks none. */
@@ -154,6 +179,15 @@ export function reduceBroadcastAlertEvent(
       if (event.unitId !== COORDINATOR_DESK_ACKNOWLEDGER_ID && !isRealDesk(state, event.unitId)) {
         return reject(state, event, `ACKNOWLEDGE_BROADCAST_ALERT unitId ${event.unitId} does not name a real unit`);
       }
+      // A1-13 (Josh, 12 Oct 2026): a desk acknowledges only as itself. A ward names its own ward
+      // (`actingUnitId`) and acknowledges as that ward; only the coordinator acknowledges as the
+      // coordinator desk; an ED acknowledges as an emergency department desk, never a ward's. No
+      // other role has a desk of its own, so none may acknowledge as one.
+      const deskRefusal = acknowledgeDeskRefusal(state, event.role, event.unitId, event.actingUnitId);
+      if (deskRefusal) {
+        decision.reasonCode = "scope";
+        return reject(state, event, deskRefusal);
+      }
       if (!isAlertActive(target, event.now)) {
         return reject(state, event, `ACKNOWLEDGE_BROADCAST_ALERT alertId ${event.alertId} is no longer active`);
       }
@@ -187,6 +221,16 @@ export function reduceBroadcastAlertEvent(
       if (target.status === "stood_down") {
         return reject(state, event, `STAND_DOWN_BROADCAST_ALERT alertId ${event.alertId} is already stood down`);
       }
+      // S2-15 (12 Oct 2026): the stand-down is recorded against the role that acted. A claimed
+      // `stoodDownByRole` naming any other role is refused rather than recorded.
+      if (event.stoodDownByRole !== undefined && event.stoodDownByRole !== event.role) {
+        decision.reasonCode = "scope";
+        return reject(
+          state,
+          event,
+          `STAND_DOWN_BROADCAST_ALERT raised as ${event.role} cannot be recorded as stood down by ${event.stoodDownByRole}`,
+        );
+      }
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       const updatedAlerts = existingAlerts.map((a: BroadcastAlert) =>
@@ -195,7 +239,7 @@ export function reduceBroadcastAlertEvent(
               ...a,
               status: "stood_down" as const,
               stoodDownAt: event.now,
-              stoodDownBy: (event.stoodDownByRole ?? event.role) as WardFlowRole,
+              stoodDownBy: event.role,
             }
           : a,
       );

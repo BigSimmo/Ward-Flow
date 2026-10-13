@@ -242,6 +242,8 @@ const actionLabels: Record<AuditEvent["action"], string> = {
   RECORD_COUNTRY_EXTENSION: "Country paper extension",
   RECORD_LEGAL_FORM_CONTINUATION: "Paper continuation",
   RECORD_LEGAL_FORM_EXPIRY: "Record legal form expiry",
+  // A1-5 (12 Oct 2026): every written-form record is audited, with old and new expiry.
+  RECORD_LEGAL_FORM_WRITTEN: "Record written legal form",
   // T4 (2026-09-17 build plan).
   CORRECT_LEGAL_FORM_RECEIPT: "Correct legal form receipt",
   FLAG_BED_RELEASE: "Plan bed release",
@@ -498,8 +500,21 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
                 ? "Extension recorded"
                 : event.details.operation === "continuation-recorded"
                   ? "Continuation recorded"
-                  : "Expiry recorded",
+                  : event.details.operation === "written-recorded"
+                    ? "Written form recorded"
+                    : "Expiry recorded",
             ],
+            // A1-5 (12 Oct 2026): every expiry change shows the old expiry beside the new one.
+            ...(event.details.previousDueAt === undefined
+              ? []
+              : [
+                  [
+                    "Previous expiry",
+                    event.details.previousDueAt === null
+                      ? "Not recorded"
+                      : formatInstantWithDay(event.details.previousDueAt, now),
+                  ] as [string, string],
+                ]),
             [
               "Expiry typed",
               event.details.dueAt === null ? "Not recorded" : formatInstantWithDay(event.details.dueAt, now),

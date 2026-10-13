@@ -895,6 +895,73 @@ function reject(state: WardFlowState, event: WardFlowEvent, reason: string): War
 }
 
 /**
+ * A refusal because the caller acted outside the ward, department or service it may act for. Audited
+ * with reason code `scope`, not the default `transition`, so scope violations can be found in the
+ * audit register (review finding A1-12, 12 Oct 2026).
+ */
+function scopeReject(
+  state: WardFlowState,
+  event: WardFlowEvent,
+  decision: AuditDecision,
+  reason: string,
+): WardFlowState {
+  decision.reasonCode = "scope";
+  return reject(state, event, reason);
+}
+
+/** The ward a `ward` caller says it is acting for, or `undefined` when it named none. */
+function claimedActingUnit(event: WardFlowEvent): string | undefined {
+  return "actingUnitId" in event && typeof event.actingUnitId === "string" && event.actingUnitId.length > 0
+    ? event.actingUnitId
+    : undefined;
+}
+
+/**
+ * STRICT WARD SCOPING (owner decision, Josh, 12 Oct 2026; review findings A1-1, A1-3, A1-8, A1-10,
+ * S1-12, S2-10, S2-11). A `ward` caller acting on a ward's bed, referral decision, transport or stay
+ * must state `actingUnitId`, and it must name one of `targets`, the wards this event acts for.
+ * Returns the refusal, or `null` to allow. Every other role passes untouched: the coordinator acts
+ * for no single ward, and the other roles are scoped elsewhere or not at all.
+ */
+function wardScopeRefusal(
+  event: WardFlowEvent,
+  targets: readonly (string | null | undefined)[],
+  action: string,
+): string | null {
+  if (event.role !== "ward") return null;
+  const acting = claimedActingUnit(event);
+  if (acting === undefined) return `${event.type} raised as ward must state its actingUnitId, and it has no default`;
+  const wards = [...new Set(targets.filter((unitId): unitId is string => typeof unitId === "string" && unitId !== ""))];
+  if (wards.includes(acting)) return null;
+  return wards.length === 0
+    ? `ward ${acting} cannot ${action}: no ward of its own is involved`
+    : `ward ${acting} cannot ${action} for ${wards.join(" or ")}; a ward may act only for its own ward`;
+}
+
+/**
+ * Who may act for a referral's SENDER (A1-7 and A1-14, 12 Oct 2026): the coordinator, or the side
+ * that sent it (`referralSenderRole`), and for a ward's own transfer referral only that ward.
+ * Returns the refusal, or `null` to allow.
+ */
+function referralSenderRefusal(event: WardFlowEvent, referral: Referral, verb: string): string | null {
+  if (event.role === "coordinator") return null;
+  const sender = referralSenderRole(referral);
+  if (event.role !== sender) {
+    const label = sender === "ed" ? "emergency department" : sender === "ward" ? "sending ward" : "community side";
+    return `referral ${referral.id} was sent by the ${label}, so role ${event.role} cannot ${verb} it`;
+  }
+  return sender === "ward" ? wardScopeRefusal(event, [referral.originUnitId], `${verb} this referral`) : null;
+}
+
+/** The ward a movement leaves from, when it leaves a ward at all (a transfer or repatriation). */
+function movementSendingUnitId(state: WardFlowState, movement: Movement): string | undefined {
+  const source = movementSourceAdmission(state, movement);
+  if (source) return source.unitId;
+  const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+  return referral?.source === "psychiatric_ward" ? referral.originUnitId : undefined;
+}
+
+/**
  * ⚠️ **THE ELIGIBILITY GATE. Owner ruling, 2026-09-02, given in three parts:** *"the engine should
  * refuse, screen checks are not enough"*, then *"refuse unless a reason is recorded"*, then
  * *"The coordinator can over ride all rules"*.
@@ -2256,7 +2323,12 @@ function withReferralDecisionUndo(state: WardFlowState, next: WardFlowState, eve
       referralId: before.id,
       at: event.now,
       role: event.role,
-      unitId: event.destinationKind === "psychiatric_ward" ? (event.unitId ?? null) : null,
+      // A ward's answer always names its ward (strict scoping, 12 Oct 2026), even on a referral
+      // addressed to that one ward, so only it can undo the answer.
+      unitId:
+        event.destinationKind === "psychiatric_ward"
+          ? (event.unitId ?? (event.role === "ward" ? (event.actingUnitId ?? null) : null))
+          : null,
       before,
       after,
       noticeIds: next.notices.slice(state.notices.length).map((notice) => notice.id),
@@ -2450,8 +2522,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
       const record = referralDecisionUndoFor(state.undoRecords, referral.id);
       if (!record) return reject(state, event, "There is no decision on this referral to undo");
+      const scopeRefusal = undoRoleRefusal(record, event.role, event.actingUnitId);
+      if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
       const refusal =
-        undoRoleRefusal(record, event.role, event.actingUnitId) ??
         undoWindowRefusal(record.at, event.now) ??
         (sameRecord(referral, record.after)
           ? null
@@ -2472,7 +2545,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.role === "ward" && event.actingUnitId !== admission.unitId)
-        return reject(state, event, "A ward may only move patients between its own beds");
+        return scopeReject(state, event, decision, "A ward may only move patients between its own beds");
       if (!bedIsOccupied(admission)) return reject(state, event, "Only a current stay can be placed in a bed");
       const unit = findUnit(state, admission.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${admission.unitId}`);
@@ -2504,8 +2577,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       const record = bedPlacementUndoFor(state.undoRecords, admission.id);
       if (!record) return reject(state, event, "There is no bed move on this stay to undo");
+      const scopeRefusal = undoRoleRefusal(record, event.role, event.actingUnitId);
+      if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
       const refusal =
-        undoRoleRefusal(record, event.role, event.actingUnitId) ??
         undoWindowRefusal(record.at, event.now) ??
         (admission.unitId === record.unitId && admission.bedNumber === record.afterBed && bedIsOccupied(admission)
           ? null
@@ -2543,8 +2617,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // An older toast's Undo must not take back a newer step that replaced its record.
       if (event.recordSeq !== undefined && record.seq !== event.recordSeq)
         return reject(state, event, "A later step replaced this one, so this Undo no longer applies");
+      const scopeRefusal = undoRoleRefusal(record, event.role, claimedActingUnit(event));
+      if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
       const refusal =
-        undoRoleRefusal(record, event.role, "actingUnitId" in event ? event.actingUnitId : undefined) ??
         undoWindowRefusal(record.at, event.now) ??
         (stepChangedSince(state, record) ? "This has changed since, so it cannot be undone" : null);
       if (refusal) return reject(state, event, refusal);
@@ -2566,10 +2641,21 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (admission.state === "departed") {
         return reject(state, event, `cannot update expected discharge for departed admission ${event.admissionId}`);
       }
-      if (event.role === "ward" && event.actingUnitId && event.actingUnitId !== admission.unitId) {
-        return reject(
+      // S1-12 (12 Oct 2026): an omitted `actingUnitId` used to skip this check, so a ward event
+      // naming no ward could move another ward's expected discharge. Strict scoping requires it.
+      if (event.role === "ward" && !event.actingUnitId) {
+        return scopeReject(
           state,
           event,
+          decision,
+          `UPDATE_EXPECTED_DISCHARGE raised as ward must state its actingUnitId, and it has no default`,
+        );
+      }
+      if (event.role === "ward" && event.actingUnitId !== admission.unitId) {
+        return scopeReject(
+          state,
+          event,
+          decision,
           `UPDATE_EXPECTED_DISCHARGE was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
         );
       }
@@ -3087,6 +3173,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_TRANSPORT_NEED": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // A1-10 (12 Oct 2026): only the destination or the sending ward answers for a ward.
+      const scopeRefusal = wardScopeRefusal(
+        event,
+        [movement.acceptedUnitId, movementSendingUnitId(state, movement)],
+        "record a transport need",
+      );
+      if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
       // Refused once the journey is over, on `RECORD_EXAMINATION`'s reasoning above: every other
       // movement-scoped handler refuses a closed movement, and an answer about how somebody will
       // travel is meaningless once they have arrived or did not proceed.
@@ -4163,6 +4256,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "ACCEPT_IN_PRINCIPLE": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // A1-1 (12 Oct 2026): a ward accepts only for itself.
+      const scopeRefusal = wardScopeRefusal(event, [event.unitId], "accept a bed");
+      if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
       if (movement.closure) {
         return reject(state, event, `cannot accept a closed movement (${movement.closure.reason})`);
       }
@@ -4325,6 +4421,27 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `movement ${movement.id} has already closed and cannot be withdrawn`);
       }
+      // A1-2 (Josh, 12 Oct 2026): only the service that raised the referral, or the coordinator,
+      // withdraws it. An ED names itself and must be the movement's origin department; a community
+      // team only for a community-sourced referral; a ward only for a referral its own ward raised.
+      {
+        const sourceReferral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+        let referrerRefusal: string | null = null;
+        if (event.role === "ed") {
+          if (!event.actingPlaceId) {
+            referrerRefusal = `WITHDRAW_REFERRAL raised as ED must state its actingPlaceId, and it has no default`;
+          } else if (event.actingPlaceId !== movement.originEdId) {
+            referrerRefusal = `ED ${event.actingPlaceId} cannot withdraw movement ${movement.id}: it was referred from ${movement.originEdId}`;
+          }
+        } else if (event.role === "community") {
+          if (!sourceReferral || referralSenderRole(sourceReferral) !== "community") {
+            referrerRefusal = `movement ${movement.id} was not referred by a community service, so role community cannot withdraw it`;
+          }
+        } else if (event.role === "ward") {
+          referrerRefusal = wardScopeRefusal(event, [movementSendingUnitId(state, movement)], "withdraw this referral");
+        }
+        if (referrerRefusal) return scopeReject(state, event, decision, referrerRefusal);
+      }
 
       /*
        * 🔴 WLQ-38 (owner, 2026-09-15), verbatim: *"This should also be the referring doctors
@@ -4342,13 +4459,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
        */
       if (movement.acceptedUnitId) {
         /*
-         * ⚠️ **`ed` IS PERMITTED BY ROLE ALONE, NOT CHECKED AGAINST `movement.originEdId`.** The
-         * referrer for a movement is the emergency department it began in, but this event (like
-         * every other ED-raised event except `RAISE_REFERRAL` itself) carries no acting-ED
-         * identity field to compare — the same absence `EVENT_ROLE.CANCEL_TRANSPORT`'s own comment
-         * already names for `community` ("no event carries which community team is acting", R2, no
-         * viewer identity). Widening this model to let one ED tell itself apart from another is an
-         * owner decision, not an implementer's.
+         * The referrer here is the movement's origin department, checked above against the ED's
+         * own `actingPlaceId` (A1-2, Josh, 12 Oct 2026). WLQ-38 still limits revoking an ACCEPTED
+         * referral to that department and the coordinator.
          */
         if (event.role !== "coordinator" && event.role !== "ed") {
           return reject(
@@ -4435,7 +4548,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         closure: {
           at: event.now,
           outcome: "did_not_proceed",
-          reason: "The referrer withdrew the referral",
+          // A1-2: says who actually withdrew it, as the post-acceptance revocation above does.
+          reason:
+            event.role === "coordinator"
+              ? "The coordinator withdrew the referral"
+              : "The referrer withdrew the referral",
         },
         // Nothing is blocking a movement that is over. Left saying "Awaiting destination response"
         // it would keep a withdrawn patient looking like a live obstruction.
@@ -4501,6 +4618,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "PULL_PATIENT": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // A1-1 (12 Oct 2026): a ward pulls only its own bed.
+      const scopeRefusal = wardScopeRefusal(event, [event.unitId], "pull a bed");
+      if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
       if (movement.closure) {
         return reject(state, event, `cannot pull a bed for a closed movement (${movement.closure.reason})`);
       }
@@ -5012,6 +5132,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "DECLINE": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // A1-3 (12 Oct 2026): a ward declines or waitlists only for itself.
+      const scopeRefusal = wardScopeRefusal(event, [event.unitId], "decline or waitlist");
+      if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
       if (movement.closure) {
         return reject(state, event, `cannot decline for a closed movement (${movement.closure.reason})`);
       }
@@ -5430,16 +5553,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // `CANCEL_TRANSPORT` both refuse a `ward` caller with no `actingUnitId` outright; this now
       // does the same, before the comparison that needs it to be present.
       if (event.role === "ward" && !event.actingUnitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `PATIENT_ARRIVED raised as ward must state its actingUnitId, and it has no default`,
         );
       }
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `ward ${event.actingUnitId} cannot confirm arrival for a patient accepted at ${movement.acceptedUnitId}`,
         );
       }
@@ -5692,9 +5817,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.actingUnitId !== admission.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RECORD_LEAVING was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
         );
       }
@@ -5980,9 +6106,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.actingUnitId !== admission.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
         );
       }
@@ -6022,9 +6149,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.actingUnitId !== admission.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
         );
       }
@@ -6055,9 +6183,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // This is a recorded assertion by the caller, not an authorisation decision, and must not
       // be described or extended as one.
       if (event.actingUnitId !== event.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `CONFIRM_CAPACITY was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
         );
       }
@@ -6127,9 +6256,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // Same claim-not-proof discipline as CONFIRM_CAPACITY immediately above (see that case's own
       // comment in full).
       if (event.actingUnitId !== event.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RECORD_WARD_INTAKE_CONSTRAINTS was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
         );
       }
@@ -6157,9 +6287,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // `FLAG_BED_RELEASE` is `ward`-only, so unlike RELEASE_PULL/CANCEL_TRANSPORT there is no
       // coordinator caller to exempt, and the comparison always runs.
       if (event.actingUnitId !== event.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `FLAG_BED_RELEASE was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
         );
       }
@@ -6270,9 +6401,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // belongs to, and refuses when they differ. `CONFIRM_BED_RELEASE` is `ward`-only, so unlike
       // RELEASE_PULL/CANCEL_TRANSPORT there is no coordinator caller to exempt.
       if (event.actingUnitId !== release.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `CONFIRM_BED_RELEASE was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
@@ -6319,9 +6451,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const release = findBedRelease(state, event.releaseId);
       if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
       if (event.actingUnitId !== release.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `REVERT_BED_RELEASE was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
@@ -6351,9 +6484,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const release = findBedRelease(state, event.releaseId);
       if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
       if (event.actingUnitId !== release.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `BLOCK_BED_RELEASE was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
@@ -6397,9 +6531,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const release = findBedRelease(state, event.releaseId);
       if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
       if (event.actingUnitId !== release.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `CLEAR_BED_RELEASE_BLOCK was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
@@ -6431,9 +6566,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const release = findBedRelease(state, event.releaseId);
       if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
       if (event.actingUnitId !== release.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `SET_BED_PREPARATION was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
@@ -6467,9 +6603,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const release = findBedRelease(state, event.releaseId);
       if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
       if (event.actingUnitId !== release.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RELEASE_BED was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
@@ -6576,9 +6713,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // Same claim-not-proof discipline as FLAG_BED_RELEASE's own field: this compares what the
       // caller SAID it was acting as against the unit the leave bed is being recorded against.
       if (event.actingUnitId !== event.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RECORD_LEAVE_BED was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
         );
       }
@@ -6627,9 +6765,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const leaveBed = findLeaveBed(state, event.leaveBedId);
       if (!leaveBed) return reject(state, event, `no leave bed found for id ${event.leaveBedId}`);
       if (event.actingUnitId !== leaveBed.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `END_LEAVE_BED was raised acting as unit ${event.actingUnitId} but leave bed ${leaveBed.id} belongs to unit ${leaveBed.unitId}`,
         );
       }
@@ -6640,9 +6779,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const stay = findAdmission(state, event.admissionId);
       if (!stay) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.actingUnitId !== stay.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RECORD_ABSENT_WITHOUT_LEAVE was raised acting as unit ${event.actingUnitId} but admission ${stay.id} is on unit ${stay.unitId}`,
         );
       }
@@ -6697,9 +6837,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `admission ${event.admissionId} is not recorded absent without leave`);
       }
       if (event.actingUnitId !== bed.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RECORD_ABSENCE_STEP was raised acting as unit ${event.actingUnitId} but the absence is on unit ${bed.unitId}`,
         );
       }
@@ -6938,6 +7079,19 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             `RECEIVE_REFERRAL source psychiatric_ward must name a real originUnitId (the sending ward)`,
           );
         }
+      }
+      // A1-7 (12 Oct 2026): a ward raises only its own transfer referral, so it is recorded as from
+      // that ward (source psychiatric_ward, `originUnitId` the acting ward), never as a community one.
+      if (event.role === "ward" && event.source !== "psychiatric_ward") {
+        return reject(
+          state,
+          event,
+          `RECEIVE_REFERRAL raised as role ward must carry source psychiatric_ward, not ${event.source}`,
+        );
+      }
+      {
+        const scopeRefusal = wardScopeRefusal(event, [event.originUnitId], "raise a referral");
+        if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
       }
       // Fix round B (this task's own addition): `homeRegion` is a REGION from a fixed list —
       // never an address, never free text. Membership-checking it here is what makes that
@@ -7267,6 +7421,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           event,
           `referral ${referral.id} was not addressed to ${event.destinationKind.replace(/_/g, " ")}`,
         );
+      }
+      // S2-11 (Josh, 12 Oct 2026): a ward answers only as itself — the ward named on the event,
+      // else the one ward this arm was addressed to, else (an arm open to any ward) itself.
+      {
+        const addressedUnitId =
+          addressing.destination.kind === "psychiatric_ward" ? addressing.destination.unitId : undefined;
+        const scopeRefusal = wardScopeRefusal(
+          event,
+          [event.unitId ?? addressedUnitId ?? claimedActingUnit(event)],
+          "accept this referral",
+        );
+        if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
       }
       // FD-22: the first acceptance ends the placement. A second destination accepting afterwards
       // would mean two places believing they had taken the same person -- the exact outcome the
@@ -7724,6 +7890,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `referral ${referral.id} was not addressed to ${event.destinationKind.replace(/_/g, " ")}`,
         );
       }
+      // S2-11 (Josh, 12 Oct 2026): a ward answers only as itself — the ward named on the event,
+      // else the one ward this arm was addressed to, else (an arm open to any ward) itself.
+      {
+        const addressedUnitId =
+          addressing.destination.kind === "psychiatric_ward" ? addressing.destination.unitId : undefined;
+        const scopeRefusal = wardScopeRefusal(
+          event,
+          [event.unitId ?? addressedUnitId ?? claimedActingUnit(event)],
+          "decline this referral",
+        );
+        if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
+      }
       // RB5 (item 16): the same community exemption as `ACCEPT_REFERRAL`'s own guard, above -- a
       // community team may still decline its own arm after a ward or ED has accepted.
       if (event.destinationKind !== "community_team" && referralState(referral) === "accepted") {
@@ -7885,15 +8063,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
        * branches below, so it scopes the community-arm withdrawal and the whole-referral one alike.
        * The coordinator may still record it for any referral.
        */
-      if (event.role === "community" || event.role === "ed") {
-        const sender = referralSenderRole(referral);
-        if (event.role !== sender) {
-          return reject(
-            state,
-            event,
-            `referral ${referral.id} was sent by the ${sender === "ed" ? "emergency department" : "community side"}, so role ${event.role} cannot withdraw it`,
-          );
-        }
+      {
+        const senderRefusal = referralSenderRefusal(event, referral, "withdraw");
+        if (senderRefusal) return scopeReject(state, event, decision, senderRefusal);
       }
 
       /*
@@ -8069,6 +8241,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "ADD_REFERRAL_CORRECTION": {
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
+      // A1-14 (12 Oct 2026): only the referral's sending side, or the coordinator, corrects it.
+      {
+        const senderRefusal = referralSenderRefusal(event, referral, "correct");
+        if (senderRefusal) return scopeReject(state, event, decision, senderRefusal);
+      }
       // Trimmed for the blank check, the same discipline `RECORD_MOVEMENT_BLOCKER` already holds a
       // typed, must-say-something field to — a whitespace-only note is not a correction.
       const note = event.note.trim();
@@ -8237,9 +8414,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // it was acting as against the unit actually holding the bed, and refuses when they differ.
       // Unused for a coordinator caller, who may act on behalf of any unit.
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RELEASE_PULL was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is pulled at ${movement.acceptedUnitId}`,
         );
       }
@@ -8410,7 +8588,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // field cannot name could never be matched against a later cancellation claim. Same
       // discipline as `escortRequired` just above: required and never defaulted.
       if (event.role === "ward" && !event.actingUnitId) {
-        return reject(state, event, `BOOK_TRANSPORT raised as ward must state its actingUnitId, and it has no default`);
+        return scopeReject(
+          state,
+          event,
+          decision,
+          `BOOK_TRANSPORT raised as ward must state its actingUnitId, and it has no default`,
+        );
       }
       // Opus adversarial review, 2026-09-17, P2 finding 1: the check above only tested PRESENCE,
       // never that the claimed unit is real. `bookedBy.unitId` (below) is later compared against a
@@ -8418,6 +8601,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // be stored as though it named a real ward and could never be matched against anything real.
       if (event.role === "ward" && event.actingUnitId !== undefined && !findUnit(state, event.actingUnitId)) {
         return reject(state, event, `BOOK_TRANSPORT actingUnitId ${event.actingUnitId} does not name a real unit`);
+      }
+      // S2-10 (Josh, 12 Oct 2026): a ward books only for a movement into or out of its own ward. An
+      // unrelated ward recorded as the booker could later cancel the ED's own journey.
+      {
+        const scopeRefusal = wardScopeRefusal(
+          event,
+          [movement.acceptedUnitId, movementSendingUnitId(state, movement)],
+          "book transport",
+        );
+        if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
       }
       // Owner's third ruling, 2026-09-17 (answer 9): "only the community team that booked
       // transport may cancel it" — a `community` booker must state its claim now, the identical
@@ -8449,9 +8642,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         movement.originEdId &&
         event.actingPlaceId !== movement.originEdId
       ) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `BOOK_TRANSPORT raised as ED acting as ${event.actingPlaceId} may only book transport for movements originating from its own ED (${movement.originEdId})`,
         );
       }
@@ -8562,14 +8756,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
        * what plumbed one (`actingPlaceId`, the same claim-not-proof discipline as `actingUnitId`).
        */
       if (event.role === "ward") {
+        // S2-10 (Josh, 12 Oct 2026): and only for a movement into or out of its own ward, so a
+        // booking an unrelated ward made before this rule cannot be cancelled by it either.
+        const scopeRefusal = wardScopeRefusal(
+          event,
+          [movement.acceptedUnitId, movementSendingUnitId(state, movement)],
+          "cancel transport",
+        );
+        if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
         if (
           movement.transport.bookedBy?.role !== "ward" ||
           !event.actingUnitId ||
           movement.transport.bookedBy.unitId !== event.actingUnitId
         ) {
-          return reject(
+          return scopeReject(
             state,
             event,
+            decision,
             `CANCEL_TRANSPORT raised as ward acting as ${event.actingUnitId} may only cancel transport it booked for movement ${movement.id}`,
           );
         }
@@ -8585,18 +8788,20 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           !event.actingPlaceId ||
           movement.transport.bookedBy.placeId !== event.actingPlaceId
         ) {
-          return reject(
+          return scopeReject(
             state,
             event,
+            decision,
             `CANCEL_TRANSPORT raised as community acting as ${event.actingPlaceId} may only cancel transport it booked for movement ${movement.id}`,
           );
         }
       }
       if (event.role === "ed" && event.actingPlaceId) {
         if (movement.transport.bookedBy?.placeId && movement.transport.bookedBy.placeId !== event.actingPlaceId) {
-          return reject(
+          return scopeReject(
             state,
             event,
+            decision,
             `CANCEL_TRANSPORT raised as ED acting as ${event.actingPlaceId} may only cancel transport it booked for movement ${movement.id}`,
           );
         }
@@ -8912,9 +9117,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // the caller SAID it was acting as against the unit actually holding the bed, and refuses
       // when they differ. Unused for a coordinator or ed caller, who may act regardless.
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RELEASE_HELD_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is held at ${movement.acceptedUnitId}`,
         );
       }
@@ -9025,9 +9231,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
       }
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RELEASE_DIVERTED_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is held at ${movement.acceptedUnitId}`,
         );
       }
@@ -9285,6 +9492,19 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "SET_ARRIVAL_DETAILS": {
       const movement = state.movements.find((m) => m.id === event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // A1-8 (Josh, 12 Oct 2026): a ward sets arrival details only as the destination ward. The
+      // call clears the bed hold's countdown, so another ward must not be able to make it.
+      const scopeRefusal = wardScopeRefusal(event, [movement.acceptedUnitId], "set arrival details");
+      if (scopeRefusal) return scopeReject(state, event, decision, scopeRefusal);
+      // S2-5 (12 Oct 2026): a closed movement takes no arrival details, so a past estimate cannot
+      // raise "arriving late" notices for a patient who is not coming (`EVALUATE_ARRIVAL_LATENESS`
+      // holds the same guard). A non-finite estimate is refused rather than stored.
+      if (movement.closure) {
+        return reject(state, event, `cannot set arrival details for a closed movement (${movement.closure.reason})`);
+      }
+      if (finiteInstant(event.estimatedArrivalAt) === null) {
+        return reject(state, event, "SET_ARRIVAL_DETAILS estimatedArrivalAt must be a valid timestamp");
+      }
 
       const arrivalDetails = {
         mode: event.arrivalMode,
@@ -9347,9 +9567,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       // Same claim-not-proof discipline as RECORD_LEAVING: a ward may only touch its own admission.
       if (event.role === "ward" && event.actingUnitId !== admission.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `SET_STEP_DOWN_CANDIDATE was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}`,
         );
       }
@@ -9369,9 +9590,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const admission = state.admissions.find((a) => a.id === event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.role === "ward" && event.actingUnitId !== admission.unitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `SET_DISCHARGE_BARRIER was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}`,
         );
       }
@@ -9660,6 +9882,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
                 { at: event.now, by: event.role, dueAt: event.paperExpiresAt, basis: "written_on_form" },
               ],
       };
+      // A1-5: every written-form record is audited (`classifyAuditEvent`), with old and new expiry.
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
       return replaceMovement(state, movement.id, updated);
     }
 
@@ -9822,9 +10047,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `RELEASE_AND_REOPEN_SEARCH reason must be chosen from RELEASE_PULL_REASONS`);
       }
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `RELEASE_AND_REOPEN_SEARCH was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is at ${movement.acceptedUnitId}`,
         );
       }
@@ -9947,9 +10173,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         (event.role === "ward" && event.actingUnitId === undefined) ||
         (event.actingUnitId !== undefined && event.actingUnitId !== event.unitId)
       ) {
-        return reject(
+        return scopeReject(
           state,
           event,
+          decision,
           `CONFIRM_MORNING_ROLLUP was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
         );
       }
