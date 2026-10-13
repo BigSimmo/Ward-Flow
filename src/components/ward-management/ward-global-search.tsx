@@ -660,6 +660,11 @@ export function WardGlobalSearch({
   }, [isStart, startGroups, allGroups, activeKind]);
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
+  /** Audit round 2 (S-33): how many each group really matched, so a cut group can offer the rest. */
+  const fullGroupCounts = useMemo(
+    () => new Map(allGroups.map((group) => [group.key, group.items.length] as const)),
+    [allGroups],
+  );
 
   /*
    * The popup stays mounted while React catches up with the typed text. Hiding it for that one
@@ -1011,7 +1016,28 @@ export function WardGlobalSearch({
                     <li role="presentation" className={styles.groupItem}>
                       <span className={styles.group} data-testid={`ward-global-search-group-${group.key}`}>
                         <span>{group.heading}</span>
-                        {isStart ? null : <span className={styles.groupCount}>{group.items.length}</span>}
+                        {isStart ? null : (
+                          <span className={styles.groupCount}>
+                            {fullGroupCounts.get(group.key) ?? group.items.length}
+                          </span>
+                        )}
+                        {(() => {
+                          // Audit round 2 (S-33): All cuts each group at six; offer the rest through
+                          // that group's kind chip rather than stopping silently.
+                          const full = fullGroupCounts.get(group.key) ?? 0;
+                          const kind = KIND_FILTERS.find((filter) => filter.groups.includes(group.key));
+                          if (isStart || activeKind !== "all" || !kind || full <= group.items.length) return null;
+                          return (
+                            <button
+                              type="button"
+                              className={styles.showAll}
+                              onClick={() => chooseKind(kind.key)}
+                              data-testid={`ward-global-search-show-all-${group.key}`}
+                            >
+                              Show all {full}
+                            </button>
+                          );
+                        })()}
                       </span>
                     </li>
                     {group.items.map((item) => {

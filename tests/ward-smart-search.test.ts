@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   detectSearchIntent,
+  normaliseCommaNameQuery,
   searchGroupOrder,
   searchIntentLabel,
   searchWardFlow,
@@ -207,5 +208,25 @@ describe("smart search finds a person's open movement by name and UMRN", () => {
       expect(results.movements.length, `${query} finds no open movement`).toBeGreaterThan(0);
       expect(results.movements.every((movement) => open.includes(movement))).toBe(true);
     }
+  });
+});
+
+describe("a name typed the way lists print it (audit round 2, S-33)", () => {
+  it("reads 'Surname, Given' as 'Given Surname' and leaves digit queries alone", () => {
+    expect(normaliseCommaNameQuery("Pallowmere, Orla")).toBe("Orla Pallowmere");
+    expect(normaliseCommaNameQuery(" Pallowmere,")).toBe("Pallowmere");
+    expect(normaliseCommaNameQuery("12/03/1990, x")).toBe("12/03/1990, x");
+    expect(normaliseCommaNameQuery("Orla Pallowmere")).toBe("Orla Pallowmere");
+  });
+
+  it("finds a seeded person from the comma form", () => {
+    const person = wardPatients[0];
+    const result = searchWardFlow({
+      query: `${person.familyName}, ${person.givenName}`,
+      patients: wardPatients,
+      movements: [],
+      units: [],
+    });
+    expect(result.people.map((patient) => patient.id)).toContain(person.id);
   });
 });

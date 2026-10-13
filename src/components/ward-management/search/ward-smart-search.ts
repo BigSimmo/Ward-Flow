@@ -547,11 +547,27 @@ export type SmartSearchResults = {
 };
 
 /**
+ * Audit round 2 (S-33): every list prints a person as "Surname, Given". A query typed that way
+ * (or ending in a comma) reads as "Given Surname", which is how the name is matched. A query with a
+ * digit in it (a UMRN, a date) is left alone.
+ */
+export function normaliseCommaNameQuery(query: string): string {
+  const trimmed = query.trim();
+  if (!trimmed.includes(",") || /\d/.test(trimmed)) return trimmed;
+  const parts = trimmed
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (parts.length === 2) return `${parts[1]} ${parts[0]}`;
+  return parts.join(" ");
+}
+
+/**
  * Unified multi-entity search runner.
  * Prefix and word-start matches lead each group. No score, no provider calls.
  */
 export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
-  const trimmed = input.query.trim();
+  const trimmed = normaliseCommaNameQuery(input.query);
   const intent = detectSearchIntent(trimmed);
   if (trimmed.length === 0) {
     return {
