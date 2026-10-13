@@ -2043,6 +2043,17 @@ export function CommunityScreen({
                 const person = phonePerson(admission.patientId);
                 const stayDays = daysInBed(admission, now);
                 const patientId = admission.patientId;
+                // A2-16 (audit round 2): the phone folds "accepted before the bed" into this row
+                // rather than listing the same people again in a second group.
+                const acceptedBefore = admittedWhileAlreadyWithTeam.find(
+                  (category) => category.admission.id === admission.id,
+                );
+                const acceptedNote =
+                  acceptedBefore === undefined
+                    ? undefined
+                    : `With the team ${elapsedSinceOrUnderADay(
+                        daysBetween(acceptedBefore.acceptedAt, acceptedBefore.arrivedAt),
+                      )} before the bed`;
                 return {
                   id: admission.id,
                   testId: `ward-community-phone-in-bed-${admission.id}`,
@@ -2058,35 +2069,17 @@ export function CommunityScreen({
                       : undefined,
                   note:
                     transport === undefined
-                      ? undefined
+                      ? acceptedNote
                       : `${ownBooking ? "This team booked transport" : "Transport already booked"}${
                           transport.estimatedAt !== undefined
                             ? ` · ${transportEtaRemainingLabel(transport.estimatedAt, now)}`
                             : ""
-                        }`,
+                        }${acceptedNote === undefined ? "" : ` · ${acceptedNote}`}`,
                 };
               }),
               empty: cannotResolve
                 ? `A bed carries no link back to the referral that named this team, so this list cannot be built for ${team.name}.`
                 : "Nobody referred to this team is currently in a bed.",
-            },
-            {
-              id: "accepted-before",
-              title: "Admitted while already with the team",
-              count: admittedWhileAlreadyWithTeam.length,
-              rows: admittedWhileAlreadyWithTeam.map(({ admission, acceptedAt, arrivedAt }) => {
-                const person = phonePerson(admission.patientId);
-                const patientId = admission.patientId;
-                return {
-                  id: admission.id,
-                  name: phoneName(person, "No person on file"),
-                  meta: `${unitName(admission.unitId, units)} · ${stayLabel(admission, now)}`,
-                  value: elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt)),
-                  time: "before the bed",
-                  onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
-                };
-              }),
-              empty: "Nobody in a bed was accepted by this team before that bed began.",
             },
           ],
         },
