@@ -135,3 +135,10 @@ describe("Ward Flow sign-in screen renders", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("Ward Flow sign-in screen — skip link target", () => {
+  it("is the page's main landmark, which the root layout's 'Skip to main content' link points at", () => {
+    const { container } = render(<WardFlowSignInScreen />);
+    expect(container.querySelector("main#main-content")).not.toBeNull();
+  });
+});

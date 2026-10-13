@@ -97,6 +97,7 @@ import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/war
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WardDecisionsCockpit, openDecisionCount } from "./ward-decisions-cockpit";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
+import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
 import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
 import { WardDischargesMatrix } from "./ward-discharges-matrix";
@@ -339,6 +340,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     nowRef.current = now;
     rejectionCountRef.current = rejections.length;
   }, [now, rejections.length]);
+  const online = useOnlineStatus();
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
   // The capacity confirmation does not join the sheet stack, so it holds the page still itself.
@@ -511,10 +513,19 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }
   }, [selectedBed]);
 
+  // Focus goes back to whichever control opened the modal (the header button or the home tab's),
+  // and falls back to the header button only when that control is gone.
+  const capacityOpenerRef = useRef<HTMLElement | null>(null);
+  const openCapacityModal = useCallback(() => {
+    capacityOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setConfirmNumbersOpen(true);
+  }, []);
   const closeCapacityModal = useCallback(() => {
     setConfirmNumbersOpen(false);
     setTimeout(() => {
-      confirmTriggerRef.current?.focus();
+      const opener = capacityOpenerRef.current;
+      (opener?.isConnected ? opener : confirmTriggerRef.current)?.focus({ preventScroll: true });
+      capacityOpenerRef.current = null;
     }, 0);
   }, []);
 
@@ -2089,13 +2100,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             }
             aside={
               <>
-                <LiveChip state="live" onHero age={formatInstant(now)} />
+                <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
                 <button
                   ref={confirmTriggerRef}
                   type="button"
                   className={buttonClass({ variant: "light", size: "sm" })}
                   onClick={() => {
-                    setConfirmNumbersOpen(true);
+                    openCapacityModal();
                   }}
                 >
                   Confirm numbers
@@ -2379,7 +2390,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             morningRollupConfirmed={isRollupConfirmedToday}
             onConfirmMorningRollup={handleConfirmMorningRollup}
             onOpenConfirmNumbers={() => {
-              setConfirmNumbersOpen(true);
+              openCapacityModal();
             }}
             onOpenArrival={openArrival}
             onOpenDischarges={openDischargesTab}

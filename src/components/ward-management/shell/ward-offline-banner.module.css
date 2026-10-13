@@ -1,0 +1,10 @@
+.banner {
+  margin: 0.5rem 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--wf-warning);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}

@@ -8,6 +8,7 @@ import { WardBarMount } from "@/components/ward-management/shell/ward-bar";
 import { WARD_EARLY_TAP_SCRIPT } from "@/components/ward-management/shell/ward-early-tap";
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
+import { WardOfflineBanner } from "@/components/ward-management/shell/ward-offline-banner";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -124,6 +125,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
           <div className={styles.shellContent} data-wf-scroller="">
             <WardBarMount />
             <WardBroadcastBanner />
+            <WardOfflineBanner />
             <WardPhoneDesktopOnly />
             <WardGround>{children}</WardGround>
           </div>
