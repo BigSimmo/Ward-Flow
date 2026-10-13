@@ -41,7 +41,7 @@ function Probe() {
 function setup(withBoard = false) {
   const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <WardReferralDrawer onClose={vi.fn()} initialPatientId="PT-023" />
+      <WardReferralDrawer onClose={vi.fn()} />
       <WardReferralInbox unitId="rph-adult-secure" />
       {withBoard && <ReferralBoard />}
       <Probe />
