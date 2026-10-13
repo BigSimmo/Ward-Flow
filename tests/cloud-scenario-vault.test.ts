@@ -5,6 +5,13 @@ import {
   loadCloudScenario,
   saveCloudScenario,
 } from "@/lib/cloud-scenario-vault";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { WARD_FLOW_STORED_STATE_VERSION } from "@/components/ward-management/ward-flow-storage-validation";
+
+/** A stored synthetic world, the only thing the vault saves or loads (review finding A2-9). */
+const world = () => JSON.parse(JSON.stringify({ version: WARD_FLOW_STORED_STATE_VERSION, state: seedWardFlowState() }));
+/** The provider's typed-text lock, stated off: the vault refuses a save without it. */
+const unlocked = { typedTextSeen: false } as const;
 
 describe("cloud-scenario-vault", () => {
   const originalFetch = globalThis.fetch;
@@ -21,6 +28,7 @@ describe("cloud-scenario-vault", () => {
 
   it("blocks save when real healthcare identifiers are detected without calling network", async () => {
     const unsafePayload = {
+      ...world(),
       notes: "Medicare number: 3123 45678 1 recorded",
     };
 
@@ -30,6 +38,7 @@ describe("cloud-scenario-vault", () => {
       "11111111-1111-4111-8111-111111111111",
       0,
       unsafePayload,
+      unlocked,
     );
 
     expect(result.status).toBe("unsafe_payload");
@@ -50,12 +59,37 @@ describe("cloud-scenario-vault", () => {
       "token123",
       "11111111-1111-4111-8111-111111111111",
       1,
-      { scenario: "synthetic-demo-ward" },
+      world(),
+      unlocked,
     );
 
     expect(result.status).toBe("saved");
     if (result.status === "saved") {
       expect(result.revision).toBe(2);
+    }
+  });
+
+  it("refuses to save without the typed-text lock stated off, or a world that fails the load fence (A2-9)", async () => {
+    const save = (payload: unknown, options = {}) =>
+      saveCloudScenario("https://example.com", "token", "demo", 0, payload, options);
+    expect((await save(world())).status).toBe("typed_text_locked");
+    expect((await save(world(), { typedTextSeen: true })).status).toBe("typed_text_locked");
+    expect((await save({ scenario: "synthetic-demo-ward" }, unlocked)).status).toBe("invalid_payload");
+    const damaged = world();
+    damaged.state.movements[0].legalStatus = "Synthetic typed note";
+    expect((await save(damaged, unlocked)).status).toBe("invalid_payload");
+    expect((await save({ ...world(), version: 1 }, unlocked)).status).toBe("invalid_payload");
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("refuses to load a world of another version or one that fails the load fence (A2-9)", async () => {
+    const damaged = world();
+    damaged.state.movements[0].legalStatus = "Synthetic typed note";
+    for (const payload of [{ ward: "Ward 2K", beds: 12 }, { ...world(), version: 1 }, damaged]) {
+      vi.mocked(fetch).mockResolvedValueOnce(
+        new Response(JSON.stringify({ revision: 5, payload, updated_at: "2026-10-03T12:00:00Z" })),
+      );
+      expect((await loadCloudScenario("https://example.com", "token", "demo")).status).toBe("invalid_payload");
     }
   });
 
@@ -73,7 +107,8 @@ describe("cloud-scenario-vault", () => {
       "token123",
       "11111111-1111-4111-8111-111111111111",
       1,
-      { scenario: "synthetic-demo-ward" },
+      world(),
+      unlocked,
     );
 
     expect(result.status).toBe("conflict");
@@ -85,7 +120,7 @@ describe("cloud-scenario-vault", () => {
       new Response(
         JSON.stringify({
           revision: 5,
-          payload: { ward: "Ward 2K", beds: 12 },
+          payload: world(),
           updated_at: "2026-10-03T12:00:00Z",
         }),
         {
@@ -104,7 +139,8 @@ describe("cloud-scenario-vault", () => {
     expect(result.status).toBe("loaded");
     if (result.status === "loaded") {
       expect(result.revision).toBe(5);
-      expect(result.payload).toEqual({ ward: "Ward 2K", beds: 12 });
+      expect(result.payload.version).toBe(WARD_FLOW_STORED_STATE_VERSION);
+      expect(result.payload.state).toMatchObject({ scenario: "standard" });
     }
   });
 
@@ -162,7 +198,9 @@ describe("cloud-scenario-vault", () => {
 
   it.each([0, -1, 1.5, 2, 2_147_483_647])("rejects malformed or unexpected saved revision %s", async (revision) => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ revision })));
-    expect((await saveCloudScenario("https://example.com", "token", "demo", 0, {})).status).toBe("unavailable");
+    expect((await saveCloudScenario("https://example.com", "token", "demo", 0, world(), unlocked)).status).toBe(
+      "unavailable",
+    );
   });
 
   it.each([
@@ -184,7 +222,7 @@ describe("cloud-scenario-vault", () => {
   it("forwards the caller's stable request ID for an unconfirmed save retry", async () => {
     const requestId = "11111111-1111-4111-8111-111111111111";
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ revision: 1 })));
-    await saveCloudScenario("https://example.com", "token", "demo", 0, {}, { requestId });
+    await saveCloudScenario("https://example.com", "token", "demo", 0, world(), { requestId, ...unlocked });
     expect(JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body))).toMatchObject({
       requestId,
       expectedRevision: 0,
@@ -195,7 +233,10 @@ describe("cloud-scenario-vault", () => {
   it("bounds a stalled transport and clears its deadline", async () => {
     vi.useFakeTimers();
     vi.mocked(fetch).mockImplementationOnce(() => new Promise<Response>(() => {}));
-    const result = saveCloudScenario("https://example.com", "token", "demo", 0, {}, { timeoutMs: 50 });
+    const result = saveCloudScenario("https://example.com", "token", "demo", 0, world(), {
+      timeoutMs: 50,
+      ...unlocked,
+    });
     const signal = vi.mocked(fetch).mock.calls[0][1]?.signal;
     await vi.advanceTimersByTimeAsync(50);
     expect((await result).status).toBe("timeout");
@@ -217,7 +258,10 @@ describe("cloud-scenario-vault", () => {
   it("supports caller cancellation without treating it as a confirmed failed write", async () => {
     const controller = new AbortController();
     vi.mocked(fetch).mockImplementationOnce(() => new Promise<Response>(() => {}));
-    const result = saveCloudScenario("https://example.com", "token", "demo", 0, {}, { signal: controller.signal });
+    const result = saveCloudScenario("https://example.com", "token", "demo", 0, world(), {
+      signal: controller.signal,
+      ...unlocked,
+    });
     controller.abort();
     expect(await result).toMatchObject({ status: "cancelled", message: expect.stringContaining("not confirmed") });
   });

@@ -12,6 +12,12 @@
 
 import { z } from "zod";
 import { checkSyntheticPayload } from "./synthetic-data-guard";
+import {
+  isValidStoredWardFlowState,
+  migrateStoredWardFlowState,
+  WARD_FLOW_STORED_STATE_VERSION,
+  withInboxStreamADefaults,
+} from "@/components/ward-management/ward-flow-storage-validation";
 
 const SaveResponseSchema = z.object({
   revision: z.number().int().min(1).max(2_147_483_646),
@@ -22,6 +28,44 @@ const LoadResponseSchema = z.object({
   payload: z.record(z.string(), z.unknown()),
   updated_at: z.iso.datetime({ offset: true }),
 });
+
+/**
+ * Review finding A2-9 (12 Oct 2026): the vault holds the same thing a browser restore does, a stored
+ * Ward Flow world `{ version, state }`, and passes the same fences. A save is refused unless the caller
+ * states the session has dispatched no typed text (D-18's default deny: the vault cannot see the
+ * provider's lock itself), and unless the world passes `isValidStoredWardFlowState` after a JSON round
+ * trip. A load is refused unless the version is this build's (or a migratable v6) and the world passes
+ * the same check. Refusal records are never sent, exactly as the browser copy saves `rejections: []`.
+ */
+export type CloudScenarioPayload = { version: number; state: unknown } & Record<string, unknown>;
+
+const INVALID_WORLD = "This scenario is not a valid Ward Flow world for this version, so nothing was loaded.";
+
+/** The payload as it will be stored, or null when it is not a valid world for this build. */
+function storableWorld(payload: unknown): CloudScenarioPayload | null {
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return null;
+  const candidate = payload as Record<string, unknown>;
+  if (candidate.version !== WARD_FLOW_STORED_STATE_VERSION) return null;
+  const state = candidate.state;
+  if (typeof state !== "object" || state === null) return null;
+  let roundTripped: CloudScenarioPayload;
+  try {
+    roundTripped = JSON.parse(JSON.stringify({ ...candidate, state: { ...state, rejections: [] } }));
+  } catch {
+    return null;
+  }
+  return isValidStoredWardFlowState(roundTripped.state) ? roundTripped : null;
+}
+
+/** A loaded payload brought to this build's version and checked, or null when it must be refused. */
+function loadedWorld(payload: Record<string, unknown>): CloudScenarioPayload | null {
+  const state =
+    payload.version === WARD_FLOW_STORED_STATE_VERSION
+      ? payload.state
+      : migrateStoredWardFlowState(payload.state, payload.version);
+  if (state === null || !isValidStoredWardFlowState(state)) return null;
+  return { ...payload, version: WARD_FLOW_STORED_STATE_VERSION, state: withInboxStreamADefaults(state) };
+}
 
 export type CloudRequestOptions = {
   /** Applies to response bodies too. Defaults to 10s; caller may choose 1–60,000ms. */
@@ -111,6 +155,8 @@ export type SaveScenarioResult =
   | { status: "conflict"; message: string }
   | { status: "unauthorised"; message: string }
   | { status: "unsafe_payload"; reason: string; sample?: string }
+  | { status: "typed_text_locked"; message: string }
+  | { status: "invalid_payload"; message: string }
   | { status: "oversized"; message: string }
   | { status: "unavailable"; message: string }
   | { status: "offline"; message: string }
@@ -118,8 +164,9 @@ export type SaveScenarioResult =
 type InterruptedResult = { status: "timeout" | "cancelled"; message: string };
 
 export type LoadScenarioResult =
-  | { status: "loaded"; revision: number; payload: unknown; updatedAt: string }
+  | { status: "loaded"; revision: number; payload: CloudScenarioPayload; updatedAt: string }
   | { status: "not_found" }
+  | { status: "invalid_payload"; message: string }
   | { status: "unauthorised"; message: string }
   | { status: "unavailable"; message: string }
   | { status: "offline"; message: string }
@@ -137,9 +184,20 @@ export async function saveCloudScenario(
   token: string,
   sessionId: string,
   expectedRevision: number,
-  payload: unknown,
-  options: CloudRequestOptions = {},
+  candidate: unknown,
+  options: CloudRequestOptions & {
+    /** Must be `false`, read from the provider's typed-text lock. Absent is refused (default deny). */
+    typedTextSeen?: boolean;
+  } = {},
 ): Promise<SaveScenarioResult> {
+  if (options.typedTextSeen !== false)
+    return {
+      status: "typed_text_locked",
+      message: "This session holds typed text, so it cannot be saved to the cloud. Nothing was sent.",
+    };
+  const payload = storableWorld(candidate);
+  if (!payload)
+    return { status: "invalid_payload", message: "This scenario could not be saved safely. Nothing was sent." };
   // Pre-flight privacy & clinical safety check
   const privacyCheck = checkSyntheticPayload(payload);
   if (!privacyCheck.safe) {
@@ -246,10 +304,12 @@ export async function loadCloudScenario(
           message: "Cloud response did not match expected scenario schema.",
         };
       }
+      const world = loadedWorld(parsed.data.payload);
+      if (!world) return { status: "invalid_payload", message: INVALID_WORLD };
       return {
         status: "loaded",
         revision: parsed.data.revision,
-        payload: parsed.data.payload,
+        payload: world,
         updatedAt: parsed.data.updated_at,
       };
     }
