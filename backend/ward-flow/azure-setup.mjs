@@ -43,10 +43,9 @@ function az(args, json = true) {
 }
 // Account/ad commands do not accept --subscription; retain the selected identity and verify its tenant.
 function directory(args) {
-  const result = spawnSync("az", [...args, "--output", "json"], {
+  const result = spawnSync(process.platform === "win32" ? "az.cmd" : "az", [...args, "--output", "json"], {
     encoding: "utf8",
     maxBuffer: 4 * 1024 * 1024,
-    shell: process.platform === "win32",
   });
   if (result.error || result.status !== 0) throw new Error("Azure identity/directory access unavailable");
   return JSON.parse(result.stdout || "null");
@@ -419,4 +418,6 @@ az(
 );
 console.log(
   "Ward Flow database migration, managed-identity grants and shared backend settings applied. Deploy the backend package and rebuild the frontend with the prepared public settings, then run the authenticated smoke test.",
+);
+
 );
