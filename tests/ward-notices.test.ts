@@ -919,7 +919,7 @@ describe("Item 48, Q3 — WITHDRAW_ACCEPTANCE and a revoked examination each not
     expect(after.notices.some((notice) => notice.kind === "examination_revoked_ward")).toBe(false);
   });
 
-  it("a revoked examination with no accepting ward raises no notice — there is nobody to tell", () => {
+  it("a revoked examination notifies referred wards of withdrawal but sends no examination_revoked notice without an accepting ward", () => {
     const state = referred(seeded()); // destination_review: referred, never accepted
     expect(state.movements.find((candidate) => candidate.id === MOVEMENT_ID)?.acceptedUnitId).toBeUndefined();
     const before = state.notices.length;
@@ -931,8 +931,23 @@ describe("Item 48, Q3 — WITHDRAW_ACCEPTANCE and a revoked examination each not
       outcome: "revoked",
     });
     expect(after.rejections).toEqual([]);
-    expect(after.notices).toHaveLength(before);
+    expect(after.notices).toHaveLength(before + 2);
     expect(after.notices.some((notice) => notice.kind === "examination_revoked_ward")).toBe(false);
+    expect(after.notices.filter((notice) => notice.kind === "ward_request_withdrawn")).toHaveLength(2);
+  });
+
+  it("a revoked examination with no referrals and no accepting ward raises no notice — there is nobody to tell", () => {
+    const state = seeded(); // placement_requested: no referrals, no acceptance
+    const before = state.notices.length;
+    const after = wardFlowReducer(state, {
+      type: "RECORD_EXAMINATION",
+      role: "ed",
+      now: NOW,
+      movementId: MOVEMENT_ID,
+      outcome: "revoked",
+    });
+    expect(after.rejections).toEqual([]);
+    expect(after.notices).toHaveLength(before);
   });
 });
 
