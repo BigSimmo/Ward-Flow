@@ -101,6 +101,7 @@ import {
 } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
 import { isOnOrder } from "../ward-stay-legal";
+import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -392,8 +393,11 @@ export function PatientNowScreen({
     patient: livePatient,
   });
   /* A3-13: absent without leave is the involuntary term under the Act. A voluntary patient who is
-   * not back reads "Not back from leave"; the missing person steps stay the same. */
-  const voluntaryNow = /^voluntary\b/i.test((liveMovement?.legalStatus ?? livePatient?.legalStatus ?? "").trim());
+   * not back reads "Not back from leave"; the missing person steps stay the same. Either source
+   * reading involuntary wins, as in the reducer's guards, so the return-order step is kept. */
+  const voluntaryNow =
+    /^voluntary\b/i.test((liveMovement?.legalStatus ?? livePatient?.legalStatus ?? "").trim()) &&
+    !legalStatusTextIsInvoluntary(livePatient?.legalStatus);
   const modeMeta =
     mode === "awol" && voluntaryNow
       ? { ...PATIENT_MODES.awol, label: "Not back from leave", pill: "Not back from leave" }

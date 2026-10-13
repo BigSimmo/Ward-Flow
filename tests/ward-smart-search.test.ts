@@ -229,4 +229,13 @@ describe("a name typed the way lists print it (audit round 2, S-33)", () => {
     });
     expect(result.people.map((patient) => patient.id)).toContain(person.id);
   });
+
+  it("keeps a comma query as typed for wards, so it is not reordered like a name", () => {
+    // A synthetic two-word ward name; the old rewrite turned "Beta, Alpha" into "Alpha Beta".
+    const unit = { ...units[0], name: "Alpha Beta" };
+    const wardsFor = (query: string) =>
+      searchWardFlow({ query, patients: [], movements: [], units: [unit] }).wards.map((ward) => ward.unit.id);
+    expect(wardsFor("Beta, Alpha")).not.toContain(unit.id);
+    expect(wardsFor("Alpha Beta")).toContain(unit.id);
+  });
 });

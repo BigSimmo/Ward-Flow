@@ -567,7 +567,10 @@ export function normaliseCommaNameQuery(query: string): string {
  * Prefix and word-start matches lead each group. No score, no provider calls.
  */
 export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
+  // The "Surname, Given" rewrite is for matching people (and movements by their name) only; places,
+  // forms, views and tasks keep the query as typed, so "Ward A, Bed" is not read as "Bed Ward A".
   const trimmed = normaliseCommaNameQuery(input.query);
+  const typed = input.query.trim();
   const intent = detectSearchIntent(trimmed);
   if (trimmed.length === 0) {
     return {
@@ -615,32 +618,32 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
   );
 
   const wards = rankAndLimit(
-    searchWards(trimmed, input.units),
-    trimmed,
+    searchWards(typed, input.units),
+    typed,
     (ward) => [ward.unit.name, ward.unit.siteCode, ward.unit.id, ward.siteName],
     limit,
   );
   const emergencyDepartments = rankAndLimit(
-    searchEmergencyDepartments(trimmed),
-    trimmed,
+    searchEmergencyDepartments(typed),
+    typed,
     (department) => [department.ed.name, department.ed.siteCode, department.ed.id],
     limit,
   );
   const communityTeams = rankAndLimit(
-    searchCommunityTeams(trimmed),
-    trimmed,
+    searchCommunityTeams(typed),
+    typed,
     (team) => [team.team.name, team.team.id],
     limit,
   );
   const legalForms = rankAndLimit(
-    searchLegalForms(trimmed),
-    trimmed,
+    searchLegalForms(typed),
+    typed,
     (form) => [form.form.code, form.title, `Form ${form.form.code}`],
     limit,
   );
   const views = rankAndLimit(
-    searchCoreViews(trimmed),
-    trimmed,
+    searchCoreViews(typed),
+    typed,
     (view) => [view.view.title, view.view.key, view.view.description, ...(view.view.keywords ?? [])],
     limit,
   );
@@ -652,8 +655,8 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
   );
   const tasks = rankAndLimit(
-    searchTasks(trimmed, tasksInbox),
-    trimmed,
+    searchTasks(typed, tasksInbox),
+    typed,
     (task) => [task.task.title, task.task.detail, task.task.movementId, task.task.owner],
     limit,
   );
