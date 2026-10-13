@@ -1412,7 +1412,7 @@ export function buildActionInbox(
  * 24-hour departmental access target, so a breach-led ranking would render this section empty.
  * Ranking by wait alone always has something to hand over.
  *
- * `placementGoneWrong` names exactly three situations, none of them a legal claim:
+ * `placementGoneWrong` names exactly four situations, none of them a legal claim:
  * - `"escalated"` — the movement carries a recorded `escalation`: a human already declared the
  *   referral network exhausted and rang the state bed coordination desk.
  * - `"declined_by_all"` — the movement has a decline on record, nothing still pending, and no
@@ -1440,6 +1440,9 @@ export function buildActionInbox(
  *   reads `"acceptance_withdrawn"`; a decline recorded after that withdrawal (a fresh referral
  *   that also said no) puts the movement back in front of a network that has since refused it
  *   again, and it reads `"declined_by_all"` once more.
+ * - `"transport_stopped_awaiting_release"` — transport was stopped while the movement still holds
+ *   its bed, and the journey remains visible until that bed is released.
+ *
  * A movement can satisfy more than one of these; the escalation check runs first, and the
  * decline/withdrawal ordering above is exactly what keeps the other two exclusive of each other,
  * so every movement is listed once.
@@ -1478,7 +1481,7 @@ export type HandoverSnapshot = {
   inTransit: { movement: Movement; leg: TransportLeg | "Cancelled" | undefined }[];
   placementGoneWrong: {
     movement: Movement;
-    kind: "escalated" | "declined_by_all" | "acceptance_withdrawn";
+    kind: "escalated" | "declined_by_all" | "acceptance_withdrawn" | "transport_stopped_awaiting_release";
   }[];
 };
 
@@ -1543,7 +1546,11 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
 
   const stoppedAwaitingRelease = movements.filter(isStoppedTransportAwaitingRelease);
 
-  const pulledBeds = open
+  const pulledBedCandidates = [
+    ...open,
+    ...stoppedAwaitingRelease.filter((movement) => !open.some((openMovement) => openMovement.id === movement.id)),
+  ];
+  const pulledBeds = pulledBedCandidates
     .filter((movement) => movement.pullExpiresAt !== undefined)
     .map((movement) => {
       const pullExpiresAt = movement.pullExpiresAt as Instant;
@@ -1593,7 +1600,7 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
 
   const stoppedGoneWrong = stoppedAwaitingRelease.map((movement) => ({
     movement,
-    kind: "acceptance_withdrawn" as const,
+    kind: "transport_stopped_awaiting_release" as const,
   }));
 
   return {
