@@ -248,4 +248,33 @@ describe("community admitted table — transport booking and cancel", () => {
     expect(within(cell).queryByTestId("ward-community-open-dossier-AD-TRANSPORT-01")).toBeNull();
     expect(within(cell).getByTestId(`ward-community-book-transport-${movementId}`)).toBeTruthy();
   });
+
+  it("dismisses book transport dialog on Escape and restores focus to opener", () => {
+    const { movementId } = pulledMovementWithoutTransport();
+    renderTeamScreen(movementId);
+
+    const trigger = screen.getByTestId(`ward-community-book-transport-${movementId}`);
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(screen.getByTestId(`ward-community-book-transport-dialog-${movementId}`)).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId(`ward-community-book-transport-dialog-${movementId}`)).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("dismisses cancel transport dialog on Escape and restores focus to opener", () => {
+    const { movementId } = pulledMovementWithoutTransport();
+    renderTeamScreen(movementId);
+
+    fireEvent.click(screen.getByTestId("prebook-transport"));
+    const trigger = screen.getByTestId(`ward-community-cancel-transport-${movementId}`);
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(screen.getByTestId(`ward-community-cancel-transport-dialog-${movementId}`)).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId(`ward-community-cancel-transport-dialog-${movementId}`)).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
 });

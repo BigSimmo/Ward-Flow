@@ -17,6 +17,7 @@ import {
 } from "react";
 
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
+import { useDebouncedValue } from "./search/use-debounced-value";
 import { destinationUnit, stageCopy } from "@/components/ward-management/ward-derivations";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -100,14 +101,16 @@ export function WardChromeSearch({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
+  const debouncedQuery = useDebouncedValue(query, 120);
   const trimmed = query.trim();
+  const debouncedTrimmed = debouncedQuery.trim();
 
   const smartResults = useMemo(
     () =>
-      trimmed.length === 0
+      debouncedTrimmed.length === 0
         ? null
         : searchWardFlow({
-            query: trimmed,
+            query: debouncedTrimmed,
             patients,
             movements,
             units,
@@ -115,7 +118,7 @@ export function WardChromeSearch({
             limitPerGroup: MAX_RESULTS_PER_GROUP,
             plannedAdmissions: context?.plannedAdmissions,
           }),
-    [trimmed, patients, movements, units, referrals, context?.plannedAdmissions],
+    [debouncedTrimmed, patients, movements, units, referrals, context?.plannedAdmissions],
   );
 
   const groups = useMemo(() => {

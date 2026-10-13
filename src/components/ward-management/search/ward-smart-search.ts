@@ -335,7 +335,7 @@ export function searchCoreViews(
 /**
  * Matches action inbox tasks by summary/detail, title, id, or keyword "task".
  */
-export function searchTasks(query: string, tasks: InboxItem[]): TaskSearchResult[] {
+export function searchTasks(query: string, tasks: readonly InboxItem[]): TaskSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
@@ -530,6 +530,7 @@ export type SmartSearchInput = {
   now?: number;
   limitPerGroup?: number;
   plannedAdmissions?: readonly import("@/components/ward-management/ward-admissions").PlannedAdmission[];
+  precomputedTasks?: readonly InboxItem[];
 };
 
 export type SmartSearchResults = {
@@ -648,12 +649,18 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     limit,
   );
 
-  const tasksInbox = buildActionInbox(
-    input.movements.filter(isOpen),
-    input.now ?? 0,
-    input.units,
-    input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
-  );
+  const shouldDeriveTasks =
+    intent === "task" || intent === "general" || /\b(tasks?|actions?|inbox|pending|overdue)\b/i.test(typed);
+
+  const tasksInbox = shouldDeriveTasks
+    ? (input.precomputedTasks ??
+      buildActionInbox(
+        input.movements.filter(isOpen),
+        input.now ?? 0,
+        input.units,
+        input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
+      ))
+    : [];
   const tasks = rankAndLimit(
     searchTasks(typed, tasksInbox),
     typed,

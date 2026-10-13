@@ -347,8 +347,9 @@ describe("assertion 2 — a decision NOT in the table produces none (the anti-va
     expect(after.notices).toEqual(state.notices);
   });
 
-  it("WITHDRAW_REFERRAL raises no notice, though it ends a movement's live referral", () => {
+  it("WITHDRAW_REFERRAL notifies all referred wards when a live referral is withdrawn", () => {
     const state = referred(seeded());
+    const before = state.notices.length;
     const after = wardFlowReducer(state, {
       type: "WITHDRAW_REFERRAL",
       role: "coordinator",
@@ -356,7 +357,9 @@ describe("assertion 2 — a decision NOT in the table produces none (the anti-va
       movementId: MOVEMENT_ID,
     });
     expect(after.rejections).toEqual([]);
-    expect(after.notices).toEqual(state.notices);
+    const added = after.notices.slice(before);
+    expect(added.length).toBeGreaterThan(0);
+    expect(added.every((n) => n.kind === "ward_request_withdrawn")).toBe(true);
   });
 });
 

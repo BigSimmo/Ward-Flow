@@ -18,7 +18,7 @@ import { SEVERE_CAUSES, delayGroups, type DelayCause } from "@/components/ward-m
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardGroupHeading, WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { edById } from "@/components/ward-management/ward-sites";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
@@ -369,10 +369,12 @@ export function MovementsScreen() {
     setReveal((previous) => ({ id, request: (previous?.request ?? 0) + 1 }));
   }
 
-  const stages = journeyStages(movements, now);
-  const closedMovements = movements.filter((movement) => !isOpen(movement));
-  const closedToday = closedMovements.filter(
-    (movement) => movement.closure !== undefined && dayOf(movement.closure.at) === dayOf(now),
+  const stages = useMemo(() => journeyStages(movements, now), [movements, now]);
+  const closedMovements = useMemo(() => movements.filter((movement) => !isOpen(movement)), [movements]);
+  const closedToday = useMemo(
+    () =>
+      closedMovements.filter((movement) => movement.closure !== undefined && dayOf(movement.closure.at) === dayOf(now)),
+    [closedMovements, now],
   );
   /*
    * ⚠️ Ordered by `byLongestWait`, not left in fixture order. The footer states ONE precedence
@@ -383,22 +385,38 @@ export function MovementsScreen() {
   // Active corridors are open movements with an accepting ward. Same-day declines are derived
   // separately because a decline has no journey stage of its own. The records do not support an
   // honest "unused corridor" count, so the drawing's illustrative third category is omitted.
-  const corridors = [...corridorCounts(movements)].sort(
-    (a, b) => b.count - a.count || (a.originEdId < b.originEdId ? -1 : a.originEdId > b.originEdId ? 1 : 0),
+  const corridors = useMemo(
+    () =>
+      [...corridorCounts(movements)].sort(
+        (a, b) => b.count - a.count || (a.originEdId < b.originEdId ? -1 : a.originEdId > b.originEdId ? 1 : 0),
+      ),
+    [movements],
   );
-  const refusedCorridors = refusedCorridorCounts(movements, now);
+  const refusedCorridors = useMemo(() => refusedCorridorCounts(movements, now), [movements, now]);
 
-  const withLeg = byLongestWait(
-    movements.filter((movement) => movement.transport?.acceptedAt !== undefined),
-    now,
+  const withLeg = useMemo(
+    () =>
+      byLongestWait(
+        movements.filter((movement) => movement.transport?.acceptedAt !== undefined),
+        now,
+      ),
+    [movements, now],
   );
-  const withoutLeg = byLongestWait(
-    movements.filter((movement) => movement.transport === undefined),
-    now,
+  const withoutLeg = useMemo(
+    () =>
+      byLongestWait(
+        movements.filter((movement) => movement.transport === undefined),
+        now,
+      ),
+    [movements, now],
   );
-  const requestedLeg = byLongestWait(
-    movements.filter((movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined),
-    now,
+  const requestedLeg = useMemo(
+    () =>
+      byLongestWait(
+        movements.filter((movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined),
+        now,
+      ),
+    [movements, now],
   );
 
   // `transportLegs` takes whichever list the caller passes (the derivation's own comment says so
@@ -448,28 +466,44 @@ export function MovementsScreen() {
   );
   useWardChecksPublisher(checks);
 
-  const openMovements = movements.filter(isOpen);
-  const openStages = journeyStages(openMovements, now);
-  const waitingMovements = byLongestWait(openMovements, now);
-  const unacceptedTransport = byLongestWait(
-    openMovements.filter((movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined),
-    now,
+  const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
+  const openStages = useMemo(() => journeyStages(openMovements, now), [openMovements, now]);
+  const waitingMovements = useMemo(() => byLongestWait(openMovements, now), [openMovements, now]);
+  const unacceptedTransport = useMemo(
+    () =>
+      byLongestWait(
+        openMovements.filter(
+          (movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined,
+        ),
+        now,
+      ),
+    [openMovements, now],
   );
-  const noTransportRecord = byLongestWait(
-    openMovements.filter((movement) => movement.transport === undefined),
-    now,
+  const noTransportRecord = useMemo(
+    () =>
+      byLongestWait(
+        openMovements.filter((movement) => movement.transport === undefined),
+        now,
+      ),
+    [openMovements, now],
   );
-  const legs = transportLegs(openMovements, now);
-  const counts = transportCounts(legs);
+  const legs = useMemo(() => transportLegs(openMovements, now), [openMovements, now]);
+  const counts = useMemo(() => transportCounts(legs), [legs]);
   // Audit round 2, A4-18: only a pulled bed or later needs transport, so a referred-stage movement
   // is not "without" a leg.
-  const legMovementIds = new Set(legs.map((leg) => leg.movement.id));
-  const withoutTransport = openMovements.filter(
-    (m) => (m.stage === "pulled" || m.stage === "handover_ready" || m.stage === "moving") && !legMovementIds.has(m.id),
-  ).length;
-  const activeCorridorCount = new Set(
-    corridors.map((corridor) => JSON.stringify([corridor.originEdId, corridor.acceptedUnitId])),
-  ).size;
+  const legMovementIds = useMemo(() => new Set(legs.map((leg) => leg.movement.id)), [legs]);
+  const withoutTransport = useMemo(
+    () =>
+      openMovements.filter(
+        (m) =>
+          (m.stage === "pulled" || m.stage === "handover_ready" || m.stage === "moving") && !legMovementIds.has(m.id),
+      ).length,
+    [openMovements, legMovementIds],
+  );
+  const activeCorridorCount = useMemo(
+    () => new Set(corridors.map((corridor) => JSON.stringify([corridor.originEdId, corridor.acceptedUnitId]))).size,
+    [corridors],
+  );
   const tierOneOpen = openMovements.filter((movement) => movement.urgency === 1);
   const attentionCore = byLongestWait(tierOneOpen, now).slice(0, 3);
   /**
@@ -629,7 +663,7 @@ export function MovementsScreen() {
   const shownStages = worklistStages;
   const shownCauseGroups = worklistCauseGroups;
   const shownTransportGroups = worklistTransportGroups;
-  const shownByWait = byLongestWait(worklistMovements, now);
+  const shownByWait = useMemo(() => byLongestWait(worklistMovements, now), [worklistMovements, now]);
   const shownClosedToday = worklistClosedToday;
   const searchedTotal = matchesSearch ? worklistMovements.filter(matchesSearch).length : null;
   const markedTotal =
@@ -1065,7 +1099,11 @@ export function MovementsScreen() {
 
         {isPhone ? (
           <nav className={flow.phNav} aria-label="Movement panels">
-            <button type="button" className={flow.phNavCard} onClick={() => setPhoneSheet("arrivals")}>
+            <button
+              type="button"
+              className={flow.phNavCard}
+              onClick={() => startTransition(() => setPhoneSheet("arrivals"))}
+            >
               <ListFilter size={16} className={flow.phNavIcon} aria-hidden="true" />
               <span className={flow.phNavText}>
                 <strong>Arrivals ahead</strong>
@@ -1076,7 +1114,11 @@ export function MovementsScreen() {
               </span>
               <ChevronRight size={16} className={flow.phNavChevron} aria-hidden="true" />
             </button>
-            <button type="button" className={flow.phNavCard} onClick={() => setPhoneSheet("corridors")}>
+            <button
+              type="button"
+              className={flow.phNavCard}
+              onClick={() => startTransition(() => setPhoneSheet("corridors"))}
+            >
               <ArrowRightLeft size={16} className={flow.phNavIcon} aria-hidden="true" />
               <span className={flow.phNavText}>
                 <strong>Corridors</strong>
@@ -1086,7 +1128,11 @@ export function MovementsScreen() {
               </span>
               <ChevronRight size={16} className={flow.phNavChevron} aria-hidden="true" />
             </button>
-            <button type="button" className={flow.phNavCard} onClick={() => setPhoneSheet("transport")}>
+            <button
+              type="button"
+              className={flow.phNavCard}
+              onClick={() => startTransition(() => setPhoneSheet("transport"))}
+            >
               <Truck size={16} className={flow.phNavIcon} aria-hidden="true" />
               <span className={flow.phNavText}>
                 <strong>Transport now</strong>
@@ -1228,7 +1274,7 @@ export function MovementsScreen() {
                         aria-selected={boardTab === tab.id}
                         tabIndex={boardTab === tab.id ? 0 : -1}
                         className={styles.boardTab}
-                        onClick={() => setBoardTab(tab.id)}
+                        onClick={() => startTransition(() => setBoardTab(tab.id))}
                       >
                         {/* Absence and zero (rule 2): "none", never a bare "0" — the same wording every
                             other count on these screens uses, and a ruling rather than a default. */}
@@ -1259,7 +1305,7 @@ export function MovementsScreen() {
                         aria-checked={order === option.id}
                         aria-label={option.description}
                         className={styles.orderBtn}
-                        onClick={() => setOrder(option.id)}
+                        onClick={() => startTransition(() => setOrder(option.id))}
                       >
                         <span>{option.label}</span>
                       </button>
@@ -1483,7 +1529,7 @@ export function MovementsScreen() {
                     <button
                       type="button"
                       aria-pressed={sideView === "transport"}
-                      onClick={() => setSideView("transport")}
+                      onClick={() => startTransition(() => setSideView("transport"))}
                       aria-label="Transport now"
                       title="Transport now"
                     >
@@ -1492,7 +1538,7 @@ export function MovementsScreen() {
                     <button
                       type="button"
                       aria-pressed={sideView === "shape"}
-                      onClick={() => setSideView("shape")}
+                      onClick={() => startTransition(() => setSideView("shape"))}
                       aria-label="Shape of the day"
                       title="Shape of the day"
                     >
@@ -1562,7 +1608,7 @@ export function MovementsScreen() {
                         type="button"
                         aria-pressed={shapeTab === tab.id}
                         className={styles.shapeTab}
-                        onClick={() => setShapeTab(tab.id)}
+                        onClick={() => startTransition(() => setShapeTab(tab.id))}
                       >
                         <span>{tab.label}</span>
                         <strong>{tab.count === 0 ? "none" : tab.count}</strong>

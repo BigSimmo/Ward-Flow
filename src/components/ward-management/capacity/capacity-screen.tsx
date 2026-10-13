@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Printer } from "lucide-react";
 import { LEAVING_DESTINATIONS } from "../ward-admissions";
@@ -201,13 +201,16 @@ export function CapacityScreen() {
     return () => observer.disconnect();
   }, [showAllColumns, tableFullscreen, service, mapLayout]);
 
-  const gapRows = bedKindGaps(movements, units, now);
-  const gapTotals = bedKindTotals(gapRows);
+  const gapRows = useMemo(() => bedKindGaps(movements, units, now), [movements, units, now]);
+  const gapTotals = useMemo(() => bedKindTotals(gapRows), [gapRows]);
   // Smart feature 10: whole-network, like the mismatch band above it, so a service scope never
   // changes it.
   // Stream D: booked planned admissions due in each window count as beds needed.
-  const forecast = bedsForecast(units, bedReleases, admissions, movements, now, plannedAdmissions ?? []);
-  const shortfalls = gapRows.filter((row) => row.gap < 0);
+  const forecast = useMemo(
+    () => bedsForecast(units, bedReleases, admissions, movements, now, plannedAdmissions ?? []),
+    [units, bedReleases, admissions, movements, now, plannedAdmissions],
+  );
+  const shortfalls = useMemo(() => gapRows.filter((row) => row.gap < 0), [gapRows]);
 
   // ⚠️ `bedReleases` PASSED DELIBERATELY. "Expected to free today" is not a fact `Unit` carries —
   // it lives in reducer state — so `networkWardRows` returns `undefined` for it unless the releases
@@ -218,24 +221,38 @@ export function CapacityScreen() {
   // list rather than an empty one, so no figure it derives is computed against a fabricated
   // absence. Nothing on this table renders `onLeave` today — passing the truth anyway costs
   // nothing and stops the next figure added here inheriting a silent `[]`.
-  const networkRows = networkWardRows(units, now, bedReleases, admissions, leaveBeds);
-  const netTotals = networkTotals(networkRows);
-  // One occupancy count on every page and in the rail (`ward-occupancy.ts`, device audit 11 Oct 2026).
-  const occupancy = wardOccupancy(
-    networkRows.map((row) => row.unit),
-    admissions,
-    bedReleases,
+  const networkRows = useMemo(
+    () => networkWardRows(units, now, bedReleases, admissions, leaveBeds),
+    [units, now, bedReleases, admissions, leaveBeds],
   );
-  const selectedRow = networkRows.find((row) => row.unit.id === selectedUnitId);
-  const totalLockedReady = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
+  const netTotals = useMemo(() => networkTotals(networkRows), [networkRows]);
+  // One occupancy count on every page and in the rail (`ward-occupancy.ts`, device audit 11 Oct 2026).
+  const occupancy = useMemo(
+    () =>
+      wardOccupancy(
+        networkRows.map((row) => row.unit),
+        admissions,
+        bedReleases,
+      ),
+    [networkRows, admissions, bedReleases],
+  );
+  const selectedRow = useMemo(
+    () => networkRows.find((row) => row.unit.id === selectedUnitId),
+    [networkRows, selectedUnitId],
+  );
+  const totalLockedReady = useMemo(() => networkRows.reduce((sum, row) => sum + row.lockedReady, 0), [networkRows]);
   const totalOpenReady = netTotals.ready - totalLockedReady;
-  const totalPulled = networkRows.reduce((sum, row) => sum + row.pulled, 0);
+  const totalPulled = useMemo(() => networkRows.reduce((sum, row) => sum + row.pulled, 0), [networkRows]);
   // Phone hero: the ring's figure without the ring, one decimal with %.
   const occupancyPercentText = formatWardOccupancy(occupancy, "Not known");
   // The ward whose count is oldest: the hero's jump chip opens it.
-  const oldestCount = networkRows.reduce<NetworkWardRow | undefined>(
-    (oldest, row) => (oldest === undefined || row.confirmedAt < oldest.confirmedAt ? row : oldest),
-    undefined,
+  const oldestCount = useMemo(
+    () =>
+      networkRows.reduce<NetworkWardRow | undefined>(
+        (oldest, row) => (oldest === undefined || row.confirmedAt < oldest.confirmedAt ? row : oldest),
+        undefined,
+      ),
+    [networkRows],
   );
 
   /**
@@ -247,8 +264,10 @@ export function CapacityScreen() {
    * already throw if a unit's site does not — so there is no "no recorded service" population to
    * state here, and the scope bar below is mounted without a `noRecordedServiceCount`.
    */
-  const scopedNetworkRows =
-    service === null ? networkRows : networkRows.filter((row) => unitHealthService(row.unit) === service);
+  const scopedNetworkRows = useMemo(
+    () => (service === null ? networkRows : networkRows.filter((row) => unitHealthService(row.unit) === service)),
+    [service, networkRows],
+  );
   /**
    * The scoped mirrors of `totalLockedReady`/`totalOpenReady`/`netTotals.beds` above — §2 "Ready now
    * is scoped, with the network figure in words." Each is summed straight from `scopedNetworkRows`,
@@ -257,11 +276,17 @@ export function CapacityScreen() {
    * these figures with it. Unused while `service` is `null` — `ReadyNowSection` never reads them on
    * that branch — but computed unconditionally so there is nothing conditional here to get wrong.
    */
-  const scopedReady = scopedNetworkRows.reduce((sum, row) => sum + row.ready, 0);
-  const scopedLockedReady = scopedNetworkRows.reduce((sum, row) => sum + row.lockedReady, 0);
+  const scopedReady = useMemo(() => scopedNetworkRows.reduce((sum, row) => sum + row.ready, 0), [scopedNetworkRows]);
+  const scopedLockedReady = useMemo(
+    () => scopedNetworkRows.reduce((sum, row) => sum + row.lockedReady, 0),
+    [scopedNetworkRows],
+  );
   const scopedOpenReady = scopedReady - scopedLockedReady;
-  const scopedPendingPreparation = scopedNetworkRows.reduce((sum, row) => sum + (row.pendingPreparation ?? 0), 0);
-  const scopedBeds = scopedNetworkRows.reduce((sum, row) => sum + row.unit.beds, 0);
+  const scopedPendingPreparation = useMemo(
+    () => scopedNetworkRows.reduce((sum, row) => sum + (row.pendingPreparation ?? 0), 0),
+    [scopedNetworkRows],
+  );
+  const scopedBeds = useMemo(() => scopedNetworkRows.reduce((sum, row) => sum + row.unit.beds, 0), [scopedNetworkRows]);
 
   /**
    * ⚠️ **ONE PREDICATE, MULTIPLE CONSUMERS, SO A CHIP'S COUNT AND ITS "MATCHING" FIGURE CANNOT
@@ -320,28 +345,35 @@ export function CapacityScreen() {
    * `groupNetworkWardRowsByService` states as a sentence — the same case `bed-map.tsx` already
    * handles the same way, immediately above this table.
    */
-  const networkServiceGroups = groupNetworkWardRowsByService(visibleNetworkRows).map((group) => ({
-    ...group,
-    wards: [...group.wards].sort((a, b) =>
-      wardSort === "ready"
-        ? b.ready - a.ready || a.unit.name.localeCompare(b.unit.name)
-        : wardSort === "confirmation"
-          ? a.confirmedAt - b.confirmedAt || a.unit.name.localeCompare(b.unit.name)
-          : a.unit.name.localeCompare(b.unit.name),
-    ),
-  }));
+  const networkServiceGroups = useMemo(
+    () =>
+      groupNetworkWardRowsByService(visibleNetworkRows).map((group) => ({
+        ...group,
+        wards: [...group.wards].sort((a, b) =>
+          wardSort === "ready"
+            ? b.ready - a.ready || a.unit.name.localeCompare(b.unit.name)
+            : wardSort === "confirmation"
+              ? a.confirmedAt - b.confirmedAt || a.unit.name.localeCompare(b.unit.name)
+              : a.unit.name.localeCompare(b.unit.name),
+        ),
+      })),
+    [visibleNetworkRows, wardSort],
+  );
 
   // See the file-level warning above: `freeing` is only ever a real number on a row where the
   // derivation actually produced one. Deriving `freeingTracked` from the data, rather than assuming
   // it is always absent, is what lets this screen start showing real figures the day a future change
   // to `networkWardRows` starts returning them.
-  const freeingValues = networkRows.map((row) => row.freeing).filter((value): value is number => value !== undefined);
+  const freeingValues = useMemo(
+    () => networkRows.map((row) => row.freeing).filter((value): value is number => value !== undefined),
+    [networkRows],
+  );
   const freeingTracked = freeingValues.length > 0;
-  const totalFreeing = freeingValues.reduce((sum, value) => sum + value, 0);
-  const freeingWards = networkRows.filter((row) => (row.freeing ?? 0) > 0);
+  const totalFreeing = useMemo(() => freeingValues.reduce((sum, value) => sum + value, 0), [freeingValues]);
+  const freeingWards = useMemo(() => networkRows.filter((row) => (row.freeing ?? 0) > 0), [networkRows]);
   // Restored 2026-09-05. See `releasesBeyondToday`: a bed freeing beyond today is correctly left
   // out of every figure on this screen, and saying so is a different act from counting it.
-  const excludedBeyondToday = releasesBeyondToday(bedReleases, now);
+  const excludedBeyondToday = useMemo(() => releasesBeyondToday(bedReleases, now), [bedReleases, now]);
 
   // Option A: the ward table is the bed map's Table layout, not a second list under the map.
   const wardTable = (
@@ -395,7 +427,10 @@ export function CapacityScreen() {
                 name="wardSort"
                 aria-label="Sort wards"
                 value={wardSort}
-                onChange={(event) => setWardSort(event.target.value)}
+                onChange={(event) => {
+                  const nextSort = event.target.value;
+                  startTransition(() => setWardSort(nextSort));
+                }}
               >
                 <option value="name">Ward A–Z</option>
                 <option value="ready">Most ready</option>
@@ -496,7 +531,7 @@ export function CapacityScreen() {
             id="capacity-network"
             label="Network details"
             value={networkTab}
-            onChange={setNetworkTab}
+            onChange={(tab) => startTransition(() => setNetworkTab(tab))}
             options={[
               { id: "freeing", label: "Beds freeing" },
               { id: "attention", label: "Attention" },
@@ -658,7 +693,9 @@ export function CapacityScreen() {
                   pressed={networkFilterId === "locked-ready"}
                   onToggle={() => {
                     highlightWards(networkFilterId === "locked-ready" ? "all" : "locked-ready");
-                    setPhoneTab("wards");
+                    startTransition(() => {
+                      setPhoneTab("wards");
+                    });
                   }}
                 />
                 <HeroStat value={totalPulled} label="Beds pulled" tone={totalPulled > 0 ? "warning" : undefined} />
@@ -783,7 +820,7 @@ export function CapacityScreen() {
                 },
               ]}
               value={phoneTab}
-              onChange={setPhoneTab}
+              onChange={(nextTab) => startTransition(() => setPhoneTab(nextTab))}
             />
           </div>
         ) : null}
@@ -921,7 +958,7 @@ export function CapacityScreen() {
               <div className={styles.capacityPanelBody} role="region" aria-label="Bed map details" tabIndex={0}>
                 <BedMap
                   initialLayout="grid"
-                  onLayoutChange={setMapLayout}
+                  onLayoutChange={(nextLayout) => startTransition(() => setMapLayout(nextLayout))}
                   table={wardTable}
                   initialBedDetail={false}
                   units={units}

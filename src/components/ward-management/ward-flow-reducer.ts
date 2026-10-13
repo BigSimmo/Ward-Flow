@@ -4527,40 +4527,41 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         closure: {
           at: event.now,
           outcome: "did_not_proceed",
-          reason: "The referrer withdrew the referral",
+          reason:
+            event.role === "coordinator"
+              ? "The coordinator withdrew the referral"
+              : "The referrer withdrew the referral",
         },
         // Nothing is blocking a movement that is over. Left saying "Awaiting destination response"
         // it would keep a withdrawn patient looking like a live obstruction.
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
       };
       const next = replaceMovement(state, movement.id, updated);
-      {
-        let noticeCount = state.notices.length;
-        const wardNotices = movement.referredUnitIds.map((unitId) =>
+      let noticeCount = state.notices.length;
+      const actorLabel = event.role === "coordinator" ? "coordinator" : "referrer";
+      const wardNotices = movement.referredUnitIds.map((unitId) =>
+        makeNotice(
+          event.now,
+          noticeCount++,
+          "ward_request_withdrawn",
+          { role: "ward", placeId: unitId },
+          { movementId: movement.id, unitId },
+          `The referral for ${movement.id} was withdrawn by the ${actorLabel}.`,
+        ),
+      );
+      if (hadLiveTransport) {
+        wardNotices.push(
           makeNotice(
             event.now,
             noticeCount++,
-            "ward_request_withdrawn",
-            { role: "ward", placeId: unitId },
-            { movementId: movement.id, unitId },
-            `The referral for ${movement.id} was withdrawn by the ${event.role === "coordinator" ? "coordinator" : "referrer"}.`,
+            "transport_cancelled_officer",
+            { role: "officer" },
+            { movementId: movement.id },
+            `Transport for ${movement.id} was cancelled: referral was withdrawn by the ${actorLabel}.`,
           ),
         );
-        if (hadLiveTransport) {
-          wardNotices.push(
-            makeNotice(
-              event.now,
-              noticeCount++,
-              "transport_cancelled_officer",
-              { role: "officer" },
-              { movementId: movement.id },
-              `Transport for ${movement.id} was cancelled: referral was withdrawn by the ${event.role === "coordinator" ? "coordinator" : "referrer"}.`,
-            ),
-          );
-        }
-        return appendNotices(next, wardNotices);
       }
-      return next;
+      return appendNotices(next, wardNotices);
     }
 
     case "WITHDRAW_WARD_REQUEST": {

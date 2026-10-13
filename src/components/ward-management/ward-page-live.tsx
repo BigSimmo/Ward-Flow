@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { LiveChip } from "@/components/wf";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardClock } from "./ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
 /**
@@ -14,7 +14,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
  * provider's clock. The chip's age is the wall time since the provider last ticked.
  */
 export function usePageLive(): { now: Instant; paused: boolean; togglePause: () => void } {
-  const { now } = useWardFlow();
+  const now = useWardClock();
   const [pausedAt, setPausedAt] = useState<Instant | null>(null);
   const togglePause = useCallback(() => setPausedAt((value) => (value === null ? now : null)), [now]);
   return { now: pausedAt ?? now, paused: pausedAt !== null, togglePause };
@@ -32,7 +32,7 @@ function AgeTicker() {
 }
 
 function LiveAge() {
-  const { now } = useWardFlow();
+  const now = useWardClock();
   return <AgeTicker key={now} />;
 }
 

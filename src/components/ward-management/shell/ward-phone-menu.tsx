@@ -30,6 +30,7 @@ import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-orde
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
+import { useDebouncedValue } from "../search/use-debounced-value";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
@@ -793,6 +794,7 @@ export function WardPhoneMenu({
   const [createOpen, setCreateOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query, 120);
 
   useEffect(
     () =>
@@ -878,7 +880,7 @@ export function WardPhoneMenu({
       >
         <MenuSearch query={query} onQuery={setQuery} />
         <MenuPages
-          query={query}
+          query={debouncedQuery}
           entries={entries}
           needs={needs}
           groups={groups}

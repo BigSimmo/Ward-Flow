@@ -12,6 +12,7 @@ import { rolesOnlyReason } from "../ward-role-permissions";
 import { referralInboxName } from "./referral-inbox";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./ward-referral-drawer.module.css";
 
 /** The ward a `/ward/<unitId>` or `/board/<unitId>` route belongs to, if any. */
@@ -156,10 +157,13 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                 <button
                   type="button"
                   className={styles.patientChipBtn}
-                  disabled={acceptRefusal !== undefined}
+                  aria-disabled={acceptRefusal !== undefined ? "true" : undefined}
                   aria-describedby={acceptRefusal ? acceptReasonId : undefined}
-                  onClick={() => {
-                    if (acceptRefusal) return;
+                  onClick={(e) => {
+                    if (acceptRefusal) {
+                      ignoreUnavailableActivation(e);
+                      return;
+                    }
                     if (isCoordinator && needsGenderPlacement && (genderReason === "" || !genderTicked)) {
                       setLocalNote({ id: entry.id, text: "Choose a placement reason and tick the ward check first." });
                       return;
@@ -188,10 +192,13 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                 <button
                   type="button"
                   className={styles.patientChipBtn}
-                  disabled={roleRefusal !== undefined}
+                  aria-disabled={roleRefusal !== undefined ? "true" : undefined}
                   aria-describedby={roleRefusal ? declineReasonId : undefined}
-                  onClick={() => {
-                    if (roleRefusal) return;
+                  onClick={(e) => {
+                    if (roleRefusal) {
+                      ignoreUnavailableActivation(e);
+                      return;
+                    }
                     setAttempt({ id: entry.id, count: rejections.length });
                     dispatch({
                       type: "DECLINE_REFERRAL",
@@ -228,20 +235,22 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                 <button
                   type="button"
                   className={styles.patientChipBtn}
-                  disabled={!reasons[entry.id] || roleRefusal !== undefined}
+                  aria-disabled={!reasons[entry.id] || roleRefusal !== undefined ? "true" : undefined}
                   aria-describedby={roleRefusal ? declineReasonId : undefined}
-                  onClick={() => {
+                  onClick={(e) => {
                     const reason = reasons[entry.id];
-                    if (reason && !roleRefusal) {
-                      setAttempt({ id: entry.id, count: rejections.length });
-                      dispatch({
-                        type: "DECLINE_REFERRAL",
-                        ...decisionBase,
-                        referralId: entry.id,
-                        reason,
-                      });
-                      watchDecision(entry.id, "Referral declined");
+                    if (!reason || roleRefusal) {
+                      ignoreUnavailableActivation(e);
+                      return;
                     }
+                    setAttempt({ id: entry.id, count: rejections.length });
+                    dispatch({
+                      type: "DECLINE_REFERRAL",
+                      ...decisionBase,
+                      referralId: entry.id,
+                      reason,
+                    });
+                    watchDecision(entry.id, "Referral declined");
                   }}
                 >
                   Decline referral
