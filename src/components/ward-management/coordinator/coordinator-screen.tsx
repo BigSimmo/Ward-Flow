@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { createBrowserStore } from "@/lib/client-store-factory";
 
 import { Copy } from "lucide-react";
 import {
@@ -71,6 +72,45 @@ import { useHomeLayout } from "./home-layout";
 import { HomeWardSheet } from "./home-phone-sheets";
 
 const HANDOVER_HREF = "/mockups/ward-flow/handover";
+
+/*
+ * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
+ * back keeps it (the "Filtered to" chip shows it is on). sessionStorage, wrapped so a blocked
+ * store never throws; the server snapshot is no filter.
+ */
+const HOME_ED_FILTER_KEY = "ward_flow_home_ed_filter";
+const HOME_ED_FILTER_EVENT = "ward_flow_home_ed_filter_change";
+let homeEdFilterFallback: string | null | undefined;
+
+function readHomeEdFilter(): string | null {
+  try {
+    return window.sessionStorage.getItem(HOME_ED_FILTER_KEY);
+  } catch {
+    return homeEdFilterFallback ?? null;
+  }
+}
+
+function writeHomeEdFilter(edId: string | undefined): void {
+  try {
+    if (edId) window.sessionStorage.setItem(HOME_ED_FILTER_KEY, edId);
+    else window.sessionStorage.removeItem(HOME_ED_FILTER_KEY);
+  } catch {
+    // A blocked store: the filter lasts for this page only.
+    homeEdFilterFallback = edId ?? null;
+  }
+  try {
+    window.dispatchEvent(new Event(HOME_ED_FILTER_EVENT));
+  } catch {
+    // Nothing else depends on the notification.
+  }
+}
+
+function subscribeHomeEdFilter(onChange: () => void) {
+  window.addEventListener(HOME_ED_FILTER_EVENT, onChange);
+  return () => window.removeEventListener(HOME_ED_FILTER_EVENT, onChange);
+}
+
+const useHomeEdFilter = createBrowserStore(subscribeHomeEdFilter, readHomeEdFilter, null);
 /** Activity lines shown under "Since you looked". */
 const SINCE_TIMELINE_LINES = 8;
 const DELAYS_HREF = "/mockups/ward-flow/delays";
@@ -141,7 +181,8 @@ export function CoordinatorScreen() {
     return restored && isOpen(restored) ? restored.id : undefined;
   });
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>(undefined);
-  const [selectedEdId, setSelectedEdId] = useState<string | undefined>(undefined);
+  const selectedEdId = useHomeEdFilter() ?? undefined;
+  const setSelectedEdId = writeHomeEdFilter;
   // The shortlist's other possible subject. Switching the queue between Patients and Referrals
   // never touches either selection.
   const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(undefined);
@@ -348,7 +389,7 @@ export function CoordinatorScreen() {
     const candidate = shortlistCandidates(movement, [unit], liveNow)[0];
     const plain =
       candidate !== undefined &&
-      fitKind(candidate) === "bed" &&
+      fitKind(candidate, movement) === "bed" &&
       referralBlockedReason(movement) === undefined &&
       !(
         genderReviewNeeded(movement.gender, movement.sex) &&

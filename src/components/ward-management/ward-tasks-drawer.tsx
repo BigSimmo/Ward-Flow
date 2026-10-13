@@ -450,7 +450,11 @@ export function WardTasksDrawer({
             </button>
             {isPhone ? (
               <p className={styles.rowMeta}>
-                <span className={styles.rowWho}>{patient?.displayName ?? "Patient not linked"}</span>
+                <span className={styles.rowWho}>
+                  {patient?.displayName ?? "Patient not linked"}
+                  {/* Audit A1-15: name plus UMRN, matching the Exceptions sheet. */}
+                  {patient?.patient ? ` · ${patient.umrn}` : ""}
+                </span>
               </p>
             ) : null}
             <p className={styles.rowMeta} data-phone-hidden={isPhone || undefined}>

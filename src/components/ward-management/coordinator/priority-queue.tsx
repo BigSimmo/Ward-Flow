@@ -158,8 +158,8 @@ export function PriorityQueue({
   const filterEd = filterEdId ? edsById.get(filterEdId) : undefined;
 
   const soonCount = movements.filter((movement) => isSoon(movement, now)).length;
-  // Soon is not offered on the phone, so a filter set on a wider screen does not carry over.
-  const rows = soonOnly && !phone ? movements.filter((movement) => isSoon(movement, now)) : movements;
+  // Form due is offered on the phone too, so the count stays visible there (audit A1-16).
+  const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now)) : movements;
   const total = totalMovements ?? movements.length;
   const isOverdue = (movement: Movement) =>
     Math.max(0, now - movement.openedAt) >= queueWaitThresholds(movement.urgency).overdue;
@@ -196,8 +196,8 @@ export function PriorityQueue({
           value={activeTab}
           onChange={setActiveTab}
         />
-        {/* The phone queue (v10 Home phone A) is the switch alone; Soon stays on the larger screens. */}
-        {activeTab === "patients" && !phone ? (
+        {/* Shown on the phone as well so the form-due count is not lost there (audit A1-16). */}
+        {activeTab === "patients" ? (
           <FilterChip
             pressed={soonOnly}
             onPressedChange={setSoonOnly}

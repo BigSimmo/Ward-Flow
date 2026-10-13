@@ -835,10 +835,8 @@ export function CapacityScreen() {
           {/*
            * Provenance badge removed as prototype is disclosed at page footer.
            */}
-          <WardPanel
-            title="Where the mismatch is"
-            count={`${gapTotals.waiting} waiting, ${gapTotals.bedsThatFit} beds that fit`}
-          >
+          {/* Audit A1-24: no header count; the hero already states waiting and beds that fit. */}
+          <WardPanel title="Where the mismatch is">
             <WardTable
               className={styles.gapTable}
               wrapperClassName={styles.gapBandWrap}

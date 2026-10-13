@@ -204,11 +204,18 @@ export function ExceptionDrawer({
             <ul className={styles.registerList}>
               {items.map((item) => {
                 const silenceCopy = silenceReminders?.get(item.movementId);
+                // Audit A1-15: name plus UMRN, the same identifier the Tasks list uses for this row.
+                const who = resolvePatientIdentity(
+                  item.plannedAdmission ??
+                    (item.movementId ? { movementId: item.movementId } : { id: item.admissionId }),
+                );
+                const whoName = who.displayName === "Unknown Patient" ? null : who.displayName;
                 const content = (
                   <>
                     <span className={styles.registerMain}>
                       <span className={styles.registerTitle}>{commandInboxTitle(item)}</span>
                       <span className={styles.registerSub}>
+                        {whoName ? `${whoName} · ` : ""}
                         {umrnText(item.detail)} · {item.owner}
                       </span>
                       {silenceCopy !== undefined ? (
