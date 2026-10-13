@@ -505,7 +505,11 @@ function AlertsWorkspace() {
     );
     return ranked.length > 0 ? ranked : countedActive;
   }, [countedActive]);
-  const openCount = countedActive.length;
+  // Ops-3 (remaining-pages audit, 13 Oct 2026): "open" is the one active list the Now tab and the
+  // header's Tasks badge count, running targets included, so the three figures always agree. The
+  // running targets are named beside it, so Act now plus Waiting plus running adds up to open.
+  const openCount = activeEntries.length;
+  const runningText = runningEntries.length > 0 ? ` · ${runningEntries.length} running` : "";
 
   const chosen = allEntries.find((entry) => entry.item.id === chosenId);
   // On the desktop the panel always shows an alert: the chosen one, else the first in line.
@@ -1223,7 +1227,7 @@ function AlertsWorkspace() {
               title={heroTitle}
               sub={
                 openCount > 0
-                  ? `${openCount} open${
+                  ? `${openCount} open${runningText}${
                       oldestRaised !== undefined ? ` · oldest ${minutesText(Math.max(0, now - oldestRaised))}` : ""
                     }`
                   : "Checking every condition below"
@@ -1306,6 +1310,7 @@ function AlertsWorkspace() {
               openCount > 0 ? (
                 <span className={styles.heroMeta}>
                   <span className={styles.mono}>{openCount}</span> open
+                  {runningText}
                   {oldestRaised !== undefined ? (
                     <>
                       {" "}

@@ -1,11 +1,12 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { alertKindOf } from "@/components/ward-management/alerts/alerts-model";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { INBOX_CATEGORIES, seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { taskItems } from "@/components/ward-management/ward-act-now-items";
+import { activeTaskItems, taskItems } from "@/components/ward-management/ward-act-now-items";
 import { wardPlannedAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -222,5 +223,39 @@ describe("Alerts v10 pass (10 Oct 2026)", () => {
     renderScreen();
     expect(screen.getByText("Not checked: handover sheets")).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/All clear/i);
+  });
+});
+
+describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () => {
+  it("the hero's open count is the Now tab's count and the Tasks list, running targets included", () => {
+    const lapsed = taskItems(seedWardFlowState(), NOW).find((item) => alertKindOf(item.id) === "hold");
+    expect(lapsed?.movementId, "the seed has a lapsed bed pull").toBeTruthy();
+    let world: ReturnType<typeof useWardFlow> | undefined;
+    function Probe() {
+      world = useWardFlow();
+      return null;
+    }
+    render(
+      <WardFlowProvider initialNow={NOW}>
+        <AlertsScreen />
+        <Probe />
+      </WardFlowProvider>,
+    );
+    // Releasing the lapsed bed starts a running transfer-acceptance target: the case that split them.
+    act(() => {
+      world!.dispatch({
+        type: "RELEASE_PULL",
+        role: "coordinator",
+        now: NOW,
+        movementId: lapsed!.movementId!,
+        reason: "patient_no_longer_coming",
+      });
+    });
+    const active = activeTaskItems(world!, NOW);
+    expect(active.some((item) => alertKindOf(item.id) === "running")).toBe(true);
+    const meta = [...document.querySelectorAll("span")].find((span) => /^\d+ open/u.test(span.textContent ?? ""));
+    const open = Number(/^(\d+) open/u.exec(meta?.textContent ?? "")?.[1]);
+    expect(open).toBe(active.length);
+    expect(screen.getByRole("tab", { name: /^Now/u }).textContent).toContain(String(open));
   });
 });
