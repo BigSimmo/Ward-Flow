@@ -88,6 +88,23 @@ describe("ward bed drawer history", () => {
     expect(window.location.search).toBe("?bed=3");
   });
 
+  it("never writes Next.js's own history entries back, so the router keeps syncing ?bed=", () => {
+    renderWard();
+    openViaUrl("1");
+    act(() => {
+      window.history.replaceState(
+        { __NA: true, __PRIVATE_NEXTJS_INTERNALS_TREE: {}, keep: 1 },
+        "",
+        window.location.href,
+      );
+    });
+    const replace = vi.spyOn(window.history, "replaceState");
+    fireEvent.click(screen.getByRole("button", { name: "Next bed" }));
+    const written = replace.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(written).toEqual({ keep: 1 });
+    expect(window.location.search).toBe("?bed=2");
+  });
+
   it("ignores a ?bed= that names no bed on this ward and drops it from the URL", () => {
     renderWard();
     openViaUrl("999");

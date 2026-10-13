@@ -169,6 +169,19 @@ const censusBedOpenerTarget = (unitId: string, bed: number) => `${unitId}:${bed}
 /** history.state key marking the entry this screen pushed when a bed drawer opened. */
 const WARD_BED_DRAWER_ENTRY = "wardBedDrawer";
 
+/**
+ * history.state without Next.js's own entries. Next's patched history methods skip syncing
+ * `useSearchParams` and the router's URL for state carrying `__NA`, so writing it back would leave
+ * the router on a stale `?bed=`; Next re-adds its entries itself when it sees our write.
+ */
+function ownHistoryState(state: unknown): Record<string, unknown> {
+  if (!state || typeof state !== "object") return {};
+  const own = { ...(state as Record<string, unknown>) };
+  delete own.__NA;
+  delete own.__PRIVATE_NEXTJS_INTERNALS_TREE;
+  return own;
+}
+
 function useOptionalRouter(): ReturnType<typeof useRouter> | null {
   try {
     return useRouter();
@@ -405,7 +418,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const next = selectedBed !== null ? String(selectedBed) : null;
     if (current === next) return;
 
-    const state = window.history.state as Record<string, unknown> | null;
+    const state = ownHistoryState(window.history.state);
     if (next !== null) {
       url.searchParams.set("bed", next);
       // Only opening a drawer creates a navigation point, marked so closing can return through it.
@@ -413,7 +426,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       // never reopens a closed/visited bed.
       if (current === null) window.history.pushState({ ...state, [WARD_BED_DRAWER_ENTRY]: true }, "", url.toString());
       else window.history.replaceState(state, "", url.toString());
-    } else if (state?.[WARD_BED_DRAWER_ENTRY]) {
+    } else if (state[WARD_BED_DRAWER_ENTRY]) {
       // This screen pushed the drawer's entry: step back over it rather than adding another ward
       // entry, so one Back after closing leaves the ward instead of reopening the bed.
       window.history.back();
