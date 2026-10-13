@@ -21,6 +21,17 @@ DO $$ BEGIN
     RAISE EXCEPTION 'Runtime role owns database objects; inspect before applying grants';
   END IF;
 END $$;
+DO $$ DECLARE column_grant record; browser_role text; BEGIN
+  FOR column_grant IN
+    SELECT c.relname, a.attname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+      JOIN pg_attribute a ON a.attrelid=c.oid
+    WHERE n.nspname='ward_flow' AND c.relkind='r' AND a.attnum>0 AND NOT a.attisdropped AND a.attacl IS NOT NULL
+  LOOP
+    FOR browser_role IN SELECT rolname FROM pg_roles WHERE rolname IN ('anon','authenticated') LOOP
+      EXECUTE format('REVOKE ALL (%I) ON TABLE ward_flow.%I FROM %I', column_grant.attname, column_grant.relname, browser_role);
+    END LOOP;
+  END LOOP;
+END $$;
 REVOKE ALL ON SCHEMA ward_flow FROM PUBLIC, anon, authenticated, wardflow_backend;
 REVOKE ALL ON ALL TABLES IN SCHEMA ward_flow FROM PUBLIC, anon, authenticated, wardflow_backend;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA ward_flow FROM PUBLIC, anon, authenticated, wardflow_backend;
