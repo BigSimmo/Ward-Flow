@@ -1256,6 +1256,13 @@ function NetworkRow({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const { refreshRequests } = useWardFlow();
+  // From the shared record, so a demo reset clears it and a request made from the ward sidebar shows here too.
+  // A request stays outstanding until the ward next confirms its capacity. Timestamps are whole minutes, so a
+  // request and a confirmation in the same minute cannot be ordered; that tie counts as still outstanding, which
+  // prevents a duplicate request rather than allowing one.
+  const latestRequest = refreshRequests.filter((request) => request.unitId === row.unit.id).at(-1);
+  const asked = latestRequest !== undefined && latestRequest.at >= row.unit.allocatable.confirmedAt;
   const site = siteByCode(row.unit.siteCode);
   /*
    * Wards are always named, never shown as a bare code. The unresolved sentence comes from
@@ -1605,12 +1612,15 @@ function NetworkRow({
           type="button"
           className={styles.refreshButton}
           data-testid={`ward-capacity-refresh-${row.unit.id}`}
+          // Once a request is on record the button says so and stops dispatching another one.
+          disabled={asked}
+          title={asked ? "An update has already been requested from this ward." : undefined}
           onClick={(e) => {
             e.stopPropagation();
             onRequestRefresh();
           }}
         >
-          Request update
+          {asked ? "Update requested" : "Request update"}
         </button>
       </td>
     </tr>

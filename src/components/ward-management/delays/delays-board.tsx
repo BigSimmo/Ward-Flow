@@ -696,7 +696,8 @@ function NoStatewideDelays() {
       <Glyph tone="success" />
       <span>
         <b>No statewide delays recorded.</b> This model records delays only against a movement. Ward-wide closures and
-        transport outages are not represented as patient movements yet.
+        transport outages are not represented as patient movements yet, and recording one is not wired in this
+        prototype.
       </span>
     </p>
   );
@@ -969,7 +970,7 @@ function Registers({
               aria-label="Record a service-wide or facility delay. Not wired in this prototype."
               title="Not wired in this prototype."
             >
-              Record hold
+              Record hold (not wired)
             </button>
           </section>
         </div>
@@ -1961,7 +1962,7 @@ export function DelaysBoard({
                   aria-label="Record a service-wide or facility delay. Not wired in this prototype."
                   title="Not wired in this prototype."
                 >
-                  Record
+                  Record (not wired)
                 </button>
               </div>
               <PhoneSheet

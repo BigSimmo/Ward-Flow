@@ -134,6 +134,30 @@ function excludedBeyondTodayCount(): number {
   return Number(screen.getByTestId("ward-capacity-excluded-beyond-today").textContent?.match(/\d+/)?.[0]);
 }
 
+function ConfirmCapacityProbe({ unitId, now }: { unitId: string; now: number }) {
+  const { dispatch, units } = useWardFlow();
+  const unit = units.find((candidate) => candidate.id === unitId)!;
+  return (
+    <button
+      type="button"
+      data-testid="test-confirm-capacity"
+      onClick={() =>
+        dispatch({
+          type: "CONFIRM_CAPACITY",
+          role: "ward",
+          now,
+          unitId,
+          actingUnitId: unitId,
+          value: unit.allocatable.value,
+          expectedRevision: unit.allocatable.revision ?? 0,
+        })
+      }
+    >
+      confirm
+    </button>
+  );
+}
+
 function RefreshRequestsProbe() {
   const { refreshRequests } = useWardFlow();
   return <div data-testid="test-refresh-requests-count">{refreshRequests.length}</div>;
@@ -294,9 +318,15 @@ describe("ward capacity headline (Task 7)", () => {
 
     expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("0");
     const table = screen.getByTestId("ward-capacity-network-table");
-    const readyBefore = within(table).getByTestId("ward-capacity-network-row-rph-adult-secure").textContent;
-
     const refreshButton = screen.getByTestId("ward-capacity-refresh-rph-adult-secure");
+    // The button's own label is the on-row acknowledgement; every other figure on the row must stay put.
+    const rowFigures = () =>
+      (within(table).getByTestId("ward-capacity-network-row-rph-adult-secure").textContent ?? "").replace(
+        refreshButton.textContent ?? "",
+        "",
+      );
+    const readyBefore = rowFigures();
+
     // A real, wired <button> — never an advisory element with no handler.
     expect(refreshButton.tagName).toBe("BUTTON");
     expect(refreshButton).not.toHaveAttribute("disabled");
@@ -306,13 +336,45 @@ describe("ward capacity headline (Task 7)", () => {
 
     // The one observable effect: a real dispatch reached the reducer's own `refreshRequests` list.
     expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("1");
+    expect(refreshButton).toHaveTextContent("Update requested");
+    // The acknowledged control must not append a duplicate request on a second click.
+    expect(refreshButton).toBeDisabled();
+    fireEvent.click(refreshButton);
+    expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("1");
     expect(
-      within(screen.getByTestId("ward-capacity-network-table")).getByTestId(
-        "ward-capacity-network-row-rph-adult-secure",
-      ).textContent,
+      rowFigures(),
       "asking a ward to restate its numbers moved a figure on its row; this control records that " +
         "somebody asked and must change nothing else",
     ).toBe(readyBefore);
+  });
+
+  it("lets the coordinator ask again once the ward has confirmed its capacity", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CapacityScreen />
+        <ConfirmCapacityProbe unitId="rph-adult-secure" now={NOW_ANCHOR + 5} />
+      </WardFlowProvider>,
+    );
+    showWardTable();
+    const refreshButton = screen.getByTestId("ward-capacity-refresh-rph-adult-secure");
+    fireEvent.click(refreshButton);
+    expect(refreshButton).toBeDisabled();
+    fireEvent.click(screen.getByTestId("test-confirm-capacity"));
+    expect(screen.getByTestId("ward-capacity-refresh-rph-adult-secure")).toBeEnabled();
+  });
+
+  it("treats a confirmation in the same minute as the request as not yet answering it", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CapacityScreen />
+        <ConfirmCapacityProbe unitId="rph-adult-secure" now={NOW_ANCHOR} />
+      </WardFlowProvider>,
+    );
+    showWardTable();
+    fireEvent.click(screen.getByTestId("ward-capacity-refresh-rph-adult-secure"));
+    fireEvent.click(screen.getByTestId("test-confirm-capacity"));
+    // Same-minute timestamps cannot be ordered, so the request stays outstanding and no duplicate is offered.
+    expect(screen.getByTestId("ward-capacity-refresh-rph-adult-secure")).toBeDisabled();
   });
 
   /*

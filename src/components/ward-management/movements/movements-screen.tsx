@@ -1268,7 +1268,7 @@ export function MovementsScreen() {
                   }}
                   onClear={() => setSearch("")}
                   placeholder="Name, UMRN or ED"
-                  aria-label="Search movements by name, UMRN or ED"
+                  aria-label="Find movements by name, UMRN or ED"
                   boxClassName={flow.search}
                 />
               </div>

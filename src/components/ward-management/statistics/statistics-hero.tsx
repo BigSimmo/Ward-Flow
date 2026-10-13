@@ -51,7 +51,7 @@ function PhoneHeroActions({ titleAction }: { titleAction?: ReactNode }) {
         open={rangeOpen}
         onClose={() => setRangeOpen(false)}
         title="Time range"
-        description="Figures are live now. History needs the metrics store."
+        description="Figures are current on the demo clock. History needs the metrics store."
       >
         <div className={phoneStyles.sheetBody}>
           <RangeChoices onNow={() => setRangeOpen(false)} />

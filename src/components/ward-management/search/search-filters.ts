@@ -39,7 +39,7 @@ export interface DropdownFilters {
 }
 
 export const QUICK_CHIPS = [
-  { label: "● Live Now", query: "● Live" },
+  { label: "● On this board", query: "● On this board" },
   { label: "○ Not in Hospital", query: "○ Not in Hospital" },
   { label: "◌ Past Patients", query: "◌ Past Patient" },
   { label: "Form 1A", query: "Form 1A" },
@@ -195,7 +195,7 @@ export function isQuickChipQuery(text: string): boolean {
 }
 
 export function matchesQuickChip(result: PatientSearchResult, chipQuery: string, now: number): boolean {
-  if (chipQuery === "● Live") {
+  if (chipQuery === "● On this board") {
     if (result.kind === "movement") return result.movement.closure === undefined && result.movement.stage !== "arrived";
     if (result.kind === "referral") {
       return !isCommunityReferral(result.referral);

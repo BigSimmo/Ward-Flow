@@ -126,7 +126,7 @@ export function PatientFlightHeader({
               data-live={isLiveBedflow}
               data-testid="ward-patient-live-status"
             >
-              <strong>{isLiveBedflow ? "Live bedflow" : "Patient record"}</strong>
+              <strong>{isLiveBedflow ? "Active bedflow" : "Patient record"}</strong>
               <span>{statusDetail}</span>
             </div>
           </>

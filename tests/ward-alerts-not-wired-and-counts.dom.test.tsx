@@ -39,7 +39,7 @@ describe("Alerts — confirm controls (F3.1)", () => {
     expect(confirm).not.toBeDisabled();
 
     fireEvent.click(confirm);
-    expect(screen.getByText(/dispatched statewide\./i)).toBeInTheDocument();
+    expect(screen.getByText(/shown in this prototype only; no external notifications are sent\./i)).toBeInTheDocument();
   });
 
   // D-16 (site review, 12 Oct 2026): a working control that says it is not wired, never greyed for
