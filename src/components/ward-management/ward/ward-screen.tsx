@@ -162,6 +162,13 @@ function wardHandoverHref(unitId: string): string {
   return `/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unitId }))}`;
 }
 
+/** Set by the Census "Ward bed" link (patient-census-view.tsx): the exact `unit:bed` it opened. */
+const CENSUS_BED_OPENER_TARGET = "wardflow:census-bed-opener-target";
+const censusBedOpenerTarget = (unitId: string, bed: number) => `${unitId}:${bed}`;
+
+/** history.state key marking the entry this screen pushed when a bed drawer opened. */
+const WARD_BED_DRAWER_ENTRY = "wardBedDrawer";
+
 function useOptionalRouter(): ReturnType<typeof useRouter> | null {
   try {
     return useRouter();
@@ -339,6 +346,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const parsedBed =
     bedParam !== null && bedParam !== undefined && /^\d+$/.test(bedParam) ? Number.parseInt(bedParam, 10) : null;
   const [selectedBed, setSelectedBed] = useState<number | null>(parsedBed);
+  // Bumped when a `?bed=` naming no bed on this ward is refused, so the URL sync below drops it.
+  const [refusedBedParam, setRefusedBedParam] = useState(0);
   const [prevBedParam, setPrevBedParam] = useState<string | null | undefined>(bedParam);
   if (prevBedParam !== bedParam) {
     setPrevBedParam(bedParam);
@@ -396,18 +405,23 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const next = selectedBed !== null ? String(selectedBed) : null;
     if (current === next) return;
 
-    const state = window.history.state;
+    const state = window.history.state as Record<string, unknown> | null;
     if (next !== null) {
       url.searchParams.set("bed", next);
-      // Only opening a drawer creates a navigation point. Normalisation and bed-to-bed
-      // movement replace the current URL so Back never reopens a closed/visited bed.
-      if (current === null) window.history.pushState(state, "", url.toString());
+      // Only opening a drawer creates a navigation point, marked so closing can return through it.
+      // Normalisation and bed-to-bed movement replace the current URL (keeping the marker) so Back
+      // never reopens a closed/visited bed.
+      if (current === null) window.history.pushState({ ...state, [WARD_BED_DRAWER_ENTRY]: true }, "", url.toString());
       else window.history.replaceState(state, "", url.toString());
+    } else if (state?.[WARD_BED_DRAWER_ENTRY]) {
+      // This screen pushed the drawer's entry: step back over it rather than adding another ward
+      // entry, so one Back after closing leaves the ward instead of reopening the bed.
+      window.history.back();
     } else {
       url.searchParams.delete("bed");
       window.history.replaceState(state, "", url.toString());
     }
-  }, [selectedBed]);
+  }, [selectedBed, refusedBedParam]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -554,10 +568,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   const closeBedDrawer = useCallback(() => {
     if (selectedBed !== null) {
-      if (typeof window !== "undefined" && window.sessionStorage.getItem("wardflow:census-bed-opener")) {
-        window.sessionStorage.removeItem("wardflow:census-bed-opener");
-        router?.back();
-        return;
+      if (typeof window !== "undefined") {
+        // Return to Census only for the exact bed its link opened, and only with a router to go
+        // back through; a stale or unrelated marker is dropped and the drawer closes normally.
+        const target = window.sessionStorage.getItem(CENSUS_BED_OPENER_TARGET);
+        const fromCensus = target !== null && target === censusBedOpenerTarget(unitId, selectedBed);
+        window.sessionStorage.removeItem(CENSUS_BED_OPENER_TARGET);
+        if (fromCensus && router) {
+          router.back();
+          return;
+        }
+        if (target !== null) window.sessionStorage.removeItem("wardflow:census-bed-opener");
       }
       const bedNum = selectedBed;
       setSelectedBed(null);
@@ -570,7 +591,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         if (tile?.isConnected) tile.focus();
       }, 0);
     }
-  }, [selectedBed, router]);
+  }, [selectedBed, router, unitId]);
 
   // Focus goes back to whichever control opened the modal (the header button or the home tab's),
   // and falls back to the header button only when that control is gone.
@@ -1287,6 +1308,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       };
     })
     .sort((left, right) => left.bedNumber - right.bedNumber);
+  // A `?bed=` from a stale or edited URL that names no bed on this ward opens nothing; clearing it
+  // here (a render-phase update, like the bed-param sync above) also drops it from the URL.
+  if (selectedBed !== null && !bedsList.some((bed) => bed.bedNumber === selectedBed)) {
+    setSelectedBed(null);
+    setRefusedBedParam((count) => count + 1);
+  }
 
   // Bed board: the referrals waiting for this ward that it can place, straight from the inbox,
   // then (v10 pass 3) the people the coordinator referred here, placed with ACCEPT_IN_PRINCIPLE.

@@ -831,7 +831,11 @@ export function CensusDetail({ row, now, onClose, onCopy, copyNote }: CensusDeta
         className={buttonClass({ size: "sm" })}
         data-census-bed-link={row.key}
         href={`/mockups/ward-flow/ward/${encodeURIComponent(row.unitId)}?bed=${row.bedNumber}`}
-        onClick={() => window.sessionStorage.setItem("wardflow:census-bed-opener", row.key)}
+        onClick={() => {
+          window.sessionStorage.setItem("wardflow:census-bed-opener", row.key);
+          // ward-screen.tsx returns to Census on close only for this exact unit and bed.
+          window.sessionStorage.setItem("wardflow:census-bed-opener-target", `${row.unitId}:${row.bedNumber}`);
+        }}
       >
         Ward bed
       </Link>
