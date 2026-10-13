@@ -27,7 +27,11 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { bedReleases, referrals as seededReferrals, wardMovements } from "@/components/ward-management/ward-movements";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { formTitleForCode } from "@/lib/form-register";
-import { EdInboxReferralFixture, openRaiseIntoMovementForm } from "./helpers/ed-raise-into-movement";
+import {
+  EdInboxReferralFixture,
+  markNotYetIdentified,
+  openRaiseIntoMovementForm,
+} from "./helpers/ed-raise-into-movement";
 
 /**
  * The two surfaces the fix-wave-1 reviewer named as untested: that the intake picker's chosen
@@ -105,6 +109,8 @@ const REQUIRED_REFERRAL_FIELDS = [
  * clinical-safety fix the `describe` block near the end of this file is about.
  */
 function fillRequiredReferralFields() {
+  // A2-1: the form starts from a person; these cases raise for one not yet identified.
+  markNotYetIdentified();
   for (const field of REQUIRED_REFERRAL_FIELDS) {
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }
@@ -125,6 +131,8 @@ function fillRequiredReferralFields() {
  * chose and then explicitly cleared is unanswered.
  */
 function fillRequiredReferralFieldsExcept(skipTestId: string) {
+  // A2-1: the form starts from a person; these cases raise for one not yet identified.
+  markNotYetIdentified();
   for (const field of REQUIRED_REFERRAL_FIELDS) {
     if (field.testId === skipTestId) continue;
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
@@ -368,6 +376,18 @@ describe("emergency department intake picker", () => {
     const outstanding = screen.getByTestId(`ward-ed-outstanding-${FIRST_RAISED_ID}`);
     expect(outstanding).toHaveAttribute("data-kind", "form");
     expect(outstanding).toHaveTextContent("examination recorded (inpatient order)");
+  });
+
+  // S-7 (audit 13 Oct 2026): "Record outcome" (discharge or community follow-up) was the primary
+  // after an inpatient order, ending the bed search. The bed search now carries on.
+  it("makes Refer to a ward the next step after an inpatient order, keeping Record outcome in the menu", () => {
+    renderEd();
+    raiseReferralWithForm("3B");
+    fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${FIRST_RAISED_ID}`));
+    fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    expect(screen.getByTestId(`ward-ed-next-${FIRST_RAISED_ID}`)).toHaveTextContent("Refer to a ward");
+    expect(screen.getByTestId(`ward-ed-outcome-toggle-${FIRST_RAISED_ID}`)).toBeInTheDocument();
   });
 });
 
@@ -629,7 +649,9 @@ describe("emergency department referral form refuses an unanswered submission", 
    */
   it("submits and records exactly the chosen values once every field is answered", () => {
     renderEd();
+    // A2-1: raised from an inbox referral with no person on it, the form opens as not yet identified.
     openRaiseIntoMovementForm();
+    expect(screen.getByTestId("ward-ed-referral-unidentified")).toBeChecked();
     fireEvent.change(screen.getByTestId("ward-ed-referral-cohort"), { target: { value: "Older adult" } });
     fireEvent.change(screen.getByTestId("ward-ed-referral-security"), { target: { value: "Secure" } });
     fireEvent.change(screen.getByTestId("ward-ed-referral-sex"), { target: { value: "Male" } });
@@ -1238,11 +1260,14 @@ describe("P3-2 (Ward Lead audit, 2026-09-17): 'Under a form' counts a legal form
   });
 });
 
-describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No destination' exclude a recorded ED outcome", () => {
+// S-19 (audit 13 Oct 2026): the "No destination" chip became "No bed yet", counted by the hero's own rule.
+describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No bed yet' exclude a recorded ED outcome", () => {
   it("drops a freshly raised, unreviewed, destination-less patient out of both chips once its outcome is recorded", () => {
     renderEd();
     const notReviewedBefore = screen.getByRole("button", { name: /Not reviewed/ }).textContent;
-    const noDestBefore = screen.getByRole("button", { name: /No destination/ }).textContent;
+    const noDestBefore = within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", {
+      name: /No bed yet/,
+    }).textContent;
 
     openRaiseIntoMovementForm();
     fillRequiredReferralFields();
@@ -1253,7 +1278,10 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No destination
     // Freshly raised: no examination, no destination — counted in both chips, proving the walk is
     // real before the fix under test can be observed at all.
     expect(screen.getByRole("button", { name: /Not reviewed/ }).textContent).not.toBe(notReviewedBefore);
-    expect(screen.getByRole("button", { name: /No destination/ }).textContent).not.toBe(noDestBefore);
+    expect(
+      within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ })
+        .textContent,
+    ).not.toBe(noDestBefore);
 
     fireEvent.click(screen.getByTestId(`ward-ed-outcome-toggle-${id}`));
     fireEvent.click(screen.getByTestId(`ward-ed-outcome-discharge-${id}`));
@@ -1263,7 +1291,8 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No destination
       "P3-1: a settled ED outcome is not an unreviewed patient",
     ).toBe(notReviewedBefore);
     expect(
-      screen.getByRole("button", { name: /No destination/ }).textContent,
+      within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ })
+        .textContent,
       "P3-1: a settled ED outcome is not a destination-less patient",
     ).toBe(noDestBefore);
   });
@@ -1300,3 +1329,15 @@ function seedPatientName(movementId: string): string {
     seed,
   ).displayName;
 }
+
+describe("S-19 (audit 13 Oct 2026): one 'No bed yet' rule for the hero and the board chip", () => {
+  it("shows the same No bed yet count on every control that names it", () => {
+    renderEd();
+    const counts = screen
+      .getAllByText(/No bed yet/u)
+      .map((node) => Number(/(\d+)/u.exec(node.closest("button")?.textContent ?? "")?.[1] ?? NaN))
+      .filter((value) => !Number.isNaN(value));
+    expect(counts.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(counts).size).toBe(1);
+  });
+});

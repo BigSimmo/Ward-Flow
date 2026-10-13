@@ -5,6 +5,9 @@ import { Button, Card, CardBody, CardHead, StatusGlyph, useIsPhone, type WfTone 
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { formTitleForCode } from "@/lib/form-register";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
 
@@ -65,27 +68,59 @@ export function PatientWhyCard({
 
 /**
  * Legal now: only the authority in force and the form still needed. Forms show when they were
- * recorded, never when they lapse (D5). Superseded and ended forms are in Documents.
+ * recorded; a lapse time shows only when a person typed the expiry from the form (D5), with the
+ * same time left the Forms and Delays pages show (audit A3-3). Superseded and ended forms are in
+ * Documents.
  */
 export function PatientLegalNowCard({
   movement,
   patient,
   onAllForms,
+  now,
+  absent = false,
 }: {
   movement?: Movement;
   patient?: Patient;
   onAllForms: () => void;
+  /** The demo clock, for the time left on a typed expiry. */
+  now?: Instant;
+  /** Absent without leave: an order stays in force while the person is missing (audit A3-2). */
+  absent?: boolean;
 }) {
-  const rows: Array<{ tone: WfTone; code: string; name: string; time?: string }> = [];
+  const rows: Array<{
+    tone: WfTone;
+    code: string;
+    name: string;
+    time?: string;
+    left?: string;
+    ended?: boolean;
+    pending?: boolean;
+  }> = [];
   if (movement?.legalForm) {
     const recordedAt = movement.legalFormReceivedAt ?? movement.formedAt;
+    // Audit S-6: after an inpatient order at the examination, or an arrival on an order, the old
+    // form shows as ended and Form 6A is the one form to record next.
+    const progression = formProgression(movement);
+    const expiry = now !== undefined && !progression ? formTimeLeft(movement, now) : undefined;
     rows.push({
-      tone: "success",
+      tone: progression ? "neutral" : expiry && expiry.standing !== "later" ? expiry.tone : "success",
       code: `Form ${movement.legalForm.code}`,
       // A3-8: the code is already in `code`, so the name is the register title alone, said once.
-      name: formTitleForCode(movement.legalForm.code) ?? "Title not in the forms register",
-      time: recordedAt !== undefined ? clock(recordedAt) : undefined,
+      // Audit S-6: a form the examination or arrival moved on from reads as ended.
+      name: progression
+        ? `Ended ${progression.endedWhen}`
+        : (formTitleForCode(movement.legalForm.code) ?? "Title not in the forms register"),
+      time: expiry ? expiry.at : recordedAt !== undefined ? clock(recordedAt) : undefined,
+      left: expiry?.text,
+      ended: progression !== undefined,
     });
+    if (progression)
+      rows.push({
+        tone: "warning",
+        code: `Form ${progression.nextCode}`,
+        name: "To record: inpatient treatment order",
+        pending: true,
+      });
     if (movement.legalForm.continuedBy)
       rows.push({
         tone: "success",
@@ -111,6 +146,13 @@ export function PatientLegalNowCard({
       time: clock(order.recordedAt),
     });
   const status = movement?.legalStatus ?? patient?.legalStatus;
+  const onOrder = status !== undefined && status !== "Voluntary";
+  const statusNote =
+    absent && onOrder
+      ? "Order stays in force while absent"
+      : rows.some((row) => row.left)
+        ? "As recorded · expiry typed from the form"
+        : "As recorded · no lapse time shown";
   const isPhone = useIsPhone();
   if (isPhone)
     /* v10 Patient, phone: "Legal now" and "All forms" head the section; each row is the form and
@@ -130,7 +172,7 @@ export function PatientLegalNowCard({
             <StatusGlyph tone={status ? "info" : "neutral"} size={10} />
             <span className={styles.phItemText}>
               <strong>{status ?? "Legal status not recorded"}</strong>
-              <span>As recorded · no lapse time shown</span>
+              <span>{statusNote}</span>
             </span>
           </li>
           {rows.map((row) => (
@@ -138,9 +180,19 @@ export function PatientLegalNowCard({
               <StatusGlyph tone={row.tone} size={10} />
               <span className={styles.phItemText}>
                 <strong>
-                  {row.code} · {row.name}
+                  {row.code} · {row.ended ? "Ended" : row.name}
                 </strong>
-                <span>{row.time ? `In force · recorded ${row.time}` : "In force"}</span>
+                <span>
+                  {row.pending
+                    ? "Not recorded yet"
+                    : row.ended
+                      ? row.name
+                      : row.left
+                        ? `In force · ${row.left}`
+                        : row.time
+                          ? `In force · recorded ${row.time}`
+                          : "In force"}
+                </span>
               </span>
             </li>
           ))}
@@ -173,14 +225,14 @@ export function PatientLegalNowCard({
           <StatusGlyph tone={status ? "info" : "neutral"} size={10} />
           <span className={styles.itemText}>
             <strong>{status ?? "Legal status not recorded"}</strong>
-            <span>Legal status as recorded</span>
+            <span>{absent && onOrder ? statusNote : "Legal status as recorded"}</span>
           </span>
         </div>
         {rows.map((row) => (
           <div key={row.code} className={styles.item}>
             <StatusGlyph tone={row.tone} size={10} />
             <span className={styles.itemText}>
-              <strong>{row.code}</strong>
+              <strong>{row.left ? `${row.code} · ${row.left}` : row.code}</strong>
               <span>{row.name}</span>
             </span>
             {row.time ? <span className={styles.time}>{row.time}</span> : null}

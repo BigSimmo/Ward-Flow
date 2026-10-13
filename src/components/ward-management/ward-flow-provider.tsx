@@ -1,5 +1,6 @@
 "use client";
 
+import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
 import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
@@ -1142,26 +1143,28 @@ function WardFlowWorld({
       {(storageUnavailable || container.recoveryNotice) && (
         <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
       )}
-      <WardFlowClockContext.Provider value={now}>
-        {/*
-         * Remounts the screens once, and only when a saved day that differs from the seed was
-         * restored: screens initialise drafts and selections from provider data once
-         * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
-         * must start again from the restored world rather than keep the seed's. A first visit, or a
-         * reload with nothing changed, never takes this path, so its tree is never rebuilt.
-         */}
-        <WardSharedAccess
-          connection={
-            shared.enabled && container.sharedRevision === undefined
-              ? { ...shared, snapshot: null }
-              : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
-                ? { ...shared, status: "saving" }
-                : shared
-          }
-        >
-          <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
-        </WardSharedAccess>
-      </WardFlowClockContext.Provider>
+      <WardDemoNotSavedContext.Provider value={!shared.enabled && initialNow === undefined && container.typedTextSeen}>
+        <WardFlowClockContext.Provider value={now}>
+          {/*
+           * Remounts the screens once, and only when a saved day that differs from the seed was
+           * restored: screens initialise drafts and selections from provider data once
+           * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
+           * must start again from the restored world rather than keep the seed's. A first visit, or a
+           * reload with nothing changed, never takes this path, so its tree is never rebuilt.
+           */}
+          <WardSharedAccess
+            connection={
+              shared.enabled && container.sharedRevision === undefined
+                ? { ...shared, snapshot: null }
+                : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
+                  ? { ...shared, status: "saving" }
+                  : shared
+            }
+          >
+            <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+          </WardSharedAccess>
+        </WardFlowClockContext.Provider>
+      </WardDemoNotSavedContext.Provider>
     </WardFlowContext.Provider>
   );
 }

@@ -5,8 +5,13 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { WardReferralInbox } from "@/components/ward-management/referrals/ward-referral-inbox";
-import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
+import {
+  discardReferralDraft,
+  forgetReferrerContact,
+  readLastReferrerContact,
+} from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -34,7 +39,7 @@ function Probe() {
 }
 
 function setup(withBoard = false) {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardReferralDrawer onClose={vi.fn()} />
       <WardReferralInbox unitId="rph-adult-secure" />
@@ -42,6 +47,9 @@ function setup(withBoard = false) {
       <Probe />
     </WardFlowProvider>,
   );
+  // Opened plainly the sheet starts on nobody (A2-3); these cases walk step 1 for WF-009's person.
+  chooseSampleReferralPerson();
+  return view;
 }
 function tab(name: string) {
   fireEvent.click(within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name }));
@@ -144,6 +152,9 @@ describe("approved four-tab referral drawer journey", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Referral sent" })).toBeVisible());
     expect(screen.getByTestId("submitted-count")).toHaveTextContent("1");
     expect(screen.getByTestId("referral-errors")).toBeEmptyDOMElement();
+    // A2-6: the details sent are kept in tab memory for the next referral, never browser storage.
+    expect(readLastReferrerContact()).toMatchObject({ name: "Demo Sender", role: "Nurse" });
+    forgetReferrerContact();
     expect(JSON.stringify(sessionStorage)).not.toContain("sender@example.com");
     fireEvent.submit(document.getElementById("referralConfirmForm")!);
     expect(screen.getByTestId("submitted-count")).toHaveTextContent("1");

@@ -82,6 +82,9 @@ export const INBOX_CATEGORIES = {
   /** The same, for a discharge. Remainder is the discharged stay's admission id (a stay may have
    *  no movement), checked against `state.admissions` by `ACKNOWLEDGE_INBOX_ITEM`. */
   support_notification_discharge: { idPrefix: "notify-discharge-", kind: "fact" },
+  /** Audit A3-1 (13 Oct 2026): a person on an order recorded absent without leave. Act now. Leaves
+   *  when the return is recorded. Remainder is the stay's admission id (`ward-absence-tasks.ts`). */
+  absent_without_leave: { idPrefix: "awol-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -125,6 +128,12 @@ export function inboxRowExists(state: WardFlowState, inboxItemId: string): boole
   if (inboxItemId.startsWith(dischargePrefix)) {
     const admissionId = inboxItemId.slice(dischargePrefix.length);
     return state.admissions.some((admission) => admission.id === admissionId);
+  }
+  // Audit A3-1: an absence row names the stay, which must still be absent.
+  const absencePrefix = INBOX_CATEGORIES.absent_without_leave.idPrefix;
+  if (inboxItemId.startsWith(absencePrefix)) {
+    const admissionId = inboxItemId.slice(absencePrefix.length);
+    return state.leaveBeds.some((bed) => bed.admissionId === admissionId && bed.absentWithoutLeave !== undefined);
   }
   // Stream D: a planned arrival row names its booking, not a movement.
   if (plannedRowBooking(state, inboxItemId) !== undefined) return true;
@@ -187,6 +196,12 @@ function inboxRowSince(state: WardFlowState, inboxItemId: string): Instant | und
   // a new one and an earlier snooze or owner no longer applies.
   const planned = plannedRowBooking(state, inboxItemId);
   if (planned) return planned.expectedArrivalAt;
+  // Audit A3-1: an absence row's occurrence starts when the absence was recorded.
+  const absencePrefix = INBOX_CATEGORIES.absent_without_leave.idPrefix;
+  if (inboxItemId.startsWith(absencePrefix)) {
+    const admissionId = inboxItemId.slice(absencePrefix.length);
+    return state.leaveBeds.find((bed) => bed.admissionId === admissionId)?.absentWithoutLeave?.since;
+  }
   const movementId = inboxRowMovementId(state.movements, inboxItemId);
   const movement = state.movements.find((candidate) => candidate.id === movementId);
   return movement ? inboxOccurrenceSince(movement, inboxItemId) : undefined;

@@ -397,7 +397,7 @@ export function HandoverPrintSheet({
       return (
         <tr key={`i-${item.row.id}`} className={styles.ib2}>
           <td colSpan={columns.length}>
-            {isbarLines(item.row, ctx.now)
+            {isbarLines(item.row, ctx.now, ctx.readyBeds)
               .slice(1)
               .map((line) => (
                 <span key={line.key}>

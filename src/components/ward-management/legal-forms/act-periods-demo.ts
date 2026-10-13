@@ -189,3 +189,44 @@ export function actPeriodCountdownText(reading: ActPeriodReading, now: Instant):
     ? `${ending} ${formatInstantWithDay(reading.endsAt, now)}, ${splitDuration(-remaining)} ago.`
     : `${ending} ${formatInstantWithDay(reading.endsAt, now)}, in ${splitDuration(remaining)}.`;
 }
+
+/**
+ * The whole Act-period line beside a form (audit A3-5, 13 Oct 2026). When a person typed an expiry
+ * from the form, that typed expiry is the record and leads the panel, so this line shows only the
+ * cited limit: no second countdown and no "nothing to count from", which contradicted the typed
+ * time. Without a typed expiry it keeps the demo countdown as before.
+ */
+export function actPeriodLineText(reading: ActPeriodReading, movement: Movement, now: Instant): string {
+  if (movement.legalForm?.dueAt !== undefined) return reading.text;
+  return `${reading.text} ${actPeriodCountdownText(reading, now)}`;
+}
+
+/**
+ * How much of the demo Act period has gone for a form with no typed expiry, counted from when the
+ * move opened (arrival in ED), the earliest the period could have started (audit A3-6, 13 Oct
+ * 2026). Used only to order the "Time not written" group; never shown as a figure or a deadline.
+ * Undefined when the form has no sourced period.
+ */
+export function actPeriodShareUsed(movement: Movement, now: Instant, dayZero: Date): number | undefined {
+  const code = movement.legalForm?.code;
+  const period = code === undefined ? undefined : actPeriodFor(code);
+  if (!period) return undefined;
+  const span = addPeriod(movement.openedAt, period.adult, dayZero) - movement.openedAt;
+  return span > 0 ? (now - movement.openedAt) / span : undefined;
+}
+
+/**
+ * The "Time not written" group, ordered by the share of the demo Act period used (most first), so
+ * a 24-hour detention order outranks a 21-day treatment order. Forms with no sourced period keep
+ * their incoming order (longest in ED first) after them.
+ */
+export function orderByActPeriodShare(rows: readonly Movement[], now: Instant, dayZero: Date): Movement[] {
+  const keyed = rows.map((movement, index) => ({ movement, index, share: actPeriodShareUsed(movement, now, dayZero) }));
+  keyed.sort((a, b) => {
+    if (a.share !== undefined && b.share !== undefined && a.share !== b.share) return b.share - a.share;
+    if (a.share !== undefined && b.share === undefined) return -1;
+    if (a.share === undefined && b.share !== undefined) return 1;
+    return a.index - b.index;
+  });
+  return keyed.map((entry) => entry.movement);
+}

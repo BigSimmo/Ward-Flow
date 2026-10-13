@@ -95,7 +95,7 @@ export function standingWord(standing: ClockStanding): string {
   if (standing === "urgent") return `Within ${reminderHours("within-urgent")}h`;
   if (standing === "soon") return `Within ${reminderHours("within-soon")}h`;
   if (standing === "later") return "Later";
-  return "No expiry typed";
+  return "Time not written";
 }
 
 /** Act now means passed or inside the first warning window. */

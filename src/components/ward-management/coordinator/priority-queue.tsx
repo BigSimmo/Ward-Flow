@@ -34,7 +34,7 @@ import { defaultWardConfiguration } from "@/components/ward-management/ward-conf
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, unitById } from "@/components/ward-management/ward-sites";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -42,6 +42,15 @@ import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits
 import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-management/ward-shared-figures";
 
 import styles from "./home.module.css";
+
+/** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
+export function offeredToLabel(unitIds: readonly string[]): string {
+  if (unitIds.length === 1) {
+    const name = unitById(unitIds[0]!)?.name;
+    return `Offered to ${name ? name.split(" — ")[0] : "a ward"}`;
+  }
+  return `Offered to ${unitIds.length} wards`;
+}
 
 type QueueTab = "patients" | "referrals";
 
@@ -337,6 +346,17 @@ export function PriorityQueue({
                         <StatusGlyph tone="danger" size={9} />
                         {legalFactor ? legalFactor.detail : "Form due time passed"}
                         <LegalLimitsNotChecked variant="tag" />
+                      </span>
+                    ) : null}
+                    {/* A1-14 (audit 13 Oct 2026): an offer made from Home shows on the row, so the
+                        coordinator sees it is out and how long the ward has had it. */}
+                    {movement.referredUnitIds.length > 0 && !movement.acceptedUnitId && movement.stage !== "pulled" ? (
+                      <span className={styles.queueMark} data-testid={`ward-queue-offered-${movement.id}`}>
+                        <StatusGlyph tone="info" size={9} />
+                        {offeredToLabel(movement.referredUnitIds)}
+                        {movement.referredAt === undefined
+                          ? ""
+                          : ` · waiting ${durMinutes(Math.max(0, now - movement.referredAt))}`}
                       </span>
                     ) : null}
                     {arrival ? (

@@ -261,11 +261,21 @@ function phonePrefix(row: BoardRow): ReactNode {
       </>
     );
   }
+  // Audit A3-15 (13 Oct 2026): a person on an order always shows their form, before the UMRN,
+  // even with no typed expiry. Voluntary rows stay short.
+  const onOrderForm = form !== undefined && row.movement.legalStatus !== "Voluntary" ? form : undefined;
   if (row.movement.escalation !== undefined)
     return (
       <>
         <Glyph tone="info" />
-        <b className={styles.phPre}>Escalated</b>
+        <b className={styles.phPre}>{onOrderForm ? `Form ${onOrderForm.code} · Escalated` : "Escalated"}</b>
+        {" · "}
+      </>
+    );
+  if (onOrderForm)
+    return (
+      <>
+        <b className={styles.phPre}>{`Form ${onOrderForm.code}, time not written`}</b>
         {" · "}
       </>
     );

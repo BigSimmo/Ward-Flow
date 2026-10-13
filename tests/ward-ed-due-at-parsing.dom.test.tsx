@@ -98,7 +98,9 @@ function raiseTransportReferral(typed: { date: string; time: string } | undefine
       <DeadlineProbe />
     </WardFlowProvider>,
   );
+  // A2-1: the form starts from a person; the inbox referral has none, so it opens as not yet identified.
   openRaiseIntoMovementForm();
+  expect(screen.getByTestId("ward-ed-referral-unidentified")).toBeChecked();
   for (const field of REQUIRED) {
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }

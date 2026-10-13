@@ -87,7 +87,8 @@ describe("recording that a patient has left", () => {
 
     expect(next.rejections).toHaveLength(0);
     expect(unit(next, person.unitId).empty.value).toBe(before + 1);
-    expect(unit(next, person.unitId).empty.confirmedAt).toBe(NOW);
+    // Audit A1-11 (13 Oct 2026): the count moves, but only Confirm numbers stamps it confirmed.
+    expect(unit(next, person.unitId).empty.confirmedAt).toBe(unit(state, person.unitId).empty.confirmedAt);
   });
 
   it("puts the vacated bed into Being made ready, and one Ready tap makes it offerable (A4-24)", () => {

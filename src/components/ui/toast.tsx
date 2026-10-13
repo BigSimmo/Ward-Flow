@@ -31,10 +31,19 @@ export type Toast = {
    * polite region re-announces and the dismiss timer restarts.
    */
   announceKey?: number;
+  /** Leaves out the provider's `offlineNote`: for a toast that is itself about being offline. */
+  skipOfflineNote?: boolean;
 };
 
 export type ToastInput = Omit<Toast, "id">;
-export type ToastProviderProps = { children: ReactNode };
+export type ToastProviderProps = {
+  children: ReactNode;
+  /**
+   * A2-21 / A3-22 / A1-18 (audit 13 Oct 2026): added to a success or info toast pushed while the
+   * browser reports no connection, so an action recorded offline says it has not gone anywhere.
+   */
+  offlineNote?: string;
+};
 export type ToastApi = {
   push: (toast: ToastInput) => string;
   dismiss: (id: string) => void;
@@ -58,7 +67,7 @@ const MAX_VISIBLE_TOASTS = 5;
  * background left no trace once its panel scrolled away. Wrap the surface (or the
  * app shell) in `ToastProvider` and call `useToast().push(...)` from the handler.
  */
-export function ToastProvider({ children }: ToastProviderProps) {
+export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastsRef = useRef<Toast[]>([]);
   const counter = useRef(0);
@@ -102,7 +111,16 @@ export function ToastProvider({ children }: ToastProviderProps) {
   );
 
   const push = useCallback(
-    (toast: ToastInput) => {
+    (input: ToastInput) => {
+      const offline =
+        offlineNote !== undefined &&
+        !input.skipOfflineNote &&
+        (input.tone === "success" || input.tone === "info") &&
+        typeof navigator !== "undefined" &&
+        navigator.onLine === false;
+      const toast: ToastInput = offline
+        ? { ...input, body: input.body ? `${input.body} ${offlineNote}` : offlineNote }
+        : input;
       // An Undo toast is never folded into another: each action keeps its own window and callbacks.
       const duplicateIndex = toast.undo
         ? -1
@@ -140,7 +158,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
       }
       return id;
     },
-    [expire],
+    [expire, offlineNote],
   );
 
   const value = useMemo(() => ({ toasts, push, dismiss, undoAndDismiss }), [toasts, push, dismiss, undoAndDismiss]);

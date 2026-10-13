@@ -46,6 +46,8 @@ export type PhonePerson = {
   name: string;
   umrn: string;
   profileHref: string | null;
+  /** Audit A3-18: the short legal status or form, before the UMRN. */
+  legal?: string;
   daysLabel: string;
   offset: number | null;
   status: ReturnStatus;
@@ -130,6 +132,12 @@ function PersonCard({
         )}
       </span>
       <span className={styles.pcLine2}>
+        {person.legal ? (
+          <>
+            <span className={styles.pcLegal}>{person.legal}</span>
+            <span className={styles.pcDot} aria-hidden="true" />
+          </>
+        ) : null}
         {person.profileHref ? (
           <Link
             href={person.profileHref}

@@ -3,6 +3,7 @@
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { acceptedWardOf } from "./accepted-ward-referral";
 import {
   Check,
   ChevronRight,
@@ -414,19 +415,6 @@ const useSplitDetailLayout = createBrowserStore<boolean>(
   false,
 );
 
-/** v10 phone: its own design below 48rem. Desktop is the server value, so tests and SSR see it. */
-const PHONE_MEDIA_QUERY = "(max-width: 48rem)";
-const usePhoneLayout = createBrowserStore<boolean>(
-  (onStoreChange) => {
-    if (typeof window.matchMedia !== "function") return () => {};
-    const media = window.matchMedia(PHONE_MEDIA_QUERY);
-    media.addEventListener("change", onStoreChange);
-    return () => media.removeEventListener("change", onStoreChange);
-  },
-  () => (typeof window.matchMedia === "function" ? window.matchMedia(PHONE_MEDIA_QUERY).matches : false),
-  false,
-);
-
 type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "both" | "community" | "refused";
 const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed", "both", "community", "refused"];
 type InspectorTab = "place" | "patient" | "timeline";
@@ -517,7 +505,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   // "New referral" and rail) before anyone had chosen anything (f997ac75a1 + 81553692fb).
   const [chosenReferralId, setSelectedReferralId] = useState<string | null | undefined>(undefined);
   const splitDetailLayout = useSplitDetailLayout();
-  const phoneLayout = usePhoneLayout();
+  // A1-17: the shared phone query, so the server's phone guess draws the phone layout first.
+  const phoneLayout = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<"axis" | "beds" | null>(null);
   const selectedReferralId =
     chosenReferralId === undefined
@@ -1148,17 +1137,45 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     {(() => {
                       const accepted = acceptedAddressing(selectedReferral);
                       const linkedMovement = movements.find((m) => m.referralId === selectedReferral.id && !m.closure);
-                      const targetWardUnitId = accepted?.acceptedUnitId ?? linkedMovement?.acceptedUnitId;
+                      const targetWardUnitId =
+                        accepted?.acceptedUnitId ??
+                        linkedMovement?.acceptedUnitId ??
+                        acceptedWardOf(selectedReferral, units)?.unitId;
                       const targetWard = targetWardUnitId ? units.find((u) => u.id === targetWardUnitId) : undefined;
                       if (!targetWardUnitId) return null;
+                      // S-9 (audit 13 Oct 2026): an accepted referral was a dead end. It links on to
+                      // its movement when one is open, otherwise names the next step, holding the
+                      // bed on the accepting ward, and links the patient record.
                       return (
-                        <Link
-                          href={`/mockups/ward-flow/board/${targetWardUnitId}`}
-                          className={buttonClass({ variant: "ghost", size: "sm" })}
-                          title={`Open ${targetWard?.name ?? "ward"} bed board`}
-                        >
-                          Open ward board
-                        </Link>
+                        <>
+                          {linkedMovement ? (
+                            <Link
+                              href={`/mockups/ward-flow/movements/${encodeURIComponent(linkedMovement.id)}`}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
+                              data-testid="ward-referral-open-movement"
+                            >
+                              Open movement
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/mockups/ward-flow/board/${targetWardUnitId}`}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
+                              title={`Open ${targetWard?.name ?? "ward"} bed board`}
+                              data-testid="ward-referral-hold-bed"
+                            >
+                              Hold the bed
+                            </Link>
+                          )}
+                          {selectedReferral.patientId && !isPhone ? (
+                            <Link
+                              href={`/mockups/ward-flow/people/${encodeURIComponent(selectedReferral.patientId)}`}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
+                              data-testid="ward-referral-open-patient"
+                            >
+                              Patient
+                            </Link>
+                          ) : null}
+                        </>
                       );
                     })()}
                     {!isPhone ? (

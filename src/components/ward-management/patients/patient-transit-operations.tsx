@@ -29,6 +29,8 @@ import {
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { useUndoableStep } from "../use-undoable-step";
+import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
+import { collectionGaps } from "@/components/ward-management/ward-transport-checks";
 import { clock, dur } from "./patient-now-records";
 import styles from "./patient-transit-operations.module.css";
 
@@ -77,6 +79,7 @@ export function PatientTransitOperations({
   const [overrideUnitId, setOverrideUnitId] = useState<string>("");
   const [overrideUnitIds, setOverrideUnitIds] = useState<string[]>([]);
   const [booking, setBooking] = useState(false);
+  const [collectCheck, setCollectCheck] = useState(false);
   const [provider, setProvider] = useState<TransportProvider | "">("");
   const [cad, setCad] = useState("");
   const [eta, setEta] = useState("");
@@ -624,12 +627,36 @@ export function PatientTransitOperations({
                 aria-describedby={collectedGate.buttonProps["aria-describedby"]}
                 onClick={() => {
                   if (!collectedGate.allowed) return;
+                  // Audit S-2 / A4-11: no Form 4A or no fit to travel warns and records a reason.
+                  if (collectionGaps(movement).length > 0) {
+                    setCollectCheck(true);
+                    return;
+                  }
                   noteAttempt();
                   dispatch({ type: "PATIENT_COLLECTED", role: routeRole, now, movementId: movement.id });
                 }}
               >
                 Mark moving · patient collected
               </button>
+              <TransportExceptionDialog
+                open={collectCheck}
+                who="this patient"
+                action="Mark moving"
+                gaps={collectionGaps(movement)}
+                onClose={() => setCollectCheck(false)}
+                onConfirm={(reason) => {
+                  setCollectCheck(false);
+                  noteAttempt();
+                  dispatch({
+                    type: "PATIENT_COLLECTED",
+                    role: routeRole,
+                    now,
+                    movementId: movement.id,
+                    exception: { gaps: collectionGaps(movement), reason },
+                  });
+                }}
+                testId="ward-patient-collect-check"
+              />
               {acceptedGate.note}
               {enRouteGate.note}
               {collectedGate.note}

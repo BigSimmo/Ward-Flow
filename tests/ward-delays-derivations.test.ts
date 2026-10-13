@@ -206,10 +206,12 @@ describe("delayGroups", () => {
       const state = clockState(dueAt, NOW);
       return state === "due" || state === "clear";
     });
+    // Audit A3-4 (13 Oct 2026): the warning windows are inclusive, so the seeded form at exactly
+    // 60 minutes is now act now on Forms and Delays alike; the rest stay non-urgent.
     expect(
       nonUrgent.length,
       "every seeded legal deadline is breached or critical — this test no longer covers the non-urgent case it names",
-    ).toBe(withDeadline.length);
+    ).toBeGreaterThan(0);
 
     const groups = delayGroups(wardMovements, allUnits(), NOW);
     const legalIds = new Set(

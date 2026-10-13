@@ -478,6 +478,18 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     const collected = jobPanel.getByTestId(`ward-officer-collect-${movementId}`);
     await expect(collected).not.toHaveAttribute("aria-disabled", "true");
     await collected.click();
+    // Audit A4-11 / S-2 (13 Oct 2026): with Form 4A or fit to travel not recorded, Collected warns
+    // and asks for a recorded reason instead of blocking. Answer it when it is asked.
+    const collectCheck = page.getByTestId("ward-officer-collect-check");
+    if (
+      await collectCheck
+        .waitFor({ state: "visible", timeout: 2000 })
+        .then(() => true)
+        .catch(() => false)
+    ) {
+      await page.getByTestId("ward-officer-collect-check-reason").selectOption("paper_sighted");
+      await collectCheck.getByRole("button", { name: "Collected, record reason" }).click();
+    }
 
     const arrived = jobPanel.getByTestId(`ward-officer-arrive-${movementId}`);
     await expect(arrived).not.toHaveAttribute("aria-disabled", "true");

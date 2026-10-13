@@ -924,15 +924,25 @@ function PhoneBedSheet({
 
           <div className={styles.phoneMore}>
             {isOccupied && admissionId ? (
-              <Button
-                variant={leavingNow ? "pri" : "sec"}
-                className={styles.pill}
-                onClick={() => {
-                  onRecordLeft(admissionId, occupantAlias, drawerLeavingDestination);
-                }}
-              >
-                Record that they have left
-              </Button>
+              <>
+                {/* Audit A1-12: the phone says plainly which destination "Has left" records too. */}
+                <p className={styles.footDestination} id="drawer-leaving-summary-phone">
+                  Going to{" "}
+                  <strong>
+                    {LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label}
+                  </strong>
+                </p>
+                <Button
+                  variant={leavingNow ? "pri" : "sec"}
+                  className={styles.pill}
+                  aria-describedby="drawer-leaving-summary-phone"
+                  onClick={() => {
+                    onRecordLeft(admissionId, occupantAlias, drawerLeavingDestination);
+                  }}
+                >
+                  Record that they have left
+                </Button>
+              </>
             ) : null}
             {admissionId ? (
               <Button

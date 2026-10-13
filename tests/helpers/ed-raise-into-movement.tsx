@@ -59,3 +59,13 @@ export function openRaiseIntoMovementForm() {
   if (!raise) throw new Error("the received referral offers no Raise into a movement");
   fireEvent.click(raise);
 }
+
+/**
+ * A2-1 (audit 13 Oct 2026): the form starts from a person. Raised from an inbox referral with no
+ * person on it, the form already opens as "Not yet identified"; this makes sure it is, without
+ * toggling it back off.
+ */
+export function markNotYetIdentified() {
+  const box = screen.getByTestId("ward-ed-referral-unidentified") as HTMLInputElement;
+  if (!box.checked) fireEvent.click(box);
+}

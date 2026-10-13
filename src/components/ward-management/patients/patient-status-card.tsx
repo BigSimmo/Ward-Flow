@@ -6,13 +6,14 @@ import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   ABSENCE_STEPS,
+  ABSENCE_STEP_BAR_LABELS,
   ABSENCE_STEP_LABELS,
   type AbsenceStep,
   type LeaveBed,
   type Movement,
 } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
@@ -49,6 +50,8 @@ export type StatusAction =
       event?: WardFlowEventType;
       /** A correction to something already recorded (Update booking): never the card's one primary. */
       secondary?: boolean;
+      /** The words when pinned in the phone bar, away from its row ("Record search done"). */
+      pinnedLabel?: string;
     }
   | { kind: "unavailable"; label: string; reason: string };
 
@@ -63,6 +66,11 @@ export interface PatientStatus {
   cells: StatusCell[];
   /** A checklist in place of the three cells (absent without leave). */
   rows?: StatusRow[];
+  /**
+   * Audit A4-9: the next step once every gate is clear (Mark handover ready). It takes the page's
+   * one primary only when no gate holds it, and on a phone it is pinned in the action bar.
+   */
+  next?: StatusAction;
 }
 
 /** One checklist row: done or not, when, and at most one action. */
@@ -105,12 +113,20 @@ export interface PatientStatusContext {
   onEndCto: () => void;
   /** Why the next forward step would be refused (the held ward no longer suits), or undefined. */
   handoverRefusal?: string;
+  /** Audit A4-9: records handover ready once every gate is clear. */
+  onHandoverReady?: () => void;
   /** Feature 11: why the route's role may not dispatch this event ("Ward only"), or undefined. */
   roleLimit?: (eventType: WardFlowEventType) => string | undefined;
   /** Decision 2: the accepted ward's page, linked from the Bed cell's value. */
   bedHref?: string;
   /** Decision 2: the movement's own page (its transport job), linked from the Transport cell's value. */
   transportHref?: string;
+  /**
+   * S-9 (audit 13 Oct 2026): a ward accepted a referral for this person and nothing is open yet
+   * (accepting pulls no bed and creates no movement). The card says so, and links the ward board
+   * where the bed is held, instead of reading "Not active".
+   */
+  acceptedReferral?: { unitName: string; boardHref: string };
 }
 
 function clearanceCell(movement: Movement, onClearance: PatientStatusContext["onClearance"]): StatusCell {
@@ -250,6 +266,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
     ...status,
     cells: status.cells.map((cell) => ({ ...cell, action: limited(cell.action) })),
     rows: status.rows?.map((row) => ({ ...row, action: limited(row.action) })),
+    next: limited(status.next),
   };
 }
 
@@ -289,21 +306,31 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
   }
 
   if (mode === "held" && movement) {
+    // Audit A4-1: the one bed-hold rule (`ward-bed-hold.ts`). A lapsed hold is act now with
+    // "Move or release" as the primary; under an hour left is the amber at-risk dot.
+    const hold = ctx.hasBedHold ? bedHold(movement.pullExpiresAt, now) : null;
+    const lapsed = hold?.state === "lapsed";
     const bed: StatusCell = {
       key: "bed",
       icon: BedDouble,
       label: "Bed",
       owner: "Bed coordinator",
-      tone: ctx.hasBedHold ? "success" : "warning",
+      tone: !ctx.hasBedHold || hold?.state === "at-risk" ? "warning" : lapsed ? "danger" : "success",
       value: ctx.acceptedUnitName ?? "Accepted ward not recorded",
       sub: ctx.hasBedHold
-        ? movement.pullExpiresAt !== undefined
-          ? `Held, ${pullHoldRemainingLabel(movement.pullExpiresAt, now)}`
+        ? hold
+          ? lapsed
+            ? hold.label
+            : `Pulled, ${hold.short}`
           : "Bed held"
         : "Accepted, no bed held yet",
       time: movement.acceptedAt !== undefined ? `Accepted ${clock(movement.acceptedAt)}` : undefined,
-      clear: ctx.hasBedHold,
-      action: ctx.hasBedHold ? undefined : { kind: "button", label: "Hold the bed", onClick: ctx.onOpenPlacement },
+      clear: ctx.hasBedHold && !lapsed,
+      action: !ctx.hasBedHold
+        ? { kind: "button", label: "Hold the bed", onClick: ctx.onOpenPlacement }
+        : lapsed
+          ? { kind: "button", label: "Move or release", onClick: ctx.onOpenPlacement }
+          : undefined,
       href: ctx.acceptedUnitName ? ctx.bedHref : undefined,
     };
     const status = withMeter({
@@ -326,12 +353,27 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
         ),
       ],
     });
-    if (ctx.handoverRefusal) {
+    if (lapsed && hold) {
+      status.tone = "danger";
+      status.verdict = "Bed pull expired";
+      status.meta = `${hold.label}. Move or release the bed.`;
+    } else if (ctx.handoverRefusal) {
       // The engine refuses the next forward step, so the three gates are not the whole answer.
       status.tone = "danger";
       status.verdict = "Cannot move";
       status.meta = ctx.handoverRefusal;
-    } else if (status.meter && status.meter.clear === status.meter.of) status.verdict = "Ready to move";
+    } else if (status.meter && status.meter.clear === status.meter.of) {
+      status.verdict = "Ready to move";
+      if (movement.stage === "pulled" && ctx.onHandoverReady) {
+        const onHandoverReady = ctx.onHandoverReady;
+        status.next = {
+          kind: "button",
+          label: "Mark handover ready",
+          onClick: () => onHandoverReady(),
+          event: "HANDOVER_READY",
+        };
+      }
+    }
     return status;
   }
 
@@ -592,7 +634,11 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
 
   if (mode === "awol" && ctx.leaveBed?.absentWithoutLeave) {
     const absence = ctx.leaveBed.absentWithoutLeave;
-    const rows: StatusRow[] = ABSENCE_STEPS.map((step) => {
+    // A3-13: a voluntary patient is not on an order, so no return order is asked for (A3-2's step
+    // is for a person on one); the other missing person steps are the same.
+    const voluntary = /^voluntary\b/i.test(legalValue(movement, patient).trim());
+    const steps = voluntary ? ABSENCE_STEPS.filter((step) => step !== "return_order_made") : ABSENCE_STEPS;
+    const rows: StatusRow[] = steps.map((step) => {
       const at = absence.steps.find((done) => done.step === step)?.at;
       return {
         key: step,
@@ -605,6 +651,8 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
                 kind: "button",
                 label: "Record",
                 ariaLabel: `Record ${ABSENCE_STEP_LABELS[step]}`,
+                // Audit A3-11: pinned alone in the phone bar, the button names its step.
+                pinnedLabel: ABSENCE_STEP_BAR_LABELS[step],
                 onClick: () => {
                   ctx.onAbsenceStep(step);
                 },
@@ -616,14 +664,40 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
     return {
       tone: "danger",
       // A3-13: absent without leave is for a person on an order; a voluntary patient is not back.
-      verdict: /^voluntary\b/i.test(legalValue(movement, patient).trim())
-        ? "Not back from leave"
-        : "Absent without leave",
+      verdict: voluntary ? "Not back from leave" : "Absent without leave",
       meter: { clear: rows.filter((r) => r.done).length, of: rows.length },
       meterWord: "steps done",
       meta: `Since ${clock(absence.since)}, owner nurse in charge`,
       cells: [],
       rows,
+    };
+  }
+
+  if ((mode === "idle" || mode === "cto") && ctx.acceptedReferral) {
+    const { unitName, boardHref } = ctx.acceptedReferral;
+    return {
+      tone: "info",
+      verdict: "Accepted, no bed held",
+      meta: `Accepted at ${unitName}. Next: hold the bed`,
+      cells: [
+        {
+          key: "bed",
+          icon: BedDouble,
+          label: "Bed",
+          owner: "Ward",
+          value: `Hold on ${unitName}`,
+          sub: "Accepted referral, no bed held yet",
+          href: boardHref,
+        },
+        {
+          key: "catchment",
+          icon: Users,
+          label: "Catchment team",
+          owner: "Community",
+          value: patient?.catchmentCommunityTeam ?? "Not recorded",
+          sub: "Recorded catchment",
+        },
+      ],
     };
   }
 
@@ -783,7 +857,9 @@ export function PatientStatusCard({
    */
   const isPhone = useIsPhone();
   const pinned = isPhone
-    ? (status.rows?.find((r) => r.key === primaryKey)?.action ?? status.cells.find((c) => c.key === primaryKey)?.action)
+    ? (status.rows?.find((r) => r.key === primaryKey)?.action ??
+      status.cells.find((c) => c.key === primaryKey)?.action ??
+      (primaryKey === undefined ? status.next : undefined))
     : undefined;
   const inList = (key: string) => !(pinned && key === primaryKey);
   /* v10 Patient, phone: outside a placement the card has no verdict row unless it counts steps
@@ -883,7 +959,16 @@ export function PatientStatusCard({
       {isPhone && (pinned || barLead || barMain) ? (
         <div className={styles.phBar} data-testid="ward-patient-phone-action-bar">
           {barLead ? <span className={styles.phLead}>{barLead}</span> : null}
-          {pinned ? <CellAction action={pinned} primary /> : barMain}
+          {pinned ? (
+            <CellAction
+              action={
+                pinned.kind === "button" && pinned.pinnedLabel ? { ...pinned, label: pinned.pinnedLabel } : pinned
+              }
+              primary
+            />
+          ) : (
+            barMain
+          )}
         </div>
       ) : null}
     </>

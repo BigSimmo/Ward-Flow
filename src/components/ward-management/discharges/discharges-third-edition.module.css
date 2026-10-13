@@ -1005,11 +1005,29 @@
 
 .detailFooter {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: var(--wf-s-2);
   padding: var(--wf-s-3) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
+}
+
+/* A4-21: the destination a confirmed release's departure records, chosen before the button. */
+.departDest {
+  display: flex;
+  flex: 1 1 14rem;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.departDest > div {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Follow-up and care-journey sections inside the dossier tab. */
@@ -2001,6 +2019,16 @@
 
   .detailFooter > a:only-child {
     flex: 1;
+    justify-content: center;
+  }
+
+  .departDest {
+    flex-basis: 100%;
+  }
+
+  .departPri {
+    flex: 1;
+    min-width: 0;
     justify-content: center;
   }
 
