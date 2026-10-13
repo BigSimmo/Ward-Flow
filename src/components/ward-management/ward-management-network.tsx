@@ -546,7 +546,7 @@ type NetworkView = "overview" | "placement";
  * coordinator's local selection when they briefly return to the overview.
  */
 export function WardNetworkWorkspace() {
-  const { movements, units, bedReleases, leaveBeds, admissions } = useWardFlow();
+  const { movements, units, bedReleases, leaveBeds, admissions, configuration } = useWardFlow();
   const { now, paused, togglePause } = usePageLive();
   const [view, setView] = useState<NetworkView>("overview");
   // Phone (v10 Network): the view tabs sit under the hero and a "Ready against waiting" row scopes
@@ -718,6 +718,7 @@ export function WardNetworkWorkspace() {
         <PressureStrip
           now={now}
           movements={movements}
+          edAccessTargetMinutes={configuration.edAccessTargetMinutes}
           selectedEdId={selectedEdId}
           onSelectEd={(edId) => {
             // Phone (v10): a department row picks that ED and opens its ready beds by road time.

@@ -17,6 +17,20 @@ async function openShortlistSections(shortlist: Locator) {
   }
 }
 
+/**
+ * shell-10 (13 Oct 2026) added a route `loading.tsx`, so every Ward Flow page now streams behind a
+ * Suspense boundary: the server parks the page in a hidden `S:` copy and an inline script swaps it
+ * in on a timer. A test that has paused the browser clock stops that timer, leaving the hidden copy
+ * (and every duplicated id) in place. Step the paused clock until the swap has happened.
+ */
+async function settleStreamUnderPausedClock(page: Page): Promise<void> {
+  const staged = page.locator('div[hidden][id^="S:"]');
+  await expect(async () => {
+    await page.clock.runFor(100);
+    await expect(staged).toHaveCount(0, { timeout: 500 });
+  }).toPass({ timeout: 15_000 });
+}
+
 async function gotoWard(page: Page, unitId: string): Promise<Locator> {
   await page.goto(`/mockups/ward-flow/ward/${unitId}`, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle");
@@ -168,19 +182,22 @@ test.describe("@mockup Ward screen", () => {
 
   /**
    * Addendum R40 (Global Constraint): an id `unitById` cannot resolve must render an explicit
-   * empty state naming the id — never a substituted unit, never `?? allUnits()[0]`. This id is
+   * empty state (since shell-12 it quotes no id) — never a substituted unit, never `?? allUnits()[0]`. This id is
    * checked against the real fixture below to prove it genuinely resolves to nothing, so the test
    * cannot silently start passing against a real unit if the fixture ever grows an id like this.
    */
-  test("names an unresolved unit id rather than substituting a different ward", async ({ page }) => {
+  test("shows a plain not-found for an unresolved unit id rather than substituting a different ward", async ({
+    page,
+  }) => {
     const bogusUnitId = "nonexistent-unit-does-not-exist";
     expect(unitById(bogusUnitId), "fixture assumption: this id resolves to no real unit").toBeUndefined();
 
     await page.goto(`/mockups/ward-flow/ward/${bogusUnitId}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
 
-    // Names the id, in real visible text — never a generic "not found" with the id swallowed.
-    await expect(page.getByTestId("ward-unit-screen")).toContainText(bogusUnitId);
+    // Not-found pages quote no ids (shell-12, 13 Oct 2026): the plain sentence, never the id.
+    await expect(page.getByTestId("ward-unit-screen")).toContainText("No ward matches this link.");
+    await expect(page.getByTestId("ward-unit-screen")).not.toContainText(bogusUnitId);
     // And never a substituted unit: no unit card is rendered at all for this route.
     await expect(page.locator('[data-testid^="ward-unit-card-"]')).toHaveCount(0);
     await expect(page.getByTestId("ward-unit-beds")).toHaveCount(0);
@@ -203,7 +220,11 @@ test.describe("@mockup Ward screen", () => {
     // still exactly 10:00:00.
     await page.clock.install({ time: new Date("2026-08-26T09:59:00Z") });
     await page.clock.pauseAt(new Date("2026-08-26T10:00:00Z"));
-    const wardScreen = await gotoWard(page, "rph-adult-secure");
+    await page.goto("/mockups/ward-flow/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
+    await settleStreamUnderPausedClock(page);
+    await page.waitForLoadState("networkidle");
+    const wardScreen = page.locator('[data-testid="ward-unit-screen"]:visible');
+    await expect(wardScreen).toHaveCount(1, { timeout: 15_000 });
 
     await openAllArrivals(page);
     const card = wardScreen.getByTestId("ward-accepted-WF-003");
@@ -626,11 +647,13 @@ test.describe("@mockup Emergency department screen", () => {
 
   /**
    * Addendum R40 (Global Constraint), the same rule `ward-screen.tsx`'s unresolved-unit test
-   * proves: an id `edById` cannot resolve must render an explicit empty state naming the id —
-   * never a substituted department. Checked against the real fixture first so this test cannot
+   * proves: an id `edById` cannot resolve must render an explicit empty state (since shell-12 it
+   * quotes no id) — never a substituted department. Checked against the real fixture first so this test cannot
    * silently start passing against a real department if one is ever added with this id.
    */
-  test("names an unresolved emergency department id rather than substituting a different one", async ({ page }) => {
+  test("shows a plain not-found for an unresolved emergency department id rather than substituting a different one", async ({
+    page,
+  }) => {
     const bogusEdId = "nonexistent-ed-does-not-exist";
     expect(edById(bogusEdId), "fixture assumption: this id resolves to no real department").toBeUndefined();
 
@@ -638,7 +661,9 @@ test.describe("@mockup Emergency department screen", () => {
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    await expect(page.getByTestId("ward-ed-screen")).toContainText(bogusEdId);
+    // Not-found pages quote no ids (shell-12, 13 Oct 2026): the plain sentence, never the id.
+    await expect(page.getByTestId("ward-ed-screen")).toContainText("No emergency department matches this link.");
+    await expect(page.getByTestId("ward-ed-screen")).not.toContainText(bogusEdId);
     await expect(page.locator('[data-testid^="ward-ed-card-"]')).toHaveCount(0);
     await expect(page.locator('[data-testid^="ward-ed-patient-"]')).toHaveCount(0);
   });
@@ -666,6 +691,7 @@ test.describe("@mockup Emergency department screen", () => {
     await page.clock.install({ time: new Date("2026-08-26T09:59:00Z") });
     await page.clock.pauseAt(new Date("2026-08-26T10:00:00Z"));
     await page.goto("/mockups/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
+    await settleStreamUnderPausedClock(page);
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -1085,7 +1111,7 @@ test.describe("@mockup Role switcher — the loop", () => {
       await ensureToolsOpen(page);
       await switcherTrigger().click();
       const matches = page
-        .getByRole("dialog", { name: "Switch workstation" })
+        .getByRole("dialog", { name: "Go to a desk" })
         .getByRole("group", { name: /^(Statewide desks|Patient in focus)$/ })
         .getByRole("link", { name: menuItemName });
       await expect(matches, `"${menuItemName}" must resolve to exactly one drawer link`).toHaveCount(1);
@@ -1131,7 +1157,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await closeEdPatientSheet(page, "WF-315");
 
     // --- Step 2: Coordinator — select WF-315, refer to all three candidates. ---
-    await switchTo("Flow coordinator");
+    await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -1189,7 +1215,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     // role. The shared `focusMovementId` (ward-flow-provider.tsx) re-selects WF-315 on this
     // remount without another click — proving the selection itself, not just the movement data,
     // survived the two role switches so far. ---
-    await switchTo("Flow coordinator");
+    await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toContainText(
@@ -1238,7 +1264,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await closeEdPatientSheet(page, "WF-315");
 
     // --- Steps 7-10: Officer — Accepted, En route, Collected, Delivered. ---
-    await switchTo("Authorised officer");
+    await switchTo("Transport officer");
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -1274,7 +1300,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     // Delivered ends the transport leg only and leaves the movement open; the receiving ward closes
     // it by confirming arrival. The Patient in focus ward chips show only from a coordinator page,
     // so the switch goes through the coordinator, as step 4 did. ---
-    await switchTo("Flow coordinator");
+    await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await switchTo("Dabakarn");
@@ -1285,7 +1311,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-accepted-WF-315")).toHaveCount(0);
 
     // --- Step 11: Coordinator — the patient has left the system. ---
-    await switchTo("Flow coordinator");
+    await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("region", { name: "Priority queue" }).getByTestId("ward-queue-row-WF-315")).toHaveCount(
@@ -1327,7 +1353,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
       await ensureToolsOpen(page);
       await switcherTrigger().click();
       const matches = page
-        .getByRole("dialog", { name: "Switch workstation" })
+        .getByRole("dialog", { name: "Go to a desk" })
         .getByRole("group", { name: /^(Statewide desks|Patient in focus)$/ })
         .getByRole("link", { name: menuItemName });
       await expect(matches, `"${menuItemName}" must resolve to exactly one drawer link`).toHaveCount(1);
@@ -1388,7 +1414,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
 
     // --- Step 5: click through to the coordinator — the role switcher's real <Link>, never a
     // goto. Coordinator is never ambiguous (spec §9: "Statewide — no ward or department"). ---
-    await switchTo("Flow coordinator");
+    await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 

@@ -288,7 +288,8 @@ export function supportNotificationInboxItems(
       title: `${SUPPORT_NOTIFICATION_OCCASION_LABELS[subject.occasion]} notifications to record`,
       // No record id in the text: the drawer names the person through the patient resolver.
       detail: `${missing.map((party) => SUPPORT_NOTIFICATION_PARTY_SHORT[party]).join(", ")} not recorded${unit ? ` · ${unit.name}` : ""}`,
-      owner: "Ward",
+      // Ops-15 (13 Oct 2026): the ward that records it, by name, so owner chips can tell wards apart.
+      owner: unit?.name ?? "Ward",
       // A discharge with no linked movement has none to name; the row opens by `admissionId`.
       movementId: subject.movementId ?? "",
       ...(subject.occasion === "discharge" ? { admissionId: key } : {}),

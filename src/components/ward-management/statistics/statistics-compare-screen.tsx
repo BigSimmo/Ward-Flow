@@ -9,6 +9,7 @@ import {
   Button,
   CardBody,
   CardFoot,
+  Field,
   FilterChip,
   HeroStat,
   Icon,
@@ -213,7 +214,7 @@ export function StatisticsCompareScreen({
 
 /**
  * Compare on a phone (v10 phone): wards or EDs, one measure at a time as chips, the bars against
- * the network mean, highest first. The pinned wards open in a sheet.
+ * the network mean, highest first. Two chosen wards open in a sheet beside the network.
  */
 function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCompareRow[] }) {
   const [kind, setKind] = useState<"wards" | "eds">("wards");
@@ -225,6 +226,7 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
     return value === null ? [] : [value];
   });
   const wardMean = wardValues.length > 0 ? mean(wardValues) : null;
+  const wardLabels = shortWardLabels(wardRows.map((row) => row.unit));
   const flagAbove = wardMean === null ? null : wardMean + standardDeviation(wardValues);
   const wardSorted = sortRows(
     wardRows.map((row) => ({ row, name: row.unit.name, value: wardMetricValue(row.statistics, wardMetric) })),
@@ -235,11 +237,19 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
     edRows.map((entry) => ({ entry, name: entry.department.name, value: edMetricValue(entry, edMetric) })),
     "high",
   );
-  const pinnedNames = [...wardRows]
-    .filter((row) => row.statistics.averageLengthOfStayDays !== null)
-    .sort((a, b) => (b.statistics.averageLengthOfStayDays ?? 0) - (a.statistics.averageLengthOfStayDays ?? 0))
-    .slice(0, PIN_LIMIT)
-    .map((row) => row.unit.siteCode);
+  // The two wards compared, kept in page state so closing the sheet keeps the choice (audit stats-7).
+  const longestTwo = useMemo(
+    () =>
+      [...wardRows]
+        .filter((row) => row.statistics.averageLengthOfStayDays !== null)
+        .sort((a, b) => (b.statistics.averageLengthOfStayDays ?? 0) - (a.statistics.averageLengthOfStayDays ?? 0))
+        .slice(0, 2)
+        .map((row) => row.unit.id),
+    [wardRows],
+  );
+  const [pair, setPair] = useState<[string | null, string | null] | null>(null);
+  const [wardA, wardB] = pair ?? [longestTwo[0] ?? null, longestTwo[1] ?? null];
+  const pairNames = [wardA, wardB].flatMap((id) => (id === null ? [] : [wardLabels.get(id) ?? id]));
 
   return (
     <PhoneBody testId="ward-statistics-compare-phone">
@@ -276,7 +286,7 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
               <BarList
                 rows={wardSorted.map(({ row, value }) => ({
                   id: row.unit.id,
-                  label: row.unit.name,
+                  label: wardLabels.get(row.unit.id) ?? row.unit.name,
                   labelText: row.unit.name,
                   value: value!,
                   display: wardMetric === "stay" ? value!.toFixed(1) : undefined,
@@ -320,11 +330,17 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
       </div>
       <PhoneSheetRow
         icon={Pin}
-        title="Pinned wards"
-        sub={`${pinnedNames.join(", ") || "None"} against the network`}
+        title="Compare two wards"
+        sub={pairNames.length > 0 ? `${pairNames.join(" and ")} against the network` : "Choose two wards"}
         testId="ward-statistics-compare-phone-pinned"
       >
-        <PinnedWards rows={wardRows} />
+        <CompareTwoWards
+          rows={wardRows}
+          labels={wardLabels}
+          wardA={wardA}
+          wardB={wardB}
+          onChange={(a, b) => setPair([a, b])}
+        />
       </PhoneSheetRow>
     </PhoneBody>
   );
@@ -576,6 +592,27 @@ const ED_METRICS: Record<EdMetric, { label: string; chart: string }> = {
 
 type EdCompareRow = { department: EmergencyDepartment; row: EdRow; longestMinutes: number };
 
+/**
+ * A ward's chart label on a phone: site code and cohort ("GRY Secure", "ALB Adult", "RPH Older"),
+ * so no name is clipped at the label width (audit stats-13). Where two wards would read the same,
+ * both keep their full name. The full name always stays in the accessible list (`labelText`).
+ */
+export function shortWardLabels(units: readonly Pick<Unit, "id" | "name" | "siteCode" | "cohort" | "lockedBeds">[]) {
+  const short = (unit: (typeof units)[number]) =>
+    `${unit.siteCode} ${
+      unit.cohort === "Adult"
+        ? unit.lockedBeds > 0
+          ? "Secure"
+          : "Adult"
+        : unit.cohort === "Older adult"
+          ? "Older"
+          : unit.cohort
+    }`;
+  const counts = new Map<string, number>();
+  for (const unit of units) counts.set(short(unit), (counts.get(short(unit)) ?? 0) + 1);
+  return new Map(units.map((unit) => [unit.id, counts.get(short(unit)) === 1 ? short(unit) : unit.name]));
+}
+
 /** "Armadale Hospital Emergency Department" reads "Armadale ED" on the chart; the full name stays in the accessible list. */
 const shortDepartmentName = (name: string) =>
   name
@@ -720,6 +757,115 @@ const PINNED_MEASURES: PinnedMeasure[] = [
 
 const oneDecimal = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
 
+/** The mean of the wards' own values for one measure; `null` when no ward has a value. */
+function networkMean(rows: readonly WardRow[], measure: PinnedMeasure): number | null {
+  const values = rows.flatMap((row) => {
+    const value = measure.value(row);
+    return value === null ? [] : [value];
+  });
+  return values.length > 0 ? mean(values) : null;
+}
+
+/** The network's per-ward figure for one measure, in that measure's own units. */
+function networkText(measure: PinnedMeasure, reference: number): string {
+  if (measure.id === "stay") return `${reference.toFixed(1)}d`;
+  if (measure.id === "occupancy") return `${Math.round(reference)}%`;
+  return oneDecimal(Math.round(reference * 10) / 10);
+}
+
+/**
+ * Compare two wards on a phone (audit stats-7, 13 Oct 2026): two pickers, then each measure on its
+ * own line with its full label and the two wards' values beside the network's mean of wards. The
+ * desktop pinned table is unchanged; this is the phone's own design.
+ */
+function CompareTwoWards({
+  rows,
+  labels,
+  wardA,
+  wardB,
+  onChange,
+}: {
+  rows: readonly WardRow[];
+  labels: ReadonlyMap<string, string>;
+  wardA: string | null;
+  wardB: string | null;
+  onChange: (a: string | null, b: string | null) => void;
+}) {
+  const chosen = [wardA, wardB].map((id) => rows.find((row) => row.unit.id === id) ?? null);
+  const picker = (which: 0 | 1) => (
+    <Field label={which === 0 ? "Ward A" : "Ward B"} className={phone.pairField}>
+      <Select
+        value={(which === 0 ? wardA : wardB) ?? ""}
+        onChange={(event) => {
+          const value = event.target.value || null;
+          if (which === 0) onChange(value, wardB);
+          else onChange(wardA, value);
+        }}
+        data-testid={`ward-statistics-compare-pair-${which === 0 ? "a" : "b"}`}
+      >
+        <option value="">No ward</option>
+        {rows.map((row) => (
+          <option key={row.unit.id} value={row.unit.id}>
+            {row.unit.name}
+          </option>
+        ))}
+      </Select>
+    </Field>
+  );
+  const heads = [...chosen.map((row) => (row ? (labels.get(row.unit.id) ?? row.unit.name) : "No ward")), "Network"];
+  return (
+    <div className={phone.pair} data-testid="ward-statistics-compare-pair">
+      <div className={phone.pairPickers}>
+        {picker(0)}
+        {picker(1)}
+      </div>
+      <div className={phone.pairHead} aria-hidden="true">
+        {heads.map((head, index) => (
+          <span key={index}>{head}</span>
+        ))}
+      </div>
+      <ul className={phone.pairList} aria-label="Measures, ward A, ward B and the network mean of wards">
+        {PINNED_MEASURES.map((measure) => {
+          const reference = networkMean(rows, measure);
+          return (
+            <li key={measure.id} className={phone.pairRow} data-testid={`ward-statistics-compare-pair-${measure.id}`}>
+              <span className={phone.pairLabel}>{measure.label}</span>
+              <span className={phone.pairValues}>
+                {chosen.map((row, index) => {
+                  const value = row ? measure.value(row) : null;
+                  const above = measure.markAbove && value !== null && reference !== null && value > reference;
+                  return (
+                    <span key={index} className={phone.flagged}>
+                      <SrOnly>{`${heads[index]}: `}</SrOnly>
+                      {above ? (
+                        <>
+                          <StatusGlyph tone="warning" size={9} />
+                          <SrOnly>above network, </SrOnly>
+                        </>
+                      ) : null}
+                      {row === null ? "none" : value === null ? "none arrived" : measure.text(value)}
+                    </span>
+                  );
+                })}
+                <span>
+                  <SrOnly>Network mean of wards: </SrOnly>
+                  {reference === null ? "none arrived" : networkText(measure, reference)}
+                </span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className={phone.note}>
+        <span className={phone.flagged}>
+          <StatusGlyph tone="warning" size={9} />
+          Above the network mean of wards
+        </span>
+      </p>
+    </div>
+  );
+}
+
 /** Up to three wards set beside the network's per-ward figure. Opens on the three longest stays. */
 function PinnedWards({ rows }: { rows: WardRow[] }) {
   const longest = useMemo(
@@ -736,13 +882,7 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
   const pinned = pinnedIds.flatMap((id) => rows.find((row) => row.unit.id === id) ?? []);
   const unpinned = rows.filter((row) => !pinnedIds.includes(row.unit.id));
 
-  const network = (measure: PinnedMeasure) => {
-    const values = rows.flatMap((row) => {
-      const value = measure.value(row);
-      return value === null ? [] : [value];
-    });
-    return values.length > 0 ? mean(values) : null;
-  };
+  const network = (measure: PinnedMeasure) => networkMean(rows, measure);
 
   return (
     <StatCard
@@ -806,7 +946,8 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
                 <th scope="col" className={styles.num}>
                   <span className={compare.pinName}>
                     <span>Network</span>
-                    <span className={styles.code}>per ward</span>
+                    {/* The mean of the wards' own figures, not the network's one figure (audit stats-20). */}
+                    <span className={styles.code}>mean of wards</span>
                   </span>
                 </th>
               </tr>
@@ -841,12 +982,8 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
                     <td className={styles.num}>
                       {reference === null ? (
                         <span className={styles.muted}>none arrived</span>
-                      ) : measure.id === "stay" ? (
-                        `${reference.toFixed(1)}d`
-                      ) : measure.id === "occupancy" ? (
-                        `${Math.round(reference)}%`
                       ) : (
-                        oneDecimal(Math.round(reference * 10) / 10)
+                        networkText(measure, reference)
                       )}
                     </td>
                   </tr>

@@ -15,6 +15,7 @@ import {
   BROADCAST_ANSWER_LABELS,
   broadcastKind,
   isPullNowOverdue,
+  pullNowOffered,
   type BroadcastAlert,
   type BroadcastReply,
 } from "./ward-broadcast-model";
@@ -123,7 +124,7 @@ export function PullNowButton({ movement }: { movement: Movement }) {
 }
 
 function PullNowControl({ movement }: { movement: Movement }) {
-  const { broadcastAlerts, movements, dispatch, rejections } = useWardFlow();
+  const { broadcastAlerts, movements, dispatch, rejections, units } = useWardFlow();
   const now = useWardFlowClock();
   const [refusalFrom, setRefusalFrom] = useState<number | null>(null);
   // Greyed with a reason on any other desk, never hidden (role limits, PR #206).
@@ -138,6 +139,10 @@ function PullNowControl({ movement }: { movement: Movement }) {
       : rejections
           .slice(refusalFrom)
           .find((r: Rejection) => r.attempted === "RAISE_PULL_NOW" && r.movementId === movement.id);
+  // Ops-4: offered only where it would be accepted; a refusal already shown stays in view.
+  if (!live && refusal === undefined && !pullNowOffered(movement, (id) => units.some((unit) => unit.id === id))) {
+    return null;
+  }
   if (live) {
     return (
       <span className={styles.sent}>

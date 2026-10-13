@@ -264,10 +264,15 @@ test.describe("@mockup Ward Flow command view", () => {
       // Device audit (11 Oct 2026): the phone menu shows each page once. Home sits in the phone
       // dock, and a page with an urgent count moves under "Needs you", so a view is reachable
       // through whichever of those three link kinds carries it. Each is still measured below.
+      // shell-9 (13 Oct 2026): a "Needs you" row may carry a filter query (Delays opens on
+      // ?show=severe), so its href is matched with or without one.
       const link = page
         .locator(
           ["ward-rail-link", "ward-phone-dock-link", "ward-phone-menu-need"]
-            .map((testId) => `[data-testid="${testId}"][href="${view.href}"]:visible`)
+            .flatMap((testId) => [
+              `[data-testid="${testId}"][href="${view.href}"]:visible`,
+              `[data-testid="${testId}"][href^="${view.href}?"]:visible`,
+            ])
             .join(", "),
         )
         .first();

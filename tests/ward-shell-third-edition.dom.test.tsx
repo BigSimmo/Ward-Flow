@@ -129,9 +129,9 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     expect(links).toHaveLength(21);
     const groups = [
       ["Today", ["Home", "Movements", "Capacity", "Delays", "Network"]],
-      ["Where", ["Places", "Emergency", "Wards", "Community", "Transport"]],
+      ["Where", ["Places", "All EDs", "All wards", "Community", "Transport"]],
       ["Work", ["Patients", "New referral", "Referrals", "Handover", "Discharges"]],
-      ["Checks", ["Governance", "Statistics", "Legal", "Out of area", "Alerts", "On-call"]],
+      ["Checks", ["Governance", "Statistics", "Legal forms", "Out of area", "Alerts", "On-call"]],
     ] as const;
     for (const [name, labels] of groups) {
       const groupLinks = within(screen.getByRole("region", { name })).getAllByRole("link");

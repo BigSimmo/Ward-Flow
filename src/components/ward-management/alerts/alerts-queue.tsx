@@ -45,14 +45,13 @@ const OWNER_SHORT: Record<string, string> = {
   "Ward nurse in charge": "Ward NIC",
 };
 
-/** A short owner name for chips and rows. A planned arrival is owned by its booking ward, named in full beneath. */
-export function ownerShort(owner: string, bookingWard = false): string {
-  return OWNER_SHORT[owner] ?? (bookingWard ? "Ward" : owner);
-}
-
-/** True when the row is a planned arrival still held by the ward the engine addressed it to. */
-export function ownedByBookingWard(entry: QueueEntry): boolean {
-  return entry.item.plannedAdmission !== undefined && entry.owner === entry.item.owner;
+/**
+ * A short owner name for chips and rows. A planned arrival is owned by its booking ward, which is
+ * named (Maali, RPH Older Adult), never collapsed to "Ward": two chips both reading "Ward" could not
+ * be told apart (ops-15, 13 Oct 2026). Ward names are already short.
+ */
+export function ownerShort(owner: string): string {
+  return OWNER_SHORT[owner] ?? owner;
 }
 
 export function groupTone(group: AlertGroup): WfTone {
@@ -203,7 +202,7 @@ export function AlertRow({
         </span>
       </span>
       <span className={styles.cell}>
-        <span className={styles.cellMain}>{ownerShort(entry.owner, ownedByBookingWard(entry))}</span>
+        <span className={styles.cellMain}>{ownerShort(entry.owner)}</span>
         <span className={styles.quiet}>{state ?? entry.owner}</span>
       </span>
       <Age entry={entry} now={now} maxAge={maxAge} />
@@ -304,7 +303,7 @@ export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now
         <span className={styles.phoneRowAge}>
           {entry.raised !== undefined ? minutesText(Math.max(0, now - entry.raised)) : ""}
         </span>
-        <span className={styles.phoneRowOwner}>{ownerShort(entry.owner, ownedByBookingWard(entry))}</span>
+        <span className={styles.phoneRowOwner}>{ownerShort(entry.owner)}</span>
       </span>
     </li>
   );

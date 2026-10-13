@@ -19,6 +19,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { bedFits, whyBedDoesNotFit, type BoardPick } from "@/components/ward-management/ward/ward-bed-board-logic";
+import { fitSurname } from "@/components/ward-management/ward/ward-bed-board";
 import { layoutBedNumbers } from "@/components/ward-management/ward/ward-bed-layout";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
@@ -164,6 +165,15 @@ describe("Bed board layout and fit rules", () => {
       free: kind === "r",
       stayAdmissionId: kind === "o" ? `a${index + 1}` : undefined,
     }));
+
+  it("cuts a long surname so its box ends at the ellipsis, leaving no gap before the initial", () => {
+    // One unit per letter, ellipsis included: room 6 fits five letters and the ellipsis.
+    const measure = (text: string) => text.length;
+    expect(fitSurname("Ferrowmoor", 6, measure)).toBe("Ferro…");
+    expect(fitSurname("Ferrowmoor", 10, measure)).toBe("Ferrowmoor");
+    expect(fitSurname("Ferrowmoor", 1, measure)).toBe("F…");
+    expect(fitSurname("Van Dyke", 5, measure)).toBe("Van…");
+  });
 
   it("keeps every tile in its baseline bed when nothing is numbered", () => {
     expect(layoutBedNumbers(items("rrooo"), () => undefined)).toEqual([1, 2, 3, 4, 5]);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
+import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import {
   BOARD_OWNERS,
   NO_FILTERS,
@@ -128,6 +128,17 @@ describe("the Delays board model", () => {
     expect(lockedYours).toHaveLength(ROWS.filter((row) => row.owner === "yours" && row.locked).length);
     const over24 = filterRows(ROWS, { ...NO_FILTERS, threshold: 3 }, bins, nameOf);
     expect(over24.every((row) => row.waited >= OVER_24H)).toBe(true);
+  });
+
+  it("the severe filter keeps exactly the severe causes the Menu's Delays figure counts (shell-9)", () => {
+    const bins = runwayBins(ROWS);
+    const severe = filterRows(ROWS, { ...NO_FILTERS, severe: true }, bins, nameOf);
+    const menuFigure = delayGroups(state.movements, UNITS, NOW_ANCHOR)
+      .filter((group) => SEVERE_CAUSES.includes(group.cause))
+      .reduce((total, group) => total + group.movements.length, 0);
+    expect(menuFigure, "fixture drifted: no severe delay to filter to").toBeGreaterThan(0);
+    expect(severe).toHaveLength(menuFigure);
+    expect(severe.every((row) => SEVERE_CAUSES.includes(row.cause))).toBe(true);
   });
 
   it("summarises the wards from the record: accepted, declined or asked", () => {

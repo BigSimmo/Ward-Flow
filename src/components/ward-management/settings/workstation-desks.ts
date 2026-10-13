@@ -13,9 +13,9 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EdSummary } from "@/components/ward-management/ed/ed-home-derivations";
 import type { HubEntry } from "@/components/ward-management/hub/hub-derivations";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { CHROME_ROLE_LABELS, type WardChromeRole, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { HEALTH_SERVICES, type HealthService, type Movement } from "@/components/ward-management/ward-model";
-import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { isOfficerJob } from "@/components/ward-management/officer/officer-jobs";
 
@@ -149,11 +149,23 @@ export function recentDeskIds(): readonly string[] {
 export function deskMatches(desk: Desk, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  return [desk.name, desk.site ?? "", desk.service ?? "", deskRoleLabel(desk.role)].join(" ").toLowerCase().includes(q);
+  // Both role names find a desk: the on-screen one and the event one ("Nurse in charge", "Ward manager").
+  return [desk.name, desk.site ?? "", desk.service ?? "", deskRoleLabel(desk.role), WARD_FLOW_ROLE_LABELS[desk.role]]
+    .join(" ")
+    .toLowerCase()
+    .includes(q);
 }
 
+/**
+ * What a role is called on screen (audit settings-22, Josh 13 Oct 2026: one role label map). The
+ * Menu, sidebar and header name a role by `CHROME_ROLE_LABELS` ("Bed coordinator"), so the desk
+ * drawer, Settings and Governance read the same words. The demonstration control has no chrome role
+ * and keeps its event label.
+ */
 export function deskRoleLabel(role: DeskRole | WardFlowRole): string {
-  return WARD_FLOW_ROLE_LABELS[role];
+  return Object.hasOwn(CHROME_ROLE_LABELS, role)
+    ? CHROME_ROLE_LABELS[role as WardChromeRole]
+    : WARD_FLOW_ROLE_LABELS[role];
 }
 
 /**
@@ -215,7 +227,7 @@ export function deskActions(role: DeskRole): DeskActions {
     if (allowed.includes(role)) {
       can.push(action.label);
     } else {
-      const by = allowed.filter((r) => r !== "demo").map((r) => WARD_FLOW_ROLE_LABELS[r]);
+      const by = allowed.filter((r) => r !== "demo").map((r) => deskRoleLabel(r));
       if (by.length) cannot.push({ label: action.label, by: by.join(" or ") });
     }
   }
