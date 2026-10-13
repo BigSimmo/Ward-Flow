@@ -32,6 +32,7 @@ import {
 } from "@/components/ward-management/ward-priority";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
@@ -150,6 +151,8 @@ export function PriorityQueue({
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
   const [soonOnly, setSoonOnly] = useState(false);
   const patientOf = usePatientOf();
+  // A2-20: initials plus UMRN on a phone when Discreet names is on; the name everywhere else.
+  const nameFor = usePatientNameDisplay();
 
   const edsById = new Map(allEmergencyDepartments().map((ed) => [ed.id, ed]));
   const filterEd = filterEdId ? edsById.get(filterEdId) : undefined;
@@ -295,7 +298,7 @@ export function PriorityQueue({
                 </span>
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
-                    <strong>{who.formalName}</strong>
+                    <strong>{nameFor(who.formalName, who.umrn)}</strong>
                   </span>
                   <span className={styles.queueSub}>
                     {/* v10 Home: "▲ Flagged · Adult open · RPH · UM827674". The word stays neutral and
@@ -436,7 +439,7 @@ export function PriorityQueue({
                 <TierTile tier={referral.urgency} className={styles.queueTier} />
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
-                    <strong>{patientOf(referral).formalName}</strong>
+                    <strong>{nameFor(patientOf(referral).formalName, patientOf(referral).umrn)}</strong>
                   </span>
                   <span className={styles.queueSub}>
                     <span className={styles.queueSubText}>

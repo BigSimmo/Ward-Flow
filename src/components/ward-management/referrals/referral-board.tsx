@@ -35,6 +35,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
@@ -1420,6 +1421,8 @@ function QueuedSection({
     () => ({ patients, referrals: allReferrals, movements }),
     [patients, allReferrals, movements],
   );
+  // A2-20: initials plus UMRN on a phone when Discreet names is on.
+  const nameFor = usePatientNameDisplay();
   return (
     <section className={styles.v6Section} data-testid="ward-referral-board-queued">
       <h2 className="sr-only">
@@ -1506,7 +1509,7 @@ function QueuedSection({
                             onSelect(referral.id);
                           }}
                         >
-                          {patientInfo.displayName}
+                          {nameFor(patientInfo.displayName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
                           <span className={a.mono}>{patientInfo.umrn}</span> · {demographicLabel(referral)}
@@ -1649,7 +1652,7 @@ function QueuedSection({
                     </span>
                     <span className={a.cardMain}>
                       <span className={a.cardName}>
-                        <strong>{patientInfo.displayName}</strong>
+                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong>
                         <ReadmissionFlag
                           flag={referralReadmissionFlag(referral, readmissionIndex)}
                           expandable={false}
@@ -1735,6 +1738,7 @@ function DecidedSection({
   onSelect: (id: string) => void;
   onResetFilters?: () => void;
 }) {
+  const nameFor = usePatientNameDisplay();
   return (
     <section className={cx(styles.v6Section, styles.v6Decided)} data-testid="ward-referral-board-decided">
       <CardHead
@@ -1804,7 +1808,7 @@ function DecidedSection({
                     <td>
                       <div>{outcomeLabel(referral)}</div>
                       <span style={{ display: "block", fontSize: "0.82rem", marginTop: "0.2rem" }}>
-                        <strong>{patientInfo.displayName}</strong>
+                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong>
                       </span>
                     </td>
                     <td data-testid={`ward-referral-board-decided-detail-${referral.id}`}>
@@ -1853,7 +1857,7 @@ function DecidedSection({
                       <span className={styles.v6RowLine}>
                         <StatusGlyph tone={accepted ? "success" : "closed"} size={10} />
                         <span className="sr-only">{outcomeLabel(referral)}, </span>
-                        <strong>{patientInfo.displayName}</strong> {accepted ? "to " : ""}
+                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong> {accepted ? "to " : ""}
                         <span
                           className={styles.v6RowOutcome}
                           data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}

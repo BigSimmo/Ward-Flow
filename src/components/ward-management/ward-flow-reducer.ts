@@ -1667,6 +1667,7 @@ function departAdmission(
   unit: Unit,
   now: Instant,
   leavingDestination: LeavingDestination,
+  role: WardFlowRole,
 ): WardFlowState {
   // Owner decision 2026-09-25: a bed release is a named patient's discharge, so the pairing is by
   // name, never by ward-wide counts. `releaseAlreadyIncremented` is true only for a state in which a
@@ -1722,7 +1723,34 @@ function departAdmission(
   const withPerson: WardFlowState = departedState.leaveBeds.some((bed) => bed.admissionId === admission.id)
     ? { ...departedState, leaveBeds: departedState.leaveBeds.filter((bed) => bed.admissionId !== admission.id) }
     : departedState;
-  if (!liveRelease) return withPerson;
+  // A4-24 (owner decision, Josh, 13 October 2026): a vacated bed is not instantly Ready. It goes to
+  // "Being made ready" (`preparing: true` on this stay's discharged release) and one tap of Ready
+  // (`SET_BED_PREPARATION` with `preparing: false`, ward or coordinator) makes it offerable again.
+  // This supersedes the Q4 note that preparation begins only by a separate event. When the bed
+  // figures did not rise (already raised, or an arrival still awaiting capacity) no bed came free
+  // here, so nothing is marked.
+  const bedCameFree = !releaseAlreadyIncremented && !arrivalAwaitingCapacity;
+  if (!liveRelease) {
+    if (!bedCameFree) return withPerson;
+    // A departure nobody flagged in advance still vacates a bed: record its release, already
+    // discharged, so the bed has somewhere to carry "Being made ready". Same id scheme as
+    // FLAG_BED_RELEASE; the array only ever grows, so its length is a collision-free source.
+    const vacated: BedRelease = {
+      id: `WR-9${String(withPerson.bedReleases.length).padStart(2, "0")}`,
+      unitId: unit.id,
+      admissionId: admission.id,
+      state: "discharged",
+      expectedAt: now,
+      waitingOn: null,
+      blocker: null,
+      blockedBy: null,
+      preparing: true,
+      preparationNote: null,
+      confirmedAt: now,
+      confirmedBy: recordedByLabel(role, unit.name),
+    };
+    return { ...withPerson, bedReleases: [...withPerson.bedReleases, vacated] };
+  }
   // Leaving completes this person's release — the same fields RELEASE_BED used to write. A stuck flag
   // comes off, because the bed is no longer held up.
   return replaceBedRelease(withPerson, liveRelease.id, {
@@ -1731,6 +1759,8 @@ function departAdmission(
     waitingOn: null,
     blocker: null,
     blockedBy: null,
+    preparing: bedCameFree,
+    preparationNote: null,
     confirmedAt: now,
   });
 }
@@ -2059,6 +2089,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
         unit,
         event.now,
         "transferred-to-another-psychiatric-ward",
+        event.role,
       );
       next = replaceUnit(next, receiving.id, {
         ...receiving,
@@ -2175,10 +2206,15 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   if (dischargeBlockingTransit(state, admission)) {
     return deny("transition", "denied", "Patient is currently in transit to another facility.");
   }
-  return appendAudit(state, departAdmission(state, admission, unit, event.now, event.leavingDestination), event, {
-    outcome: "accepted",
-    reasonCode: "none",
-  });
+  return appendAudit(
+    state,
+    departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role),
+    event,
+    {
+      outcome: "accepted",
+      reasonCode: "none",
+    },
+  );
 }
 
 /** Any ward-resource update invalidates a capacity draft, including protected departures. */
@@ -5652,6 +5688,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           sendingUnit,
           event.now,
           "transferred-to-another-psychiatric-ward",
+          event.role,
         );
         withPerson = {
           ...withPerson,
@@ -5786,7 +5823,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return departAdmission(state, admission, unit, event.now, event.leavingDestination);
+      return departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role);
     }
 
     /**

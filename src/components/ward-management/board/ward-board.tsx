@@ -1829,8 +1829,8 @@ export function WardBoard({
           </dl>
           {pendingPreparation > 0 ? (
             <p className={styles.beingMadeReady} data-testid="ward-board-pending-preparation">
-              {pendingPreparation} of them {pendingPreparation === 1 ? "is" : "are"} still being made ready — the bed
-              stays offered and stays counted, but the ward cannot admit into it yet.
+              {pendingPreparation} of them {pendingPreparation === 1 ? "is" : "are"} still being made ready. It stays
+              counted but is not offered until the ward taps Ready.
             </p>
           ) : null}
           {/* `constraintSentence` returns null — never an empty string — when nothing is

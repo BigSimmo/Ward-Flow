@@ -1022,6 +1022,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const otherOccupants = unitOccupantAdmissions.filter((a) => !leaveAdmissionIds.has(a.id));
   const unitPulledAdmissions = admissions?.filter((a) => a.unitId === unit.id && a.state === "pulled") ?? [];
   let otherOccupantCursor = 0;
+  // A4-24: a vacated bed reads "Being made ready" until someone taps Ready. The count model has no
+  // bed-level record, so the first ready tiles carry the marker, one per bed still being made ready.
+  const preparingSlots = Math.min(pendingPreparation, states.ready);
 
   const rawBeds = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
@@ -1043,7 +1046,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     let statusText = "Inpatient";
     if (i < states.ready) {
       status = "ready";
-      statusText = "Ready Vacant";
+      statusText = i < preparingSlots ? BED_STATE_LABELS.beingMadeReady : "Ready Vacant";
     } else if (isLeaveSlot) {
       status = "leave";
       // D-38: a bed held for an absence without leave is never shown as approved leave.
@@ -1165,6 +1168,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         admission?.id ??
         (incomingMovement ? unitPulledAdmissions.find((a) => a.movementId === incomingMovement.id)?.id : undefined),
       heldFor: undefined as string | undefined,
+      preparing: status === "ready" && i < preparingSlots,
       age: patientAge,
       sex: patientSex,
       homeRegion: patientHomeRegion,
@@ -1236,6 +1240,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       .map((entry) => ({
         id: entry.id,
         name: resolvePatientIdentity(entry).displayName,
+        umrn: resolvePatientIdentity(entry).umrn,
         sex: entry.destination.sex === "Female" ? "F" : entry.destination.sex === "Male" ? "M" : entry.destination.sex,
         waitedMinutes: Math.max(0, now - entry.raisedAt),
         secureBedNeeded: entry.destination.secureBedNeeded === true,
@@ -1247,6 +1252,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       kind: "movement" as const,
       id: movement.id,
       name: resolvePatientIdentity(movement).displayName,
+      umrn: resolvePatientIdentity(movement).umrn,
       sex: movement.sex === "Female" ? "F" : movement.sex === "Male" ? "M" : "Not recorded",
       waitedMinutes: Math.max(0, now - (movement.referredAt ?? movement.openedAt)),
       secureBedNeeded: movement.security === "Secure",
@@ -2562,8 +2568,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                           {capacity.available === 1 ? "bed" : "beds"} at {unit.name}{" "}
                           {pendingPreparation === 1 ? "is" : "are"} still being made ready.
                         </strong>{" "}
-                        The bed stays offered and stays counted — pulling the next patient takes hours anyway — but the
-                        ward cannot admit into it yet.
+                        It is not offered until someone opens the bed and taps Ready.
                       </span>
                     </div>
                   ) : null}
@@ -2787,6 +2792,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       });
                     }
                     setToastMessage(`Bed ${bedNum} patient marked returned to ward.`);
+                  }}
+                  onMarkReady={() => {
+                    // A4-24: one tap clears the oldest bed this ward still has being made ready.
+                    const preparing = bedReleases
+                      .filter((r) => r.unitId === unitId && r.state === "discharged" && r.preparing)
+                      .sort((left, right) => left.confirmedAt - right.confirmedAt)[0];
+                    if (!preparing) return;
+                    dispatch({
+                      type: "SET_BED_PREPARATION",
+                      role: "ward",
+                      now,
+                      releaseId: preparing.id,
+                      actingUnitId: unitId,
+                      preparing: false,
+                    });
+                    setToastMessage("Bed marked Ready. It is offered again.");
                   }}
                   bedDrawerRef={bedDrawerRef}
                   onKeyDown={handleBedDrawerKeyDown}

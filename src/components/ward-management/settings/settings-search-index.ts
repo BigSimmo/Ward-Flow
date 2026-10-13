@@ -70,6 +70,12 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   { id: "touch", label: "Touch mode", tab: "display", keywords: "tablet larger targets" },
   { id: "reduce-motion", label: "Reduce motion", tab: "display", keywords: "animation accessibility" },
   { id: "high-contrast", label: "High contrast", tab: "display", keywords: "accessibility edges ink" },
+  {
+    id: "discreet-names",
+    label: "Discreet names on phone",
+    tab: "display",
+    keywords: "privacy initials umrn mobile hide name",
+  },
   { id: "initials", label: "Initials only on shared screens", tab: "display", keywords: "privacy wallboard" },
   { id: "lock-idle", label: "Lock after idle", tab: "display", keywords: "privacy timeout blank" },
   { id: "clear-on-close", label: "Clear session on close", tab: "display", keywords: "privacy tab drafts" },
