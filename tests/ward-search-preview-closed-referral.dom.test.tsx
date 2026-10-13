@@ -114,4 +114,27 @@ describe("a declined referral with nothing open reads as Past, like the search r
     );
     expect(screen.queryByText("Not on this board now")).not.toBeInTheDocument();
   });
+
+  it("marks the person Past when an accepted referral's movement closed without a bed", () => {
+    const closed = {
+      ...openMovement!,
+      closure: { at: NOW_ANCHOR, outcome: "did_not_proceed", reason: "Synthetic: did not proceed" },
+    } as typeof openMovement & {};
+    const accepted = seed.referrals.find((r) => referralState(r) === "accepted");
+    expect(isOpen(closed)).toBe(false);
+    expect(accepted).toBeDefined();
+    render(
+      <RecordPreview
+        selection={{ kind: "person", patient: patient! }}
+        referrals={[{ ...accepted!, patientId: patient!.id }]}
+        movements={[{ ...closed, referralId: accepted!.id, patientId: patient!.id }]}
+        admissions={[]}
+        patients={[patient!]}
+        units={allUnits()}
+        now={NOW_ANCHOR}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByText("Not on this board now")).toBeInTheDocument();
+  });
 });

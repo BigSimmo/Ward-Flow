@@ -330,7 +330,10 @@ export function RecordPreview({
         // Accepted and still awaiting a movement, or arrived in a bed: on a ward, not past.
         if (state !== "accepted") return false;
         const admission = admissions.find((entry) => entry.referralId === candidate.id);
-        return admission === undefined || admission.state !== "departed";
+        if (admission) return admission.state !== "departed";
+        // No bed yet: present only while no movement has been opened for it. A closed movement with
+        // no admission (for example did not proceed) reads as Past.
+        return !movements.some((movement) => movement.referralId === candidate.id);
       }) &&
       !movements.some((movement) => movement.patientId === patient.id && isOpen(movement))
     ) {
