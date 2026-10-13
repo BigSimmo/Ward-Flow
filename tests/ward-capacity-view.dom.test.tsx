@@ -313,6 +313,10 @@ describe("ward capacity headline (Task 7)", () => {
     // The one observable effect: a real dispatch reached the reducer's own `refreshRequests` list.
     expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("1");
     expect(refreshButton).toHaveTextContent("Update requested");
+    // The acknowledged control must not append a duplicate request on a second click.
+    expect(refreshButton).toBeDisabled();
+    fireEvent.click(refreshButton);
+    expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("1");
     expect(
       rowFigures(),
       "asking a ward to restate its numbers moved a figure on its row; this control records that " +

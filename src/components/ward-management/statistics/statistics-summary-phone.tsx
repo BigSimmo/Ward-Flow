@@ -379,7 +379,7 @@ export function RangeChoices({ onNow }: { onNow: () => void }) {
           <button type="button" className={styles.rangeItem} aria-pressed="true" onClick={onNow}>
             <Check size={16} aria-hidden="true" />
             <span className={styles.rangeLabel}>Now</span>
-            <span className={styles.rangeAside}>Live</span>
+            <span className={styles.rangeAside}>Demo</span>
           </button>
         </li>
         {["Shift", "7 days", "30 days"].map((label) => (

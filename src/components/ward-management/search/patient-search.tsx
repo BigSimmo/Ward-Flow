@@ -382,7 +382,7 @@ export function PatientSearchPage() {
   const people = useMemo(() => {
     if (isChip) {
       const allPeople = findPatients(patients, "", { movements, referrals, units });
-      if (text === "● In hospital") {
+      if (text === "● On this board") {
         return allPeople.filter((p) => getPatientPresence(p, referrals, movements).key === "live");
       }
       if (text === "○ Not in Hospital") {
@@ -459,7 +459,7 @@ export function PatientSearchPage() {
           transportStatus: operational.transportStatus,
           nurseEscort: Boolean(m.transport?.escortRequired),
           presence: "live",
-          presenceLabel: "In hospital",
+          presenceLabel: "On this board",
           presenceDetail: `${operational.setting === "transit" ? "Collected from" : "Origin"} ${originText} · ${operational.holdStatus}`,
           clinicalNote: NO_CLINICAL_NOTE,
           personRecordId: info.patient?.id ?? null,
@@ -508,7 +508,7 @@ export function PatientSearchPage() {
           transportStatus: isComm ? "Not required" : "Pending allocation",
           nurseEscort: false,
           presence: isComm ? "community" : "live",
-          presenceLabel: isComm ? "Not in Hospital" : "In hospital",
+          presenceLabel: isComm ? "Not in Hospital" : "On this board",
           presenceDetail: isComm
             ? `Active Community Referral · ${ref.originSiteCode}`
             : `Queued Referral · ${ref.originSiteCode} ED`,
@@ -1449,7 +1449,7 @@ function getPatientPresence(
   movements: readonly Movement[],
 ): { key: "live" | "community" | "scheduled" | "past"; label: string } {
   const movement = movements.find((m) => (m as Record<string, unknown>)["patient" + "Id"] === patient.id && isOpen(m));
-  if (movement) return { key: "live", label: "In hospital" };
+  if (movement) return { key: "live", label: "On this board" };
   const referral = referrals.find(
     (r) => (r as Record<string, unknown>)["patient" + "Id"] === patient.id && referralState(r) === "queued",
   );
@@ -1457,7 +1457,7 @@ function getPatientPresence(
     if (referral.originSiteCode.includes("CMHT") || referral.originSiteCode.includes("Clinic")) {
       return { key: "community", label: "Community / Home" };
     }
-    return { key: "live", label: "In hospital" };
+    return { key: "live", label: "On this board" };
   }
   return { key: "past", label: "Past / Discharged" };
 }
@@ -1524,7 +1524,7 @@ export function PeopleSection({
                 <div className={styles.personHeaderCluster}>
                   <span className={`${styles.presenceTag} ${styles[presence.key]}`}>
                     {presence.key === "live"
-                      ? "● In hospital"
+                      ? "● On this board"
                       : presence.key === "community"
                         ? "○ Not in Hosp"
                         : "◌ Past"}
@@ -1628,7 +1628,7 @@ export function ResultsSection({
             const summary = buildReferralSummary(referral);
             const isComm = isCommunityReferral(referral);
             const presenceKey = isComm ? "community" : "live";
-            const presenceLabel = isComm ? "○ Not in Hosp" : "● In hospital";
+            const presenceLabel = isComm ? "○ Not in Hosp" : "● On this board";
             const isSelected = selectedReferralId === referral.id;
             return (
               <li
@@ -1779,7 +1779,7 @@ function ResultRow({
     <tr className={rowClass}>
       <td className={styles.cellIdentity}>
         <div className={styles.movementIdCluster}>
-          <span className={`${styles.presenceTag} ${styles.live}`}>● In hospital</span>
+          <span className={`${styles.presenceTag} ${styles.live}`}>● On this board</span>
           {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
           <span className={styles.movementIdText}>{patientName}</span>
         </div>

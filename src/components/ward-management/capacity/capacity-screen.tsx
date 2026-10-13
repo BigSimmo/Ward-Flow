@@ -1608,6 +1608,9 @@ function NetworkRow({
           type="button"
           className={styles.refreshButton}
           data-testid={`ward-capacity-refresh-${row.unit.id}`}
+          // Once a request is on record the button says so and stops dispatching another one.
+          disabled={asked}
+          title={asked ? "An update has already been requested from this ward." : undefined}
           onClick={(e) => {
             e.stopPropagation();
             onRequestRefresh();
