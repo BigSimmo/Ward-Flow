@@ -501,4 +501,16 @@
     -webkit-appearance: none;
     appearance: none;
   }
+
+  /* Phone taps (13 Oct 2026): the 24px Clear button takes presses across 48px through a transparent
+     hit area; the button itself does not grow. */
+  .clear {
+    position: relative;
+  }
+
+  .clear::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+  }
 }
