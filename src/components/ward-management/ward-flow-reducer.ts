@@ -2640,11 +2640,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (admission.state === "departed") {
         return reject(state, event, `cannot update expected discharge for departed admission ${event.admissionId}`);
       }
-      if (event.role === "ward" && event.actingUnitId && event.actingUnitId !== admission.unitId) {
+      if (event.role === "ward" && (!event.actingUnitId || event.actingUnitId !== admission.unitId)) {
         return reject(
           state,
           event,
-          `UPDATE_EXPECTED_DISCHARGE was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+          `UPDATE_EXPECTED_DISCHARGE was raised acting as unit ${event.actingUnitId ?? "unspecified"} but admission ${admission.id} belongs to unit ${admission.unitId}`,
         );
       }
       if (typeof event.expectedDischargeAt !== "number" || !Number.isFinite(event.expectedDischargeAt)) {
@@ -3653,7 +3653,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ? undefined
         : {
             id: referralId,
-            patientId: linkedReferral?.patientId,
+            patientId: linkedReferral?.patientId ?? movement.patientId,
             ageBand: movement.cohort,
             homeRegion: linkedReferral?.homeRegion ?? "Perth Metropolitan",
             suburb: linkedReferral?.suburb ?? { kind: "unknown", reason: "not_known" },
@@ -4177,7 +4177,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // recorded. Appended rather than replaced, because a movement can be overridden more than
         // once and the earlier one is not undone by the later.
         overrides:
-          event.overrideReason === undefined
+          event.overrideReason === undefined || permitted.length === 0
             ? movement.overrides
             : [
                 ...movement.overrides,
@@ -5739,13 +5739,6 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           "transferred-to-another-psychiatric-ward",
           event.role,
         );
-        withPerson = {
-          ...withPerson,
-          dischargeRevisions: {
-            ...withPerson.dischargeRevisions,
-            [source.id]: (withPerson.dischargeRevisions[source.id] ?? 0) + 1,
-          },
-        };
       }
       if (heldReferral && movement.referralId) {
         const referral = findReferral(withPerson, movement.referralId);
@@ -9407,6 +9400,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "SET_ARRIVAL_DETAILS": {
       const movement = state.movements.find((m) => m.id === event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) {
+        return reject(state, event, "cannot update arrival details on closed movement");
+      }
 
       const arrivalDetails = {
         mode: event.arrivalMode,
@@ -10127,6 +10123,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // Phone-log only. Never mints a transport job and never claims a booking went through.
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (
+        admission.state === "departed" ||
+        admission.leftAt !== null ||
+        (admission as { dischargedAt?: unknown }).dischargedAt !== undefined
+      ) {
+        return reject(state, event, `cannot initiate repatriation for discharged admission ${admission.id}`);
+      }
+      const movement = state.movements.find((m) => m.id === admission.movementId);
+      if (movement?.closure) {
+        return reject(state, event, `cannot initiate repatriation for closed movement ${movement.id}`);
+      }
       const existing = Array.isArray(state.repatriations) ? state.repatriations : [];
       if (existing.some((record) => record.admissionId === admission.id)) {
         return reject(state, event, `admission ${admission.id} already has a repatriation record`);

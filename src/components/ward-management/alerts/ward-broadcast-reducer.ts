@@ -151,6 +151,16 @@ export function reduceBroadcastAlertEvent(
       // (`src/app/mockups/ward-flow/layout.tsx`) passes no `currentUnitId`, so it always
       // acknowledges as `COORDINATOR_DESK_ACKNOWLEDGER_ID` — the one non-unit sender this
       // refusal exempts. Every other unrecognised unitId is still refused.
+      if (
+        (event.unitId === COORDINATOR_DESK_ACKNOWLEDGER_ID || event.unitId === "COORDINATOR_DESK") &&
+        event.role !== "coordinator"
+      ) {
+        return reject(
+          state,
+          event,
+          "ACKNOWLEDGE_BROADCAST_ALERT coordinator desk acknowledgement requires coordinator role",
+        );
+      }
       if (event.unitId !== COORDINATOR_DESK_ACKNOWLEDGER_ID && !isRealDesk(state, event.unitId)) {
         return reject(state, event, `ACKNOWLEDGE_BROADCAST_ALERT unitId ${event.unitId} does not name a real unit`);
       }
@@ -350,4 +360,23 @@ export function reduceBroadcastAlertEvent(
     default:
       return null;
   }
+}
+
+/**
+ * Convenience wrapper for tests and direct callers.
+ * Returns undefined if the event is rejected.
+ */
+export function reduceBroadcastEvent(state: WardFlowState, event: WardFlowEvent): WardFlowState | undefined {
+  let rejected = false;
+  const decision: AuditDecision = { outcome: "accepted", reasonCode: "none" };
+  const reject: RejectFn = () => {
+    rejected = true;
+    decision.outcome = "denied";
+    return state;
+  };
+  const next = reduceBroadcastAlertEvent(state, event, decision, reject);
+  if (rejected || decision.outcome === "denied" || !next) {
+    return undefined;
+  }
+  return next;
 }

@@ -28,6 +28,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
 
 export type DelayCause =
   // ⚠️ AUDIT GAP 3 CLOSED. This used to be one cause, `legal_expiring`, covering both
@@ -215,70 +216,76 @@ export function ownerOf(cause: DelayCause): DelayOwnerId {
  * group is dropped from the screen — so the failure would have looked like "nothing is wrong in
  * that category" rather than like a defect.
  */
-export function delayGroups(movements: Movement[], units: Unit[], now: Instant): DelayGroup[] {
-  const causeOf = (movement: Movement): DelayCause => {
-    // ⚠️ CORRECTION 1. The plan wrote `clockState(...) !== "ok"`. `ClockState` has no member "ok" —
-    // it is "breached" | "critical" | "due" | "clear" — so that comparison is a type error, and had
-    // it compiled it would have been true for every movement carrying a dueAt, putting the whole
-    // fixture in this group.
-    //
-    // ⚠️ AND THE REPLACEMENT IS A JUDGEMENT, NOT A MEASUREMENT. "Running out" is read here as
-    // breached or critical (already past, or under an hour). "due" — under three hours — is
-    // deliberately excluded, because a top group that holds a third of the screen directs the eye
-    // nowhere, which is the same failure as flagging every tile amber. The thresholds themselves
-    // are `clockState`'s own and are not invented here, but WHICH of them count as "running out"
-    // is the plan author's reading and the owner has not ruled on it.
-    //
-    // ⚠️ AUDIT GAP 3: breached and critical used to collapse into one cause here. They are now
-    // two returns instead of one `||`, so a caller can rank and label a passed deadline
-    // differently from an approaching one. As of this fixture, no seeded movement's legal form
-    // is actually breached or critical (the four `dueAt` values in ward-movements.ts are all
-    // "due" or "clear" against NOW_ANCHOR) — both branches are real and reachable, but neither
-    // is exercised by today's data. See the test file for how that is proved rather than assumed.
-    // Audit S-6: a form ended by an inpatient order or arrival is history, never an overdue cause.
-    const legal = currentLegalDueAt(movement);
-    if (legal !== undefined) {
-      const state = clockState(legal, now);
-      if (state === "breached") return "legal_breached";
-      if (state === "critical") return "legal_expiring";
-    }
+export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayCause {
+  // ⚠️ CORRECTION 1. The plan wrote `clockState(...) !== "ok"`. `ClockState` has no member "ok" —
+  // it is "breached" | "critical" | "due" | "clear" — so that comparison is a type error, and had
+  // it compiled it would have been true for every movement carrying a dueAt, putting the whole
+  // fixture in this group.
+  //
+  // ⚠️ AND THE REPLACEMENT IS A JUDGEMENT, NOT A MEASUREMENT. "Running out" is read here as
+  // breached or critical (already past, or under an hour). "due" — under three hours — is
+  // deliberately excluded, because a top group that holds a third of the screen directs the eye
+  // nowhere, which is the same failure as flagging every tile amber. The thresholds themselves
+  // are `clockState`'s own and are not invented here, but WHICH of them count as "running out"
+  // is the plan author's reading and the owner has not ruled on it.
+  //
+  // ⚠️ AUDIT GAP 3: breached and critical used to collapse into one cause here. They are now
+  // two returns instead of one `||`, so a caller can rank and label a passed deadline
+  // differently from an approaching one. As of this fixture, no seeded movement's legal form
+  // is actually breached or critical (the four `dueAt` values in ward-movements.ts are all
+  // "due" or "clear" against NOW_ANCHOR) — both branches are real and reachable, but neither
+  // is exercised by today's data. See the test file for how that is proved rather than assumed.
+  // Audit S-6: a form ended by an inpatient order or arrival is history, never an overdue cause.
+  const legal = currentLegalDueAt(movement);
+  if (legal !== undefined) {
+    const state = clockState(legal, now);
+    if (state === "breached") return "legal_breached";
+    if (state === "critical") return "legal_expiring";
+  }
 
-    if (destinationNoLongerLawful(movement, units) !== undefined) return "no_eligible_bed";
+  if (destinationNoLongerLawful(movement, units) !== undefined) return "no_eligible_bed";
 
-    // ⚠️ CORRECTION 2, AND IT IS THE ONE THAT MATTERED. The plan wrote
-    // `shortlistCandidates(movement, units, now).length === 0`. That function returns EVERY ward
-    // with an honest verdict on each and never a pre-filtered list — its own doc comment says so in
-    // capitals — so its length is zero only when the network holds no wards at all. This group
-    // would have been permanently empty, and an empty group is dropped, so the two people with
-    // nowhere to go would simply not have appeared on the screen built to find them.
-    if (movement.acceptedUnitId === undefined) {
-      const candidates = shortlistCandidates(movement, units, now);
-      if (!candidates.some((candidate) => candidate.availability === "eligible")) return "no_eligible_bed";
-    }
+  // ⚠️ CORRECTION 2, AND IT IS THE ONE THAT MATTERED. The plan wrote
+  // `shortlistCandidates(movement, units, now).length === 0`. That function returns EVERY ward
+  // with an honest verdict on each and never a pre-filtered list — its own doc comment says so in
+  // capitals — so its length is zero only when the network holds no wards at all. This group
+  // would have been permanently empty, and an empty group is dropped, so the two people with
+  // nowhere to go would simply not have appeared on the screen built to find them.
+  if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
+    const candidates = shortlistCandidates(movement, units, now);
+    if (!candidates.some((candidate) => candidate.availability === "eligible")) return "no_eligible_bed";
+  }
 
-    if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
-      return "awaiting_ward_answer";
-    }
-    if (movement.stage === "pulled") {
-      // ⚠️ AUDIT GAP 1: condition mirrored exactly from `buildActionInbox`'s `expiredBedPulls`
-      // filter (ward-derivations.ts) — `stage === "pulled" && pullExpiresAt !== undefined &&
-      // pullExpiresAt < now`. Do not let this drift from that one independently; the two screens
-      // must agree on which holds count as expired.
-      if (movement.pullExpiresAt !== undefined && movement.pullExpiresAt < now) return "bed_pull_expired";
-      return "awaiting_bed_ready";
-    }
-    if (movement.transport !== undefined) return "awaiting_transport";
-    // ⚠️ CORRECTION 3. The plan wrote `movement.urgentFlag`. The field is `flaggedUrgent`
-    // (ward-model.ts) and `urgentFlag` exists nowhere in this codebase, so the plan's line would
-    // not have compiled.
-    if (movement.flaggedUrgent) return "patient_or_family";
+  if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
+    return "awaiting_ward_answer";
+  }
+  if (movement.stage === "pulled") {
+    // ⚠️ AUDIT GAP 1: condition mirrored exactly from `buildActionInbox`'s `expiredBedPulls`
+    // filter (ward-derivations.ts) — `stage === "pulled" && pullExpiresAt !== undefined &&
+    // pullExpiresAt < now`. Do not let this drift from that one independently; the two screens
+    // must agree on which holds count as expired.
+    if (movement.pullExpiresAt !== undefined && movement.pullExpiresAt < now) return "bed_pull_expired";
+    return "awaiting_bed_ready";
+  }
+  if (
+    movement.examination?.outcome === "revoked" ||
+    movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease
+  ) {
     return "awaiting_coordinator";
-  };
+  }
+  if (movement.transport !== undefined) return "awaiting_transport";
+  // ⚠️ CORRECTION 3. The plan wrote `movement.urgentFlag`. The field is `flaggedUrgent`
+  // (ward-model.ts) and `urgentFlag` exists nowhere in this codebase, so the plan's line would
+  // not have compiled.
+  if (movement.flaggedUrgent) return "patient_or_family";
+  return "awaiting_coordinator";
+}
 
+export function delayGroups(movements: Movement[], units: Unit[], now: Instant): DelayGroup[] {
   const open = movements.filter(isOpen);
   const causeByMovementId = new Map<string, DelayCause>();
   for (const movement of open) {
-    causeByMovementId.set(movement.id, causeOf(movement));
+    causeByMovementId.set(movement.id, causeOf(movement, units, now));
   }
 
   return ORDER.map((entry) => ({
@@ -396,10 +403,17 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
   if (transport?.enRouteAt !== undefined) candidates.push({ at: transport.enRouteAt, what: "transport left en route" });
   if (transport?.acceptedAt !== undefined)
     candidates.push({ at: transport.acceptedAt, what: "transport accepted the job" });
+  if (movement.acceptedAt !== undefined) {
+    candidates.push({ at: movement.acceptedAt, what: "referral accepted" });
+  }
+  const pullRequestedAt = (movement as { pullRequestedAt?: Instant }).pullRequestedAt;
+  if (pullRequestedAt !== undefined) {
+    candidates.push({ at: pullRequestedAt, what: "bed pull requested" });
+  }
   if (movement.referredAt !== undefined) {
     candidates.push({ at: movement.referredAt, what: "referral raised" });
   }
-  if (movement.formedAt !== undefined) {
+  if (movement.formedAt !== undefined && (pullRequestedAt === undefined || movement.formedAt <= pullRequestedAt)) {
     candidates.push({ at: movement.formedAt, what: "the legal form was raised" });
   }
   if (movement.examination !== undefined) {
@@ -411,7 +425,7 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
       what: movement.closure.outcome === "arrived" ? "the patient arrived" : "the movement closed without an admission",
     });
   }
-  if (movement.referralAbsence !== undefined) {
+  if (movement.referralAbsence !== undefined && movement.acceptedAt === undefined && pullRequestedAt === undefined) {
     candidates.push({
       at: movement.referralAbsence.at,
       what:
@@ -431,7 +445,9 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
   const known = candidates.filter((candidate) => candidate.at <= now);
   // The floor. `openedAt` is required, never optional, so this candidate always exists — see the
   // doc comment above for why that makes `undefined` unreachable rather than a real branch.
-  known.push({ at: movement.openedAt, what: "the journey opened" });
+  const floorAt =
+    pullRequestedAt !== undefined && movement.openedAt > pullRequestedAt ? pullRequestedAt : movement.openedAt;
+  known.push({ at: floorAt, what: "the journey opened" });
   return pickLatest(known);
 }
 
@@ -618,7 +634,14 @@ export function answerSilenceReminder(movement: Movement, referrals: Referral[],
     return silentCommunityReminder(referral.raisedAt, now);
   }
   if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
-    return silentWardReminder(movement.referredAt, now);
+    const wardDestinations = referral?.destinations.filter(
+      (d) => d.destination.kind === "psychiatric_ward" && d.referredAt !== undefined,
+    );
+    const latestReferredAt =
+      wardDestinations && wardDestinations.length > 0
+        ? Math.max(...wardDestinations.map((d) => d.referredAt!))
+        : movement.referredAt;
+    return silentWardReminder(latestReferredAt, now);
   }
   return undefined;
 }

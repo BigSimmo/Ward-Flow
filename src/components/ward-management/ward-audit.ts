@@ -426,16 +426,18 @@ function bedRequest(event: WardFlowEvent): BedReleaseAuditRequest | null {
       return null;
   }
 }
-export function appendAudit(
+export function captureAuditEvent(
   before: WardFlowState,
   after: WardFlowState,
   event: WardFlowEvent,
-  decision: AuditDecision,
-): WardFlowState {
-  if (!classifyAuditEvent(event)) return after;
-  // The wrapper reserves this sequence before any clinical write. Never wrap/reuse an ID.
-  if (!safeCounter(after.auditSequence) || after.auditSequence >= Number.MAX_SAFE_INTEGER) return before;
-  const sequence = after.auditSequence + 1;
+  decisionInput: AuditDecision | boolean = true,
+): AuditEvent | null {
+  if (!classifyAuditEvent(event)) return null;
+  const decision: AuditDecision =
+    typeof decisionInput === "boolean"
+      ? { outcome: decisionInput ? "accepted" : "denied", reasonCode: "none" }
+      : decisionInput;
+  const sequence = (after.auditSequence ?? 0) + 1;
   // Role/time refusal precedence is independent of whether this command can name the current world.
   // An earlier winning refusal must never make a stale command resolve a replacement subject.
   const mayResolveSubject =
@@ -762,7 +764,7 @@ export function appendAudit(
     case "SET_BED_PREPARATION":
     case "RELEASE_BED": {
       const requested = bedRequest(event);
-      if (!requested) return after;
+      if (!requested) return null;
       const id = subject.kind === "bed-release" ? subject.releaseId : null;
       captured = {
         ...base,
@@ -778,8 +780,25 @@ export function appendAudit(
       break;
     }
     default:
-      return after;
+      return null;
   }
+  return structuredClone(captured);
+}
+
+export function appendAudit(
+  before: WardFlowState,
+  after: WardFlowState,
+  event: WardFlowEvent,
+  decision: AuditDecision,
+): WardFlowState {
+  if (!classifyAuditEvent(event)) return after;
+  // The wrapper reserves this sequence before any clinical write. Never wrap/reuse an ID.
+  if (!safeCounter(after.auditSequence) || after.auditSequence >= Number.MAX_SAFE_INTEGER) return before;
+  const sequence = after.auditSequence + 1;
+  const captured = captureAuditEvent(before, after, event, decision);
+  if (!captured) return after;
+  captured.id = `audit-${sequence}`;
+  captured.sequence = sequence;
   return { ...after, auditSequence: sequence, auditEvents: [...after.auditEvents, structuredClone(captured)] };
 }
 

@@ -1518,7 +1518,15 @@ export type DeclineEntry = { movement: Movement; decline: Decline };
  * read's only caller today.
  */
 export function allDeclines(movements: Movement[]): DeclineEntry[] {
-  return movements.flatMap((movement) => movement.declines.map((decline) => ({ movement, decline })));
+  return movements.flatMap((movement) =>
+    movement.declines
+      .filter(
+        (decline) =>
+          !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason) &&
+          !decline.reason.includes("waitlist"),
+      )
+      .map((decline) => ({ movement, decline })),
+  );
 }
 
 export function handoverSnapshot(movements: Movement[], units: Unit[], now: Instant): HandoverSnapshot {

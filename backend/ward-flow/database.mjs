@@ -130,10 +130,14 @@ export function createStore(client) {
         "x-ms-blob-type": "BlockBlob",
         [current.etag ? "if-match" : "if-none-match"]: current.etag ?? "*",
       });
-      if (result.status === 412) {
+      if (result.status === 412 || result.status === 409) {
         if (!canonicalRequestId) return null;
-        const winner = await get(owner, id);
-        return replay(winner.record) ? winner.record.revision : null;
+        try {
+          const winner = await get(owner, id);
+          return replay(winner.record) ? winner.record.revision : null;
+        } catch {
+          return null;
+        }
       }
       if (result.status !== 201) throw new Error("Session write unavailable");
       return next.revision;
@@ -149,7 +153,7 @@ export function createStore(client) {
         "content-type": "application/json",
         "x-ms-blob-type": "BlockBlob",
       });
-      if (result.status === 412) return "conflict";
+      if (result.status === 412 || result.status === 409) return "conflict";
       if (result.status !== 201) throw new Error("Session deletion unavailable");
       return "deleted";
     },
