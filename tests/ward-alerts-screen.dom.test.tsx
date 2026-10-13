@@ -227,6 +227,18 @@ describe("Alerts v10 pass (10 Oct 2026)", () => {
   });
 });
 
+describe("Alerts owner chips (remaining-pages audit ops-15, 13 Oct 2026)", () => {
+  it("names a booking ward on its chip, never the bare word Ward", () => {
+    renderScreen();
+    const planned = taskItems(seedWardFlowState(), NOW).find((item) => item.plannedAdmission !== undefined);
+    expect(planned, "the seed has a planned arrival owned by its booking ward").toBeDefined();
+    const chips = within(screen.getByRole("group", { name: "Highlight by owner" })).getAllByRole("button");
+    const labels = chips.map((chip) => chip.textContent ?? "");
+    expect(labels.some((label) => label.includes(planned!.owner))).toBe(true);
+    for (const label of labels) expect(label.replace(/\d+/gu, "").trim(), labels.join("|")).not.toBe("Ward");
+  });
+});
+
 describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => {
   it("makes Next alert the one primary and Broadcast a secondary", () => {
     vi.stubGlobal(

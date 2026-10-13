@@ -88,7 +88,6 @@ import {
   AlertPhoneRow,
   AlertRow,
   GroupHead,
-  ownedByBookingWard,
   ownerShort,
   type QueueEntry,
   type QueueHandlers,
@@ -1513,10 +1512,7 @@ function AlertsWorkspace() {
                           onPressedChange={() => setOwnerHighlight((current) => (current === owner ? null : owner))}
                           count={allEntries.filter((entry) => entry.owner === owner).length}
                         >
-                          {ownerShort(
-                            owner,
-                            allEntries.some((entry) => entry.owner === owner && ownedByBookingWard(entry)),
-                          )}
+                          {ownerShort(owner)}
                         </FilterChip>
                       ))}
                     </div>
@@ -1557,10 +1553,7 @@ function AlertsWorkspace() {
                                 <b className={styles.mono}>
                                   {allEntries.filter((entry) => entry.owner === owner).length}
                                 </b>
-                                {ownerShort(
-                                  owner,
-                                  allEntries.some((entry) => entry.owner === owner && ownedByBookingWard(entry)),
-                                )}
+                                {ownerShort(owner)}
                               </FilterChip>
                             ))}
                         </div>
