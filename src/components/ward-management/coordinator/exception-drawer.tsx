@@ -10,6 +10,7 @@ import { OverrideRegister } from "@/components/ward-management/override-register
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DeclineEntry, InboxItem, OverrideEntry } from "@/components/ward-management/ward-derivations";
 import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { dischargeHref } from "@/components/ward-management/shell/ward-facade";
 import type { Rejection, Unit } from "@/components/ward-management/ward-model";
 
@@ -101,6 +102,8 @@ export function ExceptionDrawer({
   // Owner, 26 Sept 2026: resolves a silence reminder's bare movement id to the patient's name.
   const resolvePatientIdentity = usePatientOf();
   const umrnText = useUmrnText();
+  // A2-20: names here follow Discreet names on a phone (initials plus UMRN).
+  const nameFor = usePatientNameDisplay();
 
   // Newest first: a coordinator wants to see what just got refused.
   const refusalsNewestFirst = [...rejections].reverse();
@@ -204,12 +207,26 @@ export function ExceptionDrawer({
             <ul className={styles.registerList}>
               {items.map((item) => {
                 const silenceCopy = silenceReminders?.get(item.movementId);
+                // Audit A1-15: name plus UMRN, the same identifier the Tasks list uses for this row.
+                const who = resolvePatientIdentity(
+                  item.plannedAdmission ??
+                    (item.movementId ? { movementId: item.movementId } : { id: item.admissionId }),
+                );
+                const whoName = who.displayName === "Unknown Patient" ? null : nameFor(who.displayName, who.umrn);
+                const detailText = umrnText(item.detail);
+                // A planned admission's detail carries no movement id, so add the known UMRN here,
+                // unless the discreet form or the detail already shows it.
+                const whoText =
+                  whoName && who.umrn && !whoName.includes(who.umrn) && !detailText.includes(who.umrn)
+                    ? `${whoName} · ${who.umrn}`
+                    : whoName;
                 const content = (
                   <>
                     <span className={styles.registerMain}>
                       <span className={styles.registerTitle}>{commandInboxTitle(item)}</span>
                       <span className={styles.registerSub}>
-                        {umrnText(item.detail)} · {item.owner}
+                        {whoText ? `${whoText} · ` : ""}
+                        {detailText} · {item.owner}
                       </span>
                       {silenceCopy !== undefined ? (
                         <span className={styles.registerNote} data-testid={`ward-exception-silence-${item.id}`}>
@@ -277,7 +294,12 @@ export function ExceptionDrawer({
                     data-testid={`ward-silence-reminder-${movementId}`}
                   >
                     <span className={styles.registerMain}>
-                      <span className={styles.registerTitle}>{resolvePatientIdentity({ movementId }).displayName}</span>
+                      <span className={styles.registerTitle}>
+                        {nameFor(
+                          resolvePatientIdentity({ movementId }).displayName,
+                          resolvePatientIdentity({ movementId }).umrn,
+                        )}
+                      </span>
                       <span className={styles.registerSub}>{copy}</span>
                     </span>
                   </button>

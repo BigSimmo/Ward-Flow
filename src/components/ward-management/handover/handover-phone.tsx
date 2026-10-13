@@ -194,8 +194,9 @@ function PatientRow({
           <b className={styles.prowName}>{row.name}</b>
           {highlighted ? <SrOnly>, highlighted</SrOnly> : null}
         </span>
+        {/* Audit A4-28: the UMRN on every phone row, as on desktop, so two people of one name differ. */}
         <span className={styles.prowLine}>
-          {row.edShort} to {destinationText(row)}
+          <span className={styles.prowUmrn}>{row.umrn}</span> · {row.edShort} to {destinationText(row)}
         </span>
         <span className={`${styles.prowLine} ${styles.prowNext}`}>
           {step.tone === "act" ? (
@@ -307,7 +308,7 @@ function IsbarSheet({
         />
         <h3 className={styles.isbarHead}>ISBAR</h3>
         <dl className={styles.isbar}>
-          {isbarLines(row, ctx.now).map((line) => (
+          {isbarLines(row, ctx.now, ctx.readyBeds).map((line) => (
             <div key={line.key}>
               <dt>
                 <b aria-hidden="true">{line.key}</b>
@@ -449,7 +450,9 @@ export function HandoverPhone({
         data-testid="ward-handover-phone-hero"
         eyebrow={`${clock} ${current.label.toLowerCase()} · ${scopeLabel.toLowerCase()}`}
         chip={<span className={styles.heroCountdown}>{countdown}</span>}
-        title={`${dueCount} to hand over`}
+        // A4-29 (audit round 2): the title counts every row listed under Act now and Due, so it
+        // agrees with the two figures beneath it.
+        title={`${actCount + dueCount} to hand over`}
         sub={
           signedAt !== null
             ? `Signed ${formatInstantWithDay(signedAt, now)} · ${readyCount} beds ready across ${scopeLabel.toLowerCase()}`

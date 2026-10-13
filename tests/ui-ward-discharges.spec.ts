@@ -161,9 +161,19 @@ function networkCell(page: Page, testId: string) {
   return page.getByTestId(`ward-capacity-network-row-${UNIT_ID}`).getByTestId(testId);
 }
 
-/** A board cell's own number: "none" reads as 0. */
+/**
+ * A board cell's own number: "none" reads as 0. The Ready cell can also carry an "N still being
+ * made ready" note beside its figure (audit round 2, A4-24: a departure now marks the bed Being made
+ * ready), so that note is left out before the figure is read.
+ */
 async function networkNumber(page: Page, testId: string): Promise<number> {
-  const text = ((await networkCell(page, testId).textContent()) ?? "").trim();
+  const text = (
+    await networkCell(page, testId).evaluate((cell) => {
+      const copy = cell.cloneNode(true) as HTMLElement;
+      copy.querySelector('[data-testid="ward-capacity-network-pending"]')?.remove();
+      return copy.textContent ?? "";
+    })
+  ).trim();
   return text === "none" ? 0 : Number.parseInt(text, 10);
 }
 

@@ -204,3 +204,20 @@
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);
   cursor: pointer;
 }
+
+/* Audit S-32: the legal form in the leave sheet, two short lines, never wrapped. */
+.legalLine {
+  display: grid;
+  flex: 1 1 100%;
+  gap: 2px;
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.legalLine > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

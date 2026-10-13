@@ -358,7 +358,10 @@ describe("Movement.blocker — the staleness that made it wrong on screen", () =
       { type: "PATIENT_COLLECTED", role: "officer", now: NOW + 70, movementId },
       STAGE_TRANSITION_BLOCKERS.collected,
     );
-    step({ type: "PATIENT_ARRIVED", role: "officer", now: NOW + 80, movementId }, STAGE_TRANSITION_BLOCKERS.arrived);
+    step(
+      { type: "PATIENT_ARRIVED", role: "coordinator", now: NOW + 80, movementId },
+      STAGE_TRANSITION_BLOCKERS.arrived,
+    );
 
     // The end of the journey, spelled out: an arrived patient reads "None — handover complete" and
     // is not scored as an obstruction, where before this change they read "Awaiting coordinator

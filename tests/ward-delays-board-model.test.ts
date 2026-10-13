@@ -62,7 +62,11 @@ describe("the Delays board model", () => {
   });
 
   it("counts a ward's acceptance as a recorded update, so quiet time restarts from it", () => {
-    const accepted = ROWS.find((row) => row.movement.acceptedUnitId !== undefined)!;
+    // Audit A3-4 regrouped the seeded 60-minute form, so the first accepted row changed; pick one
+    // with no later transport step, which this test is not about.
+    const accepted = ROWS.find(
+      (row) => row.movement.acceptedUnitId !== undefined && row.movement.transport?.collectedAt === undefined,
+    )!;
     expect(accepted, "nobody has an accepted bed in this fixture").toBeDefined();
     const movement = { ...accepted.movement, acceptedAt: NOW_ANCHOR - 5 };
     const groups = delayGroups([movement], UNITS, NOW_ANCHOR);

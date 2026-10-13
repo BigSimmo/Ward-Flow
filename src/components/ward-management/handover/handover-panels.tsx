@@ -11,6 +11,7 @@ import { Badge, Button, Card, Count, Icon, StatusGlyph, buttonClass, durMinutes 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { MovementStage } from "@/components/ward-management/ward-model";
 import { rowTone, type ColumnContext } from "./handover-columns";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import {
   isbarLines,
   legalLong,
@@ -105,8 +106,8 @@ export function HandoverFlowPanel({
           ? "No pull time recorded"
           : "None"
         : hold !== null && hold <= 0
-          ? `Expired ${formatInstantWithDay(row.pullExpiresAt, now)}`
-          : `Until ${formatInstantWithDay(row.pullExpiresAt, now)}`,
+          ? `${bedHold(row.pullExpiresAt, now)!.label}, at ${formatInstantWithDay(row.pullExpiresAt, now)}`
+          : `Until ${formatInstantWithDay(row.pullExpiresAt, now)}, ${bedHold(row.pullExpiresAt, now)!.short}`,
     ],
     [
       "Transport",
@@ -248,7 +249,7 @@ export function HandoverFlowPanel({
           </Button>
         </span>
         <dl className={styles.isbar}>
-          {isbarLines(row, now).map((line) => (
+          {isbarLines(row, now, ctx.readyBeds).map((line) => (
             <div key={line.key}>
               <dt title={line.label}>{line.key}</dt>
               <dd title={line.text}>{line.text}</dd>
@@ -295,6 +296,7 @@ export function HandoverSignOffPanel({
   canSignOff,
   cannotSignReason,
   onSignOff,
+  onUndoSignOff,
 }: {
   title: string;
   subtitle: string;
@@ -304,6 +306,8 @@ export function HandoverSignOffPanel({
   canSignOff: boolean;
   cannotSignReason?: string;
   onSignOff: () => void;
+  /** Takes back this shift's sign-off. Once signed, the foot offers this instead of a second sign-off. */
+  onUndoSignOff: () => void;
 }) {
   return (
     <Card
@@ -365,17 +369,24 @@ export function HandoverSignOffPanel({
         </div>
       ) : null}
       <div className={styles.signFoot}>
-        <Button
-          variant="pri"
-          size="sm"
-          icon={Check}
-          onClick={onSignOff}
-          disabled={!canSignOff}
-          disabledReason={cannotSignReason}
-          data-testid="ward-handover-sign-off-button"
-        >
-          {signedAt !== null ? `Sign off again at ${formatInstant(now)}` : `Sign off at ${formatInstant(now)}`}
-        </Button>
+        {signedAt !== null ? (
+          // A4-27 (audit round 2): once signed, no second primary. The signed time shows above.
+          <Button variant="ghost" size="sm" onClick={onUndoSignOff} data-testid="ward-handover-sign-off-undo">
+            Undo sign-off
+          </Button>
+        ) : (
+          <Button
+            variant="pri"
+            size="sm"
+            icon={Check}
+            onClick={onSignOff}
+            disabled={!canSignOff}
+            disabledReason={cannotSignReason}
+            data-testid="ward-handover-sign-off-button"
+          >
+            {`Sign off at ${formatInstant(now)}`}
+          </Button>
+        )}
       </div>
     </Card>
   );

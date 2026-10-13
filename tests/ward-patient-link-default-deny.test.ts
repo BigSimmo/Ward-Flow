@@ -100,6 +100,28 @@ const PATIENT_LINK_READ =
  * the two pre-existing entries; the other four are the plumbing this task adds, not a screen.
  */
 const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
+  // Clinical pages audit fixes, 13 Oct 2026 (Josh approved the fixes; this boundary is flagged to
+  // him on PR #267 for confirmation). Each reads one person's own link only, never a history.
+  {
+    file: "ed/ed-bed-search-step.ts",
+    reason:
+      "Audit A2-5/S-7: the ED's own row finds the newest open ward referral for the person in its department, so the row stops reading In department. One person, queued ward arms only, no outcomes elsewhere.",
+  },
+  {
+    file: "ed/ed-screen.tsx",
+    reason:
+      "Audit A2-1: Raise referral starts from a found person (draft.patientId) instead of filing an Unknown Patient, and the ED row reads its own patient's open ward referral via ed-bed-search-step.",
+  },
+  {
+    file: "referrals/accepted-ward-referral.ts",
+    reason:
+      "Audit S-9: names the ward that accepted this one person's newest referral so the next step (hold the bed) shows. Newest accepted only, no declines or other destinations.",
+  },
+  {
+    file: "referrals/referral-board.tsx",
+    reason:
+      "Audit A2-1/S-9: the coordinator's referral board links the selected referral to its own person and carries that link into a resend draft. The coordinator already sees every referral.",
+  },
   {
     file: "referrals/referral-inbox.ts",
     reason:
@@ -281,7 +303,7 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 15 → 16 on 2026-09-24: patient-now adapter live episode trajectory resolution.
     // Approved recipient projection and its own inbox renderer add two exact, scoped readers.
     // 18 → 20 on 2026-10-09: stream D planned admissions, pending Ward Lead review (see entries).
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(20);
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(24);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

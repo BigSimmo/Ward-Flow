@@ -80,6 +80,16 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByRole("button", { name: "Provider accepted job" }));
     fireEvent.click(screen.getByRole("button", { name: "Vehicle en route" }));
     fireEvent.click(screen.getByRole("button", { name: "Mark moving · patient collected" }));
+    // Audit S-2 / A4-11 (13 Oct 2026): fit to travel and Form 4A are not recorded on this journey,
+    // so the step warns and asks for a reason; it never blocks the coordinator.
+    const check = screen.getByTestId("ward-patient-collect-check");
+    expect(check).toHaveTextContent("Fit to travel not recorded");
+    expect(check).toHaveTextContent("Form 4A transport order not uploaded");
+    expect(screen.getByTestId("live-stage")).toHaveTextContent("handover_ready");
+    fireEvent.change(screen.getByTestId("ward-patient-collect-check-reason"), {
+      target: { value: "urgent_to_follow" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Mark moving, record reason" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("moving");
     fireEvent.click(screen.getByRole("button", { name: "Confirm arrival · receiving ward" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("arrived");

@@ -25,7 +25,7 @@ import wardPin from "../ward-pinned-switch.module.css";
  * audit option A, Josh, 11 Oct 2026). Its own layout at 390 wide, never a reflow of desktop: the
  * compact band hero with Switch team; the Since you looked row (one quiet line when nothing
  * changed); tool chips that scroll sideways (How to reach and On duty open as bottom sheets, the
- * rest are the team's actions, Intake referral among them, since New referral in the header is the
+ * rest are the team's actions, Refer from team among them, since New referral in the header is the
  * page's one primary); then the caseload as the page: one switch with counts heading the lists,
  * which open on the first list with someone in it; Worth attention under the lists; and the
  * notices and provenance behind one closed "About this data". Desktop never renders any of this.
@@ -146,7 +146,7 @@ export function CommunityTeamPhone({
     { id: "reach", label: "How to reach", icon: Phone, onPress: () => setSheet("reach") },
     { id: "duty", label: "On duty", icon: Users, onPress: () => setSheet("duty") },
   ];
-  const intakeChip: CommunityPhoneTool = { id: "intake", label: "Intake referral", icon: Plus, onPress: onIntake };
+  const intakeChip: CommunityPhoneTool = { id: "intake", label: "Refer from team", icon: Plus, onPress: onIntake };
   const tailChips: CommunityPhoneTool[] = [
     { id: "search", label: "Find a person", icon: Search, onPress: () => setSheet("search") },
     { id: "samples", label: "Samples", icon: Shapes, onPress: () => setSheet("samples") },

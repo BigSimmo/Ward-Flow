@@ -46,6 +46,8 @@ export type PhonePerson = {
   name: string;
   umrn: string;
   profileHref: string | null;
+  /** Audit A3-18: the short legal status or form, before the UMRN. */
+  legal?: string;
   daysLabel: string;
   offset: number | null;
   status: ReturnStatus;
@@ -130,6 +132,12 @@ function PersonCard({
         )}
       </span>
       <span className={styles.pcLine2}>
+        {person.legal ? (
+          <>
+            <span className={styles.pcLegal}>{person.legal}</span>
+            <span className={styles.pcDot} aria-hidden="true" />
+          </>
+        ) : null}
         {person.profileHref ? (
           <Link
             href={person.profileHref}
@@ -238,7 +246,17 @@ export function OutOfAreaPhone({
   );
   const more = Math.max(0, people.length - leavingIds.size - ready.length - soon.length);
   const selected = selectedId ? byId.get(selectedId) : undefined;
-  const index = selected ? people.indexOf(selected) : -1;
+  // A3-19: the sheet steps through the list the person was opened from. On Needs you that is its
+  // own order (home today, then date passed, then due soon), so its first card reads 1/6, not
+  // its place in everyone.
+  const needsList = leaving
+    .flatMap((record) => {
+      const person = byId.get(record.admissionId);
+      return person ? [person] : [];
+    })
+    .concat(ready, soon);
+  const stepList = tab === "needs" && selected && needsList.includes(selected) ? needsList : people;
+  const index = selected ? stepList.indexOf(selected) : -1;
   const nextUp = nextUpId ? byId.get(nextUpId) : undefined;
 
   const open = (id: string) => {
@@ -246,7 +264,7 @@ export function OutOfAreaPhone({
     onSelect(id);
   };
   const stepTo = (delta: number) => {
-    const next = people[index + delta];
+    const next = stepList[index + delta];
     if (next) onSelect(next.entry.admission.id);
   };
   const close = () => {
@@ -265,14 +283,14 @@ export function OutOfAreaPhone({
         onClick={() => stepTo(-1)}
       />
       <span className={styles.mono}>
-        {index + 1}/{people.length}
+        {index + 1}/{stepList.length}
       </span>
       <Button
         variant="ghost"
         iconOnly
         icon={ChevronRight}
         aria-label="Next person"
-        disabled={index < 0 || index >= people.length - 1}
+        disabled={index < 0 || index >= stepList.length - 1}
         onClick={() => stepTo(1)}
       />
     </span>

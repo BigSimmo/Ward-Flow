@@ -6,6 +6,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 import type { WfTone } from "@/components/wf";
+import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 
 export interface BedItem {
   bedNumber: number | string;
@@ -47,6 +48,8 @@ export interface BedItem {
   stayAdmissionId?: string;
   /** On a free bed held for an accepted referral (`heldBedNumber`): the person it is held for. */
   heldFor?: string;
+  /** A4-24: a free bed vacated and still being made ready; not offered until someone taps Ready. */
+  preparing?: boolean;
   age?: number | null;
   sex?: string | null;
   homeRegion?: string | null;
@@ -65,6 +68,11 @@ export interface BedItem {
   /** The ward's own expected leaving time, already worded for this moment. */
   expectedDischargeLabel?: string | null;
   dischargeBarrier?: string | null;
+  /**
+   * Audit A1-3: a pulled bed's hold, from the one bed-hold rule (`ward-bed-hold.ts`). `lapsed`
+   * is act now; `at-risk` (under an hour left) is the amber dot. Absent when no hold time is recorded.
+   */
+  bedHold?: BedHold | null;
   [key: string]: unknown;
 }
 
@@ -148,11 +156,15 @@ type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
  * for a free bed.
  */
 export function bedGlyphTone(bed: BedItem): WfTone | null {
-  if (bed.status === "ready") return "success";
+  if (bed.status === "ready") return bed.preparing ? "neutral" : "success";
   if (bed.status === "closed") return "closed";
+  // Audit A3-1 (13 Oct 2026): a missing person is act now, never a neutral "On leave".
+  if (bed.status === "leave" && bed.statusText === "Absent without leave") return "danger";
   if (bed.blockReason) return "danger";
   if (bed.awayAtEdHours != null || bed.pastDate || bed.dischargeBarrier) return "warning";
   const leaving = bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0);
+  if (bed.status === "incoming" && bed.bedHold?.state === "lapsed") return "danger";
+  if (bed.status === "incoming" && bed.bedHold?.state === "at-risk") return "warning";
   if (leaving || bed.status === "incoming") return "info";
   return bed.status === "leave" ? "neutral" : null;
 }

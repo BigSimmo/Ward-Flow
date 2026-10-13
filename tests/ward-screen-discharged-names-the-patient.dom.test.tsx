@@ -45,7 +45,7 @@ function expectedRelease(predicate: (legalStatus: string | undefined) => boolean
   );
 }
 
-const VOLUNTARY_RELEASE = expectedRelease((status) => status === "Voluntary patient");
+const VOLUNTARY_RELEASE = expectedRelease((status) => status === "Voluntary");
 const INVOLUNTARY_RELEASE = expectedRelease(isInvoluntary);
 
 /** Reads the live state for one ward, so each test can see exactly who changed. */
@@ -179,7 +179,9 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed|transferred-to-another-psychiatric-ward");
     expect(screen.getByTestId("others").textContent, "no other occupant of the ward moved").toBe(othersBefore);
-    expect(screen.getByText(`Recorded: ${name} has left the ward.`)).toBeInTheDocument();
+    expect(
+      screen.getByText(`Recorded: ${name} has left the ward (transferred to another psychiatric ward).`),
+    ).toBeInTheDocument();
     expect(document.querySelector(`[data-admission-id="${release.admissionId}"]`)).toBeNull();
   });
 

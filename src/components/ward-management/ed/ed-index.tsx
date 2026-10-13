@@ -62,6 +62,7 @@ import {
 
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { edShortName } from "@/components/ward-management/ward-sites";
+import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { edHref, patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
@@ -123,7 +124,6 @@ const STAGE_LABEL: Record<MovementStage, string> = {
   moving: "In transit",
   arrived: "Arrived",
 };
-const NO_BED: readonly MovementStage[] = ["placement_requested", "destination_review"];
 const HELD: readonly MovementStage[] = ["accepted_awaiting_bed", "pulled"];
 const LEAVING: readonly MovementStage[] = ["handover_ready", "moving"];
 
@@ -138,7 +138,7 @@ type Highlight = "past" | "severe" | "no-bed" | "held" | "form";
 const HIGHLIGHT_MATCH: Record<Highlight, (person: EdPerson) => boolean> = {
   past: (person) => person.clock === "past",
   severe: (person) => person.clock !== "in",
-  "no-bed": (person) => NO_BED.includes(person.movement.stage),
+  "no-bed": (person) => edHasNoBedYet(person.movement),
   held: (person) => HELD.includes(person.movement.stage),
   form: (person) => Boolean(person.movement.legalForm),
 };
@@ -255,7 +255,8 @@ export function EdIndex() {
         people,
         pastTarget: summary.pastAccessTarget,
         severe: people.filter((person) => person.clock !== "in").length,
-        noBed: inStages(NO_BED),
+        // S-19: the one "No bed yet" rule the ED board uses.
+        noBed: people.filter((person) => edHasNoBedYet(person.movement)).length,
         held: inStages(HELD),
         leaving: inStages(LEAVING),
         forms: people.filter((person) => person.movement.legalForm).length,

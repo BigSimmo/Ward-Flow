@@ -456,6 +456,40 @@
   letter-spacing: 0;
 }
 
+/* A group cut at six offers the rest through its kind chip (audit round 2, S-33). */
+.showAll {
+  margin-left: auto;
+  min-height: 26px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--wf-accent-ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.showAll:hover {
+  text-decoration: underline;
+}
+
+.showAll:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .group:has(.showAll) {
+    height: auto;
+  }
+
+  .showAll {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
 .option {
   display: flex;
   align-items: center;

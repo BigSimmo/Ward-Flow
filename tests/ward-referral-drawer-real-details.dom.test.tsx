@@ -32,7 +32,7 @@ const seed = seedWardFlowState();
 function renderDrawer() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <WardReferralDrawer onClose={() => {}} />
+      <WardReferralDrawer onClose={() => {}} initialPatientId="PT-023" />
     </WardFlowProvider>,
   );
 }
@@ -43,15 +43,17 @@ describe("the referral drawer shows only what the record holds", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <Sheet open title="Referrals" onClose={close} portal={false}>
-          <WardReferralDrawer onClose={close} />
+          <WardReferralDrawer onClose={close} initialPatientId="PT-023" />
         </Sheet>
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Switch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
     const search = screen.getByRole("searchbox", { name: "Find a patient" });
     fireEvent.keyDown(search, { key: "Escape" });
     expect(close).not.toHaveBeenCalled();
-    fireEvent.keyDown(search, { key: "Escape" });
+    // Opened from a person (option B), closing the search shows that person's summary again, so the
+    // second Escape comes from the summary's Change button rather than the search box it replaced.
+    fireEvent.keyDown(screen.getByRole("button", { name: "Change patient" }), { key: "Escape" });
     expect(close).toHaveBeenCalledTimes(1);
   });
   it("lists only wards that exist in the network, under their own names", () => {
@@ -89,7 +91,10 @@ describe("the referral drawer shows only what the record holds", () => {
 
   it("starts the free-text fields empty and offers one patient search", () => {
     renderDrawer();
-    expect(screen.getByRole("searchbox", { name: "Find a patient" })).toBeInTheDocument();
+    // Opened naming the person (option B), the person shows as a summary; Change opens the one search.
+    expect(screen.queryByRole("searchbox", { name: "Find a patient" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
+    expect(screen.getAllByRole("searchbox", { name: "Find a patient" })).toHaveLength(1);
     expect(screen.queryByText("Live Database Search")).not.toBeInTheDocument();
     // v6: the clinical acuity cell reads "Diagnosis not recorded".
     expect(document.body.textContent).toMatch(/Diagnosis not recorded/);
