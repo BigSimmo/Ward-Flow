@@ -822,27 +822,31 @@ export function WardTasksDrawer({
         </div>
 
         <div className={styles.controls}>
-          <div className={styles.summary}>
-            <div className={styles.stat}>
-              <strong>{overdueCount}</strong>
-              <span>
-                {overdueCount > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
-                Overdue
-              </span>
+          {/* Ops-22 (13 Oct 2026): on desktop the counts sit in the header and the All filter only;
+              the stats row repeated them. Phone keeps its one quiet line. */}
+          {isPhone ? (
+            <div className={styles.summary}>
+              <div className={styles.stat}>
+                <strong>{overdueCount}</strong>
+                <span>
+                  {overdueCount > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
+                  Overdue
+                </span>
+              </div>
+              <div className={styles.stat}>
+                <strong>{criticalFactsCount}</strong>
+                <span>Critical facts</span>
+              </div>
+              <div className={styles.stat}>
+                <strong>{unacknowledged.length}</strong>
+                <span>To acknowledge</span>
+              </div>
+              <div className={styles.stat}>
+                <strong>{acknowledgedFactsCount}</strong>
+                <span>Acknowledged</span>
+              </div>
             </div>
-            <div className={styles.stat}>
-              <strong>{criticalFactsCount}</strong>
-              <span>Critical facts</span>
-            </div>
-            <div className={styles.stat}>
-              <strong>{unacknowledged.length}</strong>
-              <span>To acknowledge</span>
-            </div>
-            <div className={styles.stat}>
-              <strong>{acknowledgedFactsCount}</strong>
-              <span>Acknowledged</span>
-            </div>
-          </div>
+          ) : null}
 
           <div className={styles.filterBar}>
             <div className={styles.segmented} role="group" aria-label="Filter tasks by status">
@@ -886,9 +890,6 @@ export function WardTasksDrawer({
                   </option>
                 ))}
               </select>
-              <span className={styles.count} aria-hidden="true">
-                {filteredItems.length}
-              </span>
               <ChevronDown aria-hidden="true" />
             </label>
             <label className={styles.selectWrap}>

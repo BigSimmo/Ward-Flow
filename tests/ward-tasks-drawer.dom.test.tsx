@@ -203,6 +203,16 @@ describe("task workspace state filters and actions", () => {
     expect(within(drawer).queryByRole("button", { name: "Mark done" })).toBeNull();
   });
 
+  it("on desktop shows the open count in the header and the All filter, not in a stats row (ops-22)", () => {
+    const { drawer } = renderDrawer();
+    expect(within(drawer).queryByText("To acknowledge")).toBeNull();
+    expect(within(drawer).queryByText("Critical facts")).toBeNull();
+    expect(within(drawer).getByTestId("ward-tasks-drawer-count")).toHaveTextContent(`${items.length} open`);
+    expect(within(drawer).getByRole("button", { name: `All ${items.length}` })).toBeTruthy();
+    const stateFilter = within(drawer).getByRole("combobox", { name: "Filter task state" });
+    expect(stateFilter.parentElement).not.toHaveTextContent(String(items.length));
+  });
+
   it("records the escalation to a pick when its Call is pressed (ops-6)", () => {
     const { drawer, dispatch } = renderDrawer({ records: seed });
     const item = items.find((item) => item.title === "Multiple destinations declined")!;
