@@ -34,7 +34,9 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
           if (!response.ok) throw new VerifierUnavailableError("Token verifier unavailable");
           const user = await response.json();
           if (!UUID.test(user?.id ?? "")) throw new VerifierUnavailableError("Token verifier unavailable");
-          return user.id.toLowerCase();
+          const userId = user.id.toLowerCase();
+          if (!config.coordinatorIds.includes(userId)) throw new InvalidCredentialError("Unauthorised");
+          return userId;
         })(),
         deadline,
       ]);
