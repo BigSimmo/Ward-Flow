@@ -1,8 +1,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { azInvocation, azResponse } from "./az-command.mjs";
+import { azInvocation, azResponse, executeAz } from "./az-command.mjs";
 
 const [mode, settingsPath] = process.argv.slice(2);
 if (!["inspect", "provision", "configure", "verify"].includes(mode) || !settingsPath)
@@ -30,39 +29,43 @@ if (new URL(config.frontendOrigin).origin !== config.frontendOrigin || !config.f
   throw new Error("An exact HTTPS frontend origin is required");
 const apiClientId = "9b7b160d-9bc7-4712-b748-17ff3e70b706"; // gitleaks:allow -- public Entra client ID, not a credential
 
-function az(args, json = true, shape = "object") {
+async function az(args, json = true, shape = "object") {
   const call = azInvocation([
     ...args,
     "--subscription",
     config.subscriptionId,
     ...(json ? ["--output", "json"] : ["--output", "none"]),
   ]);
-  const result = spawnSync(call.command, call.args, call.options);
+  const result = await executeAz(call);
   return azResponse(result, args, json ? shape : "none");
 }
 // Account/ad commands do not accept --subscription; retain the selected identity and verify its tenant.
-function directory(args, shape = "object") {
+async function directory(args, shape = "object") {
   const call = azInvocation([...args, "--output", shape === "none" ? "none" : "json"]);
-  const result = spawnSync(call.command, call.args, call.options);
+  const result = await executeAz(call);
   return azResponse(result, args, shape, args[0] === "account" ? ["id", "tenantId"] : []);
 }
-const account = directory(["account", "show", "--subscription", config.subscriptionId]);
+const account = await directory(["account", "show", "--subscription", config.subscriptionId]);
 if (
   account.id.toLowerCase() !== config.subscriptionId.toLowerCase() ||
   account.tenantId.toLowerCase() !== config.tenantId.toLowerCase()
 )
   throw new Error("Azure subscription/tenant mismatch");
-if (directory(["account", "show"]).tenantId.toLowerCase() !== config.tenantId.toLowerCase())
+if ((await directory(["account", "show"])).tenantId.toLowerCase() !== config.tenantId.toLowerCase())
   throw new Error("Select the Ward Flow tenant for directory commands before running setup");
-const group = az(["group", "show", "--name", config.resourceGroup]);
-const app = az(["functionapp", "show", "--resource-group", config.resourceGroup, "--name", config.functionName]);
+const group = await az(["group", "show", "--name", config.resourceGroup]);
+const app = await az(["functionapp", "show", "--resource-group", config.resourceGroup, "--name", config.functionName]);
 if (
   !app.identity?.principalId ||
   app.identity.tenantId.toLowerCase() !== config.tenantId.toLowerCase() ||
   !["australiaeast", "australiasoutheast"].includes(app.location.toLowerCase().replaceAll(" ", ""))
 )
   throw new Error("Verify the Ward Flow Function's Australian location and managed identity before continuing");
-const candidates = az(["postgres", "flexible-server", "list", "--resource-group", config.resourceGroup], true, "array");
+const candidates = await az(
+  ["postgres", "flexible-server", "list", "--resource-group", config.resourceGroup],
+  true,
+  "array",
+);
 let server = config.serverName
   ? candidates.find((row) => row.name === config.serverName)
   : candidates.length === 1
@@ -88,11 +91,11 @@ if (mode === "provision" && !server) {
     throw new Error(
       "The existing Function has network integration. Reuse its reviewed network or provide a reviewed peering design before adding a new database network",
     );
-  const networks = az(["network", "vnet", "list", "--resource-group", config.resourceGroup], true, "array");
+  const networks = await az(["network", "vnet", "list", "--resource-group", config.resourceGroup], true, "array");
   if (networks.some((row) => row.name === "vnet-wardflow-dev-aue"))
     throw new Error("An existing Ward Flow network needs inspection before this template may manage it");
   const serverName = config.serverName || "wardflow-dev-pg-aue";
-  const deployment = az([
+  const deployment = await az([
     "deployment",
     "group",
     "create",
@@ -112,7 +115,15 @@ if (mode === "provision" && !server) {
   ]);
   config.serverName = serverName;
   config.functionSubnetId = deployment.properties.outputs.functionSubnetId.value;
-  server = az(["postgres", "flexible-server", "show", "--resource-group", config.resourceGroup, "--name", serverName]);
+  server = await az([
+    "postgres",
+    "flexible-server",
+    "show",
+    "--resource-group",
+    config.resourceGroup,
+    "--name",
+    serverName,
+  ]);
   await writeFile(settingsPath, `${JSON.stringify(config, null, 2)}\n`);
 }
 if (server) {
@@ -158,7 +169,7 @@ if (mode === "inspect") process.exit(0);
 if (!server) throw new Error("Provision a verified database first");
 let databaseInventory;
 if (requireExistingDatabase) {
-  databaseInventory = az(
+  databaseInventory = await az(
     [
       "postgres",
       "flexible-server",
@@ -181,13 +192,13 @@ if (!config.workspaceId || !UUID.test(config.workspaceId)) config.workspaceId = 
 await writeFile(settingsPath, `${JSON.stringify(config, null, 2)}\n`);
 const output = new URL("./dist/setup/", import.meta.url);
 await mkdir(output, { recursive: true });
-const api = directory(["ad", "app", "show", "--id", apiClientId]);
+const api = await directory(["ad", "app", "show", "--id", apiClientId]);
 const scope = api.api?.oauth2PermissionScopes?.find((row) => row.value === "WardFlow.Access" && row.isEnabled);
 if (!scope || api.api.requestedAccessTokenVersion !== 2 || !api.identifierUris?.length)
   throw new Error(
     "Verify the existing Ward Flow v2 API registration and enabled WardFlow.Access scope; no identity policy was replaced",
   );
-const frontend = directory(["ad", "app", "show", "--id", config.frontendClientId]);
+const frontend = await directory(["ad", "app", "show", "--id", config.frontendClientId]);
 const redirect = `${config.frontendOrigin}/mockups/ward-flow`;
 const frontendValues = {
   NEXT_PUBLIC_WARD_SHARED_ENABLED: "true",
@@ -258,7 +269,7 @@ console.log(
 if (mode !== "configure") process.exit(0);
 
 const authUri = `https://management.azure.com${app.id}/config/authsettingsV2?api-version=2024-04-01`;
-const hostAuth = az(["rest", "--method", "get", "--uri", authUri]);
+const hostAuth = await az(["rest", "--method", "get", "--uri", authUri]);
 const aad = hostAuth.properties?.identityProviders?.azureActiveDirectory;
 if (
   !hostAuth.properties?.platform?.enabled ||
@@ -268,7 +279,7 @@ if (
   throw new Error(
     "Verify the existing Function host's enforced Ward Flow Entra authentication before enabling shared mode",
   );
-const backendSettings = az(
+const backendSettings = await az(
   [
     "functionapp",
     "config",
@@ -304,7 +315,7 @@ if (app.virtualNetworkSubnetId && app.virtualNetworkSubnetId.toLowerCase() !== t
   );
 const databases =
   databaseInventory ??
-  az(
+  (await az(
     [
       "postgres",
       "flexible-server",
@@ -317,10 +328,10 @@ const databases =
     ],
     true,
     "array",
-  );
+  ));
 const wardflowDatabase = databases.find((row) => row.name === databaseName);
 if (!wardflowDatabase)
-  az(
+  await az(
     [
       "postgres",
       "flexible-server",
@@ -360,7 +371,7 @@ try {
   await pool.end();
 }
 if (!app.virtualNetworkSubnetId)
-  az(
+  await az(
     [
       "functionapp",
       "vnet-integration",
@@ -377,7 +388,7 @@ if (!app.virtualNetworkSubnetId)
     false,
   );
 const redirects = [...new Set([...(frontend.spa?.redirectUris ?? []), redirect])];
-directory(
+await directory(
   ["ad", "app", "update", "--id", config.frontendClientId, "--set", `spa.redirectUris=${JSON.stringify(redirects)}`],
   "none",
 );
@@ -388,9 +399,9 @@ if (policy?.allowedPrincipals?.identities?.length) {
   ];
   const hostAuthPath = fileURLToPath(new URL("host-auth.json", output));
   await writeFile(hostAuthPath, JSON.stringify({ properties: hostAuth.properties }));
-  az(["rest", "--method", "put", "--uri", authUri, "--body", `@${hostAuthPath}`], false);
+  await az(["rest", "--method", "put", "--uri", authUri, "--body", `@${hostAuthPath}`], false);
 }
-az(
+await az(
   [
     "functionapp",
     "cors",
@@ -404,7 +415,7 @@ az(
   ],
   false,
 );
-az(
+await az(
   [
     "functionapp",
     "config",
