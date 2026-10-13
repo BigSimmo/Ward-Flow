@@ -1295,6 +1295,20 @@ export function ShortlistPanel({
                 >
                   Withdraw this request
                 </button>
+                {/* S-8 (audit 13 Oct 2026): the coordinator can do everything, so an offer the
+                    coordinator made can also be accepted here for that ward, not only withdrawn. */}
+                {unit && !movement.acceptedUnitId ? (
+                  <button
+                    type="button"
+                    data-testid={`ward-shortlist-accept-for-ward-${id}`}
+                    className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
+                    onClick={() =>
+                      dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "coordinator", now, movementId, unitId: id })
+                    }
+                  >
+                    Accept for this ward
+                  </button>
+                ) : null}
                 {withdrawUnitId === id ? (
                   <form
                     className={styles.shortlistOverrideForm}
