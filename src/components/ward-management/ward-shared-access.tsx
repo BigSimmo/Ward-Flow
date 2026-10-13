@@ -216,9 +216,8 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     <PhonePushAccessContext.Provider value={pushAccess}>
       <DataModeSlotContext.Provider value={setSlot}>
         <DataModeContext.Provider value={dataMode}>
-          {slot
-            ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot)
-            : <DataModePill detail={detail} onHospitalRecords={openLiveInfo} />}
+          {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
+          {slot ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot) : null}
           {showLiveInfo && (
             <section className={styles.notice} aria-label="Hospital records unavailable">
               <h1>Hospital records are not connected</h1>
