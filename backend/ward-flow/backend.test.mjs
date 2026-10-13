@@ -132,6 +132,20 @@ test("concurrent save conflicts return 409 instead of overwriting", async () => 
   const { handler } = setup({ save: async () => null });
   assert.equal((await handler(request("PUT", body))).status, 409);
 });
+test("a first save that loses the race to another first save returns 409, not 503 (A2-8)", async () => {
+  const store = createStore({
+    ...config.storage,
+    request: async (method, url) => {
+      if (url.endsWith("?restype=container")) return new Response(null, { status: 201 });
+      if (method === "GET") return new Response(null, { status: 404, headers: { "x-ms-error-code": "BlobNotFound" } });
+      // The other first save landed between this caller's read and its `if-none-match: *` write.
+      return new Response(null, { status: 409, headers: { "x-ms-error-code": "BlobAlreadyExists" } });
+    },
+  });
+  assert.equal(await store.save(environment.WARD_ALLOWED_OBJECT_ID, id, 0, body.payload), null);
+  const handler = createHandler({ config, store, authenticate: async () => environment.WARD_ALLOWED_OBJECT_ID });
+  assert.equal((await handler(request("PUT", body))).status, 409);
+});
 test("real-data labels, malformed revisions and oversized bodies are rejected", async () => {
   const { handler, calls } = setup();
   for (const invalid of [
@@ -172,6 +186,9 @@ test("store scopes blobs by owner and uses conditional writes", async () => {
         return record
           ? new Response(JSON.stringify(record), { status: 200, headers: { etag } })
           : new Response(null, { status: 404, headers: { "x-ms-error-code": "BlobNotFound" } });
+      // Azure answers `if-none-match: *` on an existing blob with 409 BlobAlreadyExists.
+      if (record && headers["if-none-match"] === "*")
+        return new Response(null, { status: 409, headers: { "x-ms-error-code": "BlobAlreadyExists" } });
       if (record && headers["if-match"] !== etag) return new Response(null, { status: 412 });
       if (!record && headers["if-none-match"] !== "*") return new Response(null, { status: 412 });
       record = JSON.parse(value);
@@ -612,6 +629,9 @@ function memoryBlobStore() {
         return current
           ? new Response(current.value, { headers: { etag: current.etag } })
           : new Response(null, { status: 404, headers: { "x-ms-error-code": "BlobNotFound" } });
+      // Azure answers `if-none-match: *` on an existing blob with 409 BlobAlreadyExists (A2-8).
+      if (current && headers["if-none-match"] === "*")
+        return new Response(null, { status: 409, headers: { "x-ms-error-code": "BlobAlreadyExists" } });
       if (current ? headers["if-match"] !== current.etag : headers["if-none-match"] !== "*")
         return new Response(null, { status: 412 });
       writes++;
