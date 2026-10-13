@@ -1017,7 +1017,6 @@
     "tests/wf-primitives.dom.test.tsx": 2.5,
     "tests/wf-state-dialog-toast.dom.test.tsx": 2.8,
     "tests/wf-v9-contracts.dom.test.tsx": 2.9,
-    "tests/work-mode-state.test.ts": 0.1,
     "tests/worktree-cleanup.test.ts": 0.2,
     "tests/worktree-inventory.test.ts": 0.1
   }

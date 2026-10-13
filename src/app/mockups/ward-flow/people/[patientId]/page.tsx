@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
+import { PersonByUmrn } from "@/components/ward-management/patients/person-by-umrn";
+import { UMRN_IN_ADDRESS } from "@/components/ward-management/ward-patients";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import type { PatientId } from "@/components/ward-management/ward-patients";
@@ -30,12 +32,16 @@ export default async function WardPersonPage({
   } catch {
     return <WardMovementNotFound requestedId={patientId} reason="not-a-person-id" />;
   }
-  if (!id.startsWith("PT-") && !id.startsWith("WF-")) {
+  const isUmrn = UMRN_IN_ADDRESS.test(id);
+  if (!isUmrn && !id.startsWith("PT-") && !id.startsWith("WF-")) {
     return <WardMovementNotFound requestedId={id} reason="not-a-person-id" />;
   }
-  if (query?.view === "governed" || query?.view === "legacy") {
+  const governed = query?.view === "governed" || query?.view === "legacy";
+  if (governed && !isUmrn) {
     return <PersonScreen patientId={id as PatientId} />;
   }
+  // shell-6: a UMRN in the address opens that person, or says no one has it.
+  if (isUmrn) return <PersonByUmrn umrn={id} governed={governed} />;
   return (
     <PatientNowScreen
       patientId={id.startsWith("PT-") ? id : undefined}

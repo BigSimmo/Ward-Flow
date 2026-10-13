@@ -210,7 +210,7 @@ export function buildCensus(state: {
     if (patient) busy.add(patient.id);
     const age = patient ? patientAgeYears(patient, today) : NaN;
     return {
-      name: info.displayName,
+      name: info.formalName,
       umrn: info.umrn,
       age: Number.isFinite(age) && age >= 0 ? age : null,
       sex: patient?.sex ?? patient?.gender ?? null,
@@ -520,7 +520,7 @@ export function buildCensus(state: {
     const accepted = movement.acceptedUnitId ? unitOf.get(movement.acceptedUnitId) : undefined;
     closedToday.push({
       key: `mv:${movement.id}`,
-      name: info.displayName,
+      name: info.formalName,
       umrn: info.umrn,
       outcome: closure.outcome === "arrived" ? "Arrived" : "Did not proceed",
       detail: closure.outcome === "arrived" ? (accepted?.name ?? "Ward not recorded") : closure.reason,
@@ -536,7 +536,7 @@ export function buildCensus(state: {
     const leaving = LEAVING_DESTINATIONS.find((d) => d.id === admission.leavingDestination);
     closedToday.push({
       key: `adm:${admission.id}`,
-      name: info.displayName,
+      name: info.formalName,
       umrn: info.umrn,
       outcome: leaving && /^Transferred/.test(leaving.label) ? "Transferred" : "Discharged",
       detail: `Left ${unit?.name ?? "the ward"}${leaving ? `, ${leaving.label.toLowerCase()}` : ""}`,

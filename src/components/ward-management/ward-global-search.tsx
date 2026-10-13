@@ -40,7 +40,7 @@ import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-ma
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
-import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
+import { formatDateOfBirth, patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import {
   resolveSubjectPatient,
   withUmrnInPlaceOfMovementIds,
@@ -163,6 +163,10 @@ export type WardGlobalSearchProps = {
    * means no "Needs you now" group, never an ungated network list.
    */
   tasks?: readonly InboxItem[];
+  /** Lifts the palette above open sheets, for a header that stays live over a sheet below it. */
+  aboveSheets?: boolean;
+  /** Opens the full Tasks list (the header's drawer). Absent means no "See all tasks" control. */
+  onSeeAllTasks?: () => void;
   /** Booked planned admissions, so search finds the same overdue rows the task count holds. */
   plannedAdmissions?: Parameters<typeof searchWardFlow>[0]["plannedAdmissions"];
   /** The Ward Flow clock, for waits in the preview. Absent means waits are simply not shown. */
@@ -277,6 +281,25 @@ export function patientResultTitle(
   if (item.kind === "person") return nameFor(item.title, item.umrn);
   if (item.kind === "movement") return nameFor(item.title, item.subjectUmrn);
   return item.title;
+}
+
+/**
+ * A "Needs you now" row's line under its title (shell-4): the patient's name (family name first,
+ * through the Discreet names setting) ahead of the UMRN the task detail already carries. A row
+ * that resolves to no single person keeps its detail as it was.
+ */
+export function needsYouMeta(
+  task: Pick<InboxItem, "detail" | "movementId">,
+  lookup: PatientLookup,
+  nameFor: (name: string, umrn: string | undefined | null) => string,
+): string {
+  const detail = withUmrnInPlaceOfMovementIds(task.detail, lookup);
+  if (!task.movementId) return detail;
+  const info = resolveSubjectPatient({ movementId: task.movementId }, lookup);
+  if (!info.patient) return detail;
+  const shown = nameFor(info.formalName, info.umrn);
+  if (!detail.includes(info.umrn)) return `${shown} · ${detail}`;
+  return detail.replace(info.umrn, shown.includes(info.umrn) ? shown : `${shown} · ${info.umrn}`);
 }
 
 export type SearchResultGroup = {
@@ -413,8 +436,9 @@ export function smartSearchGroups(
         kind: "person",
         kindLabel: "Person",
         id: p.id,
-        title: patientDisplayName(p),
-        meta: `${p.umrn} · born ${p.dateOfBirth}`,
+        // shell-8: Family, Given and DD/MM/YYYY, as every other list shows a person.
+        title: patientListName(p),
+        meta: `${p.umrn} · born ${formatDateOfBirth(p.dateOfBirth)}`,
         umrn: p.umrn,
         dateOfBirth: p.dateOfBirth,
         href: patientHref(p.id),
@@ -434,7 +458,7 @@ export function smartSearchGroups(
           kind: "movement",
           kindLabel: "Movement",
           id: m.id,
-          title: subject.displayName,
+          title: subject.formalName,
           subjectUmrn: subject.umrn,
           meta: `${subject.umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
           href: movementHref(m.id),
@@ -549,6 +573,8 @@ export function WardGlobalSearch({
   referrals,
   units,
   tasks,
+  aboveSheets = false,
+  onSeeAllTasks,
   plannedAdmissions,
   now,
   scope,
@@ -621,18 +647,22 @@ export function WardGlobalSearch({
   const startGroups = useMemo(() => {
     void recentsVersion;
     const g: SearchResultGroup[] = [];
-    const needs = (tasks ?? []).slice(0, NEEDS_YOU_LIMIT);
+    const allNeeds = tasks ?? [];
+    const needs = allNeeds.slice(0, NEEDS_YOU_LIMIT);
     if (needs.length > 0) {
       g.push({
         key: "needs",
-        heading: "Needs you now",
+        // shell-4: a cut list says so, with the full count the Tasks badge shows.
+        heading:
+          allNeeds.length > needs.length ? `Needs you now · ${needs.length} of ${allNeeds.length}` : "Needs you now",
         items: needs.map((task) => ({
           kind: "task",
           kindLabel: "Task",
           id: task.id,
           title: task.title,
           // D-39: a person is named by UMRN, never by a WF journey number, in every shape of id.
-          meta: withUmrnInPlaceOfMovementIds(task.detail, lookup),
+          // shell-4: the patient's name leads, so a phone (no preview pane) still names them.
+          meta: needsYouMeta(task, lookup, nameFor),
           href: task.href ?? movementHref(task.movementId),
           movementId: task.movementId,
           tone: task.tone,
@@ -663,7 +693,7 @@ export function WardGlobalSearch({
     });
     g.push({ key: "do", heading: "Do", items: [...START_ACTIONS] });
     return g;
-  }, [tasks, recentsVersion, lookup]);
+  }, [tasks, recentsVersion, lookup, nameFor]);
 
   // A chosen kind with nothing for the current query falls back to All, so a new query never shows
   // a false "No matches" while the chips beside it count real results.
@@ -962,6 +992,7 @@ export function WardGlobalSearch({
     <>
       <div
         className={styles.scrim}
+        data-above-sheets={aboveSheets || undefined}
         style={{ top }}
         aria-hidden="true"
         data-testid="ward-global-search-scrim"
@@ -970,6 +1001,7 @@ export function WardGlobalSearch({
       <div
         ref={paletteRef}
         className={styles.popup}
+        data-above-sheets={aboveSheets || undefined}
         // The floating palette sits 8px under the bar. The phone sheet starts at the bottom of the
         // open field, which ward-bar.module.css paints from the top of the screen (under the status
         // bar) to the bar's bottom edge, so the two meet with no gap and no overlap.
@@ -1040,6 +1072,19 @@ export function WardGlobalSearch({
                             {fullGroupCounts.get(group.key) ?? group.items.length}
                           </span>
                         )}
+                        {group.key === "needs" && onSeeAllTasks ? (
+                          <button
+                            type="button"
+                            className={styles.showAll}
+                            onClick={() => {
+                              close();
+                              onSeeAllTasks();
+                            }}
+                            data-testid="ward-global-search-see-all-tasks"
+                          >
+                            See all tasks
+                          </button>
+                        ) : null}
                         {(() => {
                           // Audit round 2 (S-33): All cuts each group at six; offer the rest through
                           // that group's kind chip rather than stopping silently.
@@ -1110,7 +1155,7 @@ export function WardGlobalSearch({
                                 {item.umrn ? (
                                   <>
                                     <span className={styles.umrn}>{item.umrn}</span>
-                                    {item.dateOfBirth ? <span>born {item.dateOfBirth}</span> : null}
+                                    {item.dateOfBirth ? <span>born {formatDateOfBirth(item.dateOfBirth)}</span> : null}
                                   </>
                                 ) : item.readyBeds !== undefined ? (
                                   <span>

@@ -13,10 +13,9 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EdSummary } from "@/components/ward-management/ed/ed-home-derivations";
 import type { HubEntry } from "@/components/ward-management/hub/hub-derivations";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { CHROME_ROLE_LABELS, type WardChromeRole, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { HEALTH_SERVICES, type HealthService, type Movement } from "@/components/ward-management/ward-model";
-import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { isOfficerJob } from "@/components/ward-management/officer/officer-jobs";
 

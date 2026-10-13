@@ -21,7 +21,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
+import { patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { installMatchMediaStub } from "./setup/jsdom.setup";
@@ -65,7 +65,7 @@ describe("phone menu search", () => {
     const people = screen.getByRole("region", { name: "People" });
     const link = within(people)
       .getAllByRole("link")
-      .find((row) => row.textContent?.includes(patientDisplayName(patient)));
+      .find((row) => row.textContent?.includes(patientListName(patient)));
     expect(link).toBeDefined();
   });
 

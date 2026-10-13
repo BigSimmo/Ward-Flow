@@ -157,6 +157,8 @@ export type DelaysBoardProps = {
   onNotWired: () => void;
   /** Rendered under the hero: the alias banner, the service scope bar and any notice. */
   banner?: ReactNode;
+  /** shell-9: the Menu's Delays row opens the board filtered to the severe causes. */
+  initialSevere?: boolean;
   /** Shown in place of the board's body when nobody is waiting. */
   empty?: ReactNode;
 };
@@ -1098,11 +1100,19 @@ export function DelaysBoard({
   onNotWired,
   banner,
   empty,
+  initialSevere = false,
 }: DelaysBoardProps) {
   const patientOf = usePatientOf();
   const rows = useMemo(() => boardRows(groups, now), [groups, now]);
   const bins = useMemo(() => runwayBins(rows), [rows]);
   const [chosenFilters, setFilters] = useState<BoardFilters>(NO_FILTERS);
+  // shell-9: the address is read after hydration, so apply the Menu's severe filter once it
+  // arrives. Adjusting state during render is React's pattern for state derived from a prop.
+  const [severeApplied, setSevereApplied] = useState(false);
+  if (initialSevere && !severeApplied) {
+    setSevereApplied(true);
+    setFilters((current) => ({ ...current, severe: true }));
+  }
   // A blocker filter whose group has emptied (the person was recategorised) stops applying, so no
   // chip names a cause the board no longer shows.
   const filters = useMemo(
@@ -1285,6 +1295,14 @@ export function DelaysBoard({
       label: `Due within ${urgentMinutes}m`,
       clear: () => {
         set({ dueSoon: false });
+      },
+    });
+  if (filters.severe)
+    chips.push({
+      key: "severe",
+      label: `At a time limit or nowhere to go · ${rows.filter((row) => row.severe).length}`,
+      clear: () => {
+        set({ severe: false });
       },
     });
   if (filters.breached)

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
+import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
@@ -718,5 +718,20 @@ describe("Wave 4 item 15 — Delays alias pedagogy banners", () => {
   it("shows no alias banner on a direct Delays open", () => {
     renderScreen(null);
     expect(screen.queryByTestId("ward-delays-alias-banner")).not.toBeInTheDocument();
+  });
+});
+
+describe("the Menu's Delays row lands on its own figure (shell-9)", () => {
+  it("opens with the severe filter on when the address says show=severe, its count inside the chip", () => {
+    const severe = delayGroups(seededMovements, allUnits(), NOW_ANCHOR)
+      .filter((group) => SEVERE_CAUSES.includes(group.cause))
+      .reduce((total, group) => total + group.movements.length, 0);
+    window.history.replaceState(null, "", "/mockups/ward-flow/delays?show=severe");
+    try {
+      renderScreen();
+      expect(screen.getAllByText(`At a time limit or nowhere to go · ${severe}`).length).toBeGreaterThan(0);
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
   });
 });

@@ -11,9 +11,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { ArrowRight, ChevronRight, Command, Copy, History, UserPlus, Zap } from "lucide-react";
+import { UserPlus } from "lucide-react";
 
-import { Button, Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx } from "@/components/wf";
+import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx } from "@/components/wf";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -36,7 +36,8 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import {
   findPatients,
   foldPatientSearchText,
-  patientDisplayName,
+  formatDateOfBirth,
+  patientListName,
   patientAgeYears,
   type Patient,
 } from "@/components/ward-management/ward-patients";
@@ -59,7 +60,7 @@ const LONG_WAIT_HOURS = LONG_WAIT_MINUTES / 60;
 
 import { recordSearch, type AccessEntry } from "./access-record";
 import { PatientTypeahead } from "./patient-typeahead";
-import { handOffTypedPatientQuery, isNewTabClick } from "./patient-query-handoff";
+import { handOffTypedPatientQuery, isNewTabClick, takeHandedOffPatientSearchText } from "./patient-query-handoff";
 import { RecordPreview, buildMovementSummary, buildReferralSummary, type PreviewSelection } from "./record-preview";
 import { refusalFor } from "./search-refusals";
 import { movementOriginService, movementSearchState, referralOriginService } from "./search-operational-state";
@@ -97,9 +98,7 @@ import {
   CensusTable,
   FlowChip,
   PhoneCensus,
-  PhoneCommands,
   PhoneDobField,
-  type PhoneCommand,
   SearchAdornment,
   ShiftSummary,
 } from "./patient-census-view";
@@ -228,7 +227,8 @@ export interface UnifiedCaseloadPatient {
 export function PatientSearchPage() {
   const { movements, referrals, units, patients, admissions, plannedAdmissions = [], dayZero } = useWardFlow();
   const now = useWardFlowClock();
-  const [text, setText] = useState("");
+  // shell-6: a "Person not found" page can hand a UMRN over in memory, never in the address.
+  const [text, setText] = useState(() => takeHandedOffPatientSearchText() ?? "");
   const [stage, setStage] = useState<MovementStage | "">("");
   const [edId, setEdId] = useState("");
   const [presenceFilter, setPresenceFilter] = useState<PresenceFilter>("all");
@@ -264,7 +264,6 @@ export function PatientSearchPage() {
   });
   const [showAllWard, setShowAllWard] = useState(false);
   const [flashKey, setFlashKey] = useState<string | null>(null);
-  const [commandsOpen, setCommandsOpen] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const showToast = (msg: string) => setCopyNote(msg);
@@ -437,7 +436,7 @@ export function PatientSearchPage() {
         list.push({
           id: m.id,
           urm: info.umrn,
-          name: info.displayName,
+          name: info.formalName,
           age: patientAge,
           sex: info.patient?.sex ?? info.patient?.gender ?? null,
           communityTeam: info.patient?.catchmentCommunityTeam ?? null,
@@ -486,7 +485,7 @@ export function PatientSearchPage() {
         list.push({
           id: ref.id,
           urm: info.umrn,
-          name: info.displayName,
+          name: info.formalName,
           age: patientAge,
           sex: info.patient?.sex ?? info.patient?.gender ?? null,
           communityTeam: info.patient?.catchmentCommunityTeam ?? null,
@@ -699,8 +698,11 @@ export function PatientSearchPage() {
   const groupTotals = countGroups(census.rows);
   const groupMatches = countGroups(visibleRows);
   const liveCount = census.rows.length - groupTotals.off;
+  // shell-16: the highlight chips count what the search and filters leave, as the tiles do.
+  const countedRows =
+    searching || legacyNarrowing || settingFilter !== "all" || presenceFilter !== "all" ? visibleRows : census.rows;
   const highlightCounts = Object.fromEntries(
-    CENSUS_HIGHLIGHTS.map((chip) => [chip.id, census.rows.filter(chip.test).length]),
+    CENSUS_HIGHLIGHTS.map((chip) => [chip.id, countedRows.filter(chip.test).length]),
   ) as Record<CensusHighlight, number>;
 
   // A search that finds exactly one person opens them; otherwise the panel shows this shift until a
@@ -817,7 +819,6 @@ export function PatientSearchPage() {
   };
 
   // While a search runs on the phone, a group with no match gives way to the first one with any.
-  const firstWaiting = visibleRows.find((row) => row.group === "wait") ?? null;
   const flowLine = (() => {
     const closed = census.closedToday;
     const arrived = closed.filter((row) => row.outcome === "Arrived").length;
@@ -825,7 +826,9 @@ export function PatientSearchPage() {
     const stopped = closed.filter((row) => row.outcome === "Did not proceed").length;
     return `Today ${arrived} arrived · ${left} left · ${stopped} did not proceed`;
   })();
-  const historyCount = census.closedToday.length + accessRecord.length;
+  // shell-16: History lists every closure and search whatever is typed, so it shows no count while
+  // a search is on rather than a figure that disagrees with the result.
+  const historyCount = searching ? undefined : census.closedToday.length + accessRecord.length;
   const addPatientClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
     if (isNewTabClick(event)) {
       handOffTypedPatientQuery("", "carried");
@@ -948,7 +951,7 @@ export function PatientSearchPage() {
       data-ward-rebuilt-screen="patient-search"
     >
       <main id="main-content" className={styles.main}>
-        <h1 className="sr-only">Patient Search</h1>
+        <h1 className="sr-only">Patients</h1>
         <div data-testid="ward-patient-search-cockpit" className={styles.v6HeroWrap}>
           <Hero
             className={cx(cs.censusHero, isPhone && cs.heroPhone)}
@@ -991,16 +994,9 @@ export function PatientSearchPage() {
                 <div className={cs.phoneHeroFoot}>
                   {/* The five group figures live once, in the band under the hero (device audit
                       11 Oct 2026): a three-up here repeated 51 / 41 / 242 directly above it. */}
+                  {/* shell-17 (13 Oct 2026): no phone Commands sheet. It repeated Add patient, Menu
+                      and the chips, and offered a bulk copy of patient rows on a handheld. */}
                   <div className={cs.phoneHeroActions}>
-                    <Button
-                      variant="onHero"
-                      icon={Command}
-                      aria-haspopup="dialog"
-                      onClick={() => setCommandsOpen(true)}
-                      data-testid="ward-patient-search-commands-open"
-                    >
-                      Commands
-                    </Button>
                     <Link
                       href={WARD_ADD_PERSON_HREF}
                       className={buttonClass({ variant: "onHero" })}
@@ -1271,67 +1267,6 @@ export function PatientSearchPage() {
             onJump={jumpToGroup}
           />
         ) : null}
-        {isPhone ? (
-          <PhoneCommands
-            open={commandsOpen}
-            onClose={() => setCommandsOpen(false)}
-            actions={[
-              {
-                id: "add",
-                label: "Add patient",
-                hint: "New record with a UMRN",
-                icon: UserPlus,
-                href: WARD_ADD_PERSON_HREF,
-              },
-              ...(firstWaiting
-                ? [
-                    {
-                      id: "find",
-                      label: `Find a bed for ${firstWaiting.name}`,
-                      hint: `${firstWaiting.umrn} · ${firstWaiting.where}`,
-                      icon: ArrowRight,
-                      onAction: () => selectRow(firstWaiting),
-                    },
-                  ]
-                : []),
-              {
-                id: "copy",
-                label: "Copy list",
-                hint: `${visibleRows.length} rows as text`,
-                icon: Copy,
-                onAction: copyList,
-              },
-              {
-                id: "history",
-                label: "Show today's history",
-                hint: "Arrived, left and did not proceed",
-                icon: History,
-                onAction: () => setTab("history"),
-              },
-              {
-                id: "t1",
-                label: "Highlight Tier 1",
-                hint: `${highlightCounts.t1} patients`,
-                icon: Zap,
-                onAction: () => {
-                  setTab("now");
-                  setHighlight("t1");
-                },
-              },
-              {
-                id: "long",
-                label: "Highlight waiting over 24 hours",
-                hint: `${highlightCounts.long} waiting`,
-                icon: Zap,
-                onAction: () => {
-                  setTab("now");
-                  setHighlight("long");
-                },
-              },
-            ]}
-            places={PHONE_PLACES}
-          />
-        ) : null}
         {isPhone ? null : (
           <div className={cs.layout}>
             <CensusTable
@@ -1530,8 +1465,8 @@ export function PeopleSection({
                         : "◌ Past"}
                   </span>
                   <span className={styles.personUmrn}>{patient.umrn}</span>
-                  <span className={styles.personName}>{patientDisplayName(patient)}</span>
-                  <span className={styles.personDob}>DOB {patient.dateOfBirth}</span>
+                  <span className={styles.personName}>{patientListName(patient)}</span>
+                  <span className={styles.personDob}>DOB {formatDateOfBirth(patient.dateOfBirth)}</span>
                   {(patient as { confidential?: boolean }).confidential && (
                     <span className={styles.confidentialBadge} data-testid={`ward-patient-confidential-${patient.id}`}>
                       🔒 Restricted
@@ -1836,37 +1771,3 @@ function AccessRecordPanel({ entries, now }: { entries: readonly AccessEntry[]; 
     </WardPanel>
   );
 }
-
-/** The main places in the phone Commands sheet (v10). Each is an existing route. */
-const PHONE_PLACES: readonly PhoneCommand[] = [
-  { id: "home", label: "Home", hint: "Today's board", icon: ChevronRight, href: "/mockups/ward-flow" },
-  {
-    id: "referrals",
-    label: "Referrals",
-    hint: "Who needs a bed",
-    icon: ChevronRight,
-    href: "/mockups/ward-flow/referrals",
-  },
-  {
-    id: "movements",
-    label: "Movements",
-    hint: "Booked and on the road",
-    icon: ChevronRight,
-    href: "/mockups/ward-flow/movements",
-  },
-  {
-    id: "forms",
-    label: "Forms",
-    hint: "Mental Health Act forms",
-    icon: ChevronRight,
-    href: "/mockups/ward-flow/legal-forms",
-  },
-  { id: "wards", label: "Wards", hint: "Every ward and bed", icon: ChevronRight, href: "/mockups/ward-flow/wards" },
-  {
-    id: "settings",
-    label: "Settings",
-    hint: "Rules, alerts and display",
-    icon: ChevronRight,
-    href: "/mockups/ward-flow/settings",
-  },
-];

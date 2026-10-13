@@ -31,6 +31,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
+import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import {
   StatusGlyph,
   WF_BAND_SCROLLED_PX,
@@ -280,11 +281,14 @@ const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wa
 /** What the service choice narrows, named from `SERVICE_SCOPED_SCREENS` so it cannot drift (D-e).
  *  Screen readers only: the painted note and its "scopes the lists" hint were removed at the
  *  owner's request (9 Oct 2026). */
-const SERVICE_SCOPE_NOTE = `One service, or all of them. ${
+const SERVICE_SCOPED_SCREEN_LIST =
   SERVICE_SCOPED_SCREENS.length > 1
     ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
-    : SERVICE_SCOPED_SCREENS.join(", ")
-} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not. Each count is the people waiting in that service's emergency departments; a narrowed list also shows people referred to its wards.`;
+    : SERVICE_SCOPED_SCREENS.join(", ");
+/** The painted sheet line (shell-1, 13 Oct 2026): it used to promise "What every page and count
+ *  shows", which most pages do not honour. It now names only the screens that read the choice. */
+const SERVICE_SCOPE_SHEET_LINE = `Narrows the ${SERVICE_SCOPED_SCREEN_LIST} lists`;
+const SERVICE_SCOPE_NOTE = `One service, or all of them. ${SERVICE_SCOPED_SCREEN_LIST} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not. Each count is the people waiting in that service's emergency departments; a narrowed list also shows people referred to its wards.`;
 
 /** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (D-16) — named
  *  in one place so the three "not wired" primary-action kinds and any future caller share the
@@ -457,7 +461,10 @@ function PhoneMenuEntry({
   roleCategory,
   onOpenDrawer,
   onOpenReferral,
+  liveOverSheet,
 }: {
+  /** Keeps Menu tappable while a sheet sits below the bar (see `headerLiveOverSheet`). */
+  liveOverSheet: boolean;
   menuRef: RefObject<HTMLButtonElement | null>;
   tasksCount: number;
   activityUnread: number;
@@ -475,6 +482,7 @@ function PhoneMenuEntry({
         aria-haspopup="dialog"
         aria-controls="ward-phone-menu"
         data-testid="ward-bar-phone-menu"
+        data-sheet-inert-skip={liveOverSheet ? "" : undefined}
         onClick={(event) => openWardMenu(event.currentTarget)}
       >
         <MenuIcon aria-hidden="true" strokeWidth={1.75} />
@@ -727,10 +735,18 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     leaveBeds,
   ]);
   // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
-  const tasksActiveCount = useMemo(
-    () => partitionSnoozed(tasksItems, inboxSnoozes, now).active.length,
+  const tasksActiveItems = useMemo(
+    () => partitionSnoozed(tasksItems, inboxSnoozes, now).active,
     [tasksItems, inboxSnoozes, now],
   );
+  const tasksActiveCount = tasksActiveItems.length;
+  /*
+   * Josh (13 Oct 2026, iPhone): the phone New referral sheet starts under the bar, so the bar stays
+   * on screen, but the sheet inerted the whole page and Menu and Search could not be tapped. While
+   * that sheet is open on a phone, Menu and Search opt out of the sheet's background inert; Menu
+   * opens its own sheet on top and the referral, with everything typed, stays open beneath.
+   */
+  const headerLiveOverSheet = isPhone && openPanel === "referral";
   /**
    * The Service selector's own "{n} waiting" counts. L1 (site review, 12 Oct 2026): this used to
    * count every open movement that touched a service (origin ED or any ward asked), so a person
@@ -1119,6 +1135,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [closePopover, openPanel]);
 
+  // shell-23 (13 Oct 2026): on a phone the service sheet is a real popup like Menu and Create. It
+  // joins the shared sheet stack, so the page behind is inert, and focus moves to the chosen service.
+  // Its scrim opts out of that inert so a tap on it still closes the sheet. Desktop keeps its menu.
+  useEffect(() => {
+    if (!isPhone || openPanel !== "service") return;
+    const sheetId = "ward-bar-service-sheet";
+    pushSheet(sheetId, servicePanelRef.current);
+    servicePanelRef.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
+    return () => popSheet(sheetId);
+  }, [isPhone, openPanel]);
+
   // The one Escape order — see the file header for the full reasoning behind each branch. The
   // "New referral" popover joins the Service selector's branch rather than getting its own: both
   // are the drawing's own "menu" shape (`command-third-edition.html`'s `escape()`: any open menu
@@ -1140,9 +1167,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       if (service !== null) {
         // Exact wording, build plan §3 "Escape": now that S2 wires the choice to a real store, the
         // old "not wired" clause is false — the fixed alternative is telling the owner what widening
-        // the lists actually takes (choose All services), not that the feature does not exist yet.
+        // the lists actually takes (choose Statewide), not that the feature does not exist yet.
         announceToWardShell(
-          `Nothing more to clear. The service stays ${service}. Choose All services in the selector to widen the lists.`,
+          `Nothing more to clear. The service stays ${service}. Choose Statewide in the selector to widen the lists.`,
         );
       }
     }
@@ -1226,6 +1253,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         roleCategory={roleCategory}
         onOpenDrawer={openPopover}
         onOpenReferral={openReferral}
+        liveOverSheet={headerLiveOverSheet}
       />
       {/* Device audit (11 Oct 2026): on the phone the whole title block is the service control's
           tap target, not only the 91 x 18 service line. A tap on the title forwards to the service
@@ -1260,12 +1288,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             data-testid="ward-bar-service-trigger"
             data-service={activeSwatchKey}
             data-locked={isFixedJurisdiction ? "true" : undefined}
-            aria-haspopup={isFixedJurisdiction ? undefined : "true"}
+            aria-haspopup={isFixedJurisdiction ? undefined : isPhone ? "dialog" : "true"}
             aria-expanded={isFixedJurisdiction ? undefined : openPanel === "service"}
             aria-controls={isFixedJurisdiction ? undefined : "ward-bar-service-panel"}
-            aria-label={
-              isFixedJurisdiction ? `Jurisdiction: ${activeService}` : `Service: ${activeService ?? "All services"}`
-            }
+            aria-label={isFixedJurisdiction ? `Jurisdiction: ${activeService}` : `Service: ${activeServiceBadgeLabel}`}
             onClick={() => {
               if (isFixedJurisdiction) {
                 announceToWardShell(`${routeTitle} is in ${activeService}.`);
@@ -1283,7 +1309,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             {!isFixedJurisdiction && (
               <ChevronDown className={styles.scopeCaret} aria-hidden="true" strokeWidth={1.75} />
             )}
-            <span className="sr-only">{activeService ?? "All services"}</span>
+            <span className="sr-only">{activeServiceBadgeLabel}</span>
           </button>
           {isPhone ? (
             <span className={styles.scopeLive} aria-hidden="true">
@@ -1295,6 +1321,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             <div
               className={styles.serviceScrim}
               data-ward-service-scrim=""
+              data-sheet-inert-skip=""
               aria-hidden="true"
               onClick={() => closePopover("service", false)}
             />
@@ -1304,14 +1331,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               id="ward-bar-service-panel"
               ref={servicePanelRef}
               className={styles.servicePanel}
-              role="group"
+              role={isPhone ? "dialog" : "group"}
+              aria-modal={isPhone ? true : undefined}
               aria-label="Choose a health service"
               data-testid="ward-bar-service-panel"
             >
               <p className={styles.popoverHead}>Service</p>
               {/* Phone (v10 service sheet): the quiet line under the title. */}
               <p className={styles.serviceSheetNote} aria-hidden="true">
-                What every page and count shows
+                {SERVICE_SCOPE_SHEET_LINE}
               </p>
               <p className="sr-only">{SERVICE_SCOPE_NOTE}</p>
               <button
@@ -1321,7 +1349,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                 onClick={() => selectService(null)}
               >
                 <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
-                <span className={styles.serviceName}>All services</span>
+                {/* shell-23 (13 Oct 2026): one word. The header says Statewide, so the option does too. */}
+                <span className={styles.serviceName}>Statewide</span>
                 <span className={`${styles.serviceOptionCount} ${styles.serviceAllCount}`} aria-hidden="true">
                   {waitingText(allWaitingCount)}
                 </span>
@@ -1372,6 +1401,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       <div className={styles.centerGroup}>
         <div
           className={styles.searchWrap}
+          data-sheet-inert-skip={headerLiveOverSheet ? "" : undefined}
           onFocusCapture={() =>
             setOpenPanel((current) => (current === "service" || current === "primary" ? null : current))
           }
@@ -1381,7 +1411,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             patients={patients}
             referrals={referrals}
             units={units}
-            tasks={tasksItems}
+            // shell-4: the same active list the Tasks badge counts, so "3 of N" agrees with it.
+            tasks={tasksActiveItems}
+            aboveSheets={headerLiveOverSheet}
+            onSeeAllTasks={() => openPopover("tasks")}
             plannedAdmissions={plannedAdmissions}
             now={now}
             placeholder="Search"

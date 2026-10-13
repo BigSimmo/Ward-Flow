@@ -80,6 +80,25 @@ export function takeHandedOffPatientQuery(): PatientQueryHandoff | undefined {
   return value;
 }
 
+let pendingSearch: string | undefined;
+
+/**
+ * shell-6 (13 Oct 2026): the same read-once memory channel, to the Patients search instead of the
+ * add-patient form. "Person not found" for a UMRN in the address hands that UMRN to the search, so
+ * it opens with it typed in, without the UMRN going into the search link. A new-tab click clears.
+ */
+export function handOffPatientSearchText(text: string | undefined): void {
+  const trimmed = text?.trim() ?? "";
+  pendingSearch = trimmed === "" ? undefined : trimmed;
+}
+
+/** Consumes and clears the search text waiting for the Patients search, if any. */
+export function takeHandedOffPatientSearchText(): string | undefined {
+  const value = pendingSearch;
+  pendingSearch = undefined;
+  return value;
+}
+
 /**
  * Whether a click event is the "open in a new tab/window" gesture — a modifier key held, or a
  * mouse button other than the primary one — rather than an ordinary same-tab navigation.

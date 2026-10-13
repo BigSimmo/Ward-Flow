@@ -1763,16 +1763,25 @@ export function PatientNowScreen({
                 <span className={styles.v6HeroFacts} data-testid="ward-patient-phone-figures">
                   {(mode === "idle" || mode === "cto"
                     ? [
-                        {
-                          key: "discharged",
-                          value:
-                            lastStay?.leftAt != null
-                              ? now - lastStay.leftAt < 6 * 1440
-                                ? dayLabel(lastStay.leftAt, dayZero).replace(",", "").split(" ")[0]
-                                : dayLabel(lastStay.leftAt, dayZero).replace(",", "").split(" ").slice(1).join(" ")
-                              : "None",
-                          label: "Discharged",
-                        },
+                        // shell-24 (13 Oct 2026): no Discharged figure for someone never admitted.
+                        ...(lastStay == null
+                          ? []
+                          : [
+                              {
+                                key: "discharged",
+                                value:
+                                  lastStay?.leftAt != null
+                                    ? now - lastStay.leftAt < 6 * 1440
+                                      ? dayLabel(lastStay.leftAt, dayZero).replace(",", "").split(" ")[0]
+                                      : dayLabel(lastStay.leftAt, dayZero)
+                                          .replace(",", "")
+                                          .split(" ")
+                                          .slice(1)
+                                          .join(" ")
+                                    : "None",
+                                label: "Discharged",
+                              },
+                            ]),
                         { key: "orders", value: ctoInForce ? "1" : "0", label: "Orders" },
                         { key: "presentations", value: String(record.presentations.length), label: "Presentations" },
                       ]

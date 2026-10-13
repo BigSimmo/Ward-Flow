@@ -285,7 +285,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
       footerClassName={styles.foot}
     >
       {top}
-      {here && !searching ? (
+      {/* shell-14 (13 Oct 2026): a statewide desk already shows as its own tile below (marked as the
+          current page), so the "You are here" row is only for a site or team desk. */}
+      {here && !searching && !statewide.some((desk) => desk.id === here.id) ? (
         <section className={styles.here} aria-label="Your desk">
           <button
             type="button"
@@ -509,7 +511,8 @@ function DeskFigure({ desk, now, accessTargetMinutes }: { desk: Desk; now: numbe
         <b className={styles.mono}>{desk.waiting ?? 0}</b>
         <span className={styles.unit}>waiting</span>
         {desk.pastTarget ? (
-          <span className={cx(styles.age, styles.danger)}>
+          // shell-13: words stay neutral; the red glyph before the figure carries the tone.
+          <span className={styles.age}>
             {desk.pastTarget} over {targetLabel(accessTargetMinutes)}
           </span>
         ) : null}
@@ -639,13 +642,7 @@ function DeskFacts({ desk, now, accessTargetMinutes }: { desk: Desk; now: number
       ["Waiting", desk.waiting ?? 0, "for a bed"],
       [
         "Longest",
-        desk.waiting ? (
-          <span className={desk.pastTarget ? styles.danger : undefined}>
-            {durMinutes(desk.longestWaitMinutes ?? 0)}
-          </span>
-        ) : (
-          "None"
-        ),
+        desk.waiting ? <span>{durMinutes(desk.longestWaitMinutes ?? 0)}</span> : "None",
         `target ${targetLabel(accessTargetMinutes)}`,
       ],
     ];
