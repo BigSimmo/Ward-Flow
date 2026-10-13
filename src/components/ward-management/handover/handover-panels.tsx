@@ -14,6 +14,7 @@ import { rowTone, type ColumnContext } from "./handover-columns";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import {
   isbarLines,
+  isCollected,
   legalLong,
   nextStep,
   obsLong,
@@ -106,8 +107,10 @@ export function HandoverFlowPanel({
         ? row.stage === "pulled"
           ? "No pull time recorded"
           : "None"
-        : hold !== null && pullHasLapsed(row, now)
-          ? `${bedHold(row.pullExpiresAt, now)!.label}, at ${formatInstantWithDay(row.pullExpiresAt, now)}`
+        : hold !== null && isCollected(row) && hold <= 0
+          ? `In transit, pull time was ${formatInstantWithDay(row.pullExpiresAt!, now)}`
+          : hold !== null && pullHasLapsed(row, now)
+            ? `${bedHold(row.pullExpiresAt, now)!.label}, at ${formatInstantWithDay(row.pullExpiresAt, now)}`
           : `Until ${formatInstantWithDay(row.pullExpiresAt, now)}, ${bedHold(row.pullExpiresAt, now)!.short}`,
     ],
     [
