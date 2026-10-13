@@ -4,7 +4,12 @@ import { useEffect, useId, useRef, type RefObject } from "react";
 import { canRestoreFocusTo, isTopmostSheet, lockPageScroll, popSheet, pushSheet } from "@/components/ui/sheet-focus";
 
 /** Shared Ward dialog lifecycle using the existing overlay stack and background isolation. */
-export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | null>, onClose: () => void) {
+export function useWardModalFocus(
+  open: boolean,
+  ref: RefObject<HTMLElement | null>,
+  onClose: () => void,
+  trapFocus = true,
+) {
   const id = useId();
   const closeRef = useRef(onClose);
   useEffect(() => {
@@ -30,7 +35,7 @@ export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | nu
         event.preventDefault();
         event.stopImmediatePropagation();
         closeRef.current();
-      } else if (event.key === "Tab") {
+      } else if (trapFocus && event.key === "Tab") {
         const items = focusables();
         const first = items[0] ?? panel;
         const last = items.at(-1) ?? panel;
@@ -49,7 +54,7 @@ export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | nu
       popSheet(id);
       if (previous?.isConnected && canRestoreFocusTo(previous)) previous.focus({ preventScroll: true });
     };
-  }, [open, ref, id]);
+  }, [open, ref, id, trapFocus]);
 }
 
 /**

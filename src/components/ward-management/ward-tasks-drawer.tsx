@@ -186,18 +186,7 @@ export function WardTasksDrawer({
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
-  useWardModalFocus(Boolean(withBackdrop), drawerRef, onClose);
-  useEffect(() => {
-    if (withBackdrop) return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.defaultPrevented) return;
-      if (e.key === "Escape") {
-        onClose();
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [withBackdrop, onClose]);
+  useWardModalFocus(true, drawerRef, onClose, Boolean(withBackdrop));
   // Phone (v10 Tasks sheet): a plain list, due first. A row opens in place to show its actions.
   const isPhone = useIsPhone();
 
