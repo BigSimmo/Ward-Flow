@@ -419,13 +419,9 @@ export function WardDailySheet({
   embedded,
 }: WardDailySheetProps) {
   const isEmbedded = embedded ?? onClose !== undefined;
-  const clockNow = useWardFlowClock(-1);
+  const clockNow = useWardFlowClock(WARD_ADMISSIONS_ANCHOR);
   const currentNow =
-    now !== undefined && Number.isFinite(now)
-      ? now
-      : Number.isFinite(clockNow) && clockNow > 0
-        ? clockNow
-        : WARD_ADMISSIONS_ANCHOR;
+    now !== undefined && Number.isFinite(now) ? now : Number.isFinite(clockNow) ? clockNow : WARD_ADMISSIONS_ANCHOR;
   // Prefer the provider's live admissions when this sheet is opened from ward-screen's unit-only
   // path; the frozen seed is only a last resort for isolated renders without a provider.
   const liveFlow = useContext(WardFlowContext);
