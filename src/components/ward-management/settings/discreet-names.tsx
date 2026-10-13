@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 
-import { useIsPhone } from "@/components/wf/use-is-phone";
+import { useIsPhone } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 
 /**

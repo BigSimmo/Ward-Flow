@@ -98,6 +98,7 @@ describe("ED Raise referral starts from a person", () => {
 
   it("does not raise when Enter submits the form with no patient chosen", () => {
     renderEd();
+    clearNotYetIdentified();
     answerClinicalFields();
     const before = screen.getByTestId("movement-count").textContent;
     fireEvent.submit(screen.getByTestId("ward-ed-referral-form"));
