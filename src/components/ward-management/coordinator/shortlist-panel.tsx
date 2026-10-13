@@ -474,12 +474,13 @@ export function ShortlistPanel({
   // Whole-branch review Critical 1: resolved from the live `units` the provider hands back —
   // never `unitById`, which reads the frozen fixture and would still call this ward "Eligible
   // now" after it confirmed zero allocatable beds on its own screen.
+  const acceptedUnitId = movement?.acceptedUnitId;
   const activeUnit = useMemo(() => {
     if (selectedUnitId) return units.find((unit) => unit.id === selectedUnitId);
     // Audit A1-20: once a destination is accepted, explain that ward's gates, not the list's first.
-    const accepted = movement?.acceptedUnitId ? units.find((unit) => unit.id === movement.acceptedUnitId) : undefined;
+    const accepted = acceptedUnitId ? units.find((unit) => unit.id === acceptedUnitId) : undefined;
     return accepted ?? shortlist[0]?.unit;
-  }, [selectedUnitId, shortlist, units, movement?.acceptedUnitId]);
+  }, [selectedUnitId, shortlist, units, acceptedUnitId]);
 
   const activeVerdict = useMemo(() => {
     if (!movement || !activeUnit) return undefined;
