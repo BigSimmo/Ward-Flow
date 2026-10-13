@@ -13,11 +13,11 @@ export type BoardPick =
   /** A current stay moved to another bed with `PLACE_IN_BED`. */
   | { kind: "stay"; admissionId: string; fromBed: number; name: string };
 
-export type BoardBed = Pick<BedItem, "bedNumber" | "status" | "designation" | "heldFor">;
+export type BoardBed = Pick<BedItem, "bedNumber" | "status" | "designation" | "heldFor" | "preparing">;
 
-/** A free bed, not held for anyone, and locked when the referral needs a secure bed on a mixed ward. */
+/** A free bed, not held for anyone, not still being made ready, and locked when the referral needs a secure bed on a mixed ward. */
 export function bedFits(bed: BoardBed, pick: BoardPick | null, isMixed: boolean): boolean {
-  if (pick === null || bed.status !== "ready" || bed.heldFor !== undefined) return false;
+  if (pick === null || bed.status !== "ready" || bed.heldFor !== undefined || bed.preparing) return false;
   if (pick.kind !== "stay" && pick.secureBedNeeded && isMixed && bed.designation !== "Locked") return false;
   return true;
 }
@@ -27,6 +27,7 @@ export function whyBedDoesNotFit(bed: BoardBed, pick: BoardPick, isMixed: boolea
   if (bed.status === "closed") return "it is closed";
   if (bed.heldFor !== undefined) return `it is held for ${bed.heldFor}`;
   if (bed.status !== "ready") return "it is taken";
+  if (bed.preparing) return "it is still being made ready";
   if (pick.kind !== "stay" && pick.secureBedNeeded && isMixed && bed.designation !== "Locked")
     return `${pick.name} needs a locked bed`;
   return "it is not free";

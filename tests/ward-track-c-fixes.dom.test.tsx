@@ -10,7 +10,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { EdScreen } from "@/components/ward-management/ed/ed-screen";
+import { EdScreen, edBayAssignments } from "@/components/ward-management/ed/ed-screen";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { ReferralMatchView } from "@/components/ward-management/referrals/referral-match";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -203,6 +203,34 @@ describe("Track C ED screen fixes", () => {
     expect(bayDd?.textContent).not.toBe("not recorded");
     expect(bayDd?.textContent).toMatch(/^Bay \d{2}$/u);
     expect(bayDd?.textContent).toBe(`Bay ${bay}`);
+  });
+
+  it("A2-19: hands out a different bay to ids whose own number would share one", () => {
+    const bays = edBayAssignments([
+      { id: "WF-004", openedAt: 1 },
+      { id: "WF-016", openedAt: 2 },
+      { id: "WF-028", openedAt: 3 },
+    ]);
+    expect(new Set(bays.values()).size).toBe(3);
+    expect(bays.get("WF-004")).toBe("Bay 05");
+  });
+
+  it("A2-19: no two people on any ED board share a bay", () => {
+    let checked = 0;
+    for (const department of allEmergencyDepartments()) {
+      const { unmount } = render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <EdScreen edId={department.id} />
+        </WardFlowProvider>,
+      );
+      const bays = screen
+        .queryAllByTestId(/^ward-ed-patient-WF-[^-]+$/u)
+        .map((row) => row.children[3]?.textContent ?? "");
+      expect(new Set(bays).size, `${department.id} has a shared bay: ${bays.join(", ")}`).toBe(bays.length);
+      checked += bays.length;
+      unmount();
+    }
+    expect(checked, "no ED rows were found, so nothing was checked").toBeGreaterThan(12);
   });
 
   it("Wired priority flag actions can be clicked without throwing or jamming", () => {

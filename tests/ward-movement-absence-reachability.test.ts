@@ -167,7 +167,8 @@ describe("NOT REACHABLE by any reducer path: a closure carrying no reason", () =
     );
     expect(movingWithCollection.length, "no movement is in flight to arrive").toBeGreaterThan(0);
 
-    // ⚠️ ROLE "officer", NOT "ward" — `EVENT_ROLE.PATIENT_ARRIVED` is `["officer"]` alone. The first
+    // ROLE "coordinator": since A4-16 (13 Oct 2026) the officer's arrival ends the transport leg
+    // only, and the ward or coordinator closes the movement. Earlier note: role "officer", not "ward". The first
     // draft used "ward", every dispatch was refused on permission, and the test went red saying the
     // movement "did not arrive". That red was correct and useful: a probe that had instead asserted
     // only "no closure has an empty reason" would have passed on a run where nothing arrived at all.
@@ -175,7 +176,7 @@ describe("NOT REACHABLE by any reducer path: a closure carrying no reason", () =
     for (const target of movingWithCollection) {
       const next = wardFlowReducer(state, {
         type: "PATIENT_ARRIVED",
-        role: "officer",
+        role: "coordinator",
         now: NOW + 1,
         movementId: target.id,
       });

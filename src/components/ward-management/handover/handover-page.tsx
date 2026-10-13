@@ -653,6 +653,9 @@ export function HandoverPage() {
     );
     if (recorded === null) announceToWardShell("Sign-off is not recorded.");
   }, [runStep, now]);
+  const handleUndoSignOff = useCallback(() => {
+    runStep({ type: "UNDO_HANDOVER_SIGN_OFF", role: "coordinator", now }, { success: "Sign-off undone." });
+  }, [runStep, now]);
   const showSignOff = () => {
     setSheetOpen(false);
     setTab("pts");
@@ -737,11 +740,19 @@ export function HandoverPage() {
 
   /* sign-off checks */
   const actRows = rows.filter((row) => groupOf(row, now, cutoff) === "act");
+  const actOwned = actRows.every((row) => row.owner !== "No owner recorded");
+  const actPassed = actRows.filter(
+    (row) =>
+      (row.pullExpiresAt !== undefined && row.pullExpiresAt <= now) ||
+      (row.formDueAt !== undefined && row.formDueAt <= now),
+  ).length;
   const signChecks: SignOffCheck[] = [
     {
       id: "act",
-      done: actRows.every((row) => row.owner !== "No owner recorded"),
-      text: `${actRows.length} act now, ${actRows.every((row) => row.owner !== "No owner recorded") ? "each has an owner" : "some have no owner"}`,
+      // A4-27 (audit round 2): an act-now row whose bed pull or form time has passed is not settled,
+      // whoever owns it, so the tick stays open until that time is dealt with.
+      done: actOwned && actPassed === 0,
+      text: `${actRows.length} act now, ${actPassed > 0 ? `${actPassed} past ${actPassed === 1 ? "its" : "their"} time` : actOwned ? "each has an owner" : "some have no owner"}`,
     },
     { id: "due", done: true, text: `${counts.due} due by ${formatInstantWithDay(cutoff, now)} listed` },
     staleWards.length
@@ -785,6 +796,7 @@ export function HandoverPage() {
         canSignOff={canSignOff}
         cannotSignReason={passed ? "This handover has passed. Choose the next one." : undefined}
         onSignOff={handleSignOff}
+        onUndoSignOff={handleUndoSignOff}
       />
     </div>
   );

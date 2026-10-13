@@ -53,6 +53,14 @@ describe("Ward Flow Read-Only Plain History", () => {
     expect(EVENT_HISTORY_TABLE[event.type].category).toBe("both");
   });
 
+  it("words the officer's Delivered as a transport delivery and the ward's confirmation as arrival", () => {
+    const base = { type: "PATIENT_ARRIVED", movementId: "WF-001", now: 600 } as const;
+    const delivered = buildHistoryEntry({ ...base, role: "officer" } as WardFlowEvent, NOW);
+    const arrived = buildHistoryEntry({ ...base, role: "ward", actingUnitId: "U-1" } as WardFlowEvent, NOW);
+    expect(delivered.summary).toBe("Transport delivered to the receiving ward");
+    expect(arrived.summary).toBe("Patient arrived at ward bed");
+  });
+
   describe("selectPatientHistory", () => {
     const mockEvents: WardFlowEvent[] = [
       {

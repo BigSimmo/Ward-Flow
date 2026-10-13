@@ -15,13 +15,24 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * absence and steps, and On a CTO the patient record's order. Each is driven through the reducer.
  */
 const seed = seedWardFlowState();
-const occupied = seed.admissions.find(
-  (a) => a.state === "occupied" && a.patientId && !seed.leaveBeds.some((bed) => bed.admissionId === a.id),
-)!;
+const legalStatusOf = (patientId: string | null) => seed.patients.find((p) => p.id === patientId)?.legalStatus;
+const occupiedWith = (status: (legal: string | undefined) => boolean) =>
+  seed.admissions.find(
+    (a) =>
+      a.state === "occupied" &&
+      a.patientId &&
+      a.awayAtEmergencyDepartmentSince == null &&
+      !seed.leaveBeds.some((bed) => bed.admissionId === a.id) &&
+      !seed.movements.some((m) => m.admissionId === a.id || (m.patientId === a.patientId && !m.closure)) &&
+      status(legalStatusOf(a.patientId)),
+  )!;
+// A3-13: absent without leave is for a person on an order, so the main case is involuntary.
+const occupied = occupiedWith((legal) => legal === "Involuntary inpatient");
 const inBedPatientId = occupied.patientId!;
+const voluntaryStay = occupiedWith((legal) => legal === "Voluntary");
 
 /** Starts leave the way the ward board does, through the reducer. */
-function LeaveProbe() {
+function LeaveProbe({ stay = occupied }: { stay?: typeof occupied }) {
   const { dispatch } = useWardFlow();
   return (
     <button
@@ -31,9 +42,9 @@ function LeaveProbe() {
           type: "RECORD_LEAVE_BED",
           role: "ward",
           now: NOW_ANCHOR,
-          unitId: occupied.unitId,
-          actingUnitId: occupied.unitId,
-          admissionId: occupied.id,
+          unitId: stay.unitId,
+          actingUnitId: stay.unitId,
+          admissionId: stay.id,
           expectedReturn: NOW_ANCHOR + 180,
         })
       }
@@ -43,11 +54,11 @@ function LeaveProbe() {
   );
 }
 
-function renderPatient(patientId: string) {
+function renderPatient(patientId: string, stay = occupied) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <PatientNowScreen patientId={patientId} />
-      <LeaveProbe />
+      <LeaveProbe stay={stay} />
     </WardFlowProvider>,
   );
   return screen.getByTestId("ward-person-screen");
@@ -88,6 +99,27 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
       within(screen.getByTestId("ward-patient-last-seen")).getByRole("button", { name: "Record return" }),
     );
     expect(root).toHaveAttribute("data-patient-mode", "ward");
+  });
+
+  it("reads Not back from leave for a voluntary patient, with the same missing person steps (A3-13)", () => {
+    const root = renderPatient(voluntaryStay.patientId!, voluntaryStay);
+    fireEvent.click(screen.getByRole("button", { name: "Start synthetic leave" }));
+    const leaveCard = screen.getByTestId("ward-patient-leave-card");
+    expect(leaveCard).toHaveTextContent("Treat as not back from leave");
+    expect(leaveCard).not.toHaveTextContent("absent without leave");
+    fireEvent.click(within(leaveCard).getByRole("button", { name: "Mark absent" }));
+    expect(root).toHaveAttribute("data-patient-mode", "awol");
+    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Not back from leave");
+    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("Not back from leave");
+    expect(screen.getByRole("img", { name: "0 of 5 steps done" })).toBeInTheDocument();
+    // No return order is prompted for a person who is not on one.
+    expect(screen.getByTestId("ward-patient-last-seen")).not.toHaveTextContent("Return order");
+  });
+
+  it("prompts the return order question for an involuntary patient (S-5)", () => {
+    renderPatient(inBedPatientId);
+    fireEvent.click(within(screen.getByTestId("ward-patient-gate-leave")).getByRole("button", { name: "Mark absent" }));
+    expect(screen.getByTestId("ward-patient-last-seen")).toHaveTextContent("Return order");
   });
 
   it("marks absent straight from the ward, holding the bed", () => {

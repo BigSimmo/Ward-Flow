@@ -1669,6 +1669,7 @@ function departAdmission(
   unit: Unit,
   now: Instant,
   leavingDestination: LeavingDestination,
+  role: WardFlowRole,
 ): WardFlowState {
   // Owner decision 2026-09-25: a bed release is a named patient's discharge, so the pairing is by
   // name, never by ward-wide counts. `releaseAlreadyIncremented` is true only for a state in which a
@@ -1723,7 +1724,34 @@ function departAdmission(
   const withPerson: WardFlowState = departedState.leaveBeds.some((bed) => bed.admissionId === admission.id)
     ? { ...departedState, leaveBeds: departedState.leaveBeds.filter((bed) => bed.admissionId !== admission.id) }
     : departedState;
-  if (!liveRelease) return withPerson;
+  // A4-24 (owner decision, Josh, 13 October 2026): a vacated bed is not instantly Ready. It goes to
+  // "Being made ready" (`preparing: true` on this stay's discharged release) and one tap of Ready
+  // (`SET_BED_PREPARATION` with `preparing: false`, ward or coordinator) makes it offerable again.
+  // This supersedes the Q4 note that preparation begins only by a separate event. When the bed
+  // figures did not rise (already raised, or an arrival still awaiting capacity) no bed came free
+  // here, so nothing is marked.
+  const bedCameFree = !releaseAlreadyIncremented && !arrivalAwaitingCapacity;
+  if (!liveRelease) {
+    if (!bedCameFree) return withPerson;
+    // A departure nobody flagged in advance still vacates a bed: record its release, already
+    // discharged, so the bed has somewhere to carry "Being made ready". Same id scheme as
+    // FLAG_BED_RELEASE; the array only ever grows, so its length is a collision-free source.
+    const vacated: BedRelease = {
+      id: `WR-9${String(withPerson.bedReleases.length).padStart(2, "0")}`,
+      unitId: unit.id,
+      admissionId: admission.id,
+      state: "discharged",
+      expectedAt: now,
+      waitingOn: null,
+      blocker: null,
+      blockedBy: null,
+      preparing: true,
+      preparationNote: null,
+      confirmedAt: now,
+      confirmedBy: recordedByLabel(role, unit.name),
+    };
+    return { ...withPerson, bedReleases: [...withPerson.bedReleases, vacated] };
+  }
   // Leaving completes this person's release — the same fields RELEASE_BED used to write. A stuck flag
   // comes off, because the bed is no longer held up.
   return replaceBedRelease(withPerson, liveRelease.id, {
@@ -1732,6 +1760,8 @@ function departAdmission(
     waitingOn: null,
     blocker: null,
     blockedBy: null,
+    preparing: bedCameFree,
+    preparationNote: null,
     confirmedAt: now,
   });
 }
@@ -2060,6 +2090,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
         unit,
         event.now,
         "transferred-to-another-psychiatric-ward",
+        event.role,
       );
       next = replaceUnit(next, receiving.id, {
         ...receiving,
@@ -2176,10 +2207,15 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   if (dischargeBlockingTransit(state, admission)) {
     return deny("transition", "denied", "Patient is currently in transit to another facility.");
   }
-  return appendAudit(state, departAdmission(state, admission, unit, event.now, event.leavingDestination), event, {
-    outcome: "accepted",
-    reasonCode: "none",
-  });
+  return appendAudit(
+    state,
+    departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role),
+    event,
+    {
+      outcome: "accepted",
+      reasonCode: "none",
+    },
+  );
 }
 
 /** Any ward-resource update invalidates a capacity draft, including protected departures. */
@@ -5456,6 +5492,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         (movement.transportNeed?.needed ?? movement.transport?.needed) === false &&
         !liveTransportJob &&
         movement.transport?.collectedAt === undefined;
+      // Audit r1 item 4: arrival with no transport leg and fit to travel open records why.
+      const arrivalException =
+        event.exception === undefined
+          ? undefined
+          : transportExceptionRecord(event.exception, event.now, event.role, "arrived");
+      if (typeof arrivalException === "string") return reject(state, event, `PATIENT_ARRIVED ${arrivalException}`);
       if (noTransportNeeded) {
         if (movement.stage !== "pulled" && movement.stage !== "handover_ready") {
           return reject(
@@ -5495,6 +5537,27 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       const unit = findUnit(state, movement.acceptedUnitId);
       if (!unit) return reject(state, event, `no unit found for id ${movement.acceptedUnitId}`);
+
+      /*
+       * Josh, 13 Oct 2026 (audit round 2, A4-16): the receiving ward closes the transfer on arrival
+       * and handover. The officer's Delivered ends the transport leg only: it records
+       * `transport.arrivedAt` and leaves the movement open at `moving`, with no bed, stay or closure
+       * written. The ward (or the coordinator) then confirms arrival with this same event, which
+       * completes the movement and keeps the officer's delivery time on the job.
+       */
+      if (event.role === "officer") {
+        if (movement.transport?.arrivedAt !== undefined) {
+          return reject(
+            state,
+            event,
+            `transport for movement ${movement.id} was already delivered; the receiving ward confirms arrival`,
+          );
+        }
+        return replaceMovement(state, movement.id, {
+          ...movement,
+          transport: movement.transport && { ...movement.transport, arrivedAt: event.now },
+        });
+      }
 
       const patientId =
         movement.patientId ??
@@ -5609,7 +5672,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         transport:
           movement.transport === undefined || noTransportNeeded
             ? movement.transport
-            : { ...movement.transport, arrivedAt: event.now },
+            : { ...movement.transport, arrivedAt: movement.transport.arrivedAt ?? event.now },
+        ...(arrivalException ? { arrivalException } : {}),
         closure: {
           at: event.now,
           outcome: "arrived",
@@ -5673,6 +5737,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           sendingUnit,
           event.now,
           "transferred-to-another-psychiatric-ward",
+          event.role,
         );
         withPerson = {
           ...withPerson,
@@ -5807,7 +5872,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return departAdmission(state, admission, unit, event.now, event.leavingDestination);
+      return departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role);
     }
 
     /**

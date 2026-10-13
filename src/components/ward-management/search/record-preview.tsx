@@ -292,7 +292,7 @@ export function RecordPreview({
     // With no open movement and no referral the record says nothing about where the person is or
     // what is planned, so this default says so. "NOT IN HOSPITAL · COMMUNITY OUTPATIENT", an
     // outpatient stage and "Tier 3" used to be assumed here (25 September 2026 audit, A5).
-    let presenceStatus: "live" | "community" = "community";
+    let presenceStatus: "live" | "community" | "past" = "community";
     let bannerTitle = "NO OPEN MOVEMENT OR REFERRAL";
     let bannerTag = "No open episode";
     let waitTimeHours = 0;
@@ -331,6 +331,16 @@ export function RecordPreview({
         targetWard = "Not admitted";
         currentStage = "Outpatient";
         originSite = referral.originSiteCode;
+        urgency = `Tier ${referral.urgency}`;
+      } else if (referralState(referral) === "declined") {
+        // Every destination declined and no movement is open: match the search row's Past status.
+        presenceStatus = "past";
+        bannerTitle = "Not on this board now";
+        bannerTag = "Referral declined";
+        disposition = "Declined";
+        targetWard = "Not admitted";
+        currentStage = "Declined";
+        originSite = `${referral.originSiteCode} ED`;
         urgency = `Tier ${referral.urgency}`;
       } else {
         presenceStatus = "live";

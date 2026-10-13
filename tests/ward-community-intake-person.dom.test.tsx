@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,52 +11,55 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
+import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
 import { matchReferralPatient } from "@/components/ward-management/referrals/referral-patient-match";
+import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
 
 /**
  * A2-12 and A2-10 (audit 13 Oct 2026): the community intake sent a Tier 1 referral as "Unknown
  * Patient" because UMRN was optional and there was no name. It now needs a registered person by
- * name or UMRN, or "Unidentified" with a description, and says why it is greyed in visible text.
+ * name or UMRN, or "Not yet identified" with a description, and says why it is greyed in visible text.
+ *
+ * Round 2 (option B, 13 Oct 2026) retired the community intake modal: the team page's "Refer from
+ * team" opens the one referral slide-out from that team. The same person requirement is proven
+ * there: the slide-out opened from a team starts on nobody, and Send names what is missing.
  */
-function LastReferral() {
-  const { referrals } = useWardFlow();
-  const last = referrals[referrals.length - 1];
-  return (
-    <>
-      <p data-testid="referral-count">{referrals.length}</p>
-      <p data-testid="last-referral-patient">{last?.patientId ?? "none"}</p>
-      <p data-testid="last-referral-history">{last?.history ?? ""}</p>
-    </>
+const TEAM = COMMUNITY_TEAM_PAGES[0]!.name;
+
+function renderTeamPage() {
+  render(
+    <ToastProvider>
+      <WardFlowProvider>
+        <CommunityScreen teamId="midland" />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 
 function renderIntake() {
   render(
-    <ToastProvider>
-      <WardFlowProvider>
-        <CommunityScreen teamId="midland" />
-        <LastReferral />
-      </WardFlowProvider>
-    </ToastProvider>,
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <WardReferralDrawer onClose={vi.fn()} initialCategory="community" initialSendingTeam={TEAM} />
+    </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Intake referral" }));
 }
 
-function answerTheRest() {
-  for (const id of [
-    "ward-community-intake-age-band",
-    "ward-community-intake-home-region",
-    "ward-community-intake-urgency",
-    "ward-community-intake-origin-site",
-  ]) {
-    const select = screen.getByTestId(id) as HTMLSelectElement;
-    const value = [...select.options].map((option) => option.value).find(Boolean)!;
-    fireEvent.change(select, { target: { value } });
-  }
+function sendBlockedReason() {
+  fireEvent.click(
+    within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Wards" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+  return screen.getByRole("alert");
+}
+
+function patientRow() {
+  return within(screen.getByTestId("ward-referral-summary-rail")).getByText("Patient").parentElement!;
 }
 
 beforeEach(() =>
@@ -72,44 +75,46 @@ beforeEach(() =>
 );
 afterEach(() => {
   cleanup();
+  discardReferralDraft();
   vi.unstubAllGlobals();
 });
 
 describe("community intake names its person", () => {
-  it("stays greyed, with a visible reason, until a person is named", () => {
-    renderIntake();
-    answerTheRest();
-    const reason = document.getElementById("ward-community-intake-blocked");
-    expect(reason).toHaveTextContent("Enter the patient's name or UMRN, or choose Unidentified.");
-    expect(reason).not.toHaveClass("sr-only");
-    const before = screen.getByTestId("referral-count").textContent;
-    fireEvent.click(screen.getByTestId("ward-community-intake-submit"));
-    expect(screen.getByTestId("referral-count").textContent).toBe(before);
+  it("offers Refer from team, not the retired intake modal", () => {
+    renderTeamPage();
+    expect(screen.getAllByRole("button", { name: "Refer from team" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Intake referral" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-community-intake-form")).not.toBeInTheDocument();
   });
 
-  it("sends for the registered person a UMRN names", () => {
+  it("stays greyed, with a visible reason, until a person is named", () => {
+    vi.unstubAllGlobals();
+    renderIntake();
+    expect(screen.getByTestId("ward-referral-no-patient")).toHaveTextContent("No patient chosen");
+    const reason = sendBlockedReason();
+    expect(reason).toHaveTextContent('Find a registered patient, add a new patient, or choose "Not yet identified".');
+    expect(reason).not.toHaveClass("sr-only");
+  });
+
+  it("names the registered person a UMRN finds", () => {
+    vi.unstubAllGlobals();
     const person = seedWardFlowState().patients.find((patient) => patient.umrn !== "")!;
     renderIntake();
-    fireEvent.change(screen.getByTestId("ward-community-intake-umrn"), { target: { value: person.umrn } });
-    answerTheRest();
-    fireEvent.click(screen.getByTestId("ward-community-intake-submit"));
-    expect(screen.getByTestId("last-referral-patient")).toHaveTextContent(person.id);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find a patient" }), { target: { value: person.umrn } });
+    fireEvent.click(within(screen.getByRole("listbox", { name: "Matching patients" })).getAllByRole("option")[0]!);
+    expect(screen.queryByTestId("ward-referral-no-patient")).not.toBeInTheDocument();
+    expect(patientRow()).toHaveTextContent(person.familyName);
   });
 
-  it("sends an unidentified person only with a description, which leads the history", () => {
+  it("sends an unidentified person only with a description, which leads the patient line", () => {
+    vi.unstubAllGlobals();
     renderIntake();
-    fireEvent.click(screen.getByTestId("ward-community-intake-unidentified"));
-    answerTheRest();
-    expect(document.getElementById("ward-community-intake-blocked")).toHaveTextContent(
-      "Describe the unidentified person before sending.",
-    );
-    fireEvent.change(screen.getByTestId("ward-community-intake-description"), {
+    fireEvent.click(screen.getByTestId("ward-referral-unidentified"));
+    expect(sendBlockedReason()).toHaveTextContent("Describe the unidentified person.");
+    fireEvent.change(screen.getByTestId("ward-referral-unidentified-description"), {
       target: { value: "Woman, about 40, at Midland station" },
     });
-    fireEvent.click(screen.getByTestId("ward-community-intake-submit"));
-    expect(screen.getByTestId("last-referral-history")).toHaveTextContent(
-      "Unidentified person: Woman, about 40, at Midland station",
-    );
+    expect(patientRow()).toHaveTextContent("Not yet identified, Woman, about 40, at Midland station");
   });
 });
 

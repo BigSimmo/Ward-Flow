@@ -121,7 +121,7 @@ describe("Ward page (A1-3)", () => {
 describe("a departure never stamps the census as confirmed (A1-11)", () => {
   it("moves the figures and leaves the confirmed time alone", () => {
     const state = seedWardFlowState();
-    const voluntary = new Set(wardPatients.filter((p) => p.legalStatus === "Voluntary patient").map((p) => p.id));
+    const voluntary = new Set(wardPatients.filter((p) => p.legalStatus === "Voluntary").map((p) => p.id));
     const admission = state.admissions.find(
       (candidate) =>
         candidate.state === "occupied" &&

@@ -3,7 +3,12 @@ import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
-import { INFORMATIONAL_GATES, isOpen, shortlistCandidates } from "@/components/ward-management/ward-derivations";
+import {
+  INFORMATIONAL_GATES,
+  isOpen,
+  restrictionNotice,
+  shortlistCandidates,
+} from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
@@ -14,7 +19,9 @@ import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites"
  * now, and opens only the health services those wards are in.
  */
 const NOW = NOW_ANCHOR;
-const MOVEMENT_ID = "WF-030";
+// Audit S-21: WF-030's only no-bed wards are locked, which now read Review for a voluntary patient,
+// so a voluntary patient with an open no-bed ward keeps both colours exercised.
+const MOVEMENT_ID = "WF-018";
 
 function expectedFits(movementId: string) {
   const state = seedWardFlowState();
@@ -22,6 +29,8 @@ function expectedFits(movementId: string) {
   const bed = new Set<string>();
   const noBed = new Set<string>();
   for (const candidate of shortlistCandidates(movement, state.units, NOW)) {
+    // Audit S-21: a voluntary patient's locked ward is a Review, never a fit.
+    if (restrictionNotice(movement, candidate.unit)?.level === "voluntary_on_locked") continue;
     if (candidate.availability === "eligible") {
       bed.add(candidate.unit.id);
       continue;

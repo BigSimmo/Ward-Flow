@@ -155,7 +155,7 @@ describe("a pull allocates a bed and marks nobody as arrived", () => {
 
     state = wardFlowReducer(state, {
       type: "PATIENT_ARRIVED",
-      role: "officer",
+      role: "coordinator",
       now: NOW + 30,
       movementId: MOVEMENT_ID,
     });

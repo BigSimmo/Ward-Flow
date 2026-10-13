@@ -18,8 +18,8 @@ describe("involuntary discharge guard reads the patient record's own wording", (
       return patient?.legalStatus !== undefined && status.test(patient.legalStatus);
     });
 
-  it("refuses discharge to the community for a patient recorded as 'Involuntary patient (recorded)'", () => {
-    const admission = occupiedWith(/^Involuntary patient \(recorded\)$/);
+  it("refuses discharge to the community for a patient recorded as 'Involuntary inpatient'", () => {
+    const admission = occupiedWith(/^Involuntary inpatient$/);
     expect(admission, "a seeded occupied admission with that wording").toBeDefined();
     const after = wardFlowReducer(seed, {
       type: "RECORD_LEAVING",
