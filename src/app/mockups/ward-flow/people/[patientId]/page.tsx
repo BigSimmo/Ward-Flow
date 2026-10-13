@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
+import { PersonByUmrn } from "@/components/ward-management/patients/person-by-umrn";
+import { UMRN_IN_ADDRESS } from "@/components/ward-management/ward-patients";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import type { PatientId } from "@/components/ward-management/ward-patients";
@@ -29,6 +31,10 @@ export default async function WardPersonPage({
     id = decodeURIComponent(patientId);
   } catch {
     return <WardMovementNotFound requestedId={patientId} reason="not-a-person-id" />;
+  }
+  // shell-6: a UMRN in the address opens that person, or says no one has it.
+  if (UMRN_IN_ADDRESS.test(id)) {
+    return <PersonByUmrn umrn={id} governed={query?.view === "governed" || query?.view === "legacy"} />;
   }
   if (!id.startsWith("PT-") && !id.startsWith("WF-")) {
     return <WardMovementNotFound requestedId={id} reason="not-a-person-id" />;

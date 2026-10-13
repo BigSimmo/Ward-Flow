@@ -74,8 +74,19 @@ export function WardMovementNotFound({
   reason,
 }: {
   requestedId: string;
-  reason: "no-such-movement" | "not-a-movement-id" | "not-a-person-id";
+  reason: "no-such-movement" | "not-a-movement-id" | "not-a-person-id" | "no-such-umrn";
 }) {
+  const aboutPerson = reason === "not-a-person-id" || reason === "no-such-umrn";
+  // shell-6: a way on to the patient search. Only a UMRN, already in the address, is carried into
+  // the search link; other typed text never goes into a URL.
+  const searchLink =
+    reason === "no-such-umrn" ? (
+      <Link href={`/mockups/ward-flow/search?q=${encodeURIComponent(requestedId)}`}>
+        Search patients for {requestedId}
+      </Link>
+    ) : (
+      <Link href="/mockups/ward-flow/search">Search patients</Link>
+    );
   return (
     <div className={styles.patientWorkspace} data-testid="ward-patient-workspace">
       <header className={styles.workspaceHeader}>
@@ -84,31 +95,29 @@ export function WardMovementNotFound({
         </ContextualBackLink>
         <div>
           <span>Ward Flow</span>
-          <span className={styles.headerCrumb}>
-            {reason === "not-a-person-id" ? "Person not found" : "Movement not found"}
-          </span>
+          <span className={styles.headerCrumb}>{aboutPerson ? "Person not found" : "Movement not found"}</span>
         </div>
       </header>
       <main id="main-content" className={styles.workspaceMain}>
         <div className={styles.masthead}>
-          <span className={styles.eyebrow}>
-            {reason === "not-a-person-id" ? "Person record" : "Movement workspace"}
-          </span>
-          <h1 className={styles.mastheadTitle}>
-            {reason === "not-a-person-id" ? "Person not found" : "Movement not found"}
-          </h1>
+          <span className={styles.eyebrow}>{aboutPerson ? "Person record" : "Movement workspace"}</span>
+          <h1 className={styles.mastheadTitle}>{aboutPerson ? "Person not found" : "Movement not found"}</h1>
         </div>
         <p className={styles.governanceNote}>
-          {reason === "not-a-person-id" ? (
+          {reason === "no-such-umrn" ? (
             <>
-              &ldquo;{requestedId}&rdquo; is not a person&rsquo;s record number.{" "}
+              No one with UMRN {requestedId}. {searchLink}.
+            </>
+          ) : reason === "not-a-person-id" ? (
+            <>
+              &ldquo;{requestedId}&rdquo; does not match a person here.{" "}
               {requestedId.startsWith("WF-") ? (
                 <>
                   It is a movement id.{" "}
                   <Link href={`/mockups/ward-flow/movements/${requestedId}`}>Open that movement instead</Link>.
                 </>
               ) : (
-                <>Record numbers (UMRN) identify a person. This screen shows one person&rsquo;s own record.</>
+                <>{searchLink}.</>
               )}
             </>
           ) : reason === "not-a-movement-id" && requestedId.startsWith("PT-") ? (

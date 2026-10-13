@@ -256,6 +256,9 @@ export function patientCohort(
   return "Adult";
 }
 
+/** A UMRN as people type or paste it into an address: two letters then digits (shell-6). */
+export const UMRN_IN_ADDRESS = /^[A-Za-z]{2}\d+$/u;
+
 /** `Given Family`, the order a name is spoken and written on a board. */
 export function patientDisplayName(patient: Patient): string {
   return `${patient.givenName} ${patient.familyName}`;

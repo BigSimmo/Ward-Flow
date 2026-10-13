@@ -38,6 +38,7 @@ import {
   foldPatientSearchText,
   patientDisplayName,
   patientAgeYears,
+  UMRN_IN_ADDRESS,
   type Patient,
 } from "@/components/ward-management/ward-patients";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -268,6 +269,16 @@ export function PatientSearchPage() {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const showToast = (msg: string) => setCopyNote(msg);
+
+  // shell-6: a not-found patient page links here as `?q=UMRN`, so the search opens with it typed in.
+  // Read once on mount from the address rather than `useSearchParams`, which would need a Suspense
+  // boundary on this statically rendered route.
+  useEffect(() => {
+    // Only a UMRN is accepted, the one value that page puts in the address.
+    const requested = new URLSearchParams(window.location.search).get("q");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the address cannot be read during render without breaking hydration
+    if (requested && UMRN_IN_ADDRESS.test(requested)) setText(requested.toUpperCase());
+  }, []);
 
   useEffect(() => {
     // The record drawer is modal: the search behind it stays put until it closes.
