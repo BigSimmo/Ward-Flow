@@ -802,7 +802,10 @@
   transition:
     opacity 150ms ease,
     transform 150ms ease,
-    background-color 150ms ease;
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .fullscreenButton:hover,

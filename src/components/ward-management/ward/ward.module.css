@@ -2474,7 +2474,10 @@
   transition:
     opacity 150ms ease,
     transform 150ms ease,
-    background-color 150ms ease;
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .drawerCloseBtn:hover {
@@ -2745,7 +2748,10 @@
   transition:
     opacity 150ms ease,
     transform 150ms ease,
-    background-color 150ms ease;
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
   white-space: nowrap;
   text-decoration: none;
 }
@@ -3004,7 +3010,10 @@
   transition:
     opacity 150ms ease,
     transform 150ms ease,
-    background-color 150ms ease;
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
   outline: none;
 }
 
@@ -3036,7 +3045,10 @@
   transition:
     opacity 150ms ease,
     transform 150ms ease,
-    background-color 150ms ease;
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .btnLookupAction:hover {
@@ -3073,7 +3085,10 @@
   transition:
     opacity 150ms ease,
     transform 150ms ease,
-    background-color 150ms ease;
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .quickPillBtn:hover {
