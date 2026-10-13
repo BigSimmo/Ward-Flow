@@ -177,7 +177,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
 
       const afterState = wardFlowReducer(state, {
         type: "PATIENT_ARRIVED",
-        role: "officer",
+        role: "coordinator",
         now: NOW,
         movementId: "WF-014",
       });

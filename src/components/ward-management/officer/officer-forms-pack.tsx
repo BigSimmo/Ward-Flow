@@ -1,8 +1,7 @@
 "use client";
 
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { FileUp, Send, Upload, X } from "lucide-react";
+import { FileUp, Upload, X } from "lucide-react";
 
 import { Button, Icon, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -141,8 +140,7 @@ export function FormsPack({ movement, now, who }: { movement: Movement; now: Ins
           <span className={styles.packCount}>
             <b>{done}</b> of {PACK_SLOTS.length} uploaded
           </span>
-          <span className={styles.preview}>Preview</span>
-          <NotWiredButton variant="sec" size="sm" icon={Send} label="Send to officer" />
+          {/* Audit round 2, A4-17: no "Send to officer" here; this pack is the officer's own. */}
         </div>
       </div>
       {uploading ? (

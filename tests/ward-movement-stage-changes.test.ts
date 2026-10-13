@@ -322,7 +322,7 @@ function buildDrivenFixture() {
 
   const s11 = wardFlowReducer(s10, {
     type: "PATIENT_ARRIVED",
-    role: "officer",
+    role: "coordinator",
     now: t(110),
     movementId: MOVEMENT_ID,
   });

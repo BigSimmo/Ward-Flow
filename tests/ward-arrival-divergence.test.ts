@@ -66,7 +66,7 @@ const HAND_AUTHORED = "WF-014";
 function arrive(state: WardFlowState, movementId: string): WardFlowState {
   return wardFlowReducer(state, {
     type: "PATIENT_ARRIVED",
-    role: "officer",
+    role: "coordinator",
     now: NOW,
     movementId,
   } as Parameters<typeof wardFlowReducer>[1]);

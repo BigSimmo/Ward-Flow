@@ -122,6 +122,15 @@ export function collectionGaps(
 }
 
 /**
+ * Audit r1 item 4: a journey with no transport leg (nobody collected the patient) is never asked
+ * fit to travel at Collected, so arrival asks instead. A warning with a recorded reason, never a block.
+ */
+export function arrivalGaps(movement: Pick<Movement, "transport" | "medicalClearance">): TransportExceptionGap[] {
+  if (movement.transport?.collectedAt !== undefined) return [];
+  return movement.medicalClearance?.cleared === true ? [] : ["fit_to_travel_missing"];
+}
+
+/**
  * The engine's check of a submitted exception: known gaps, at least one, and a known reason.
  * Returns the record to store, or the refusal reason.
  */

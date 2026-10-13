@@ -9,6 +9,11 @@ import { referralPatientLabel } from "@/components/ward-management/referrals/ref
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import {
+  EdInboxReferralFixture,
+  markNotYetIdentified,
+  openRaiseIntoMovementForm,
+} from "./helpers/ed-raise-into-movement";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -25,6 +30,12 @@ afterEach(cleanup);
  * name or UMRN, off screen and silently, and its greyed button explained itself only to a screen
  * reader. It now starts from a person, says why it is greyed in visible text, and confirms the raise
  * with a toast that opens the new row.
+ *
+ * Round 2 (option B, 13 Oct 2026): ED "Raise referral" now opens the shared referral slide-out
+ * (its no-patient start is covered in `ward-referral-no-default-patient.dom.test.tsx`). The inline
+ * form survives only as "Raise into a movement" from the ED inbox, so these cases prove the same
+ * person requirement there. An inbox referral with no person on it opens as "Not yet identified";
+ * clearing that is the "nobody named yet" state.
  */
 function LastMovementPatient() {
   const { movements } = useWardFlow();
@@ -40,12 +51,19 @@ function renderEd() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <ToastProvider>
+        <EdInboxReferralFixture edId="jhc-ed" />
         <EdScreen edId="jhc-ed" />
         <LastMovementPatient />
       </ToastProvider>
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+  openRaiseIntoMovementForm();
+}
+
+/** Clears the inbox referral's "Not yet identified", leaving nobody named on the form. */
+function clearNotYetIdentified() {
+  const box = screen.getByTestId("ward-ed-referral-unidentified") as HTMLInputElement;
+  if (box.checked) fireEvent.click(box);
 }
 
 function answerClinicalFields() {
@@ -66,6 +84,7 @@ function answerClinicalFields() {
 describe("ED Raise referral starts from a person", () => {
   it("is greyed with a visible reason until a patient is found or marked not yet identified", () => {
     renderEd();
+    clearNotYetIdentified();
     answerClinicalFields();
     const submit = screen.getByTestId("ward-ed-referral-submit");
     expect(submit).toHaveAttribute("aria-disabled", "true");
@@ -79,6 +98,7 @@ describe("ED Raise referral starts from a person", () => {
 
   it("does not raise when Enter submits the form with no patient chosen", () => {
     renderEd();
+    clearNotYetIdentified();
     answerClinicalFields();
     const before = screen.getByTestId("movement-count").textContent;
     fireEvent.submit(screen.getByTestId("ward-ed-referral-form"));
@@ -87,7 +107,7 @@ describe("ED Raise referral starts from a person", () => {
 
   it("shows only the first sentence of a long reason beside the button", () => {
     renderEd();
-    fireEvent.click(screen.getByTestId("ward-ed-referral-unidentified"));
+    markNotYetIdentified();
     expect(document.getElementById("ward-ed-referral-blocked")).toHaveTextContent(
       /^Choose a cohort before raising this referral\.$/u,
     );
@@ -96,6 +116,7 @@ describe("ED Raise referral starts from a person", () => {
   it("raises for the registered person found by UMRN and confirms with Open row", () => {
     const person = seedWardFlowState().patients.find((patient) => patient.umrn !== "")!;
     renderEd();
+    clearNotYetIdentified();
     fireEvent.change(screen.getByTestId("ward-ed-referral-patient"), { target: { value: person.umrn } });
     answerClinicalFields();
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
@@ -110,6 +131,7 @@ describe("ED Raise referral starts from a person", () => {
     const first = patients[0]!;
     const second = patients.find((patient) => patient.sex !== first.sex)!;
     renderEd();
+    clearNotYetIdentified();
     const field = screen.getByTestId("ward-ed-referral-patient");
     fireEvent.change(field, { target: { value: first.umrn } });
     expect(screen.getByTestId("ward-ed-referral-sex")).toHaveValue(first.sex);

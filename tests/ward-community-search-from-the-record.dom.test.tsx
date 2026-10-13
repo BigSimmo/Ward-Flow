@@ -52,7 +52,7 @@ describe("community team screen: search and dossier come from the patient record
 
     const hit = screen.getByTestId("ward-community-search-hit-PT-010");
     expect(hit.textContent).toContain("Farah Davenporton · UM100010");
-    expect(hit.textContent).toContain("Involuntary patient (recorded)");
+    expect(hit.textContent).toContain("Involuntary inpatient");
     expect(hit.textContent).toContain("Mirrabooka Community Team");
     for (const invented of ["FSH Secure Bed 04", "In Bed 8d", "Wait 4h 12m", "35y"]) {
       expect(hit.textContent, invented).not.toContain(invented);

@@ -3,7 +3,7 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { ReferralIntakeDetails } from "@/components/ward-management/referrals/referral-submission";
 import { referralIntakeError } from "@/components/ward-management/referrals/referral-submission";
-import { wardReferralInboxEntries } from "@/components/ward-management/referrals/referral-inbox";
+import { referralInboxName, wardReferralInboxEntries } from "@/components/ward-management/referrals/referral-inbox";
 import { referralState, edReferralsFor } from "@/components/ward-management/ward-referrals";
 import { communityScopedReferral } from "@/components/ward-management/ward-referral-visibility";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -78,6 +78,21 @@ describe("confirmed drawer submissions use the shared referral engine", () => {
     expect(JSON.stringify(own)).not.toContain("arm-adult-open");
     expect(wardReferralInboxEntries(state.referrals, "rph-adult-secure").some((entry) => entry.id === created.id)).toBe(
       false,
+    );
+  });
+  it("heads an unidentified referral's inbox card with the referrer's description, not Unknown Patient", () => {
+    const history = "Not yet identified, synthetic adult in a blue jacket\nSynthetic patient story";
+    const state = wardFlowReducer(seedWardFlowState(), { ...event(), history });
+    expect(state.rejections).toHaveLength(0);
+    const created = state.referrals.at(-1)!;
+    const own = wardReferralInboxEntries(state.referrals, "scgh-adult-open").find((entry) => entry.id === created.id)!;
+    expect(own.patientId).toBeUndefined();
+    expect(referralInboxName(own, "Unknown Patient")).toBe("Not yet identified, synthetic adult in a blue jacket");
+    expect(referralInboxName({ ...own, history: "Synthetic patient story" }, "Unknown Patient")).toBe(
+      "Unknown Patient",
+    );
+    expect(referralInboxName({ ...own, patientId: "PT-001" as typeof own.patientId }, "Resolved Name")).toBe(
+      "Resolved Name",
     );
   });
   it("refuses duplicate recipients, unknown wards and an ambiguous ward answer", () => {

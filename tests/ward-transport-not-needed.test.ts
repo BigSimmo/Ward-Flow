@@ -179,3 +179,53 @@ describe('"No transport needed" — owner answer 10 (second round, 2026-09-17)',
     expect(arrived.rejections.at(-1)?.reason).toMatch(/cannot arrive a patient at the movement's current stage/);
   });
 });
+
+describe("fit to travel at arrival with no transport leg (audit r1 item 4)", () => {
+  it("records the open check and reason on arrival, and never blocks an arrival without one", () => {
+    const { state: pulled, movementId, unitId } = pulledWithCapacity(seedWardFlowState());
+    const recorded = wardFlowReducer(pulled, {
+      type: "RECORD_TRANSPORT_NEED",
+      role: "ward",
+      now: NOW + 2,
+      movementId,
+      needed: false,
+    });
+    const withReason = wardFlowReducer(recorded, {
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      now: NOW + 3,
+      movementId,
+      actingUnitId: unitId,
+      exception: { gaps: ["fit_to_travel_missing"], reason: "treating_team_confirmed" },
+    });
+    expect(withReason.rejections).toHaveLength(0);
+    expect(movement(withReason, movementId).stage).toBe("arrived");
+    expect(movement(withReason, movementId).arrivalException).toEqual({
+      at: NOW + 3,
+      by: "ward",
+      step: "arrived",
+      gaps: ["fit_to_travel_missing"],
+      reason: "treating_team_confirmed",
+    });
+
+    const malformed = wardFlowReducer(recorded, {
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      now: NOW + 3,
+      movementId,
+      actingUnitId: unitId,
+      exception: { gaps: [], reason: "treating_team_confirmed" },
+    });
+    expect(malformed.rejections.length).toBeGreaterThan(recorded.rejections.length);
+
+    const without = wardFlowReducer(recorded, {
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      now: NOW + 3,
+      movementId,
+      actingUnitId: unitId,
+    });
+    expect(movement(without, movementId).stage).toBe("arrived");
+    expect(movement(without, movementId).arrivalException).toBeUndefined();
+  });
+});

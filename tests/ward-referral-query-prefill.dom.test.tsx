@@ -6,6 +6,7 @@ import {
   referralSheetRequestFromSearch,
 } from "@/components/ward-management/referrals/referral-sheet-link";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { REFERRAL_SOURCES } from "@/components/ward-management/ward-model";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
@@ -22,7 +23,8 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
  *     source       → where it comes from, as the slide-out groups it (community / ED / ward)
  *     refer        → where it goes, the slide-out's first choice
  *     originEdId   → resolves through the ED's own `siteCode` to the referring site
- *     teamId       → NOWHERE: the model holds a team's name, not an id
+ *     teamId       → the referring team's NAME, looked up in the community team pages (D-30 round,
+ *                    13 Oct 2026: the team page's New referral opens the slide-out from that team)
  *
  * Unknown or blank values are dropped, never guessed.
  */
@@ -95,9 +97,15 @@ describe("originEdId → the referring site", () => {
   });
 });
 
-describe("teamId is not read", () => {
-  it("adds nothing for a team id, because the model holds a team's name, not an id", () => {
-    expect(search("teamId=armadale-cmht")).toEqual(search(""));
+describe("teamId names the referring team", () => {
+  it("resolves a real team page id to that team's name, and nothing else", () => {
+    const team = COMMUNITY_TEAM_PAGES[0]!;
+    expect(search(`teamId=${team.id}`).sendingTeam).toBe(team.name);
+  });
+
+  it("adds nothing for a team id no page has, because the model holds a team's name, not an id", () => {
+    expect(search("teamId=no-such-team")).toEqual(search(""));
+    expect(search("teamId=")).toEqual(search(""));
   });
 });
 
