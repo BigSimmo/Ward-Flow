@@ -282,7 +282,7 @@ export const PULL_NOW_LIVE_STAGES: readonly Movement["stage"][] = [
  * considering the referral. `knownUnit` drops a ward id the unit list no longer holds.
  */
 export function pullNowWards(movement: Movement, knownUnit: (unitId: string) => boolean = () => true): string[] {
-  if (movement.acceptedUnitId) return [movement.acceptedUnitId];
+  if (movement.acceptedUnitId) return knownUnit(movement.acceptedUnitId) ? [movement.acceptedUnitId] : [];
   const declined = new Set(movement.declines.map((decline) => decline.unitId));
   return movement.referredUnitIds.filter((unitId) => !declined.has(unitId) && knownUnit(unitId));
 }

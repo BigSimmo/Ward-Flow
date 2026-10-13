@@ -1696,7 +1696,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             testId="ward-ed-unresolved"
             list={{ href: "/mockups/ward-flow/ed", label: "All emergency departments" }}
           >
-            No emergency department matches &ldquo;{edId}&rdquo;. It never falls back to a different department.
+            No emergency department matches this link. It never falls back to a different department.
           </WardNotFoundBody>
         </main>
       </div>

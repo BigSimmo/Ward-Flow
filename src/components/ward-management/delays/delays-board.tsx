@@ -1106,12 +1106,13 @@ export function DelaysBoard({
   const rows = useMemo(() => boardRows(groups, now), [groups, now]);
   const bins = useMemo(() => runwayBins(rows), [rows]);
   const [chosenFilters, setFilters] = useState<BoardFilters>(NO_FILTERS);
-  // shell-9: the address is read after hydration, so apply the Menu's severe filter once it
-  // arrives. Adjusting state during render is React's pattern for state derived from a prop.
-  const [severeApplied, setSevereApplied] = useState(false);
-  if (initialSevere && !severeApplied) {
-    setSevereApplied(true);
-    setFilters((current) => ({ ...current, severe: true }));
+  // shell-9: the address is read after hydration, so follow the Menu's severe filter whenever it
+  // changes (Back and Forward included). Adjusting state during render is React's pattern for
+  // state derived from a prop.
+  const [seenSevere, setSeenSevere] = useState(false);
+  if (initialSevere !== seenSevere) {
+    setSeenSevere(initialSevere);
+    setFilters((current) => ({ ...current, severe: initialSevere }));
   }
   // A blocker filter whose group has emptied (the person was recategorised) stops applying, so no
   // chip names a cause the board no longer shows.

@@ -1003,7 +1003,7 @@ export function CommunityScreen({
             testId="ward-community-unresolved"
             list={{ href: "/mockups/ward-flow/community", label: "All community teams" }}
           >
-            No community team matches &ldquo;{teamId}&rdquo;. It never falls back to a different team.
+            No community team matches this link. It never falls back to a different team.
           </WardNotFoundBody>
         </main>
       </div>

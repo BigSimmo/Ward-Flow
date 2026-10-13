@@ -633,7 +633,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   return (
     <div className={styles.screen} data-testid="ward-legal-forms-page" data-ward-design="v8">
       <main id="main-content" className={styles.main}>
-        <h1 className={styles.srOnly}>Forms</h1>
+        <h1 className={styles.srOnly}>Legal forms</h1>
         <p className={styles.srOnly}>Recorded forms and deadlines for open movements.</p>
         <span className={`${styles.prototypeBadge} ${styles.srOnly}`} data-ward-type-floor="badge">
           Synthetic prototype

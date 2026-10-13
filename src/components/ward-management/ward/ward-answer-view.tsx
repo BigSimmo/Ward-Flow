@@ -219,7 +219,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             testId="ward-unit-unresolved"
             list={{ href: "/mockups/ward-flow/wards", label: "All wards" }}
           >
-            No ward matches &ldquo;{unitId}&rdquo;. It never falls back to a different ward.
+            No ward matches this link. It never falls back to a different ward.
           </WardNotFoundBody>
         </main>
       </div>

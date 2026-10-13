@@ -1232,7 +1232,7 @@ export function WardBoard({
       <div className={styles.screen} data-testid="ward-board-unknown-unit" data-ward-design="third-edition">
         <main id="main-content" className={styles.main}>
           <WardNotFoundBody title="Ward not found" list={{ href: "/mockups/ward-flow/wards", label: "All wards" }}>
-            No ward matches &ldquo;{unitId}&rdquo;. It never falls back to a different ward.
+            No ward matches this link. It never falls back to a different ward.
           </WardNotFoundBody>
         </main>
       </div>
