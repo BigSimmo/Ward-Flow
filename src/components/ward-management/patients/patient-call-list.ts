@@ -29,6 +29,10 @@ export type CallTarget =
   | { kind: "team"; name: string; role: string }
   | { kind: "bedFlow"; name: string; role: string; service: HealthService | undefined }
   | { kind: "transport"; name: string; role: string }
+  /** The consultant psychiatrist on call at a site, else that service's (escalation, ops-6). */
+  | { kind: "consultant"; name: string; role: string; siteCode: string | undefined; service: HealthService | undefined }
+  /** A health service's executive on call (escalation, ops-6). */
+  | { kind: "executive"; name: string; role: string; service: HealthService | undefined }
   | { kind: "plain"; name: string; role: string };
 
 export type CallRow = {
@@ -73,6 +77,17 @@ function findEntry(target: CallTarget): DirectoryEntry | undefined {
     }
     case "transport":
       return all.find((entry) => entry.id === "sw-pts");
+    case "consultant":
+      return (
+        (target.siteCode
+          ? all.find((entry) => entry.siteCode === target.siteCode && entry.kind === "consultant")
+          : undefined) ?? all.find((entry) => entry.kind === "serviceConsultant" && entry.service === target.service)
+      );
+    case "executive":
+      return (
+        all.find((entry) => entry.kind === "executive" && entry.service === target.service) ??
+        all.find((entry) => entry.id === "sw-gov")
+      );
     default:
       return undefined;
   }

@@ -203,6 +203,17 @@ describe("task workspace state filters and actions", () => {
     expect(within(drawer).queryByRole("button", { name: "Mark done" })).toBeNull();
   });
 
+  it("records the escalation to a pick when its Call is pressed (ops-6)", () => {
+    const { drawer, dispatch } = renderDrawer({ records: seed });
+    const item = items.find((item) => item.title === "Multiple destinations declined")!;
+    const card = within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!;
+    fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
+    fireEvent.click(within(card).getByRole("button", { name: /^Call State bed desk, / }));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "RECORD_ESCALATION", movementId: item.movementId, contact: "State bed desk" }),
+    );
+  });
+
   it("shows linked patient identity and routes actions with the correct patient context", () => {
     const { drawer, onSelectMovement, dispatch } = renderDrawer({ records: seed });
     const item = items.find((item) => item.title === "Multiple destinations declined")!;
@@ -213,9 +224,20 @@ describe("task workspace state filters and actions", () => {
     expect(card).not.toHaveTextContent("Flow coordinator");
     fireEvent.click(within(card).getByRole("button", { name: "Refer" }));
     expect(onSelectMovement).toHaveBeenLastCalledWith(item.movementId, "refer");
+    // Ops-5: Contact opens the numbers this task needs, in place; the patient's contacts stay one tap on.
     fireEvent.click(within(card).getByRole("button", { name: "Contact" }));
+    const contacts = within(card).getByTestId(`ward-task-contacts-${item.id}`);
+    expect(within(contacts).getByText("ED mental health liaison")).toBeInTheDocument();
+    expect(within(contacts).getAllByRole("button", { name: /^Call .*, 08 0000 \d{4}$/u }).length).toBeGreaterThan(0);
+    fireEvent.click(within(contacts).getByRole("button", { name: "Open patient contacts" }));
     expect(onSelectMovement).toHaveBeenLastCalledWith(item.movementId, "contact");
     fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
+    // Ops-6: each escalation pick shows its number with Call.
+    for (const pick of ["Duty consultant", "State bed desk", "Executive on call"]) {
+      expect(
+        within(card).getByRole("button", { name: new RegExp(`^Call ${pick}, 08 0000 \\d{4}$`, "u") }),
+      ).toBeTruthy();
+    }
     fireEvent.change(within(card).getByRole("textbox"), { target: { value: "Duty coordinator" } });
     fireEvent.click(within(card).getByRole("button", { name: "Record escalation" }));
     expect(dispatch).toHaveBeenCalledWith(

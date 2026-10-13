@@ -11,6 +11,7 @@ import {
   Filter,
   ListChecks,
   Phone,
+  PhoneCall,
   RotateCcw,
   Search,
   Send,
@@ -23,10 +24,12 @@ import {
 import { useRef, useState, type Dispatch } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
+import { StatusGlyph, durMinutes, useIsPhone, useOptionalToast, type WfTone } from "@/components/wf";
+import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
+import { edHealthService } from "./ward-service-scope";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
-import { edById } from "./ward-sites";
+import { edById, unitById } from "./ward-sites";
 import { stageCopy } from "./ward-derivations";
 import type { Admission } from "./ward-admissions";
 import type { Movement, Referral, Unit } from "./ward-model";
@@ -95,6 +98,50 @@ const ACK_FILTER_LABELS: Record<AckFilter, string> = {
 
 /** Quick picks only fill the box; the person still records the escalation themselves. */
 const ESCALATION_PICKS = ["Duty consultant", "State bed desk", "Executive on call"] as const;
+
+/**
+ * Ops-6 (remaining-pages audit, 13 Oct 2026): each escalation pick with the number that answers
+ * now, from the On-call directory for the patient's service. Every number is a mock.
+ */
+function escalationTargets(movement: Movement): CallTarget[] {
+  const service = edHealthService(movement.originEdId);
+  return [
+    {
+      kind: "consultant",
+      name: "Duty consultant",
+      role: "Consultant psychiatrist on call",
+      siteCode: edById(movement.originEdId)?.siteCode,
+      service,
+    },
+    { kind: "bedFlow", name: "State bed desk", role: "Statewide bed flow", service: undefined },
+    { kind: "executive", name: "Executive on call", role: "Diversion and escalation", service },
+  ];
+}
+
+/**
+ * Ops-5 (remaining-pages audit, 13 Oct 2026): the numbers a task needs, from the On-call
+ * directory: transport when a leg is booked or waiting, the sending ED's liaison and the
+ * receiving ward's nurse in charge.
+ */
+function contactTargets(item: InboxItem, movement: Movement): CallTarget[] {
+  const targets: CallTarget[] = [];
+  if (movement.transport || /transport/i.test(item.title)) {
+    targets.push({ kind: "transport", name: "Patient transport", role: "Transport bookings" });
+  }
+  const ed = edById(movement.originEdId);
+  if (ed) {
+    targets.push({
+      kind: "ed",
+      name: ed.name,
+      role: "ED mental health liaison",
+      siteCode: ed.siteCode,
+      line: "liaison",
+    });
+  }
+  const ward = movement.acceptedUnitId ? unitById(movement.acceptedUnitId) : undefined;
+  if (ward) targets.push({ kind: "ward", name: ward.name, role: "Nurse in charge", unitId: ward.id });
+  return targets;
+}
 
 const ROLE_LABELS: Partial<Record<WardFlowRole, string>> = {
   coordinator: "Bed coordinator",
@@ -219,7 +266,41 @@ export function WardTasksDrawer({
   }
 
   const [escalating, setEscalating] = useState<string | null>(null);
+  const [contacting, setContacting] = useState<string | null>(null);
   const [contact, setContact] = useState("");
+  const toast = useOptionalToast();
+
+  /** Calling is not wired: the number is copied and the toast says so. */
+  function callNumber(row: CallRow) {
+    if (!row.number) return;
+    void navigator.clipboard?.writeText(row.number).catch(() => undefined);
+    toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." });
+  }
+
+  function renderCallRow(row: CallRow, onCall: (from: HTMLElement) => void) {
+    return (
+      <li key={row.key} className={styles.callRow}>
+        <span className={styles.callText}>
+          <b>{row.name}</b>
+          <span>{row.role}</span>
+        </span>
+        <span className={styles.callNumber}>
+          {row.number ? <b className={styles.mono}>{row.number}</b> : <span>No line held</span>}
+          {row.hours ? <span>{row.hours}</span> : null}
+        </span>
+        {row.number ? (
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnIcon}`}
+            aria-label={`Call ${row.name}, ${row.number}`}
+            onClick={(event) => onCall(event.currentTarget)}
+          >
+            <PhoneCall aria-hidden="true" />
+          </button>
+        ) : null}
+      </li>
+    );
+  }
   const [ackFilter, setAckFilter] = useState<AckFilter>("all");
   const [taskFilter, setTaskFilter] = useState<"all" | "critical" | "review">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -316,8 +397,9 @@ export function WardTasksDrawer({
           className={`${styles.btn} ${styles.btnIcon}`}
           aria-label="Contact"
           title="Contact"
+          aria-expanded={contacting === item.id}
           onClick={() => {
-            onSelectMovement(item.movementId, "contact");
+            setContacting(contacting === item.id ? null : item.id);
           }}
         >
           <Phone aria-hidden="true" />
@@ -326,6 +408,7 @@ export function WardTasksDrawer({
           <button
             type="button"
             className={styles.btn}
+            data-escalate
             aria-expanded={escalating === item.id}
             onClick={() => {
               setEscalating(escalating === item.id ? null : item.id);
@@ -340,24 +423,48 @@ export function WardTasksDrawer({
     );
   }
 
+  function renderContacts(item: InboxItem, movement?: Movement) {
+    if (contacting !== item.id || !movement) return null;
+    const rows = callRows(contactTargets(item, movement), now);
+    return (
+      <div className={styles.escalationForm} data-testid={`ward-task-contacts-${item.id}`}>
+        <ul className={styles.callList} aria-label="Who to call, mock numbers">
+          {rows.map((row) => renderCallRow(row, () => callNumber(row)))}
+        </ul>
+        <div className={styles.escalationFoot}>
+          <span className={styles.escalationNote}>Mock numbers from On-call.</span>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGhost}`}
+            onClick={() => onSelectMovement(item.movementId, "contact")}
+          >
+            Open patient contacts
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   function renderEscalation(item: InboxItem, movement?: Movement) {
     if (escalating !== item.id || !movement) return null;
+    const recordEscalation = (who: string) =>
+      dispatch({
+        type: "RECORD_ESCALATION",
+        role,
+        now,
+        movementId: movement.id,
+        triedUnitIds: [...new Set(movement.declines.map((decline) => decline.unitId))],
+        contact: who,
+      });
     const focusTrigger = (from: HTMLElement) =>
-      from.closest("li")?.querySelector<HTMLButtonElement>("button[aria-expanded]")?.focus();
+      from.closest("li[data-expanded]")?.querySelector<HTMLButtonElement>("button[data-escalate]")?.focus();
     return (
       <form
         className={styles.escalationForm}
         onSubmit={(event) => {
           event.preventDefault();
           if (!contact.trim()) return;
-          dispatch({
-            type: "RECORD_ESCALATION",
-            role,
-            now,
-            movementId: movement.id,
-            triedUnitIds: [...new Set(movement.declines.map((decline) => decline.unitId))],
-            contact: contact.trim(),
-          });
+          recordEscalation(contact.trim());
           focusTrigger(event.currentTarget);
           setEscalating(null);
           setContact("");
@@ -394,6 +501,19 @@ export function WardTasksDrawer({
             </button>
           ))}
         </div>
+        {/* Ops-6: each pick's number, with Call. Calling copies the number and records the
+            escalation to that contact. */}
+        <ul className={styles.callList} aria-label="Escalation contacts, mock numbers">
+          {callRows(escalationTargets(movement), now).map((row) =>
+            renderCallRow(row, (from) => {
+              callNumber(row);
+              recordEscalation(row.name);
+              focusTrigger(from);
+              setEscalating(null);
+              setContact("");
+            }),
+          )}
+        </ul>
         <div className={styles.escalationFoot}>
           <span className={styles.escalationNote}>Records only. Sends nothing.</span>
           <button
@@ -649,6 +769,7 @@ export function WardTasksDrawer({
             </div>
           </>
         )}
+        {renderContacts(item, movement)}
         {renderEscalation(item, movement)}
       </li>
     );
