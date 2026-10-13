@@ -1493,7 +1493,6 @@ function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, 
     allocatable: {
       ...unit.allocatable,
       value: Math.min(unit.beds, unit.allocatable.value + 1),
-      confirmedAt: now,
     },
     allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + (lockedBedReleased ? 1 : 0)),
     ...(releaseCountDisagrees
@@ -1693,23 +1692,22 @@ function departAdmission(
   // An admission carries only `sex`, so the gender comes from the movement that admitted it.
   const admittingMovement = state.movements.find((m) => m.admissionId === admission.id);
   const leaverSex = mixSexOf(admission.gender ?? admittingMovement?.gender, admission.sex);
+  // Audit A1-11 (13 Oct 2026): a departure moves the figures but never stamps them as confirmed;
+  // only the ward's own Confirm numbers (`CONFIRM_CAPACITY`) sets `confirmedAt`.
   const updatedUnit: Unit =
     releaseAlreadyIncremented || arrivalAwaitingCapacity
       ? {
           ...unit,
-          empty: { ...unit.empty, confirmedAt: now },
-          allocatable: { ...unit.allocatable, confirmedAt: now },
           allocatableLocked: unit.allocatableLocked + restoreLocked,
           sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
           ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
         }
       : {
           ...unit,
-          empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1), confirmedAt: now },
+          empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) },
           allocatable: {
             ...unit.allocatable,
             value: Math.min(unit.beds, unit.allocatable.value + 1),
-            confirmedAt: now,
           },
           allocatableLocked: unit.allocatableLocked + restoreLocked,
           sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
@@ -2063,8 +2061,8 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       );
       next = replaceUnit(next, receiving.id, {
         ...receiving,
-        empty: { ...receiving.empty, value: receiving.empty.value - 1, confirmedAt: event.now },
-        allocatable: { ...receiving.allocatable, value: receiving.allocatable.value - 1, confirmedAt: event.now },
+        empty: { ...receiving.empty, value: receiving.empty.value - 1 },
+        allocatable: { ...receiving.allocatable, value: receiving.allocatable.value - 1 },
         allocatableLocked: receiving.allocatableLocked - (bedKind === "locked" ? 1 : 0),
         sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
       });
@@ -4883,7 +4881,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       const updatedUnit: Unit = {
         ...unit,
-        allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1, confirmedAt: event.now },
+        // Audit A1-11: a pull moves the figure; only Confirm numbers stamps it confirmed.
+        allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1 },
         // Item 11, owner answer 11 — decremented ONLY when the bed taken was one of the locked
         // ones, exactly mirroring the restore in `releasePulledBedAndAdmission`. Taking an open bed
         // leaves this untouched: the locked ones remaining are exactly as many as before.
@@ -5569,7 +5568,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       const updatedUnit: Unit = {
         ...unit,
-        empty: { ...unit.empty, value: Math.max(0, unit.empty.value - 1), confirmedAt: event.now },
+        empty: { ...unit.empty, value: Math.max(0, unit.empty.value - 1) },
         sexMix: adjustSexMix(unit.sexMix, arriverSex, 1),
         ...(isBedTurnaround
           ? {
@@ -6587,20 +6586,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // the leaver's gender (owner rulings 2026-09-25), so the count moves when the admission
       // departs (`departAdmission`), never by guessing a sex here. 5d7f438126's guess (decrement
       // the larger bucket) was removed 2026-09-25; it also subtracted twice when the occupant later left.
+      // Audit A1-11: recording the stage never stamps the ward's figures as confirmed.
       const updatedUnit: Unit = departureAlreadyIncremented
-        ? {
-            ...unit,
-            allocatable: { ...unit.allocatable, confirmedAt: event.now },
-            empty: { ...unit.empty, confirmedAt: event.now },
-          }
+        ? unit
         : {
             ...unit,
             allocatable: {
               ...unit.allocatable,
               value: Math.min(unit.beds, unit.allocatable.value + 1),
-              confirmedAt: event.now,
             },
-            empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1), confirmedAt: event.now },
+            empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) },
           };
       const withUnit = replaceUnit(state, unit.id, updatedUnit);
       decision.outcome = "accepted";

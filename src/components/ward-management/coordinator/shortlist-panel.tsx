@@ -41,6 +41,7 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
@@ -698,7 +699,9 @@ export function ShortlistPanel({
   // never be presented as a suggestion at all (review Important 3).
   const acceptedUnit = movement.acceptedUnitId ? units.find((unit) => unit.id === movement.acceptedUnitId) : undefined;
   // L3: the one next step once a destination has accepted (see the "Next step" section below).
-  const placementNextStep: "hold" | "book" | "booked" | undefined = !acceptedUnit
+  // Audit A1-4: the one bed-hold rule (`ward-bed-hold.ts`); a lapsed hold asks for Move or release.
+  const hold = bedHold(movement.pullExpiresAt, now);
+  const placementNextStep: "hold" | "book" | "booked" | "release" | undefined = !acceptedUnit
     ? undefined
     : movement.transport !== undefined && movement.transport.cancelledAt === undefined
       ? "booked"
@@ -706,7 +709,9 @@ export function ShortlistPanel({
           movement.stage === "destination_review" ||
           movement.stage === "accepted_awaiting_bed"
         ? "hold"
-        : "book";
+        : hold?.state === "lapsed"
+          ? "release"
+          : "book";
   const referredUnits = movement.referredUnitIds.map((id) => ({ id, unit: units.find((unit) => unit.id === id) }));
   const recordedDestination = destinationUnit(movement, units);
   const hasRecordedReferral =
@@ -1394,7 +1399,7 @@ export function ShortlistPanel({
                   ? (ARRIVAL_MODE_LABELS[movement.arrivalDetails.mode] ?? movement.arrivalDetails.mode)
                   : movement.arrivalMode
                     ? (ARRIVAL_MODE_LABELS[movement.arrivalMode as ArrivalMode] ?? movement.arrivalMode)
-                    : "St John Ambulance")
+                    : "Not booked")
               }
               testId="ward-shortlist-transit-mode"
             />
@@ -1412,11 +1417,14 @@ export function ShortlistPanel({
                   ? now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
                     ? `Overdue (+${Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h)`
                     : `ETA in ${Math.max(0, movement.arrivalDetails.estimatedArrivalAt - now)}m`
-                  : `${holdLabel} countdown active (${holdLabel} hold)`
+                  : hold
+                    ? hold.label
+                    : `${holdLabel} pull, end time not recorded`
               }
               urgent={
-                movement.arrivalDetails?.estimatedArrivalAt !== undefined &&
-                now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
+                movement.arrivalDetails?.estimatedArrivalAt !== undefined
+                  ? now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
+                  : hold?.state === "lapsed"
               }
               testId="ward-shortlist-transit-countdown"
             />
@@ -1455,19 +1463,29 @@ export function ShortlistPanel({
               ? `${acceptedUnit.name} has accepted. Hold the bed so it is kept for this patient.`
               : placementNextStep === "book"
                 ? `The bed at ${acceptedUnit.name} is held. Book transport to move the patient.`
-                : `Transport is booked to ${acceptedUnit.name}.`}
+                : placementNextStep === "release" && hold
+                  ? `${hold.label} at ${acceptedUnit.name}. Move the patient or release the bed.`
+                  : `Transport is booked to ${acceptedUnit.name}.`}
           </p>
           <div className={styles.shortlistActionRow}>
             <Link
               href={movementHref(movement.id)}
-              data-testid={placementNextStep === "hold" ? "ward-shortlist-hold-bed" : "ward-shortlist-book-transport"}
+              data-testid={
+                placementNextStep === "hold"
+                  ? "ward-shortlist-hold-bed"
+                  : placementNextStep === "release"
+                    ? "ward-shortlist-move-or-release"
+                    : "ward-shortlist-book-transport"
+              }
               className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
             >
               {placementNextStep === "hold"
                 ? "Hold the bed"
                 : placementNextStep === "book"
                   ? "Book transport"
-                  : "Open patient"}
+                  : placementNextStep === "release"
+                    ? "Move or release"
+                    : "Open patient"}
             </Link>
             {otherBedsFor === movement.id ? null : (
               <button

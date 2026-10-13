@@ -7,6 +7,7 @@
  * file never computes a legal time limit.
  */
 import { durMinutes } from "@/components/wf";
+import { bedHold, bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import {
   formatInstantWithDay,
   MINUTES_PER_DAY,
@@ -224,11 +225,7 @@ export type HandoverTone = "act" | "due" | "calm";
  */
 export function isActNow(row: HandoverRow, now: Instant): boolean {
   if (row.actNow !== undefined) return row.actNow || row.urgent;
-  return (
-    row.urgent ||
-    (row.pullExpiresAt !== undefined && row.pullExpiresAt <= now) ||
-    (row.formDueAt !== undefined && row.formDueAt <= now)
-  );
+  return row.urgent || bedHoldLapsed(row.pullExpiresAt, now) || (row.formDueAt !== undefined && row.formDueAt <= now);
 }
 
 export function isDueBy(row: HandoverRow, now: Instant, cutoff: Instant): boolean {
@@ -292,10 +289,8 @@ export function destinationText(row: HandoverRow): string {
 /** Short due text for the table: whichever comes first of a bed hold and a typed form time. */
 export function dueShort(row: HandoverRow, now: Instant): string | null {
   if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
-    const left = row.pullExpiresAt - now;
-    return left <= 0
-      ? `Pull over by ${durMinutes(-left)}`
-      : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
+    const hold = bedHold(row.pullExpiresAt, now)!;
+    return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
   if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
   return null;
@@ -305,12 +300,17 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
  * The Due cell in two parts: the time or length on its own line, which is never cut, and what it is
  * ("Pull over by", "Pull ends", "1A due"), which may truncate (device audit 11 Oct 2026).
  */
-export function dueParts(row: HandoverRow, now: Instant): { when: string; what: string } | null {
+export function dueParts(row: HandoverRow, now: Instant): { when: string; what: string; atRisk?: boolean } | null {
   if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
-    const left = row.pullExpiresAt - now;
-    return left <= 0
-      ? { when: durMinutes(-left), what: "Pull over by" }
-      : { when: formatInstantWithDay(row.pullExpiresAt, now), what: "Pull ends" };
+    // Audit A4-3: the one bed-hold rule. Under an hour left carries the amber at-risk dot (not Act now).
+    const hold = bedHold(row.pullExpiresAt, now)!;
+    return hold.state === "lapsed"
+      ? { when: durMinutes(hold.minutes), what: "Pull expired" }
+      : {
+          when: formatInstantWithDay(row.pullExpiresAt, now),
+          what: "Pull ends",
+          ...(hold.state === "at-risk" ? { atRisk: true } : {}),
+        };
   }
   if (row.formDueAt !== undefined)
     return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };
@@ -320,12 +320,10 @@ export function dueParts(row: HandoverRow, now: Instant): { when: string; what: 
 /** Long due text for the panel: the bed hold and the typed form time, both when both are held. */
 export function dueLong(row: HandoverRow, now: Instant): string | null {
   const parts: string[] = [];
-  if (row.pullExpiresAt !== undefined) {
-    const left = row.pullExpiresAt - now;
+  const hold = bedHold(row.pullExpiresAt, now);
+  if (hold) {
     parts.push(
-      left <= 0
-        ? `Pull expired ${durMinutes(-left)} ago`
-        : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}, ${durMinutes(left)} left`,
+      hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(hold.expiresAt, now)}, ${hold.short}`,
     );
   }
   if (row.formDueAt !== undefined) {
@@ -347,13 +345,13 @@ export function nextStep(
 ): { text: string; tone: HandoverTone } {
   const tone: HandoverTone = isActNow(row, now) ? "act" : isDueBy(row, now, cutoff) ? "due" : "calm";
   let text: string;
-  const hold = row.pullExpiresAt === undefined ? null : row.pullExpiresAt - now;
+  const hold = bedHold(row.pullExpiresAt, now);
   if (row.stage === "pulled") {
     text =
-      hold !== null && hold <= 0
-        ? `Pull expired ${durMinutes(-hold)} ago. Move or release`
-        : row.pullExpiresAt !== undefined
-          ? `Move by ${formatInstantWithDay(row.pullExpiresAt, now)}`
+      hold?.state === "lapsed"
+        ? `${hold.label}. ${hold.nextStep}`
+        : hold
+          ? `Move by ${formatInstantWithDay(hold.expiresAt, now)}, ${hold.short}`
           : "Move to the pulled bed";
   } else if (row.stage === "moving") {
     text =

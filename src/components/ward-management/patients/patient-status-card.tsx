@@ -12,7 +12,7 @@ import {
   type Movement,
 } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
@@ -288,21 +288,31 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
   }
 
   if (mode === "held" && movement) {
+    // Audit A4-1: the one bed-hold rule (`ward-bed-hold.ts`). A lapsed hold is act now with
+    // "Move or release" as the primary; under an hour left is the amber at-risk dot.
+    const hold = ctx.hasBedHold ? bedHold(movement.pullExpiresAt, now) : null;
+    const lapsed = hold?.state === "lapsed";
     const bed: StatusCell = {
       key: "bed",
       icon: BedDouble,
       label: "Bed",
       owner: "Bed coordinator",
-      tone: ctx.hasBedHold ? "success" : "warning",
+      tone: !ctx.hasBedHold || hold?.state === "at-risk" ? "warning" : lapsed ? "danger" : "success",
       value: ctx.acceptedUnitName ?? "Accepted ward not recorded",
       sub: ctx.hasBedHold
-        ? movement.pullExpiresAt !== undefined
-          ? `Held, ${pullHoldRemainingLabel(movement.pullExpiresAt, now)}`
+        ? hold
+          ? lapsed
+            ? hold.label
+            : `Pulled, ${hold.short}`
           : "Bed held"
         : "Accepted, no bed held yet",
       time: movement.acceptedAt !== undefined ? `Accepted ${clock(movement.acceptedAt)}` : undefined,
-      clear: ctx.hasBedHold,
-      action: ctx.hasBedHold ? undefined : { kind: "button", label: "Hold the bed", onClick: ctx.onOpenPlacement },
+      clear: ctx.hasBedHold && !lapsed,
+      action: !ctx.hasBedHold
+        ? { kind: "button", label: "Hold the bed", onClick: ctx.onOpenPlacement }
+        : lapsed
+          ? { kind: "button", label: "Move or release", onClick: ctx.onOpenPlacement }
+          : undefined,
       href: ctx.acceptedUnitName ? ctx.bedHref : undefined,
     };
     const status = withMeter({
@@ -325,7 +335,11 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
         ),
       ],
     });
-    if (ctx.handoverRefusal) {
+    if (lapsed && hold) {
+      status.tone = "danger";
+      status.verdict = "Bed pull expired";
+      status.meta = `${hold.label}. Move or release the bed.`;
+    } else if (ctx.handoverRefusal) {
       // The engine refuses the next forward step, so the three gates are not the whole answer.
       status.tone = "danger";
       status.verdict = "Cannot move";

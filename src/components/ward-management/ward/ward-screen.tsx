@@ -114,6 +114,7 @@ import {
   type BoardPick,
 } from "./ward-bed-board-logic";
 import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
+import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
 import type { BedItem } from "./ward-beds-matrix";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import {
@@ -1225,6 +1226,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       dischargeConfirmed: admission ? admission.dischargeConfirmedAt != null : null,
       dischargeConfirmedBy: admission?.dischargeConfirmedBy ?? null,
       expectedDischargeLabel,
+      // Audit A1-3: a pulled bed carries its hold, so a lapsed hold reaches the ward's Act now.
+      bedHold: status === "incoming" ? bedHoldOf(linkedMovement?.pullExpiresAt, now) : undefined,
     };
   });
 
@@ -1849,6 +1852,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     incoming: incoming.length,
     heldUp: blockedReleases.length,
     rollupOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
+    lapsedHolds: bedsList.filter((bed) => bed.status === "incoming" && bed.bedHold?.state === "lapsed").length,
   });
   const readyByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
   const bedCountsStale = now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
