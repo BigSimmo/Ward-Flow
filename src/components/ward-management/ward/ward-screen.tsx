@@ -1,16 +1,19 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { WardReferralInbox } from "../referrals/ward-referral-inbox";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftRight,
+  Bell,
   ChevronDown,
   ChevronLeft,
   Clock,
   FileText,
   ListChecks,
+  MoreHorizontal,
   Printer,
   Search,
   Send,
@@ -91,8 +94,10 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { WardAnswerView } from "./ward-answer-view";
 import styles from "./ward.module.css";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WardDecisionsCockpit, openDecisionCount } from "./ward-decisions-cockpit";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
+import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
 import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
 import { WardDischargesMatrix } from "./ward-discharges-matrix";
@@ -109,6 +114,7 @@ import {
 } from "./ward-bed-board-logic";
 import { layoutBedNumbers } from "./ward-bed-layout";
 import type { BedItem } from "./ward-beds-matrix";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   LEAVE_BED_OPEN_WARNING_MINUTES,
@@ -150,6 +156,11 @@ function boardUndoEvent(undo: NonNullable<BoardCheck["undo"]>, now: Instant): Wa
 }
 
 /** The router, or null where the screen renders outside the app router (a test or preview). */
+/** This ward's Handover page, scoped to the ward. */
+function wardHandoverHref(unitId: string): string {
+  return `/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unitId }))}`;
+}
+
 function useOptionalRouter(): ReturnType<typeof useRouter> | null {
   try {
     return useRouter();
@@ -329,8 +340,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     nowRef.current = now;
     rejectionCountRef.current = rejections.length;
   }, [now, rejections.length]);
+  const online = useOnlineStatus();
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
+  // The capacity confirmation does not join the sheet stack, so it holds the page still itself.
+  useWardPageScrollLock(confirmNumbersOpen);
   const [drawerLeavingDestination, setDrawerLeavingDestination] =
     useState<LeavingDestination>("discharged-to-the-community");
   // A destination belongs to the bed it was chosen for: opening or stepping to another bed starts
@@ -499,10 +513,19 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }
   }, [selectedBed]);
 
+  // Focus goes back to whichever control opened the modal (the header button or the home tab's),
+  // and falls back to the header button only when that control is gone.
+  const capacityOpenerRef = useRef<HTMLElement | null>(null);
+  const openCapacityModal = useCallback(() => {
+    capacityOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setConfirmNumbersOpen(true);
+  }, []);
   const closeCapacityModal = useCallback(() => {
     setConfirmNumbersOpen(false);
     setTimeout(() => {
-      confirmTriggerRef.current?.focus();
+      const opener = capacityOpenerRef.current;
+      (opener?.isConnected ? opener : confirmTriggerRef.current)?.focus({ preventScroll: true });
+      capacityOpenerRef.current = null;
     }, 0);
   }, []);
 
@@ -546,8 +569,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       if (
         notificationCenterRef.current &&
         !notificationCenterRef.current.contains(target) &&
-        notificationTriggerRef.current &&
-        !notificationTriggerRef.current.contains(target)
+        // Phone and iPad portrait open it from the More menu, which has no trigger here.
+        !notificationTriggerRef.current?.contains(target)
       ) {
         setNotificationCenterOpen(false);
       }
@@ -694,6 +717,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // screen shows. `capacity.held` is NOT Closed (it still counts a live pull's empty bed), and
   // "Held" is reserved for a bed kept for a patient on leave.
   const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+  // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`): the same percentage this
+  // ward shows on Ward answer, the rail and Capacity.
+  const occupancy = wardOccupancy([unit], admissions, bedReleases);
   // Visual-fix pass: the capacity board (`CapacityView` in `ward-management-modes.tsx`) was just
   // corrected to source Confirmed/Expected from `capacityBreakdown()` rather than `unitCapacity()`'s
   // raw, state-and-timing-blind `potential` count — this screen used to be the one place still
@@ -1319,6 +1345,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         referralId: pick.referralId,
         destinationKind: "psychiatric_ward",
         unitId: boardUnitId,
+        actingUnitId: boardUnitId,
         bedNumber,
       });
     }
@@ -1671,7 +1698,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     dispatch({ type: "END_LEAVE_BED", role: "ward", now, leaveBedId, actingUnitId: unitId });
   }
 
+  // L2 (site review, 12 Oct 2026): only the discharges the ward figures count for today, from the
+  // same `releaseBand` window as `capacityBreakdown` (Confirmed, Expected, Discharges held up). A
+  // release dated beyond today is not a decision for this shift, so it no longer inflates the
+  // Decisions badge past the ward's own expected discharges.
   const departureDecisions = pendingBedReleases
+    .filter((release) => releaseBand(release, now) !== "beyond-today")
     .filter((release) => release.state === "expected" || release.blocker !== null)
     .map((release) => ({
       id: release.id,
@@ -1750,10 +1782,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function showHome(targetId: string) {
     setActiveTab("attn");
     window.requestAnimationFrame(() => {
-      const reduceMotion = "matchMedia" in window && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      document
-        .getElementById(targetId)
-        ?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+      document.getElementById(targetId)?.scrollIntoView({ block: "nearest", behavior: wardScrollBehavior() });
     });
   }
 
@@ -1890,6 +1919,67 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     </span>
   );
 
+  // Audit 11 Oct 2026: the phone chip row and the iPad portrait toolbar keep their main views and
+  // put the less used actions in one More menu, so nothing clips at the edge.
+  const handoverHref = wardHandoverHref(unit.id);
+  const wardMoreMenu = (triggerClassName: string, tablet: boolean) => (
+    <Menu
+      label="More ward actions"
+      align="end"
+      items={[
+        {
+          id: "notices",
+          label: "Notices",
+          icon: Bell,
+          meta: unreadAlertsCount > 0 ? String(unreadAlertsCount) : undefined,
+          onSelect: () => {
+            setNotificationCenterOpen(true);
+          },
+        },
+        {
+          id: "brief",
+          label: "Shift brief",
+          icon: FileText,
+          onSelect: () => {
+            setDailySheetOpen(true);
+          },
+        },
+        {
+          id: "handover",
+          label: "Handover",
+          icon: Printer,
+          onSelect: () => {
+            if (router) router.push(handoverHref);
+            else window.location.assign(handoverHref);
+          },
+        },
+        ...(tablet
+          ? []
+          : [
+              {
+                id: "referral",
+                label: "Raise referral",
+                icon: Send,
+                disabled: !raiseReferralGate.allowed,
+                meta: raiseReferralGate.allowed ? undefined : raiseReferralGate.reason,
+                onSelect: handleRaiseWardReferral,
+              },
+            ]),
+      ]}
+      trigger={(props) => (
+        <button
+          type="button"
+          {...props}
+          className={triggerClassName}
+          data-testid={tablet ? "ward-tools-more" : "ward-phone-chip-more"}
+        >
+          <MoreHorizontal size={16} aria-hidden="true" />
+          More
+        </button>
+      )}
+    />
+  );
+
   const tabHome = (
     <li role="presentation">
       <button
@@ -2010,13 +2100,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             }
             aside={
               <>
-                <LiveChip state="live" onHero age={formatInstant(now)} />
+                <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
                 <button
                   ref={confirmTriggerRef}
                   type="button"
                   className={buttonClass({ variant: "light", size: "sm" })}
                   onClick={() => {
-                    setConfirmNumbersOpen(true);
+                    openCapacityModal();
                   }}
                 >
                   Confirm numbers
@@ -2061,53 +2151,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   <ArrowLeftRight size={16} aria-hidden="true" />
                   Ward flow
                 </button>
-                <button
-                  type="button"
-                  className={styles.phoneChip}
-                  onClick={() => {
-                    setDailySheetOpen(true);
-                  }}
-                  data-testid="ward-open-daily-sheet-btn"
-                >
-                  <FileText size={16} aria-hidden="true" />
-                  Shift brief
-                </button>
-                <Link
-                  className={styles.phoneChip}
-                  href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
-                >
-                  <Printer size={16} aria-hidden="true" />
-                  Handover
-                </Link>
-                <button
-                  type="button"
-                  className={styles.phoneChip}
-                  onClick={handleRaiseWardReferral}
-                  title="Record a ward-to-ward referral with this ward as the sending ward."
-                  {...raiseReferralGate.buttonProps}
-                >
-                  <Send size={16} aria-hidden="true" />
-                  Raise referral
-                </button>
-                <button
-                  ref={notificationTriggerRef}
-                  type="button"
-                  className={styles.phoneChip}
-                  onClick={() => {
-                    setNotificationCenterOpen((prev) => !prev);
-                  }}
-                  aria-expanded={notificationCenterOpen}
-                  data-testid="ward-notifications-toggle-btn"
-                  title="Buzzes, urgent tasks and notices"
-                >
-                  <ListChecks size={16} aria-hidden="true" />
-                  Tasks
-                  {unreadAlertsCount > 0 ? (
-                    <span className={styles.phoneChipCount} data-testid="ward-notification-count-badge">
-                      {unreadAlertsCount}
-                    </span>
-                  ) : null}
-                </button>
+                {wardMoreMenu(styles.phoneChip, false)}
               </ScrollRow>
               {raiseReferralGate.note}
               {notificationCenterOpen ? (
@@ -2176,7 +2220,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     <button
                       ref={notificationTriggerRef}
                       type="button"
-                      className={buttonClass({ variant: "ghost", size: "sm" })}
+                      className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
                       onClick={() => {
                         setNotificationCenterOpen((prev) => !prev);
                       }}
@@ -2184,8 +2228,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       data-testid="ward-notifications-toggle-btn"
                       title="Buzzes, urgent tasks and notices"
                     >
-                      <ListChecks size={16} aria-hidden="true" />
-                      <span>Tasks</span>
+                      <Bell size={16} aria-hidden="true" />
+                      <span>Notices</span>
                       {unreadAlertsCount > 0 ? (
                         <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
                           {unreadAlertsCount}
@@ -2220,7 +2264,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   </div>
                   <button
                     type="button"
-                    className={buttonClass({ variant: "ghost", size: "sm" })}
+                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
                     onClick={() => {
                       setDailySheetOpen(true);
                     }}
@@ -2231,12 +2275,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     Shift brief
                   </button>
                   <Link
-                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
-                    href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
+                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide} ${styles.toolSolo}`}
+                    href={handoverHref}
                   >
                     <Printer size={16} aria-hidden="true" />
                     Handover
                   </Link>
+                  <span className={styles.toolMore}>
+                    {wardMoreMenu(buttonClass({ variant: "ghost", size: "sm" }), true)}
+                  </span>
                   <button
                     type="button"
                     className={buttonClass({ variant: "sec", size: "sm" })}
@@ -2286,7 +2333,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </>
               ) : undefined
             }
-            phoneFiguresSummary={`Closed ${states.closed} · Pulled ${states.pulled} · Expected out ${breakdown.expectedToday} · Held up ${blockedReleases.length}`}
+            phoneFiguresSummary="Shift, roster, legal status and feeds"
             phoneFind={
               isPhone ? (
                 <TextInput
@@ -2343,7 +2390,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             morningRollupConfirmed={isRollupConfirmedToday}
             onConfirmMorningRollup={handleConfirmMorningRollup}
             onOpenConfirmNumbers={() => {
-              setConfirmNumbersOpen(true);
+              openCapacityModal();
             }}
             onOpenArrival={openArrival}
             onOpenDischarges={openDischargesTab}
@@ -2563,10 +2610,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               byLabel: formatInstantWithDay(dayShiftEndInstant(now), now),
             }}
           />
-          <footer className={styles.protoBanner}>
-            SYNTHETIC PROTOTYPE &middot; Scoped to {unit.name} &middot; Bed decisions remain human-confirmed &middot;
-            Not a medical device
-          </footer>
+          {/* U3: the page's prototype footer below carries this safety line; it is not repeated here. */}
         </section>
 
         {/* ───────── TAB 2: COMING IN ───────── */}
@@ -2824,7 +2868,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                         </dd>
                       </div>
                       <div>
-                        <dt>Occupied Census</dt>
+                        <dt>Beds in use</dt>
                         <dd
                           style={{
                             fontFamily: "var(--mono, monospace)",
@@ -2832,8 +2876,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                             fontWeight: 600,
                           }}
                         >
-                          {states.occupied} / {unit.beds} beds (
-                          {unit.beds > 0 ? Math.round((states.occupied / unit.beds) * 100) : 0}%)
+                          {occupancy.inUse} / {unit.beds} beds ({formatWardOccupancy(occupancy)})
                         </dd>
                       </div>
                       <div>

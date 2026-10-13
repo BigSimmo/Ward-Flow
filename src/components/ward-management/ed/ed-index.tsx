@@ -1,5 +1,6 @@
 "use client";
 
+import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -38,6 +39,7 @@ import {
   buttonClass,
   cx,
   useIsPhone,
+  useIsTabletPortrait,
   BarList,
   RowSpark,
   RowTrend,
@@ -81,7 +83,8 @@ type ServiceFilter = "all" | HealthService;
 type StatusFilter = "all" | "past-target" | "waiting" | "clear";
 type OrderBy = "longest" | "most" | "service";
 type ViewMode = "cards" | "table" | "lanes";
-type PhoneView = "list" | "lanes" | "service";
+// Device audit 11 Oct 2026: By service left the phone; its figures are the service chips.
+type PhoneView = "list" | "lanes";
 type WaitClock = "past" | "severe" | "in";
 
 type EdPerson = {
@@ -160,6 +163,20 @@ function lanePosition(minutes: number): number {
   return Math.min(1, Math.log1p(minutes / 30) / Math.log1p(LANE_MAX_MINUTES / 30)) * 100;
 }
 
+/**
+ * Phone lanes: people whose marks would overlap share one counted mark, drawn at the longest wait.
+ * The phone lane is about 190px and a mark 22px, so marks within 12% of the lane chain together.
+ */
+function laneClusters<T extends { wait: number }>(people: readonly T[]): T[][] {
+  const clusters: T[][] = [];
+  for (const person of [...people].sort((a, b) => a.wait - b.wait)) {
+    const last = clusters[clusters.length - 1];
+    if (last && lanePosition(person.wait) - lanePosition(last[last.length - 1]!.wait) < 12) last.push(person);
+    else clusters.push([person]);
+  }
+  return clusters;
+}
+
 /** "24h", "8h": the two wait lines as a person says them, never "1d" or "8h 00m". */
 function waitLine(minutes: number): string {
   return minutes % 60 === 0 ? `${minutes / 60}h` : splitDuration(minutes);
@@ -189,6 +206,7 @@ export function EdIndex() {
   const [phoneFiltersOpen, setPhoneFiltersOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const isPhone = useIsPhone();
+  const isTabletPortrait = useIsTabletPortrait();
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -290,7 +308,7 @@ export function EdIndex() {
   const otherFilters = (row: EdRow) => byStatus(row) && matchesQuery(row);
   const services = ED_HOME_SERVICE_BAND_ORDER.filter((name) => rows.some((row) => row.summary.service === name));
   const serviceItems = [
-    { id: "all" as ServiceFilter, label: "All", count: rows.filter(otherFilters).length },
+    { id: "all" as ServiceFilter, label: "All EDs", count: rows.filter(otherFilters).length },
     ...services.map((name) => ({
       id: name as ServiceFilter,
       label: serviceShortName(name),
@@ -471,7 +489,8 @@ export function EdIndex() {
               />
             )
           }
-          footAside={isPhone ? undefined : <span>Lists update once a minute</span>}
+          // At tablet portrait the line wrapped onto its own row; the footer note says it too.
+          footAside={isPhone || isTabletPortrait ? undefined : <span>Lists update once a minute</span>}
         />
 
         <section className={styles.filters} aria-label="Emergency department filters">
@@ -552,7 +571,6 @@ export function EdIndex() {
               items={[
                 { id: "list" as PhoneView, label: "EDs" },
                 { id: "lanes" as PhoneView, label: "Wait lanes" },
-                { id: "service" as PhoneView, label: "By service" },
               ]}
               value={phoneView}
               onChange={setPhoneView}
@@ -586,8 +604,6 @@ export function EdIndex() {
               highlight={highlight}
               phone
             />
-          ) : phoneView === "service" ? (
-            servicePicker
           ) : (
             <PhoneEdList rows={ordered} isDim={isDim} highlight={highlight} onPreview={setPreviewId} />
           )
@@ -596,18 +612,24 @@ export function EdIndex() {
         ) : view === "lanes" ? (
           <EdLanes rows={ordered} services={services} accessTarget={accessTarget} isDim={isDim} highlight={highlight} />
         ) : (
-          <section className={styles.cardGrid} aria-label="Emergency department cards">
-            {ordered.map((row) => (
-              <EdCard
-                key={row.summary.ed.id}
-                row={row}
-                dim={isDim(row)}
-                highlight={highlight}
-                onPreview={() => setPreviewId(row.summary.ed.id)}
-              />
-            ))}
-            {servicePicker}
-          </section>
+          // Device audit 11 Oct 2026: Waiting by service is a rail beside the cards rather than an
+          // eleventh card, and a full-width strip under them at tablet portrait.
+          <div className={styles.cardsWithRail}>
+            <section className={styles.cardGrid} aria-label="Emergency department cards">
+              {ordered.map((row) => (
+                <EdCard
+                  key={row.summary.ed.id}
+                  row={row}
+                  dim={isDim(row)}
+                  highlight={highlight}
+                  onPreview={() => setPreviewId(row.summary.ed.id)}
+                />
+              ))}
+            </section>
+            <div className={styles.serviceRail} data-wf-rail>
+              {servicePicker}
+            </div>
+          </div>
         )}
 
         <Drawer
@@ -800,6 +822,17 @@ function EdCard({
       data-dim={dim ? "true" : undefined}
       data-testid={`ed-index-card-${summary.ed.id}`}
     >
+      {/* Device audit 11 Oct 2026: one control per card. The card itself opens the preview, and
+          Enter stays as the one button. */}
+      <button
+        type="button"
+        className={styles.cardOpen}
+        aria-label={`Preview ${row.short}`}
+        aria-haspopup="dialog"
+        title="Preview who is waiting"
+        onClick={onPreview}
+        data-testid={`ed-index-preview-${row.summary.ed.id}`}
+      />
       <div className={styles.cardHead}>
         <h3 className={styles.edTitle} title={summary.ed.name}>
           {row.short}
@@ -823,7 +856,6 @@ function EdCard({
         <Longest row={row} />
         {summary.waiting > 0 ? <span className={styles.footLabel}>longest</span> : null}
         <span className={styles.footActions}>
-          <PreviewButton row={row} onPreview={onPreview} />
           <EnterLink row={row} />
         </span>
       </div>
@@ -966,20 +998,57 @@ function EdLanes({
                   <span key={minutes} className={styles.gridline} style={{ left: `${lanePosition(minutes)}%` }} />
                 ))}
                 <span className={styles.target} style={{ left: `${lanePosition(accessTarget)}%` }} />
-                {row.people.map((person) => (
-                  <button
-                    key={person.movement.id}
-                    type="button"
-                    className={styles.mark}
-                    style={{ left: `${lanePosition(person.wait)}%` }}
-                    data-dim={personDim(person, highlight) ? "true" : undefined}
-                    aria-pressed={selected === person.movement.id}
-                    aria-label={`${person.name}, ${splitDuration(person.wait)}, ${person.stage}`}
-                    onClick={() => setSelected((value) => (value === person.movement.id ? null : person.movement.id))}
-                  >
-                    <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} />
-                  </button>
-                ))}
+                {phone
+                  ? // Device audit 11 Oct 2026: on a phone, marks closer than a mark's width become one
+                    // counted mark (it opens the longest wait in it), and the lane is inset so the
+                    // last mark is never cut by the Longest column.
+                    laneClusters(row.people).map((cluster) => {
+                      const longest = cluster[cluster.length - 1]!;
+                      const isOn = cluster.some((person) => person.movement.id === selected);
+                      return (
+                        <button
+                          key={longest.movement.id}
+                          type="button"
+                          className={cx(styles.mark, cluster.length > 1 && styles.markCluster)}
+                          style={{ left: `calc(11px + (100% - 22px) * ${lanePosition(longest.wait) / 100})` }}
+                          data-dim={cluster.every((person) => personDim(person, highlight)) ? "true" : undefined}
+                          aria-pressed={isOn}
+                          aria-label={
+                            cluster.length > 1
+                              ? `${cluster.length} people, longest ${longest.name}, ${splitDuration(longest.wait)}`
+                              : `${longest.name}, ${splitDuration(longest.wait)}, ${longest.stage}`
+                          }
+                          onClick={() =>
+                            setSelected((value) => (value === longest.movement.id ? null : longest.movement.id))
+                          }
+                        >
+                          {cluster.length > 1 ? (
+                            <span className={styles.markCount}>{cluster.length}</span>
+                          ) : (
+                            <StatusGlyph tone={CLOCK_TONE[longest.clock]} size={9} />
+                          )}
+                        </button>
+                      );
+                    })
+                  : null}
+                {phone
+                  ? null
+                  : row.people.map((person) => (
+                      <button
+                        key={person.movement.id}
+                        type="button"
+                        className={styles.mark}
+                        style={{ left: `${lanePosition(person.wait)}%` }}
+                        data-dim={personDim(person, highlight) ? "true" : undefined}
+                        aria-pressed={selected === person.movement.id}
+                        aria-label={`${person.name}, ${splitDuration(person.wait)}, ${person.stage}`}
+                        onClick={() =>
+                          setSelected((value) => (value === person.movement.id ? null : person.movement.id))
+                        }
+                      >
+                        <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} />
+                      </button>
+                    ))}
               </span>
               <span className={styles.end}>
                 <Longest row={row} />
@@ -1024,7 +1093,7 @@ function EdLanes({
               {
                 id: "form",
                 label: "Form",
-                value: picked.person.movement.legalForm ? picked.person.movement.legalForm.code : "None",
+                value: picked.person.movement.legalForm ? legalStatusShort(picked.person.movement) : "None",
               },
               {
                 id: "tier",

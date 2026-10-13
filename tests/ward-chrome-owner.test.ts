@@ -259,7 +259,7 @@ const KNOWN_BACKLOG_TOP_ANCHORED = [".modeHeader"];
  * Dated 11 Oct 2026, an owner decision rather than backlog. The approved v10 phone mockup pins
  * each page's view switch under the bar while the list scrolls (`.ph-seg`, "segmented control,
  * pinned while the list scrolls"). These are in-content segmented rows that stick directly
- * beneath WardBar's 56px `.bar` (top: 3.5rem); they hold no navigation, title or menu, so `.bar`
+ * beneath WardBar's stable 56px `.bar` using its shared height token; they hold no navigation, title or menu, so `.bar`
  * stays the one chrome owner. Home's queue switch (.queueTools), the Alerts views (.tabsBar) and
  * the ED and Community view switches (.phonePanes). Each must still be found, so a removal fails
  * the line below instead of leaving a stale permission. 11 Oct 2026 (review): the guard now also
@@ -267,6 +267,13 @@ const KNOWN_BACKLOG_TOP_ANCHORED = [".modeHeader"];
  * file), which added the Ward, Hub, Network, Capacity, Governance, Out of area, On call, Census,
  * Legal forms, Reports, Handover, Chronology and Statistics switches.
  */
+/*
+ * Device audit (11 Oct 2026): Community's A to Z letter headings stick under the pinned view
+ * switch (8.125rem, below bar plus switch) while 64 names scroll. In-content index headings, not
+ * chrome, and stacked under a switch rather than under the bar, so they are named here apart.
+ */
+const STACKED_INDEX_HEADINGS = [".letterHeading"];
+
 const V10_PINNED_VIEW_SWITCHES = [
   ".phoneKindBar",
   ".phonePanes",
@@ -277,6 +284,10 @@ const V10_PINNED_VIEW_SWITCHES = [
   ".phoneViewRow",
   ".phoneViewTabs",
   ".phoneViews",
+  // 12 Oct 2026 (Josh): the shared phone pinned view switch (ward-pinned-switch.module.css), copied
+  // from Home's .queueTools and adopted by Delays, Movements, Discharges, Legal forms, Governance
+  // and Community team.
+  ".pinnedSwitch",
   ".queueTools",
   ".seg",
   ".segPinned",
@@ -285,11 +296,10 @@ const V10_PINNED_VIEW_SWITCHES = [
 ];
 
 /**
- * WardBar's `.bar` is 56px (3.5rem) at rest and condenses to 52px (3.25rem) once the page scrolls
- * (`.bar[data-scrolled="true"]`, ward-bar.module.css), so a pinned switch sits directly below it
- * at either height.
+ * WardBar keeps a stable phone height. Canvas bands start at that height; controls with an 8px
+ * painted canvas collar leave that room in their offset, so its paint still meets the header.
  */
-const BAR_HEIGHTS = ["3.5rem", "3.25rem", "52px"];
+const BAR_HEIGHTS = ["var(--wf-header-height, 3.5rem)", "calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2))"];
 
 describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
   it("mounts the shared WardBar and does not import the retired ClinicalRail, even under an alias", () => {
@@ -360,7 +370,10 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
 
   it("has exactly one mounted top-anchored phone element outside the documented backlog — .bar", () => {
     const withoutBacklog = allTopAnchored.filter(
-      (selector) => !KNOWN_BACKLOG_TOP_ANCHORED.includes(selector) && !V10_PINNED_VIEW_SWITCHES.includes(selector),
+      (selector) =>
+        !KNOWN_BACKLOG_TOP_ANCHORED.includes(selector) &&
+        !V10_PINNED_VIEW_SWITCHES.includes(selector) &&
+        !STACKED_INDEX_HEADINGS.includes(selector),
     );
     expect(
       withoutBacklog,
@@ -422,7 +435,9 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
           ".detailFooter",
         ].includes(selector),
     );
-    expect(actionRows).toEqual([".actionRow", ".decisionArea"]);
+    // Device audit (11 Oct 2026): the Patient page's pinned primary (.phBar) is the v10 "one
+    // pinned primary" bar, and now rests above the phone dock on var(--wf-dock-clear).
+    expect(actionRows).toEqual([".actionRow", ".decisionArea", ".phBar"]);
     const command = stripComments(readModule(path.join(WARD_ROOT, "coordinator/coordinator.module.css")));
     const phone = splitMediaBlocks(command).narrowBlocks.join("\n");
     expect(phone).toMatch(/\.shortlistActionRow\s*\{\s*position:\s*static;/u);

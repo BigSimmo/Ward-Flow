@@ -50,7 +50,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
-import { occupiedBeds } from "./statistics-occupancy";
+import { occupancyPercent, occupiedBeds } from "./statistics-occupancy";
 import {
   PhoneBody,
   PhoneFacts,
@@ -152,8 +152,9 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const readyRows = serviceUnits.map((unit) => ({ unit, capacity: unitCapacity(unit, bedReleases) }));
   const totalReady = readyRows.reduce((sum, row) => sum + row.capacity.available, 0);
   const totalBedBase = serviceUnits.reduce((sum, unit) => sum + unit.beds, 0);
-  const totalOccupied = occupiedBeds(serviceUnits, admissions, bedReleases, leaveBeds).occupied;
-  const occupancyPct = totalBedBase > 0 ? Math.round((totalOccupied / totalBedBase) * 100) : 0;
+  // L1: the one occupancy figure, Occupied + Pulled (`ward-occupancy.ts`), as every page prints it.
+  const serviceOccupancy = occupiedBeds(serviceUnits, admissions, bedReleases, leaveBeds);
+  const occupancyPct = occupancyPercent(serviceOccupancy);
   const zeroReadyWards = readyRows.filter((row) => row.capacity.available === 0).length;
   // Owner's ruling of 2026-09-07: only beds the patient has already left count as being made ready.
   const pendingPreparation = serviceUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0);
@@ -260,7 +261,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
         scope: service,
         figures: () => [
           ["Beds", totalBedBase],
-          ["Occupied percent", occupancyPct],
+          ["Occupancy percent (occupied or pulled)", occupancyPct],
           ["Ready", totalReady],
           ["Being made ready", pendingPreparation],
           ["Wards", serviceUnits.length],
@@ -270,7 +271,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       }}
       phone={{
         eyebrow: `Health service · ${serviceSites.length} ${serviceSites.length === 1 ? "hospital" : "hospitals"}`,
-        sub: `${occupancyPct}% occupied · ${serviceUnits.length} ${serviceUnits.length === 1 ? "ward" : "wards"}`,
+        sub: `${occupancyPct}% in use · ${serviceUnits.length} ${serviceUnits.length === 1 ? "ward" : "wards"}`,
         stats: (
           <>
             <HeroStat value={totalBedBase} label="Beds" />
@@ -295,7 +296,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
           />
           <HeroStat
             value={<span data-testid="ward-statistics-service-exec-occupancy">{occupancyPct}%</span>}
-            label="Occupied"
+            label="In use"
           />
           <HeroStat
             value={<span data-testid="ward-statistics-service-exec-ready-beds">{totalReady}</span>}

@@ -144,6 +144,12 @@ export type HandoverRow = {
   escalated: boolean;
   urgent: boolean;
   eta?: Instant;
+  /**
+   * Whether the shared act-now list (`activeActNowItems`, `ward-act-now-items.ts`, the one the
+   * Alerts page and Tasks lead with) holds a row for this journey. Set by the page from the live
+   * state; a row built without it falls back to its own recorded times (`isActNow`).
+   */
+  actNow?: boolean;
 };
 
 function unitName(units: Unit[], id: string): string {
@@ -210,7 +216,14 @@ export function toHandoverRow(
 export type HandoverGroupId = "act" | "due" | "bed" | "acc" | "mov";
 export type HandoverTone = "act" | "due" | "calm";
 
+/**
+ * Act now on the sheet. L1 (site review, 12 Oct 2026): Handover read "Act now 3" while Alerts read
+ * 2, because the sheet kept its own list. With `actNow` set the sheet reads the shared act-now list
+ * (`activeActNowItems`), so a snoozed alert leaves both together. A journey flagged urgent by a
+ * person is always act now as well: that flag is a human safety call the sheet must not drop.
+ */
 export function isActNow(row: HandoverRow, now: Instant): boolean {
+  if (row.actNow !== undefined) return row.actNow || row.urgent;
   return (
     row.urgent ||
     (row.pullExpiresAt !== undefined && row.pullExpiresAt <= now) ||
@@ -240,13 +253,13 @@ export function groupOf(row: HandoverRow, now: Instant, cutoff: Instant): Handov
 
 export function handoverGroups(cutoff: Instant, now: Instant) {
   return [
-    { id: "act", title: "Act now", why: "Flagged urgent, typed form time passed or bed pull expired" },
+    { id: "act", title: "Act now", why: "On the act-now alerts, or flagged urgent" },
     {
       id: "due",
       title: `Due by ${formatInstantWithDay(cutoff, now)}`,
       why: "Bed pulls and typed form times before then",
     },
-    { id: "bed", title: "Waiting for a bed", why: "Placement requested or a ward is reviewing" },
+    { id: "bed", title: "Finding a ward", why: "Placement requested or a ward is reviewing" },
     { id: "acc", title: "Accepted, bed not ready", why: "Ward accepted, bed not yet free" },
     { id: "mov", title: "Moving", why: "Transport accepted or collected" },
   ] as const satisfies readonly { id: HandoverGroupId; title: string; why: string }[];
@@ -285,6 +298,22 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
       : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
   if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
+  return null;
+}
+
+/**
+ * The Due cell in two parts: the time or length on its own line, which is never cut, and what it is
+ * ("Pull over by", "Pull ends", "1A due"), which may truncate (device audit 11 Oct 2026).
+ */
+export function dueParts(row: HandoverRow, now: Instant): { when: string; what: string } | null {
+  if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
+    const left = row.pullExpiresAt - now;
+    return left <= 0
+      ? { when: durMinutes(-left), what: "Pull over by" }
+      : { when: formatInstantWithDay(row.pullExpiresAt, now), what: "Pull ends" };
+  }
+  if (row.formDueAt !== undefined)
+    return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };
   return null;
 }
 
@@ -423,10 +452,12 @@ export function pillTest(pill: HandoverPill, row: HandoverRow, now: Instant, cut
       return groupOf(row, now, cutoff) === "act";
     case "due":
       return groupOf(row, now, cutoff) === "due";
+    // Waiting and Moving name their meeting group, so a highlight, its count and the group heading
+    // agree (device audit 11 Oct 2026: hero 40 and 13 against groups 39 and 9).
     case "bed":
-      return isWaitingForBed(row);
+      return groupOf(row, now, cutoff) === "bed";
     case "mov":
-      return isMoving(row);
+      return groupOf(row, now, cutoff) === "mov";
     case "new":
       return row.openedAt >= newSince;
   }

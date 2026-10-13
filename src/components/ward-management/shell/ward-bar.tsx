@@ -42,8 +42,8 @@ import {
   subscribeThemePreference,
 } from "@/lib/theme-client";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
+import { taskItems } from "@/components/ward-management/ward-act-now-items";
+import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
@@ -64,7 +64,6 @@ import { wardPlaceFor, wardPlaceIdFor } from "@/components/ward-management/ward-
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import {
   edHealthService,
-  movementBelongsToService,
   SERVICE_SCOPED_SCREENS,
   unitHealthService,
 } from "@/components/ward-management/ward-service-scope";
@@ -116,6 +115,7 @@ import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPri
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
+import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WardDataModeSlot } from "../ward-shared-access";
 import styles from "./ward-bar.module.css";
 
@@ -277,7 +277,7 @@ const SERVICE_SCOPE_NOTE = `One service, or all of them. ${
   SERVICE_SCOPED_SCREENS.length > 1
     ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
     : SERVICE_SCOPED_SCREENS.join(", ")
-} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not.`;
+} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not. Each count is the people waiting in that service's emergency departments; a narrowed list also shows people referred to its wards.`;
 
 /** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (D-16) — named
  *  in one place so the three "not wired" primary-action kinds and any future caller share the
@@ -360,31 +360,41 @@ export function isPendingNavigation(href: string, current: string): boolean {
 
 /**
  * Phone bar (Josh, 8 Oct 2026, board 00b): bar A with C's behaviour. It never hides. At the top of
- * the page it sits on the page with no fill; once the page scrolls it condenses and turns solid.
+ * the page it sits on the page with no fill; once the page scrolls its controls condense and it
+ * turns solid. Its layout height stays fixed so scrolling never moves the content below it.
  * Phone only: `enabled` is false above 48rem, so the desktop bar never gets `data-scrolled`.
  */
 const SCROLLED_AFTER_PX = 8;
+const RESTING_BELOW_PX = 2;
 
-function useBarScrolled(enabled: boolean): boolean {
+function useBarScrolled(barRef: RefObject<HTMLElement | null>, enabled: boolean): boolean {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     if (!enabled) return;
+    // Phone scrolls inside the work column (`[data-wf-scroller]`), not the window, so iOS Safari's
+    // toolbar never collapses and the fixed dock stays put (Josh, 12 Oct 2026). The window is still
+    // watched in case a page is ever shown without the shell's column.
+    const scroller = barRef.current?.closest<HTMLElement>("[data-wf-scroller]") ?? null;
     let frame = 0;
     const update = () => {
       frame = 0;
-      setScrolled(window.scrollY > SCROLLED_AFTER_PX);
+      const offset = Math.max(scroller?.scrollTop ?? 0, window.scrollY);
+      // Separate entry and exit thresholds avoid flicker during small scroll reversals or bounce.
+      setScrolled((previous) => offset > (previous ? RESTING_BELOW_PX : SCROLLED_AFTER_PX));
     };
     const onScroll = () => {
       if (!frame) frame = window.requestAnimationFrame(update);
     };
     frame = window.requestAnimationFrame(update);
+    scroller?.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
+      scroller?.removeEventListener("scroll", onScroll);
       window.removeEventListener("scroll", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [enabled]);
+  }, [barRef, enabled]);
 
   return enabled && scrolled;
 }
@@ -565,12 +575,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     publishLiveClock(liveClockFace);
   }, [liveClockFace]);
   useEffect(() => () => publishLiveClock(undefined), []);
+  // The header is ready: press the panel button a reader tapped while it was still loading.
+  useEffect(() => replayEarlyHeaderTap(), []);
 
-  const { role, placeId } = useWardNavCounts();
+  const { role, shellRole, placeId } = useWardNavCounts();
   const roleCategory = roleReferralCategory(role);
   const checksPublication = useWardChecks();
 
   const [openPanel, setOpenPanel] = useState<WardBarPopoverId | null>(null);
+  // A history Back is asynchronous. Keep the drawer identity here so repeated closes are
+  // ignored and a delayed popstate cannot close a drawer opened in the meantime.
+  const closingViaHistoryRef = useRef<{ id: WardBarPopoverId; announce: boolean } | null>(null);
   const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
   // The slide-out fills this with its guarded close, which asks before discarding a draft.
   const referralCloseRef = useRef<(() => void) | null>(null);
@@ -683,32 +698,38 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // the one place that must gate — `wardTasksAreActionableForRole` exists in `ward-chrome-role.ts`
   // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
   // own "No outstanding work right now." empty state, never a network list with every action refused.
+  // Device audit item 6 (11 Oct 2026): Tasks is the signed-in person's count on every page, so it
+  // is gated on `shellRole`, not the route — it no longer drops to 0 on ED, team and officer pages.
+  // L1 (site review, 12 Oct 2026): the one task list (`taskItems`, `ward-act-now-items.ts`) that
+  // Alerts and Home Exceptions read too, so the badge and those lists cannot disagree.
   const tasksItems = useMemo(() => {
-    if (!wardTasksAreActionableForRole(role)) return [];
-    const open = movements.filter(isOpen);
-    // Stream A, 9 Oct 2026: decision targets join the same list.
-    return [
-      ...buildActionInbox(open, now, units, {
+    if (!wardTasksAreActionableForRole(shellRole)) return [];
+    return taskItems(
+      {
         movements,
+        units,
+        configuration,
+        inboxSnoozes,
         admissions,
         patients,
         referrals,
         supportNotifications,
         plannedAdmissions,
-      }),
-      ...decisionTargetInboxItems(open, now, configuration),
-    ];
+      },
+      now,
+    );
   }, [
     movements,
     now,
     units,
-    role,
+    shellRole,
     plannedAdmissions,
     admissions,
     patients,
     referrals,
     supportNotifications,
     configuration,
+    inboxSnoozes,
   ]);
   // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
   const tasksActiveCount = useMemo(
@@ -716,32 +737,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [tasksItems, inboxSnoozes, now],
   );
   /**
-   * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service
-   * panel"). One open-movement membership count per `HEALTH_SERVICES` member, through
-   * `ward-service-scope.ts`'s own `movementBelongsToService` — the SAME join this panel's own
-   * count can never disagree with by construction, since it calls that function directly rather
-   * than a second copy.
-   *
-   * ⚠️ **CORRECTED, R2 (2026-09-17).** This used to cite a `shown + outside = total` test in
-   * `tests/ward-service-scope.test.ts` proving movement membership over the real seed — that test
-   * existed for MOVEMENTS once, under the name "TEST 8", but R1's own review had already replaced
-   * it (it proved only that a filter and its negation sum to the total, true of any predicate) and
-   * R2 replaced its successor again for the same reason. What proves `movementBelongsToService`
-   * correct today is that file's `movementHealthServices`/`movementBelongsToService` describe
-   * block, plus the R2 landmark-membership test — `shown + outside = total` survives in that file
-   * only for REFERRALS, a different population from what this comment named.
+   * The Service selector's own "{n} waiting" counts. L1 (site review, 12 Oct 2026): this used to
+   * count every open movement that touched a service (origin ED or any ward asked), so a person
+   * referred across services counted twice: "All services 70 open" over services adding to 97,
+   * and East Metro 43 here against 35 on Network. It now reads `waitingInEds`
+   * (`ward-shared-figures.ts`), the figure Home's hero and Network print: people waiting in each
+   * service's emergency departments. A person waits in one department, so the services add up to
+   * All services.
    */
-  const serviceOptionOpenCounts = useMemo(() => {
-    const openMovementsList = movements.filter(isOpen);
-    const counts = new Map<HealthService, number>();
-    for (const candidate of HEALTH_SERVICES) {
-      counts.set(
-        candidate,
-        openMovementsList.filter((movement) => movementBelongsToService(movement, candidate, units)).length,
-      );
-    }
-    return counts;
-  }, [movements, units]);
+  const waiting = useMemo(() => waitingInEds(movements, now), [movements, now]);
   const commandActivity = useMemo(
     () =>
       deriveCommandActivity({
@@ -847,20 +851,30 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, []);
 
   const closePopover = useCallback((id: WardBarPopoverId, announce = true) => {
-    setOpenPanel((current) => (current === id ? null : current));
-    if (announce) announceToWardShell("Closed.");
-    if (typeof window === "undefined" || !window.history) return;
+    // Do not issue another Back while the first one is still waiting for popstate.
+    if (closingViaHistoryRef.current !== null) return;
+    if (typeof window === "undefined" || !window.history) {
+      setOpenPanel((current) => (current === id ? null : current));
+      if (announce) announceToWardShell("Closed.");
+      return;
+    }
     const step = drawerCloseHistoryStep({
       drawerEntryIsCurrent: Boolean(window.history.state?.wardDrawer),
       navigationPending: navigationPendingRef.current,
       canGoBack: typeof window.history.back === "function",
     });
     if (step === "back") {
+      // Keep the sheet and its background lock until popstate completes the close.
+      closingViaHistoryRef.current = { id, announce };
       window.history.back();
-    } else if (step === "clear") {
-      const nextState = { ...window.history.state };
-      delete nextState.wardDrawer;
-      window.history.replaceState(nextState, "");
+    } else {
+      setOpenPanel((current) => (current === id ? null : current));
+      if (announce) announceToWardShell("Closed.");
+      if (step === "clear") {
+        const nextState = { ...window.history.state };
+        delete nextState.wardDrawer;
+        window.history.replaceState(nextState, "");
+      }
     }
     // Used once: a link whose own handler stopped the page change (a menu that opens a drawer
     // instead) must not keep later closes from stepping back.
@@ -869,6 +883,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {
+      // A replacement open must wait for the pending Back; otherwise its popstate would
+      // be indistinguishable from the drawer that initiated the close.
+      if (closingViaHistoryRef.current !== null) return;
       setOpenPanel(id);
       if (typeof window !== "undefined" && window.history && isDrawerPanel(id)) {
         if (window.history.state?.wardDrawer) {
@@ -971,17 +988,24 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   useEffect(() => {
     function onPopState() {
-      setOpenPanel((current) => {
-        if (current !== null) {
-          announceToWardShell("Closed.");
-          return null;
-        }
-        return current;
-      });
+      const closing = closingViaHistoryRef.current;
+      if (closing !== null) {
+        // Only the drawer that initiated Back may be closed by its delayed event, and it keeps
+        // the caller's choice not to announce (a service pick announces its own confirmation).
+        closingViaHistoryRef.current = null;
+        if (openPanel !== closing.id) return;
+        setOpenPanel(null);
+        if (closing.announce) announceToWardShell("Closed.");
+        return;
+      }
+      if (openPanel === null) return;
+      setOpenPanel(null);
+      // Announce in the event, outside React's state updater/render phase.
+      announceToWardShell("Closed.");
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [openPanel]);
 
   useEffect(() => {
     const unsubOpen = subscribeWardDrawer((drawerId) => {
@@ -1160,10 +1184,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const activeServiceBadgeLabel = activeService ?? "Statewide";
   const activityHasUnread = unreadNoticeCount > 0;
 
-  const barScrolled = useBarScrolled(isPhone);
   // A page that opens on the shared Hero bands the header (v10 7.1). On phone the lean bar sits in
   // hero ink at rest and hands over to its own solid scrolled face (v10 Home mockup, 11 Oct 2026).
   const barRef = useRef<HTMLElement>(null);
+  const barScrolled = useBarScrolled(barRef, isPhone);
   const bandHero = useWfBandActive();
   const bandScrolled = useBandScrolled(barRef, bandHero && !isPhone);
   const bandState = !bandHero
@@ -1176,10 +1200,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         ? "light"
         : "ink";
   // Phone only: the condensed bar's live line, the open movements in the current scope.
-  const allOpenCount = movements.filter(isOpen).length;
-  const scopeOpenCount = activeService
-    ? (serviceOptionOpenCounts.get(activeService as HealthService) ?? 0)
-    : allOpenCount;
+  const allWaitingCount = waiting.total;
+  const scopeWaitingCount = activeService
+    ? (waiting.byService.get(activeService as HealthService) ?? 0)
+    : allWaitingCount;
 
   return (
     <header
@@ -1201,7 +1225,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         onOpenDrawer={openPopover}
         onOpenReferral={openReferral}
       />
-      <div className={styles.title}>
+      {/* Device audit (11 Oct 2026): on the phone the whole title block is the service control's
+          tap target, not only the 91 x 18 service line. A tap on the title forwards to the service
+          button, which stays the one keyboard and screen-reader control; taps inside the button's
+          own container (the button itself, the sheet and its scrim) are left to it. */}
+      <div
+        className={styles.title}
+        onClick={
+          isPhone
+            ? (event) => {
+                if ((event.target as Element).closest(`.${styles.scopeBadgeContainer}`)) return;
+                serviceTriggerRef.current?.click();
+              }
+            : undefined
+        }
+      >
         <div className={styles.titleGroup}>
           <span
             className={styles.place}
@@ -1247,7 +1285,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           </button>
           {isPhone ? (
             <span className={styles.scopeLive} aria-hidden="true">
-              {scopeOpenCount} open · {activeServiceBadgeLabel}
+              {scopeWaitingCount} waiting · {activeServiceBadgeLabel}
             </span>
           ) : null}
 
@@ -1283,13 +1321,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                 <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
                 <span className={styles.serviceName}>All services</span>
                 <span className={`${styles.serviceOptionCount} ${styles.serviceAllCount}`} aria-hidden="true">
-                  {allOpenCount > 0 ? `${allOpenCount} open` : "none open"}
+                  {waitingText(allWaitingCount)}
                 </span>
                 <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === null} />
               </button>
               <hr className={styles.popoverRule} />
               {HEALTH_SERVICES.map((candidate) => {
-                const openCount = serviceOptionOpenCounts.get(candidate) ?? 0;
+                const waitingCount = waiting.byService.get(candidate) ?? 0;
                 return (
                   <button
                     key={candidate}
@@ -1305,7 +1343,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                     />
                     <span className={styles.serviceName}>{candidate}</span>
                     <span className={styles.serviceOptionCount} aria-hidden="true">
-                      {openCount > 0 ? `${openCount} open` : "none open"}
+                      {waitingText(waitingCount)}
                     </span>
                     <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === candidate} />
                   </button>
@@ -1898,7 +1936,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             ownership={inboxOwnership}
             snoozes={inboxSnoozes}
             configuration={configuration}
-            role={role}
+            role={shellRole}
             now={now}
             dispatch={dispatch}
             onClose={() => closePopover("tasks")}

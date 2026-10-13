@@ -15,21 +15,6 @@ import styles from "./ward-management-modes.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import governance from "./governance-third-edition.module.css";
 
-const roleFocusCopy: Record<WardRole, { title: string; detail: string }> = {
-  flow: {
-    title: "Statewide coordination focus",
-    detail: "Review matches, cross-catchment escalation, pulls and owned exceptions.",
-  },
-  ed: {
-    title: "ED readiness focus",
-    detail: "Prioritise referral, legal/form timing, handover and transport request readiness.",
-  },
-  ward: {
-    title: "Ward capacity focus",
-    detail: "Prioritise capacity freshness, suitability response, acceptance and time-limited pulls.",
-  },
-};
-
 /**
  * ⚠️ **KEYED BY THE MODES THIS FILE RENDERS, NOT BY EVERY WARD DESTINATION.** It was
  * `Record<WardMode, …>` — eight entries, of which `modeCopy[mode]` could only ever read two,
@@ -165,7 +150,8 @@ export function GovernanceView() {
     <div className={governance.governanceRoute} data-testid="ward-governance-view">
       <GovernanceWorkbench movements={movements} units={units} now={now} api={flow} />
       <details className={governance.srOnly} data-testid="ward-governance-medical-device-notice">
-        <summary>Synthetic prototype · not a medical device</summary>
+        {/* Read by assistive tech, kept out of the Tab order: the notice is visually hidden. */}
+        <summary tabIndex={-1}>Synthetic prototype · not a medical device</summary>
         <NotAMedicalDeviceStatement />
         <p data-testid="ward-governance-data-scope">
           Patient identity and operational facts are recorded, including patient-linked discharge records. No diagnosis,
@@ -176,16 +162,6 @@ export function GovernanceView() {
         </p>
       </details>
     </div>
-  );
-}
-
-function RoleFocus({ role }: { role: WardRole }) {
-  const focus = roleFocusCopy[role];
-  return (
-    <section className={styles.roleFocus} aria-live="polite">
-      <strong>{focus.title}</strong>
-      <span>{focus.detail}</span>
-    </section>
   );
 }
 
@@ -293,7 +269,7 @@ export function WardModeWorkspace({ mode }: { mode: WardWorkspaceMode }) {
         {/* v10: a page opens on its hero, so the role note follows the body rather than sitting
             above the Network hero (a block above the hero would cost it the band). */}
         <ModeBody mode={mode} />
-        {mode !== "governance" && <RoleFocus role={role} />}
+        {/* Audit 11 Oct 2026: the generic role focus banner is gone; the page carries the work. */}
         <WardPrototypeFooter
           testId={mode === "network" ? "ward-network-governance" : `ward-mode-${mode}-disclosure`}
           note={mode === "network" ? "Synthetic network figures and bed statuses · Not a medical device" : undefined}

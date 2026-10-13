@@ -520,7 +520,10 @@
 
   .phoneRow[data-act="true"] {
     margin: -1px 0 0;
-    border: 1px solid var(--wf-act-edge);
+    border: 1px solid var(--wf-line);
+
+    background: var(--wf-act-tint);
+    position: relative;
   }
 
   .phoneBulk {
@@ -530,5 +533,28 @@
     gap: var(--wf-s-2);
     padding: var(--wf-s-2) var(--wf-s-3);
     border-top: 1px solid var(--wf-line);
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.phoneRow[data-act="true"] {
+  position: relative;
+}
+
+.phoneRow[data-act="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .phoneRow[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

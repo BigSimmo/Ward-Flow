@@ -242,9 +242,14 @@ test.describe("@mockup Ward Flow command view", () => {
       ? page.getByRole("button", { name: /^All pages/iu })
       : page.getByTestId("ward-bar-phone-menu");
     if (await opener.isVisible()) {
-      await opener.click();
       // Phone (10 Oct 2026): the bar's Menu opens the phone menu rather than the rail's sheet.
-      await expect(page.getByTestId("ward-rail-more-pages").or(page.getByTestId("ward-phone-menu"))).toBeVisible();
+      // Retried as one step: a dev-server reload right after load can swallow the first tap, and
+      // the property here is the tap-target floor, not that the first tap beats a reload.
+      const sheet = page.getByTestId("ward-rail-more-pages").or(page.getByTestId("ward-phone-menu"));
+      await expect(async () => {
+        if (!(await sheet.isVisible())) await opener.click();
+        await expect(sheet).toBeVisible({ timeout: 2_000 });
+      }).toPass({ timeout: 20_000 });
     }
 
     // By `href`, not by counting every link this landmark now contains: the sheet also carries the
@@ -256,7 +261,16 @@ test.describe("@mockup Ward Flow command view", () => {
       // (`components/ui/sheet.tsx`'s `Sheet`), so its copy of a non-primary view's link sits
       // outside `nav`'s own DOM subtree once open. `:visible` then picks whichever of the two
       // copies (the rail's own inline one, or the sheet's) is actually the one on screen.
-      const link = page.locator(`[data-testid="ward-rail-link"][href="${view.href}"]:visible`);
+      // Device audit (11 Oct 2026): the phone menu shows each page once. Home sits in the phone
+      // dock, and a page with an urgent count moves under "Needs you", so a view is reachable
+      // through whichever of those three link kinds carries it. Each is still measured below.
+      const link = page
+        .locator(
+          ["ward-rail-link", "ward-phone-dock-link", "ward-phone-menu-need"]
+            .map((testId) => `[data-testid="${testId}"][href="${view.href}"]:visible`)
+            .join(", "),
+        )
+        .first();
       await expect(link, `${view.label} (${view.href}) must be reachable from this rail`).toBeVisible();
       links.push(link);
     }

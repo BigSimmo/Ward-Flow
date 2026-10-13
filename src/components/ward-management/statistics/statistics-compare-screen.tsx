@@ -31,7 +31,7 @@ import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-manageme
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import type { EmergencyDepartment, Unit } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { allWardStatistics, type WardStatistics } from "@/components/ward-management/ward-statistics";
@@ -85,7 +85,7 @@ export function StatisticsCompareScreen({
   admissions?: Admission[];
 } = {}) {
   const live = useStatisticsLive();
-  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
+  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases } = live.state;
   const now = live.now;
   const isPhone = useIsPhone();
   const admissions = admissionsOverride ?? liveAdmissions;
@@ -111,13 +111,13 @@ export function StatisticsCompareScreen({
   const unplacedCount = openMovements.filter((m) => m.acceptedUnitId === undefined).length;
 
   const wardRows: WardRow[] = wardStats.map(({ unit, statistics }) => {
-    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
     return {
       unit,
       statistics,
       site: siteByCode(unit.siteCode),
       group: wardGroup(unit),
-      occupancy: unit.beds > 0 ? Math.round((states.occupied / unit.beds) * 100) : 0,
+      // L1: the one occupancy count, Occupied + Pulled (`wardBedsInUse`, `ward-occupancy.ts`).
+      occupancy: unit.beds > 0 ? Math.round((wardBedsInUse(unit, admissions, bedReleases) / unit.beds) * 100) : 0,
       readyNow: unitCapacity(unit, bedReleases).available,
       awaitingAnswer: wardReferralTally(openMovements, unit.id).askedAndWaiting,
     };

@@ -1,0 +1,62 @@
+/*
+ * The phone dock on every page (device audit option A, Josh, 11 Oct 2026): the v10 Menu foot moved
+ * onto the page, with the + rising out of its curved edge. Phone only: above 48rem it is never
+ * drawn, so tablet and desktop are unchanged.
+ */
+
+.pageDock {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  /* Doubled so it outranks the composed foot's own position: relative. */
+  .pageDock.pageDock {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    display: block;
+  }
+
+  /* Bottom bar (Josh, 11 Oct 2026, iPhone Safari): the icons sit 8px off the bottom edge, or just
+     clear of the home indicator where there is one, not 18px above it as well. The sides follow
+     the screen's own insets so a phone on its side keeps the bar clear of the notch. */
+  .pageDock.rise {
+    padding-right: max(4px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(4px, env(safe-area-inset-left, 0px));
+  }
+
+  /* The page keeps its last rows clear of the dock, and any pinned phone bar rests on
+     var(--wf-dock-clear) instead of bottom: 0. The local class keeps the selector pure for the
+     webpack CSS Modules build. */
+  :global(body):has(.pageDock) {
+    --wf-dock-clear: calc(72px + max(8px, env(safe-area-inset-bottom, 0px)));
+    /* The dock's flat top edge (2px + 48px row + bottom pad), below the + hump. A pinned bar seats
+       its box here so no card shows between the bar and the dock (Josh, 12 Oct 2026, iPhone). */
+    --wf-dock-top: calc(50px + max(8px, env(safe-area-inset-bottom, 0px)));
+  }
+
+  :global(body):has(.pageDock) :global([data-wf-scroller]) {
+    padding-bottom: var(--wf-dock-clear);
+  }
+
+  /* While a sheet or dialog is open the dock steps out of view (Josh, 12 Oct 2026, iPhone: the dock
+     showed under the Broadcast sheet's footer). Some dialogs paint inside the page's own stacking
+     layers, below the dock, so hiding it is the one rule that works for all of them. The Menu and
+     Create sheets are the dock's own and already cover it, so they leave it as it was. */
+  :global(body:has([aria-modal="true"]:not([hidden], #ward-phone-menu, #ward-phone-create))) .pageDock.pageDock {
+    visibility: hidden;
+  }
+
+  /* A swipe that reaches the end of a popup stops there instead of carrying on to the page. */
+  :global(body):has(.pageDock) :global([aria-modal="true"]) {
+    overscroll-behavior: contain;
+  }
+}
+
+/* rise: the Menu's own foot shape, fixed to the page. */
+.rise {
+  composes: foot from "./ward-phone-menu.module.css";
+}

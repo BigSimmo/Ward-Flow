@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 
-import { Copy, Pause, Play } from "lucide-react";
+import { Copy } from "lucide-react";
 import {
   Button,
   CheckingFoot,
@@ -24,11 +24,12 @@ import { answerSilenceReminder } from "@/components/ward-management/delays/delay
 import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
+import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import {
   allDeclines,
   allOverrides,
-  buildActionInbox,
   isOpen,
   referralBlockedReason,
   shortlistCandidates,
@@ -39,7 +40,6 @@ import { deriveCommandActivity } from "@/components/ward-management/shell/ward-c
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { queueOrder } from "@/components/ward-management/ward-priority";
-import { edPressure } from "@/components/ward-management/ward-pressure";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import {
   movementBelongsToService,
@@ -121,6 +121,7 @@ export function CoordinatorScreen() {
     plannedAdmissions,
     patients,
     supportNotifications,
+    inboxSnoozes,
   } = useWardFlow();
   const liveNow = useWardFlowClock();
   const service = useServiceScope();
@@ -222,7 +223,40 @@ export function CoordinatorScreen() {
   }, [service, units]);
 
   const scopedFilteredMovements = isInServiceScope ? filteredMovements.filter(isInServiceScope) : filteredMovements;
-  const queue = queueOrder(scopedFilteredMovements, now);
+  // D-32 on Home (decision 4, 12 Oct 2026): movements with an active act-now task are pinned on top
+  // of the queue, then longest wait first. The act-now rows are the shared ones (`activeActNowItems`).
+  const actNowMovementIds = useMemo(
+    () =>
+      new Set(
+        activeActNowItems(
+          {
+            movements,
+            units,
+            configuration,
+            inboxSnoozes,
+            admissions,
+            patients,
+            referrals,
+            supportNotifications,
+            plannedAdmissions,
+          },
+          now,
+        ).map((item) => item.movementId),
+      ),
+    [
+      movements,
+      units,
+      configuration,
+      inboxSnoozes,
+      admissions,
+      patients,
+      referrals,
+      supportNotifications,
+      plannedAdmissions,
+      now,
+    ],
+  );
+  const queue = queueOrder(scopedFilteredMovements, now, actNowMovementIds);
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
 
   const noRecordedServiceCount = useMemo(() => noRecordedServiceMovementCount(movements, units), [movements, units]);
@@ -360,16 +394,24 @@ export function CoordinatorScreen() {
   }
 
   // The work list is network-wide and open movements only, never scoped to the ED filter.
+  // L1 (site review, 12 Oct 2026): the same active task list as the header's Tasks badge
+  // (`activeTaskItems`), so snoozed rows leave the count and decision targets join it.
   const actionInbox = useMemo(
     () =>
-      buildActionInbox(openMovements, now, units, {
-        movements,
-        admissions,
-        patients,
-        referrals,
-        supportNotifications,
-        plannedAdmissions,
-      }).map((item) => {
+      activeTaskItems(
+        {
+          movements,
+          units,
+          configuration,
+          inboxSnoozes,
+          admissions,
+          patients,
+          referrals,
+          supportNotifications,
+          plannedAdmissions,
+        },
+        now,
+      ).map((item) => {
         if (!item.id.startsWith("bed-pull-") && item.title !== "Bed pull expired") return item;
         return {
           ...item,
@@ -377,7 +419,18 @@ export function CoordinatorScreen() {
           detail: `${item.detail} · Release the bed or set a new reserved time`,
         };
       }),
-    [openMovements, now, units, plannedAdmissions, movements, admissions, patients, referrals, supportNotifications],
+    [
+      movements,
+      units,
+      configuration,
+      inboxSnoozes,
+      admissions,
+      patients,
+      referrals,
+      supportNotifications,
+      plannedAdmissions,
+      now,
+    ],
   );
   const silenceReminders = useMemo(() => {
     const notes = new Map<string, string>();
@@ -424,10 +477,8 @@ export function CoordinatorScreen() {
     () => wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now }),
     [movements, units, referrals, bedReleases, leaveBeds, now],
   );
-  const waitingInEd = useMemo(
-    () => edPressure(now, movements).reduce((sum, row) => sum + row.waiting, 0),
-    [now, movements],
-  );
+  // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
+  const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);
   const breachWithinHour = openMovements.filter(
     (movement) => movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now) === "critical",
   ).length;
@@ -439,14 +490,12 @@ export function CoordinatorScreen() {
   const tierOneInQueue = queue.filter((movement) => movement.urgency === 1).length;
   const dueWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
 
-  // v10 hero: the one ring on the page is statewide occupancy, read from the same ward rows as the
-  // Capacity page's ring so the two pages show one figure, against the sidebar's alert line.
-  const statewideOccupancy = useMemo(() => {
-    const rows = networkWardRows(units, now, bedReleases, admissions, leaveBeds);
-    const beds = rows.reduce((sum, row) => sum + row.unit.beds, 0);
-    const occupied = rows.reduce((sum, row) => sum + row.occupied, 0);
-    return beds > 0 ? (occupied / beds) * 100 : null;
-  }, [units, now, bedReleases, admissions, leaveBeds]);
+  // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
+  // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
+  const statewideOccupancy = useMemo(
+    () => wardOccupancy(units, admissions, bedReleases).percent,
+    [units, admissions, bedReleases],
+  );
   // Checking foot: what this page watched, as counts. Never "All clear".
   const staleBedCounts = units.filter((unit) => now - unit.allocatable.confirmedAt > BED_COUNT_FRESH_MINUTES).length;
   const wardsNotReporting = units.filter(
@@ -460,8 +509,8 @@ export function CoordinatorScreen() {
     .toLowerCase();
   const heroTitle = (
     <>
-      <span className={styles.heroNum}>{waitingInEd}</span> waiting, <span className={styles.heroNum}>{bedsReady}</span>{" "}
-      {bedsReady === 1 ? "bed" : "beds"} ready
+      <span className={styles.heroNum}>{waitingInEd}</span> waiting in ED,{" "}
+      <span className={styles.heroNum}>{bedsReady}</span> {bedsReady === 1 ? "bed" : "beds"} ready
     </>
   );
   // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
@@ -608,7 +657,7 @@ export function CoordinatorScreen() {
             titleMeta={
               isPhone
                 ? `Prototype data, invented records${
-                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(0)}% of open beds full` : ""
+                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% occupied` : ""
                   }`
                 : undefined
             }
@@ -617,7 +666,7 @@ export function CoordinatorScreen() {
                 <>
                   <HeroStat
                     value={overdueInQueue}
-                    label="Overdue"
+                    label="Overdue waits"
                     tone={overdueInQueue > 0 ? "danger" : undefined}
                     pressed={highlight === "overdue"}
                     onToggle={() => toggleHighlight("overdue")}
@@ -652,35 +701,30 @@ export function CoordinatorScreen() {
             bar={
               isPhone ? (
                 // v10 phone hero: the full-width "N since you looked at HH:MM" pill and a round
-                // pause. The Live chip itself sits on the eyebrow line (`aside` below).
+                // pause. The Live chip itself sits on the eyebrow line (`aside` below). The pill
+                // shows only when something changed (device audit, 11 Oct 2026: "0 since you
+                // looked" cost 45px of hero for nothing).
                 <div className={styles.phoneHeroActs}>
-                  <Button
-                    variant="onHero"
-                    className={styles.phoneSince}
-                    aria-haspopup="dialog"
-                    aria-expanded={phoneSheet?.kind === "since"}
-                    onClick={() => setPhoneSheet({ kind: "since" })}
-                  >
-                    <b className={styles.phoneSinceMono}>{newEvents}</b> since you looked at{" "}
-                    <span className={styles.phoneSinceMono}>{sinceClock}</span>
-                  </Button>
-                  <Button
-                    variant="onHero"
-                    iconOnly
-                    icon={paused ? Play : Pause}
-                    // One name with aria-pressed: swapping the name too reads as "Resume, pressed".
-                    aria-label="Pause live updates"
-                    aria-pressed={paused}
-                    className={styles.phonePause}
-                    onClick={togglePause}
-                  />
+                  {newEvents > 0 ? (
+                    <Button
+                      variant="onHero"
+                      className={styles.phoneSince}
+                      aria-haspopup="dialog"
+                      aria-expanded={phoneSheet?.kind === "since"}
+                      onClick={() => setPhoneSheet({ kind: "since" })}
+                    >
+                      <b className={styles.phoneSinceMono}>{newEvents}</b>{" "}
+                      {lastLook.changes?.basis === "shift" ? "new since" : "since you looked at"}{" "}
+                      <span className={styles.phoneSinceMono}>{sinceClock}</span>
+                    </Button>
+                  ) : null}
                 </div>
               ) : (
                 <div className={styles.heroToggles}>
                   <HeroStat
                     inline
                     value={overdueInQueue}
-                    label="Overdue"
+                    label="Overdue waits"
                     tone={overdueInQueue > 0 ? "danger" : undefined}
                     pressed={highlight === "overdue"}
                     onToggle={() => toggleHighlight("overdue")}
@@ -695,7 +739,9 @@ export function CoordinatorScreen() {
                   <HeroStat
                     inline
                     value={breachWithinHour}
-                    label={`Due within ${dueWindow}`}
+                    // Names its noun (device audit, 11 Oct 2026): it counts recorded legal forms due
+                    // within the saved window, not the queue's "due in" wait targets.
+                    label={`Forms due within ${dueWindow}`}
                     tone={breachWithinHour > 0 ? "warning" : undefined}
                     className={styles.heroDueChip}
                   />
@@ -735,7 +781,13 @@ export function CoordinatorScreen() {
             }
             aside={
               isPhone ? (
-                <LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} />
+                // Device audit (11 Oct 2026): the pause is folded into the Live pill.
+                <LiveChip
+                  state={paused ? "paused" : "live"}
+                  onHero
+                  age={formatInstant(now)}
+                  onTogglePause={togglePause}
+                />
               ) : (
                 <>
                   <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
@@ -807,7 +859,9 @@ export function CoordinatorScreen() {
               value={portraitView}
               onChange={setPortraitView}
               items={[
-                { id: "queue", label: "Priority queue", count: queue.length + referralQueue.length },
+                // The count is patients plus referrals, so the label says both (device audit, 11 Oct
+                // 2026: "Priority queue 77" sat beside the card's "70 of 70").
+                { id: "queue", label: "Queue and referrals", count: queue.length + referralQueue.length },
                 { id: "bedflow", label: "State bedflow", count: units.length },
               ]}
             />
@@ -841,6 +895,7 @@ export function CoordinatorScreen() {
                   onClearHighlight={() => setHighlight(undefined)}
                   rowCap={isPhone ? PHONE_QUEUE_ROWS : undefined}
                   phone={isPhone}
+                  pinnedIds={actNowMovementIds}
                 />
                 {/* Phone (v10 Home): the queue ends the page; the beds-ready list is on Capacity
                     and Places, not repeated here. */}

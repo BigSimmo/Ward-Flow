@@ -1,4 +1,5 @@
 "use client";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { DischargeCareJourney } from "./discharge-care-journey";
 
 import Link from "next/link";
@@ -48,7 +49,6 @@ import {
   Button,
   Card,
   EmptyState,
-  FilterChip,
   Hero,
   LiveChip,
   PhoneSheet,
@@ -77,6 +77,7 @@ import {
 import { SupportNotificationChecklist } from "../movements/support-notification-checklist";
 import styles from "./discharges.module.css";
 import pageStyles from "./discharges-third-edition.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
@@ -144,6 +145,12 @@ const BAND_LABELS: Record<ReleaseBand, string> = {
   tonight: "Tonight",
   tomorrow: "Tomorrow",
 };
+
+/** The timing word for a release: how far past its date when late, never "Now" for a late one. */
+function releaseTimingWords(release: BedRelease, now: Instant): string {
+  if (release.state !== "discharged" && release.expectedAt < now) return `${durMinutes(now - release.expectedAt)} past`;
+  return BAND_LABELS[releaseBand(release, now) as ReleaseBand];
+}
 
 const EMPTY_REASON: Record<GroupKey, string> = {
   blocked: "release is currently blocked",
@@ -306,6 +313,16 @@ function recordName(record: DischargeRecord): string {
 }
 function recordedMoment(value: Instant | null, dayZero: Date): string {
   return value !== null && Number.isFinite(value) ? formatSheetMoment(value, dayZero) : "Not recorded";
+}
+
+/** The calendar day alone ("Fri, 9 Oct"), for a release already past its date. */
+function recordedDate(value: Instant, dayZero: Date): string {
+  return calendarDateOf(value, dayZero).toLocaleDateString("en-AU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "Australia/Perth",
+  });
 }
 
 const BLOCKER_CATEGORIES = [
@@ -660,16 +677,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     identity !== "all" ||
     destination !== "all" ||
     blockerCategory !== "all";
-  const blockerCount = (category: string) =>
-    bedReleases.filter(
-      (release) =>
-        inScope(release.unitId) &&
-        release.blocker !== null &&
-        release.state !== "discharged" &&
-        (category === "all" || release.blocker.toLowerCase().includes(category.toLowerCase())),
-    ).length;
-  const destinationCount = (id: string) =>
-    records.filter((record) => inScope(record.unitId) && (id === "all" || record.leavingDestination === id)).length;
   const openCount = counts.blocked + counts.confirmed + counts.expected;
   /* The charts under the table count PEOPLE: the admission records in scope that have not left,
      so a click can highlight the same rows the Admission records list shows. */
@@ -729,7 +736,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     if (list) {
       list.scrollTop = 0;
       if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 40rem)").matches) {
-        list.scrollIntoView?.({ block: "start", behavior: "smooth" });
+        list.scrollIntoView?.({ block: "start", behavior: wardScrollBehavior() });
       }
     }
   };
@@ -1044,6 +1051,31 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             ))}
           </Select>
         </label>
+        {/* Decision 5 (review 12 Oct 2026): one control per filter. Status narrows from this one
+            dropdown (its counts are the hero chips' counts); the hero chips highlight. The tab
+            row over the table and the blocker chip row are gone. */}
+        <label htmlFor="discharges-filter-status" className={pageStyles.filterField}>
+          <span className={pageStyles.filterLabelText}>Status</span>
+          <Select
+            id="discharges-filter-status"
+            name="dischargesFilterStatus"
+            value={status}
+            boxClassName={pageStyles.filterSelect}
+            data-testid="ward-discharge-filter-status"
+            onChange={(event) => {
+              const next = event.target.value;
+              setStatus(WORK_ORDER.includes(next as WorkStatus) ? (next as WorkStatus) : "all");
+              clearSelection();
+            }}
+          >
+            <option value="all">{`All statuses · ${total}`}</option>
+            {WORK_ORDER.map((key) => (
+              <option key={key} value={key}>
+                {`${population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]} · ${counts[key]}`}
+              </option>
+            ))}
+          </Select>
+        </label>
         <label htmlFor="discharges-filter-blocker" className={pageStyles.filterField}>
           <span className={pageStyles.filterLabelText}>Blocker</span>
           <Select
@@ -1130,66 +1162,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           </Button>
         )}
       </div>
-      {population === "records" ? (
-        <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick destination filters">
-          <span className={pageStyles.filterLabelText}>Destination</span>
-          <FilterChip
-            className={pageStyles.quickChip}
-            pressed={destination === "all"}
-            count={destinationCount("all")}
-            onPressedChange={() => {
-              setDestination("all");
-              clearSelection();
-            }}
-          >
-            All
-          </FilterChip>
-          {LEAVING_DESTINATIONS.slice(0, 4).map((item) => (
-            <FilterChip
-              key={item.id}
-              className={pageStyles.quickChip}
-              pressed={destination === item.id}
-              count={destinationCount(item.id)}
-              onPressedChange={() => {
-                setDestination(destination === item.id ? "all" : item.id);
-                clearSelection();
-              }}
-            >
-              {item.label}
-            </FilterChip>
-          ))}
-        </div>
-      ) : (
-        <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick blocker filters">
-          <span className={pageStyles.filterLabelText}>Blocker</span>
-          {/* v10: the barrier chips highlight matching rows and dim the rest; none is hidden. */}
-          <FilterChip
-            className={pageStyles.quickChip}
-            pressed={highlight?.kind !== "barrier"}
-            count={blockerCount("all")}
-            onPressedChange={() => {
-              if (highlight?.kind === "barrier") setHighlight(null);
-            }}
-          >
-            All
-          </FilterChip>
-          {BLOCKER_CATEGORIES.slice(0, 4).map((cat) => (
-            <FilterChip
-              key={cat.id}
-              className={pageStyles.quickChip}
-              pressed={highlight?.kind === "barrier" && highlight.id === cat.id}
-              count={blockerCount(cat.id)}
-              onPressedChange={() =>
-                setHighlight(
-                  highlight?.kind === "barrier" && highlight.id === cat.id ? null : { kind: "barrier", id: cat.id },
-                )
-              }
-            >
-              {cat.label}
-            </FilterChip>
-          ))}
-        </div>
-      )}
     </Card>
   );
 
@@ -1286,24 +1258,14 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   </button>
                 ))}
               </div>
-              {isPhone ? (
-                /* v10 phone: the hero's one action, full width under the figures. */
-                <Button
-                  variant="onHero"
-                  icon={Copy}
-                  className={pageStyles.phHeroAction}
-                  onClick={copySummary}
-                  data-testid="ward-discharge-copy"
-                >
-                  Copy summary
-                </Button>
-              ) : null}
+              {/* Device audit, 11 Oct 2026: no desk tools in the phone hero, so Copy summary
+                  is off phone (it stays in the tablet and desktop hero). */}
             </>
           }
           barAside={isPhone ? undefined : populationSwitch}
         />
         {isPhone ? (
-          <div className={pageStyles.phToolbar}>
+          <div className={`${pageStyles.phToolbar} ${wardPin.pinnedSwitch}`}>
             {populationSwitch}
             <button
               type="button"
@@ -1410,39 +1372,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               <h2 id="discharge-register-heading" className={pageStyles.localTitle}>
                 {population === "releases" ? "Bed release worklist" : "Admission discharge records"}
               </h2>
-              <div
-                className={pageStyles.statusFilters}
-                aria-label="Filter by discharge status"
-                hidden={population === "records" && guarded.status === "denied"}
-              >
-                <button
-                  type="button"
-                  aria-pressed={status === "all"}
-                  onClick={() => {
-                    setStatus("all");
-                    clearSelection();
-                  }}
-                >
-                  <span>All</span> <strong className={pageStyles.tabCountBadge}>{total}</strong>
-                </button>
-                {WORK_ORDER.map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    data-status={key}
-                    aria-pressed={status === key}
-                    onClick={() => {
-                      setStatus(key);
-                      clearSelection();
-                    }}
-                  >
-                    <span>
-                      {population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]}
-                    </span>{" "}
-                    <strong className={pageStyles.tabCountBadge}>{counts[key]}</strong>
-                  </button>
-                ))}
-              </div>
               <div className={pageStyles.viewSwitch} role="group" aria-label="Table view">
                 <button type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>
                   <List size={14} aria-hidden="true" />
@@ -1479,7 +1408,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 {counts.confirmed} confirmed, {counts.expected} expected, {counts.departed} departed.
               </span>
               <span aria-live="polite" className={pageStyles.shownCountBadge}>
-                {population === "records" && guarded.status === "denied" ? "Unavailable" : `${shown} shown`}
+                {/* Device audit, 11 Oct 2026: the hero says 53 open and the list holds 57, so the
+                    list names both parts rather than a bare "57 shown". */}
+                {population === "records" && guarded.status === "denied"
+                  ? "Unavailable"
+                  : population === "releases" && status === "all" && shown === total && counts.departed > 0
+                    ? `${shown - counts.departed} open · ${counts.departed} discharged`
+                    : `${shown} shown`}
               </span>
             </header>
             <div
@@ -1633,7 +1568,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                           (isPhone && !phoneGroupsOpen[key]
                             ? litFirst(releaseGroups[key], releaseLit).slice(0, PHONE_GROUP_CAP)
                             : litFirst(releaseGroups[key], releaseLit)
-                          ).map((release) => {
+                          ).map((release, index) => {
                             const unit = units.find((candidate) => candidate.id === release.unitId);
                             const linked = records.find((candidate) => candidate.admissionId === release.admissionId);
                             const overdue = release.state !== "discharged" && release.expectedAt < now;
@@ -1644,7 +1579,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 data-selected={releaseId === release.id}
                                 data-highlighted={releaseLit(release) || undefined}
                                 data-dim={dimmed(releaseLit(release))}
-                                data-act={key === "blocked" || undefined}
+                                // One thin red edge, on the first act-now row only (device audit,
+                                // 11 Oct 2026: five stacked red outlines read as an error state).
+                                data-act={(key === "blocked" && index === 0) || undefined}
                                 onClick={(e) => selectRelease(release.id, e.currentTarget)}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
@@ -1672,27 +1609,44 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                     {linked ? (
                                       <>
                                         <span aria-hidden="true">{isPhone ? "\u00a0· " : " · "}</span>
-                                        <span className={pageStyles.patientHint}>{recordName(linked)}</span>
+                                        {/* Phone rows carry the UMRN only (device audit, 11 Oct
+                                            2026); the sheet adds the name. */}
+                                        <span className={isPhone ? pageStyles.mono : pageStyles.patientHint}>
+                                          {isPhone && linked.identity.kind === "linked"
+                                            ? linked.identity.patient.umrn
+                                            : recordName(linked)}
+                                        </span>
                                       </>
                                     ) : null}
                                   </span>
                                 </td>
                                 <td data-label="Timing" className={pageStyles.timingCell}>
-                                  <strong className={pageStyles.band}>
-                                    {overdue ? "Now" : BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
-                                  </strong>{" "}
-                                  <span className={pageStyles.due}>
-                                    {recordedMoment(
-                                      release.state === "discharged" ? release.confirmedAt : release.expectedAt,
-                                      dayZero,
-                                    )}
-                                  </span>
+                                  {/* Device audit, 11 Oct 2026: a release past its date says how far
+                                      past, with the date alone; "Now" and the clock time read as
+                                      due this minute on rows one to four days late. */}
                                   {overdue ? (
-                                    <span className={pageStyles.overdue}>
-                                      <StatusGlyph tone="danger" size={9} />
-                                      {durMinutes(now - release.expectedAt)} overdue
-                                    </span>
-                                  ) : null}
+                                    <>
+                                      <strong className={pageStyles.band}>
+                                        <StatusGlyph tone="danger" size={9} />
+                                        {durMinutes(now - release.expectedAt)} past
+                                      </strong>{" "}
+                                      <span className={pageStyles.due}>
+                                        {recordedDate(release.expectedAt, dayZero)}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <strong className={pageStyles.band}>
+                                        {BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
+                                      </strong>{" "}
+                                      <span className={pageStyles.due}>
+                                        {recordedMoment(
+                                          release.state === "discharged" ? release.confirmedAt : release.expectedAt,
+                                          dayZero,
+                                        )}
+                                      </span>
+                                    </>
+                                  )}
                                 </td>
                                 <td data-label="Stage / blocker">
                                   <div className={pageStyles.stageCluster}>
@@ -2122,7 +2076,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                               {detailRelease.state === "discharged"
                                 ? "Departed"
                                 : detailRelease.expectedAt < now
-                                  ? "Now"
+                                  ? "Past the ward's date"
                                   : BAND_LABELS[releaseBand(detailRelease, now) as ReleaseBand]}
                             </dd>
                           </div>
@@ -2576,12 +2530,11 @@ export function DischargeGroupSection({
               <tbody>
                 {releases.map((release) => {
                   const unit = units.find((candidate) => candidate.id === release.unitId);
-                  const band = releaseBand(release, now) as ReleaseBand;
                   return (
                     <tr key={release.id}>
                       <td>{unitLabel(unit, release.unitId)}</td>
                       <td>{healthServiceLabel(unit)}</td>
-                      <td className={styles.countdownBand}>{BAND_LABELS[band]}</td>
+                      <td className={styles.countdownBand}>{releaseTimingWords(release, now)}</td>
                       {/* Bed-model rework (2026-08-28): the stage is rendered on every row, in
                           every group. Without it the Blocked group would swallow the one fact
                           this rework exists to preserve — that a stuck discharge is still a
@@ -2621,11 +2574,10 @@ export function DischargeGroupSection({
             <ul className={styles.cardList} data-testid={`ward-discharge-cards-${groupKey}`}>
               {releases.map((release) => {
                 const unit = units.find((candidate) => candidate.id === release.unitId);
-                const band = releaseBand(release, now) as ReleaseBand;
                 return (
                   <li key={release.id} className={styles.card}>
                     <div className={styles.cardTop}>
-                      <span className={styles.cardBand}>{BAND_LABELS[band]}</span>
+                      <span className={styles.cardBand}>{releaseTimingWords(release, now)}</span>
                       <span className={styles.cardUnit}>{unitLabel(unit, release.unitId)}</span>
                     </div>
                     <p className={styles.cardService}>{healthServiceLabel(unit)}</p>

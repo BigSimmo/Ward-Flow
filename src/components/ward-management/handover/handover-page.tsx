@@ -13,7 +13,6 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import {
-  Activity,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -22,6 +21,7 @@ import {
   Columns3,
   Keyboard,
   MonitorPlay,
+  MoreHorizontal,
   Printer,
   Sparkles,
   Timer as TimerIcon,
@@ -29,11 +29,11 @@ import {
 
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
-import { openWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
@@ -65,7 +65,10 @@ import {
   type SinceItem,
   Icon,
   LiveChip,
+  Menu,
   Popover,
+  PortraitList,
+  PortraitRail,
   Segmented,
   Select,
   SrOnly,
@@ -76,6 +79,8 @@ import {
   cx,
   durMinutes,
   tableClasses,
+  useIsTabletPortrait,
+  useMediaQuery,
 } from "@/components/wf";
 
 import {
@@ -83,6 +88,7 @@ import {
   DENSITY_LABEL,
   HANDOVER_COLUMNS,
   columnsFor,
+  rowTone,
   type ColumnContext,
   type HandoverColumnId,
   type HandoverDensity,
@@ -100,13 +106,13 @@ import {
   heldDischarges,
   isActNow,
   isbarText,
-  isMoving,
-  isWaitingForBed,
   pillTest,
   summaryText,
   toHandoverRow,
   toHandoverWard,
   wardIsStale,
+  STAGE_LABEL,
+  nextStep,
   type HandoverChip,
   type HandoverGrouping,
   type HandoverPill,
@@ -374,9 +380,14 @@ export function HandoverPage() {
     dayZero,
     handoverSignOffs,
     rejections,
+    configuration,
+    inboxSnoozes,
   } = useWardFlow();
   const now = useWardFlowClock();
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
+  const isTabletPortrait = useIsTabletPortrait();
+  /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the rail as a slide-over. */
+  const portrait = isTabletPortrait && !isPhoneWidth;
 
   /* scope, read once from the URL */
   const searchParams = useSearchParams();
@@ -431,9 +442,19 @@ export function HandoverPage() {
   }, [copied]);
 
   /* rows and wards */
+  // Act now reads the shared act-now list (`ward-act-now-items.ts`), the one Alerts and Tasks show.
+  const actNowMovementIds = useMemo(
+    () =>
+      new Set(activeActNowItems({ movements, units, configuration, inboxSnoozes }, now).map((item) => item.movementId)),
+    [movements, units, configuration, inboxSnoozes, now],
+  );
   const allRows = useMemo(
-    () => movements.filter(isOpen).map((movement) => toHandoverRow(movement, units, patients, referrals)),
-    [movements, units, patients, referrals],
+    () =>
+      movements.filter(isOpen).map((movement) => ({
+        ...toHandoverRow(movement, units, patients, referrals),
+        actNow: actNowMovementIds.has(movement.id),
+      })),
+    [movements, units, patients, referrals, actNowMovementIds],
   );
   const rows = useMemo(
     () => allRows.filter((row) => movementInHandoverScope(row.movement, scope, units, referrals)),
@@ -495,8 +516,8 @@ export function HandoverPage() {
     () => ({
       act: rows.filter((row) => groupOf(row, now, cutoff) === "act").length,
       due: rows.filter((row) => groupOf(row, now, cutoff) === "due").length,
-      bed: rows.filter(isWaitingForBed).length,
-      mov: rows.filter(isMoving).length,
+      bed: rows.filter((row) => groupOf(row, now, cutoff) === "bed").length,
+      mov: rows.filter((row) => groupOf(row, now, cutoff) === "mov").length,
       new: rows.filter((row) => row.openedAt >= newSince).length,
     }),
     [rows, now, cutoff, newSince],
@@ -549,7 +570,9 @@ export function HandoverPage() {
       },
     ];
   }, [admissions, wards, units, rows, newSince, now]);
-  const sinceTotal = sinceItems.reduce((sum, item) => sum + item.value, 0);
+  // L1 (site review, 12 Oct 2026): the chip counts each change once. "New act now" rows are already
+  // among "new on the sheet", so adding them again made the chip read 35 beside a strip of 0, 1, 32.
+  const sinceTotal = sinceItems.reduce((sum, item) => (item.id === "act" ? sum : sum + item.value), 0);
   const copySince = useCallback(() => {
     const text = [
       `Since ${formatInstantWithDay(newSince, now)} (${scopeLabel}):`,
@@ -564,16 +587,25 @@ export function HandoverPage() {
   const outsideAct = outside.filter((row) => isActNow(row, now));
 
   /* columns */
-  const columnIds = customColumns ?? DENSITY_COLUMNS[density];
+  // Desktop with the sign-off rail beside the table (1201px and up): Standard drops Legal and obs and
+  // fits the rest to the card, so Due and Next step are on screen rather than scrolled off (device
+  // audit 11 Oct 2026). Full and custom columns keep their own set.
+  const railBeside = useMediaQuery("(min-width: 75.0625rem)");
+  const fitted = railBeside && !present && customColumns === null && density === "std";
+  const columnIds =
+    customColumns ?? (fitted ? DENSITY_COLUMNS.std.filter((id) => id !== "lo") : DENSITY_COLUMNS[density]);
   const columns = columnsFor(columnIds);
   const wide = present || columnIds.length > 8;
   const compact = customColumns === null && density === "min";
 
   /* selection */
   const selected = selectedId === null ? undefined : allRows.find((row) => row.id === selectedId);
+  // The rail's own Sign off shows only when the rail is on screen beside the Patients table and is
+  // not holding a picked patient's flow; everywhere else the hero button is the way in.
+  const signOffInRail = railBeside && !wide && tab === "pts" && !selected;
   const pick = (id: string) => {
     setSelectedId(id);
-    if (wide || isPhoneWidth) setDrawerOpen(true);
+    if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
   };
   const step = useCallback(
     (direction: 1 | -1) => {
@@ -582,12 +614,14 @@ export function HandoverPage() {
       const next = index < 0 ? 0 : Math.max(0, Math.min(visibleOrder.length - 1, index + direction));
       const id = visibleOrder[next]!.id;
       setSelectedId(id);
-      if (wide || isPhoneWidth) setDrawerOpen(true);
-      if (typeof document !== "undefined") {
+      if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
+      // A sheet owns the selection on phone and in presentation mode. Revealing
+      // its table row would move the locked background behind that sheet.
+      else if (typeof document !== "undefined") {
         document.querySelector(`[data-row-id="${CSS.escape(id)}"]`)?.scrollIntoView?.({ block: "nearest" });
       }
     },
-    [visibleOrder, selectedId, wide, isPhoneWidth, setDrawerOpen],
+    [visibleOrder, selectedId, wide, isPhoneWidth, portrait, setDrawerOpen],
   );
 
   /* sign-off */
@@ -616,7 +650,7 @@ export function HandoverPage() {
     setSheetOpen(false);
     setTab("pts");
     setSelectedId(null);
-    if (wide || isPhoneWidth) setDrawerOpen(true);
+    if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
     window.requestAnimationFrame(() => signOffRef.current?.querySelector<HTMLElement>("button")?.focus());
   };
 
@@ -722,28 +756,11 @@ export function HandoverPage() {
       : { id: "feeds", done: true, text: "Every ward feed is current" },
     takenAt !== null
       ? { id: "print", done: true, text: `Printed copy taken ${formatInstantWithDay(takenAt, now)}` }
-      : {
-          id: "print",
-          done: false,
-          text: "No printed copy yet",
-          action: isPhoneWidth
-            ? undefined
-            : {
-                label: "Print handover",
-                onClick: () => {
-                  setDrawerOpen(false);
-                  setSheetOpen(true);
-                },
-              },
-        },
+      : // Print and the meeting timer live once, in the hero (device audit 11 Oct 2026).
+        { id: "print", done: false, text: "No printed copy yet" },
     meetings.length
       ? { id: "meet", done: true, text: `Meeting timed, ${meetings[0]!.minutes} min` }
-      : {
-          id: "meet",
-          done: false,
-          text: "Meeting not timed",
-          action: { label: "Start timer", onClick: toggleMeeting },
-        },
+      : { id: "meet", done: false, text: "Meeting not timed" },
   ];
   const canSignOff = canDispatch("coordinator", "RECORD_HANDOVER_SIGN_OFF") && !passed;
 
@@ -774,6 +791,22 @@ export function HandoverPage() {
       onCopyIsbar={copyIsbar}
     />
   ) : null;
+
+  /* iPad portrait: the rail (sign off, or the open patient) as a slide-over. */
+  const portraitRail = (signedLine: string | null, checksDone: number) => (
+    <PortraitRail
+      title={selected ? selected.name : "Sign off"}
+      summary={selected ? "Patient flow" : (signedLine ?? `${checksDone} of ${signChecks.length} checks`)}
+      open={drawerOpen}
+      onOpenChange={(open) => {
+        // The trigger opens the rest state (sign off); closing returns to it.
+        setSelectedId(null);
+        setDrawerOpen(open);
+      }}
+    >
+      {flowPanel ?? signOffPanel}
+    </PortraitRail>
+  );
 
   const togglePill = (next: HandoverPill) => {
     setPill((current) => (current === next ? null : next));
@@ -984,26 +1017,33 @@ export function HandoverPage() {
               "Start meeting"
             )}
           </Button>
-          <Button
-            variant="onHero"
-            size="sm"
-            icon={MonitorPlay}
-            aria-pressed={present}
-            onClick={() => setPresent((on) => !on)}
-          >
-            {present ? "Exit present" : "Present"}
-          </Button>
-          <Button
-            variant="onHero"
-            size="sm"
-            icon={Printer}
-            aria-pressed={sheetOpen}
-            onClick={() => setSheetOpen((open) => !open)}
-            data-testid="ward-handover-print"
-          >
-            Print handover
-          </Button>
-          {signOffButton}
+          {/* Present and Print sit behind More, so the band carries one primary (device audit 11 Oct 2026). */}
+          <Menu
+            label="More handover actions"
+            align="end"
+            items={[
+              {
+                id: "present",
+                label: present ? "Exit present" : "Present",
+                icon: MonitorPlay,
+                onSelect: () => setPresent((on) => !on),
+              },
+              {
+                id: "print",
+                label: "Print handover",
+                icon: Printer,
+                onSelect: () => setSheetOpen((open) => !open),
+              },
+            ]}
+            trigger={(props) => (
+              <Button {...props} variant="onHero" size="sm" icon={MoreHorizontal} data-testid="ward-handover-more">
+                More
+              </Button>
+            )}
+          />
+          {/* With the rail beside the table its Sign off is the one; below 1201px the rail is a
+              drawer and this opens it. */}
+          {signOffInRail ? null : signOffButton}
         </>
       }
       bar={
@@ -1023,7 +1063,7 @@ export function HandoverPage() {
                 : id === "due"
                   ? `Due by ${formatInstantWithDay(cutoff, now)}`
                   : id === "bed"
-                    ? "Waiting for a bed"
+                    ? "Finding a ward"
                     : "Moving"}
             </button>
           ))}
@@ -1075,9 +1115,9 @@ export function HandoverPage() {
         </div>
       }
       footAside={
-        <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} waiting`}>
+        <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} finding a ward`}>
           <span>
-            <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> waiting
+            <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> finding a ward
           </span>
           <span className={styles.gapBar} aria-hidden="true">
             {readyTotal > 0 ? <i className={styles.gapReady} style={{ flex: readyTotal }} /> : null}
@@ -1102,9 +1142,6 @@ export function HandoverPage() {
       <Link href="/mockups/ward-flow/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
         Downtime pack
       </Link>
-      <Button variant="ghost" size="sm" icon={Activity} onClick={() => openWardDrawer("activity")}>
-        Activity
-      </Button>
       <Popover
         label="Keyboard shortcuts"
         align="end"
@@ -1204,10 +1241,19 @@ export function HandoverPage() {
         ) : null}
       </div>
       <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Handover patients">
-        <table className={cx(tableClasses.table, styles.sheetTable, compact && styles.compact)}>
+        <table
+          className={cx(tableClasses.table, styles.sheetTable, compact && styles.compact, fitted && styles.fitted)}
+        >
           <colgroup>
             {columns.map((column) => (
-              <col key={column.id} style={{ width: column.width }} />
+              <col
+                key={column.id}
+                style={{
+                  width: fitted
+                    ? `${((column.width / columns.reduce((sum, entry) => sum + entry.width, 0)) * 100).toFixed(2)}%`
+                    : column.width,
+                }}
+              />
             ))}
           </colgroup>
           <thead>
@@ -1345,6 +1391,7 @@ export function HandoverPage() {
           wards={wards}
           held={held}
           now={now}
+          waitingForBed={counts.bed}
           onOpenPatient={(id) => {
             setTab("pts");
             pick(id);
@@ -1356,6 +1403,45 @@ export function HandoverPage() {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="hist">
         <HandoverHistory signOffs={handoverSignOffs} meetings={meetings} takenAt={takenAt} now={now} />
+      </TabPanel>
+    );
+  } else if (portrait) {
+    const signedLine = signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : null;
+    const checksDone = signChecks.filter((check) => check.done).length;
+    body = (
+      <TabPanel idPrefix="ward-handover-tab" id="pts">
+        <div className={styles.portraitTools}>
+          <span className={styles.portraitNote}>
+            <b>{rows.length}</b> of {allRows.length} open · {scopeLabel}
+          </span>
+          {portraitRail(signedLine, checksDone)}
+        </div>
+        <PortraitList
+          label="Handover patients"
+          onOpen={pick}
+          groups={groups.map((group) => ({
+            id: group.id,
+            title: group.title,
+            tone: group.tone ? GROUP_TONE[group.tone] : undefined,
+            note: group.rows.length === 0 ? undefined : group.why,
+            rows: group.rows.map((row) => {
+              const next = nextStep(row, now, cutoff, readyBeds);
+              return {
+                id: row.id,
+                name: row.name,
+                sub: `${row.umrn} · T${row.tier} · ${STAGE_LABEL[row.stage]}`,
+                figure: durMinutes(now - row.openedAt),
+                figureNote: "waiting",
+                tone: rowTone(row, ctx),
+                next: next.text,
+                actNow: isActNow(row, now),
+                selected: row.id === selectedId,
+                dim: anyHighlight && !isHighlighted(row),
+              };
+            }),
+          }))}
+          footer={<span>Form times are as typed, not legally checked</span>}
+        />
       </TabPanel>
     );
   } else {
@@ -1379,7 +1465,6 @@ export function HandoverPage() {
         id="ward-handover-since"
         since={formatInstantWithDay(newSince, now)}
         items={sinceTotal === 0 ? [] : sinceItems}
-        onCopy={copySince}
       />
     </div>
   ) : null;
@@ -1391,7 +1476,7 @@ export function HandoverPage() {
       {sheetOpen ? null : sinceStrip}
       {sheetOpen ? null : toolbar}
       {body}
-      {wide ? (
+      {wide && !portrait ? (
         <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title={selected ? selected.name : "Sign off"}>
           {flowPanel ?? signOffPanel}
         </Drawer>

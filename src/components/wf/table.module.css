@@ -1,5 +1,5 @@
 /* v6 rows and tables, v9 heights: rows read `--wf-row` (density), hairlines, the selected row's 3px
- * edge is the only stripe. An act-now row has a thin red full edge and no fill. */
+ * edge marks selection. Act-now rows use inset rounded markers and a subtle tint. */
 
 .row {
   display: grid;
@@ -27,19 +27,23 @@
   box-shadow: inset 3px 0 0 var(--wf-accent-strong);
 }
 
-/* Act now: a thin red edge all round, never a fill (v9 section 5 and 9). */
+/* Act now: an inset coral marker and subtle tint (v9 section 5 and 9). */
 .actNow {
-  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: none;
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .selected.actNow {
-  box-shadow:
-    inset 3px 0 0 var(--wf-accent-strong),
-    inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+
+  background: var(--wf-selected);
+  position: relative;
 }
 
-/* v9 section 8: a row's ring sits inside with a 2px gap, so it never touches the red edge or the
- * selection stripe, and it paints over both: focus wins over selection. */
+/* v9 section 8: a row's ring sits inside with a 2px gap, so it stays separate from the
+ * attention marker and selection stripe: focus wins over selection. */
 .row:focus-visible,
 .table tr:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
@@ -210,11 +214,16 @@
 }
 
 .table tr.actNow {
-  outline: 1px solid var(--wf-act-edge);
-  outline-offset: -1px;
+  background: var(--wf-act-tint);
 }
 
-/* Focus wins over the act now edge: the ring replaces the edge's outline while focused. */
+.table tr.selected.actNow > td:first-child {
+  box-shadow:
+    inset 3px 0 0 var(--wf-accent-strong),
+    inset 5px 0 0 var(--wf-act-edge);
+}
+
+/* Focus paints its ring inside the row, clear of the act now edge. */
 .table tr.actNow:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -4px;
@@ -246,5 +255,31 @@
   }
   .sq {
     border-color: CanvasText;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.row.actNow,
+.table tr.actNow > td:first-child {
+  position: relative;
+}
+
+.row.actNow::before,
+.table tr.actNow > td:first-child::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .row.actNow::before,
+  .table tr.actNow > td:first-child::before {
+    background: CanvasText;
+    forced-color-adjust: none;
   }
 }

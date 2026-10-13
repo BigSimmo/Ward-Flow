@@ -42,65 +42,6 @@
   outline-offset: 2px;
 }
 
-.teamPanel {
-  width: 22rem;
-  max-width: calc(100vw - 2 * var(--wf-s-4));
-}
-
-.teamMenu {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.teamMenuHead {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  margin: 0;
-  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-2);
-  color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.teamMenuList {
-  max-height: 22rem;
-  margin: 0;
-  padding: 0 var(--wf-s-1) var(--wf-s-1);
-  overflow-y: auto;
-  list-style: none;
-}
-
-.teamMenuItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-  min-height: 32px;
-  padding: 0 var(--wf-s-2);
-  border-radius: var(--wf-r-sm);
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.teamMenuItem:hover {
-  background: var(--wf-hover);
-}
-
-.teamMenuItem[aria-current="page"] {
-  font-weight: 600;
-}
-
-.teamMenuItem:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
 /* ---- List tabs, drawn as the hero track ---- */
 
 .trackScroll {
@@ -258,7 +199,6 @@
   }
 
   .trackItem,
-  .teamMenuItem,
   .searchHit {
     min-height: var(--spacing-tap, 3rem);
   }

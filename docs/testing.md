@@ -166,8 +166,6 @@ it is limited to the documented, exact GitHub connector-gap operation in
 | `npm run verify:phone-chrome`             | Smart phone-chrome gate: lock parity, affected contracts, browser/PWA owners and exact journeys, then full UI only for shared foundations.              |
 | `npm run verify:ui`                       | Complete required production Chromium gate.                                                                                                             |
 | `npm run test:e2e:style-contract`         | Focused rendered-effect assertions for the unlayered classes in `globals.css` (also runs inside `test:e2e:pr`).                                         |
-| `npm run test:e2e:visual`                 | Pixel baselines. Advisory in CI; a platform with no committed baseline fails by design.                                                                 |
-| `npm run test:e2e:visual:update`          | Rewrite the pixel baselines for the current platform. Review every changed PNG before committing.                                                       |
 | `npm run verify:lighthouse`               | Build, serve, and measure the budgeted routes with Lighthouse, then grade against the committed baseline. `-- --dry-run` prints the plan.               |
 | `npm run check:lighthouse-budget`         | Grade Lighthouse JSON that already exists. `-- --update` refreshes the baseline in `lighthouse-budget.json`.                                            |
 | `npm run check:coverage-inventory`        | Fail if a declared executable root is absent from the generated `coverage/lcov.info`.                                                                   |

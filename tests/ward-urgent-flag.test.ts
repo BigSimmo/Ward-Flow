@@ -124,10 +124,18 @@ describe("the urgent flag — the mechanism the owner asked for and nobody could
     const state = seedWardFlowState();
     const open = state.movements.filter((candidate) => !candidate.closure && candidate.stage !== "arrived");
     const leastUrgent = open.find((candidate) => candidate.urgency === 3 && !candidate.flaggedUrgent);
-    const mostUrgent = open.find((candidate) => candidate.urgency === 1 && !candidate.flaggedUrgent);
+    // D-32 on Home (12 Oct 2026): beneath the flag the wait leads, so the tier-1 patient must have
+    // waited longer for "before" to put them first.
+    const mostUrgent = open.find(
+      (candidate) =>
+        candidate.urgency === 1 &&
+        !candidate.flaggedUrgent &&
+        leastUrgent !== undefined &&
+        candidate.openedAt < leastUrgent.openedAt,
+    );
     if (!leastUrgent || !mostUrgent) throw new Error("the seed lacks an open tier-1 and tier-3 pair");
 
-    // Before: the tier does the ordering, and the tier-1 patient leads.
+    // Before: the longer-waiting tier-1 patient leads.
     const before = queueOrder(state.movements, NOW).map((candidate) => candidate.id);
     expect(before.indexOf(mostUrgent.id)).toBeLessThan(before.indexOf(leastUrgent.id));
 

@@ -354,15 +354,25 @@
   align-items: end;
 }
 
+/* A phone on its side: the five places stay together round the + instead of spreading the
+   width of the screen. */
+@media (max-width: 48rem) and (orientation: landscape) {
+  .dock {
+    max-width: 30rem;
+    margin-inline: auto;
+  }
+}
+
 .dockItem {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 4px;
-  min-height: 54px;
-  padding: 6px 0 2px;
+  gap: 2px;
+  /* Compact bar (Josh, 12 Oct 2026): 48px keeps a full thumb target, 6px less than before. */
+  min-height: 48px;
+  padding: 4px 0 2px;
   border: 0;
   border-radius: var(--wf-r-md);
   background: transparent;
@@ -436,7 +446,7 @@
   position: relative;
   display: flex;
   justify-content: center;
-  min-height: 54px;
+  min-height: 48px;
 }
 
 .rise {
@@ -588,4 +598,19 @@
 .dataModeButton:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
+}
+
+/* Device audit option A (11 Oct 2026): an act-now row in Needs you carries a thin red edge, never a
+   fill, drawn above the hover fill. */
+.row[data-act-now] {
+  position: relative;
+}
+
+.row[data-act-now]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--wf-danger);
+  pointer-events: none;
 }

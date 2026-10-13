@@ -2,7 +2,6 @@
 
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pause, Play } from "lucide-react";
-import { Button } from "./button";
 import { cx } from "./cx";
 import { clk, dur } from "./format";
 import { SrOnly } from "./primitives";
@@ -59,7 +58,7 @@ function useLiveClock(): string | undefined {
 }
 
 const WORD: Record<LiveState, string> = {
-  live: "Live",
+  live: "Demo",
   paused: "Paused",
   syncing: "Syncing",
   stale: "Stale",
@@ -80,34 +79,44 @@ export function LiveChip({ state, age, asAt, onHero = false, onTogglePause, clas
   // Phone (v10): the chip reads "Live HH:MM" from the shared clock; desktop keeps its own age.
   const phoneClock = isPhone && age !== null && clock ? clock : undefined;
   const shownAge = phoneClock ?? age;
+  const chip = (
+    <span className={cx(styles.lv, onHero && styles.onHero)} aria-hidden="true">
+      {state === "live" ? <span className={styles.pulse} /> : null}
+      {state === "paused" ? <span className={styles.ring} /> : null}
+      {state === "syncing" ? <span className={styles.spin} /> : null}
+      {state === "stale" ? <StatusGlyph tone="warning" size={9} /> : null}
+      {state === "offline" ? <StatusGlyph tone="danger" size={9} /> : null}
+      {word}
+      {state === "live" && shownAge != null ? (
+        <span className={cx(styles.u, phoneClock && styles.clk)}>{shownAge}</span>
+      ) : null}
+      {asAtText ? <span className={styles.u}>{asAtText}</span> : null}
+      {onTogglePause ? (
+        <span className={styles.toggleGlyph}>
+          {paused ? <Play strokeWidth={2} aria-hidden="true" /> : <Pause strokeWidth={2} aria-hidden="true" />}
+        </span>
+      ) : null}
+    </span>
+  );
   return (
     <span className={cx(styles.group, className)} data-wf-live="">
-      <span className={cx(styles.lv, onHero && styles.onHero)} aria-hidden="true">
-        {state === "live" ? <span className={styles.pulse} /> : null}
-        {state === "paused" ? <span className={styles.ring} /> : null}
-        {state === "syncing" ? <span className={styles.spin} /> : null}
-        {state === "stale" ? <StatusGlyph tone="warning" size={9} /> : null}
-        {state === "offline" ? <StatusGlyph tone="danger" size={9} /> : null}
-        {word}
-        {state === "live" && shownAge != null ? (
-          <span className={cx(styles.u, phoneClock && styles.clk)}>{shownAge}</span>
-        ) : null}
-        {asAtText ? <span className={styles.u}>{asAtText}</span> : null}
-      </span>
-      <SrOnly role="status">{asAtText ? `${word}, ${asAtText}` : word}</SrOnly>
+      {/* Device audit (11 Oct 2026): the pause is folded into the Live pill — one control, not a pill
+          and a separate 32 x 48 tile. The whole pill is the button; its glyph shows pause or play. */}
       {onTogglePause ? (
-        <Button
-          variant={onHero ? "onHero" : "sec"}
-          size="sm"
-          iconOnly
-          icon={paused ? Play : Pause}
+        <button
+          type="button"
+          className={styles.toggle}
           // One name with aria-pressed: swapping the name too reads as "Resume, pressed".
-          aria-label="Pause live updates"
+          aria-label="Pause demo updates"
           aria-pressed={paused}
-          className={styles.pause}
           onClick={onTogglePause}
-        />
-      ) : null}
+        >
+          {chip}
+        </button>
+      ) : (
+        chip
+      )}
+      <SrOnly role="status">{asAtText ? `${word}, ${asAtText}` : word}</SrOnly>
     </span>
   );
 }

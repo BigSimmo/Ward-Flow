@@ -48,6 +48,20 @@ export function wardChromeRole(pathname: string): WardChromeRole {
   return "coordinator";
 }
 
+/**
+ * **THE PERSON THE SHELL IS SIGNED IN AS — device audit, 11 October 2026 (Recommended, item 6).**
+ *
+ * The rail's person card names one person on every page ("Dr S. Chen · Bed coordinator") and the
+ * phone Menu's initials are "BC". The shell's own furniture — the nav order, the Tasks count and the
+ * header primary — follows that person, not the route, so the coordinator's sidebar no longer
+ * reshuffles as they move between a ward, an ED, a team and the officer page, and Tasks no longer
+ * drops to 0 there. `wardChromeRole(pathname)` above still answers which route-scoped figures a page
+ * shows (the standing strip, Activity notices); this constant answers only "who is using the shell".
+ * The per-role orders in `ward-nav-role-order.ts` stay (owner ruling 2026-09-06, "reorder real
+ * screens only"): they apply the day a different person signs in.
+ */
+export const WARD_SHELL_ROLE: WardChromeRole = "coordinator";
+
 export function noticeIsForWardChrome(
   notice: Notice,
   role: WardChromeRole,

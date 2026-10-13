@@ -132,12 +132,15 @@ describe("ED compact draft selectors", () => {
     );
     const originalState = screen.getByTestId("clinical-state").textContent;
     const recordedFormsTab = screen.getByRole("tab", { name: /^Forms,/ }).getAttribute("aria-label");
+    // Device audit 11 Oct 2026 (owner pick A2): board edits live in the person sheet; the row name opens it.
     const row = screen.getAllByTestId(/^ward-ed-patient-WF-/)[0];
-    const form = within(row).getByRole("combobox", { name: /^Legal form for/ });
-    const clearance = within(row).getByRole("combobox", { name: /^Medical clearance for/ });
+    fireEvent.click(within(row).getByTestId(/^ward-ed-row-name-/));
+    const sheet = screen.getByRole("dialog");
+    const form = within(sheet).getByRole("combobox", { name: /^Legal form for/ });
+    const clearance = within(sheet).getByRole("combobox", { name: /^Medical clearance for/ });
     fireEvent.change(form, { target: { value: "6A" } });
     fireEvent.change(clearance, { target: { value: "yes" } });
-    fireEvent.click(within(row).getByRole("button", { name: /^Review status/ }));
+    fireEvent.click(within(sheet).getByRole("button", { name: /^Review status/ }));
     fireEvent.click(screen.getByRole("option", { name: /^Awaiting collateral$/ }));
     expect(form).toHaveValue("6A");
     expect(clearance).toHaveValue("yes");

@@ -365,7 +365,6 @@
 .codeChip:focus-visible,
 .taskLabel:focus-visible,
 .rowLink:focus-visible,
-.nextRow:focus-visible,
 .reqItem:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
@@ -774,45 +773,6 @@ button.taskLabel[aria-pressed="true"] {
   font-variant-numeric: tabular-nums;
 }
 
-.nextList {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.nextRow {
-  display: grid;
-  grid-template-columns: 12px minmax(0, 1fr) auto 64px;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-height: 44px;
-  padding: 4px 0;
-  border: 0;
-  border-bottom: 1px solid var(--wf-line);
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.nextList li:last-child .nextRow {
-  border-bottom: 0;
-}
-
-.nextRow:hover .name {
-  text-decoration: underline;
-}
-
-.nextLeft {
-  justify-self: end;
-  font: 700 var(--wf-fs-13) / 1 var(--wf-mono);
-  white-space: nowrap;
-}
-
 .windows {
   display: flex;
   gap: var(--wf-s-2);
@@ -866,7 +826,10 @@ button.taskLabel[aria-pressed="true"] {
 }
 
 .focusClock[data-tone="danger"] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .focusClockLine {
@@ -1472,7 +1435,7 @@ button.taskLabel[aria-pressed="true"] {
 
 .phoneViews {
   position: sticky;
-  top: 3.5rem;
+  top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
   z-index: 6;
   box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
 }
@@ -1492,14 +1455,10 @@ button.taskLabel[aria-pressed="true"] {
 }
 
 /* ─── v10 phone fidelity (11 Oct 2026) ───
- * The view switch keeps its 8px canvas collar right under the bar once the page has scrolled (the
- * bar condenses from 56px to 52px), so no row shows through a gap. In the form sheet, Copy and the next step live in the sheet's own pinned foot, so
+ * The view switch keeps its 8px canvas collar right under the bar throughout the scroll, so no row
+ * shows through a gap. In the form sheet, Copy and the next step live in the sheet's own pinned foot, so
  * the panel's foot keeps only the quiet Open move link, flat on the sheet. Phone only. */
 @media (max-width: 48rem) {
-  :global(body:has([data-scrolled="true"])) .phoneViews {
-    top: calc(3.25rem + var(--wf-s-2));
-  }
-
   .phoneFocus .focusFoot {
     justify-content: center;
     padding: var(--wf-s-2) 0 0;
@@ -1514,5 +1473,45 @@ button.taskLabel[aria-pressed="true"] {
 
   .phoneFocus .focusFoot > :last-child {
     flex: 0 1 auto;
+  }
+}
+
+/* "Show all N" under a folded group (device audit 11 Oct 2026). */
+.showAll {
+  display: flex;
+  justify-content: center;
+  padding: var(--wf-s-2) 0;
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.focusClock[data-tone="danger"] {
+  position: relative;
+}
+
+.focusClock[data-tone="danger"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .focusClock[data-tone="danger"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
+/* Phone compact switch (Josh, 12 Oct 2026): the views take the shared phone track (`--wf-phone-*`);
+ * each option's hit area reaches the 48px floor, so the face drops its own 44px floor. The switch
+ * pins under the phone header through the shared `pinnedSwitch` (ward-pinned-switch.module.css). */
+@media (max-width: 48rem) {
+  .phoneViews button,
+  .phoneViews [role="radio"] {
+    min-height: 0;
   }
 }

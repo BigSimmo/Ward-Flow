@@ -41,7 +41,9 @@ const ROUTES_DIR = "src/app/mockups/ward-flow";
 function componentRenderedBy(source: string): string | null {
   const body = source.slice(source.indexOf("export default"));
   if (body === "") return null;
-  const jsx = /<([A-Z][A-Za-z0-9]*)/u.exec(body);
+  // The first tag that is not the not-found stub: dynamic pages return `<WardMovementNotFound>` from a
+  // try/catch before the real screen, and pinning the stub would pass even if the screen were deleted.
+  const jsx = [...body.matchAll(/<([A-Z][A-Za-z0-9]*)/gu)].find((match) => match[1] !== "WardMovementNotFound");
   if (jsx) return jsx[1];
   const redirected = /\bredirect\(\s*["'`]([^"'`]+)/u.exec(body);
   return redirected ? `redirect:${redirected[1]}` : null;
@@ -104,10 +106,10 @@ const PINNED: Record<string, string | null> = {
   // was deleted outright, not merely repointed to redirect, so there is no page.tsx left on disk
   // for `routeFiles`/`found` to discover and no binding left to pin.
   movements: "MovementsScreen",
-  "movements/[movementId]": "WardMovementNotFound",
+  "movements/[movementId]": "PatientNowScreen",
   network: "WardModeWorkspace",
   "out-of-area": "OutOfAreaBoard",
-  "people/[patientId]": "WardMovementNotFound",
+  "people/[patientId]": "PersonScreen",
   "people/new": "AddPatientForm",
   queue: "redirect:/mockups/ward-flow/delays?from=queue",
   referrals: "ReferralBoard",

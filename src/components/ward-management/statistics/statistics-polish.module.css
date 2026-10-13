@@ -4,14 +4,15 @@
  */
 .root {
   display: contents;
-  --statistics-anchor-offset: 5rem;
+  /* The document/work column already reserves the app header with scroll-padding. */
+  --statistics-anchor-offset: var(--wf-s-4);
 }
 
 .root :global(section[id]),
 .root :global(div[id]),
 .root :global(span[id]),
 .root :global(dl[id]) {
-  scroll-margin-top: var(--statistics-anchor-offset, 5rem);
+  scroll-margin-top: var(--statistics-anchor-offset, var(--wf-s-4));
 }
 
 .root :global(table),

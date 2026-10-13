@@ -65,7 +65,7 @@ describe("Q004 refinement interaction regressions", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("returns from Resolved today to Every movement and focuses the requested attention record", () => {
+  it("returns from Resolved today to Open and resolved and focuses the requested attention record", () => {
     renderMovements();
     const { button, movementId } = firstAttentionTarget();
     const resolvedTab = screen.getByRole("tab", { name: /Resolved today/u });
@@ -75,7 +75,7 @@ describe("Q004 refinement interaction regressions", () => {
     expect(document.querySelector(`li[data-record-key='${movementId}']`)).toBeNull();
 
     fireEvent.click(button);
-    expect(screen.getByRole("tab", { name: /Every movement/u })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /Open and resolved/u })).toHaveAttribute("aria-selected", "true");
     expect(recordFor(movementId)).toHaveFocus();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
@@ -138,7 +138,7 @@ describe("Q004 refinement interaction regressions", () => {
 
   it("highlights exactly as many queue rows as the hero's Overdue count says", () => {
     renderCoordinator();
-    const hero = screen.getByRole("region", { name: /waiting, \d+ beds? ready/u });
+    const hero = screen.getByRole("region", { name: /waiting in ED, \d+ beds? ready/u });
     const chip = within(hero).getByRole("button", { name: /Overdue/u });
     const count = Number(chip.textContent!.match(/\d+/u)![0]);
     expect(count, "the seed has no overdue movement, so this test proves nothing").toBeGreaterThan(0);

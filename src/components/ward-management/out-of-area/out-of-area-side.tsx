@@ -1,8 +1,9 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { ArrowRight, Car, ChevronRight, Clock, Map as MapIcon, Plane } from "lucide-react";
 
-import { Button, Card, CardHead, Icon, StatusGlyph, cx } from "@/components/wf";
+import { Card, CardHead, Icon, StatusGlyph, cx } from "@/components/wf";
 
 import { TRAVEL_SHORT, confirmedAgeText, shortSiteName, type HomeRegionBeds } from "./out-of-area-model";
 import styles from "./out-of-area-board.module.css";
@@ -92,7 +93,8 @@ export function HomeBedsCard({
   rows: HomeRegionBeds[];
   region: string | null;
   onRegion: (region: string) => void;
-  notBanded: number;
+  /** Phone only: the desktop states the unbanded records once, in the hero's Checking line. */
+  notBanded?: number;
 }) {
   const max = Math.max(1, ...rows.map((row) => row.away));
   return (
@@ -167,19 +169,19 @@ export function HomeBedsCard({
           </div>
         ))
       )}
-      <p className={styles.gapRow}>
-        <StatusGlyph tone="closed" size={9} />
-        <b className={styles.mono}>{notBanded}</b> records with no travel band
-        <Button
-          variant="sec"
-          size="sm"
-          className={styles.gapButton}
-          disabledReason="Not wired in this prototype."
-          reasonDisplay="tooltip"
-        >
-          List
-        </Button>
-      </p>
+      {notBanded === undefined ? null : (
+        <p className={styles.gapRow}>
+          <StatusGlyph tone="closed" size={9} />
+          <b className={styles.mono}>{notBanded}</b> records with no travel band
+          <NotWiredButton
+            variant="sec"
+            size="sm"
+            wrapClassName={styles.gapButton}
+            label="List"
+            name="List records with no travel band"
+          />
+        </p>
+      )}
     </Card>
   );
 }

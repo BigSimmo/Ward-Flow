@@ -98,7 +98,7 @@ import {
   type DocumentationDraft,
 } from "./referral-flow-panels";
 import { WardReferralInbox } from "./ward-referral-inbox";
-import { duplicateSentence } from "./referral-duplicate";
+import { duplicateCaseHref, duplicateSentence } from "./referral-duplicate";
 import {
   discardReferralDraft,
   keepReferralDraft,
@@ -490,6 +490,11 @@ function documentationNeeded(draft: DocumentationDraft): number {
   return needed;
 }
 
+/** Every answer the Documents step asks for, the denominator `documentationNeeded` counts against. */
+function documentationItems(draft: DocumentationDraft): number {
+  return 5 + (draft.medical === "no" ? 3 : 0) + (draft.additional === "yes" ? 1 : 0);
+}
+
 /** Per-field contact messages for display; `referralContactError` stays the gate. */
 function contactFieldErrors(contact: ReferralContact): Partial<Record<keyof ReferralContact, string>> {
   const errors: Partial<Record<keyof ReferralContact, string>> = {};
@@ -842,10 +847,15 @@ function WardReferralDrawerContent({
   const [catchmentEditing, setCatchmentEditing] = useState(false);
   const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? liveMovement?.homeRegion ?? "");
   // What a menu or link asks for wins over a kept draft; the draft fills in everything else.
+  // L6 (review 12 Oct 2026): a person already in an ED is referred from that ED by default.
+  const liveOriginSite = liveMovement ? edById(liveMovement.originEdId)?.siteCode : undefined;
   const [sourceKind, setSourceKind] = useState<"community" | "ed">(
-    (initialOriginSiteCode ? undefined : kept?.sourceKind) ?? (initialCategory === "ed" ? "ed" : "community"),
+    (initialOriginSiteCode ? undefined : kept?.sourceKind) ??
+      (liveOriginSite || initialCategory === "ed" ? "ed" : "community"),
   );
-  const [originSiteCode, setOriginSiteCode] = useState(initialOriginSiteCode ?? kept?.originSiteCode ?? "");
+  const [originSiteCode, setOriginSiteCode] = useState(
+    initialOriginSiteCode ?? kept?.originSiteCode ?? liveOriginSite ?? "",
+  );
   const [sendingTeam, setSendingTeam] = useState(kept?.sendingTeam ?? "");
   const [referralSex, setReferralSex] = useState<RecordedSex>(
     kept?.referralSex ?? RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ?? "Not recorded",
@@ -919,14 +929,8 @@ function WardReferralDrawerContent({
   const [openingDraft] = useState(() => (kept ? "" : JSON.stringify(draftNow)));
   const draftJson = JSON.stringify(draftNow);
 
-  // Body scroll locking on mobile/desktop while drawer is open
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, []);
+  // The enclosing Sheet or standalone useWardModalFocus owns the shared scroll lock.
+  // A second per-drawer save/restore raced with stacked sheets and could leave body locked.
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
@@ -1042,6 +1046,11 @@ function WardReferralDrawerContent({
     setCatchmentConfirmed(false);
     setCatchmentEditing(false);
     setHomeRegion(movements.find((movement) => movement.id === key)?.homeRegion ?? "");
+    const originSite = edById(movements.find((movement) => movement.id === key)?.originEdId ?? "")?.siteCode;
+    if (originSite) {
+      setSourceKind("ed");
+      setOriginSiteCode(originSite);
+    }
     const record = resolveSubjectPatient(movements.find((movement) => movement.id === key) ?? {}, {
       patients,
       referrals,
@@ -1229,6 +1238,11 @@ function WardReferralDrawerContent({
     placement: selectedDestinations.length ? 0 : 1,
   };
   const totalNeeded = needed.patient + needed.referral + needed.documentation + needed.placement;
+  // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed"
+  // all count the same items, so the steps add up to the summary and four Complete steps read as
+  // all ready. The checklist rows below are labels for the letter, not a second count.
+  const itemsTotal = 4 + (sourceKind === "community" ? 3 : 2) + documentationItems(documentation) + 1;
+  const itemsReady = itemsTotal - totalNeeded;
   function sectionFor(error: string | null): DrawerSection | null {
     if (!error) return null;
     if (patientError() === error) return "patient";
@@ -1408,6 +1422,8 @@ function WardReferralDrawerContent({
   }
   // D-19: one place-free, count-free sentence about the person already named on this form.
   const alreadyOpen = patientRecord ? duplicateSentence({ patientId: patientRecord.id, referrals }) : undefined;
+  // L5 / decision 2: the link follows the case's stage to the page that actually lists it.
+  const alreadyOpenHref = patientRecord ? duplicateCaseHref({ patientId: patientRecord.id, referrals }) : undefined;
   // 28 day readmission: this person's most recent discharge in the 28 days before now, if any.
   const readmissionIndex = useMemo(
     () => createReadmissionIndex({ admissions, patients, referrals, movements, units }),
@@ -1438,7 +1454,7 @@ function WardReferralDrawerContent({
       state: catchmentConfirmed ? "done" : "needed",
     },
     { label: "From", value: originLabel || "Needed", state: originValid ? "done" : "needed" },
-    { label: "Legal status", value: legalStatus, state: legalStatus === NOT_RECORDED ? "needed" : "done" },
+    { label: "Legal status", value: legalStatus, state: legalStatus === NOT_RECORDED ? "follow" : "done" },
     {
       label: "Urgency",
       value: tier === undefined ? "Needed" : `Tier ${tier}`,
@@ -1455,10 +1471,13 @@ function WardReferralDrawerContent({
             : "Answered",
       state: needed.documentation ? "needed" : documentation.medical === "no" ? "follow" : "done",
     },
-    { label: "Your contact", value: contactNeeded ? "Needed" : contact.name, state: contactNeeded ? "needed" : "done" },
+    {
+      label: "Your contact",
+      value: contactNeeded ? "Asked at Send" : contact.name,
+      state: contactNeeded ? "follow" : "done",
+    },
     { label: destination.places, value: placeRow, state: selectedDestinations.length ? "done" : "needed" },
   ];
-  const readyDone = readyRows.filter((row) => row.state !== "needed").length;
   const draftNeeds = needsFor(destType, communityNeeds, edNeeds);
   const letterInput: ReferralTextInput = {
     destinationPhrase: destination.phrase,
@@ -1537,7 +1556,8 @@ function WardReferralDrawerContent({
     }
     return {
       tone: (totalNeeded ? "neutral" : "success") as WfTone,
-      first: totalNeeded ? `${totalNeeded} ${totalNeeded === 1 ? "answer" : "answers"} still needed` : "All answers in",
+      // Audit 11 Oct 2026: the same unit as Ready to send, so "4 of 9" and this line agree.
+      first: totalNeeded > 0 ? `${totalNeeded} of ${itemsTotal} items still needed` : "All items in",
       second: recipientSummary(recipientLabels),
     };
   })();
@@ -1650,7 +1670,7 @@ function WardReferralDrawerContent({
                   ? `${inboxCount} waiting in ward inboxes`
                   : sentReferralId
                     ? "Referral sent"
-                    : `${readyDone} of ${readyRows.length} ready to send`}
+                    : `${itemsReady} of ${itemsTotal} ready to send`}
               </p>
               <p className={styles.phHeroSub}>
                 {view === "inbox"
@@ -1685,13 +1705,15 @@ function WardReferralDrawerContent({
                     </>
                   ) : (
                     <>
+                      {/* Audit 11 Oct 2026: one unit (items, as "N of M ready to send" counts), and no
+                          decision time before anything is sent. */}
                       <span className={styles.phFigure}>
                         <b className={styles.mono}>{totalNeeded}</b>
-                        <span>Answers left</span>
+                        <span>Items left</span>
                       </span>
-                      <span className={styles.phFigure} title={OPERATIONAL_DEFAULT_LABEL}>
-                        <b className={styles.mono}>{decisionDueAt(now) ?? "–"}</b>
-                        <span>Decision due</span>
+                      <span className={styles.phFigure}>
+                        <b className={styles.mono}>{tier === undefined ? "–" : `T${tier}`}</b>
+                        <span>Urgency</span>
                       </span>
                       <button
                         type="button"
@@ -1746,10 +1768,10 @@ function WardReferralDrawerContent({
               {sentReferralId ? null : (
                 /* v10 phone: a compact answer line, how many items are ready to send. Phone only. */
                 <p className={styles.phReady} data-testid="ward-referral-phone-ready">
-                  <StatusGlyph tone={readyDone === readyRows.length ? "success" : "neutral"} size={10} />
+                  <StatusGlyph tone={totalNeeded === 0 ? "success" : "neutral"} size={10} />
                   <span className={styles.phReadyText}>
                     <b>
-                      {readyDone} of {readyRows.length}
+                      {itemsReady} of {itemsTotal}
                     </b>{" "}
                     ready to send
                   </span>
@@ -2338,7 +2360,7 @@ function WardReferralDrawerContent({
                             <X aria-hidden="true" />
                           </button>
                         ) : null}
-                        <kbd className={styles.kbd}>/</kbd>
+                        {isPhone ? null : <kbd className={styles.kbd}>/</kbd>}
 
                         {isSearchOpen && filteredPatients.length > 0 ? (
                           <div className={styles.patientSearchResults} role="listbox" aria-label="Matching patients">
@@ -2380,7 +2402,8 @@ function WardReferralDrawerContent({
                             {currentPatient.name} ({ageSexLabel(currentPatient)})
                           </p>
                           <p className={styles.patientSub}>
-                            UMRN <span className={styles.mono}>{currentPatient.umrn}</span> · DOB{" "}
+                            {isPhone ? null : "UMRN "}
+                            <span className={styles.mono}>{currentPatient.umrn}</span> · DOB{" "}
                             {formatDob(currentPatient.dob)} · Medicare {currentPatient.medicare}
                           </p>
                           <ReadmissionFlag flag={readmissionFlag} testId="ward-referral-readmission" />
@@ -2403,11 +2426,11 @@ function WardReferralDrawerContent({
                           <StatusGlyph tone="warning" size={9} />
                           <span className={styles.suggestionText}>
                             <strong>{alreadyOpen}</strong>
-                            <small>Check the Referrals board before sending another</small>
+                            <small>Check where this case is before sending another</small>
                           </span>
                           <Link
                             className={styles.btn}
-                            href="/mockups/ward-flow/referrals"
+                            href={alreadyOpenHref ?? "/mockups/ward-flow/referrals"}
                             onClick={(event) => {
                               if (dirty) {
                                 event.preventDefault();
@@ -2417,7 +2440,7 @@ function WardReferralDrawerContent({
                               onClose();
                             }}
                           >
-                            Open board
+                            Where this case is
                           </Link>
                         </div>
                       ) : null}
@@ -2669,8 +2692,12 @@ function WardReferralDrawerContent({
                             <button
                               type="button"
                               className={`${styles.btn} ${styles.btnTint}`}
-                              disabled={!catchmentTeam.trim() || !homeRegion}
+                              aria-disabled={!catchmentTeam.trim() || !homeRegion ? "true" : undefined}
+                              aria-describedby={
+                                !catchmentTeam.trim() || !homeRegion ? `${sectionId}-catchment-why` : undefined
+                              }
                               onClick={() => {
+                                if (!catchmentTeam.trim() || !homeRegion) return;
                                 setCatchmentConfirmed(true);
                                 setCatchmentEditing(false);
                                 setFlowError(null);
@@ -2680,7 +2707,7 @@ function WardReferralDrawerContent({
                               Confirm catchment
                             </button>
                             {!catchmentTeam.trim() || !homeRegion ? (
-                              <span className={styles.bodyMeta}>
+                              <span className={styles.bodyMeta} id={`${sectionId}-catchment-why`}>
                                 {!catchmentTeam.trim() ? "Choose the catchment first" : "Choose the home region first"}
                               </span>
                             ) : null}
@@ -3230,7 +3257,8 @@ function WardReferralDrawerContent({
                                 />
                                 <span className={styles.wardIdentity}>
                                   <span className={styles.wardTitle}>
-                                    <strong>{unit.name}</strong> {unit.hospital}
+                                    <strong>{unit.name}</strong>{" "}
+                                    <span className={styles.wardHospital}>{unit.hospital}</span>
                                   </span>
                                   <span className={styles.wardMeta}>
                                     <span className={styles.fit} data-fit={unit.readyBeds > 0 ? "bed" : "none"}>
@@ -3532,10 +3560,10 @@ function WardReferralDrawerContent({
                     <div className={styles.railHead}>
                       <h3 className={styles.cardTitle}>Ready to send</h3>
                       <Frac
-                        done={readyDone}
-                        total={readyRows.length}
+                        done={itemsReady}
+                        total={itemsTotal}
                         label="items ready to send"
-                        tone={readyDone === readyRows.length ? "success" : undefined}
+                        tone={totalNeeded === 0 ? "success" : undefined}
                         className={styles.railFrac}
                       />
                       {kept || draftKeptAt !== null ? (
@@ -3559,10 +3587,10 @@ function WardReferralDrawerContent({
                       </p>
                     ) : null}
                     <p className={styles.railCount}>
-                      <strong className={styles.mono}>{readyDone}</strong> of {readyRows.length} ready
+                      <strong className={styles.mono}>{itemsReady}</strong> of {itemsTotal} ready
                     </p>
                     <span className={styles.railProgress} aria-hidden="true">
-                      <i style={{ width: `${Math.round((readyDone / readyRows.length) * 100)}%` }} />
+                      <i style={{ width: `${Math.round((itemsReady / itemsTotal) * 100)}%` }} />
                     </span>
                     <dl className={styles.railRows}>
                       {readyRows.map((row) => (
@@ -3580,10 +3608,11 @@ function WardReferralDrawerContent({
                     </dl>
                   </section>
                   <section className={styles.railCard} data-layout="pair">
+                    {/* Audit 11 Oct 2026: the decision time appears once the referral is sent. */}
                     <div title={OPERATIONAL_DEFAULT_LABEL}>
-                      <p className={styles.eyebrow}>Decision due</p>
-                      <strong className={styles.mono}>{decisionDueAt(now) ?? "Choose urgency"}</strong>
-                      <small>{tier === undefined ? "No tier yet" : `Tier ${tier} default`}</small>
+                      <p className={styles.eyebrow}>Urgency</p>
+                      <strong className={styles.mono}>{tier === undefined ? "Choose urgency" : `T${tier}`}</strong>
+                      <small>Decision due shows after Send</small>
                     </div>
                     <div>
                       <p className={styles.eyebrow}>Already open</p>
@@ -3650,7 +3679,7 @@ function WardReferralDrawerContent({
                 }}
               >
                 {phFirstNeeded ? (
-                  `Continue: ${sectionLabel(phFirstNeeded, destType)}`
+                  `Continue to ${sectionLabel(phFirstNeeded, destType).toLowerCase()}`
                 ) : (
                   <>
                     <Send aria-hidden="true" />
@@ -3680,7 +3709,7 @@ function WardReferralDrawerContent({
                       Send referral
                     </>
                   ) : (
-                    `Next: ${sectionLabel(SECTION_IDS[phStepIndex + 1]!, destType)}`
+                    `Next, ${sectionLabel(SECTION_IDS[phStepIndex + 1]!, destType).toLowerCase()}`
                   )}
                 </button>
               </>
@@ -3727,8 +3756,48 @@ function WardReferralDrawerContent({
                         : goBack
                   }
                 >
-                  {confirmationOpen ? "Back to referral" : activeSection === "patient" ? "Cancel" : "Back"}
+                  {confirmationOpen
+                    ? "Back to referral"
+                    : activeSection === "patient"
+                      ? dirty
+                        ? "Discard"
+                        : "Cancel"
+                      : "Back"}
                 </button>
+                {/* Audit 11 Oct 2026: Save draft keeps the referral in this tab and closes, so a
+                    referrer called away does not lose it. */}
+                {confirmationOpen ? null : (
+                  <button
+                    type="button"
+                    className={styles.btnCancelReferral}
+                    data-testid="ward-referral-save-draft"
+                    disabled={sendPending || !dirty}
+                    title={dirty ? "Keep this draft until the tab reloads" : "Nothing typed yet"}
+                    onClick={keepAndClose}
+                  >
+                    Save draft
+                  </button>
+                )}
+                {/* Audit 11 Oct 2026: Send is always visible; until every item is in it stays locked
+                    and says what it waits on. */}
+                {!confirmationOpen && activeSection !== "placement" ? (
+                  <>
+                    <button
+                      type="button"
+                      className={styles.btnCancelReferral}
+                      data-testid="ward-referral-send-locked"
+                      title={phNeedsLine}
+                      disabled
+                      aria-describedby={`${sectionId}-send-waits`}
+                    >
+                      <Lock aria-hidden="true" />
+                      Send
+                    </button>
+                    <span className="sr-only" id={`${sectionId}-send-waits`}>
+                      Send waits on the steps after this one. {phNeedsLine}.
+                    </span>
+                  </>
+                ) : null}
                 <button
                   className={styles.btnSendReferral}
                   onClick={
@@ -3749,7 +3818,7 @@ function WardReferralDrawerContent({
                       ? "Confirm and send"
                       : activeSection === "placement"
                         ? "Send referral"
-                        : `Next: ${sectionLabel(SECTION_IDS[SECTION_IDS.indexOf(activeSection) + 1]!, destType)}`}
+                        : `Next, ${sectionLabel(SECTION_IDS[SECTION_IDS.indexOf(activeSection) + 1]!, destType).toLowerCase()}`}
                 </button>
                 {confirmationOpen ? sendGate.note : null}
               </>

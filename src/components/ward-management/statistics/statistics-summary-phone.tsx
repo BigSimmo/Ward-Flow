@@ -2,10 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, CalendarRange, Check, ChevronRight, Clock, Layers, Pause, Play } from "lucide-react";
+import { Activity, Building2, CalendarRange, Check, ChevronRight, Clock, Layers } from "lucide-react";
 
 import {
-  Button,
   GroupHead,
   IconTile,
   LiveChip,
@@ -24,7 +23,7 @@ import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 
 import { StatisticsNav } from "./statistics-nav";
-import { STATISTICS_OVERVIEW_HREF } from "./statistics-sections";
+import { STATISTICS_OVERVIEW_HREF, STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import styles from "./statistics-phone.module.css";
 
 /** One ward on the phone Summary, from the same figures the desktop pressure table reads. */
@@ -86,6 +85,7 @@ export function StatisticsSummaryPhone({
 }: {
   ready: number;
   beingMadeReady: number;
+  /** Beds in use: Occupied + Pulled, the one occupancy count (`ward-occupancy.ts`). */
   occupied: number;
   occupiedPct: number;
   waitingInEd: number;
@@ -127,7 +127,7 @@ export function StatisticsSummaryPhone({
   const listLength = group === "hospital" ? hospitals.length : wards.length;
   const rangeSheet: Sheet = {
     title: "Time range",
-    description: "Figures are live now. History needs the metrics store.",
+    description: "Figures are current on the demo clock. History needs the metrics store.",
     body: <RangeChoices onNow={() => setSheet(null)} />,
   };
 
@@ -151,12 +151,19 @@ export function StatisticsSummaryPhone({
           title={`${ready} ${ready === 1 ? "bed" : "beds"} ready now`}
           sub={`Prototype, invented records${beingMadeReady > 0 ? ` · ${beingMadeReady} being made ready` : ""}`}
           figures={[
-            { id: "occupied", value: occupied, label: `${occupiedPct}% occupied` },
+            { id: "occupied", value: occupied, label: `${occupiedPct}% in use` },
             { id: "ed", value: waitingInEd, label: "Waiting in ED" },
             { id: "ended", value: endedToday, label: "Ended today" },
           ]}
           eyebrow="Statistics · Whole network"
-          chip={<LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} />}
+          chip={
+            <LiveChip
+              state={paused ? "paused" : "live"}
+              onHero
+              age={formatInstant(now)}
+              onTogglePause={onTogglePause}
+            />
+          }
           actions={
             <span className={styles.heroActions}>
               <button
@@ -171,15 +178,6 @@ export function StatisticsSummaryPhone({
                 <b>Now</b>
                 <span className={styles.rangeMore}>· Shift, 7 and 30 days Preview</span>
               </button>
-              <Button
-                variant="onHero"
-                iconOnly
-                icon={paused ? Play : Pause}
-                aria-label="Pause live updates"
-                aria-pressed={paused}
-                className={styles.pauseButton}
-                onClick={onTogglePause}
-              />
             </span>
           }
         />
@@ -345,6 +343,15 @@ export function StatisticsSummaryPhone({
             </span>
             <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
           </Link>
+          {/* The phone chips stop at Weekly, so this row is a phone's way to each health service. */}
+          <Link className={styles.navRow} href={STATISTICS_SERVICES_HREF}>
+            <IconTile icon={Building2} />
+            <span className={styles.navText}>
+              <b>Services</b>
+              <span>Beds, referrals and waits for each health service</span>
+            </span>
+            <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
+          </Link>
         </nav>
       </main>
       <PhoneSheet
@@ -372,7 +379,7 @@ export function RangeChoices({ onNow }: { onNow: () => void }) {
           <button type="button" className={styles.rangeItem} aria-pressed="true" onClick={onNow}>
             <Check size={16} aria-hidden="true" />
             <span className={styles.rangeLabel}>Now</span>
-            <span className={styles.rangeAside}>Live</span>
+            <span className={styles.rangeAside}>Demo</span>
           </button>
         </li>
         {["Shift", "7 days", "30 days"].map((label) => (

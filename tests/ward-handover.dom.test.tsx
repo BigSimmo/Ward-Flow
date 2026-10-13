@@ -62,7 +62,8 @@ describe("Handover page", () => {
     expect(screen.getByRole("tab", { name: /Patients/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: /Beds/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /History/ })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-handover-print")).toBeInTheDocument();
+    // Device audit 11 Oct 2026: Present and Print sit behind the hero's More menu.
+    expect(screen.getByTestId("ward-handover-more")).toBeInTheDocument();
   });
 
   it("groups every open patient in meeting order", () => {
@@ -126,6 +127,21 @@ describe("Handover page", () => {
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
   });
 
+  it("opens the patient drawer in presentation mode without revealing the background table row", () => {
+    renderHandover();
+    // Device audit 11 Oct 2026: Present sits behind the hero's More menu.
+    fireEvent.click(screen.getByTestId("ward-handover-more"));
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Present$/ }));
+    const scroll = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
+    scroll.mockClear();
+    fireEvent.keyDown(window, { key: "j" });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-handover-flow-panel")).toBeInTheDocument();
+    expect(firstPatientRow()).toHaveAttribute("aria-selected", "true");
+    expect(scroll).not.toHaveBeenCalled();
+    scroll.mockRestore();
+  });
+
   it("records the sign-off with role and time and lists it in History", async () => {
     const user = userEvent.setup();
     renderHandover();
@@ -151,7 +167,7 @@ describe("Handover page", () => {
       .getAllByRole("row")
       .filter((row) => row.hasAttribute("data-row-id")).length;
     await user.click(
-      within(screen.getByTestId("ward-handover-kpi-strip")).getByRole("button", { name: /Waiting for a bed/ }),
+      within(screen.getByTestId("ward-handover-kpi-strip")).getByRole("button", { name: /Finding a ward/ }),
     );
     const after = within(screen.getByTestId("ward-handover-sheet"))
       .getAllByRole("row")
@@ -175,7 +191,8 @@ describe("Handover page", () => {
   it("opens the print sheet builder from Print handover and comes back", async () => {
     const user = userEvent.setup();
     renderHandover();
-    await user.click(screen.getByTestId("ward-handover-print"));
+    await user.click(screen.getByTestId("ward-handover-more"));
+    await user.click(screen.getByRole("menuitem", { name: /Print handover/ }));
     const sheet = screen.getByTestId("ward-handover-print-sheet");
     expect(sheet).toBeInTheDocument();
     expect(sheet.textContent ?? "").not.toMatch(/Government of Western Australia|NSQHS/);
@@ -232,5 +249,23 @@ describe("Handover sign-off belongs to one handover", () => {
     const print = css.slice(css.lastIndexOf("@media print"));
     expect(print).toMatch(/\.ph \{\s*display: flex !important;/);
     expect(print).toMatch(/\.rowButton \{\s*display: block !important;/);
+  });
+});
+
+describe("Handover counts agree (device audit 11 Oct 2026)", () => {
+  it("counts Finding a ward and Moving the way the meeting groups do", () => {
+    renderHandover();
+    const strip = screen.getByTestId("ward-handover-kpi-strip");
+    for (const [id, label] of [
+      ["bed", /Finding a ward/],
+      ["mov", /Moving/],
+    ] as const) {
+      const pill = within(strip)
+        .getAllByRole("button")
+        .find((button) => label.test(button.textContent ?? ""));
+      const group = screen.getByTestId(`ward-handover-group-${id}`);
+      const groupCount = group.querySelector("[class*=groupCount]")?.textContent;
+      expect(pill?.textContent).toMatch(new RegExp(`^${groupCount}\\D`, "u"));
+    }
   });
 });

@@ -42,6 +42,13 @@ interface StatisticsNavProps {
   variant?: "hero" | "chips";
 }
 
+const PHONE_SECTIONS: StatisticsNavSection[] = ["hub", "compare", "weekly"];
+
+/** The current chip scrolls into the row's view, so a sub-route never hides its own chip. */
+function scrollActiveIntoView(node: HTMLAnchorElement | null) {
+  node?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+}
+
 /** Each unit kind's tab is current on its index page and on any one unit's page of that kind. */
 function sectionOf(pathname: string): StatisticsNavSection {
   if (pathname.includes("/statistics/overview")) return "overview";
@@ -132,13 +139,18 @@ export function StatisticsNav({
           </Link>
         ) : null}
         {items
-          .filter((item) => item !== backTo)
+          // Device audit 11 Oct 2026: eight sections is a desktop model. A phone keeps Summary,
+          // Compare and Weekly, plus the section it is on so the current chip is always there.
+          .filter(
+            (item) => item !== backTo && (PHONE_SECTIONS.includes(item.id) || (item.id === activeSection && !backTo)),
+          )
           .map((item) => (
             <Link
               key={item.id}
               href={item.href}
               className={styles.chip}
               aria-current={item.id === activeSection ? "page" : undefined}
+              ref={item.id === activeSection ? scrollActiveIntoView : undefined}
             >
               {item.label}
               {item.count !== undefined ? <span className={styles.chipCount}>{item.count}</span> : null}

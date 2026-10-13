@@ -1,6 +1,6 @@
 import { clockState, type Instant } from "@/components/ward-management/ward-clock";
 import { openBedsNow } from "@/components/ward-management/ward-bed-availability";
-import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { elapsedOpenMinutes, isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
 import {
   HEALTH_SERVICES,
@@ -11,6 +11,8 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { wardSites } from "@/components/ward-management/ward-sites";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import {
   ED_ELEVATED_PRESSURE_WAIT_MINUTES,
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
@@ -336,6 +338,8 @@ export function trackServiceBedCapacity(
   sites: readonly Site[] = wardSites,
   /** The configured ED access target; undefined when none is configured (nobody counted past it). */
   accessTargetMinutes?: number,
+  /** Admissions, so a live pull counts as a bed in use (`ward-occupancy.ts`). */
+  admissions: readonly Admission[] = [],
 ): StatewideCapacityReport {
   const releases = [...bedReleases];
   const serviceTrackings: ServiceCapacityTracking[] = [];
@@ -370,9 +374,11 @@ export function trackServiceBedCapacity(
       for (const u of siteUnits) {
         siteFree += openBedsNow(u, releases);
         siteTotal += u.beds;
-        // Occupied is the board's own bucket (Josh, 25 Sept 2026: the rail matches the board). It was
-        // `total - free`, which counted held, blocked and being-cleaned beds as occupied.
-        siteOccupiedBeds += unitCapacity(u, releases).occupied;
+        // Occupied is the board's own buckets (Josh, 25 Sept 2026: the rail matches the board): the
+        // Occupied and Pulled boxes, through the one shared count every screen reads
+        // (`ward-occupancy.ts`, device audit 11 Oct 2026). It was once `total - free`, which counted
+        // held, blocked and being-cleaned beds as occupied.
+        siteOccupiedBeds += wardBedsInUse(u, admissions, releases);
       }
 
       serviceTotalBeds += siteTotal;

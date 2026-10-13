@@ -126,7 +126,7 @@ export function PatientFlightHeader({
               data-live={isLiveBedflow}
               data-testid="ward-patient-live-status"
             >
-              <strong>{isLiveBedflow ? "Live bedflow" : "Patient record"}</strong>
+              <strong>{isLiveBedflow ? "Active bedflow" : "Patient record"}</strong>
               <span>{statusDetail}</span>
             </div>
           </>
@@ -142,18 +142,30 @@ export function PatientFlightHeader({
           </div>
         }
       />
-      {/* v10: the record tabs leave the hero and sit on the page, under the band. */}
-      <div className={styles.v6HeroTabsRow}>
-        <ContextualBackLink
-          fallbackHref="/mockups/ward-flow"
-          className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
-          aria-label="Back to previous page"
-          data-testid="ward-patient-back-button"
-        >
-          <ArrowLeft size={16} aria-hidden="true" />
-        </ContextualBackLink>
-        {tabs}
-      </div>
+      {/* v10: the record tabs leave the hero and sit on the page, under the band. On a phone the
+          screen renders this row itself, beside the record, so it can pin under the header. */}
+      {isPhone ? null : <PatientRecordTabsRow tabs={tabs} />}
+    </div>
+  );
+}
+
+/**
+ * The back button and the record tabs. On a phone Patient Now renders this row as a sibling of
+ * the record (not inside the hero) and adds the shared `pinnedSwitch` class, so it sticks under
+ * the phone header while the record scrolls (Josh, 12 Oct 2026).
+ */
+export function PatientRecordTabsRow({ tabs, className }: { tabs: ReactNode; className?: string }) {
+  return (
+    <div className={className ? `${styles.v6HeroTabsRow} ${className}` : styles.v6HeroTabsRow}>
+      <ContextualBackLink
+        fallbackHref="/mockups/ward-flow"
+        className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
+        aria-label="Back to previous page"
+        data-testid="ward-patient-back-button"
+      >
+        <ArrowLeft size={16} aria-hidden="true" />
+      </ContextualBackLink>
+      {tabs}
     </div>
   );
 }

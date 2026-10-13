@@ -1351,6 +1351,9 @@ export type WardFlowEvent =
        * addressing as `heldBedNumber`.
        */
       bedNumber?: number;
+      /** B1: a ward answering names itself; refused when it answers for another ward. The
+       *  coordinator acts for any ward and sends none. */
+      actingUnitId?: string;
       /** Optional fields for reassessment of clinical decisions (WF-17) */
       clinicalUpdate?: boolean;
       reassessment?: boolean;
@@ -1377,6 +1380,8 @@ export type WardFlowEvent =
       waitlist?: boolean;
       /** Required to answer one of several explicitly addressed wards. */
       unitId?: string;
+      /** B1: as `ACCEPT_REFERRAL.actingUnitId`. */
+      actingUnitId?: string;
       role: WardFlowRole;
       now: Instant;
       /** The referral being decided. */

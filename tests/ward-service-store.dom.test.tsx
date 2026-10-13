@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -48,12 +48,11 @@ import {
   useServiceScope,
 } from "@/components/ward-management/shell/ward-service-store";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
-import { isOpen } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { WARD_HOME_HREF, resolveWardPrimaryAction } from "@/components/ward-management/ward-nav";
-import { movementBelongsToService } from "@/components/ward-management/ward-service-scope";
+import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 function ServiceScopeProbe() {
@@ -171,43 +170,49 @@ describe("WardBar's Service selector, wired to the store", () => {
     expect(
       within(panel).getByText(
         "One service, or all of them. Capacity, Delays and Movements narrow their lists to it. " +
-          "The bed shortlist, whole-network figures, the rail counts and the drawers do not.",
+          "The bed shortlist, whole-network figures, the rail counts and the drawers do not. " +
+          "Each count is the people waiting in that service's emergency departments; a narrowed list " +
+          "also shows people referred to its wards.",
       ),
     ).toHaveClass("sr-only");
   });
 
-  it("shows each service option's open-movement count exactly as ward-service-scope.ts (S1) computes it over the real seed", async () => {
-    const { movements, units } = seedWardFlowState();
-    const openMovements = movements.filter(isOpen);
+  // L1 (site review, 12 Oct 2026): the picker counts people waiting in each service's EDs
+  // (`waitingInEds`), the same figure Home and Network print, so the services add up to All services.
+  it("shows each service option's waiting count exactly as waitingInEds computes it over the real seed", async () => {
+    const { movements } = seedWardFlowState();
+    const waiting = waitingInEds(movements, NOW_ANCHOR);
     const user = userEvent.setup();
     renderBar();
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     const panel = screen.getByTestId("ward-bar-service-panel");
     const options = within(panel).getAllByRole("button");
 
+    let sum = 0;
     for (const service of HEALTH_SERVICES) {
-      const expectedCount = openMovements.filter((movement) =>
-        movementBelongsToService(movement, service, units),
-      ).length;
-      const expectedText = expectedCount > 0 ? `${expectedCount} open` : "none open";
+      const expectedCount = waiting.byService.get(service) ?? 0;
+      sum += expectedCount;
       const option = options.find((button) => (button.textContent ?? "").startsWith(service));
       expect(option, `no option button found starting with "${service}"`).toBeDefined();
-      expect(option!.textContent ?? "").toContain(expectedText);
+      expect(option!.textContent ?? "").toContain(waitingText(expectedCount));
     }
+    expect(sum, "the services add up to All services").toBe(waiting.total);
+    const all = options.find((button) => (button.textContent ?? "").startsWith("All services"));
+    expect(all!.textContent ?? "").toContain(waitingText(waiting.total));
   });
 
-  // Anti-vacuity: the count test above would pass just as well if every option showed "none open"
+  // Anti-vacuity: the count test above would pass just as well if every option showed "none waiting"
   // by a broken join always returning zero. The real seed must actually produce a mix, or that
   // test cannot tell "computed correctly" from "computed as always zero".
-  it("anti-vacuity: at least one service option shows a non-zero open count over the real seed", async () => {
+  it("anti-vacuity: at least one service option shows a non-zero waiting count over the real seed", async () => {
     const user = userEvent.setup();
     renderBar();
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     const panel = screen.getByTestId("ward-bar-service-panel");
     const nonZero = within(panel)
       .getAllByRole("button")
-      .filter((button) => /\d+ open/.test(button.textContent ?? ""));
-    expect(nonZero.length).toBeGreaterThan(0);
+      .filter((button) => /\d+ waiting/.test(button.textContent ?? ""));
+    expect(nonZero.length).toBeGreaterThan(1);
   });
 
   // Exact accessible-name compatibility: several existing suites (this file's neighbour,
@@ -230,6 +235,19 @@ describe("WardBar's Service selector, wired to the store", () => {
     await user.click(screen.getByRole("button", { name: "South Metro" }));
     expect(window.sessionStorage.getItem(SERVICE_SCOPE_STORAGE_KEY)).toBe("South Metro");
     expect(screen.getByTestId("ward-bar-service-trigger")).toHaveTextContent("South Metro");
+  });
+
+  it("keeps the service confirmation after the drawer's history Back completes", async () => {
+    const user = userEvent.setup();
+    renderBar();
+    await user.click(screen.getByTestId("ward-bar-service-trigger"));
+    await user.click(screen.getByRole("button", { name: "South Metro" }));
+    // The selector closes through history; its delayed popstate must not announce "Closed." over the choice.
+    await waitFor(() => expect(screen.queryByRole("button", { name: "North Metro" })).toBeNull());
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+    const live = screen.getByTestId("ward-live-region").textContent ?? "";
+    expect(live).toContain("Service set to South Metro.");
+    expect(live).not.toContain("Closed.");
   });
 });
 

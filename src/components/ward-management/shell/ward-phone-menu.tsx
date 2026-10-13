@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
 import {
   Activity,
   BedSingle,
@@ -21,9 +21,23 @@ import {
 import { Sheet } from "@/components/ui/sheet";
 import { Dot } from "@/components/wf";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import {
+  CHROME_ROLE_LABELS,
+  wardTasksAreActionableForRole,
+  type WardChromeRole,
+} from "@/components/ward-management/ward-chrome-role";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
+import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
+import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
+import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import {
+  SearchResultIcon,
+  smartSearchGroups,
+  type SearchResultGroup,
+  type SearchResultItem,
+} from "@/components/ward-management/ward-global-search";
 
 import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
@@ -31,6 +45,8 @@ import { settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
 import styles from "./ward-phone-menu.module.css";
+import actNowStyles from "./ward-phone-menu-act-now.module.css";
+import pageDock from "./ward-phone-page-dock.module.css";
 
 /**
  * Phone menu (Josh, 10 Oct 2026, locked from the phone header and navigation mockups, set 9 with
@@ -38,9 +54,12 @@ import styles from "./ward-phone-menu.module.css";
  * above 48rem, so desktop is unchanged.
  *
  * A tall bottom sheet: who you are working as, a page filter, what needs you, your other places,
- * then every page in the rail's own groups, and More. Its foot is the dock: two places for the
- * role, a raised + that rises out of the dock's own curved edge, Tasks and Activity. Nothing is
- * listed twice. Every figure is the rail's own `wardNavCounts`, never typed here.
+ * then every page in the rail's own groups, and More. Nothing is listed twice. Every figure is the
+ * rail's own `wardNavCounts` or the shared act-now list, never typed here.
+ *
+ * Device audit option A (Josh, 11 Oct 2026): the dock (two places for the role, a raised + that
+ * rises out of the dock's curved edge, Tasks and Activity) sits on every phone page, not in the
+ * Menu's foot. Needs you holds only what is act-now or overdue.
  */
 
 type DockPlace = readonly [id: string, label: string];
@@ -78,8 +97,8 @@ const DOCK_PLACES: Record<WardChromeRole, readonly [DockPlace, DockPlace]> = {
 };
 
 /** Counted pages that are work waiting on someone. Capacity counts free beds, so it is not here. */
-const NEEDS_IDS = ["referrals", "delays", "discharges", "movements"] as const;
-const NEEDS_LIMIT = 4;
+/** Pages whose count joins Needs you, only while it is urgent (overdue). */
+const OVERDUE_NEED_IDS = ["delays", "discharges"] as const;
 
 /** What the + starts. New referral is real; the rest open the page where that work is done. */
 const CREATE_LINKS = [
@@ -113,18 +132,12 @@ function phoneMenuModel(role: WardChromeRole, counts: CountMap) {
     const entry = byId.get(id);
     return entry ? [{ entry, label }] : [];
   });
-  const needs = NEEDS_IDS.flatMap((id) => {
-    const entry = byId.get(id);
-    const count = countIn(counts, id);
-    return entry && count && count.value > 0 ? [{ entry, count }] : [];
-  })
-    .toSorted((a, b) => Number(b.count.urgent) - Number(a.count.urgent))
-    .slice(0, NEEDS_LIMIT);
+  const needs = strictNeeds(byId, counts);
   // Nothing twice: a page in the dock or under Needs you leaves its group, and New referral is the +.
   const shown = new Set([
     "referral-intake",
     ...dock.map((place) => place.entry.id),
-    ...needs.map((need) => need.entry.id),
+    ...needs.flatMap((need) => (need.entryId ? [need.entryId] : [])),
   ]);
   const rank = (id: string) => wardNavRoleRank(role, id) ?? Number.MAX_SAFE_INTEGER;
   const groups = RAIL_GROUPS.map((group) => ({
@@ -135,6 +148,102 @@ function phoneMenuModel(role: WardChromeRole, counts: CountMap) {
       .toSorted((a, b) => rank(a.id) - rank(b.id)),
   })).filter((group) => group.entries.length > 0);
   return { entries, byId, dock, needs, groups };
+}
+
+/**
+ * Needs you (device audit option A, 11 Oct 2026) holds only what is act-now or overdue. The first
+ * row is the act-now tasks: the same red rows Tasks leads with (`activeActNowItems`), which the
+ * notifier and phone push also read. Home's "Overdue" counts queue referrals past their wait, a
+ * different thing, so this row keeps its own noun. Then Delays and Discharges while their count is
+ * urgent. Movements' "still open" and Referrals' "awaiting a decision" stay in their groups.
+ */
+type NeedRow = {
+  id: string;
+  /** The rail entry this row stands for, so it leaves its group. */
+  entryId?: string;
+  label: string;
+  meta: string;
+  count: number;
+  /** A page to open, or the Tasks drawer when absent. */
+  href?: string;
+  icon: typeof Plus;
+  actNow: boolean;
+};
+
+function strictNeeds(byId: ReadonlyMap<string, RailEntry>, counts: CountMap): NeedRow[] {
+  const rows: NeedRow[] = [];
+  for (const id of OVERDUE_NEED_IDS) {
+    const entry = byId.get(id);
+    const count = countIn(counts, id);
+    if (entry && count?.urgent && count.value > 0) {
+      rows.push({
+        id,
+        entryId: id,
+        label: entry.label,
+        meta: count.noun,
+        count: count.value,
+        href: entry.href,
+        icon: entry.icon,
+        actNow: false,
+      });
+    }
+  }
+  return rows;
+}
+
+function actNowNeed(actNow: number): NeedRow[] {
+  return actNow > 0
+    ? [
+        {
+          id: "act-now",
+          label: "Act-now tasks",
+          meta: "red rows in Tasks",
+          count: actNow,
+          icon: ListChecks,
+          actNow: true,
+        },
+      ]
+    : [];
+}
+
+function NeedRowLink({ row, onGo, onTasks }: { row: NeedRow; onGo: () => void; onTasks: () => void }) {
+  const face = (
+    <>
+      <RowBody
+        icon={row.icon}
+        label={row.label}
+        meta={
+          <>
+            <Dot tone={row.actNow ? "danger" : "warning"} />
+            <span>{row.meta}</span>
+          </>
+        }
+      />
+      <CountChip value={row.count} className={styles.count} />
+      <Chevron />
+    </>
+  );
+  // Site review, 12 Oct 2026: the act-now row takes the approved tint and rounded marker
+  // (`ward-phone-menu-act-now.module.css`), not the full red box the shared row rule drew.
+  const common = {
+    className: row.actNow ? `${styles.row} ${actNowStyles.actNow}` : styles.row,
+    "data-act-marker": row.actNow || undefined,
+    "aria-label": `${row.label}, ${row.count} ${row.meta}`,
+    "data-testid": "ward-phone-menu-need",
+  };
+  return (
+    <li>
+      {row.href ? (
+        <Link href={row.href} {...common} onClick={onGo}>
+          {face}
+        </Link>
+      ) : (
+        <button type="button" {...common} onClick={onTasks}>
+          {face}
+        </button>
+      )}
+    </li>
+  );
 }
 
 function announceGo(pathname: string, entry: RailEntry) {
@@ -266,7 +375,7 @@ function PhoneDock({
           className={styles.dockItem}
           aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
           aria-label={wardNavCountLabel(label, countIn(counts, entry.id))}
-          data-testid="ward-rail-link"
+          data-testid="ward-phone-dock-link"
           onClick={() => onGo(entry)}
         >
           {/* Home is the house in the dock (v10 phone mockup); the rail keeps its own icon. */}
@@ -475,11 +584,11 @@ function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string
   return (
     <label className={styles.search}>
       <Search aria-hidden="true" strokeWidth={1.75} />
-      <span className="sr-only">Go to a page</span>
+      <span className="sr-only">Go to a page or patient</span>
       <input
         type="search"
         value={query}
-        placeholder="Go to a page"
+        placeholder="Go to a page or patient"
         autoComplete="off"
         onChange={(event) => onQuery(event.target.value)}
         data-testid="ward-phone-menu-search"
@@ -488,37 +597,133 @@ function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string
   );
 }
 
-/** With a filter typed, the matching pages. Without one, Needs you, every page by group, then More. */
+/** Records per kind in the menu, the same short list the header search shows under All. */
+const MENU_RESULTS_PER_GROUP = 6;
+
+/**
+ * The menu's search is the app's one smart search (`searchWardFlow`, grouped by
+ * `smartSearchGroups`), so it finds the same patients, movements, places, forms and tasks as the
+ * header search. Pages come first from the rail's own role-ordered entries; a screen the engine
+ * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
+ */
+function useMenuSearch(query: string, entries: RailEntry[]) {
+  const { movements, patients, units, referrals, plannedAdmissions, now } = useWardFlow();
+  // Not deferred: a stale list under new text could open the wrong record.
+  const needle = query.trim();
+  return useMemo(() => {
+    if (!needle) return null;
+    const refusal = refusalFor(needle);
+    const results = searchWardFlow({
+      query: needle,
+      patients,
+      movements,
+      units,
+      referrals,
+      now,
+      limitPerGroup: MENU_RESULTS_PER_GROUP,
+      plannedAdmissions,
+    });
+    const viewHrefs = new Set(results.views.map((view) => view.href));
+    const lower = needle.toLowerCase();
+    const pages = entries.filter((entry) => entry.label.toLowerCase().includes(lower) || viewHrefs.has(entry.href));
+    // A screen already listed as a page drops out, including an alias titled the same (Escalation
+    // is "Delays" and redirects there).
+    const pageHrefs = new Set(pages.map((entry) => entry.href));
+    const pageLabels = new Set(pages.map((entry) => entry.label.toLowerCase()));
+    const groups: SearchResultGroup[] = refusal
+      ? []
+      : smartSearchGroups(results, needle, units, { patients, referrals, movements, plannedAdmissions })
+          .map((group) =>
+            group.key === "views"
+              ? {
+                  ...group,
+                  items: group.items.filter(
+                    (item) => !pageHrefs.has(item.href) && !pageLabels.has(item.title.toLowerCase()),
+                  ),
+                }
+              : group,
+          )
+          .filter((group) => group.items.length > 0);
+    return { needle, refusal, pages, groups };
+  }, [needle, entries, movements, patients, units, referrals, plannedAdmissions, now]);
+}
+
+function ResultRow({ item, onGo }: { item: SearchResultItem; onGo: (item: SearchResultItem) => void }) {
+  return (
+    <li>
+      <Link href={item.href} className={styles.row} onClick={() => onGo(item)} data-testid="ward-phone-menu-result">
+        <SearchResultIcon kind={item.kind} id={item.id} className={styles.rowIcon} />
+        <span className={styles.rowText}>
+          <span className={styles.rowLabel}>{item.title}</span>
+          {item.meta ? <span className={styles.rowMeta}>{item.meta}</span> : null}
+        </span>
+        <Chevron />
+      </Link>
+    </li>
+  );
+}
+
+function MenuResults({
+  search,
+  pageRow,
+  onGo,
+}: {
+  search: NonNullable<ReturnType<typeof useMenuSearch>>;
+  pageRow: PageRowRender;
+  onGo: (item: SearchResultItem) => void;
+}) {
+  const { needle, refusal, pages, groups } = search;
+  return (
+    <>
+      {pages.length > 0 ? <Section label="Pages">{pages.map((entry) => pageRow(entry))}</Section> : null}
+      {groups.map((group) => (
+        <Section key={group.key} label={group.heading}>
+          {group.items.map((item) => (
+            <ResultRow key={`${item.kind}-${item.id}`} item={item} onGo={onGo} />
+          ))}
+        </Section>
+      ))}
+      {refusal ? (
+        <p className={styles.empty}>{refusal.sentence}</p>
+      ) : pages.length === 0 && groups.length === 0 ? (
+        <p className={styles.empty}>{NOTHING_FOUND(needle)}</p>
+      ) : null}
+    </>
+  );
+}
+
+/** With a search typed, the matching pages and records. Without one, Needs you, every page by group, then More. */
 function MenuPages({
   query,
   entries,
   needs,
   groups,
   pageRow,
+  onResult,
   onDrawer,
   onClose,
 }: {
   query: string;
   entries: RailEntry[];
-  needs: PhoneMenuModel["needs"];
+  /** Act-now and overdue rows only (device audit option A). */
+  needs: NeedRow[];
   groups: PhoneMenuModel["groups"];
   pageRow: PageRowRender;
+  onResult: (item: SearchResultItem) => void;
   onDrawer: (id: DrawerId) => void;
   onClose: () => void;
 }) {
-  const needle = query.trim().toLowerCase();
-  if (needle) {
-    const results = entries.filter((entry) => entry.label.toLowerCase().includes(needle));
-    if (results.length === 0) return <p className={styles.empty}>No page called “{query.trim()}”.</p>;
-    return <Section label="Pages found">{results.map((entry) => pageRow(entry))}</Section>;
-  }
+  const search = useMenuSearch(query, entries);
+  if (search) return <MenuResults search={search} pageRow={pageRow} onGo={onResult} />;
   return (
     <>
-      {needs.length > 0 ? (
-        <Section label="Needs you" rich>
-          {needs.map(({ entry, count }) => pageRow(entry, count, true))}
-        </Section>
-      ) : null}
+      <Section label="Needs you" rich>
+        {needs.length === 0 ? (
+          <li className={styles.empty}>Nothing is act-now or overdue.</li>
+        ) : (
+          needs.map((row) => <NeedRowLink key={row.id} row={row} onGo={onClose} onTasks={() => onDrawer("tasks")} />)
+        )}
+      </Section>
       {groups.map((group) => (
         <Section key={group.label} label={group.label}>
           {group.entries.map((entry) => pageRow(entry))}
@@ -537,7 +742,7 @@ export function WardPhoneMenu({
   onNewReferral,
 }: WardPhoneMenuProps) {
   const pathname = usePathname() ?? "";
-  const { counts, role } = useWardNavCounts();
+  const { counts, shellRole } = useWardNavCounts();
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -554,7 +759,15 @@ export function WardPhoneMenu({
     [],
   );
 
-  const { entries, byId, dock, needs, groups } = phoneMenuModel(role, counts);
+  // One order for the signed-in person (device audit, 11 Oct 2026), as the desktop rail.
+  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts);
+  // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
+  const flow = useWardFlow();
+  const actNowCount = useMemo(
+    () => (wardTasksAreActionableForRole(shellRole) ? activeActNowItems(flow, flow.now).length : 0),
+    [shellRole, flow],
+  );
+  const needs = [...actNowNeed(actNowCount), ...overdueNeeds];
 
   const close = () => setOpen(false);
   const closeCreate = () => setCreateOpen(false);
@@ -598,25 +811,12 @@ export function WardPhoneMenu({
         mobileSize="viewport"
         mobileBreakpoint="phone"
         returnFocusRef={returnFocusRef}
-        headerLeading={<WhoLink role={role} onClose={close} />}
+        headerLeading={<WhoLink role={shellRole} onClose={close} />}
         contentClassName={styles.sheet}
         headerClassName={styles.head}
         titleClassName="sr-only"
         closeButtonClassName={styles.close}
         bodyClassName={styles.body}
-        footerClassName={styles.foot}
-        footer={
-          <PhoneDock
-            places={dock}
-            counts={counts}
-            pathname={pathname}
-            tasksCount={tasksCount}
-            activityUnread={activityUnread}
-            onGo={go}
-            onCreate={create}
-            onDrawer={drawer}
-          />
-        }
       >
         <MenuSearch query={query} onQuery={setQuery} />
         <MenuPages
@@ -625,6 +825,10 @@ export function WardPhoneMenu({
           needs={needs}
           groups={groups}
           pageRow={pageRow}
+          onResult={(item) => {
+            announceToWardShell(`${item.title}.`);
+            close();
+          }}
           onDrawer={drawer}
           onClose={close}
         />
@@ -637,6 +841,20 @@ export function WardPhoneMenu({
         byId={byId}
         onNewReferral={onNewReferral}
       />
+
+      {/* The dock on every phone page (device audit option A). Hidden above 48rem by its CSS. */}
+      <div className={`${pageDock.pageDock} ${pageDock.rise}`} data-wf-page-dock="rise">
+        <PhoneDock
+          places={dock}
+          counts={counts}
+          pathname={pathname}
+          tasksCount={tasksCount}
+          activityUnread={activityUnread}
+          onGo={(entry) => announceGo(pathname, entry)}
+          onCreate={create}
+          onDrawer={drawer}
+        />
+      </div>
     </>
   );
 }

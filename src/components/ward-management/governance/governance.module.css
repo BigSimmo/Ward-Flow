@@ -24,29 +24,6 @@
   gap: var(--ward-space-12);
 }
 
-.topBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--ward-space-12);
-  padding: var(--ward-space-8) 0;
-  min-height: var(--ward-tap);
-}
-
-.barTitle {
-  font-size: var(--t-4);
-  font-weight: 700;
-  color: var(--ink);
-  line-height: var(--ward-leading-tight);
-}
-
-.barSubtitle {
-  font-size: var(--t-1);
-  color: var(--muted);
-  line-height: var(--ward-leading-body);
-}
-
 .btn {
   display: inline-flex;
   align-items: center;
@@ -118,16 +95,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.kpiCard[data-tone="warn"] .kpiVal {
-  color: var(--warn);
-}
-.kpiCard[data-tone="good"] .kpiVal {
-  color: var(--good);
-}
-.kpiCard[data-tone="accent"] .kpiVal {
-  color: var(--accent);
-}
-
 .kpiLabel {
   font-size: var(--t-0);
   font-weight: 600;
@@ -136,34 +103,10 @@
   color: var(--muted);
 }
 
-.kpiVal {
-  font-family: var(--mono);
-  font-size: var(--t-5);
-  font-weight: 700;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  line-height: var(--ward-leading-compact);
-}
-
 .kpiSub {
   font-size: var(--t-0);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-}
-
-.workspaceBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ward-space-8);
-  font-size: var(--t-2);
-  color: var(--muted);
-}
-
-.workspaceBar > p {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-2);
 }
 
 .summary {
@@ -332,18 +275,8 @@
   cursor: pointer;
 }
 
-/* ─── Detail Inspector & Event Cards ─── */
-.sideColumn {
-  display: grid;
-  min-width: 0;
-  align-content: start;
-  gap: var(--ward-space-12);
-}
-
 .detailPanel,
-.recordPanel,
-.registerPanel,
-.legacyPanel {
+.registerPanel {
   min-width: 0;
   overflow: hidden;
   border: 0.0625rem solid var(--line);
@@ -351,12 +284,6 @@
   border-radius: var(--r1);
   background: var(--surface);
   box-shadow: var(--lift);
-}
-
-.inspectorBody {
-  padding: var(--ward-space-16, 1rem);
-  display: grid;
-  gap: var(--ward-space-14);
 }
 
 .inspectorCard {
@@ -367,44 +294,6 @@
   display: grid;
   gap: var(--ward-space-8);
   font-variant-numeric: tabular-nums;
-}
-
-.inspectorRow {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--t-1);
-  gap: var(--ward-space-8);
-}
-
-.inspectorLabel {
-  color: var(--muted);
-  font-size: var(--t-0);
-  text-transform: uppercase;
-  font-weight: 600;
-  flex: 0 0 auto;
-}
-
-.inspectorVal {
-  font-weight: 600;
-  color: var(--ink);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.inspectorText {
-  background: var(--surface-2);
-  border: 0.0625rem solid var(--line);
-  border-radius: var(--r2);
-  padding: var(--ward-space-10) var(--ward-space-12);
-  font-size: var(--t-1);
-  line-height: var(--ward-leading-body);
-  color: var(--ink);
-}
-
-.inspectorActions {
-  display: flex;
-  gap: var(--ward-space-8);
-  margin-top: var(--ward-space-4);
 }
 
 /* ─── Status & Category Badges ─── */
@@ -487,32 +376,6 @@
   background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
 
-.eventMain,
-.eventMeta,
-.eventBottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ward-space-8);
-}
-
-.eventMeta,
-.eventBottom {
-  color: var(--muted);
-  font-size: var(--t-1);
-  line-height: 1.5;
-}
-
-.eventMeta time {
-  flex: 0 0 auto;
-  font-variant-numeric: tabular-nums;
-}
-
-.eventBottom > span:first-child {
-  margin-right: auto;
-}
-
-.eventBottom svg,
 .entityLinks svg {
   width: 0.875rem;
   height: 0.875rem;
@@ -618,18 +481,6 @@
   font-size: var(--t-1);
 }
 
-.reviewControls {
-  padding: var(--ward-space-10) var(--ward-space-14);
-  border-top: 0.0625rem solid var(--line);
-  background: var(--surface-2);
-}
-
-.reviewControls > p {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-2);
-}
-
 .reviewActions {
   display: flex;
   flex-wrap: wrap;
@@ -660,12 +511,6 @@
 .reviewActions button:disabled {
   color: var(--wf-dim);
   cursor: not-allowed;
-}
-
-.reviewControls .feedback {
-  min-height: 1.5em;
-  margin-top: var(--ward-space-8);
-  color: var(--ink);
 }
 
 .empty {
@@ -759,20 +604,6 @@
   font-size: var(--t-1);
 }
 
-/* ─── Legacy & Scope Disclosures ─── */
-.legacyGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ward-space-12);
-  padding: var(--ward-space-14);
-}
-
-.legacyPanel > aside {
-  border: 0;
-  box-shadow: none;
-}
-
-.accessScope,
 .boundary {
   padding: var(--ward-space-10) var(--ward-space-14);
   border-top: 0.0625rem solid var(--line);
@@ -781,7 +612,6 @@
   line-height: 1.5;
 }
 
-.accessScope summary,
 .boundary summary {
   width: fit-content;
   min-height: var(--ward-tap);
@@ -956,37 +786,9 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .topBar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--ward-space-8);
-  }
-
-  .topBar .btn {
-    width: 100%;
-  }
-
-  .inspectorActions {
-    flex-direction: column;
-  }
-
-  .inspectorActions button {
-    width: 100%;
-  }
-
-  .workspaceBar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--ward-space-4);
-  }
-
   .summary {
     flex-wrap: wrap;
     gap: var(--ward-space-8);
-  }
-
-  .legacyGrid {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1077,24 +879,13 @@
   border-color: color-mix(in srgb, var(--good) 45%, transparent);
 }
 
-/* ─── Tabular Numbers & Audit Timestamps ─── */
-.auditList,
-.auditList li,
-.tabularTime,
-.auditList time {
-  font-variant-numeric: tabular-nums;
-}
-
 /* ─── Dark Mode Crisp Borders Contract ─── */
 @media (prefers-color-scheme: dark) {
   .kpiCard,
   .tabsPanel,
   .registerPanel,
   .detailPanel,
-  .recordPanel,
-  .legacyPanel,
   .inspectorCard,
-  .inspectorText,
   .eventRow,
   .modalDialog,
   .tableWrap {
@@ -1107,9 +898,5 @@
   .tabbar,
   .filters {
     border-bottom-color: var(--line-strong);
-  }
-
-  .reviewControls {
-    border-top-color: var(--line-strong);
   }
 }

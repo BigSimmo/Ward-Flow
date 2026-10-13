@@ -1150,7 +1150,7 @@
 @media (max-width: 48rem) {
   .phonePanes {
     position: sticky;
-    top: 3.5rem;
+    top: var(--wf-header-height, 3.5rem);
     z-index: 6;
     margin: 0 calc(-1 * var(--wf-s-3));
     padding: var(--wf-s-2) var(--wf-s-3);
@@ -1280,16 +1280,12 @@
 
 /* ─── v10 phone fidelity (11 Oct 2026) ───
  * The view switch band runs the full width and, once the page has scrolled, sits flush under the
- * condensed 52px bar (56px at rest). The pinned "Reads alike" chip leaves the phone: the hero's
+ * stable shared header. The pinned "Reads alike" chip leaves the phone: the hero's
  * Read alike figure is that filter there. A name that reads like others says so at the end of its
  * meta line, as the mockup ("EMHS · 1 suburb · reads like 3 others"). Phone only. */
 @media (max-width: 48rem) {
   .phonePanes {
     max-width: none;
-  }
-
-  :global(body:has([data-scrolled="true"])) .phonePanes {
-    top: 3.25rem;
   }
 
   .phonePanes > div {
@@ -1326,4 +1322,98 @@
 .guideFootAction {
   width: 100%;
   justify-content: center;
+}
+
+/* Device audit 11 Oct 2026, phone: the letter heads stick under the view switch while 64 names
+ * scroll. `clip` rather than `hidden` on the card, so the card is not the sticky container. */
+@media (max-width: 48rem) {
+  .directoryCard,
+  .directoryCard .listWrap {
+    overflow: clip;
+  }
+
+  .letterHeading {
+    position: sticky;
+    top: 8.125rem;
+    z-index: 2;
+    background: var(--wf-surface);
+  }
+}
+
+/* Tablet portrait: the suburb lookup, the faster job, leads above the A to Z. */
+@media (min-width: 48.0625rem) and (max-width: 62.5625rem) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .side {
+    display: contents;
+  }
+
+  .side > [data-pane="suburb"] {
+    order: -1;
+  }
+}
+
+/* Device audit 11 Oct 2026, phone: the compared spellings are the point of the Alike tab, so they
+ * wrap in their columns rather than being cut or hidden off the side; the note wraps too. */
+@media (max-width: 48rem) {
+  .sideTable {
+    white-space: normal;
+  }
+
+  .sideTable thead th:not(:first-child) {
+    overflow-wrap: anywhere;
+  }
+
+  .note span {
+    white-space: normal;
+  }
+}
+
+/* Site review 12 Oct 2026, phone only: a team name in the postcode lookup is a 44px target, and
+   "Show in list" keeps to one line beside it. */
+@media (max-width: 48rem) {
+  .lookupName a {
+    display: flex;
+    align-items: center;
+    min-height: 3rem;
+  }
+
+  .lookupAside {
+    flex: none;
+  }
+
+  .lookupAside button {
+    white-space: nowrap;
+  }
+}
+
+/* Phone compact chips (Josh, 12 Oct 2026): the toolbar chips take the shared phone pill
+ * (`--wf-phone-*`): 32px faces, 13px 600 labels, 12px mono counts. The row carries the hit area in
+ * its padding so the 48px target is not clipped by the sideways scroll. Phone only. */
+@media (max-width: 48rem) {
+  .toolbar > :global([role="radiogroup"]) {
+    gap: var(--wf-phone-pill-gap);
+    padding: var(--wf-phone-pill-hit) 2px;
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"]),
+  .toolbar > button[aria-pressed] {
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"]) > span:last-child {
+    font-size: var(--wf-phone-pill-count-fs);
+  }
+
+  .toolbar > :global([role="radiogroup"]) > :global([role="radio"])::after,
+  .toolbar > button[aria-pressed]::after {
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
 }

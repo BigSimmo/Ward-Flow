@@ -212,6 +212,7 @@
 }
 
 .edCard {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -517,6 +518,65 @@
   border-color: var(--wf-line);
 }
 
+/* The whole card opens the preview; Enter and the trend sit above that button. */
+.cardOpen {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cardOpen:hover {
+  background: var(--wf-hover);
+}
+
+.cardOpen:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.edCard > :not(.cardOpen) {
+  position: relative;
+  pointer-events: none;
+}
+
+.edCard a,
+.edCard button:not(.cardOpen) {
+  pointer-events: auto;
+}
+
+.cardsWithRail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.cardsWithRail .cardGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 80rem) {
+  .cardsWithRail .cardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 62.5rem) {
+  .cardsWithRail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 48rem) {
+  .cardsWithRail .cardGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 80rem) {
   .cardGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -567,8 +627,9 @@
     gap: var(--wf-s-2);
   }
 
+  /* Choice options keep the shared compact phone face; their hit area reaches 48px on its own. */
   .main a,
-  .main button:not(.mark) {
+  .main button:not(.mark):not([role="radio"]) {
     min-height: var(--spacing-tap, 3rem);
   }
 
@@ -589,6 +650,22 @@
   .laneLabel {
     flex-direction: column;
     gap: 0;
+  }
+
+  /* The ED name ends in an ellipsis rather than a hard clip (device audit 11 Oct 2026). */
+  .laneLabel b {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .markCluster {
+    border-color: var(--wf-line-3);
+  }
+
+  .markCount {
+    font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+    color: var(--wf-ink-1);
   }
 
   .mark {
@@ -698,7 +775,11 @@
 }
 
 .previewPerson[data-act-now="true"] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
+  padding-inline-start: 14px;
 }
 
 .previewText {
@@ -943,9 +1024,12 @@
     border-top: 1px solid var(--wf-line);
   }
 
-  /* Act now keeps its thin red edge, drawn inside the joined list. */
+  /* Act now keeps its inset rounded marker in the joined phone list. */
   .previewList[data-phone="true"] .previewPerson[data-act-now="true"] {
-    box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+    box-shadow: none;
+
+    background: var(--wf-act-tint);
+    position: relative;
   }
 
   .previewUmrn {
@@ -1020,8 +1104,7 @@
 
 /* ─── v10 phone fidelity (11 Oct 2026) ───
  * Status and order sit beside the search; EDs, Wait lanes and By service run the full width and
- * stay pinned under the bar while the list scrolls (56px at rest, 52px once scrolled; the switch
- * only sticks after a scroll), on a canvas band so no row shows behind it. Phone-only elements. */
+ * stay pinned under the bar while the list scrolls below the stable shared header, on a canvas band so no row shows behind it. Phone-only elements. */
 .phoneSearchRow {
   display: flex;
   align-items: center;
@@ -1045,16 +1128,12 @@
 
 .phoneViewRow {
   position: sticky;
-  top: 3.5rem;
+  top: var(--wf-header-height, 3.5rem);
   z-index: 6;
   width: auto;
   margin: calc(var(--wf-s-2) * -1) calc(var(--wf-s-3) * -1);
   padding: var(--wf-s-2) var(--wf-s-3);
   background: var(--wf-canvas);
-}
-
-:global(body:has([data-scrolled="true"])) .phoneViewRow {
-  top: 3.25rem;
 }
 
 .phoneViewRow :global([role="radiogroup"]) {
@@ -1064,4 +1143,52 @@
 .phoneViewRow :global([role="radio"]) {
   flex: 1 1 0;
   justify-content: center;
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.previewPerson[data-act-now="true"] {
+  position: relative;
+}
+
+.previewPerson[data-act-now="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .previewPerson[data-act-now="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
+/* Phone compact chips (Josh, 12 Oct 2026): the By service chips take the shared phone pill
+ * (`--wf-phone-*`): 32px faces, 13px 600 labels, 12px mono counts. The row carries the hit area in
+ * its padding so the 48px target is not clipped by the sideways scroll. Phone only. */
+@media (max-width: 48rem) {
+  .phoneServices :global([role="radiogroup"]) {
+    gap: var(--wf-phone-pill-gap);
+    padding: var(--wf-phone-pill-hit) 2px;
+  }
+
+  .phoneServices :global([role="radio"]) {
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+  }
+
+  .phoneServices :global([role="radio"]) > span:last-child {
+    font-size: var(--wf-phone-pill-count-fs);
+  }
+
+  .phoneServices :global([role="radio"])::after {
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
 }

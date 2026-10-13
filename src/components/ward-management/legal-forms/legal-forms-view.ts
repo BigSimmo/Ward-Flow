@@ -1,5 +1,11 @@
 import type { WfTone } from "@/components/wf";
-import { formatInstantWithDay, minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstantWithDay,
+  minutesUntil,
+  perthCalendarDay,
+  perthMidnight,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -259,8 +265,10 @@ export function instantFromDateAndTimeInputs(dateValue: string, timeValue: strin
   const day = Number(rawDay);
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return undefined;
   if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
-  const typedDate = new Date(year, month - 1, day);
-  if (typedDate.getFullYear() !== year || typedDate.getMonth() !== month - 1 || typedDate.getDate() !== day) {
+  // A typed date is a Perth calendar day, counted from `dayZero`'s Perth midnight (L7).
+  const typedDate = perthMidnight(year, month - 1, day);
+  const read = perthCalendarDay(typedDate);
+  if (read.year !== year || read.monthIndex !== month - 1 || read.day !== day) {
     return undefined;
   }
   const dayOffsetMinutes = Math.round((typedDate.getTime() - dayZero.getTime()) / 60_000);

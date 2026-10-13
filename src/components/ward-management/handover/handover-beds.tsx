@@ -46,6 +46,11 @@ export type HandoverBedsProps = {
   /** Held discharges already in scope, longest first. */
   held: HeldDischarge[];
   now: Instant;
+  /**
+   * The hero's "Finding a ward" figure (the meeting group), so this tile and the hero's
+   * "beds ready for N finding a ward" read one number. Falls back to every row still finding a ward.
+   */
+  waitingForBed?: number;
   /** Switches to the Patients tab and selects the row. */
   onOpenPatient: (movementId: string) => void;
 };
@@ -109,7 +114,7 @@ function CountPill({ n }: { n: number }) {
   return <span className={styles.k}>{n}</span>;
 }
 
-function BedTiles({ rows, wards, held, now }: Omit<HandoverBedsProps, "onOpenPatient">) {
+function BedTiles({ rows, wards, held, now, waitingForBed }: Omit<HandoverBedsProps, "onOpenPatient">) {
   const sum = (key: "ready" | "beds" | "occupied" | "outToday" | "pastEdd" | "longStays") =>
     wards.reduce((total, ward) => total + ward[key], 0);
   const ready = sum("ready");
@@ -117,14 +122,14 @@ function BedTiles({ rows, wards, held, now }: Omit<HandoverBedsProps, "onOpenPat
   const beds = sum("beds");
   const occupied = sum("occupied");
   const stale = wards.filter((ward) => wardIsStale(ward, now)).length;
-  const waiting = rows.filter(isWaitingForBed).length;
+  const waiting = waitingForBed ?? rows.filter(isWaitingForBed).length;
   return (
     <div className={styles.tiles}>
       <div className={cx(styles.tile, styles.tileOk)}>
         <b className={cx(styles.tileValue, styles.inkSuccess)}>{ready}</b>
         <span className={styles.tileLabel}>Beds ready</span>
         <span className={styles.tileSub}>
-          for <b>{waiting}</b> waiting{preparing > 0 ? `, ${preparing} being made ready` : ""}
+          for <b>{waiting}</b> finding a ward{preparing > 0 ? `, ${preparing} being made ready` : ""}
         </span>
       </div>
       <div className={styles.tile}>
@@ -374,7 +379,7 @@ function HeldList({ held }: { held: HeldDischarge[] }) {
   );
 }
 
-export function HandoverBeds({ rows, wards, held, now, onOpenPatient }: HandoverBedsProps) {
+export function HandoverBeds({ rows, wards, held, now, waitingForBed, onOpenPatient }: HandoverBedsProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [chips, setChips] = useState<ReadonlySet<BedChip>>(() => new Set());
 
@@ -431,7 +436,7 @@ export function HandoverBeds({ rows, wards, held, now, onOpenPatient }: Handover
   return (
     <div data-testid="ward-handover-beds" className={styles.root}>
       <div className={styles.main}>
-        <BedTiles rows={rows} wards={wards} held={held} now={now} />
+        <BedTiles rows={rows} wards={wards} held={held} now={now} waitingForBed={waitingForBed} />
         <Card aria-labelledby="handover-beds-wards">
           <CardHead
             id="handover-beds-wards"

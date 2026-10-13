@@ -251,15 +251,6 @@
   line-height: var(--ward-leading-relaxed);
 }
 
-/* Whose question this section answers. Never hidden behind a tooltip or an icon: the two
-   audiences are the structure of the page, so the naming of them is body text. */
-.sectionAudience {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--ward-leading-relaxed);
-}
-
 .figure {
   display: grid;
   gap: var(--ward-space-8);
@@ -278,13 +269,6 @@
   color: var(--ink);
   font-size: var(--text-xs);
   font-weight: 700;
-}
-
-.figureBlurb {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--ward-leading-relaxed);
 }
 
 /* A measured average. Larger than the body, and deliberately not larger than the page title: it is
@@ -340,76 +324,11 @@
   line-height: var(--ward-leading-relaxed);
 }
 
-/*
- * The third case: measurable, but with an empty population. Distinct from `.absence` on purpose —
- * treating it as an absence would tell a reader the figure can never be had, which is false.
- */
-.nothingToAverage {
-  margin: 0;
-  border-left: 0.125rem solid var(--line-strong);
-  padding-left: var(--ward-space-10);
-  color: var(--ink);
-  font-size: var(--text-xs);
-  line-height: var(--ward-leading-relaxed);
-}
-
 .figureNote {
   margin: 0;
   color: var(--muted);
   font-size: var(--t-0);
   line-height: var(--ward-leading-relaxed);
-}
-
-/*
- * ONE ROW PER MEMBER OF A CLOSED VOCABULARY, INCLUDING THE MEMBERS AT NOUGHT.
- *
- * ⚠️ **NOTHING HERE VARIES WITH THE VALUE.** No bar, no fill, no colour that changes with the
- * count, and no dimming of a row at nought. A bar is a comparison and a comparison of refusal
- * reasons is a ranking; a dimmed nought would say the row matters less, when the whole reason the
- * row is rendered is that a nought and an absent row are different statements and the reader must
- * be able to tell them apart. Every row is typeset identically and the numeral does the talking.
- */
-.tallyList {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  border: 0.0625rem solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
-  padding: 0;
-  list-style: none;
-}
-
-.tallyRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--ward-space-12);
-  /*
-   * A DIVIDER, not a border, and the two tokens resolve to the same colour today so nothing
-   * renders differently either way. The list above draws the box outline; this is the rule
-   * BETWEEN rows inside it, zeroed on the first row because the box edge already draws there.
-   * Picked by role rather than by value, so a later re-point of one token finds only its own uses.
-   */
-  border-top: 0.0625rem solid var(--line);
-  padding: var(--ward-space-6) var(--ward-space-12);
-}
-
-.tallyRow:first-child {
-  border-top: 0;
-}
-
-.tallyReason {
-  color: var(--ink);
-  font-size: var(--text-xs);
-  line-height: var(--ward-leading-relaxed);
-}
-
-.tallyCount {
-  color: var(--ink);
-  font-size: var(--text-sm, 0.875rem);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
 }
 
 /* A field name from the model, quoted so a reader can go and look at the record the sentence is
@@ -476,18 +395,6 @@
   width: 100%;
   height: auto;
 }
-.chartCaption {
-  margin-top: var(--ward-space-8);
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-relaxed);
-}
-.chartCaption b {
-  font-family: var(--font-mono, monospace);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  color: var(--ink);
-}
 
 /*
  * DemonstrationChart is nested under an opted-in statistics frame but declares its own legacy
@@ -504,55 +411,6 @@
   font-size: var(--t-0);
   font-weight: 600;
   letter-spacing: 0.1em;
-}
-
-.overviewChartBox {
-  position: relative;
-  width: 100%;
-}
-
-.chartTooltip {
-  position: absolute;
-  pointer-events: none;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2, 6px);
-  padding: 8px 12px;
-  font-size: 12px;
-  box-shadow: var(--lift);
-  z-index: 10;
-  min-width: 130px;
-  color: var(--ink);
-}
-
-.chartTooltipDate {
-  font-family: var(--mono, monospace);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-.chartTooltipRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-
-[data-ward-design="third-edition"] .chartCaption {
-  color: var(--muted);
-  font-family: var(--body);
-  font-size: var(--t-1);
-  line-height: 1.5;
-}
-
-[data-ward-design="third-edition"] .chartCaption b {
-  color: var(--ink);
-  font-family: var(--mono);
-  font-weight: 600;
 }
 
 /* ─── tableWrap / dtable: sits ON TOP OF WardTable, never replaces it ────────────────────────
@@ -578,12 +436,6 @@
 .tableWrap {
   display: grid;
   gap: var(--ward-space-8);
-}
-.tableCaption {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-relaxed);
 }
 
 .dtable {
@@ -653,30 +505,6 @@
   color: var(--accent);
   border-color: var(--line-strong);
   background: var(--accent-soft);
-}
-
-/* ─── statLine: a compact ratio fact, short of a full kpi tile ────────────────────────────────── */
-.statLine {
-  display: flex;
-  align-items: baseline;
-  gap: var(--ward-space-6);
-  padding: var(--ward-space-10) 0;
-  border-bottom: 0.0625rem solid var(--line);
-}
-.statLine:last-child {
-  border-bottom: 0;
-}
-.statLineValue {
-  font-family: var(--font-mono, monospace);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: var(--text-lg, 1.125rem);
-  color: var(--ink);
-}
-.statLineLabel {
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--ward-leading-copy);
 }
 
 /* ─── eyebrow: a small worded label above a heading ───────────────────────────────────────────── */
@@ -877,40 +705,7 @@
   padding: var(--ward-space-12) var(--ward-space-14);
 }
 
-/*
- * 5-Domain Chooser Cards (.domainChooser / .sectionCards)
- * On viewports < 480px (mobile phones), clamp cards so they wrap cleanly without causing horizontal scrolling.
- */
-.domainChooser {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.sectionCards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
-  gap: var(--ward-space-8);
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 @media (max-width: 479.98px) {
-  .domainChooser {
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  .sectionCards {
-    grid-template-columns: 1fr;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
   .indexList {
     grid-template-columns: 1fr;
     max-width: 100%;

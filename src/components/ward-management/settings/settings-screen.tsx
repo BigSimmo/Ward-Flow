@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
   useCallback,
@@ -64,7 +65,6 @@ import {
   DUE_SOON_RANGE_MINUTES,
   DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
-  OCCUPANCY_ALERT_PERCENT,
   OVERDUE_AFTER_MINUTES_BY_TIER,
   WARD_ANSWER_TARGET_MINUTES,
   SILENT_WARD_FIRST_REMINDER_MINUTES,
@@ -72,6 +72,7 @@ import {
   TRANSPORT_BOOKED_TARGET_MINUTES,
   UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { DECISION_TARGET_STEPS } from "@/components/ward-management/ward-decision-targets";
 import {
   enableActNowNotifications,
@@ -112,6 +113,7 @@ import type { WardAppearance } from "@/components/ward-management/shell/ward-she
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
 import { AlertsPane, DataPane, DisplayPane, ProfilePane, type ReferenceTab } from "./settings-panes";
+import { useRowDensity, type RowDensity } from "./row-density";
 import { NOT_WIRED, PreviewTag, RuleRow, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_TABS, findSettings, type SettingsSearchEntry, type SettingsTab } from "./settings-search-index";
 import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
@@ -129,8 +131,9 @@ import styles from "./settings.module.css";
  *
  * Wired: the six coordination rules (draft, then `SET_CONFIGURATION`, each save audited), theme,
  * sidebar, reduce motion, high contrast, buzz sound, export, import, clear session and restore.
- * Everything marked Preview is shown for review only: each such control is `aria-disabled`, stays
- * focusable, and says "Not wired in this prototype." (D4) when pressed.
+ * Everything marked Preview is shown for review only. Site review (12 Oct 2026): such a control
+ * works like any other and, when pressed, says "<name> is not wired in this prototype." (D4, D-16);
+ * it is never greyed. Row density is wired (`row-density.tsx`).
  *
  * ⚠️ **NO DEMONSTRATION CONTROL BELONGS ON THIS SCREEN.** Owner ruling Q-7 puts the clock, the
  * scenario and Reset in the Tools drawer; the Data tab says so in words.
@@ -285,6 +288,7 @@ export function SettingsScreen() {
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useWardAccessibilityPreference("reduced-motion");
   const [highContrast, setHighContrast] = useWardAccessibilityPreference("high-contrast");
+  const [rowDensity, setRowDensity] = useRowDensity();
   const [audioBuzz, setAudioBuzz] = useAudioBuzzPreference();
   const [actNowNotifications] = useActNowNotificationPreference();
   const [notificationPermission, setNotificationPermission] = useState<NotificationSupport>("default");
@@ -311,7 +315,18 @@ export function SettingsScreen() {
     },
     [toast],
   );
-  const onPreview = useCallback((name: string) => showToast(`${name}: ${NOT_WIRED}`), [showToast]);
+  // D-16: "<name> is not wired in this prototype." No colon outside a clock time.
+  const onPreview = useCallback(
+    (name: string) => showToast(`${name} is ${NOT_WIRED.charAt(0).toLowerCase()}${NOT_WIRED.slice(1)}`),
+    [showToast],
+  );
+  const chooseRowDensity = useCallback(
+    (next: RowDensity) => {
+      setRowDensity(next);
+      showToast(`Row density set to ${next === "compact" ? "Compact" : "Comfortable"}.`);
+    },
+    [setRowDensity, showToast],
+  );
 
   // Open the tab named in the address (#alerts), and keep the address in step.
   useEffect(() => {
@@ -347,7 +362,6 @@ export function SettingsScreen() {
   const unsavedCount = diffs.length;
   const hasUnsavedRules = unsavedCount > 0;
   const isSurge = isSurgePreset(draft);
-  const savedSurge = isSurgePreset(configuration);
 
   // The ED row's effect: who waits past the target now, at the draft value and at the saved one.
   const savedEdOver = thresholds.find((threshold) => threshold.id === "ed-access-target")?.reached ?? 0;
@@ -538,7 +552,7 @@ export function SettingsScreen() {
     const frame = window.requestAnimationFrame(() => {
       const element = document.querySelector<HTMLElement>(`[data-setting="${highlight}"]`);
       element?.classList.add(styles.hit);
-      element?.scrollIntoView?.({ block: "center", behavior: reducedMotion ? "auto" : "smooth" });
+      element?.scrollIntoView?.({ block: "center", behavior: wardScrollBehavior() });
       const control = element?.matches("button, a, input")
         ? element
         : element?.querySelector<HTMLElement>("button, a[href], input");
@@ -755,7 +769,6 @@ export function SettingsScreen() {
                 label="Surge ends"
                 items={["Manual", "8h", "12h", "Shift end"].map((item) => ({ id: item, label: item }))}
                 value="12h"
-                unavailable
                 onChange={() => onPreview("Surge ends")}
               />
             </SettingRow>
@@ -898,16 +911,15 @@ export function SettingsScreen() {
               id="more-title"
               icon={SlidersHorizontal}
               title="More thresholds"
-              meta="Fixed in code today"
               aside={<PreviewTag />}
             />
             <RuleRow
               setting="occupancy"
               title="Occupancy alert"
               sub="Bed alerts dot from"
-              value={OCCUPANCY_ALERT_PERCENT}
-              saved={OCCUPANCY_ALERT_PERCENT}
-              display={`${OCCUPANCY_ALERT_PERCENT}%`}
+              value={BED_ALERT_THRESHOLD_PERCENT}
+              saved={BED_ALERT_THRESHOLD_PERCENT}
+              display={`${BED_ALERT_THRESHOLD_PERCENT}%`}
               noun="occupancy alert"
               range={{
                 min: 80,
@@ -1103,6 +1115,8 @@ export function SettingsScreen() {
           setHighContrast(next);
           showToast(`High contrast ${next ? "on" : "off"}.`);
         }}
+        rowDensity={rowDensity}
+        onRowDensityChange={chooseRowDensity}
         onPreview={onPreview}
       />
     </>
@@ -1239,22 +1253,8 @@ export function SettingsScreen() {
             eyebrow={SETTINGS_DEMO_PROFILE.location}
             chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
             sub={`${SETTINGS_DEMO_PROFILE.role} · nothing here changes care`}
-            figures={[
-              { id: "rules", value: savedSurge ? "Surge" : "Standard", label: "Rules" },
-              {
-                id: "unsaved",
-                value: hasUnsavedRules ? unsavedCount : "None",
-                label: "Unsaved",
-                tone: hasUnsavedRules ? "info" : undefined,
-                onPress: hasUnsavedRules ? () => setPhoneSheet("rules") : undefined,
-                actionLabel: hasUnsavedRules ? `Open Rules, ${unsavedCount} unsaved` : undefined,
-              },
-              {
-                id: "last",
-                value: lastAccepted?.at != null ? formatInstantWithDay(lastAccepted.at, now) : "None",
-                label: "Last rule save",
-              },
-            ]}
+            // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
+            // are what this hero is for. The save strip still appears when a rule is unsaved.
             actions={
               <Button
                 variant="onHero"
@@ -1304,15 +1304,17 @@ export function SettingsScreen() {
                   className={styles.phoneSwitch}
                 />
               </SettingRow>
-              <SettingRow setting="density" title="Row density" stacked preview>
-                <Segmented
+              <SettingRow setting="density" title="Row density" stacked>
+                <Segmented<RowDensity>
                   className={styles.phoneSeg}
                   size="md"
                   label="Row density"
-                  items={["Comfortable", "Compact"].map((item) => ({ id: item, label: item }))}
-                  value="Comfortable"
-                  unavailable
-                  onChange={() => onPreview("Row density")}
+                  items={[
+                    { id: "comfortable", label: "Comfortable" },
+                    { id: "compact", label: "Compact" },
+                  ]}
+                  value={rowDensity}
+                  onChange={chooseRowDensity}
                 />
               </SettingRow>
               <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz">
@@ -1387,7 +1389,7 @@ export function SettingsScreen() {
             title={sheetTab ? tabLabel(sheetTab) : "Settings"}
             description={
               sheetTab === "rules"
-                ? "Needs Save · each save is recorded in the audit"
+                ? "Save to apply. Each save is recorded in the audit"
                 : "Saves at once · this browser only"
             }
             primary={
@@ -1470,17 +1472,15 @@ export function SettingsScreen() {
             />
           }
           barAside={
+            // Device audit 11 Oct 2026: the other chips repeated the tabs, the save strip and the
+            // Buzz switch; Last save is the one fact only the hero gives.
             <HeroChips label="Settings at a glance">
-              <HeroChip value={savedSurge ? "Surge" : "Standard"} label="Rules" />
-              <HeroChip
-                value={hasUnsavedRules ? unsavedCount : "None"}
-                label={hasUnsavedRules ? (unsavedCount === 1 ? "Unsaved rule" : "Unsaved rules") : "Unsaved"}
-              />
-              <HeroChip value={audioBuzz ? "On" : "Off"} label="Buzz sound" />
-              <HeroChip
-                value={lastAccepted?.at != null ? formatInstantWithDay(lastAccepted.at, now) : "None"}
-                label="Last save"
-              />
+              {/* Site review (12 Oct 2026): plain words when nothing has been saved yet. */}
+              {lastAccepted?.at != null ? (
+                <HeroChip value={formatInstantWithDay(lastAccepted.at, now)} label="Last save" />
+              ) : (
+                <HeroChip value="No" label="saves yet" />
+              )}
             </HeroChips>
           }
         />

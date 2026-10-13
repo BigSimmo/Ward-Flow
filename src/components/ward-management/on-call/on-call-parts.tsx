@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Copy, Flag, Mail, PhoneCall, Star, X } from "lucide-react";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { Badge, Button, Icon, StatusGlyph, cx, durMinutes } from "@/components/wf";
@@ -461,14 +462,13 @@ function RecordFoot({ entry }: { entry: DirectoryEntry }) {
     <div className={styles.recordFoot}>
       <StatusGlyph tone={due ? "warning" : "success"} size={10} />
       <span className={styles.recordText}>
-        Synthetic record, checked {entry.checkedDaysAgo} {entry.checkedDaysAgo === 1 ? "day" : "days"} ago
+        {/* Shortened so the line no longer cuts twice in the rail (device audit 11 Oct 2026). */}
+        Synthetic · checked {entry.checkedDaysAgo}d ago
       </span>
       <Badge size="sm" variant="plain">
         Not verified
       </Badge>
-      <Button variant="ghost" size="sm" icon={Flag} disabledReason={NOT_WIRED} reasonDisplay="tooltip">
-        Report change
-      </Button>
+      <NotWiredButton variant="ghost" size="sm" icon={Flag} label="Report change" />
     </div>
   );
 }

@@ -966,12 +966,6 @@
   color: var(--net-muted);
 }
 
-.placementNote {
-  color: var(--net-muted);
-  font-size: var(--text-3xs);
-  line-height: var(--net-leading-body);
-}
-
 /* --- band arrangement (Task 8) ------------------------------------------ */
 
 /*

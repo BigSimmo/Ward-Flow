@@ -1,5 +1,6 @@
 "use client";
 
+import { NotWiredButton } from "../not-wired-button";
 import { useState, type Ref } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronRight, UserRound } from "lucide-react";
@@ -190,47 +191,55 @@ export function AlertDetail({
       </section>
     ) : null;
 
-  const actionButtons = (
-    <>
-      {movement ? <PullNowButton movement={movement} /> : null}
-      <Button
-        size="sm"
-        icon={mine ? Check : UserRound}
-        disabledReason={mine ? "You own this alert" : undefined}
-        reasonDisplay="tooltip"
-        aria-label={mine ? `You own ${subjectLine}` : `Take ${subjectLine}`}
-        onClick={() => handlers.onTake(item)}
-      >
-        {mine ? "Yours" : "Take"}
-      </Button>
-      <Button
-        size="sm"
-        icon={seen ? Check : undefined}
-        disabledReason={seen ? "Already acknowledged" : undefined}
-        reasonDisplay="tooltip"
-        aria-label={seen ? `Acknowledged ${subjectLine}` : `Acknowledge ${subjectLine}`}
-        onClick={() => handlers.onAcknowledge(item)}
-      >
-        {seen ? "Seen" : "Acknowledge"}
-      </Button>
-      {snoozedUntil ? (
+  // Device audit (11 Oct 2026): the sheet and the rail show two actions (the primary and Take), and the
+  // rest sit behind one "More actions" disclosure instead of a grid of equal buttons.
+  const takeButton = (
+    <Button
+      size="sm"
+      icon={mine ? Check : UserRound}
+      disabledReason={mine ? "You own this alert" : undefined}
+      reasonDisplay="tooltip"
+      aria-label={mine ? `You own ${subjectLine}` : `Take ${subjectLine}`}
+      onClick={() => handlers.onTake(item)}
+    >
+      {mine ? "Yours" : "Take"}
+    </Button>
+  );
+  const moreActions = (
+    <details className={styles.moreActions} data-testid="alerts-more-actions">
+      <summary>More actions</summary>
+      <div className={styles.moreGrid}>
+        {movement ? <PullNowButton movement={movement} /> : null}
         <Button
           size="sm"
-          aria-label={`Return ${item.title} now, ${subject.displayName}`}
-          onClick={() => handlers.onReturn(item)}
+          icon={seen ? Check : undefined}
+          disabledReason={seen ? "Already acknowledged" : undefined}
+          reasonDisplay="tooltip"
+          aria-label={seen ? `Acknowledged ${subjectLine}` : `Acknowledge ${subjectLine}`}
+          onClick={() => handlers.onAcknowledge(item)}
         >
-          Return now
+          {seen ? "Seen" : "Acknowledge"}
         </Button>
-      ) : (
-        <InboxSnoozeControl
-          subject={subjectLine}
-          actNow={inboxItemIsActNow(item.id)}
-          now={now}
-          variant="sec"
-          onSnooze={(until, reason) => handlers.onSnooze(item, until, reason)}
-        />
-      )}
-    </>
+        {snoozedUntil ? (
+          <Button
+            size="sm"
+            aria-label={`Return ${item.title} now, ${subject.displayName}`}
+            onClick={() => handlers.onReturn(item)}
+          >
+            Return now
+          </Button>
+        ) : (
+          <InboxSnoozeControl
+            subject={subjectLine}
+            actNow={inboxItemIsActNow(item.id)}
+            now={now}
+            variant="sec"
+            onSnooze={(until, reason) => handlers.onSnooze(item, until, reason)}
+          />
+        )}
+        <NotWiredButton size="sm" variant="ghost" icon={ArrowUpRight} label="Escalate" />
+      </div>
+    </details>
   );
 
   const activityList = (
@@ -338,16 +347,8 @@ export function AlertDetail({
           </Field>
         ) : null}
 
-        <div className={styles.phActions}>{actionButtons}</div>
-        <Button
-          size="sm"
-          variant="ghost"
-          icon={ArrowUpRight}
-          className={styles.phEscalate}
-          disabledReason="Not wired in this prototype."
-        >
-          Escalate
-        </Button>
+        <div className={styles.phActions}>{takeButton}</div>
+        {moreActions}
 
         {activity.length > 0 ? (
           <section aria-label="Activity" className={styles.phActivity}>
@@ -525,49 +526,8 @@ export function AlertDetail({
             </Button>
           </div>
         )}
-        <div className={styles.actionRow}>
-          {movement ? <PullNowButton movement={movement} /> : null}
-          <Button
-            size="sm"
-            icon={mine ? Check : UserRound}
-            disabledReason={mine ? "You own this alert" : undefined}
-            reasonDisplay="tooltip"
-            aria-label={mine ? `You own ${subjectLine}` : `Take ${subjectLine}`}
-            onClick={() => handlers.onTake(item)}
-          >
-            {mine ? "Yours" : "Take"}
-          </Button>
-          <Button
-            size="sm"
-            icon={seen ? Check : undefined}
-            disabledReason={seen ? "Already acknowledged" : undefined}
-            reasonDisplay="tooltip"
-            aria-label={seen ? `Acknowledged ${subjectLine}` : `Acknowledge ${subjectLine}`}
-            onClick={() => handlers.onAcknowledge(item)}
-          >
-            {seen ? "Seen" : "Acknowledge"}
-          </Button>
-          {snoozedUntil ? (
-            <Button
-              size="sm"
-              aria-label={`Return ${item.title} now, ${subject.displayName}`}
-              onClick={() => handlers.onReturn(item)}
-            >
-              Return now
-            </Button>
-          ) : (
-            <InboxSnoozeControl
-              subject={subjectLine}
-              actNow={inboxItemIsActNow(item.id)}
-              now={now}
-              variant="sec"
-              onSnooze={(until, reason) => handlers.onSnooze(item, until, reason)}
-            />
-          )}
-        </div>
-        <Button size="sm" variant="ghost" icon={ArrowUpRight} disabledReason="Not wired in this prototype.">
-          Escalate
-        </Button>
+        <div className={styles.actionRow}>{takeButton}</div>
+        {moreActions}
       </div>
 
       {activity.length > 0 ? (

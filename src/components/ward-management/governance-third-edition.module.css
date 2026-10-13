@@ -31,16 +31,14 @@
 }
 
 .registerCard,
-.detailCard,
-.capturedCard {
+.detailCard {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
 /* Side by side cards sit flush at equal heights (v10): the register stretches to the rail. */
-.govLayout > .registerCard,
-.govLayout > .capturedCard {
+.govLayout > .registerCard {
   align-self: stretch;
 }
 
@@ -110,35 +108,11 @@
   border-radius: var(--wf-r-sm);
 }
 
-.typeCell {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  max-width: 100%;
-  min-width: 0;
-}
-
-.typeTile {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-sm);
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-}
-
 .clip {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.quietCell {
-  color: var(--wf-ink-2);
 }
 
 .statusText {
@@ -159,21 +133,6 @@
 .quietText {
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.typeBlock {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  border-top: 1px solid var(--wf-line);
-}
-
-.typeHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  flex-wrap: wrap;
 }
 
 .blockTitle {
@@ -271,46 +230,6 @@
 .reasonText {
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.reviewForm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  min-width: 0;
-}
-
-.verdictSet {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.verdictSet legend {
-  padding: 0;
-  margin-bottom: var(--wf-s-2);
-}
-
-.verdictRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-1) var(--wf-s-4);
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface-2);
-}
-
-.inlineError {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--wf-ink-1);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 .formActions {
@@ -445,13 +364,6 @@
   white-space: nowrap;
 }
 
-.capturedGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 18.75rem);
-  min-width: 0;
-  border-top: 1px solid var(--wf-line);
-}
-
 .capturedList {
   min-width: 0;
   overflow-x: auto;
@@ -460,7 +372,7 @@
 .eventHeader,
 .eventRow {
   display: grid;
-  grid-template-columns: 5.5rem minmax(7rem, 1.3fr) minmax(7rem, 1.3fr) minmax(6rem, 1fr) 6.5rem 8rem;
+  grid-template-columns: minmax(4.5rem, 4.5rem) minmax(9rem, 1.6fr) minmax(7rem, 1.2fr) minmax(6rem, 0.8fr) 8rem 7rem;
   align-items: center;
   gap: var(--wf-s-3);
   min-width: 44rem;
@@ -829,10 +741,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .capturedGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .recordPane {
     border-left: 0;
     border-top: 1px solid var(--wf-line);
@@ -860,7 +768,6 @@
 
 @media print {
   .heroActions,
-  .reviewForm,
   .reviewActions,
   .filterRow,
   .modal,
@@ -890,11 +797,6 @@
 .eventRow[data-dim="true"],
 .eventRow[data-dim="true"] * {
   color: var(--wf-dim);
-}
-
-/* Preview controls on the hero are dashed and carry their reason. */
-.previewButton {
-  border-style: dashed;
 }
 
 /* ---------- Phone tree (v10): its own design at 390 ---------- */
@@ -1021,44 +923,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.restNext {
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  list-style: none;
-}
-
-.restNext > li + li {
-  border-top: 1px solid var(--wf-line);
-}
-
-.restNextRow {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-height: 44px;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 0;
-  background: none;
-  color: var(--wf-ink-1);
-  font: inherit;
-  font-size: var(--wf-fs-13);
-  text-align: left;
-  cursor: pointer;
-}
-
-.restNextRow:hover {
-  background: var(--wf-hover);
-}
-
-.restNextRow:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
 .restClear {
   display: flex;
   align-items: center;
@@ -1099,7 +963,7 @@
 
 .phoneTabs {
   position: sticky;
-  top: 3.5rem;
+  top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
   z-index: 6;
   box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
 }
@@ -1119,12 +983,6 @@
   background: none;
   color: var(--wf-ink-3);
   font-weight: 400;
-}
-
-/* v10 phone: once the page has scrolled the bar condenses to 52px; the pinned switch keeps its 8px
- * canvas collar right under it. */
-:global(body:has([data-scrolled="true"])) .phoneTabs {
-  top: calc(3.25rem + var(--wf-s-2));
 }
 
 /* v10 phone review sheet: "Your review" over two outlined choices, the picked one edged in the
@@ -1159,6 +1017,37 @@
   box-shadow: none;
 }
 
+/* Audit trust item: the sheet opens with neither answer picked. Only a checked answer takes the
+   accent border and tint; a focus ring sits outside the box so it cannot read as a selection. */
+.phoneDecision [role="radio"][aria-checked="false"] {
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface);
+  font-weight: 500;
+}
+
 .phoneDecision [role="radio"][aria-checked="true"] {
   border: 2px solid var(--wf-accent);
+  background: var(--wf-accent-tint);
+}
+
+.phoneDecision [role="radio"]:focus-visible {
+  box-shadow: none;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Device audit 11 Oct 2026: the safety-incident line is a notice, so plain quiet text on the hero. */
+.heroNotice {
+  color: var(--wf-hero-ink-2);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* Phone compact switch (Josh, 12 Oct 2026): the tabs take the shared phone track (`--wf-phone-*`);
+ * each option's hit area reaches the 48px floor, so the face drops its own 44px floor. The switch
+ * pins under the phone header through the shared `pinnedSwitch` (ward-pinned-switch.module.css). */
+@media (max-width: 48rem) {
+  .phoneTabs [role="radio"] {
+    min-height: 0;
+  }
 }

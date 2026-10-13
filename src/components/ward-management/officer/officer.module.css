@@ -87,6 +87,10 @@
   flex-wrap: nowrap;
   gap: var(--wf-s-2);
   min-width: 0;
+  /* The stat toggles reach 4px past their row; the sideways scroller would clip that, so the row
+     keeps 4px of room above and below (device audit, 11 Oct 2026: tiles clipped at the top). */
+  margin: -4px;
+  padding: 4px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -141,15 +145,6 @@
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
   letter-spacing: 0.04em;
   white-space: nowrap;
-}
-
-.onHeroPreview {
-  border-color: var(--wf-hero-ink-2);
-  color: var(--wf-hero-ink-2);
-}
-
-.previewButton {
-  border-style: dashed;
 }
 
 .eyebrow {
@@ -1077,23 +1072,6 @@
   margin: 0;
 }
 
-.modalFields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-3);
-}
-
-.modalField {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-1);
-  min-width: 0;
-}
-
-.modalLabel {
-  font-weight: 600;
-}
-
 .checklist {
   display: flex;
   flex-direction: column;
@@ -1767,21 +1745,40 @@
     border: 0;
   }
 
+  /* The two tabs take the shared phone segmented size (`--wf-phone-seg-*`): a 34px track with 28px
+     options, each with a transparent 48px hit area. Two tabs always fit, so the track does not
+     scroll and nothing clips the hit areas. */
   .tabsRow [role="tablist"] {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
     width: 100%;
-    padding: var(--wf-s-1);
+    height: var(--wf-phone-seg-h);
+    box-sizing: border-box;
+    margin-block: var(--wf-phone-seg-band);
+    padding: 2px;
+    overflow: visible;
     border: 1px solid var(--wf-line);
     border-radius: var(--wf-r-pill);
     background: var(--wf-track);
   }
 
   .tabsRow [role="tab"] {
+    position: relative;
     justify-content: center;
-    min-height: 2.75rem;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    margin-bottom: 0;
     border: 0;
     border-radius: var(--wf-r-pill);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .tabsRow [role="tab"]::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
   }
 
   .tabsRow [role="tab"][aria-selected="true"] {
@@ -1856,10 +1853,13 @@
     color: var(--wf-ink-3);
   }
 
+  /* Site review 12 Oct 2026: the name measured 18px tall. The ::after already spans the row; the
+     button's own box also reaches 44px, grown into the row's padding so the card keeps its height. */
   .selectButton.selectButton {
     align-items: center;
     gap: var(--wf-s-1);
-    min-height: 0;
+    min-height: 3rem;
+    margin-block: -15px;
   }
 
   .jobRoute {
@@ -2035,8 +2035,14 @@
 
   .phStageRow {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--wf-s-2);
+  }
+
+  .phNextStep {
+    width: 100%;
+    min-height: var(--spacing-tap, 3rem);
+    justify-content: center;
   }
 
   .phStage {
@@ -2130,4 +2136,35 @@
   :global(html:has([role="dialog"][aria-modal="true"])) .toast {
     bottom: 136px;
   }
+}
+
+.arrivalsCard[hidden] {
+  display: none;
+}
+
+/* iPad portrait (device audit, 11 Oct 2026): the Route cell keeps its one place line; the provider
+   line under it truncated the row. */
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .jobMeta {
+    display: none;
+  }
+
+  /* Forms read as dots only here, so the "0 of 3" figure is never cut; it stays for screen
+     readers and in the cell's title. */
+  .formsCell > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
+/* A column hides while it would say the same on every row: ETA while no job carries one (device
+   audit, 11 Oct 2026), Forms while every job shows the same count (site review, 12 Oct 2026). The
+   cell stays in the row so the phone card's column positions do not shift. */
+.jobsTable thead th.etaOff,
+.jobsTable .jobRow > td.etaOff {
+  display: none;
 }

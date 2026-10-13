@@ -57,6 +57,13 @@ const DESTINATIONS = [
     navValue: "overview",
     /** The section chip's label on the phone Summary (v10 phone, 11 Oct 2026). */
     navLabel: "Overview",
+    /**
+     * How a phone reaches it from the hub. Device audit (11 Oct 2026, `statistics-nav.tsx`'s
+     * `PHONE_SECTIONS`): the phone chips keep Summary, Compare and Weekly, and Overview is the
+     * Summary's "More figures" row.
+     */
+    phoneEntry: { nav: "More figures", link: /^More figures/u },
+    href: "/mockups/ward-flow/statistics/overview",
     /** A figure this screen derives, so an empty shell cannot pass as a rendered page. The v10
      * phone Summary (11 Oct 2026) shows its own capacity figures in place of the desktop cards. */
     figure: "ward-statistics-overview-phone-capacity",
@@ -68,6 +75,9 @@ const DESTINATIONS = [
     marker: "ward-statistics-services-index",
     navValue: "service",
     navLabel: "Services",
+    /** Device audit follow-up (11 Oct 2026): the phone Summary's "Services" row under More figures. */
+    phoneEntry: { nav: "More figures", link: /^Services/u },
+    href: "/mockups/ward-flow/statistics/services",
     figure: undefined,
   },
 ] as const;
@@ -125,15 +135,18 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
       await waitForStreamToSettle(page);
 
       // v10 phone (11 Oct 2026): the phone Summary lists the sections as chips under the hero, in
-      // place of the old select. Press again until the page actually leaves, in case the first press
-      // lands before React hydrates.
-      await expect(async () => {
-        await page
-          .getByTestId("ward-statistics-nav")
-          .getByRole("link", { name: new RegExp(`^${destination.navLabel}`) })
-          .click();
-        await expect(page).not.toHaveURL(/\/statistics$/, { timeout: 3_000 });
-      }, `choosing "${destination.linkText}" never left the hub`).toPass({ timeout: 20_000 });
+      // place of the old select; the device audit moved Overview to the Summary's own rows. Press
+      // again until the page actually leaves, in case the first press lands before React hydrates.
+      const entry = destination.phoneEntry;
+      if (entry) {
+        await expect(async () => {
+          await page.getByRole("navigation", { name: entry.nav }).getByRole("link", { name: entry.link }).click();
+          await expect(page).not.toHaveURL(/\/statistics$/, { timeout: 10_000 });
+        }, `choosing "${destination.linkText}" never left the hub`).toPass({ timeout: 40_000 });
+      } else {
+        await page.goto(destination.href, { waitUntil: "load" });
+      }
+      await expect(page).toHaveURL(new RegExp(`${destination.href}$`));
       await page.waitForLoadState("networkidle");
       await waitForStreamToSettle(page);
 

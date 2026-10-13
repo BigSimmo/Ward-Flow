@@ -21,11 +21,12 @@ import {
   type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
-import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { DECLINE_REASONS, type DeclineReason, type Movement, type Unit } from "@/components/ward-management/ward-model";
 import {
   GENDER_NO_LONGER_SUITS_REFUSAL,
@@ -206,6 +207,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     sayRefusal: wardSafeRejectionReason,
   });
 
+  // Hooks run before the early return below; the accept sheet only opens on a ward's incoming answer.
+  useWardPageScrollLock(acceptModalOpen && unit !== undefined);
+
   if (!unit) {
     return (
       <div className={styles.answerScreen} data-testid="ward-unit-screen">
@@ -231,6 +235,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const breakdown = capacityBreakdown(currentUnit, bedReleases, leaveBeds, now);
   // The ruled four boxes for the census grid below; "Held" is kept for a leave bed only.
   const states = bedStates(currentUnit, admissions, bedReleases, leaveBeds);
+  // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`), so this ward reads the same
+  // percentage here as on its Ward page, the rail and Capacity.
+  const occupancy = wardOccupancy([currentUnit], admissions, bedReleases);
   // Owner ruling 2026-09-05, carried here: the ready figure above does not subtract a bed being
   // made ready (it must not lurch as cleaning starts and stops), so this sentence — using the
   // reducer's own `bedsPendingPreparation`, never re-derived — is what keeps a coordinator from
@@ -487,19 +494,16 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               ? `Ward answer · ${unit.name}`
               : `Ward answer · ${site?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
           }
+          // One title on every device (device audit, 11 Oct 2026; the build guide's "Nothing to answer").
           title={
-            isPhone
-              ? incoming.length === 0
-                ? "Nothing waiting"
-                : `Request ${activeAnswerIndex + 1} of ${incoming.length}`
-              : incoming.length === 0
-                ? "Nothing to answer"
-                : `${incoming.length} ${incoming.length === 1 ? "request" : "requests"} to answer`
+            incoming.length === 0
+              ? "Nothing to answer"
+              : `${incoming.length} ${incoming.length === 1 ? "request" : "requests"} to answer`
           }
           titleMeta={
             isPhone
               ? activeMovement
-                ? `${activeMovement.urgency} · waiting ${elapsedLabel(activeMovement, now).replace(/ waiting$/, "")} · from an ED`
+                ? `Tier ${activeMovement.urgency} · waiting ${elapsedLabel(activeMovement, now).replace(/ waiting$/, "")} · from an ED`
                 : `${recentAnswers[0]?.at !== undefined ? `Last answer at ${formatInstantWithDay(recentAnswers[0].at, now)} · ` : ""}${states.ready} ${states.ready === 1 ? "bed" : "beds"} ready`
               : undefined
           }
@@ -507,10 +511,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             isPhone ? (
               <>
                 <HeroStat value={states.ready} label="Ready" tone="success" />
-                <HeroStat
-                  value={unit.beds > 0 ? `${((states.occupied / unit.beds) * 100).toFixed(1)}%` : "Not recorded"}
-                  label="In use"
-                />
+                <HeroStat value={formatWardOccupancy(occupancy)} label="In use" />
                 {phoneGates ? (
                   <HeroStat
                     value={`${phoneGates.pass}/${phoneGates.total}`}
@@ -526,11 +527,11 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           lead={
             isPhone ? undefined : (
               <OccupancyRing
-                percent={unit.beds > 0 ? (states.occupied / unit.beds) * 100 : null}
+                percent={occupancy.percent}
                 alertAt={ANSWER_ALERT_LINE}
                 scope={unit.name}
                 status={
-                  unit.beds > 0 && (states.occupied / unit.beds) * 100 >= ANSWER_ALERT_LINE
+                  occupancy.percent !== null && occupancy.percent >= ANSWER_ALERT_LINE
                     ? { tone: "warning", word: `At risk, over ${ANSWER_ALERT_LINE}%` }
                     : { tone: "success", word: `In use, under ${ANSWER_ALERT_LINE}%` }
                 }
@@ -538,9 +539,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             )
           }
           aside={
-            incoming.length > 0 ? (
+            incoming.length > 1 ? (
               <>
                 {isPhone ? <LiveChip state="live" onHero /> : null}
+                {/* Previous and Next show only when there is more than one request to step through. */}
                 <span className={styles.heroNav} role="group" aria-label="Bed request position">
                   <button
                     type="button"
@@ -575,7 +577,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 {/* Facts, not filters: the same ruled four as the Census below, plus being made ready. */}
                 <HeroStat inline value={states.occupied} label={BED_STATE_LABELS.occupied} />
                 <HeroStat inline value={states.ready} label={BED_STATE_LABELS.ready} tone="success" />
-                <HeroStat inline value={pendingPreparation} label={BED_STATE_LABELS.beingMadeReady} />
+                {/* U3: no "0 being made ready" chip; it shows only when a bed is being made ready. */}
+                {pendingPreparation > 0 ? (
+                  <HeroStat inline value={pendingPreparation} label={BED_STATE_LABELS.beingMadeReady} />
+                ) : null}
                 <HeroStat inline value={states.pulled} label={BED_STATE_LABELS.pulled} />
                 <HeroStat inline value={states.closed} label={BED_STATE_LABELS.closed} />
               </div>
@@ -780,11 +785,14 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             <dt>Sex</dt>
                             <dd>{activeMovement.sex}</dd>
                           </div>
-                          {/* Owner answer 2026-09-25 (R7, Q2): gender identity beside sex, same style. */}
-                          <div>
-                            <dt>Gender</dt>
-                            <dd>{activeMovement.gender ?? "Not recorded"}</dd>
-                          </div>
+                          {/* Owner answer 2026-09-25 (R7, Q2): gender identity beside sex, same style.
+                              Phone (device audit, 11 Oct 2026) shows it only when it differs from sex. */}
+                          {isPhone && activeMovement.gender === activeMovement.sex ? null : (
+                            <div>
+                              <dt>Gender</dt>
+                              <dd>{activeMovement.gender ?? "Not recorded"}</dd>
+                            </div>
+                          )}
                           <div>
                             <dt>Specialling</dt>
                             <dd>{activeMovement.specialling ? "Requested" : "Not requested"}</dd>
@@ -819,7 +827,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             aria-controls="ward-answer-facts"
                             onClick={() => setShowAllFacts((open) => !open)}
                           >
-                            {showAllFacts ? "Show fewer facts" : "Show all 9 facts"}
+                            {showAllFacts
+                              ? "Show fewer facts"
+                              : `Show all ${activeMovement.gender === activeMovement.sex ? 8 : 9} facts`}
                           </button>
                         ) : null}
                         {isPhone ? (
@@ -1255,27 +1265,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       ward cannot admit into it yet.
                     </p>
                   ) : null}
-                  <div className={styles.freshnessRow}>
-                    <div className={styles.freshnessCard}>
-                      <strong>Physically empty beds</strong>
-                      <WardFreshness
-                        confirmedAt={unit.empty.confirmedAt}
-                        confirmedByRole={unit.empty.source === "ward" ? `NUM ${unit.name}` : undefined}
-                        now={now}
-                        derived={unit.empty.source !== "ward"}
-                      />
-                    </div>
-                    <div className={styles.freshnessCard}>
-                      <strong>Allocatable beds</strong>
-                      <WardFreshness
-                        confirmedAt={unit.allocatable.confirmedAt}
-                        confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
-                        now={now}
-                        derived={unit.allocatable.source !== "ward"}
-                      />
-                    </div>
-                  </div>
-
                   <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
                     <span className={styles.capacityLabel} id="ward-capacity-label">
                       Allocatable now, for {unit.name}
@@ -1295,7 +1284,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       <button
                         type="submit"
                         data-testid="ward-capacity-submit"
-                        className={`${styles.btn} ${styles.btnPrimary}`}
+                        // Secondary: Accept in principle is the page's one primary (device audit).
+                        className={styles.btn}
                       >
                         Confirm
                       </button>
@@ -1358,6 +1348,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           }
                         }}
                         aria-label={`Bed ${bedNum} ${statusLabel}`}
+                        aria-describedby={isVacant ? undefined : `ward-answer-bed-reason-${unit.id}`}
+                        title={isVacant ? undefined : "Only a ready bed can take a request"}
                         disabled={!isVacant}
                       >
                         <span className={styles.bedNum}>{bedNum}</span>
@@ -1366,18 +1358,18 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                     );
                   })}
                 </div>
+                {/* The reason the greyed beds give (a disabled control always says why). */}
+                <p id={`ward-answer-bed-reason-${unit.id}`} className={styles.bedGridReason}>
+                  Only a ready bed can take a request.
+                </p>
                 {/* Shift milieu and staffing balance. The ratio ("1 : 3 (Compliant)"), the shift name and a
                   65/35 male-to-female split of the occupied count were typed in here (25 September
                   2026 review). Ward Flow holds no staffing figures and this screen counts no one's
                   sex, so both rows say so rather than show a number. */}
                 <div className={styles.milieuList}>
                   <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Nurse ratio</span>
-                    <span className={styles.milieuValue}>not recorded</span>
-                  </div>
-                  <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Sex mix</span>
-                    <span className={styles.milieuValue}>not counted here</span>
+                    <span className={styles.milieuLabel}>Not recorded</span>
+                    <span className={styles.milieuValue}>nurse ratio, sex mix</span>
                   </div>
                   <div className={styles.milieuRow}>
                     <span className={styles.milieuLabel}>1:1 specialling</span>
@@ -1404,10 +1396,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   <h2 className={styles.panelTitle}>Recent answers</h2>
                 </div>
                 <div className={styles.historyPanelBody}>
-                  <p className={styles.historyScopeNote}>
-                    Recorded acceptances and declines for this ward. The prototype does not hold a shift boundary or the
-                    name of the person who answered.
-                  </p>
                   {recentAnswers.length === 0 ? (
                     <p>No accepted or declined answers are recorded for {unit.name}.</p>
                   ) : (

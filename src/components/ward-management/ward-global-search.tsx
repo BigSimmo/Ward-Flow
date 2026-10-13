@@ -1,5 +1,7 @@
 "use client";
 
+import { lockPageScroll } from "@/components/ui/sheet-focus";
+import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -8,9 +10,11 @@ import {
   useDeferredValue,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
@@ -23,6 +27,7 @@ import {
   searchGroupOrder,
   searchIntentLabel,
   searchWardFlow,
+  type SmartSearchResults,
 } from "@/components/ward-management/search/ward-smart-search";
 import {
   GlobalSearchPreview,
@@ -176,60 +181,68 @@ const MAX_RESULTS_PER_GROUP = 6;
 /** The full search console, linked from the palette footer. No query travels in the URL. */
 const PATIENT_SEARCH_HREF = "/mockups/ward-flow/search";
 
-function SearchResultIcon({ kind, id }: { kind: string; id?: string }) {
+export function SearchResultIcon({
+  kind,
+  id,
+  className = styles.itemIcon,
+}: {
+  kind: string;
+  id?: string;
+  className?: string;
+}) {
   switch (kind) {
     case "person":
-      return <UserRound className={styles.itemIcon} aria-hidden="true" />;
+      return <UserRound className={className} aria-hidden="true" />;
     case "movement":
-      return <Route className={styles.itemIcon} aria-hidden="true" />;
+      return <Route className={className} aria-hidden="true" />;
     case "ward":
-      return <BedSingle className={styles.itemIcon} aria-hidden="true" />;
+      return <BedSingle className={className} aria-hidden="true" />;
     case "ed":
-      return <Hospital className={styles.itemIcon} aria-hidden="true" />;
+      return <Hospital className={className} aria-hidden="true" />;
     case "community":
-      return <Users className={styles.itemIcon} aria-hidden="true" />;
+      return <Users className={className} aria-hidden="true" />;
     case "form":
-      return <FileText className={styles.itemIcon} aria-hidden="true" />;
+      return <FileText className={className} aria-hidden="true" />;
     case "task":
-      return <CheckSquare className={styles.itemIcon} aria-hidden="true" />;
+      return <CheckSquare className={className} aria-hidden="true" />;
     case "action":
       return id === "add-patient" ? (
-        <UserPlus className={styles.itemIcon} aria-hidden="true" />
+        <UserPlus className={className} aria-hidden="true" />
       ) : (
-        <Plus className={styles.itemIcon} aria-hidden="true" />
+        <Plus className={className} aria-hidden="true" />
       );
     case "view": {
       switch (id) {
         case "delays":
-          return <Clock className={styles.itemIcon} aria-hidden="true" />;
+          return <Clock className={className} aria-hidden="true" />;
         case "movements":
-          return <ArrowRightLeft className={styles.itemIcon} aria-hidden="true" />;
+          return <ArrowRightLeft className={className} aria-hidden="true" />;
         case "handover":
-          return <ClipboardList className={styles.itemIcon} aria-hidden="true" />;
+          return <ClipboardList className={className} aria-hidden="true" />;
         case "capacity":
-          return <BedSingle className={styles.itemIcon} aria-hidden="true" />;
+          return <BedSingle className={className} aria-hidden="true" />;
         case "escalation":
-          return <AlertTriangle className={styles.itemIcon} aria-hidden="true" />;
+          return <AlertTriangle className={className} aria-hidden="true" />;
         case "statistics":
-          return <BarChart2 className={styles.itemIcon} aria-hidden="true" />;
+          return <BarChart2 className={className} aria-hidden="true" />;
         case "on-call":
-          return <PhoneCall className={styles.itemIcon} aria-hidden="true" />;
+          return <PhoneCall className={className} aria-hidden="true" />;
         case "hub":
-          return <Building2 className={styles.itemIcon} aria-hidden="true" />;
+          return <Building2 className={className} aria-hidden="true" />;
         case "settings":
-          return <Settings className={styles.itemIcon} aria-hidden="true" />;
+          return <Settings className={className} aria-hidden="true" />;
         case "legal-forms":
-          return <Scale className={styles.itemIcon} aria-hidden="true" />;
+          return <Scale className={className} aria-hidden="true" />;
         case "referrals":
-          return <Inbox className={styles.itemIcon} aria-hidden="true" />;
+          return <Inbox className={className} aria-hidden="true" />;
         case "community":
-          return <Users className={styles.itemIcon} aria-hidden="true" />;
+          return <Users className={className} aria-hidden="true" />;
         default:
-          return <LayoutDashboard className={styles.itemIcon} aria-hidden="true" />;
+          return <LayoutDashboard className={className} aria-hidden="true" />;
       }
     }
     default:
-      return <Search className={styles.itemIcon} aria-hidden="true" />;
+      return <Search className={className} aria-hidden="true" />;
   }
 }
 
@@ -241,7 +254,7 @@ function SearchResultIcon({ kind, id }: { kind: string; id?: string }) {
  * is why the call sites below read `patientHref(patient.id)` rather than `personHref(patient)`.
  */
 
-type SearchResultItem = GlobalSearchPreviewItem & {
+export type SearchResultItem = GlobalSearchPreviewItem & {
   kindLabel: string;
   umrn?: string;
   dateOfBirth?: string;
@@ -249,7 +262,7 @@ type SearchResultItem = GlobalSearchPreviewItem & {
   siteName?: string;
 };
 
-type SearchResultGroup = {
+export type SearchResultGroup = {
   key: string;
   heading: string;
   items: SearchResultItem[];
@@ -319,6 +332,32 @@ export function clearGlobalSearchRecents() {
 }
 
 /** The header's bottom edge, so the scrim and palette start under the bar rather than covering it. */
+/** The width where the open search is a full screen sheet (`.popup` in the module's phone block). */
+const PHONE_SEARCH_QUERY = "(max-width: 48rem)";
+
+/** The phone sheet's top: the open field's bottom edge (the bar's top or the status bar, plus the bar). */
+const PHONE_SHEET_TOP = "calc(max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px)) + var(--wgs-bar-h, 3.5rem))";
+
+/*
+ * Whether the phone sheet is showing, read from the same query as the stylesheet. The phone sheet
+ * has no preview pane, so the preview (which derives a patient's stage, waits and links) is not
+ * built there at all rather than built and hidden on every keystroke.
+ */
+function subscribePhone(onChange: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
+  const query = window.matchMedia(PHONE_SEARCH_QUERY);
+  query.addEventListener?.("change", onChange);
+  return () => query.removeEventListener?.("change", onChange);
+}
+
+function phoneSnapshot() {
+  return typeof window.matchMedia === "function" && window.matchMedia(PHONE_SEARCH_QUERY).matches === true;
+}
+
+function useIsPhoneSearch() {
+  return useSyncExternalStore(subscribePhone, phoneSnapshot, () => false);
+}
+
 function headerBottom(root: HTMLElement | null): number {
   if (!root) return 0;
   const bar = root.closest("header") ?? root;
@@ -335,6 +374,155 @@ function headerBox(root: HTMLElement | null): { top: number; height: number } {
   const bar = root.closest("header") ?? root;
   const rect = bar.getBoundingClientRect();
   return { top: Math.max(0, Math.round(rect.top)), height: Math.max(0, Math.round(rect.height)) };
+}
+
+/**
+ * Every matched group in full, in the engine's intent order. Shared by this palette and the phone
+ * menu's search, so both list the same records under the same headings.
+ */
+export function smartSearchGroups(
+  smartResults: SmartSearchResults,
+  trimmed: string,
+  units: Unit[],
+  lookup: PatientLookup,
+): SearchResultGroup[] {
+  const g: SearchResultGroup[] = [];
+
+  if (smartResults.people.length > 0) {
+    g.push({
+      key: "people",
+      heading: "People",
+      items: smartResults.people.map((p) => ({
+        kind: "person",
+        kindLabel: "Person",
+        id: p.id,
+        title: patientDisplayName(p),
+        meta: `${p.umrn} · born ${p.dateOfBirth}`,
+        umrn: p.umrn,
+        dateOfBirth: p.dateOfBirth,
+        href: patientHref(p.id),
+      })),
+    });
+  }
+
+  if (smartResults.movements.length > 0) {
+    g.push({
+      key: "movements",
+      heading: "Movements",
+      items: smartResults.movements.map((m) => {
+        const dest = destinationUnit(m, units);
+        const subject = resolveSubjectPatient(m, lookup);
+        // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
+        return {
+          kind: "movement",
+          kindLabel: "Movement",
+          id: m.id,
+          title: subject.displayName,
+          meta: `${subject.umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
+          href: movementHref(m.id),
+        };
+      }),
+    });
+  }
+
+  if (smartResults.wards.length > 0) {
+    g.push({
+      key: "wards",
+      heading: "Wards",
+      items: smartResults.wards.map((w) => ({
+        kind: "ward",
+        kindLabel: "Ward",
+        id: w.unit.id,
+        title: w.unit.name,
+        meta: `${w.siteName} · ${w.readyBeds === null ? "ready beds not recorded" : `${w.readyBeds} ready`}`,
+        siteName: w.siteName,
+        readyBeds: w.readyBeds ?? undefined,
+        href: w.href,
+      })),
+    });
+  }
+
+  if (smartResults.emergencyDepartments.length > 0) {
+    g.push({
+      key: "eds",
+      heading: "ED",
+      items: smartResults.emergencyDepartments.map((e) => ({
+        kind: "ed",
+        kindLabel: "ED",
+        id: e.ed.id,
+        title: `${e.ed.name} (${e.ed.siteCode})`,
+        meta: "Emergency Department",
+        href: e.href,
+      })),
+    });
+  }
+
+  if (smartResults.communityTeams.length > 0) {
+    g.push({
+      key: "teams",
+      heading: "Community",
+      items: smartResults.communityTeams.map((c) => ({
+        kind: "community",
+        kindLabel: "Community",
+        id: c.team.id,
+        title: c.team.name,
+        meta: "Community Mental Health Team",
+        href: c.href,
+      })),
+    });
+  }
+
+  if (smartResults.legalForms.length > 0) {
+    g.push({
+      key: "forms",
+      heading: "Legal",
+      items: smartResults.legalForms.map((f) => ({
+        kind: "form",
+        kindLabel: "Legal Form",
+        id: f.form.code.toLowerCase(),
+        title: `Form ${f.form.code}`,
+        meta: f.title,
+        href: f.href,
+      })),
+    });
+  }
+
+  if (smartResults.views.length > 0) {
+    g.push({
+      key: "views",
+      heading: "Screens",
+      items: smartResults.views.map((v) => ({
+        kind: "view",
+        kindLabel: "View",
+        id: v.view.key,
+        title: v.view.title,
+        meta: v.view.description ?? "View",
+        href: v.href,
+      })),
+    });
+  }
+
+  if (smartResults.tasks.length > 0) {
+    g.push({
+      key: "tasks",
+      heading: "Tasks",
+      items: smartResults.tasks.map((t) => ({
+        kind: "task",
+        kindLabel: "Task",
+        id: t.task.id,
+        title: t.task.title,
+        meta: withUmrnInPlaceOfMovementIds(t.task.detail, lookup),
+        href: t.href,
+        movementId: t.task.movementId,
+        tone: t.task.tone,
+      })),
+    });
+  }
+
+  const order = searchGroupOrder(smartResults.intent, trimmed);
+  const position = new Map<string, number>(order.map((key, index) => [key, index]));
+  g.sort((left, right) => (position.get(left.key) ?? order.length) - (position.get(right.key) ?? order.length));
+  return g;
 }
 
 export function WardGlobalSearch({
@@ -381,156 +569,21 @@ export function WardGlobalSearch({
             patients,
             movements,
             units,
+            referrals,
             now,
             limitPerGroup: FULL_RESULTS_PER_GROUP,
             plannedAdmissions,
           }),
-    [trimmed, patients, movements, units, now, plannedAdmissions],
+    [trimmed, patients, movements, units, referrals, now, plannedAdmissions],
   );
 
   const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);
 
   /** Every matched group in full (up to the full limit), in the engine's intent order. */
-  const allGroups = useMemo(() => {
-    if (!smartResults || refusal) return [];
-    const g: SearchResultGroup[] = [];
-
-    if (smartResults.people.length > 0) {
-      g.push({
-        key: "people",
-        heading: "People",
-        items: smartResults.people.map((p) => ({
-          kind: "person",
-          kindLabel: "Person",
-          id: p.id,
-          title: patientDisplayName(p),
-          meta: `${p.umrn} · born ${p.dateOfBirth}`,
-          umrn: p.umrn,
-          dateOfBirth: p.dateOfBirth,
-          href: patientHref(p.id),
-        })),
-      });
-    }
-
-    if (smartResults.movements.length > 0) {
-      g.push({
-        key: "movements",
-        heading: "Movements",
-        items: smartResults.movements.map((m) => {
-          const dest = destinationUnit(m, units);
-          const subject = resolveSubjectPatient(m, lookup);
-          // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-          return {
-            kind: "movement",
-            kindLabel: "Movement",
-            id: m.id,
-            title: subject.displayName,
-            meta: `${subject.umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
-            href: movementHref(m.id),
-          };
-        }),
-      });
-    }
-
-    if (smartResults.wards.length > 0) {
-      g.push({
-        key: "wards",
-        heading: "Wards",
-        items: smartResults.wards.map((w) => ({
-          kind: "ward",
-          kindLabel: "Ward",
-          id: w.unit.id,
-          title: w.unit.name,
-          meta: `${w.siteName} · ${w.readyBeds === null ? "ready beds not recorded" : `${w.readyBeds} ready`}`,
-          siteName: w.siteName,
-          readyBeds: w.readyBeds ?? undefined,
-          href: w.href,
-        })),
-      });
-    }
-
-    if (smartResults.emergencyDepartments.length > 0) {
-      g.push({
-        key: "eds",
-        heading: "ED",
-        items: smartResults.emergencyDepartments.map((e) => ({
-          kind: "ed",
-          kindLabel: "ED",
-          id: e.ed.id,
-          title: `${e.ed.name} (${e.ed.siteCode})`,
-          meta: "Emergency Department",
-          href: e.href,
-        })),
-      });
-    }
-
-    if (smartResults.communityTeams.length > 0) {
-      g.push({
-        key: "teams",
-        heading: "Community",
-        items: smartResults.communityTeams.map((c) => ({
-          kind: "community",
-          kindLabel: "Community",
-          id: c.team.id,
-          title: c.team.name,
-          meta: "Community Mental Health Team",
-          href: c.href,
-        })),
-      });
-    }
-
-    if (smartResults.legalForms.length > 0) {
-      g.push({
-        key: "forms",
-        heading: "Legal",
-        items: smartResults.legalForms.map((f) => ({
-          kind: "form",
-          kindLabel: "Legal Form",
-          id: f.form.code.toLowerCase(),
-          title: `Form ${f.form.code}`,
-          meta: f.title,
-          href: f.href,
-        })),
-      });
-    }
-
-    if (smartResults.views.length > 0) {
-      g.push({
-        key: "views",
-        heading: "Screens",
-        items: smartResults.views.map((v) => ({
-          kind: "view",
-          kindLabel: "View",
-          id: v.view.key,
-          title: v.view.title,
-          meta: v.view.description ?? "View",
-          href: v.href,
-        })),
-      });
-    }
-
-    if (smartResults.tasks.length > 0) {
-      g.push({
-        key: "tasks",
-        heading: "Tasks",
-        items: smartResults.tasks.map((t) => ({
-          kind: "task",
-          kindLabel: "Task",
-          id: t.task.id,
-          title: t.task.title,
-          meta: withUmrnInPlaceOfMovementIds(t.task.detail, lookup),
-          href: t.href,
-          movementId: t.task.movementId,
-          tone: t.task.tone,
-        })),
-      });
-    }
-
-    const order = searchGroupOrder(smartResults.intent, trimmed);
-    const position = new Map<string, number>(order.map((key, index) => [key, index]));
-    g.sort((left, right) => (position.get(left.key) ?? order.length) - (position.get(right.key) ?? order.length));
-    return g;
-  }, [smartResults, refusal, trimmed, units, lookup]);
+  const allGroups = useMemo(
+    () => (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup)),
+    [smartResults, refusal, trimmed, units, lookup],
+  );
 
   const kindCounts = useMemo(() => {
     const counts = new Map<KindFilter, number>();
@@ -608,7 +661,14 @@ export function WardGlobalSearch({
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
-  const showPopup = open && deferredQuery === query;
+  /*
+   * The popup stays mounted while React catches up with the typed text. Hiding it for that one
+   * render unmounted the list, dropped data-open and released the phone scroll lock on every
+   * keystroke, which read as a flash on iPhone. Stale rows stay visible but cannot be picked by
+   * keyboard until `resultsCurrent` is true again.
+   */
+  const showPopup = open;
+  const resultsCurrent = deferredQuery === query;
 
   /*
    * THE ACTIVE ROW RESETS WHENEVER THE OPTION LIST CHANGES IDENTITY — same render-phase adjustment
@@ -626,37 +686,90 @@ export function WardGlobalSearch({
 
   /** The preview follows the pointer, then the keyboard, then falls back to the first row. */
   const previewIndex = hoverIndex >= 0 ? hoverIndex : activeIndex >= 0 ? activeIndex : 0;
-  const previewItem = refusal ? undefined : options[previewIndex];
+  const isPhone = useIsPhoneSearch();
+  const previewItem = refusal || isPhone ? undefined : options[previewIndex];
 
   /*
    * D1-style fix, same reason `PatientTypeahead` carries it: the list clips with its own scrollbar,
    * and ArrowDown/End can move `activeIndex` to a row that is scrolled out of view.
-   * `block: "nearest"` moves the list only as far as it has to.
+   * Reveal the option inside the list only; `scrollIntoView` also moved the page behind it.
    */
   useEffect(() => {
-    if (!showPopup || activeIndex < 0) return;
-    document.getElementById(`${id}-opt-${activeIndex}`)?.scrollIntoView?.({ block: "nearest" });
-  }, [activeIndex, showPopup, id]);
+    if (!showPopup || !resultsCurrent || activeIndex < 0) return;
+    revealWardOption(document.getElementById(`${id}-opt-${activeIndex}`));
+  }, [activeIndex, showPopup, resultsCurrent, id]);
 
   /*
    * THE PALETTE IS PORTALLED TO THE BODY, BECAUSE THE BAR IS GLASS. `backdrop-filter` on the
    * header makes it the containing block for anything fixed inside it, so a fixed palette mounted
    * in place would be clipped to the bar. Its top is measured from the bar's own bottom edge, which
    * also follows the phone bar as it condenses on scroll.
+   *
+   * A LAYOUT EFFECT, so the first painted frame already has the measured top and bar height: with a
+   * plain effect the phone sheet painted one frame at the top of the screen over the field, then
+   * jumped (Josh, 12 Oct 2026). Every later measure is one per animation frame, and a scroll inside
+   * the palette's own list is ignored, so scrolling results does not re-measure the header.
+   *
+   * The on-screen keyboard's height (layout viewport minus the visual viewport) is written straight
+   * to the palette as `--wgs-kb`, not kept in state, so a keyboard resize never re-renders the rows.
+   * The phone sheet pads its bottom by it, so the footer sits just above the keyboard.
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!showPopup) return;
+    let frame = 0;
     const measure = () => {
+      frame = 0;
       setTop(headerBottom(rootRef.current));
       const box = headerBox(rootRef.current);
       setBarBox((current) => (current.top === box.top && current.height === box.height ? current : box));
+      const viewport = window.visualViewport;
+      const keyboard =
+        viewport && viewport.scale <= 1
+          ? Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop))
+          : 0;
+      paletteRef.current?.style.setProperty("--wgs-kb", `${keyboard}px`);
+    };
+    const schedule = (event?: Event) => {
+      const target = event?.target;
+      if (target instanceof Node && paletteRef.current?.contains(target)) return;
+      if (!frame) frame = window.requestAnimationFrame(() => measure());
     };
     measure();
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", schedule);
+    // Capture includes the desktop work column, whose scroll never reaches the window.
+    window.addEventListener("scroll", schedule, { passive: true, capture: true });
+    window.visualViewport?.addEventListener("resize", schedule);
+    window.visualViewport?.addEventListener("scroll", schedule);
     return () => {
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("scroll", schedule, true);
+      window.visualViewport?.removeEventListener("resize", schedule);
+      window.visualViewport?.removeEventListener("scroll", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [showPopup]);
+
+  // Phone (Josh, 11 Oct 2026, iPhone Safari): the search fills the screen, so the page behind it
+  // must not scroll. When it could, Safari grew and shrank its toolbar under the open search, which
+  // cut off the search's top and left the page showing below its footer.
+  useEffect(() => {
+    if (!showPopup) return;
+    const phone = window.matchMedia(PHONE_SEARCH_QUERY);
+    // The shared counted lock also holds the phone work column (`[data-wf-scroller]`), which is
+    // what scrolls on phone. Follows the width while open, so turning a tablet keeps it right.
+    let release: (() => void) | null = null;
+    const apply = () => {
+      if (phone.matches && !release) release = lockPageScroll();
+      else if (!phone.matches && release) {
+        release();
+        release = null;
+      }
+    };
+    apply();
+    phone.addEventListener("change", apply);
+    return () => {
+      phone.removeEventListener("change", apply);
+      release?.();
     };
   }, [showPopup]);
 
@@ -723,7 +836,7 @@ export function WardGlobalSearch({
   /**
    * Only intercepts when a test has supplied `onNavigate`, and only for the plain click a real
    * anchor would otherwise have handled itself. A modified click (middle button, ctrl/cmd, shift)
-   * is left completely alone in every case, real or tested, because that is the browser's own
+   * on a current row is left completely alone in every case, real or tested, because that is the browser's own
    * "open in a new tab/window" gesture and this control has no business overriding it.
    */
   function onOptionClick(event: MouseEvent<HTMLAnchorElement>, href: string) {
@@ -741,6 +854,13 @@ export function WardGlobalSearch({
 
   /** A preview action is a plain link too, with the same modified-click rule as a row. */
   function onPreviewOpen(event: MouseEvent<HTMLAnchorElement>, href: string) {
+    // Preview actions use real links too, so apply the stale-result guard before remembering or
+    // allowing plain, modified, or assistive-technology activation to leave this page.
+    if (!resultsCurrent) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (previewItem) {
       rememberRecent(previewItem);
       setRecentsVersion((version) => version + 1);
@@ -769,7 +889,7 @@ export function WardGlobalSearch({
       close();
       return;
     }
-    if (!showPopup || options.length === 0) {
+    if (!showPopup || !resultsCurrent || options.length === 0) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setOpen(true);
@@ -826,7 +946,15 @@ export function WardGlobalSearch({
       <div
         ref={paletteRef}
         className={styles.popup}
-        style={{ top: top + 8 }}
+        // The floating palette sits 8px under the bar. The phone sheet starts at the bottom of the
+        // open field, which ward-bar.module.css paints from the top of the screen (under the status
+        // bar) to the bar's bottom edge, so the two meet with no gap and no overlap.
+        style={
+          {
+            top: isPhone ? PHONE_SHEET_TOP : top + 8,
+            ...(barBox.height > 0 ? { "--wgs-bar-h": `${barBox.height}px`, "--wgs-bar-top": `${barBox.top}px` } : {}),
+          } as CSSProperties
+        }
         data-testid="ward-global-search-popup"
         data-start={isStart || undefined}
         // Clicking inside keeps focus in the header field, so the keyboard contract never breaks
@@ -872,8 +1000,8 @@ export function WardGlobalSearch({
                 <Search className={styles.emptyIcon} aria-hidden="true" />
                 <span className={styles.emptyTitle}>No matches found</span>
                 <p className={styles.emptyDescription}>
-                  No matches for “{trimmed}”. Nothing here says whether the person or movement exists — only that this
-                  did not find one.
+                  No matches for “{trimmed}”. This does not say whether the person or movement exists, only that this
+                  search did not find one.
                 </p>
               </div>
             ) : (
@@ -898,12 +1026,29 @@ export function WardGlobalSearch({
                             id={`${id}-opt-${index}`}
                             href={item.href}
                             role="option"
-                            aria-selected={activeIndex === index}
+                            aria-selected={resultsCurrent && activeIndex === index}
+                            aria-disabled={!resultsCurrent || undefined}
                             tabIndex={-1}
-                            onClick={(event) => onOptionClick(event, item.href)}
+                            // Stale rows stay mounted to avoid the popup flash, but never open a
+                            // result for text that is no longer in the field. The footer link is
+                            // not a result, so it keeps working.
+                            onClick={(event) => {
+                              if (resultsCurrent) {
+                                onOptionClick(event, item.href);
+                                return;
+                              }
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                            onAuxClick={(event) => {
+                              if (!resultsCurrent) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }
+                            }}
                             onMouseEnter={() => setHoverIndex(index)}
                             className={styles.option}
-                            data-active={activeIndex === index || undefined}
+                            data-active={(resultsCurrent && activeIndex === index) || undefined}
                             data-previewed={previewIndex === index || undefined}
                             data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
                           >
@@ -946,7 +1091,11 @@ export function WardGlobalSearch({
           </div>
 
           {previewItem ? (
-            <div className={styles.previewPane}>
+            <div
+              className={styles.previewPane}
+              inert={!resultsCurrent || undefined}
+              aria-disabled={!resultsCurrent || undefined}
+            >
               <GlobalSearchPreview
                 item={previewItem}
                 patients={patients}
@@ -961,7 +1110,7 @@ export function WardGlobalSearch({
         </div>
 
         <div className={styles.resultsFooter} data-testid="ward-global-search-footer">
-          <div className={styles.footerHints} aria-hidden="true">
+          <div className={styles.footerHints} aria-hidden="true" data-kbd-hint="">
             <span className={styles.hintItem}>
               <kbd className={styles.hintKbd}>↑</kbd>
               <kbd className={styles.hintKbd}>↓</kbd>
@@ -1029,7 +1178,7 @@ export function WardGlobalSearch({
           spellCheck={false}
           aria-haspopup="listbox"
           aria-controls={showPopup && options.length > 0 ? listId : undefined}
-          aria-activedescendant={activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined}
+          aria-activedescendant={resultsCurrent && activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined}
           aria-autocomplete="list"
           aria-describedby={hintId}
           placeholder={placeholder}

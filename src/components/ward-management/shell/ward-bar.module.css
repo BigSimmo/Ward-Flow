@@ -101,35 +101,123 @@
   flex: none;
 }
 
+/* Header taps (Josh, 11 Oct 2026): the Prototype pill lands in this slot once the app loads. Until
+ * then a server-drawn copy of the pill holds the same room, so the Prototype notice shows from the
+ * first frame and the search and buttons after it do not slide right under a finger. It matches
+ * `ward-shared-access.module.css`'s .pill: 10px sides, 1px border, 12px semibold, and 24px before
+ * the word where the 8px ring and its 6px gap sit. */
+.dataMode:empty::before {
+  content: "Prototype";
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 28px;
+  min-height: var(--wf-tablet-tap, 0px);
+  padding: 0 10px 0 24px;
+  border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
+  border-radius: var(--wf-r-pill);
+  color: inherit;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  font: 600 12px / 1 var(--wf-font, inherit);
+  white-space: nowrap;
+}
+
 @media (max-width: 48rem) {
   .dataMode {
     display: none;
   }
 }
 
-/* Tablet portrait: the bar is tight, so the pill keeps only its ring and the page title keeps its
- * room. The button's aria-label still names the data mode; its panel is unchanged. */
+/* Tablet portrait (device audit, 11 Oct 2026): the Prototype pill keeps its word (the safety
+ * notice must stay legible) and New referral keeps its label. The room comes from the search field,
+ * which folds to its magnifier here and still opens the full smart search; Activity and Tools stay,
+ * because the portrait Menu sheet does not hold them. */
 @media (min-width: 48.0625rem) and (max-width: 1000px) {
-  /* The ring sits centred; the word is pushed past the clipped edge (no 0px text). */
-  .dataMode > div > button:first-child {
-    justify-content: flex-start;
-    gap: 40px;
-    width: 36px;
-    min-width: 36px;
-    padding: 0 0 0 14px;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-  .dataMode > div > button:first-child > span {
-    flex-shrink: 0;
-  }
-  /* The title keeps its full width; the search field gives up the room instead. */
+  /* The title keeps its full width. */
   .title {
     flex-shrink: 0;
   }
   /* A long ward name still ends in an ellipsis rather than pushing the bar off the screen. */
   .titleGroup .place {
     max-width: 13rem;
+  }
+
+  .bar .primaryPrefix,
+  .bar .primaryMain {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+
+  .bar .primaryPrefix {
+    margin: 0;
+    white-space: pre;
+  }
+
+  .bar .primaryPrefix + .primaryMain {
+    margin: 0 0 0 -7px;
+  }
+
+  .bar .centerGroup,
+  .bar .searchWrap {
+    flex: 0 0 auto;
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    margin-left: auto;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"]) {
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"] > div) {
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    padding: 0;
+    justify-content: center;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    max-width: none;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .bar .searchWrap :global([data-ward-search-shortcut]),
+  .bar .searchWrap :global([data-testid="ward-global-search-clear"]) {
+    display: none;
+  }
+}
+
+/* B7 (site review, 12 Oct 2026): below 860px wide the header's New referral shows its plus icon
+ * only; the words stay for screen readers, so the button no longer runs past the edge. */
+@media (min-width: 48.0625rem) and (max-width: 860px) {
+  .bar .primaryPrefix,
+  .bar .primaryMain {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .bar .primary {
+    padding-left: 10px;
   }
 }
 
@@ -856,7 +944,11 @@
   }
 }
 
-@container ward-bar (max-width: 42rem) {
+/* 768px matches the phone search sheet (`PHONE_SEARCH_QUERY`, 48rem at the initial 16px), so a 672 to
+ * 768px phone or small tablet in portrait never pairs the full-screen results with an inline header
+ * field. Pixels, because a container query's rem follows the density setting's 15px or 17px root. The
+ * bar is never this narrow above the phone breakpoint. */
+@container ward-bar (max-width: 768px) {
   .centerGroup,
   .searchWrap {
     flex: 0 0 auto;
@@ -1002,9 +1094,10 @@
  * One bar on every page (locked lean bar, Josh 10 Oct 2026): Menu, title with scope under it,
  * Search and Tasks. New referral, Activity and Tools live in the phone menu (`ward-phone-menu.tsx`),
  * New referral behind its raised +. At the top of the page the bar has no fill or edge and
- * sits on the page (56px). Once the page scrolls (`data-scrolled`) it condenses to 52px, turns solid
+ * sits on the page (56px). Once the page scrolls (`data-scrolled`) its controls condense, it turns solid
  * with a hairline, and the scope line becomes a live count. It never hides. Controls keep a 48px
- * hit area; their faces are 40px at rest and 36px condensed, painted by `::before`. */
+ * hit area; their faces are 40px at rest and 36px condensed, painted by `::before`. The bar keeps
+ * its 56px layout height in both states, avoiding reflow and scroll anchoring during touch scroll. */
 .phoneOnly {
   display: none;
 }
@@ -1013,8 +1106,8 @@
   .bar,
   :global(html.dark) .bar {
     gap: 0;
-    height: 3.5rem;
-    min-height: 3.5rem;
+    height: var(--wf-header-height, 3.5rem);
+    min-height: var(--wf-header-height, 3.5rem);
     padding: 0 8px 0 6px;
     border-bottom-color: transparent;
     background: transparent;
@@ -1022,8 +1115,6 @@
     backdrop-filter: none;
     box-shadow: none;
     transition:
-      height var(--wf-m-base) var(--wf-ease),
-      min-height var(--wf-m-base) var(--wf-ease),
       background-color var(--wf-m-base) var(--wf-ease),
       border-color var(--wf-m-base) var(--wf-ease),
       box-shadow var(--wf-m-base) var(--wf-ease);
@@ -1036,8 +1127,10 @@
 
   .bar[data-scrolled="true"],
   :global(html.dark) .bar[data-scrolled="true"] {
-    height: 3.25rem;
-    min-height: 3.25rem;
+    /* Keep the scroll geometry stable. Animating the in-flow height moved every row and
+       could repeatedly cross the scroll threshold as browser anchoring compensated. */
+    height: var(--wf-header-height, 3.5rem);
+    min-height: var(--wf-header-height, 3.5rem);
     border-bottom-color: var(--wf-line-2);
     background: var(--wf-surface-2);
     box-shadow: 0 6px 16px -12px color-mix(in srgb, var(--wf-ink-1) 28%, transparent);
@@ -1189,11 +1282,6 @@
     line-height: 20px;
     letter-spacing: -0.015em;
     max-width: 100%;
-    transition: font-size var(--wf-m-base) var(--wf-ease);
-  }
-
-  .bar[data-scrolled="true"] .place {
-    font-size: var(--t-3);
   }
 
   .scopeBadgeContainer {
@@ -1250,7 +1338,7 @@
 
   /* The visible line is small; the hit area still reaches 48px tall. */
   .scopeBadgeBtn::before {
-    inset: -14px -8px;
+    inset: -15px -8px;
     border: 0;
     background: transparent;
     box-shadow: none;
@@ -1284,9 +1372,11 @@
 
   .drawerTrigger[data-bar-mode="activity"],
   .drawerTrigger[data-bar-mode="tools"],
+  .drawerTrigger[data-bar-mode="tasks"],
   .vsep,
   .primaryWrap {
-    /* .primaryWrap: the server render does not know it is a phone, so CSS hides it before hydration. */
+    /* .primaryWrap: the server render does not know it is a phone, so CSS hides it before hydration.
+       Tasks: the page dock carries it on the phone (device audit option A, 11 Oct 2026). */
     display: none;
   }
 
@@ -2546,10 +2636,10 @@
  * open field takes over the whole bar so what is typed is visible, with Cancel beside it. The bar
  * is sticky at the top, so top 0 is the bar whether the containing block is the viewport or the
  * scrolled bar's backdrop filter. The height is the bar's own, measured by the search (56px at rest,
- * 52px once scrolled). Last in the file, and prefixed with `.bar`, so it outranks the phone and
+ * 56px once scrolled). Last in the file, and prefixed with `.bar`, so it outranks the phone and
  * scrolled face rules above.
  */
-@container ward-bar (max-width: 42rem) {
+@container ward-bar (max-width: 768px) {
   .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
     position: fixed;
     inset: 0 0 auto;
@@ -2612,6 +2702,95 @@
   }
 }
 
+/* Tablet portrait folds search to its magnifier (device audit, 11 Oct 2026), so the open field
+ * takes over the bar there too, as in the 42rem container rule above (an 820px bar is wider than
+ * that rule). Touch sizes here: Cancel keeps the 48px target. The band rules below still apply over
+ * a Hero, so the open field restores the light face explicitly (doubled `.bar` outranks the band's
+ * later focus-within rule), as the phone block does. */
+@media (min-width: 48.0625rem) and (max-width: 1000px) {
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type,
+  .bar.bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+    --wf-focus-ring: var(--wf-accent);
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 5;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: var(--wgs-bar-h, 3.5rem);
+    gap: 10px;
+    padding: 0 8px 0 24px;
+    justify-content: flex-start;
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-1);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type::before,
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open])
+    > div:first-of-type::before {
+    inset: 8px 80px 8px 12px;
+    border: 1px solid var(--wf-focus-ring);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-focus-ring) 18%, transparent);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg,
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open])
+    > div:first-of-type
+    > svg {
+    width: 16px;
+    height: 16px;
+    color: var(--wf-ink-3);
+  }
+
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"])::placeholder {
+    color: var(--wf-ink-3);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]),
+  .bar.bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]) {
+    position: static;
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    margin-right: 16px;
+    opacity: 1;
+    color: var(--wf-ink-1);
+    cursor: text;
+    font-size: var(--wf-fs-16);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-cancel"]) {
+    display: inline-flex;
+    flex: 0 0 64px;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--ward-tap, 48px);
+    padding: 0;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: transparent;
+    color: var(--wf-accent-ink);
+    font: 600 var(--wf-fs-14) / 1 var(--wf-font);
+    cursor: pointer;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-cancel"]):focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
 /* Phone: the phone bar has no backdrop filter, so the open field is fixed to the viewport. It sits
  * where the bar is (its measured top), so nothing above the bar can stretch or misplace it. */
 @media (max-width: 48rem) {
@@ -2625,6 +2804,8 @@
  *
  * Desktop and tablet only. `data-band` comes from `useWfBandActive()` (src/components/wf/band.ts),
  * which is true while the page opens on the shared Hero. Pages without a hero keep the glass bar.
+ * Until the bar has its own `data-band`, the `:has()` arm paints it ink while a band hero is not
+ * measured `"off"`, so the server render, the hero's measure and hydration never show glass.
  *
  * `ink`: at rest over the band. The bar paints the band's top colour, the hero rises to meet it,
  * and the two read as one surface. Title in hero ink, the service pill and search on the on-hero
@@ -2649,8 +2830,12 @@
     display: none;
   }
 
-  .bar.bar[data-band="ink"] {
+  .bar.bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    ) {
     --wf-focus-ring: var(--wf-hero-ink);
+    --wf-focus-gap: var(--wf-hero-1);
     background: var(--wf-hero-1);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -2667,29 +2852,66 @@
     box-shadow: var(--wf-e-bar);
   }
 
-  .bar[data-band="ink"] .place {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .place {
     color: var(--wf-hero-ink);
   }
 
-  .bar[data-band="ink"] .scopeBadgeBtn,
-  .bar[data-band="ink"] .drawerTrigger,
-  .bar[data-band="ink"] .triggerIcon {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .scopeBadgeBtn,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .drawerTrigger,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .triggerIcon {
     color: var(--wf-hero-ink);
   }
 
-  .bar[data-band="ink"] .scopeCaret,
-  .bar[data-band="ink"] .triggerCaret {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .scopeCaret,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .triggerCaret {
     color: var(--wf-hero-ink-2);
   }
 
-  .bar[data-band="ink"] .scopeBadgeBtn::before,
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type::before {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .scopeBadgeBtn::before,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search"])
+    > div:first-of-type::before {
     background: var(--wf-on-hero-fill);
     border-color: var(--wf-on-hero-line);
     box-shadow: none;
   }
 
-  .bar[data-band="ink"]
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
     .searchWrap
     :global([data-testid="ward-global-search"]):focus-within
     > div:first-of-type::before {
@@ -2697,53 +2919,107 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
   }
 
-  .bar[data-band="ink"] .scopeBadgeBtn:hover::before,
-  .bar[data-band="ink"] .drawerTrigger:hover::before {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .scopeBadgeBtn:hover::before,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .drawerTrigger:hover::before {
     background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
   }
 
-  .bar[data-band="ink"] .drawerTrigger[aria-expanded="true"]::before {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .drawerTrigger[aria-expanded="true"]::before {
     border-color: var(--wf-on-hero-line);
     background: var(--wf-on-hero-fill);
     box-shadow: none;
   }
 
   /* The service dot keeps its own colour; its halo takes the band so it never smudges. */
-  .bar[data-band="ink"] .scopeDot {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .scopeDot {
     box-shadow: 0 0 0 2px var(--wf-on-hero-line);
   }
 
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type > svg,
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search-input"])::placeholder {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search"])
+    > div:first-of-type
+    > svg,
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search-input"])::placeholder {
     color: var(--wf-hero-ink-3);
   }
 
-  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search-input"]) {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .searchWrap
+    :global([data-testid="ward-global-search-input"]) {
     color: var(--wf-hero-ink);
   }
 
-  .bar[data-band="ink"] .searchWrap :global([data-ward-search-shortcut]) {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .searchWrap
+    :global([data-ward-search-shortcut]) {
     border-color: var(--wf-on-hero-line);
     background: transparent;
     color: var(--wf-hero-ink-2);
   }
 
-  .bar[data-band="ink"] .unread {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .unread {
     background: var(--wf-hero-ink-2);
   }
 
-  .bar[data-band="ink"] .badge {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .badge {
     background: transparent;
     box-shadow: inset 0 0 0 1px var(--wf-on-hero-line);
     color: var(--wf-hero-ink);
   }
 
-  .bar[data-band="ink"] .vsep {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .vsep {
     background: var(--wf-on-hero-line);
   }
 
   /* The primary keeps its blue face; its focus gap takes the band colour. */
-  .bar[data-band="ink"] .primary {
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .primary {
     --wf-focus-ring: var(--wf-hero-ink);
   }
 }
@@ -2823,15 +3099,15 @@
 
 /* Tablet portrait (v10 shell, 10 Oct 2026, 769px to 1000px): no sidebar, so the Menu button shows
  * at the left of the header and opens the full sidebar as a 280px sheet over a scrim (the rail's
- * own sheet answers above 48rem). 44px target. Desktop above 1000px and the phone are unchanged. */
+ * own sheet answers above 48rem). 48px target. Desktop above 1000px and the phone are unchanged. */
 @media (min-width: 48.0625rem) and (max-width: 1000px) {
   .phoneOnly {
     display: inline-flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--wf-touch);
-    height: var(--wf-touch);
+    width: var(--ward-tap, var(--spacing-tap, 3rem));
+    height: var(--ward-tap, var(--spacing-tap, 3rem));
     margin-right: var(--wf-s-1);
     border: 0;
     border-radius: var(--wf-r-md);
@@ -2973,9 +3249,11 @@
  * count), an 8px service dot and a 16px caret. Controls keep their 48px hit area.
  */
 @media (max-width: 48rem) {
+  /* Edge to edge: the band runs to both sides, and on a phone turned on its side the controls
+     keep clear of the notch. */
   .bar,
   :global(html.dark) .bar {
-    padding: 0 6px 0 2px;
+    padding: 0 max(6px, env(safe-area-inset-right, 0px)) 0 max(2px, env(safe-area-inset-left, 0px));
   }
 
   .phoneOnly svg,
@@ -3005,6 +3283,16 @@
   /* The 18px line keeps a 48px tall hit area: 15px above and below. */
   .scopeBadgeBtn::before {
     inset: -15px -8px;
+  }
+
+  /* Device audit (11 Oct 2026): the whole title block — the page title and the service line under
+   * it — is the service control's tap target, not just the 91 x 18 line. On the phone the block is
+   * a <label> round the service button (ward-bar.tsx), so a tap anywhere in it activates the
+   * button; stretching it to the bar's full height makes the target the whole block. */
+  .title {
+    align-self: stretch;
+    justify-content: center;
+    cursor: pointer;
   }
 
   .bar[data-scrolled="true"] .scopeBadgeBtn > * {
@@ -3199,11 +3487,94 @@
    search, tasks) stays above the referral hero as in the mockup. */
 @media (max-width: 48rem) {
   .drawerBackdrop:has(> .drawerSheetReferral) {
-    top: 3.5rem !important;
+    top: var(--wf-header-height, 3.5rem) !important;
   }
 
   /* The sheet is h-full of that shortened backdrop, so it ends at the bottom edge. */
   .drawerSheetReferral {
     border-radius: 0 !important;
+  }
+}
+
+/*
+ * ── Phone search, opened (Josh, 12 Oct 2026, iPhone Safari) ──────────────────────────────────
+ * The open field and the results sheet under it read as one full screen surface. The field's band
+ * starts at the very top of the screen, under the status bar (padded by the safe area or by
+ * whatever sits above the bar), square, on the sheet's own surface, with a hairline where the
+ * results begin. So no strip of the page's dark header band shows above or around it. The field is
+ * one clean pill: a filled face with a single edge that turns the focus colour, no glow.
+ * The closed field is an invisible 48px tap target over the magnifier. It is kept at 16px text so
+ * iOS does not zoom the page on focus, and it is hidden by transparent text rather than opacity,
+ * because Safari treats a fully transparent field as hidden and may not raise the keyboard for it.
+ * Phone only; the tablet and desktop rules above are unchanged.
+ */
+@media (max-width: 48rem) {
+  .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
+    font-size: var(--wf-fs-16);
+  }
+
+  @container ward-bar (max-width: 768px) {
+    .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
+      opacity: 1;
+      color: transparent;
+      caret-color: transparent;
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search-input"])::placeholder {
+      color: transparent;
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type,
+    .bar.bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+      --wgs-sheet-top: max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px));
+      top: 0;
+      box-sizing: border-box;
+      height: calc(var(--wgs-sheet-top) + var(--wgs-bar-h, 3.5rem));
+      padding-top: var(--wgs-sheet-top);
+      border-radius: 0;
+      background: var(--wf-surface);
+      box-shadow: inset 0 -1px 0 var(--wf-line);
+      transition: none;
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type::before,
+    .bar.bar[data-band="ink"]
+      .searchWrap
+      :global([data-testid="ward-global-search"][data-open])
+      > div:first-of-type::before {
+      inset: calc(var(--wgs-sheet-top) + 6px) 80px 6px 12px;
+      border: 1px solid var(--wf-line-2);
+      border-radius: var(--wf-r-pill);
+      background: var(--wf-surface-2);
+      box-shadow: none;
+      transition: border-color var(--wf-m-fast) var(--wf-ease);
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search"][data-open]):focus-within > div:first-of-type::before,
+    .bar.bar[data-band="ink"]
+      .searchWrap
+      :global([data-testid="ward-global-search"][data-open]):focus-within
+      > div:first-of-type::before {
+      border-color: var(--wf-focus-ring);
+      box-shadow: none;
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]),
+    .bar.bar[data-band="ink"]
+      .searchWrap
+      :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]) {
+      color: var(--wf-ink-1);
+      caret-color: var(--wf-focus-ring);
+    }
+
+    .bar
+      .searchWrap
+      :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"])::placeholder {
+      color: var(--wf-ink-3);
+    }
+
+    .bar .searchWrap :global([data-testid="ward-global-search-cancel"]) {
+      min-height: var(--spacing-tap, 3rem);
+    }
   }
 }

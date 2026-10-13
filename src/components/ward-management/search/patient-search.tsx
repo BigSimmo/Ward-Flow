@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
   useEffect,
@@ -78,7 +79,6 @@ import { referralState } from "@/components/ward-management/ward-referrals";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import {
-  CENSUS_GROUPS,
   CENSUS_HIGHLIGHTS,
   buildCensus,
   censusLine,
@@ -106,6 +106,7 @@ import {
 
 import styles from "./search.module.css";
 import cs from "./census.module.css";
+import { isCommunityReferral } from "./community-referral";
 
 const ACCESS_RECORD_EMPTY = "No searches submitted this session. Press Enter in the search field to record a search.";
 
@@ -333,10 +334,7 @@ export function PatientSearchPage() {
       if (activeKpiFacet === "live") {
         if (result.kind === "movement" && !isOpen(result.movement)) return false;
         if (result.kind === "referral") {
-          const isComm =
-            result.referral.originSiteCode.includes("CMHT") ||
-            result.referral.originSiteCode.includes("Clinic") ||
-            (result.referral.homeRegion as unknown as string) === "Community";
+          const isComm = isCommunityReferral(result.referral);
           if (isComm) return false;
         }
       }
@@ -347,10 +345,7 @@ export function PatientSearchPage() {
       if (activeKpiFacet === "notin") {
         if (result.kind === "movement") return false;
         if (result.kind === "referral") {
-          const isComm =
-            result.referral.originSiteCode.includes("CMHT") ||
-            result.referral.originSiteCode.includes("Clinic") ||
-            (result.referral.homeRegion as unknown as string) === "Community";
+          const isComm = isCommunityReferral(result.referral);
           if (!isComm) return false;
         }
       }
@@ -387,7 +382,7 @@ export function PatientSearchPage() {
   const people = useMemo(() => {
     if (isChip) {
       const allPeople = findPatients(patients, "", { movements, referrals, units });
-      if (text === "● Live") {
+      if (text === "● On this board") {
         return allPeople.filter((p) => getPatientPresence(p, referrals, movements).key === "live");
       }
       if (text === "○ Not in Hospital") {
@@ -464,7 +459,7 @@ export function PatientSearchPage() {
           transportStatus: operational.transportStatus,
           nurseEscort: Boolean(m.transport?.escortRequired),
           presence: "live",
-          presenceLabel: "Live in Hospital",
+          presenceLabel: "On this board",
           presenceDetail: `${operational.setting === "transit" ? "Collected from" : "Origin"} ${originText} · ${operational.holdStatus}`,
           clinicalNote: NO_CLINICAL_NOTE,
           personRecordId: info.patient?.id ?? null,
@@ -475,10 +470,7 @@ export function PatientSearchPage() {
       } else if (r.kind === "referral") {
         const ref = r.referral;
         const info = resolveSubjectPatient(ref, { patients, referrals, movements });
-        const isComm =
-          ref.originSiteCode.includes("CMHT") ||
-          ref.originSiteCode.includes("Clinic") ||
-          (ref.homeRegion as unknown as string) === "Community";
+        const isComm = isCommunityReferral(ref);
         const acceptedDest = ref.destinations.find((d) => d.acceptedUnitId);
         const destUnit = acceptedDest ? units.find((u) => u.id === acceptedDest.acceptedUnitId) : null;
         const waitH = Math.max(0, (now - ref.raisedAt) / 60);
@@ -516,7 +508,7 @@ export function PatientSearchPage() {
           transportStatus: isComm ? "Not required" : "Pending allocation",
           nurseEscort: false,
           presence: isComm ? "community" : "live",
-          presenceLabel: isComm ? "Not in Hospital" : "Live in Hospital",
+          presenceLabel: isComm ? "Not in Hospital" : "On this board",
           presenceDetail: isComm
             ? `Active Community Referral · ${ref.originSiteCode}`
             : `Queued Referral · ${ref.originSiteCode} ED`,
@@ -661,7 +653,12 @@ export function PatientSearchPage() {
     const lifted = highlightTest(highlight);
     return sortCensusRows(
       (refusal ? [] : census.rows).filter((row) => {
-        if (row.kind === "movement" || row.kind === "referral") {
+        // A referral with a bed found has left the legacy record search (it only holds queued
+        // referrals) but stays in the census, so it is filtered like a ward or person row instead of
+        // dropped: dropping it made the list read "Bed found 31" under a hero "41" (device audit
+        // 11 Oct 2026).
+        const foundReferral = row.kind === "referral" && row.group === "found" && !caseIds.has(row.key);
+        if ((row.kind === "movement" || row.kind === "referral") && !foundReferral) {
           // A place shown in the census also finds the case, not only the legacy record search.
           if (!caseIds.has(row.key) && !(needle.length >= 2 && row.placeText.includes(needle))) return false;
         } else {
@@ -782,7 +779,7 @@ export function PatientSearchPage() {
     window.setTimeout(() => {
       document
         .querySelector(`[data-id="${CSS.escape(row.key)}"]`)
-        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+        ?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
     }, 30);
     window.setTimeout(() => setFlashKey(null), 1800);
   };
@@ -793,7 +790,7 @@ export function PatientSearchPage() {
     window.setTimeout(() => {
       document
         .getElementById(`ward-patient-search-group-${group}`)
-        ?.scrollIntoView({ block: "start", behavior: "smooth" });
+        ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
     }, 30);
   };
 
@@ -992,20 +989,8 @@ export function PatientSearchPage() {
             foot={
               isPhone ? (
                 <div className={cs.phoneHeroFoot}>
-                  <div className={cs.phoneFigs} role="group" aria-label="Where patients are now">
-                    {(["wait", "found", "ward"] as const).map((group) => (
-                      <button
-                        key={group}
-                        type="button"
-                        className={cs.phoneFig}
-                        onClick={() => jumpToGroup(group)}
-                        aria-label={`${searching ? groupMatches[group] : groupTotals[group]} ${CENSUS_GROUPS.find((entry) => entry.id === group)?.label}, go to the list`}
-                      >
-                        <b>{searching ? groupMatches[group] : groupTotals[group]}</b>
-                        <span>{CENSUS_GROUPS.find((entry) => entry.id === group)?.short}</span>
-                      </button>
-                    ))}
-                  </div>
+                  {/* The five group figures live once, in the band under the hero (device audit
+                      11 Oct 2026): a three-up here repeated 51 / 41 / 242 directly above it. */}
                   <div className={cs.phoneHeroActions}>
                     <Button
                       variant="onHero"
@@ -1031,7 +1016,8 @@ export function PatientSearchPage() {
             }
           />
 
-          {/* The counts and filters below the bar that tests and assistive tech read directly. */}
+          {/* The counts and filters below the bar that tests and assistive tech read directly. Out of the
+              Tab order (11 Oct 2026), so keyboard focus never lands on a control nobody can see. */}
           <div className="sr-only" data-testid="ward-patient-search-yield-strip">
             <span data-testid="ward-patient-search-yield-total">{yieldMetrics.total}</span>
             <span data-testid="ward-patient-search-yield-holds">{yieldMetrics.live}</span>
@@ -1048,6 +1034,7 @@ export function PatientSearchPage() {
                 const isActive = text === chip.query;
                 return (
                   <button
+                    tabIndex={-1}
                     key={chip.label}
                     type="button"
                     data-chip={chip.query}
@@ -1061,6 +1048,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-wait">Wait Band</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-wait"
               value={waitFilter}
               onChange={(e) => setWaitFilter(e.target.value)}
@@ -1083,6 +1071,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-presence">Presence</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-presence"
               value={presenceFilter}
               onChange={(e) => setPresenceFilter(e.target.value as PresenceFilter)}
@@ -1097,6 +1086,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-stage">Stage</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-stage"
               value={stage}
               aria-label="Stage"
@@ -1112,6 +1102,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-department">Department</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-department"
               value={edId}
               aria-label="Department"
@@ -1127,6 +1118,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-setting">Setting</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-setting"
               value={settingFilter}
               onChange={(e) => setSettingFilter(e.target.value)}
@@ -1143,6 +1135,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-service">Service</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-service"
               value={serviceFilter}
               onChange={(e) => setServiceFilter(e.target.value)}
@@ -1157,6 +1150,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-legal">Legal Status</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-legal"
               value={legalFilter}
               onChange={(e) => setLegalFilter(e.target.value)}
@@ -1172,6 +1166,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-tier">Acuity Tier</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-tier"
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
@@ -1184,6 +1179,7 @@ export function PatientSearchPage() {
             </select>
 
             <button
+              tabIndex={-1}
               type="button"
               onClick={resetAllFilters}
               data-testid="ward-patient-search-reset-filters"
@@ -1453,7 +1449,7 @@ function getPatientPresence(
   movements: readonly Movement[],
 ): { key: "live" | "community" | "scheduled" | "past"; label: string } {
   const movement = movements.find((m) => (m as Record<string, unknown>)["patient" + "Id"] === patient.id && isOpen(m));
-  if (movement) return { key: "live", label: "Live in Hospital" };
+  if (movement) return { key: "live", label: "On this board" };
   const referral = referrals.find(
     (r) => (r as Record<string, unknown>)["patient" + "Id"] === patient.id && referralState(r) === "queued",
   );
@@ -1461,7 +1457,7 @@ function getPatientPresence(
     if (referral.originSiteCode.includes("CMHT") || referral.originSiteCode.includes("Clinic")) {
       return { key: "community", label: "Community / Home" };
     }
-    return { key: "live", label: "Live in Hospital" };
+    return { key: "live", label: "On this board" };
   }
   return { key: "past", label: "Past / Discharged" };
 }
@@ -1527,7 +1523,11 @@ export function PeopleSection({
               >
                 <div className={styles.personHeaderCluster}>
                   <span className={`${styles.presenceTag} ${styles[presence.key]}`}>
-                    {presence.key === "live" ? "● Live" : presence.key === "community" ? "○ Not in Hosp" : "◌ Past"}
+                    {presence.key === "live"
+                      ? "● On this board"
+                      : presence.key === "community"
+                        ? "○ Not in Hosp"
+                        : "◌ Past"}
                   </span>
                   <span className={styles.personUmrn}>{patient.umrn}</span>
                   <span className={styles.personName}>{patientDisplayName(patient)}</span>
@@ -1626,12 +1626,9 @@ export function ResultsSection({
         <ul className={styles.referralList} data-testid="ward-patient-search-referrals">
           {referralResults.map(({ referral }) => {
             const summary = buildReferralSummary(referral);
-            const isComm =
-              referral.originSiteCode.includes("CMHT") ||
-              referral.originSiteCode.includes("Clinic") ||
-              (referral.homeRegion as unknown as string) === "Community";
+            const isComm = isCommunityReferral(referral);
             const presenceKey = isComm ? "community" : "live";
-            const presenceLabel = isComm ? "○ Not in Hosp" : "● Live";
+            const presenceLabel = isComm ? "○ Not in Hosp" : "● On this board";
             const isSelected = selectedReferralId === referral.id;
             return (
               <li
@@ -1782,7 +1779,7 @@ function ResultRow({
     <tr className={rowClass}>
       <td className={styles.cellIdentity}>
         <div className={styles.movementIdCluster}>
-          <span className={`${styles.presenceTag} ${styles.live}`}>● Live</span>
+          <span className={`${styles.presenceTag} ${styles.live}`}>● On this board</span>
           {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
           <span className={styles.movementIdText}>{patientName}</span>
         </div>

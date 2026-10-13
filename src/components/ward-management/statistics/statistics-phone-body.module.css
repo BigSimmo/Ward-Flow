@@ -255,6 +255,13 @@
   font-family: var(--wf-mono);
 }
 
+/* U2 (site review, 12 Oct 2026): a unit after a figure ("12 d") at the 12px text floor; a bare
+ * <small> rendered 11.2px. */
+.unit {
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
 /* Segmented controls run the full width with equal options. */
 .seg {
   width: 100%;
@@ -269,8 +276,8 @@
 /* A segmented control that stays in view under the header while its list scrolls (One ward). */
 .stickySeg {
   position: sticky;
-  /* Under the phone app bar, which stays 52px tall while the page scrolls. */
-  top: 52px;
+  /* Follow the same stable height as the phone app bar. */
+  top: var(--wf-header-height, 3.5rem);
   z-index: 2;
   padding-block: var(--wf-s-1);
   background: var(--wf-canvas);
@@ -312,13 +319,6 @@
 /* A small occupancy ring before a service name. */
 .ring {
   flex: none;
-}
-
-.ringRow {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
 }
 
 .dotName {

@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -86,6 +87,7 @@ import {
 } from "@/components/wf";
 
 import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
@@ -95,7 +97,6 @@ import {
   DecisionClock,
   HeroTools,
   IsbarSheet,
-  NOT_WIRED,
   REFERRAL_SOURCE_WORDS,
   ReferralAlerts,
   ReferralPatientTab,
@@ -118,6 +119,7 @@ import {
 import styles from "./referrals.module.css";
 import a from "./referral-board.module.css";
 import p from "./referral-board-phone.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 import { ReferralPhoneCard, ReferralPhoneChips, ReferralPhoneHero, ReferralPhoneTop } from "./referral-board-phone";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { useIsPhone } from "@/components/wf";
@@ -624,8 +626,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     value: decidedToday.filter((r) => Math.floor(minuteOfDay(referralDecidedAt(r)!) / 60) === hour).length,
   }));
   const bedsSummary = useMemo(
-    () => bedsReadySummary(units, admissions, bedReleases, leaveBeds, now),
-    [units, admissions, bedReleases, leaveBeds, now],
+    () => bedsReadySummary(units, bedReleases, leaveBeds, now),
+    [units, bedReleases, leaveBeds, now],
   );
   const meetingRows: MeetingRow[] = queued.map((referral) => {
     const person = resolveSubjectPatient(referral, resolverState);
@@ -654,7 +656,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
       detailRef.current.scrollTop = 0;
       if (typeof window !== "undefined" && window.innerWidth <= 768) {
         if (typeof detailRef.current.scrollIntoView === "function") {
-          detailRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
         }
       }
     }
@@ -715,11 +717,14 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           <dd>{siteByCode(r.originSiteCode)?.name ?? r.originSiteCode}</dd>
           <dd className={a.stripSub}>{REFERRAL_SOURCE_WORDS[r.source]}</dd>
         </div>
-        <div>
-          <dt>Asking for</dt>
-          <dd>{askingForShort(r)}</dd>
-          <dd className={a.stripSub}>{needWords(r).join(", ") || "No bed needs"}</dd>
-        </div>
+        {/* U3: once every request is answered there is nothing being asked for, so the cell goes. */}
+        {openArms(r).length > 0 ? (
+          <div>
+            <dt>Asking for</dt>
+            <dd>{askingForShort(r)}</dd>
+            <dd className={a.stripSub}>{needWords(r).join(", ") || "No bed needs"}</dd>
+          </div>
+        ) : null}
         <div data-testid="ward-referral-detail-legal-status">
           <dt>Legal status</dt>
           <dd>{r.intake?.legalStatus?.trim() || "Not recorded"}</dd>
@@ -745,6 +750,20 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     </>
   );
 
+  const viewSwitch = (
+    <Tabs
+      label="Referral views"
+      idPrefix="ward-referral-view"
+      className={a.viewTabs}
+      value={view}
+      onChange={setView}
+      items={[
+        { id: "queue", label: "Queue", count: queued.length },
+        { id: "history", label: "History", count: decidedTotal },
+      ]}
+    />
+  );
+
   return (
     <div
       className={styles.screen}
@@ -763,7 +782,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               median={medianDecision !== undefined ? durMinutes(medianDecision) : undefined}
               overdue={overdueQueued.length}
               tier1={queued.filter((r) => highlightTest("tier1", r, now)).length}
-              bedsReady={bedsSummary.cells.reduce((sum, cell) => sum + cell.value, 0)}
+              bedsReady={bedsSummary.total}
               highlight={highlight}
               onHighlight={(key) => {
                 setSearchQuery("");
@@ -791,7 +810,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
             {queued.length > 0 ? (
               <ReferralPhoneCard
                 title="Waiting time against due times"
-                meta={`Due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h · tap a mark to open`}
+                meta={`${queued.filter((r) => highlightTest("overdue", r, now)).length} past due · due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h`}
                 expanded={phoneSheet === "axis"}
                 onOpen={() => setPhoneSheet("axis")}
               />
@@ -900,29 +919,22 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           ) : null}
           <div className={styles.registerQueue} role="region" aria-label="Referral queues" tabIndex={0}>
             <Card className={cx(styles.v6QueueCard, a.queueCard)}>
+              {/* Phone (Josh, 12 Oct 2026): Queue and History pin under the phone header, as Home's
+                  queue switch does. The row sits in the queue card beside the list it pins over. */}
+              {phoneLayout ? <div className={cx(a.phoneViewRow, wardPin.pinnedSwitch)}>{viewSwitch}</div> : null}
               <div className={a.toolbar}>
-                <Tabs
-                  label="Referral views"
-                  idPrefix="ward-referral-view"
-                  className={a.viewTabs}
-                  value={view}
-                  onChange={setView}
-                  items={[
-                    { id: "queue", label: "Queue", count: queued.length },
-                    { id: "history", label: "History", count: decidedTotal },
-                  ]}
-                />
+                {phoneLayout ? null : viewSwitch}
                 {/* The search narrows queue rows only, so History (at most ten rows) does not offer it. */}
                 {view === "queue" ? (
                   <TextInput
                     type="search"
                     icon={Search}
                     boxClassName={a.search}
-                    placeholder="Name, UMRN, hospital or suburb"
+                    placeholder="Filter queue"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onClear={() => setSearchQuery("")}
-                    aria-label="Search referrals"
+                    aria-label="Filter referrals"
                   />
                 ) : null}
                 {/* v10: Refused once moved here from the hero, which keeps its five chips. */}
@@ -960,9 +972,14 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       </Button>
                     </>
                   ) : (
-                    <span className={a.orderNote} data-testid="ward-referral-board-order-note">
+                    <span
+                      className={a.orderNote}
+                      data-testid="ward-referral-board-order-note"
+                      title="Longest wait first, tier breaks ties"
+                    >
                       <ListOrdered size={14} aria-hidden="true" />
-                      <b>Longest wait first</b> · tier breaks ties
+                      <b>Longest wait first</b>
+                      <span className={a.orderTie}> · tier breaks ties</span>
                     </span>
                   )}
                 </span>
@@ -1006,14 +1023,14 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 ) : null}
               </TabPanel>
               <div className={a.queueFoot}>
-                <span className={a.keyHint}>
+                <span className={a.keyHint} data-kbd-hint="">
                   <Kbd>J</Kbd>
                   <Kbd>K</Kbd> move
                 </span>
-                <span className={a.keyHint}>
+                <span className={a.keyHint} data-kbd-hint="">
                   <Kbd>Esc</Kbd> close
                 </span>
-                <button type="button" className={a.keyLink} onClick={() => setSheet("keys")}>
+                <button type="button" className={a.keyLink} data-kbd-hint="" onClick={() => setSheet("keys")}>
                   <Kbd>?</Kbd> all shortcuts
                 </button>
                 <span className={a.footNote}>
@@ -1106,16 +1123,14 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       );
                     })()}
                     {!isPhone ? (
-                      <Button
+                      <NotWiredButton
+                        label="Claim"
                         variant="sec"
                         size="sm"
                         icon={Hand}
-                        disabledReason={NOT_WIRED}
-                        reasonDisplay="tooltip"
                         className={a.preview}
-                      >
-                        Claim
-                      </Button>
+                        data-testid="ward-referral-claim"
+                      />
                     ) : null}
                     <Button
                       variant="ghost"
@@ -1170,7 +1185,22 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                           <p className={mph.ch} id="ward-referral-phone-journey">
                             Journey
                           </p>
-                          <JourneyStrip label="Referral journey" stages={stages} formatDuration={durMinutes} />
+                          <JourneyStrip
+                            label="Referral journey"
+                            stages={stages}
+                            formatDuration={journeyDuration}
+                            note={false}
+                          />
+                          {(() => {
+                            // U3 (review 12 Oct 2026): words, not "Now: Bed offered 0s".
+                            const current = stages.find((stage) => stage.now);
+                            return current ? (
+                              <p className={mph.journeyNote} aria-hidden="true">
+                                {current.label}{" "}
+                                {current.minutes < 1 ? "just now" : `${durMinutes(current.minutes)} ago`}
+                              </p>
+                            ) : null;
+                          })()}
                         </section>
                       ) : null;
                     })()}
@@ -1184,17 +1214,19 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       patientInfo={selectedPatientInfo}
                       hideDossierHeader
                       onDecision={(title) => watchDecision(selectedReferral.id, title)}
+                      admissions={admissions}
+                      bedReleases={bedReleases}
                       phone={
                         <>
-                          <Button
-                            variant="sec"
-                            icon={Hand}
-                            disabledReason={NOT_WIRED}
-                            reasonDisplay="tooltip"
-                            className={mph.tall}
-                          >
-                            Claim this referral
-                          </Button>
+                          <span className={a.notWiredStart}>
+                            <NotWiredButton
+                              label="Claim this referral"
+                              variant="sec"
+                              icon={Hand}
+                              className={mph.tall}
+                              data-testid="ward-referral-phone-claim"
+                            />
+                          </span>
                           <button
                             type="button"
                             className={mph.more}
@@ -1226,15 +1258,15 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                             <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
                           ) : null}
                           <div className={mph.acts}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              icon={Megaphone}
-                              disabledReason={NOT_WIRED}
-                              reasonDisplay="tooltip"
-                            >
-                              Escalate
-                            </Button>
+                            <span className={a.notWiredUp}>
+                              <NotWiredButton
+                                label="Escalate"
+                                variant="ghost"
+                                size="sm"
+                                icon={Megaphone}
+                                data-testid="ward-referral-phone-escalate"
+                              />
+                            </span>
                             <span className={a.spacer} />
                             <SummaryButton onClick={() => setSheet("summary")} />
                             <Button
@@ -1269,6 +1301,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         patientInfo={selectedPatientInfo}
                         hideDossierHeader
                         onDecision={(title) => watchDecision(selectedReferral.id, title)}
+                        admissions={admissions}
+                        bedReleases={bedReleases}
                       />
                     ) : null}
                     {inspectorTab === "patient" ? (
@@ -1284,16 +1318,16 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
 
                 {!isPhone ? (
                   <div className={a.panelFoot}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={Megaphone}
-                      disabledReason={NOT_WIRED}
-                      reasonDisplay="tooltip"
-                      className={a.preview}
-                    >
-                      Escalate
-                    </Button>
+                    <span className={a.notWiredUp}>
+                      <NotWiredButton
+                        label="Escalate"
+                        variant="ghost"
+                        size="sm"
+                        icon={Megaphone}
+                        className={a.preview}
+                        data-testid="ward-referral-escalate"
+                      />
+                    </span>
                     <span className={a.spacer} />
                     <SummaryButton onClick={() => setSheet("summary")} />
                     <Button
@@ -1496,10 +1530,15 @@ function QueuedSection({
                     </td>
                     <td data-testid={`ward-referral-board-hospital-${referral.id}`}>
                       <span className={a.who}>
-                        <span className={a.truncate} title={sendingHospital}>
-                          {sendingHospital}
+                        {/* Audit 11 Oct 2026: the site code, as phone shows, so names and figures are not cut. */}
+                        <span
+                          className={cx(a.truncate, a.mono)}
+                          title={`${sendingHospital}, ${REFERRAL_SOURCE_WORDS[referral.source]}`}
+                        >
+                          <span aria-hidden="true">{referral.originSiteCode}</span>
+                          <span className="sr-only">{sendingHospital}</span>
                         </span>
-                        <span className={a.sub}>{REFERRAL_SOURCE_WORDS[referral.source]}</span>
+                        <span className={cx(a.sub, a.fromSource)}>{REFERRAL_SOURCE_WORDS[referral.source]}</span>
                       </span>
                     </td>
                     <td>
@@ -1847,6 +1886,11 @@ function DecidedSection({
       )}
     </section>
   );
+}
+
+/** Journey segment time: "just now" under a minute, never "0s". */
+function journeyDuration(minutes: number): string {
+  return minutes < 1 ? "just now" : durMinutes(minutes);
 }
 
 /**

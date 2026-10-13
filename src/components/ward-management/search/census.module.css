@@ -370,6 +370,19 @@
   }
 }
 
+/* Tablet portrait: five pills beside the search ran off the right edge ("20 No..."), so they take
+   their own row under it (device audit 11 Oct 2026). */
+@container patient-search (max-width: 56rem) {
+  .heroBar {
+    flex-wrap: wrap;
+  }
+
+  .mapPills {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+}
+
 @container patient-search (min-width: 56rem) {
   .layout {
     grid-template-columns: minmax(0, 1fr) 300px;
@@ -463,11 +476,21 @@ table.censusTable {
 }
 
 .colWho {
-  width: 24%;
+  width: 21%;
 }
 
 .colTime {
   width: 100px;
+}
+
+/* Device audit 11 Oct 2026: Next step is the column a nurse reads, so it takes the spare width
+   that Where now had; Heading to stays narrower. */
+.colWhere {
+  width: 12%;
+}
+
+.colNext {
+  width: 18%;
 }
 
 .censusTable thead th {
@@ -1123,33 +1146,6 @@ table.censusTable {
   gap: var(--wf-s-2);
 }
 
-.phoneTool {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 48px;
-  padding: 0 16px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-14) / 1 var(--wf-font);
-  cursor: pointer;
-}
-
-.phoneToolOn {
-  border-color: var(--wf-accent);
-  box-shadow: inset 0 0 0 1px var(--wf-accent);
-  font-weight: 600;
-}
-
-.phoneToolDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wf-accent);
-}
-
 .phoneList {
   margin: 0;
   padding: 0;
@@ -1197,41 +1193,11 @@ table.censusTable {
   outline-offset: -2px;
 }
 
-.phoneAvatar {
-  display: inline-flex;
-  grid-row: 1 / span 2;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--wf-surface-2);
-  border: 1px solid var(--wf-line-2);
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-}
-
 .phoneTime {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
-}
-
-.phoneLine {
-  display: flex;
-  grid-column: 2 / span 2;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-13);
-  white-space: nowrap;
-}
-
-.phoneLine > svg,
-.phoneLine > span:not(.truncate) {
-  flex: none;
 }
 
 .phoneMore {
@@ -1257,56 +1223,6 @@ table.censusTable {
   padding: 8px 12px;
   background: var(--wf-surface);
   font-size: var(--wf-fs-13);
-}
-
-.phoneActions {
-  display: flex;
-  gap: var(--wf-s-2);
-}
-
-.phoneActions .tap,
-.phoneActions > button {
-  min-height: 48px;
-}
-
-.sheetList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.sheetOption {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 52px;
-  padding: 0 4px;
-  border: 0;
-  border-bottom: 1px solid var(--wf-line);
-  background: transparent;
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-16) / 1 var(--wf-font);
-  text-align: left;
-  cursor: pointer;
-}
-
-.sheetOption[aria-pressed="true"] {
-  font-weight: 600;
-}
-
-.sheetOption[aria-pressed="true"]::after {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wf-accent);
-}
-
-.glyphSpace {
-  display: inline-block;
-  width: 10px;
 }
 
 .sheetFoot {
@@ -1379,52 +1295,6 @@ table.censusTable {
   width: 100%;
 }
 
-.phoneFigs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.phoneFig {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 4px;
-  min-width: 0;
-  min-height: 48px;
-  padding: 0 var(--wf-s-2);
-  border: 0;
-  border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
-  background: transparent;
-  color: var(--wf-hero-ink);
-  text-align: left;
-  cursor: pointer;
-}
-
-.phoneFig:first-child {
-  padding-left: var(--wf-s-1);
-  border-left: 0;
-}
-
-.phoneFig b {
-  color: var(--wf-hero-ink);
-  font: 700 var(--wf-fs-16) / 1 var(--wf-mono);
-}
-
-.phoneFig span {
-  max-width: 100%;
-  overflow: hidden;
-  color: color-mix(in srgb, var(--wf-hero-ink) 75%, transparent);
-  font: 500 var(--wf-fs-12) / 1.2 var(--wf-font);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.phoneFig:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: -2px;
-}
-
 .phoneHeroActions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1482,7 +1352,7 @@ table.censusTable {
 
 .phoneSeg {
   position: sticky;
-  top: 3.5rem;
+  top: var(--wf-header-height, 3.5rem);
   z-index: 3;
   margin: 0 calc(-1 * var(--wf-s-3));
   padding: var(--wf-s-2) var(--wf-s-3);

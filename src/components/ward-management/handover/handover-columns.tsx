@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { durMinutes, StatusGlyph, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
+  dueParts,
   destinationText,
   dueShort,
   groupOf,
@@ -53,7 +54,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "pt",
     header: "Patient",
-    width: 188,
+    width: 156,
     locked: true,
     cell: (row) => (
       <span className={styles.two}>
@@ -71,7 +72,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "st",
     header: "Status",
-    width: 168,
+    width: 140,
     cell: (row, ctx) => (
       <span className={styles.two}>
         <span className={styles.glyphText}>
@@ -86,7 +87,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "wait",
     header: "Waiting",
-    width: 92,
+    width: 84,
     mono: true,
     cell: (row, ctx) => (
       <span className={styles.two}>
@@ -99,7 +100,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "route",
     header: "From and to",
-    width: 172,
+    width: 140,
     cell: (row) => (
       <span className={styles.two}>
         <span className={styles.trunc}>{row.edShort}</span>
@@ -152,18 +153,27 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "due",
     header: "Due",
-    width: 128,
+    width: 92,
     mono: true,
     cell: (row, ctx) => {
-      const due = dueShort(row, ctx.now);
-      return due ? <span className={`${styles.mono} ${styles.trunc}`}>{due}</span> : off;
+      const due = dueParts(row, ctx.now);
+      return due ? (
+        <span className={styles.two}>
+          <b className={`${styles.mono} ${styles.nowrap}`}>{due.when}</b>
+          <span className={`${styles.sub} ${styles.trunc}`}>{due.what}</span>
+        </span>
+      ) : (
+        off
+      );
     },
     paper: (row, ctx) => dueShort(row, ctx.now) ?? "",
   },
   {
+    // U1 (site review, 12 Oct 2026): the action never truncates, so Next step takes the widest share
+    // and Patient, Status and From and to give way (names truncate first).
     id: "next",
     header: "Next step",
-    width: 168,
+    width: 300,
     cell: (row, ctx) => {
       const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
       return (

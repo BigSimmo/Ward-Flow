@@ -14,6 +14,7 @@ import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * Owner ruling, 2026-09-12 (closing spec D9, open six days): the morning bed-state board's coverage
@@ -64,11 +65,13 @@ const networkRows = networkWardRows(units, NOW, bedReleases, wardAdmissions, lea
 const netTotals = networkTotals(networkRows);
 
 function renderScreen() {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <CapacityScreen />
     </WardFlowProvider>,
   );
+  showWardTable();
+  return view;
 }
 
 /**

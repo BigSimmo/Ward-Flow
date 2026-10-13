@@ -367,11 +367,6 @@
   margin-bottom: var(--ward-space-12);
 }
 
-.statutoryCard.breachAlert {
-  border-left-color: var(--danger);
-  background: var(--danger-soft);
-}
-
 .statutoryHead {
   display: flex;
   align-items: center;

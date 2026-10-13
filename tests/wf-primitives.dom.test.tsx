@@ -215,11 +215,11 @@ describe("LiveChip", () => {
   it("announces state, not the ticking age, and offers a named pause control", async () => {
     const onTogglePause = vi.fn();
     const { rerender } = render(<LiveChip state="live" age="1s" onTogglePause={onTogglePause} />);
-    expect(screen.getByRole("status")).toHaveTextContent(/^Live$/);
-    await userEvent.click(screen.getByRole("button", { name: "Pause live updates" }));
+    expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
+    await userEvent.click(screen.getByRole("button", { name: "Pause demo updates" }));
     expect(onTogglePause).toHaveBeenCalledOnce();
     rerender(<LiveChip state="paused" onTogglePause={onTogglePause} />);
-    expect(screen.getByRole("button", { name: "Pause live updates" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Pause demo updates" })).toHaveAttribute("aria-pressed", "true");
     rerender(<LiveChip state="stale" asAt={new Date(2026, 9, 7, 10, 26)} />);
     expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
   });

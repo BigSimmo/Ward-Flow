@@ -44,42 +44,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Bar: way back, synthetic marker, then Print and Save draft on the right. */
-.topBar.topBar {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-2) var(--wf-s-3);
-}
-
-.topLead {
-  display: flex;
-  align-items: center;
-  padding-right: var(--wf-s-3);
-  border-right: 1px solid var(--wf-line);
-}
-
 .backLink {
   gap: var(--wf-s-1);
   color: var(--wf-accent-ink);
   font-weight: 600;
-}
-
-.topMarker {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
-.topActions {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin-left: auto;
 }
 
 .d4Notice {
@@ -144,7 +112,8 @@
   gap: var(--wf-s-3) var(--wf-s-4);
 }
 
-.span2 {
+.span2,
+.spanAll {
   grid-column: 1 / -1;
 }
 
@@ -428,11 +397,6 @@
 }
 
 @media (max-width: 48rem) {
-  .topLead {
-    padding-right: 0;
-    border-right: 0;
-  }
-
   .screen button,
   .screen a[href] {
     min-height: 3rem;
@@ -471,7 +435,6 @@
     box-shadow: none !important;
   }
 
-  .topActions,
   .submitActions,
   .side {
     display: none !important;
@@ -644,13 +607,34 @@
     border-left: 0;
   }
 
+  /* The choice options take the shared phone pill size (`--wf-phone-*`): a 32px face with a
+     transparent 48px hit area, carried in the scrolling row's own padding so it is not clipped. */
   .segmented.segmented {
+    gap: var(--wf-phone-pill-gap);
+    height: auto;
+    padding-block: var(--wf-phone-pill-hit);
     overflow-x: auto;
   }
 
   .segmented.segmented > button {
+    position: relative;
     flex: 0 0 auto;
-    height: var(--wf-touch, 44px);
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    overflow: visible;
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .segmented.segmented > button::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+
+  .segmented.segmented .segSub {
+    font-size: var(--wf-phone-pill-count-fs);
   }
 }
 

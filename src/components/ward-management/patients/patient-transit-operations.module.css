@@ -786,9 +786,6 @@
 .destination p {
   margin: 5px 0 0;
 }
-.dispatchBody {
-  padding: 14px;
-}
 .hold {
   background: var(--surface-2);
   border-radius: 8px;
@@ -1042,8 +1039,7 @@
   font-size: var(--wf-fs-12);
 }
 
-[data-ward-design="v6"] .cardBody,
-[data-ward-design="v6"] .dispatchBody {
+[data-ward-design="v6"] .cardBody {
   padding: var(--wf-s-3) var(--wf-s-4);
 }
 
@@ -1237,4 +1233,9 @@
   [data-ward-design="v6"] .card[aria-labelledby="correction-title"] .cardBody > details[open] {
     padding-bottom: var(--wf-s-3);
   }
+}
+
+/* Device audit (11 Oct 2026): past stage 3 only the placement and dispatch work shows, full width. */
+.columns[data-single="true"] {
+  grid-template-columns: minmax(0, 1fr);
 }

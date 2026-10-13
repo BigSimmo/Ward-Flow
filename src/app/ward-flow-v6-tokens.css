@@ -87,7 +87,22 @@
   --wf-h-chip: 22px;
   --wf-h-sm: 30px;
   --wf-h-md: 36px;
+  /* Shared sticky header and navigation geometry. Phone overrides this in the Ward layout. */
+  --wf-header-height: 3.75rem;
   --wf-h-lg: 44px;
+  /* Phone (max-width: 48rem) filter pills, chips and segmented controls share one compact size.
+     Only phone rules read these. The visual face stays small; a transparent hit area reaches the
+     --spacing-tap floor, so the tap target never drops below 48px. */
+  --wf-phone-pill-h: 32px;
+  --wf-phone-pill-px: 12px;
+  --wf-phone-pill-gap: 6px;
+  --wf-phone-pill-fs: var(--wf-fs-13);
+  --wf-phone-pill-count-fs: var(--wf-fs-12);
+  --wf-phone-pill-hit: calc((var(--spacing-tap, 3rem) - var(--wf-phone-pill-h)) / 2);
+  --wf-phone-seg-h: 34px;
+  --wf-phone-seg-item-h: 28px;
+  --wf-phone-seg-item-hit: calc((var(--spacing-tap, 3rem) - var(--wf-phone-seg-item-h)) / 2);
+  --wf-phone-seg-band: calc((var(--spacing-tap, 3rem) - var(--wf-phone-seg-h)) / 2);
   --wf-row: 52px;
   --wf-row-compact: 44px;
   --wf-m-fast: 120ms;

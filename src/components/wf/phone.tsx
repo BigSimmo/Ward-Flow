@@ -66,6 +66,11 @@ export type PhoneSheetProps = {
   returnFocusRef?: RefObject<HTMLElement | null>;
   /** `content` sizes to its body (up to the top safe area). `tall` opens near full height. */
   height?: "content" | "tall";
+  /**
+   * Where the sheet docks. "bottom" (the default) is the phone sheet. "right" is the tablet
+   * slide-over: full height against the right edge, the same header, body and footer.
+   */
+  placement?: "bottom" | "right";
   className?: string;
   "data-testid"?: string;
 };
@@ -106,6 +111,7 @@ export function PhoneSheet({
   initialFocusRef,
   returnFocusRef,
   height = "content",
+  placement = "bottom",
   className,
   ...data
 }: PhoneSheetProps) {
@@ -243,6 +249,7 @@ export function PhoneSheet({
       <div
         ref={setScrimRef}
         className={styles.sheetScrim}
+        data-placement={placement === "right" ? "right" : undefined}
         onPointerDown={(event) => {
           scrimPressRef.current = event.target === event.currentTarget;
         }}
@@ -260,6 +267,7 @@ export function PhoneSheet({
           aria-describedby={present(description) ? descId : undefined}
           tabIndex={-1}
           data-height={height}
+          data-placement={placement === "right" ? "right" : undefined}
           className={cx(styles.sheet, !hasFooter && styles.sheetNoFooter, className)}
           {...data}
         >
@@ -722,9 +730,18 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
   useEffect(() => {
     const row = rowRef.current;
     if (!row) return;
+    let frame = 0;
+    const schedule = () => {
+      if (!frame) {
+        frame = window.requestAnimationFrame(() => {
+          frame = 0;
+          measure();
+        });
+      }
+    };
     measure();
-    row.addEventListener("scroll", measure, { passive: true });
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    row.addEventListener("scroll", schedule, { passive: true });
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
     observer?.observe(row);
     // Chips arriving or leaving change the content width without resizing the row itself, so each
     // chip is watched too, and the list is refreshed only when chips actually change.
@@ -741,11 +758,12 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
                 if (node instanceof Element) observer?.observe(node);
               });
             }
-            measure();
+            schedule();
           });
     chips?.observe(row, { childList: true });
     return () => {
-      row.removeEventListener("scroll", measure);
+      row.removeEventListener("scroll", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
       observer?.disconnect();
       chips?.disconnect();
     };

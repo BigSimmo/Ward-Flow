@@ -15,6 +15,13 @@ import { useLayoutEffect, useSyncExternalStore, type RefObject } from "react";
  * else. The bleed is measured, not a MutationObserver: the hero reads where it would sit, then
  * pulls itself out to the column edges and up to the header's bottom edge with negative margins.
  *
+ * First paint (site review B6, 12 Oct 2026): the bleed is measured after hydration, so a band hero
+ * that waited for it painted as a rounded card first and jumped (layout shift up to 0.49). The
+ * server render is now already the band: until `useWfBandBleed` has measured, a band hero inside
+ * the work column carries no `data-band` and `hero.module.css` styles it as the band with the
+ * usual 16px page insets (desktop and tablet only; phone is unchanged). The measure then writes
+ * `data-band="on"` with the real insets, or `data-band="off"` when the page does not open on it.
+ *
  * The header stays in flow above the page and paints the band's top colour at rest, so the band
  * reads as one surface from the top of the window. The hero never rises above the page's own
  * box: the desktop `.shell` clips vertical overflow (`tests/ward-shell-fill.test.ts`), and a
@@ -94,7 +101,14 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
   useLayoutEffect(() => {
     const hero = ref.current;
     if (!enabled || !hero || typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    // Leave the server-rendered band so the first measure reads where the hero would sit. This
+    // runs before the browser paints again, so the band never shows as a card in between.
+    // "measuring" styles the hero like "off", but the header's pre-hydration ink rule
+    // (ward-bar.module.css) only lets go on a final "off". With "off" here, the forced layout in
+    // the first measure restyled the header as light glass, and its band transition then faded it
+    // back to ink: a light flash on every load (13 Oct 2026).
     const scroller = scrollAreaOf(hero);
+    if (hero.dataset.band === undefined) hero.dataset.band = scroller ? "measuring" : "off";
     if (!scroller) return;
     const query = window.matchMedia(WF_BAND_QUERY);
 
@@ -102,13 +116,15 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
     let release: (() => void) | null = null;
     let frame = 0;
 
-    const clear = () => {
+    const clear = (state: "off" | null) => {
       if (release) {
         release();
         release = null;
       }
       applied = NO_BLEED;
-      delete hero.dataset.band;
+      // "off" ends the server-rendered band (see the header): this hero is measured and not a band.
+      if (state) hero.dataset.band = state;
+      else delete hero.dataset.band;
       hero.style.removeProperty("--wf-band-top");
       hero.style.removeProperty("--wf-band-left");
       hero.style.removeProperty("--wf-band-right");
@@ -117,7 +133,7 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
     const measure = () => {
       frame = 0;
       if (!query.matches) {
-        clear();
+        clear("off");
         return;
       }
       const area = scroller.getBoundingClientRect();
@@ -131,7 +147,7 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
       // banner, a breadcrumb, a filter row) means the page does not open on its hero.
       const gap = naturalTop - barHeight;
       if (gap < 0 || gap > WF_BAND_TOP_SLACK_PX) {
-        clear();
+        clear("off");
         return;
       }
       const next: Bleed = {
@@ -164,7 +180,7 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
       observer?.disconnect();
       query.removeEventListener("change", schedule);
       window.removeEventListener("resize", schedule);
-      clear();
+      clear(null);
     };
   }, [ref, enabled]);
 }

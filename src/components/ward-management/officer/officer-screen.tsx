@@ -1,5 +1,7 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob } from "./officer-jobs";
 import {
   useCallback,
@@ -22,6 +24,8 @@ import {
   EmptyState,
   FilterChip,
   Hero,
+  HeroChip,
+  HeroChips,
   LiveChip,
   HeroStat,
   Icon,
@@ -544,7 +548,7 @@ export function OfficerScreen() {
   useEffect(() => {
     if (selectedId === undefined || typeof window.matchMedia !== "function") return;
     if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
-    sideRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    sideRef.current?.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
   }, [selectedId]);
   // On a phone the panel is a modal bottom sheet, so it takes focus, traps Tab, isolates the page
   // behind it and hands focus back on close. Wider screens keep the side panel non-modal.
@@ -768,7 +772,7 @@ export function OfficerScreen() {
       return { leg, verb: "Accept", blocked: acceptedBlockedReason(movement, who), run: runAccepted };
     }
     if (leg === "Accepted") {
-      return { leg, verb: "Send crew", blocked: enRouteBlockedReason(movement, who), run: runEnRoute };
+      return { leg, verb: "En route", blocked: enRouteBlockedReason(movement, who), run: runEnRoute };
     }
     if (leg === "En route") {
       return { leg, verb: "Collected", blocked: collectedBlockedReason(movement, who), run: runCollected };
@@ -925,33 +929,25 @@ export function OfficerScreen() {
         blocked: () => arrivedBlockedReason(movement, unitFor(movement), patientName),
       },
     ];
+    // Device audit, 11 Oct 2026: one pinned primary for the next step, not four equal pills; the
+    // Steps list above stays the record of what is done.
+    const step = steps[index];
+    if (!step) return null;
+    const blocked = step.blocked();
     return (
       <div className={styles.phStageRow}>
-        {steps.map((step, stepIndex) => {
-          // Same rules as the desktop row: action `stepIndex` is done once the leg has moved past it.
-          // No tick icon here: four buttons share 390px and the Steps list above carries the ticks.
-          const done = index >= stepIndex + 1;
-          const isNext = stepIndex === index;
-          const blocked = step.blocked();
-          return (
-            <Button
-              key={step.testId}
-              variant={isNext && !blocked ? "pri" : "sec"}
-              className={
-                done
-                  ? `${styles.actionButton} ${styles.phStage} ${styles.actionDone}`
-                  : `${styles.actionButton} ${styles.phStage}`
-              }
-              data-testid={`${step.testId}-${movement.id}`}
-              aria-disabled={blocked ? "true" : undefined}
-              aria-describedby={blocked ? `${step.testId}-unavailable-${movement.id}` : undefined}
-              title={blocked ?? undefined}
-              onClick={blocked ? ignoreUnavailableActivation : step.run}
-            >
-              {step.label}
-            </Button>
-          );
-        })}
+        <Button
+          variant="pri"
+          size="lg"
+          className={styles.phNextStep}
+          data-testid={`${step.testId}-${movement.id}`}
+          aria-disabled={blocked ? "true" : undefined}
+          aria-describedby={blocked ? `${step.testId}-unavailable-${movement.id}` : undefined}
+          title={blocked ?? undefined}
+          onClick={blocked ? ignoreUnavailableActivation : step.run}
+        >
+          Mark {step.label.toLowerCase()}
+        </Button>
       </div>
     );
   }
@@ -1350,20 +1346,43 @@ export function OfficerScreen() {
     );
   }
 
-  const pillStat = (which: HighlightPill, value: number, label: string, short: string, tone?: WfTone) => (
-    <HeroStat
-      className={cx(styles.heroPill, PHONE_PILLS.includes(which) ? undefined : styles.deskOnly)}
-      value={value}
-      label={
-        <>
-          <span className={styles.longLabel}>{label}</span>
-          <span className={styles.shortLabel}>{short}</span>
-        </>
-      }
-      tone={tone}
-      pressed={pill === which}
-      onToggle={() => setPill((current) => (current === which ? null : which))}
-    />
+  // Larger screen: the shared hero chip every other page uses (site review U5). Phone keeps its own
+  // v10 design of three plain figures, so it stays on `HeroStat` and its phone styles.
+  const pillStat = (which: HighlightPill, value: number, label: string, short: string, tone?: WfTone) =>
+    isPhone ? (
+      <HeroStat
+        className={cx(styles.heroPill, PHONE_PILLS.includes(which) ? undefined : styles.deskOnly)}
+        value={value}
+        label={
+          <>
+            <span className={styles.longLabel}>{label}</span>
+            <span className={styles.shortLabel}>{short}</span>
+          </>
+        }
+        tone={tone}
+        pressed={pill === which}
+        onToggle={() => setPill((current) => (current === which ? null : which))}
+      />
+    ) : (
+      <HeroChip
+        key={which}
+        value={value}
+        label={label}
+        tone={tone}
+        pressed={pill === which}
+        onPress={() => setPill((current) => (current === which ? null : which))}
+      />
+    );
+
+  const heroPillStats = (
+    <>
+      {pillStat("requested", awaitingDeparture, "Not accepted", "To accept", "neutral")}
+      {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
+      {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
+      {pillStat("collected", inCustody, "On board", "On board", "info")}
+      {pillStat("late", pastEta, "Past ward ETA", "Late", pastEta > 0 ? "warning" : "neutral")}
+      {pillStat("forms", formsOutstanding, "Jobs need forms", "Need forms", "neutral")}
+    </>
   );
 
   // Hero tools: beside the title on the larger screen, under the figures on phone (v10).
@@ -1388,7 +1407,7 @@ export function OfficerScreen() {
         <span className={styles.longLabel}>Copy handover</span>
       </Button>
       {/* Phone (v10): Arrivals jumps to the arrivals list below the jobs. */}
-      {isPhone ? (
+      {isPhone && upcoming > 0 ? (
         <Button
           variant="onHero"
           size="sm"
@@ -1397,28 +1416,22 @@ export function OfficerScreen() {
           onClick={() =>
             document
               .getElementById("ward-officer-arrivals-heading")
-              ?.scrollIntoView({ block: "start", behavior: "smooth" })
+              ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() })
           }
         >
           Arrivals <span className={styles.phArrivalsCount}>{upcoming}</span>
         </Button>
       ) : null}
-      <span className={cx(styles.preview, styles.onHeroPreview, styles.deskOnly)}>Preview</span>
-      <Button
-        variant="onHero"
-        size="sm"
-        icon={Truck}
-        className={cx(styles.previewButton, styles.deskOnly)}
-        aria-disabled="true"
-        title="Not wired in this prototype."
-        onClick={(event) => event.preventDefault()}
-      >
-        Log booking
-      </Button>
+      <NotWiredButton variant="onHero" size="sm" icon={Truck} label="Log booking" wrapClassName={styles.deskOnly} />
     </div>
   );
 
   const panelOpen = selectedJob !== undefined && selectedJob.transport !== undefined;
+  const anyJobEta = jobs.some((movement) => expectedArrival(movement) !== undefined);
+  // Site review 12 Oct 2026: a column that says the same thing on every row ("0 of 3" thirteen
+  // times) says nothing; the hero's "Jobs need forms" and the job sheet still carry the count.
+  const formsVary =
+    jobs.length < 2 || new Set(jobs.map((movement) => (packRequired(movement) ? packCount(movement) : -1))).size > 1;
   useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
 
   return (
@@ -1429,23 +1442,23 @@ export function OfficerScreen() {
           className={styles.dispatchHero}
           eyebrow="Transport dispatch"
           title={`${inCustody} on board`}
-          titleMeta={`${crewEnRoute} ${crewEnRoute === 1 ? "crew" : "crews"} en route`}
           aside={isPhone ? <LiveChip state="live" onHero /> : heroTools}
           barAside={isPhone ? heroTools : undefined}
           bar={
-            <div className={styles.heroPills} role="group" aria-label="Highlight jobs">
-              {pillStat("requested", awaitingDeparture, "Not accepted", "To accept", "neutral")}
-              {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
-              {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
-              {pillStat("collected", inCustody, "On board", "On board", "info")}
-              {pillStat("late", pastEta, "Past ward ETA", "Late", pastEta > 0 ? "warning" : "neutral")}
-              {pillStat("forms", formsOutstanding, "Forms to upload", "Forms", "neutral")}
-            </div>
+            isPhone ? (
+              <div className={styles.heroPills} role="group" aria-label="Highlight jobs">
+                {heroPillStats}
+              </div>
+            ) : (
+              <HeroChips label="Highlight jobs">{heroPillStats}</HeroChips>
+            )
           }
           foot={
             <div className={styles.fleetPanel} role="group" aria-label="Highlight jobs by provider">
               <span className={styles.fleetLabel}>Providers</span>
-              {TRANSPORT_PROVIDERS.map((provider) => {
+              {TRANSPORT_PROVIDERS.filter((provider) =>
+                jobs.some((movement) => movement.transport?.provider === provider),
+              ).map((provider) => {
                 const providerJobs = jobs.filter((movement) => movement.transport?.provider === provider);
                 const moving = providerJobs.filter((movement) => {
                   const leg = transportLeg(movement.transport);
@@ -1510,7 +1523,11 @@ export function OfficerScreen() {
 
         {isPhone ? (
           <div className={styles.phProviders} role="group" aria-label="Highlight jobs by provider">
-            {TRANSPORT_PROVIDERS.map((provider) => {
+            {/* Zero providers are hidden (device audit, 11 Oct 2026): "0 Ambulance" took the row
+                and pushed a real one off screen. */}
+            {TRANSPORT_PROVIDERS.filter((provider) =>
+              jobs.some((movement) => movement.transport?.provider === provider),
+            ).map((provider) => {
               const isSelected = providerHighlight === provider;
               return (
                 <button
@@ -1604,7 +1621,7 @@ export function OfficerScreen() {
                     items={[
                       { id: "next", label: "Next action" },
                       { id: "wait", label: "Longest wait" },
-                      { id: "eta", label: "ETA" },
+                      ...(anyJobEta ? [{ id: "eta" as const, label: "ETA" }] : []),
                     ]}
                   />
                 </div>
@@ -1625,8 +1642,14 @@ export function OfficerScreen() {
                           <th scope="col">Patient</th>
                           <th scope="col">Route</th>
                           <th scope="col">Stage</th>
-                          <th scope="col">Forms</th>
-                          <th scope="col">ETA</th>
+                          <th scope="col" className={formsVary ? undefined : styles.etaOff}>
+                            Forms
+                          </th>
+                          {/* Device audit, 11 Oct 2026: the ETA column shows only when a job has one;
+                              thirteen rows of "No ETA" said nothing. */}
+                          <th scope="col" className={anyJobEta ? undefined : styles.etaOff}>
+                            ETA
+                          </th>
                           <th scope="col" className={tableClasses.num}>
                             Next
                           </th>
@@ -1730,7 +1753,7 @@ export function OfficerScreen() {
                                   transportLeg(transport)
                                 )}
                               </td>
-                              <td>
+                              <td className={formsVary ? undefined : styles.etaOff}>
                                 {!packRequired(movement) ? (
                                   <span className={styles.muted}>Not needed</span>
                                 ) : (
@@ -1753,7 +1776,7 @@ export function OfficerScreen() {
                                   </span>
                                 )}
                               </td>
-                              <td>
+                              <td className={anyJobEta ? undefined : styles.etaOff}>
                                 {expected ? (
                                   <span className={styles.etaCell}>
                                     {isLate ? <StatusGlyph tone="warning" size={9} /> : null}
@@ -1879,7 +1902,12 @@ export function OfficerScreen() {
               </TabPanel>
             </Card>
 
-            <Card className={styles.arrivalsCard} aria-labelledby="ward-officer-arrivals-heading">
+            {/* An empty Arrivals card ("0 still to come") is hidden (device audit, 11 Oct 2026). */}
+            <Card
+              className={styles.arrivalsCard}
+              aria-labelledby="ward-officer-arrivals-heading"
+              hidden={arrivals.length === 0}
+            >
               <CardHead
                 id="ward-officer-arrivals-heading"
                 title="Arrivals"

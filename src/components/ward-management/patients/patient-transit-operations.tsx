@@ -27,7 +27,8 @@ import {
   type ReleasePullReason,
 } from "../ward-change-reasons";
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
-import { useRoleGate } from "../ward-role-gate";
+import { useRoleGate, useRouteRole } from "../ward-role-gate";
+import { useUndoableStep } from "../use-undoable-step";
 import { clock, dur } from "./patient-now-records";
 import styles from "./patient-transit-operations.module.css";
 
@@ -39,14 +40,24 @@ import styles from "./patient-transit-operations.module.css";
 export function PatientTransitOperations({
   movement,
   showMetrics = true,
+  bare = false,
 }: {
   movement: Movement;
   showMetrics?: boolean;
+  /** Inside a sheet that already names it (the Patient Now mockups): no section heading. */
+  bare?: boolean;
 }) {
   const { units, admissions, dispatch, rejections, readAuditEvents } = useWardFlow();
   const now = useWardFlowClock();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
   const gate = useRoleGate();
+  // B2 (site review, 12 Oct 2026): every step is raised as the route's own role, so the history
+  // names who acted rather than a borrowed ward, ED or officer.
+  const routeRole = useRouteRole();
+  // A ward acts for the ward the patient is accepted at; the other roles name no unit.
+  const wardActing = routeRole === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {};
+  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
+  const holdGate = gate("PULL_PATIENT");
   const bookGate = gate("BOOK_TRANSPORT");
   const handoverGate = gate("HANDOVER_READY");
   const acceptedGate = gate("TRANSPORT_ACCEPTED");
@@ -113,6 +124,7 @@ export function PatientTransitOperations({
   const activeJob = job && job.cancelledAt === undefined;
   const noTransport = movement.transportNeed?.needed === false && !activeJob;
   const remaining = movement.pullExpiresAt === undefined ? undefined : movement.pullExpiresAt - now;
+  const searchStage = ["placement_requested", "destination_review", "accepted_awaiting_bed"].includes(movement.stage);
   const selectedTargets = selected.filter(
     (id) => candidates.some((c) => c.unit.id === id && c.verdict.eligible) && !movement.referredUnitIds.includes(id),
   );
@@ -186,7 +198,7 @@ export function PatientTransitOperations({
                 if (!unitId) return;
                 dispatch({
                   type: "ACCEPT_IN_PRINCIPLE",
-                  role: "ward",
+                  role: routeRole,
                   now,
                   movementId: movement.id,
                   unitId,
@@ -197,7 +209,7 @@ export function PatientTransitOperations({
                 if (!unitId) return;
                 dispatch({
                   type: "PULL_PATIENT",
-                  role: "coordinator",
+                  role: routeRole,
                   now,
                   movementId: movement.id,
                   unitId,
@@ -322,7 +334,7 @@ export function PatientTransitOperations({
                       noteAttempt();
                       dispatch({
                         type: "ACCEPT_IN_PRINCIPLE",
-                        role: "ward",
+                        role: routeRole,
                         now,
                         movementId: movement.id,
                         unitId: unit.id,
@@ -416,52 +428,57 @@ export function PatientTransitOperations({
               </ul>
             </details>
           )}
+          {/* B5 (site review, 12 Oct 2026): one name for the step, "Hold the bed", from the status
+              card to this button to its toast, which offers Undo like every other move. Undo
+              releases the hold as made in error, the engine's own audited reverse. */}
           {open && movement.stage === "accepted_awaiting_bed" && destination && (
-            <button
-              type="button"
-              className={styles.primary}
-              onClick={() => {
-                setOverrideUnitId(destination.id);
-                noteAttempt();
-                dispatch({
-                  type: "PULL_PATIENT",
-                  role: "coordinator",
-                  now,
-                  movementId: movement.id,
-                  unitId: destination.id,
-                });
-              }}
-            >
-              Pull patient into bed
-            </button>
+            <>
+              <button
+                type="button"
+                className={styles.primary}
+                {...holdGate.buttonProps}
+                onClick={() => {
+                  if (!holdGate.allowed) return;
+                  setOverrideUnitId(destination.id);
+                  noteAttempt();
+                  runStep(
+                    {
+                      type: "PULL_PATIENT",
+                      role: routeRole,
+                      now,
+                      movementId: movement.id,
+                      unitId: destination.id,
+                    },
+                    {
+                      success: "Bed held",
+                      undo: (at) => ({
+                        type: "RELEASE_PULL",
+                        role: routeRole,
+                        now: at,
+                        movementId: movement.id,
+                        reason: "pull_made_in_error",
+                        ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
+                      }),
+                      undone: "Bed hold undone.",
+                    },
+                  );
+                }}
+              >
+                <BedDouble size={16} aria-hidden="true" />
+                Hold the bed
+              </button>
+              {holdGate.note}
+            </>
           )}
           {remaining !== undefined && (
             <p className={styles.hold} role="status">
               {remaining <= 0
-                ? "Hold expired. Review the reservation before progressing."
-                : `Bed hold · ${dur(remaining)} remaining · expires ${clock(movement.pullExpiresAt!)}`}
+                ? "Bed hold expired. Review the hold before progressing."
+                : `Bed held · ${dur(remaining)} remaining · expires ${clock(movement.pullExpiresAt!)}`}
             </p>
           )}
-          {activeJob && (
-            <dl className={styles.facts}>
-              <div>
-                <dt>Provider</dt>
-                <dd>{job.provider}</dd>
-              </div>
-              <div>
-                <dt>CAD number</dt>
-                <dd>{job.cadNumber ?? "Not recorded"}</dd>
-              </div>
-              <div>
-                <dt>Quoted ETA</dt>
-                <dd>{job.estimatedAt === undefined ? "Not recorded" : clock(job.estimatedAt)}</dd>
-              </div>
-              <div>
-                <dt>Clinical escort</dt>
-                <dd>{job.escortRequired ? "Required" : "Not required"}</dd>
-              </div>
-            </dl>
-          )}
+          {/* The booked provider, CAD number, quoted ETA and escort show once, in the Transport block
+              below this workspace (device audit, 11 Oct 2026). */}
           {open && movement.stage === "pulled" && !job && !booking && (
             <button
               ref={bookTriggerRef}
@@ -498,7 +515,8 @@ export function PatientTransitOperations({
                 noteAttempt();
                 dispatch({
                   type: "BOOK_TRANSPORT",
-                  role: "ed",
+                  role: routeRole,
+                  ...wardActing,
                   now,
                   movementId: movement.id,
                   provider,
@@ -563,7 +581,7 @@ export function PatientTransitOperations({
                 if (!handoverGate.allowed) return;
                 closeBooking();
                 noteAttempt();
-                dispatch({ type: "HANDOVER_READY", role: "ed", now, movementId: movement.id });
+                dispatch({ type: "HANDOVER_READY", role: routeRole, now, movementId: movement.id });
               }}
             >
               Mark handover ready · sending team
@@ -581,7 +599,7 @@ export function PatientTransitOperations({
                 onClick={() => {
                   if (!acceptedGate.allowed) return;
                   noteAttempt();
-                  dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id });
+                  dispatch({ type: "TRANSPORT_ACCEPTED", role: routeRole, now, movementId: movement.id });
                 }}
               >
                 Provider accepted job
@@ -594,7 +612,7 @@ export function PatientTransitOperations({
                 onClick={() => {
                   if (!enRouteGate.allowed) return;
                   noteAttempt();
-                  dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id });
+                  dispatch({ type: "TRANSPORT_EN_ROUTE", role: routeRole, now, movementId: movement.id });
                 }}
               >
                 Vehicle en route
@@ -607,7 +625,7 @@ export function PatientTransitOperations({
                 onClick={() => {
                   if (!collectedGate.allowed) return;
                   noteAttempt();
-                  dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id });
+                  dispatch({ type: "PATIENT_COLLECTED", role: routeRole, now, movementId: movement.id });
                 }}
               >
                 Mark moving · patient collected
@@ -630,10 +648,10 @@ export function PatientTransitOperations({
                     noteAttempt();
                     dispatch({
                       type: "PATIENT_ARRIVED",
-                      role: "ward",
+                      role: routeRole,
                       now,
                       movementId: movement.id,
-                      actingUnitId: destination.id,
+                      ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
                     });
                   }}
                 >
@@ -679,7 +697,8 @@ export function PatientTransitOperations({
                     noteAttempt();
                     dispatch({
                       type: "RELEASE_PULL",
-                      role: "coordinator",
+                      role: routeRole,
+                      ...wardActing,
                       now,
                       movementId: movement.id,
                       reason: releaseReason,
@@ -777,13 +796,12 @@ export function PatientTransitOperations({
   );
   return (
     <section className={styles.deck} aria-labelledby="transit-title">
-      <header className={styles.heading}>
+      <header className={styles.heading} hidden={bare}>
         <div>
           <span className={styles.eyebrow}>PATIENT NOW / BEDFLOW</span>
           <h2 id="transit-title">Transit operations</h2>
           <p>Coordinate the next step with the patient’s clinical context in view.</p>
         </div>
-        <span className={styles.stage}>{stageCopy[movement.stage].label}</span>
       </header>
       <div aria-live="polite" aria-atomic="true" className={styles.feedback}>
         {errors.length > 0 ? (
@@ -840,15 +858,27 @@ export function PatientTransitOperations({
         </p>
       )}
       {overridePanel}
-      <div className={styles.columns} data-assigned={Boolean(destination)}>
-        {destination ? dispatchPanel : candidatePanel}
-        {destination ? candidatePanel : dispatchPanel}
+      {/* Device audit (11 Oct 2026): once a bed is pulled (stage 4 on), the ward search is settled, so the
+          shortlist and eligibility reference give way to the placement and dispatch work alone. */}
+      {/* B5 (site review, 12 Oct 2026): once a ward has accepted, the dispatch deck names it and the
+          refer-to-wards list gives way; inside a sheet the deck is one column. */}
+      <div
+        className={styles.columns}
+        data-assigned={Boolean(destination)}
+        data-single={bare || !searchStage || Boolean(destination)}
+      >
+        {destination || !searchStage ? dispatchPanel : candidatePanel}
+        {searchStage && !destination ? dispatchPanel : null}
       </div>
       <details className={`${styles.card} ${styles.additional}`}>
         <summary>
           Additional workflow controls <span>Blockers, urgency, transport exceptions & paper authority</span>
         </summary>
-        <MovementWorkspaceCockpit movementId={movement.id} embedded role="ward" />
+        <MovementWorkspaceCockpit
+          movementId={movement.id}
+          embedded
+          role={routeRole === "ward" ? "ward" : "coordinator"}
+        />
       </details>
     </section>
   );

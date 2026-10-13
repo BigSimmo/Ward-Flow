@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   isOpen,
@@ -82,6 +83,7 @@ import { MovementHorizonGantt, rankCorridorPairs } from "./movement-horizon-gant
 import { isCoordinatorStep, movementNextStep, nextStepTarget } from "./movement-next-step";
 import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ArrivalsAheadList } from "./arrivals-ahead-list";
 import arrivalsStyles from "./arrivals-ahead-list.module.css";
@@ -532,7 +534,8 @@ export function MovementsScreen() {
   }, [service, units]);
 
   // Phone: the first tab is "Open", so its rows and count are the open movements only; closed ones
-  // are on "Resolved today". Desktop's "Every movement" is unchanged.
+  // are on "Resolved today". Tablet and desktop list both and say so ("Open and resolved", device
+  // audit 11 Oct 2026: "Every movement 77" read as a clash with the hero's 70 open).
   const worklistMovements = useMemo(() => {
     const scoped = isInServiceScope ? movements.filter(isInServiceScope) : movements;
     return isPhone ? scoped.filter(isOpen) : scoped;
@@ -626,20 +629,20 @@ export function MovementsScreen() {
     capping
       ? rows.filter((movement, index) => index < cap || pinnedRowIds.has(movement.id) || isMarked(movement))
       : rows;
-  /* v10 phone: a group shows its first three rows and a "Show N more in <group>" row under them. */
+  /* Device audit, 11 Oct 2026: on phone a group opens as its header and count; one tap shows its rows. */
   const groupRows = (id: string, rows: Movement[]) =>
-    isPhone ? (phoneOpenGroups.has(id) ? rows : capRows(rows, PHONE_GROUP_CAP)) : capRows(rows, GROUP_CAP);
-  const phoneGroupMore = (id: string, title: string, total: number, shown: number) =>
-    isPhone && total > shown ? (
-      <button
-        type="button"
-        className={arrivalsStyles.groupMore}
-        data-testid={`movements-group-more-${id}`}
-        onClick={() => setPhoneOpenGroups((open) => new Set(open).add(id))}
-      >
-        Show {total - shown} more in {title.toLowerCase()}
-      </button>
-    ) : null;
+    isPhone
+      ? phoneOpenGroups.has(id)
+        ? rows
+        : rows.filter((movement) => pinnedRowIds.has(movement.id) || isMarked(movement))
+      : capRows(rows, GROUP_CAP);
+  const togglePhoneGroup = (id: string) =>
+    setPhoneOpenGroups((open) => {
+      const next = new Set(open);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const hiddenIn = (groups: Movement[][], cap: number) =>
     groups.reduce((sum, rows) => sum + rows.length - capRows(rows, cap).length, 0);
   const hiddenRowCount =
@@ -741,7 +744,7 @@ export function MovementsScreen() {
   const phoneCorridors = rankCorridorPairs(corridors);
   // The live transport legs: the side card's feed on the larger screen, a sheet on phone.
   const transportFeed = (onPicked?: () => void) => (
-    <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs">
+    <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs" tabIndex={0}>
       {legs.map((leg) => {
         const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
         const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
@@ -919,16 +922,13 @@ export function MovementsScreen() {
               <div className={flow.heroTools}>
                 {isPhone ? null : (
                   <>
-                    <button
-                      type="button"
-                      className={buttonClass({ variant: "onHero", size: "sm", className: flow.previewTool })}
-                      aria-disabled="true"
-                      title="Preview. Not wired in this prototype."
-                      onClick={() => announceToWardShell("Run sheet is a preview. Not wired in this prototype.")}
-                    >
-                      <Printer size={14} aria-hidden="true" />
-                      Run sheet
-                    </button>
+                    <NotWiredButton
+                      variant="onHero"
+                      size="sm"
+                      icon={Printer}
+                      label="Run sheet"
+                      wrapClassName={flow.previewTool}
+                    />
                     {/* Phone: Transport opens from the "Transport now" card below the hero. */}
                     <Link
                       href="/mockups/ward-flow/transport/officer"
@@ -942,12 +942,17 @@ export function MovementsScreen() {
                 {myQueue[0] ? (
                   <button
                     type="button"
-                    className={buttonClass({ variant: "light", size: "sm" })}
+                    // One primary per screen (device audit): the shell's "Record a decision" is the
+                    // primary beside this on tablet and desktop; phone has no shell primary.
+                    className={buttonClass({ variant: isPhone ? "light" : "onHero", size: "sm" })}
                     onClick={() => openFromHero(myQueue[0].id)}
-                    title={`Top of your queue: ${resolveSubjectPatient(myQueue[0], { patients, referrals }).formalName}`}
+                    title={`Top of your queue: ${resolveSubjectPatient(myQueue[0], { patients, referrals }).formalName}. ${myQueue.length} open movements wait on a coordinator step.`}
                   >
                     Next in my queue
-                    <span className={flow.queueCount}>{myQueue.length}</span>
+                    <span className={flow.queueCount}>
+                      {myQueue.length}
+                      <span className={flow.queueNoun}> in queue</span>
+                    </span>
                   </button>
                 ) : null}
               </div>
@@ -983,8 +988,8 @@ export function MovementsScreen() {
                 {attentionMovements.map((movement, index) => {
                   const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
                   const subject = resolveSubjectPatient(movement, { patients, referrals });
-                  // Phone (v10) lists people surname first, as every other phone row does.
-                  const who = isPhone ? subject.formalName : subject.displayName;
+                  // Surname first on every device, as the worklist and timeline list people.
+                  const who = subject.formalName;
                   const reason = meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
                   return (
                     <li key={movement.id} className={flow.needsCell}>
@@ -1181,13 +1186,14 @@ export function MovementsScreen() {
                 disclaiming. */}
             <Card aria-label="Movement worklist" data-ward-primitive="panel" className={styles.wlCard}>
               <CardHead
+                className={wardPin.pinnedSwitch}
                 icon={ArrowRightLeft}
                 title="Movement worklist"
                 action={
                   <div className={styles.boardTabs} role="tablist" aria-label="Movements">
                     {(
                       [
-                        { id: "every", label: isPhone ? "Open" : "Every movement", count: worklistMovements.length },
+                        { id: "every", label: isPhone ? "Open" : "Open and resolved", count: worklistMovements.length },
                         { id: "resolved", label: "Resolved today", count: worklistClosedToday.length },
                       ] as const
                     ).map((tab) => (
@@ -1262,7 +1268,7 @@ export function MovementsScreen() {
                   }}
                   onClear={() => setSearch("")}
                   placeholder="Name, UMRN or ED"
-                  aria-label="Search movements by name, UMRN or ED"
+                  aria-label="Find movements by name, UMRN or ED"
                   boxClassName={flow.search}
                 />
               </div>
@@ -1301,7 +1307,7 @@ export function MovementsScreen() {
                     {order === "stands"
                       ? shownStages.map((stage) => {
                           if (stage.movements.length === 0) {
-                            if (matchesSearch !== null) return null;
+                            if (matchesSearch !== null || isPhone) return null;
                             return (
                               <div key={stage.id} className={styles.stageBlock}>
                                 <div className={styles.emptyStage}>
@@ -1315,7 +1321,13 @@ export function MovementsScreen() {
                           return (
                             <div key={stage.id} className={styles.stageBlock}>
                               {isPhone ? (
-                                <PhoneGroupHeading title={stage.label} people={stage.movements.length} />
+                                <PhoneGroupHeading
+                                  id={stage.id}
+                                  title={stage.label}
+                                  people={stage.movements.length}
+                                  open={phoneOpenGroups.has(stage.id)}
+                                  onToggle={() => togglePhoneGroup(stage.id)}
+                                />
                               ) : (
                                 <WardGroupHeading
                                   title={stage.label}
@@ -1323,8 +1335,7 @@ export function MovementsScreen() {
                                   note={moreNote(stage.movements.length - rows.length)}
                                 />
                               )}
-                              <WardRecordList>{rows.map(renderRow)}</WardRecordList>
-                              {phoneGroupMore(stage.id, stage.label, stage.movements.length, rows.length)}
+                              {rows.length > 0 ? <WardRecordList>{rows.map(renderRow)}</WardRecordList> : null}
                             </div>
                           );
                         })
@@ -1333,7 +1344,7 @@ export function MovementsScreen() {
                     {order === "transport"
                       ? shownTransportGroups.map((group) => {
                           if (group.rows.length === 0) {
-                            if (matchesSearch !== null) return null;
+                            if (matchesSearch !== null || isPhone) return null;
                             return (
                               <div key={group.id} className={styles.stageBlock}>
                                 <div className={styles.emptyStage}>
@@ -1349,7 +1360,13 @@ export function MovementsScreen() {
                           return (
                             <div key={group.id} className={styles.stageBlock}>
                               {isPhone ? (
-                                <PhoneGroupHeading title={group.title} people={group.rows.length} />
+                                <PhoneGroupHeading
+                                  id={group.id}
+                                  title={group.title}
+                                  people={group.rows.length}
+                                  open={phoneOpenGroups.has(group.id)}
+                                  onToggle={() => togglePhoneGroup(group.id)}
+                                />
                               ) : (
                                 <WardGroupHeading
                                   title={group.title}
@@ -1357,8 +1374,7 @@ export function MovementsScreen() {
                                   note={moreNote(group.rows.length - rows.length)}
                                 />
                               )}
-                              <WardRecordList>{rows.map(renderRow)}</WardRecordList>
-                              {phoneGroupMore(group.id, group.title, group.rows.length, rows.length)}
+                              {rows.length > 0 ? <WardRecordList>{rows.map(renderRow)}</WardRecordList> : null}
                             </div>
                           );
                         })
@@ -1856,14 +1872,41 @@ function HighlightStat({
 }
 
 /** v10 phone group heading: the caps title left, a bare count right ("21", not "21 people"). */
-function PhoneGroupHeading({ title, people }: { title: string; people: number }) {
+/**
+ * Device audit, 11 Oct 2026: the phone worklist opens as stage headers with their counts, and one
+ * tap on a header shows that stage's rows. A marked, opened or jumped-to row stays visible.
+ */
+function PhoneGroupHeading({
+  id,
+  title,
+  people,
+  open,
+  onToggle,
+}: {
+  id: string;
+  title: string;
+  people: number;
+  open: boolean;
+  onToggle: () => void;
+}) {
   return (
     <div className={flow.phGroupHead} data-ward-primitive="group-heading">
-      <h3 className={flow.phGroupTitle}>{title}</h3>
-      <span className={flow.phGroupCount}>
-        {people}
-        <span className="sr-only"> {people === 1 ? "person" : "people"}</span>
-      </span>
+      <h3 className={flow.phGroupTitle}>
+        <button
+          type="button"
+          className={flow.phGroupToggle}
+          aria-expanded={open}
+          data-testid={`movements-group-toggle-${id}`}
+          onClick={onToggle}
+        >
+          <ChevronRight size={14} aria-hidden="true" className={flow.phGroupChevron} data-open={open} />
+          <span className={flow.phGroupTitleText}>{title}</span>
+          <span className={flow.phGroupCount}>
+            {people}
+            <span className="sr-only"> {people === 1 ? "person" : "people"}</span>
+          </span>
+        </button>
+      </h3>
     </div>
   );
 }
@@ -2208,7 +2251,6 @@ function StageRow({
  */
 /** Rows shown per group in the worklist before Show all, and in a single ungrouped list. */
 const GROUP_CAP = 4;
-const PHONE_GROUP_CAP = 3;
 const LIST_CAP = 12;
 
 function moreNote(hidden: number): string | undefined {

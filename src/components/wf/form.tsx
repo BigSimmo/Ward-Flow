@@ -370,6 +370,7 @@ export function Stepper({
           className={styles.stpButton}
           aria-label={`Decrease ${noun}`}
           aria-disabled={unavailable || value <= min || undefined}
+          title={!unavailable && value <= min ? "Already at the lowest allowed value" : undefined}
           onClick={() => set(value - step)}
         >
           <Icon icon={Minus} size={16} />
@@ -394,6 +395,7 @@ export function Stepper({
           className={styles.stpButton}
           aria-label={`Increase ${noun}`}
           aria-disabled={unavailable || value >= max || undefined}
+          title={!unavailable && value >= max ? "Already at the highest allowed value" : undefined}
           onClick={() => set(value + step)}
         >
           <Icon icon={Plus} size={16} />

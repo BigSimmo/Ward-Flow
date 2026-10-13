@@ -38,6 +38,7 @@ import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational
 import { durMinutes } from "@/components/wf";
 
 import { movementOriginService, movementSearchState, referralOriginService } from "./search-operational-state";
+import { isCommunityReferral } from "./community-referral";
 
 export type CensusGroup = "wait" | "found" | "move" | "ward" | "off";
 
@@ -45,7 +46,10 @@ export type CensusGroup = "wait" | "found" | "move" | "ward" | "off";
 export type CensusGlyph = "act" | "risk" | "done" | "move" | "wait" | "off";
 
 export const CENSUS_GROUPS: readonly { id: CensusGroup; label: string; short: string; glyph: CensusGlyph }[] = [
-  { id: "wait", label: "Waiting for a bed", short: "Waiting", glyph: "wait" },
+  // L1 (site review, 12 Oct 2026): "Waiting" here read as Home's "70 waiting" (people waiting in an
+  // ED). This group is people with no bed yet: ED waits with no accepted ward, queued referrals and
+  // ward waiting lists, so it carries its own noun.
+  { id: "wait", label: "No bed yet", short: "No bed yet", glyph: "wait" },
   { id: "found", label: "Bed found", short: "Bed found", glyph: "done" },
   { id: "move", label: "Moving", short: "Moving", glyph: "move" },
   { id: "ward", label: "On a ward", short: "On a ward", glyph: "done" },
@@ -174,14 +178,6 @@ function plural(n: number, word: string): string {
 
 function daysText(minutes: number): string {
   return `${Math.max(1, Math.floor(minutes / MINUTES_PER_DAY))}d`;
-}
-
-function isCommunityReferral(referral: Referral): boolean {
-  return (
-    referral.originSiteCode.includes("CMHT") ||
-    referral.originSiteCode.includes("Clinic") ||
-    (referral.homeRegion as unknown as string) === "Community"
-  );
 }
 
 export function buildCensus(state: {

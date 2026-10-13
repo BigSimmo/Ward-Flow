@@ -113,8 +113,7 @@
 
 /* Option groups are equal columns that never wrap: a long label shortens, it never breaks the row. */
 .categoryTrack,
-.segmented,
-.segmentedFull {
+.segmented {
   display: grid;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
@@ -1200,11 +1199,6 @@
   }
 }
 
-.segmentedFull {
-  width: 100%;
-  box-sizing: border-box;
-}
-
 .tierGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1608,6 +1602,19 @@
 .wardTitle strong {
   color: var(--wf-ink-1);
   font-weight: 600;
+}
+
+/* L6: the hospital name truncates with an ellipsis, never a hard cut. */
+.wardHospital {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* L6: the pinned send bar never covers a field scrolled to or focused. */
+.drawerBody {
+  scroll-padding-bottom: var(--wf-s-4);
 }
 
 .wardMeta {
@@ -2965,6 +2972,7 @@ details.refCard > summary {
     overflow-x: hidden;
     overflow-y: auto;
     padding: 0 var(--wf-s-4) calc(6rem + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
     border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
     background: var(--wf-canvas);
     box-shadow: var(--wf-e3);
@@ -3073,6 +3081,11 @@ details.refCard > summary {
   .drawerWide[data-ph-mode="sheet"] .confirmationPanel,
   .drawerWide[data-ph-mode="sheet"] .drawerBody > section {
     padding-top: var(--wf-s-3);
+  }
+
+  /* L6: a field scrolled to or focused stops clear of the pinned bar below. */
+  .drawerWide[data-ph-mode] :is(input, select, textarea, button, [tabindex]) {
+    scroll-margin-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
   }
 
   /* The pinned bar: one primary, and Back in a step sheet. */
@@ -3272,5 +3285,20 @@ details.refCard > summary {
 
   .checkList > .radioField > .segmented > label {
     padding: 0 var(--wf-s-3);
+  }
+}
+
+/* Audit 11 Oct 2026, phone: the already-open note reads as one block with Open board under it. */
+@media (max-width: 48rem) {
+  .suggestion {
+    flex-wrap: wrap;
+  }
+
+  .suggestionText {
+    flex: 1 1 calc(100% - 2rem);
+  }
+
+  .suggestion > a {
+    margin-left: 19px;
   }
 }

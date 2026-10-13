@@ -66,16 +66,16 @@ describe("Referrals v10: search narrows", () => {
   it("narrows the queue to matching rows and the count line says how many are shown", () => {
     renderBoard();
     const total = queueIds().length;
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search referrals" }), { target: { value: "RF-005" } });
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter referrals" }), { target: { value: "RF-005" } });
     expect(queueIds()).toEqual(["RF-005"]);
     expect(screen.getByTestId("ward-referral-search-note")).toHaveTextContent(`1 of ${total} shown`);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search referrals" }), { target: { value: "" } });
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter referrals" }), { target: { value: "" } });
     expect(queueIds()).toHaveLength(total);
   });
 
   it("says no queued referral matches rather than claiming the queue is empty", () => {
     renderBoard();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search referrals" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter referrals" }), {
       target: { value: "zzzz-no-such" },
     });
     expect(screen.getByTestId("ward-referral-board-queued-empty")).toHaveTextContent(

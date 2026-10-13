@@ -130,13 +130,6 @@
   gap: var(--ward-space-6) var(--ward-space-10);
 }
 
-/* The identity, the name and the sentence share one baseline. `.prototypeNote` is the exception —
-   it takes the full width beneath them, because a safety line reading as a fourth item on a busy
-   line is a safety line nobody reads. */
-.prototypeNote {
-  flex-basis: 100%;
-}
-
 .headSep {
   color: var(--line-strong);
 }
@@ -303,26 +296,6 @@
   font-style: italic;
 }
 
-/* The published contact detail for a team a person has paired with a real service. Definition list
-   rather than paragraphs, because label and value are exactly what this is, and a screen reader
-   should hear "Phone, 08 9416 3800" rather than one run-on line. */
-.contactList {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.25rem 0.75rem;
-  margin: 0 0 0.75rem;
-}
-
-.contactList dt {
-  color: var(--muted);
-  font-size: var(--t-1);
-}
-
-.contactList dd {
-  margin: 0;
-  font-size: var(--t-1);
-}
-
 /*
  * Cards at every width rather than a table on the desktop and cards on a phone. Each row carries
  * two or three short facts, not four columns of comparable values, so there is nothing here for a
@@ -375,14 +348,6 @@
   font-size: var(--t-0);
   font-weight: 600;
   line-height: var(--ward-leading-ui);
-}
-
-.statusDot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--warn);
-  flex-shrink: 0;
 }
 
 .cardDetail {
@@ -577,29 +542,6 @@
   white-space: normal;
 }
 
-.transportActionButton {
-  align-self: flex-start;
-  min-height: 3rem;
-  min-width: 3rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--ward-space-8) var(--ward-space-12);
-  border: 0.0625rem solid var(--line);
-  border-radius: var(--radius-md, var(--r2));
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--t-1);
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
-}
-
-.transportActionButton:hover {
-  background: var(--surface-2, var(--sunk, var(--surface)));
-  border-color: var(--line-strong);
-}
-
 .transportCancelButton {
   background: var(--danger-soft, var(--surface));
   color: var(--danger, var(--ink));
@@ -752,27 +694,6 @@
   line-height: var(--ward-leading-relaxed);
 }
 
-/*
- * ── Third edition: the reordered layout ─────────────────────────────────────────────────────
- * A two-column layout below the figure strip — the seven ordered panels on the left, the rail on
- * the right — collapsing to one column on anything narrower than `ward-tokens.module.css`'s own
- * board breakpoint. `WardFigureStrip` (`ward-figure.module.css`) already handles the figure row's
- * own responsive columns, so nothing here repeats that.
- */
-.contentGrid {
-  display: grid;
-  gap: var(--ward-space-16);
-  align-items: start;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.primaryColumn {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--ward-space-16);
-}
-
 /* The rail's own panels are `WardPanel`s like every other panel on this page — this only supplies
    the gap between them and the column's own width once there is room for two columns. */
 .rail {
@@ -804,11 +725,6 @@
  * resolution that goes green and loses the constraint: the gate exists to make an off-scale value
  * argue for itself, and this comment is the argument. A silent entry in a list is not one.
  */
-@media (min-width: 64rem) {
-  .contentGrid {
-    grid-template-columns: minmax(0, 1fr) 20rem;
-  }
-}
 
 /* The "admitted while already with this team" table. Same composition `referrals.module.css` and
    `ward-table.module.css` already establish; `--ward-table-min-width` is the whole reason a
@@ -1004,20 +920,6 @@
   }
 }
 
-/* The one safety line kept in the header, and the footer the three page-level notices moved to.
-   Both mirror `community-index.module.css` exactly, so the two community screens do not drift into
-   two treatments of the same idea. */
-.prototypeNote {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-1);
-  line-height: var(--ward-leading-relaxed);
-}
-
-.prototypeNote strong {
-  color: var(--ink);
-}
-
 .aboutPage {
   display: flex;
   flex-direction: column;
@@ -1088,30 +990,16 @@
   font-weight: 600;
 }
 
-.pageSubtitle,
-.prototypeNote {
+.pageSubtitle {
   font-size: var(--t-1);
   line-height: 1.5;
-}
-
-.prototypeNote {
-  flex-basis: auto;
 }
 .prototypeBadge {
   font-size: var(--t-0);
 }
 
-.contentGrid {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-}
-
-.primaryColumn,
 .rail {
   display: contents;
-}
-.contentGrid :global([data-ward-primitive="panel"]) {
-  grid-column: 1 / -1;
 }
 
 .panelBody {
@@ -1279,21 +1167,6 @@
   text-transform: none;
   letter-spacing: 0;
 }
-.aboutDisclosure > :not(summary) {
-  margin-top: 0.75rem;
-}
-
-@media (min-width: 64rem) {
-  .contentGrid {
-    grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
-  }
-  .contentGrid :global([data-testid="ward-community-waiting"]) {
-    grid-column: 1;
-  }
-  .contentGrid :global([data-testid="ward-community-attention"]) {
-    grid-column: 2;
-  }
-}
 
 @media (max-width: 40rem) {
   .main {
@@ -1340,143 +1213,12 @@
   .tableScroll {
     overflow: visible;
   }
-  .contentGrid {
-    display: block;
-  }
-  .contentGrid :global([data-ward-primitive="panel"]) {
-    margin-bottom: 1rem;
-  }
 }
 
 /* Q003: pair the team's primary lists with its summary panels on desktop. Each row shares a
  * bottom edge and each panel keeps its heading outside the independently scrolling body. Longer
  * unmatched lists remain full-width bounded sections below the paired dashboard rows. */
-@media (min-width: 62.5625rem) {
-  .contentGrid {
-    grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
-    align-items: stretch;
-  }
-
-  .contentGrid :global([data-ward-primitive="panel"]) {
-    display: flex;
-    min-height: 0;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .contentGrid :global([data-ward-primitive="panel"]) > :global([data-ward-primitive="panel-header"]) {
-    flex: none;
-  }
-
-  .contentGrid .panelBody {
-    min-height: 0;
-    flex: 1;
-    align-content: start;
-    grid-auto-rows: max-content;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-  }
-
-  .contentGrid :global([data-testid="ward-community-waiting"]) {
-    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .contentGrid :global([data-testid="ward-community-attention"]) {
-    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .contentGrid :global([data-testid="ward-community-admitted"]) {
-    height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .contentGrid :global([data-testid="ward-community-limits"]) {
-    height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-    grid-column: 2;
-    grid-row: 2;
-  }
-
-  .contentGrid :global([data-testid="ward-community-accepted-before-admission"]) {
-    height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-    grid-column: 1;
-    grid-row: 3;
-  }
-
-  .contentGrid :global([data-testid="ward-community-facts"]) {
-    height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-    grid-column: 2;
-    grid-row: 3;
-  }
-
-  .contentGrid :global([data-testid="ward-community-expected"]) {
-    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
-    grid-column: 1;
-    grid-row: 4;
-  }
-
-  .contentGrid :global([data-testid="ward-community-links"]) {
-    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
-    grid-column: 2;
-    grid-row: 4;
-  }
-
-  .contentGrid :global([data-testid="ward-community-discharged"]),
-  .contentGrid :global([data-testid="ward-community-other-departures-panel"]),
-  .contentGrid :global([data-testid="ward-community-referrals"]) {
-    grid-column: 1 / -1;
-    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-  }
-}
-
-@media print {
-  .contentGrid :global([data-ward-primitive="panel"]) {
-    height: auto;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .contentGrid .panelBody {
-    overflow: visible;
-  }
-}
 /* Q004: content-sized worklists and full-width admission tables follow the team drawing. */
-@media screen and (min-width: 62.5625rem) {
-  .contentGrid {
-    align-items: start;
-  }
-  .contentGrid :global([data-ward-primitive="panel"]) {
-    height: auto;
-    max-height: 38rem;
-  }
-  .contentGrid :global([data-testid="ward-community-admitted"]) {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-  .contentGrid :global([data-testid="ward-community-accepted-before-admission"]) {
-    grid-column: 1 / -1;
-    grid-row: 3;
-  }
-  .contentGrid :global([data-testid="ward-community-expected"]) {
-    grid-column: 1;
-    grid-row: 4;
-  }
-  .contentGrid :global([data-testid="ward-community-discharged"]) {
-    grid-column: 2;
-    grid-row: 4;
-  }
-  .contentGrid :global([data-testid="ward-community-limits"]),
-  .contentGrid :global([data-testid="ward-community-facts"]),
-  .contentGrid :global([data-testid="ward-community-links"]) {
-    grid-column: auto;
-    grid-row: auto;
-  }
-}
 .panelBody {
   overflow-wrap: anywhere;
 }
@@ -1755,10 +1497,6 @@
   border-color: var(--line-strong);
 }
 
-.modalWide {
-  max-width: 36rem;
-}
-
 .formGroup {
   display: flex;
   flex-direction: column;
@@ -1920,58 +1658,6 @@
    Priority Referral Triage Queue, Clinician Roster & Operational Drawers
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Universal Sovereign Header ─────────────────────────────────────────── */
-.sovereignHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ward-space-12);
-  padding: var(--ward-space-12) var(--ward-space-20);
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  position: sticky;
-  top: 0;
-  z-index: 35;
-  box-shadow: var(--lift);
-  flex-wrap: wrap;
-}
-
-.hdrPlace {
-  display: flex;
-  align-items: baseline;
-  gap: var(--ward-space-8);
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.hdrPlaceTitle {
-  font-family: var(--display, var(--body));
-  font-size: var(--t-4);
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  color: var(--ink);
-  margin: 0;
-  white-space: nowrap;
-}
-
-.hdrChip {
-  display: inline-flex;
-  align-items: center;
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  font-weight: 600;
-  color: var(--muted);
-  background: var(--sunk);
-  padding: 0.125rem 0.5rem;
-  border-radius: var(--radius-pill, 9999px);
-  border: 1px solid var(--line);
-  letter-spacing: 0.02em;
-}
-
-.hdrChipFull {
-  display: inline;
-}
-
 .exampleMenu {
   position: relative;
   margin-left: auto;
@@ -2017,11 +1703,6 @@
   color: var(--muted);
   font-size: var(--t-0);
   line-height: 1.45;
-}
-
-.exampleMenuActions .iconBtn {
-  min-height: var(--ward-tap, 3rem);
-  justify-content: flex-start;
 }
 
 /* Universal Search in Header */
@@ -2073,13 +1754,6 @@
   color: var(--muted);
 }
 
-.searchInputPlaceholder {
-  flex: 1;
-  font-size: var(--t-1);
-  color: var(--muted);
-  text-align: left;
-}
-
 button.searchBox {
   cursor: pointer;
   width: 100%;
@@ -2090,105 +1764,6 @@ button.searchBox {
 button.searchBox:hover {
   background: var(--surface-2);
   border-color: var(--line-strong);
-}
-
-.searchKbd {
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  padding: 0.0625rem 0.3125rem;
-  border-radius: 0.25rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--muted);
-  pointer-events: none;
-}
-
-.qPop {
-  position: absolute;
-  top: calc(100% + 0.375rem);
-  left: 0;
-  right: 0;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  box-shadow: var(--lift);
-  z-index: 50;
-  max-height: 20rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.qHit {
-  padding: 0.625rem 0.875rem;
-  border-bottom: 1px solid var(--line);
-  cursor: pointer;
-  transition: background 0.12s;
-  text-align: left;
-}
-
-.qHit:last-child {
-  border-bottom: none;
-}
-
-.qHit:hover {
-  background: var(--sunk);
-}
-
-.qHitTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: var(--t-1);
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.qHitMeta {
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  color: var(--muted);
-  margin-top: 0.1875rem;
-  display: block;
-}
-
-/* Header Controls & End buttons */
-.hdrEnd {
-  display: flex;
-  align-items: center;
-  gap: var(--ward-space-8);
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-.iconBtn {
-  height: 2.125rem;
-  padding: 0 0.625rem;
-  border-radius: var(--r2);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  font-size: var(--t-1);
-  font-weight: 600;
-  color: var(--ink-soft);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  transition: all 0.12s;
-  white-space: nowrap;
-}
-
-.iconBtn:hover {
-  background: var(--sunk);
-  color: var(--ink);
-  border-color: var(--line-strong);
-}
-
-.iconBtn[aria-expanded="true"] {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border-color: var(--accent);
 }
 
 .badgePill {
@@ -2243,39 +1818,6 @@ button.searchBox:hover {
   border-color: var(--line);
 }
 
-/* Service Menu Dropdown */
-.serviceMenu {
-  position: relative;
-}
-
-.dotSvc {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--accent);
-}
-
-.dotSvc[data-svc="east"] {
-  background: var(--svc-east, var(--clinical-domain-ward));
-}
-
-.dotSvc[data-svc="south"] {
-  background: var(--svc-south, var(--clinical-domain-transport));
-}
-
-.dotSvc[data-svc="north"] {
-  background: var(--svc-north, var(--clinical-domain-coordinator));
-}
-
-.dotSvc[data-svc="all"] {
-  background: var(--muted);
-}
-
-.dotSvc[data-svc="country"] {
-  background: var(--svc-country, var(--clinical-domain-capacity));
-}
-
 /* ── Top Action Bar & Team Selector ─────────────────────────────────────── */
 .topActionBarWrap {
   background: var(--surface);
@@ -2316,41 +1858,6 @@ button.searchBox:hover {
   flex-wrap: wrap;
 }
 
-.catchmentScopeChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  background: var(--surface-2);
-  padding: 4px 10px;
-  border-radius: var(--radius-pill, 9999px);
-  border: 1px solid var(--line);
-  line-height: 1.25;
-}
-
-.teamSelectorBtn {
-  font-weight: 600;
-  color: var(--ink);
-  border: 1px solid var(--accent);
-  background: var(--surface);
-  min-height: 36px;
-  padding: 6px 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: var(--r2);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-size: var(--t-1, 13px);
-}
-
-.teamSelectorBtn:hover {
-  background: var(--sunk);
-  border-color: var(--line-strong);
-}
-
 .moreActions {
   position: relative;
 }
@@ -2374,48 +1881,6 @@ button.searchBox:hover {
   border-color: var(--accent);
 }
 
-.moreActionsMenu {
-  position: absolute;
-  top: calc(100% + 0.375rem);
-  right: 0;
-  z-index: 40;
-  min-width: 15rem;
-  padding: 0.5rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  background: var(--surface);
-  box-shadow: var(--lift);
-  display: grid;
-  gap: 0.375rem;
-}
-
-.moreActionsMenu .btnActionSec {
-  width: 100%;
-  min-height: var(--ward-tap, 3rem);
-}
-
-.btnPrimaryAction {
-  background: var(--accent);
-  color: var(--on-accent);
-  border: 1px solid var(--accent);
-  padding: 0.5rem 1rem;
-  font-weight: 600;
-  font-size: var(--t-2, 14px);
-  border-radius: var(--r2);
-  box-shadow: var(--lift);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-
-.btnPrimaryAction:hover {
-  background: var(--accent-press, var(--accent));
-  transform: translateY(-1px);
-}
-
 .btnActionSec {
   background: var(--surface);
   color: var(--ink);
@@ -2437,163 +1902,9 @@ button.searchBox:hover {
   border-color: var(--line-strong);
 }
 
-.scopeTeamDropdown {
-  position: relative;
-}
-
-.scopeDropdownMenu {
-  position: absolute;
-  top: calc(100% + 0.375rem);
-  right: 0;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  box-shadow: var(--lift);
-  z-index: 50;
-  min-width: 16rem;
-  display: flex;
-  flex-direction: column;
-  padding: 0.375rem 0;
-}
-
-.scopeDropdownHead {
-  font-family: var(--mono);
-  font-size: var(--t-0, 12px);
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 0.375rem 0.75rem;
-  margin: 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.scopeDropdownItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 0.75rem;
-  font-size: var(--t-1, 13px);
-  color: var(--ink);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: background 0.12s;
-  width: 100%;
-  text-align: left;
-}
-
-.scopeDropdownItem:hover {
-  background: var(--sunk);
-}
-
-.scopeDropdownItem[data-selected="true"] {
-  background: var(--surface-2);
-  font-weight: 600;
-  color: var(--accent);
-}
-
-/* ── Sovereign Catchment Telemetry Capsule Ribbon (Image 2 Endorsed) ── */
-.telemetryCapsuleWrap {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  margin-top: 4px;
-}
-
-.telemetryCapsule {
-  display: grid;
-  grid-template-columns: 1.12fr 0.92fr 1.1fr 0.95fr 0.95fr 0.96fr;
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-pill, 9999px);
-  padding: 4px 6px;
-  box-shadow: var(--lift-sm, var(--lift));
-  gap: 0;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.telemetryItem {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 4px;
-  border-radius: var(--radius-pill, 9999px);
-  font-size: 12px;
-  color: var(--ink-soft);
-  white-space: nowrap;
-  justify-content: center;
-  min-width: 0;
-  overflow: hidden;
-  transition:
-    background 0.15s ease,
-    transform 0.1s ease;
-  user-select: none;
-  text-decoration: none;
-}
-
-.telemetryItem:not(:last-child) {
-  border-right: 1px solid var(--line);
-}
-
-.telemetryItem.interactiveItem {
-  cursor: pointer;
-}
-
-.telemetryItem.interactiveItem:hover {
-  background: var(--sunk);
-}
-
-.telemetryItem.interactiveItem:active {
-  background: var(--surface-3);
-  transform: scale(0.99);
-}
-
-.telemetryLabel {
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  font-size: 12px;
-  letter-spacing: 0.05em;
-  line-height: 1;
-}
-
-.telemetryVal {
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: var(--t-3, 16px);
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-}
-
-.telemetryVal small {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--muted);
-  font-family: var(--display, var(--body));
-}
-
-.telemetrySub {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1;
-}
-
 /* Precision Medical Status Pills — ZERO EGG / CIRCLE DISTORTION GUARANTEED */
 .statusPillBadge,
-.telemetryPillGood,
-.telemetryPillWarn,
-.telemetryPillDanger,
-.telemetryPillNeutral,
-.telemetryPillAccent {
+.telemetryPillGood {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2619,29 +1930,25 @@ button.searchBox:hover {
   border-color: var(--good);
 }
 
-.statusPillBadge.warn,
-.telemetryPillWarn {
+.statusPillBadge.warn {
   background: var(--warn-soft);
   color: var(--warn);
   border-color: var(--warn);
 }
 
-.statusPillBadge.danger,
-.telemetryPillDanger {
+.statusPillBadge.danger {
   background: var(--danger-soft);
   color: var(--danger-ink);
   border-color: var(--danger);
 }
 
-.statusPillBadge.neutral,
-.telemetryPillNeutral {
+.statusPillBadge.neutral {
   background: var(--sunk);
   color: var(--ink-soft);
   border-color: var(--line-strong);
 }
 
-.statusPillBadge.accent,
-.telemetryPillAccent {
+.statusPillBadge.accent {
   background: var(--accent-soft);
   color: var(--accent-ink);
   border-color: var(--accent);
@@ -2676,14 +1983,6 @@ button.searchBox:hover {
   display: none !important;
 }
 
-/* Legacy Glance Strip Compatibility */
-.glanceStrip {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: var(--ward-space-12);
-  width: 100%;
-}
-
 .glanceCard {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -2703,55 +2002,13 @@ button.searchBox:hover {
   box-shadow: var(--lift);
 }
 
-.glanceTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.glanceLbl {
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.glanceVal {
-  font-family: var(--display, var(--body));
-  font-size: var(--t-5);
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1.15;
-  font-variant-numeric: tabular-nums;
-}
-
-.glanceVal small {
-  font-size: var(--t-0);
-  font-weight: 500;
-  color: var(--muted);
-}
-
-.glanceSub {
-  font-size: var(--t-0);
-  color: var(--ink-soft);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* ── Operational Tab Bar ────────────────────────────────────────────────── */
 .tabBarWrap {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   padding: 0 var(--ward-space-20);
   position: sticky;
-  top: 3.5rem;
+  top: var(--wf-header-height, 3.75rem);
   z-index: 30;
 }
 
@@ -3151,8 +2408,7 @@ button.searchBox:hover {
   margin-top: var(--ward-space-12);
 }
 
-.clinicRoomItem,
-.vehicleItem {
+.clinicRoomItem {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r2);
@@ -3163,16 +2419,14 @@ button.searchBox:hover {
   margin-bottom: 0.5rem;
 }
 
-.clinicRoomTop,
-.vehicleTop {
+.clinicRoomTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
 }
 
-.clinicRoomTitle,
-.vehicleTitle {
+.clinicRoomTitle {
   font-weight: 600;
   font-size: var(--t-1);
   color: var(--ink);
@@ -3185,44 +2439,6 @@ button.searchBox:hover {
   border-radius: var(--r1);
   overflow: hidden;
   margin-bottom: var(--ward-space-16);
-}
-
-.teamWorkspaceSection {
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface);
-  box-shadow: var(--lift);
-}
-
-.teamWorkspaceSummary {
-  min-height: var(--ward-tap, 3rem);
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid transparent;
-  color: var(--ink);
-  font-size: var(--t-2);
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.teamWorkspaceSection[open] > .teamWorkspaceSummary {
-  border-bottom-color: var(--line);
-  background: var(--surface-2);
-}
-
-.illustrativeNotice {
-  margin: 0.75rem 1rem 0;
-  padding: 0.625rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface-2);
-  color: var(--ink-soft);
-  font-size: var(--t-1);
-  line-height: 1.45;
 }
 
 .caseloadHead {
@@ -3440,46 +2656,9 @@ button.searchBox:hover {
   gap: 0.625rem;
 }
 
-.searchPopInputWrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
-}
-
-.searchPopClose {
-  background: transparent;
-  border: none;
-  font-size: 1.25rem;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 0 0.5rem;
-  line-height: 1;
-}
-
-.searchPopClose:hover {
-  color: var(--ink);
-}
-
 /* ── Responsive Adaptations ─────────────────────────────────────────────── */
-@media (max-width: 64rem) {
-  .glanceStrip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
 
 @media (max-width: 48rem) {
-  .sovereignHeader {
-    /* Decision 3: WardBar's `.bar` is the ONE top-anchored phone element. This header is
-       `position: sticky; top: 0` unconditionally above, which is correct on a wide screen and a
-       competing owner on a phone. Released here rather than unpinned above, so the sovereign
-       header keeps sticky behaviour everywhere the phone bar is not present. Same release as
-       `.boardBar`, `.workspaceHeader`, and `.hdr1`. */
-    position: static;
-    padding: var(--ward-space-8) var(--ward-space-12);
-  }
   .exampleMenu {
     margin-left: 0;
   }
@@ -3496,9 +2675,6 @@ button.searchBox:hover {
     max-width: 100%;
     width: 100%;
   }
-  .glanceStrip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .topActionBarWrap {
     padding: var(--ward-space-8) var(--ward-space-12);
   }
@@ -3511,12 +2687,6 @@ button.searchBox:hover {
   .actionBtnsLeft > button,
   .moreActions > summary {
     justify-content: flex-start;
-  }
-  .moreActionsMenu {
-    position: static;
-    width: 100%;
-    margin-top: 0.375rem;
-    box-shadow: none;
   }
   .tabBarWrap {
     /* Decision 3: same release as `.sovereignHeader` — sticky tab wrap is fine on wide screens
@@ -3599,22 +2769,6 @@ button.searchBox:hover {
 }
 
 /* ── Responsive Adaptations for Sovereign Telemetry & Mobile First Fold ── */
-@media (max-width: 64rem) {
-  .telemetryCapsule {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-  }
-  .telemetryItem {
-    flex: 0 0 auto;
-    padding: 5px 8px;
-    gap: 6px;
-  }
-  .telemetrySub {
-    display: none;
-  }
-}
 
 /* Hide legacy figure strip and team switcher globally across all viewports */
 .legacyFigureStrip {
@@ -3649,75 +2803,12 @@ button.searchBox:hover {
     min-width: 0;
   }
 
-  .teamSelectorBtn {
-    flex: 1;
-    justify-content: space-between;
-    min-height: 44px; /* Strict 44px mobile touch target */
-    padding: 0 10px;
-    font-size: 12px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .catchmentScopeChip {
-    display: none; /* Suburbs detail already represented in title */
-  }
-
   .actionRightGroup {
     flex: 0 0 auto;
   }
 
-  .actionRightGroup .btnPrimaryAction {
-    justify-content: center;
-    min-height: 44px; /* Strict 44px mobile touch target */
-    padding: 0 12px;
-    font-size: 12px;
-    white-space: nowrap;
-  }
-
   .actionRightGroup .btnActionSec {
     display: none;
-  }
-
-  /* Mobile Telemetry Ribbon: Horizontal scrollable strip with 44px touch targets */
-  .telemetryCapsuleWrap {
-    margin-top: 1px;
-    overflow: hidden;
-    width: 100%;
-  }
-
-  .telemetryCapsule {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    padding: 1px 0;
-    gap: 6px;
-    border-radius: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .telemetryCapsule::-webkit-scrollbar {
-    display: none;
-  }
-
-  .telemetryItem {
-    display: inline-flex;
-    align-items: center;
-    flex: 0 0 auto;
-    background: var(--surface);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-pill, 9999px);
-    box-shadow: var(--lift-sm);
-    padding: 4px 10px;
-    min-height: 44px; /* 44px mobile touch target */
-    gap: 6px;
-    font-size: 12px;
   }
 
   .tabBtn {
@@ -3728,15 +2819,17 @@ button.searchBox:hover {
     flex-shrink: 0;
   }
 
+  /* The triage filter chips take the shared phone pill size (`--wf-phone-*`): a 32px face with a
+     transparent 48px hit area, carried in the scrolling row's own padding so it is not clipped. */
   .filterChipsGroup {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--wf-phone-pill-gap);
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    padding: 2px 0;
+    padding: var(--wf-phone-pill-hit) 0;
   }
 
   .filterChipsGroup::-webkit-scrollbar {
@@ -3744,11 +2837,25 @@ button.searchBox:hover {
   }
 
   .chipFilterBtn {
+    position: relative;
     white-space: nowrap;
     flex-shrink: 0;
-    min-height: 44px; /* 44px mobile touch target */
-    padding: 4px 12px;
-    font-size: 12px;
+    gap: var(--wf-phone-pill-gap);
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .chipFilterBtn::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+
+  .chipFilterBtn .badgePill {
+    font-size: var(--wf-phone-pill-count-fs);
   }
 
   .refActionsRow .btnSmPrimary,
@@ -3825,22 +2932,6 @@ button.searchBox:hover {
   flex-direction: column;
   gap: 16px;
   background: var(--surface);
-}
-
-.progressTrack {
-  width: 100%;
-  height: 6px;
-  background: var(--sunk);
-  border-radius: var(--radius-pill, 9999px);
-  overflow: hidden;
-  margin-top: 4px;
-}
-
-.progressBar {
-  height: 100%;
-  background: var(--accent);
-  border-radius: var(--radius-pill, 9999px);
-  transition: width 0.2s ease;
 }
 
 .visuallyHidden {

@@ -1,5 +1,6 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { FileUp, Send, Upload, X } from "lucide-react";
 
@@ -133,17 +134,7 @@ export function FormsPack({ movement, now, who }: { movement: Movement; now: Ins
             <b>{done}</b> of {PACK_SLOTS.length} uploaded
           </span>
           <span className={styles.preview}>Preview</span>
-          <Button
-            variant="sec"
-            size="sm"
-            icon={Send}
-            className={styles.previewButton}
-            aria-disabled="true"
-            title="Not wired in this prototype."
-            onClick={(event) => event.preventDefault()}
-          >
-            Send to officer
-          </Button>
+          <NotWiredButton variant="sec" size="sm" icon={Send} label="Send to officer" />
         </div>
       </div>
       {uploading ? (

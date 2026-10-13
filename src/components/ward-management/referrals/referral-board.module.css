@@ -187,11 +187,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.375rem;
+  min-width: 1.375rem;
   height: 1.375rem;
-  padding: 0;
+  padding: 0 3px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 45%, transparent);
-  border-radius: 50%;
+  border-radius: var(--wf-r-pill);
   background: var(--wf-hero-2);
   color: var(--wf-hero-ink);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
@@ -480,7 +480,7 @@
 }
 
 .colFrom {
-  width: 16%;
+  width: 12%;
 }
 
 .colAsk {
@@ -527,11 +527,14 @@
   --wf-ink-3: var(--wf-dim);
 }
 
-/* Act now (overdue): a thin full red edge and no fill. */
+/* Act now (overdue): an inset coral marker and subtle tint. */
 .row[data-overdue="true"],
 .card[data-overdue="true"] {
-  outline: 1px solid var(--wf-act-edge);
-  outline-offset: -1px;
+  background: var(--wf-act-tint);
+}
+
+.row[data-overdue="true"]:not(.rowOn):hover {
+  background: var(--wf-hover);
 }
 
 .rowOn,
@@ -821,8 +824,9 @@
 
 .panelMeta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-1);
+  gap: 0 var(--wf-s-1);
   min-width: 0;
   margin: 0;
   color: var(--wf-ink-3);
@@ -995,6 +999,26 @@
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   font-weight: 400;
+}
+
+/* U1 (review 12 Oct 2026): on desktop the facts reflow to fewer columns rather than cut the
+   hospital or the legal status ("Royal Perth Ho…"). Hairlines come from the grid gap, so a cell
+   that moves to a new row keeps its rules. */
+@media (min-width: 48.0625rem) {
+  .strip {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: 1px;
+    overflow: hidden;
+    background: var(--wf-line);
+  }
+
+  .strip > div {
+    background: var(--wf-surface);
+  }
+
+  .strip > div + div {
+    border-left: 0;
+  }
 }
 
 .panelTabs.panelTabs {
@@ -1388,7 +1412,6 @@
 }
 
 @media (max-width: 48rem) {
-  .heroNew,
   .heroMedian,
   .tickTier {
     display: none;
@@ -1427,7 +1450,7 @@
   }
 
   .runwayMarker {
-    width: 1.25rem;
+    min-width: 1.25rem;
     height: 1.25rem;
   }
 
@@ -1526,25 +1549,31 @@
     min-width: 8rem;
   }
 
+  /* U1 (review 12 Oct 2026): the sort order itself never truncates ("Longest wait fi…" at 1180);
+     only the "tier breaks ties" tail gives way, and the search box shrinks first. */
   .toolbarNote {
     flex: 1 1 auto;
     justify-content: flex-end;
-    min-width: 0;
+    min-width: min-content;
     overflow: hidden;
   }
 
   .orderNote {
-    display: block;
-    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    min-width: min-content;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .orderNote svg {
-    display: inline;
-    margin-right: var(--wf-s-1);
-    vertical-align: -2px;
+  .orderNote b {
+    flex: 0 0 auto;
+  }
+
+  .orderTie {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -1555,19 +1584,69 @@
     display: none;
   }
 
+  /* Queue and History pin under the phone header in their own row (shared `pinnedSwitch`). The
+     row carries Home's vertical padding; the negative top margin keeps the resting spacing. */
+  .phoneViewRow {
+    margin: calc(-1 * var(--wf-s-2)) 0 calc(var(--wf-s-3) - var(--wf-s-2));
+    padding-block: var(--wf-s-2);
+  }
+
+  /* The shared phone segmented size (`--wf-phone-seg-*`, Josh, 12 Oct 2026): a 34px track with
+     28px tabs, each with a transparent 48px hit area. Two short tabs always fit, so the track does
+     not scroll and nothing clips the hit areas; the band round the track keeps them clear. */
   .viewTabs.viewTabs {
     display: flex;
     flex: 1 1 100%;
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--wf-phone-seg-h);
+    margin-block: var(--wf-phone-seg-band);
+    padding: 2px;
+    overflow: visible;
   }
 
   .viewTabs [role="tab"] {
+    position: relative;
     flex: 1 1 0;
     justify-content: center;
-    height: calc(var(--wf-touch, 44px) - 6px);
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .viewTabs [role="tab"]::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
+  }
+
+  /* The detail sheet's tabs take the same phone segmented size: a 34px track with 28px tabs, each
+     with a transparent 48px hit area. Three short tabs always fit, so the track does not scroll
+     and nothing clips the hit areas; the band round the track keeps them off its neighbours. */
+  .panelTabs.panelTabs {
+    align-items: center;
+    height: var(--wf-phone-seg-h);
+    box-sizing: border-box;
+    margin-block: var(--wf-phone-seg-band);
+    padding: 2px;
+    overflow: visible;
   }
 
   .panelTabs [role="tab"] {
-    height: calc(var(--wf-touch, 44px) - 6px);
+    position: relative;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .panelTabs [role="tab"]::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
   }
 }
 
@@ -1689,7 +1768,7 @@
    rather than a full-screen slide-over. The facts read as a two by two grid. */
 @media (max-width: 48rem) {
   [data-referral-layout="queue-panel"] .layout .detail.detail.detail[data-has-selection="true"] {
-    top: 3.5rem;
+    top: var(--wf-header-height, 3.5rem);
     width: 100vw;
     height: auto;
     max-height: none;
@@ -1734,9 +1813,9 @@
     flex-basis: calc(100% - 9rem);
   }
 
+  /* Audit 11 Oct 2026: the tier sits beside the name, not on a line of its own. */
   .panelTier {
-    order: 10;
-    flex-basis: 100%;
+    align-self: flex-start;
   }
 
   .strip {
@@ -1776,4 +1855,89 @@
   to {
     transform: translateY(0);
   }
+}
+
+/* Audit 11 Oct 2026: the tie rule lives in the note's title, so the toolbar is not cut short. */
+.orderTie {
+  display: none;
+}
+
+/* Audit 11 Oct 2026: no keyboard shortcut hints on a touch station. */
+@media (pointer: coarse) {
+  .keyHint,
+  .keyLink {
+    display: none;
+  }
+}
+
+/* Audit 11 Oct 2026: beside the open panel the From column keeps the site code only; the
+ * referral source is in the cell's title and in the panel. */
+@media (min-width: 48.0625rem) {
+  .fromSource {
+    display: none;
+  }
+}
+
+/* Audit 11 Oct 2026: the queue card fits its rows instead of padding to the panel's height. */
+@media (min-width: 64rem) {
+  [data-referral-layout="queue-panel"] .queueCard.queueCard {
+    align-self: start;
+    min-height: 0;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.row[data-overdue="true"] > td:first-child,
+.card[data-overdue="true"] {
+  position: relative;
+}
+
+.row[data-overdue="true"] > td:first-child::before,
+.card[data-overdue="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .row[data-overdue="true"] > td:first-child::before,
+  .card[data-overdue="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
+/* Selection remains distinct when an overdue row or phone card is selected. */
+.rowOn[data-overdue="true"],
+.cardOn[data-overdue="true"] {
+  background: var(--wf-selected);
+}
+
+/* D-16 not-wired popovers (shared `NotWiredButton`). At the panel foot it opens upward so the
+   clipped panel never hides it; on the phone's full-width Claim it opens from the left edge. */
+.notWiredUp {
+  display: inline-flex;
+}
+
+.notWiredStart,
+.notWiredStart > span {
+  display: flex;
+  width: 100%;
+}
+
+.notWiredUp [role="group"] {
+  top: auto;
+  right: auto;
+  bottom: calc(100% + 4px);
+  left: 0;
+}
+
+.notWiredStart [role="group"] {
+  right: auto;
+  left: 0;
 }

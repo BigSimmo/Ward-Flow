@@ -1,18 +1,16 @@
 "use client";
 
 import { wardAddressing } from "@/components/ward-management/ward-eligibility";
-import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ClipboardCopy, Copy, FileText, ListOrdered, Phone, TriangleAlert } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
-import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed } from "@/components/ward-management/ward-model";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
   OVERDUE_AFTER_ANY_TIER_MINUTES,
@@ -36,6 +34,7 @@ import {
   type ClearanceStatus,
 } from "./referral-submission";
 import { ReferralDocumentLinks } from "./referral-flow-panels";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import styles from "./referral-board.module.css";
 
 /** The page's one link for counts that open the bed picture. Places lists every ward's ready beds. */
@@ -140,6 +139,30 @@ function hoursLabel(minutes: number): string {
   return `${Math.round(minutes / 60)}h`;
 }
 
+/** Centre-to-centre room two markers need on one lane, in px: a "T2" pill is about 23px wide, plus
+ *  the 3px highlight ring on each side, so neighbours never touch. */
+export const RUNWAY_MARKER_GAP_PX = 28;
+
+/** The lane gap as a share of the track. A fixed percentage overlapped on narrow tracks (4% of a
+ *  270px tablet track is 11px, under half a marker), so the gap follows the measured width. Before
+ *  the track is measured it keeps the old percentage, which matches a standard desktop track. */
+export function runwayGapPercent(trackPx: number | undefined, compact: boolean): number {
+  if (trackPx === undefined || trackPx <= 0) return compact ? 8 : 4;
+  return (RUNWAY_MARKER_GAP_PX / trackPx) * 100;
+}
+
+/** Lane per marker, for positions already sorted shortest wait first: each marker takes the
+ *  lowest lane whose last marker is at least `gapPercent` to its left. Positions never move. */
+export function runwayLanes(positions: readonly number[], gapPercent: number): number[] {
+  const laneEnds: number[] = [];
+  return positions.map((x) => {
+    let lane = 0;
+    while (laneEnds[lane] !== undefined && x - laneEnds[lane]! < gapPercent) lane += 1;
+    laneEnds[lane] = x;
+    return lane;
+  });
+}
+
 export function WaitRunway({
   queued,
   now,
@@ -157,19 +180,36 @@ export function WaitRunway({
   onSelect: (referralId: string) => void;
   compact?: boolean;
 }) {
+  // Markers are kept apart in real pixels, so measure the track rather than assume its width.
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [trackPx, setTrackPx] = useState<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (track === null) return;
+    const measure = () => {
+      if (track.clientWidth > 0) setTrackPx(track.clientWidth);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(track);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
   // Shortest wait first, so the lanes stack upward from the left the way the eye reads them.
-  const placed: { referral: Referral; x: number; lane: number; minutes: number }[] = [];
-  const laneEnds: number[] = [];
-  const gap = compact ? 8 : 4;
-  for (const referral of [...queued].sort((a, b) => b.raisedAt - a.raisedAt)) {
-    const minutes = referralClocks(referral, now).sinceReferral;
-    const x = runwayPercent(minutes);
-    let lane = 0;
-    while (laneEnds[lane] !== undefined && x - laneEnds[lane]! < gap) lane += 1;
-    laneEnds[lane] = x;
-    placed.push({ referral, x, lane, minutes });
-  }
-  const lanes = Math.max(1, laneEnds.length);
+  const sorted = [...queued]
+    .sort((a, b) => b.raisedAt - a.raisedAt)
+    .map((referral) => {
+      const minutes = referralClocks(referral, now).sinceReferral;
+      return { referral, minutes, x: runwayPercent(minutes) };
+    });
+  const laneOf = runwayLanes(
+    sorted.map((entry) => entry.x),
+    runwayGapPercent(trackPx, compact),
+  );
+  const placed = sorted.map((entry, index) => ({ ...entry, lane: laneOf[index] ?? 0 }));
+  const lanes = Math.max(1, ...placed.map((entry) => entry.lane + 1));
   const ticks = [
     { at: 0, label: "0", tier: "" },
     { at: OVERDUE_AFTER_MINUTES_BY_TIER[1], label: hoursLabel(OVERDUE_AFTER_MINUTES_BY_TIER[1]), tier: "T1" },
@@ -187,6 +227,7 @@ export function WaitRunway({
         </span>
       </div>
       <div
+        ref={trackRef}
         className={styles.runwayTrack}
         style={{ height: `calc(${lanes} * 1.625rem + 0.5rem)` }}
         role="group"
@@ -214,7 +255,8 @@ export function WaitRunway({
               aria-pressed={selectedId === referral.id}
               onClick={() => onSelect(referral.id)}
             >
-              {overdue ? <TriangleAlert size={12} aria-hidden="true" /> : referral.urgency}
+              {/* Audit 11 Oct 2026: "T2", as the tier chip reads, so a mark is not read as a count. */}
+              {overdue ? <TriangleAlert size={12} aria-hidden="true" /> : `T${referral.urgency}`}
             </button>
           );
         })}
@@ -235,6 +277,12 @@ export function WaitRunway({
 
 export type BedsReadySummary = {
   cells: { label: string; value: number }[];
+  /**
+   * L1 (review 12 Oct 2026): the one statewide "beds ready" figure, the same sum Home, Capacity and
+   * the rail read (`capacityBreakdown(...).availableNow`, as `serviceRollup` sums it). Locked is a
+   * part of the cohort cells, never added on top: summing every cell read 33 against 26.
+   */
+  total: number;
   /** Beds counted as ready that are still being made ready, so a pull would be refused today. */
   preparing: number;
   oldestUpdateMinutes: number | undefined;
@@ -242,17 +290,19 @@ export type BedsReadySummary = {
 
 export function bedsReadySummary(
   units: Unit[],
-  admissions: readonly Admission[],
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
 ): BedsReadySummary {
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
+  let total = 0;
   let oldest: number | undefined;
   let preparing = 0;
   for (const unit of units) {
-    // Every unit counts: a unit without authorisation still takes voluntary admissions.
-    const ready = bedStates(unit, admissions, bedReleases, leaveBeds).ready;
+    // Every unit counts: a unit without authorisation still takes voluntary admissions. The shared
+    // per-unit ready figure, so the cohort cells add up to the same total every other page shows.
+    const ready = capacityBreakdown(unit, bedReleases, [...leaveBeds], now).availableNow;
+    total += ready;
     totals[unit.cohort] += ready;
     // Locked is the ready locked portion of any ward, mixed wards included.
     totals.Locked += Math.min(ready, lockedBedsFree(unit));
@@ -262,6 +312,7 @@ export function bedsReadySummary(
   }
   return {
     cells: (Object.keys(totals) as (keyof typeof totals)[]).map((label) => ({ label, value: totals[label] })),
+    total,
     preparing,
     oldestUpdateMinutes: oldest,
   };
@@ -783,15 +834,19 @@ export function ReferralPatientTab({
               />
             </>
           ) : null}
-          <Button
-            variant="sec"
-            size="sm"
-            icon={Phone}
-            disabledReason={intake?.referrer.phone ? NOT_WIRED : "No phone number recorded on this referral."}
-            reasonDisplay="tooltip"
-          >
-            Call
-          </Button>
+          {intake?.referrer.phone ? (
+            <NotWiredButton label="Call" variant="sec" size="sm" icon={Phone} />
+          ) : (
+            <Button
+              variant="sec"
+              size="sm"
+              icon={Phone}
+              disabledReason="No phone number recorded on this referral."
+              reasonDisplay="tooltip"
+            >
+              Call
+            </Button>
+          )}
         </div>
         <dl className={styles.pCells}>
           <div>

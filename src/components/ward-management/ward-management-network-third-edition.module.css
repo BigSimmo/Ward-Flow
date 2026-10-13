@@ -119,12 +119,6 @@
   }
 }
 
-@media (max-width: 40rem) {
-  .viewTab {
-    height: 3rem;
-  }
-}
-
 @media print {
   .viewTabs {
     display: none;
@@ -150,21 +144,35 @@
     gap: var(--wf-s-3);
   }
 
+  /* The two views take the shared phone segmented size (`--wf-phone-seg-*`): a 34px track with
+     28px options, each with a transparent 48px hit area. Two short labels always fit, so neither
+     the track nor a tab clips (a clip would cut the hit area). */
   .viewTabs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
     width: 100%;
+    height: var(--wf-phone-seg-h);
     box-sizing: border-box;
-    overflow: hidden;
+    padding: 2px;
+    overflow: visible;
   }
 
   .viewTab {
+    position: relative;
     justify-content: center;
     min-width: 0;
-    height: var(--spacing-tap, 3rem);
-    padding: 0 var(--wf-s-2);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .viewTab::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
   }
 
   .viewTab > span {
@@ -186,7 +194,7 @@
  * control, the Placement count visible. `.phoneViewTabs` renders only on phone (`useIsPhone`). */
 .phoneViewTabs {
   position: sticky;
-  top: 3.25rem;
+  top: var(--wf-header-height, 3.5rem);
   z-index: 6;
   margin-inline: -14px;
   padding: var(--wf-s-2) 14px;
@@ -234,6 +242,20 @@
 
 .phoneViewTabs .viewTab:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
+}
+
+/* Phone compact size (Josh, 12 Oct 2026): the canvas segmented control keeps its pill look at the
+ * shared phone size; the 48px hit area comes from the `.viewTab::before` above and sits inside the
+ * sticky band's own padding. */
+@media (max-width: 48rem) {
+  .phoneViewTabs .viewTabs {
+    padding: 2px;
+  }
+
+  .phoneViewTabs .viewTab {
+    min-height: 0;
+    font-size: var(--wf-phone-pill-fs);
+  }
 }
 
 /* Phone order: Ready against waiting, departments, road time, then the bed flow. */

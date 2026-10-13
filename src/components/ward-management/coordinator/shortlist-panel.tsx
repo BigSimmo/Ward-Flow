@@ -1,11 +1,12 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { Fragment, useCallback, useMemo, useState, type Dispatch, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
+import { SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -370,7 +371,7 @@ function focusFirstCandidate(from: HTMLElement) {
   const first = from
     .closest("[data-testid^='ward-shortlist-']")
     ?.querySelector<HTMLElement>("[data-testid^='ward-shortlist-candidate-'][data-fit]");
-  first?.scrollIntoView({ block: "center", behavior: "smooth" });
+  first?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
   first?.focus({ preventScroll: true });
 }
 
@@ -546,6 +547,9 @@ export function ShortlistPanel({
   // in it. Mirrors `releasePullOpen`/`releasePullReason` above — the form only ever renders for a
   // ward that is genuinely live, so it can never advertise an action the reducer would refuse.
   const [withdrawUnitId, setWithdrawUnitId] = useState<string | undefined>(undefined);
+  // L3: after an acceptance the next step leads; the bed list stays one tap away ("Find another bed"),
+  // so the coordinator can still change the destination or override. Keyed by movement.
+  const [otherBedsFor, setOtherBedsFor] = useState<string | undefined>(undefined);
   const [withdrawReason, setWithdrawReason] = useState<WardRequestWithdrawalReason | "">("");
   // Whole-branch review I2 (spec §11): the escalation form's own open/typed-contact state — never
   // the recorded fact itself, which lives on `movement.escalation` and is read fresh on every
@@ -693,6 +697,16 @@ export function ShortlistPanel({
   // suggestion must never sit unlabelled in the destination slot, and an ineligible candidate must
   // never be presented as a suggestion at all (review Important 3).
   const acceptedUnit = movement.acceptedUnitId ? units.find((unit) => unit.id === movement.acceptedUnitId) : undefined;
+  // L3: the one next step once a destination has accepted (see the "Next step" section below).
+  const placementNextStep: "hold" | "book" | "booked" | undefined = !acceptedUnit
+    ? undefined
+    : movement.transport !== undefined && movement.transport.cancelledAt === undefined
+      ? "booked"
+      : movement.stage === "placement_requested" ||
+          movement.stage === "destination_review" ||
+          movement.stage === "accepted_awaiting_bed"
+        ? "hold"
+        : "book";
   const referredUnits = movement.referredUnitIds.map((id) => ({ id, unit: units.find((unit) => unit.id === id) }));
   const recordedDestination = destinationUnit(movement, units);
   const hasRecordedReferral =
@@ -768,7 +782,7 @@ export function ShortlistPanel({
     "Choose at least one candidate ward before overriding — nothing is overridden against a default.";
   const activeNotice = activeUnit ? restrictionNotice(movement, activeUnit) : undefined;
 
-  const { score, factors } = operationalScore(movement, now);
+  const { factors } = operationalScore(movement, now);
 
   /** Adds or removes a unit from the referral selection, capped at the coordinator-configured
    * `parallelReferralCap` (Task 7 of the audit-wiring plan, 2026-09-16 — previously the constant
@@ -1163,7 +1177,8 @@ export function ShortlistPanel({
             {movement.flaggedUrgent ? (
               <span className={shortlistStyles.urgentBadge}>
                 <StatusGlyph tone="danger" size={9} />
-                Urgent
+                {/* L4: the flag is not the tier, so a T3 patient is never labelled "Urgent". */}
+                Flagged<SrOnly> urgent</SrOnly>
               </span>
             ) : null}
             <span
@@ -1420,210 +1435,260 @@ export function ShortlistPanel({
         </section>
       ) : null}
 
-      <section aria-label="Candidate units" className={shortlistStyles.candidatesSection}>
-        <button
-          type="button"
-          className={shortlistStyles.candidateHeaderToggle}
-          onClick={() => setCandidatesOpen((open) => !open)}
-          aria-expanded={candidatesOpen}
-          aria-controls="ward-shortlist-candidates-content"
-          data-testid="ward-shortlist-candidates-toggle"
+      {/*
+        L3 / decision 3 (site review, 12 Oct 2026, Recommended): once a destination has accepted,
+        the card stops offering beds and Refer and shows the one next step as its primary: hold the
+        bed, or book transport once the bed is held. Both open the patient page, where the hold
+        (with its override reasons and Undo) and the booking (with the sending team's answers)
+        already live, so no second copy of either flow is built here.
+      */}
+      {placementNextStep !== undefined && acceptedUnit ? (
+        <section
+          aria-label="Next step"
+          className={shortlistStyles.candidatesSection}
+          data-testid="ward-shortlist-next-step"
+          data-step={placementNextStep}
         >
-          <div className={shortlistStyles.candidateHeading}>
-            <h4 className={styles.shortlistSectionHeading}>Candidates</h4>
-            <span className={`${shortlistStyles.candidateState} ${shortlistStyles.tabularNum}`}>
-              {shortlist.length} wards
-            </span>
-          </div>
-          <span className={shortlistStyles.toggleChevron}>
-            {candidatesOpen ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
-          </span>
-        </button>
-        {/* FitHighlight counts: the same four groups State bedflow counts (`home-fit.ts`), so the
-            two columns always agree. */}
-        <div
-          className={`${shortlistStyles.candidateCounts} ${shortlistStyles.tabularNum}`}
-          aria-label="Candidate summary"
-        >
-          <span data-tone="good">
-            <StatusGlyph tone="success" size={9} />
-            {groups.bed.length} fit
-          </span>
-          <span data-tone="warn">
-            <StatusGlyph tone="warning" size={9} />
-            {groups["no-bed"].length} no bed
-          </span>
-          <span>
-            <StatusGlyph tone="neutral" size={9} />
-            {groups.review.length} review
-          </span>
-        </div>
-        <div id="ward-shortlist-candidates-content" style={candidatesOpen ? undefined : { display: "none" }}>
-          {offerable.length === 0 && groups["no-bed"].length === 0 ? (
-            <p className={styles.placeholder}>
-              No eligible destination. No ward can take this person, with or without a recorded reason.
-            </p>
-          ) : null}
-          {(
-            [
-              ["bed", "Fits, bed ready", groups.bed],
-              ["review", "Needs review", groups.review],
-            ] as const
-          ).map(([kind, title, list]) =>
-            list.length > 0 ? (
-              <div key={kind} className={shortlistStyles.fitGroup} data-fit-group={kind}>
-                <h5 className={shortlistStyles.fitGroupHead}>
-                  {title} <span className={shortlistStyles.fitGroupCount}>{list.length}</span>
-                </h5>
-                <ul className={styles.shortlistCandidateList}>
-                  {list.map((candidate) => renderCandidate(candidate, kind))}
-                </ul>
-              </div>
-            ) : null,
-          )}
-          {/* Fits in every way except a bed: shown with the amber fit tint so the coordinator sees
-              where a bed would do, never selectable (the engine refuses a ward with no bed). */}
-          {groups["no-bed"].length > 0 ? (
-            <div className={shortlistStyles.fitGroup} data-fit-group="no-bed">
-              <h5 className={shortlistStyles.fitGroupHead}>
-                Fits, no bed now <span className={shortlistStyles.fitGroupCount}>{groups["no-bed"].length}</span>
-              </h5>
-              <ul className={styles.shortlistCandidateList}>
-                {groups["no-bed"].map((candidate) => renderUnavailable(candidate, "no-bed"))}
-              </ul>
-            </div>
-          ) : null}
-
-          {/* The caveat for every road distance in the list above, stated once and AS TEXT: a
-            `title` is invisible on a touch screen and to a keyboard. Rendered only when a route
-            can be shown. */}
-          {originEd?.referenceEdId !== undefined ? (
-            <p
-              className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}
-              data-testid="ward-shortlist-route-caveat"
+          <h4 className={styles.shortlistSectionHeading}>Next step</h4>
+          <p className={styles.shortlistCandidateCapacity}>
+            {placementNextStep === "hold"
+              ? `${acceptedUnit.name} has accepted. Hold the bed so it is kept for this patient.`
+              : placementNextStep === "book"
+                ? `The bed at ${acceptedUnit.name} is held. Book transport to move the patient.`
+                : `Transport is booked to ${acceptedUnit.name}.`}
+          </p>
+          <div className={styles.shortlistActionRow}>
+            <Link
+              href={movementHref(movement.id)}
+              data-testid={placementNextStep === "hold" ? "ward-shortlist-hold-bed" : "ward-shortlist-book-transport"}
+              className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
             >
-              {REFERENCE_DISTANCE_CAVEAT}
-            </p>
-          ) : null}
-
-          {/* ⚠️ A DISCLOSURE, NOT A FILTER. These wards fail a gate no recorded reason can buy, so
-            there is no choice behind this toggle. The count is stated while collapsed and what is
-            behind it is the reasons, not just the names. */}
-          {groups.no.length > 0 ? (
-            <div className={styles.shortlistUnavailableBlock}>
+              {placementNextStep === "hold"
+                ? "Hold the bed"
+                : placementNextStep === "book"
+                  ? "Book transport"
+                  : "Open patient"}
+            </Link>
+            {otherBedsFor === movement.id ? null : (
               <button
                 type="button"
+                data-testid="ward-shortlist-find-another-bed"
                 className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
-                data-testid="ward-shortlist-unavailable-toggle"
-                aria-expanded={unavailableOpen}
-                onClick={() => setUnavailableOpen((open) => !open)}
+                aria-expanded={false}
+                onClick={() => setOtherBedsFor(movement.id)}
               >
-                Does not fit: {groups.no.length} {groups.no.length === 1 ? "ward cannot" : "wards cannot"} take this
-                person
+                Find another bed
               </button>
-              {unavailableOpen ? (
-                <ul className={styles.shortlistCandidateList} data-testid="ward-shortlist-unavailable-list">
-                  {groups.no.map((candidate) => renderUnavailable(candidate, "no"))}
-                </ul>
+            )}
+          </div>
+        </section>
+      ) : null}
+      {placementNextStep === undefined || otherBedsFor === movement.id ? (
+        <>
+          <section aria-label="Candidate units" className={shortlistStyles.candidatesSection}>
+            <button
+              type="button"
+              className={shortlistStyles.candidateHeaderToggle}
+              onClick={() => setCandidatesOpen((open) => !open)}
+              aria-expanded={candidatesOpen}
+              aria-controls="ward-shortlist-candidates-content"
+              data-testid="ward-shortlist-candidates-toggle"
+            >
+              <div className={shortlistStyles.candidateHeading}>
+                <h4 className={styles.shortlistSectionHeading}>Candidates</h4>
+                <span className={`${shortlistStyles.candidateState} ${shortlistStyles.tabularNum}`}>
+                  {shortlist.length} wards
+                </span>
+              </div>
+              <span className={shortlistStyles.toggleChevron}>
+                {candidatesOpen ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+              </span>
+            </button>
+            {/* FitHighlight counts: the same four groups State bedflow counts (`home-fit.ts`), so the
+            two columns always agree. */}
+            <div
+              className={`${shortlistStyles.candidateCounts} ${shortlistStyles.tabularNum}`}
+              aria-label="Candidate summary"
+            >
+              <span data-tone="good">
+                <StatusGlyph tone="success" size={9} />
+                {groups.bed.length} fit
+              </span>
+              <span data-tone="warn">
+                <StatusGlyph tone="warning" size={9} />
+                {groups["no-bed"].length} no bed
+              </span>
+              <span>
+                <StatusGlyph tone="neutral" size={9} />
+                {groups.review.length} review
+              </span>
+            </div>
+            <div id="ward-shortlist-candidates-content" style={candidatesOpen ? undefined : { display: "none" }}>
+              {offerable.length === 0 && groups["no-bed"].length === 0 ? (
+                <p className={styles.placeholder}>
+                  No eligible destination. No ward can take this person, with or without a recorded reason.
+                </p>
+              ) : null}
+              {(
+                [
+                  ["bed", "Fits, bed ready", groups.bed],
+                  ["review", "Needs review", groups.review],
+                ] as const
+              ).map(([kind, title, list]) =>
+                list.length > 0 ? (
+                  <div key={kind} className={shortlistStyles.fitGroup} data-fit-group={kind}>
+                    <h5 className={shortlistStyles.fitGroupHead}>
+                      {title} <span className={shortlistStyles.fitGroupCount}>{list.length}</span>
+                    </h5>
+                    <ul className={styles.shortlistCandidateList}>
+                      {list.map((candidate) => renderCandidate(candidate, kind))}
+                    </ul>
+                  </div>
+                ) : null,
+              )}
+              {/* Fits in every way except a bed: shown with the amber fit tint so the coordinator sees
+              where a bed would do, never selectable (the engine refuses a ward with no bed). */}
+              {groups["no-bed"].length > 0 ? (
+                <div className={shortlistStyles.fitGroup} data-fit-group="no-bed">
+                  <h5 className={shortlistStyles.fitGroupHead}>
+                    Fits, no bed now <span className={shortlistStyles.fitGroupCount}>{groups["no-bed"].length}</span>
+                  </h5>
+                  <ul className={styles.shortlistCandidateList}>
+                    {groups["no-bed"].map((candidate) => renderUnavailable(candidate, "no-bed"))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {/* The caveat for every road distance in the list above, stated once and AS TEXT: a
+            `title` is invisible on a touch screen and to a keyboard. Rendered only when a route
+            can be shown. */}
+              {originEd?.referenceEdId !== undefined ? (
+                <p
+                  className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}
+                  data-testid="ward-shortlist-route-caveat"
+                >
+                  {REFERENCE_DISTANCE_CAVEAT}
+                </p>
+              ) : null}
+
+              {/* ⚠️ A DISCLOSURE, NOT A FILTER. These wards fail a gate no recorded reason can buy, so
+            there is no choice behind this toggle. The count is stated while collapsed and what is
+            behind it is the reasons, not just the names. */}
+              {groups.no.length > 0 ? (
+                <div className={styles.shortlistUnavailableBlock}>
+                  <button
+                    type="button"
+                    className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
+                    data-testid="ward-shortlist-unavailable-toggle"
+                    aria-expanded={unavailableOpen}
+                    onClick={() => setUnavailableOpen((open) => !open)}
+                  >
+                    Does not fit: {groups.no.length} {groups.no.length === 1 ? "ward cannot" : "wards cannot"} take this
+                    person
+                  </button>
+                  {unavailableOpen ? (
+                    <ul className={styles.shortlistCandidateList} data-testid="ward-shortlist-unavailable-list">
+                      {groups.no.map((candidate) => renderUnavailable(candidate, "no"))}
+                    </ul>
+                  ) : null}
+                </div>
               ) : null}
             </div>
-          ) : null}
-        </div>
-      </section>
+          </section>
 
-      <footer className={`${styles.shortlistActions} ${shortlistStyles.actionToolbar}`}>
-        {isPhone && referTargetNames.length === 0 ? null : (
-          <p className={`${styles.shortlistAutoAllocationNote} ${shortlistStyles.tabularNum}`}>
-            <span className={shortlistStyles.toWard} data-testid="ward-shortlist-to">
-              {referTargetNames.length === 0 ? (
-                "Choose a ward"
-              ) : (
-                <>
-                  To <strong>{referTargetNames.join(", ")}</strong>
-                </>
-              )}
-            </span>
-            <span className={shortlistStyles.toMeta}>
-              {referTargets.length} selected · {movement.referredUnitIds.length} of {parallelReferralCap} parallel
-              referrals in use.
-            </span>
-          </p>
-        )}
+          <footer className={`${styles.shortlistActions} ${shortlistStyles.actionToolbar}`}>
+            {isPhone && referTargetNames.length === 0 ? null : (
+              <p className={`${styles.shortlistAutoAllocationNote} ${shortlistStyles.tabularNum}`}>
+                <span className={shortlistStyles.toWard} data-testid="ward-shortlist-to">
+                  {referTargetNames.length === 0 ? (
+                    "Choose a ward"
+                  ) : (
+                    <>
+                      To <strong>{referTargetNames.join(", ")}</strong>
+                    </>
+                  )}
+                </span>
+                <span className={shortlistStyles.toMeta}>
+                  {referTargets.length} selected · {movement.referredUnitIds.length} of {parallelReferralCap} parallel
+                  referrals in use.
+                </span>
+              </p>
+            )}
 
-        {/* Task 5 fix round 1: rendered only when `overrideSucceeded` — a real check against
+            {/* Task 5 fix round 1: rendered only when `overrideSucceeded` — a real check against
             `movement.referredUnitIds`, not the mere existence of `overrideRecord`. A refused
             override leaves this silent here; the refusal is visible on the Exceptions drawer
             instead (`rejections`), never claimed as a success on this footer. */}
-        {overrideRecord && overrideSucceeded ? (
-          <p
-            className={`${styles.shortlistConfirmationRecord} ${shortlistStyles.tabularNum}`}
-            data-testid="ward-shortlist-confirmation-record"
-          >
-            {`Overridden by a human coordinator — referred to ${overrideRecordUnits.join(", ")} at ${formatInstantWithDay(overrideRecord.at, now)} — reason: "${overrideRecord.reason}". No bed was allocated automatically.`}
-          </p>
-        ) : null}
+            {overrideRecord && overrideSucceeded ? (
+              <p
+                className={`${styles.shortlistConfirmationRecord} ${shortlistStyles.tabularNum}`}
+                data-testid="ward-shortlist-confirmation-record"
+              >
+                {`Overridden by a human coordinator — referred to ${overrideRecordUnits.join(", ")} at ${formatInstantWithDay(overrideRecord.at, now)} — reason: "${overrideRecord.reason}". No bed was allocated automatically.`}
+              </p>
+            ) : null}
 
-        <div className={styles.shortlistActionRow}>
-          {/* Phone (v10): with no ward picked yet, Refer is never shown greyed. It reads "Choose a
+            <div className={styles.shortlistActionRow}>
+              {/* Phone (v10): with no ward picked yet, Refer is never shown greyed. It reads "Choose a
               ward to refer" and takes the person to the fits list; nothing is referred against a
               default (Critical 2), so the choice stays a human tap on a ward. */}
-          {isPhone && !hasReferSelection && referralBlocked === undefined ? (
-            <button
-              type="button"
-              data-testid="ward-shortlist-refer"
-              data-phone-choose="true"
-              className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
-              onClick={(event) => focusFirstCandidate(event.currentTarget)}
-            >
-              Choose a ward to refer
-            </button>
-          ) : (
-            <button
-              type="button"
-              data-testid="ward-shortlist-refer"
-              aria-disabled={canRefer ? undefined : "true"}
-              aria-describedby={canRefer ? undefined : "ward-shortlist-refer-unavailable"}
-              title={canRefer ? undefined : referUnavailableReason}
-              className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
-              onClick={canRefer ? handleRefer : ignoreUnavailableActivation}
-            >
-              {referTargetNames.length === 1 ? `Refer to ${referTargetNames[0]}` : "Refer"}
-            </button>
-          )}
-          <button
-            type="button"
-            data-testid="ward-shortlist-override-toggle"
-            aria-disabled={canOverride || isPhone ? undefined : "true"}
-            aria-describedby={canOverride ? undefined : "ward-shortlist-override-unavailable"}
-            title={canOverride ? undefined : overrideUnavailableReason}
-            aria-expanded={overrideOpen}
-            className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
-            onClick={
-              canOverride
-                ? () => setOverrideOpen((open) => !open)
-                : isPhone
-                  ? // Phone: never greyed; with no ward picked it takes the person to the list.
-                    (event) => focusFirstCandidate(event.currentTarget)
-                  : ignoreUnavailableActivation
-            }
-          >
-            Override
-          </button>
-        </div>
-        {!canRefer ? (
-          <span id="ward-shortlist-refer-unavailable" className="sr-only">
-            {referUnavailableReason}
-          </span>
-        ) : null}
-        {!canOverride ? (
-          <span id="ward-shortlist-override-unavailable" className="sr-only">
-            {overrideUnavailableReason}
-          </span>
-        ) : null}
+              {isPhone && !hasReferSelection && referralBlocked === undefined ? (
+                <button
+                  type="button"
+                  data-testid="ward-shortlist-refer"
+                  data-phone-choose="true"
+                  className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
+                  onClick={(event) => focusFirstCandidate(event.currentTarget)}
+                >
+                  Choose a ward to refer
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="ward-shortlist-refer"
+                  aria-disabled={canRefer ? undefined : "true"}
+                  aria-describedby={canRefer ? undefined : "ward-shortlist-refer-unavailable"}
+                  title={canRefer ? undefined : referUnavailableReason}
+                  className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
+                  onClick={canRefer ? handleRefer : ignoreUnavailableActivation}
+                >
+                  {referTargetNames.length === 1 ? `Refer to ${referTargetNames[0]}` : "Refer"}
+                </button>
+              )}
+              <button
+                type="button"
+                data-testid="ward-shortlist-override-toggle"
+                aria-disabled={canOverride || isPhone ? undefined : "true"}
+                aria-describedby={canOverride ? undefined : "ward-shortlist-override-unavailable"}
+                title={canOverride ? undefined : overrideUnavailableReason}
+                aria-expanded={overrideOpen}
+                className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
+                onClick={
+                  canOverride
+                    ? () => setOverrideOpen((open) => !open)
+                    : isPhone
+                      ? // Phone: never greyed; with no ward picked it takes the person to the list.
+                        (event) => focusFirstCandidate(event.currentTarget)
+                      : ignoreUnavailableActivation
+                }
+              >
+                Override
+              </button>
+            </div>
+            {!canRefer ? (
+              <span id="ward-shortlist-refer-unavailable" className="sr-only">
+                {referUnavailableReason}
+              </span>
+            ) : null}
+            {!canOverride ? (
+              <span id="ward-shortlist-override-unavailable" className="sr-only">
+                {overrideUnavailableReason}
+              </span>
+            ) : null}
 
-        {overrideOpen && canOverride ? (
-          <form className={styles.shortlistOverrideForm} onSubmit={handleOverrideSubmit}>
-            {/*
+            {overrideOpen && canOverride ? (
+              <form className={styles.shortlistOverrideForm} onSubmit={handleOverrideSubmit}>
+                {/*
               ⚠️ WHAT THE BED FAILED ON, IN THE FORM, AT THE MOMENT OF OVERRIDING.
               Derivation by Ward Verifier; the sentence already existed, computed and in scope, one
               line from being rendered — `firstIneligibleSelected` at :404 and `candidateReason` at
@@ -1639,7 +1704,7 @@ export function ShortlistPanel({
               does not touch `canOverride`. It states the reason and leaves the decision where the
               owner put it.
             */}
-            {/*
+                {/*
               TWO BLOCKERS, NOT ONE — and the first version of this block rendered for only one of
               them. Refer can be unavailable because a selected ward is ineligible OR because the
               movement's own stage is not referable, and `canOverride` deliberately carries neither
@@ -1659,34 +1724,34 @@ export function ShortlistPanel({
 
               ⚠️ STILL NOT A GATE. Neither line touches `canOverride`.
             */}
-            {referralBlocked || firstIneligibleSelected ? (
-              /* ⚠️ THE WRAPPER TAKES A NEW ID AND THE OLD ONE GOES BACK WHERE IT MEANT SOMETHING.
+                {referralBlocked || firstIneligibleSelected ? (
+                  /* ⚠️ THE WRAPPER TAKES A NEW ID AND THE OLD ONE GOES BACK WHERE IT MEANT SOMETHING.
                  `ward-shortlist-override-failing-gate` used to name THE INELIGIBILITY SENTENCE. When
                  this became two lines I put it on the wrapper, whose `textContent` is now BOTH
                  sentences concatenated — so a future assertion written against that id would pass
                  for the wrong reason, which is structurally the same defect this block exists to
                  fix. Found by Ward Verifier, which checked the whole tree first and confirmed no
                  test references it today, so nothing breaks. */
-              <div data-testid="ward-shortlist-override-reasons">
-                {referralBlocked ? (
-                  <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-stage-block">
-                    {referralBlocked}
-                  </p>
+                  <div data-testid="ward-shortlist-override-reasons">
+                    {referralBlocked ? (
+                      <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-stage-block">
+                        {referralBlocked}
+                      </p>
+                    ) : null}
+                    {firstIneligibleSelected ? (
+                      <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-failing-gate">
+                        <strong>{firstIneligibleSelected.unit.name}</strong>
+                        {" — Not eligible: "}
+                        {candidateReason(firstIneligibleSelected.verdict)}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : null}
-                {firstIneligibleSelected ? (
-                  <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-failing-gate">
-                    <strong>{firstIneligibleSelected.unit.name}</strong>
-                    {" — Not eligible: "}
-                    {candidateReason(firstIneligibleSelected.verdict)}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-            <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-reason">
-              Reason for overriding the shortlist for{" "}
-              {referredCandidates.map((c) => c?.unit.name ?? "an unresolved unit").join(", ")}
-            </label>
-            {/*
+                <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-reason">
+                  Reason for overriding the shortlist for{" "}
+                  {referredCandidates.map((c) => c?.unit.name ?? "an unresolved unit").join(", ")}
+                </label>
+                {/*
               Owner decision OD-3: the free-text box is gone and these five replace it. Derived
               from `OVERRIDE_REASONS` rather than written out here — a second copy of an
               owner-approved list is how two screens come to offer different words for one thing.
@@ -1695,95 +1760,95 @@ export function ShortlistPanel({
               text returns after being removed from the front, and it would undo the decision this
               control implements.
             */}
-            <select
-              id="ward-shortlist-override-reason"
-              required
-              className={styles.shortlistOverrideSelect}
-              value={overrideReason}
-              onChange={(event) => setOverrideReason(event.target.value)}
-            >
-              <option value="">Choose a reason</option>
-              {OVERRIDE_REASONS.map((reason) => (
-                <option key={reason} value={reason}>
-                  {reason}
-                </option>
-              ))}
-            </select>
-            {/* v10 Home: Override asks for a reason and a second sign-off. The tick and who gave it
+                <select
+                  id="ward-shortlist-override-reason"
+                  required
+                  className={styles.shortlistOverrideSelect}
+                  value={overrideReason}
+                  onChange={(event) => setOverrideReason(event.target.value)}
+                >
+                  <option value="">Choose a reason</option>
+                  {OVERRIDE_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {reason}
+                    </option>
+                  ))}
+                </select>
+                {/* v10 Home: Override asks for a reason and a second sign-off. The tick and who gave it
                 (their role and a typed name or initials) are required before the override is
                 recorded; pass 3 stores both on the override and its audit entry. */}
-            <label className={styles.shortlistOverrideCheckOption}>
-              <input
-                type="checkbox"
-                required
-                checked={overrideSecondSignOff}
-                onChange={(event) => setOverrideSecondSignOff(event.target.checked)}
-                data-testid="ward-shortlist-override-second-sign-off"
-              />
-              Second sign-off: another senior clinician has agreed to this override
-            </label>
-            <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-sign-off-role">
-              Signed off as
-            </label>
-            <select
-              id="ward-shortlist-override-sign-off-role"
-              className={styles.shortlistOverrideSelect}
-              value={overrideSignOffRole}
-              onChange={(event) => setOverrideSignOffRole(event.target.value as WardFlowRole)}
-              data-testid="ward-shortlist-override-sign-off-role"
-            >
-              {(["coordinator", "ward", "ed", "bed_manager", "executive"] as const).map((role) => (
-                <option key={role} value={role}>
-                  {WARD_FLOW_ROLE_LABELS[role]}
-                </option>
-              ))}
-            </select>
-            <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-sign-off-name">
-              Name or initials of who signed off
-            </label>
-            <input
-              id="ward-shortlist-override-sign-off-name"
-              type="text"
-              required
-              maxLength={OVERRIDE_SIGN_OFF_NAME_MAX}
-              autoComplete="off"
-              className={styles.shortlistOverrideSelect}
-              value={overrideSignOffName}
-              onChange={(event) => setOverrideSignOffName(event.target.value)}
-              data-testid="ward-shortlist-override-sign-off-name"
-            />
-            <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-second-sign-off-note">
-              Recorded with the override and its audit entry.
-            </p>
-            <button
-              type="submit"
-              className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-              aria-disabled={
-                overrideReason === "" || !overrideSecondSignOff || overrideSignOffName.trim() === ""
-                  ? "true"
-                  : undefined
-              }
-              onClick={
-                overrideReason === "" || !overrideSecondSignOff || overrideSignOffName.trim() === ""
-                  ? ignoreUnavailableActivation
-                  : undefined
-              }
-              title={
-                overrideReason === ""
-                  ? "Choose a reason first"
-                  : !overrideSecondSignOff
-                    ? "Tick the second sign-off first"
-                    : overrideSignOffName.trim() === ""
-                      ? "Type who gave the second sign-off first"
+                <label className={styles.shortlistOverrideCheckOption}>
+                  <input
+                    type="checkbox"
+                    required
+                    checked={overrideSecondSignOff}
+                    onChange={(event) => setOverrideSecondSignOff(event.target.checked)}
+                    data-testid="ward-shortlist-override-second-sign-off"
+                  />
+                  Second sign-off: another senior clinician has agreed to this override
+                </label>
+                <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-sign-off-role">
+                  Signed off as
+                </label>
+                <select
+                  id="ward-shortlist-override-sign-off-role"
+                  className={styles.shortlistOverrideSelect}
+                  value={overrideSignOffRole}
+                  onChange={(event) => setOverrideSignOffRole(event.target.value as WardFlowRole)}
+                  data-testid="ward-shortlist-override-sign-off-role"
+                >
+                  {(["coordinator", "ward", "ed", "bed_manager", "executive"] as const).map((role) => (
+                    <option key={role} value={role}>
+                      {WARD_FLOW_ROLE_LABELS[role]}
+                    </option>
+                  ))}
+                </select>
+                <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-sign-off-name">
+                  Name or initials of who signed off
+                </label>
+                <input
+                  id="ward-shortlist-override-sign-off-name"
+                  type="text"
+                  required
+                  maxLength={OVERRIDE_SIGN_OFF_NAME_MAX}
+                  autoComplete="off"
+                  className={styles.shortlistOverrideSelect}
+                  value={overrideSignOffName}
+                  onChange={(event) => setOverrideSignOffName(event.target.value)}
+                  data-testid="ward-shortlist-override-sign-off-name"
+                />
+                <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-second-sign-off-note">
+                  Recorded with the override and its audit entry.
+                </p>
+                <button
+                  type="submit"
+                  className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
+                  aria-disabled={
+                    overrideReason === "" || !overrideSecondSignOff || overrideSignOffName.trim() === ""
+                      ? "true"
                       : undefined
-              }
-            >
-              Record override
-            </button>
-          </form>
-        ) : null}
+                  }
+                  onClick={
+                    overrideReason === "" || !overrideSecondSignOff || overrideSignOffName.trim() === ""
+                      ? ignoreUnavailableActivation
+                      : undefined
+                  }
+                  title={
+                    overrideReason === ""
+                      ? "Choose a reason first"
+                      : !overrideSecondSignOff
+                        ? "Tick the second sign-off first"
+                        : overrideSignOffName.trim() === ""
+                          ? "Type who gave the second sign-off first"
+                          : undefined
+                  }
+                >
+                  Record override
+                </button>
+              </form>
+            ) : null}
 
-        {/*
+            {/*
           T12 (item 9, owner answer 9, 17 September 2026): "Non-binary patient: coordinator
           places with a recorded reason after checking with the ward, preferring a single room."
           Build plan §2's exact wording — legend, guidance, tick and submit label are quoted, not
@@ -1795,59 +1860,61 @@ export function ShortlistPanel({
           would repeat the exact defect this file's own history records for the override reason
           (a failing gate reaching a sighted mouse user only as a button tooltip).
         */}
-        {needsGenderPlacement ? (
-          <form
-            className={styles.shortlistOverrideForm}
-            onSubmit={submitGenderPlacement}
-            data-testid="ward-shortlist-gender-placement-form"
-          >
-            <fieldset>
-              <legend className={styles.shortlistOverrideLabel}>Place a non-binary patient</legend>
-              <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-gender-placement-guidance">
-                Check with the ward first. A single room is preferred.
-              </p>
-              <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-gender-placement-refusal">
-                {GENDER_PLACEMENT_REFUSAL}
-              </p>
-              <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-gender-placement-reason">
-                Reason
-              </label>
-              <select
-                id="ward-shortlist-gender-placement-reason"
-                required
-                className={styles.shortlistOverrideSelect}
-                data-testid="ward-shortlist-gender-placement-reason"
-                value={genderPlacementReason}
-                onChange={(event) => setGenderPlacementReason(event.target.value)}
+            {needsGenderPlacement ? (
+              <form
+                className={styles.shortlistOverrideForm}
+                onSubmit={submitGenderPlacement}
+                data-testid="ward-shortlist-gender-placement-form"
               >
-                <option value="">Choose a reason</option>
-                {GENDER_PLACEMENT_REASONS.map((reason) => (
-                  <option key={reason} value={reason}>
-                    {reason}
-                  </option>
-                ))}
-              </select>
-              <label className={styles.shortlistOverrideCheckOption}>
-                <input
-                  type="checkbox"
-                  checked={genderPlacementChecked}
-                  onChange={(event) => setGenderPlacementChecked(event.target.checked)}
-                  data-testid="ward-shortlist-gender-placement-checked"
-                />
-                I have checked this placement with the ward
-              </label>
-              <button
-                type="submit"
-                className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-                disabled={genderPlacementReason.trim().length === 0 || !genderPlacementChecked}
-                data-testid="ward-shortlist-gender-placement-submit"
-              >
-                Record reason and place
-              </button>
-            </fieldset>
-          </form>
-        ) : null}
-      </footer>
+                <fieldset>
+                  <legend className={styles.shortlistOverrideLabel}>Place a non-binary patient</legend>
+                  <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-gender-placement-guidance">
+                    Check with the ward first. A single room is preferred.
+                  </p>
+                  <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-gender-placement-refusal">
+                    {GENDER_PLACEMENT_REFUSAL}
+                  </p>
+                  <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-gender-placement-reason">
+                    Reason
+                  </label>
+                  <select
+                    id="ward-shortlist-gender-placement-reason"
+                    required
+                    className={styles.shortlistOverrideSelect}
+                    data-testid="ward-shortlist-gender-placement-reason"
+                    value={genderPlacementReason}
+                    onChange={(event) => setGenderPlacementReason(event.target.value)}
+                  >
+                    <option value="">Choose a reason</option>
+                    {GENDER_PLACEMENT_REASONS.map((reason) => (
+                      <option key={reason} value={reason}>
+                        {reason}
+                      </option>
+                    ))}
+                  </select>
+                  <label className={styles.shortlistOverrideCheckOption}>
+                    <input
+                      type="checkbox"
+                      checked={genderPlacementChecked}
+                      onChange={(event) => setGenderPlacementChecked(event.target.checked)}
+                      data-testid="ward-shortlist-gender-placement-checked"
+                    />
+                    I have checked this placement with the ward
+                  </label>
+                  <button
+                    type="submit"
+                    className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
+                    disabled={genderPlacementReason.trim().length === 0 || !genderPlacementChecked}
+                    data-testid="ward-shortlist-gender-placement-submit"
+                  >
+                    Record reason and place
+                  </button>
+                </fieldset>
+              </form>
+            ) : null}
+          </footer>
+        </>
+      ) : null}
 
       {(() => {
         const metCount = sortedGates.filter((g) => g.pass).length;
@@ -2380,9 +2447,7 @@ export function ShortlistPanel({
       ) : null}
 
       <details className={`${styles.shortlistScoreDetails} ${shortlistStyles.scoreDetails} source-print`}>
-        <summary className={`${styles.shortlistScoreSummary} ${shortlistStyles.tabularNum}`}>
-          Operational score {score}
-        </summary>
+        <summary className={`${styles.shortlistScoreSummary} ${shortlistStyles.tabularNum}`}>Why this wait</summary>
         <p className={styles.shortlistScoreNote}>The factors below explain a wait; they do not order the queue.</p>
         {factors.length === 0 ? (
           <p className={styles.placeholder}>No contributing factors currently.</p>

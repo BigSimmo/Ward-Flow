@@ -8,6 +8,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ensureWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * Flags one bed as freeing later today, for a real occupant with no live release. Since 25 September
@@ -120,6 +121,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
 
   it("opens a ward's explicit linked discharge record through the guarded Capacity journey", () => {
     renderCapacity();
+    ensureWardTable();
     const rphRow = screen.getByTestId("ward-capacity-network-row-rph-adult-secure");
     fireEvent.click(within(rphRow).getByRole("button", { name: "Dabakarn" }));
     fireEvent.click(screen.getByRole("tab", { name: "Discharges" }));
@@ -170,11 +172,14 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     const worklistCount =
       groups.blocked.length + groups.confirmed.length + groups.expected.length + groups["discharged-today"].length;
     expect(worklistCount + groups.excludedBeyondToday + groups.completedBeforeToday).toBe(releaseCount);
-    expect(screen.getByRole("button", { name: `All ${worklistCount}` })).toHaveAttribute("aria-pressed", "true");
+    // Decision 5 (review 12 Oct 2026): the Status dropdown's "All statuses" carries the count.
+    const allStatuses = () =>
+      within(screen.getByRole("combobox", { name: "Status" })).getByRole("option", { name: /^All statuses/u });
+    expect(allStatuses()).toHaveTextContent(`All statuses · ${worklistCount}`);
 
     fireEvent.click(records);
-    expect(screen.getByRole("button", { name: `All ${recordCount}` })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.queryByRole("button", { name: `All ${releaseCount + recordCount}` })).toBeNull();
+    expect(allStatuses()).toHaveTextContent(`All statuses · ${recordCount}`);
+    expect(allStatuses()).not.toHaveTextContent(`All statuses · ${releaseCount + recordCount}`);
   });
 
   it("filters to the linked patients, opens one, and clears that identity on filter and population changes", () => {

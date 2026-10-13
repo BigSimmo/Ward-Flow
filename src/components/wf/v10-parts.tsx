@@ -172,7 +172,7 @@ export function OccupancyRing({ percent, alertAt, scope, status, className }: Oc
     <div
       className={cx(styles.ring, className)}
       role="img"
-      aria-label={`${scope} ${known ? `${figure} of open beds occupied` : "occupancy not recorded"}. Alert line ${alertAt}%. ${shown.word}.`}
+      aria-label={`${scope} ${known ? `${figure} of beds occupied` : "occupancy not recorded"}. Alert line ${alertAt}%. ${shown.word}.`}
       data-testid="wf-occupancy-ring"
     >
       <svg viewBox="0 0 148 82" aria-hidden="true" focusable="false">

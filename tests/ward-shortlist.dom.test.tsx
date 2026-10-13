@@ -241,6 +241,10 @@ describe("the override form says what the bed failed on, in text a coordinator c
         <OverrideHarness movementId={movementId} />
       </WardFlowProvider>,
     );
+    // L3 (12 Oct 2026): an accepted movement leads with its next step; the bed list is behind
+    // "Find another bed", which keeps the override path reachable.
+    const another = screen.queryByTestId("ward-shortlist-find-another-bed");
+    if (another) fireEvent.click(another);
     const candidates = screen.getAllByTestId(/^ward-shortlist-candidate-/);
     expect(candidates.length, `${movementId} offers no candidate, so nothing below is exercised`).toBeGreaterThan(0);
 
@@ -295,6 +299,25 @@ describe("the override form says what the bed failed on, in text a coordinator c
         "keyboard, and the exact defect this block replaced",
     ).toBeNull();
     expect(block.textContent?.trim().length, "the block renders but says nothing").toBeGreaterThan(0);
+  });
+
+  // L3 / decision 3 (site review, 12 Oct 2026): once a destination has accepted, the card leads
+  // with the one next step, not the bed list and Refer. WF-011 is accepted and its bed is held, so
+  // the next step is booking transport.
+  it("swaps an accepted patient's card to the next step, with the bed list one tap away", () => {
+    const seeded = seedWardFlowState().movements.find((candidate) => candidate.id === NON_REFERABLE_STAGE_MOVEMENT);
+    expect(seeded?.acceptedUnitId, "WF-011 must be accepted for this to test anything").toBeDefined();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <OverrideHarness movementId={NON_REFERABLE_STAGE_MOVEMENT} />
+      </WardFlowProvider>,
+    );
+    const step = screen.getByTestId("ward-shortlist-next-step");
+    expect(step).toHaveAttribute("data-step", seeded?.transport ? "booked" : "book");
+    expect(screen.queryAllByTestId(/^ward-shortlist-candidate-/)).toHaveLength(0);
+    expect(screen.queryByTestId("ward-shortlist-refer")).toBeNull();
+    fireEvent.click(screen.getByTestId("ward-shortlist-find-another-bed"));
+    expect(screen.getAllByTestId(/^ward-shortlist-candidate-/).length).toBeGreaterThan(0);
   });
 
   it("states a non-referable stage too, which the first version of this block did not", () => {

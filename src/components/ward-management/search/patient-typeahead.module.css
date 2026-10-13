@@ -309,12 +309,6 @@
   color: var(--wf-ink-3);
 }
 
-.attachedMovement {
-  color: var(--ward-blue);
-  border-color: var(--ward-blue-border);
-  background: var(--ward-blue-soft);
-}
-
 .attachedReferral {
   color: var(--ward-warning);
   border-color: var(--ward-warning);

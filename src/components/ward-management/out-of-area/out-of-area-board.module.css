@@ -244,14 +244,6 @@
   border-radius: var(--wf-r-pill);
 }
 
-.ageSeg {
-  min-width: 6px;
-}
-
-.ageSegOn {
-  box-shadow: inset 0 0 0 2px var(--wf-hero-ink);
-}
-
 .age_under7 {
   background: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
 }
@@ -362,6 +354,20 @@
   }
 }
 
+/* Tablet portrait (device audit 11 Oct 2026): the rail cards sit two-up under the register; an odd
+   last card takes the full width. */
+@media (min-width: 48.0625rem) and (max-width: 62.5rem) {
+  .side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .side > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
 /* ---- register ---- */
 
 .toolbar {
@@ -424,9 +430,10 @@
   padding: var(--wf-s-4);
 }
 
+/* Device audit 11 Oct 2026: the register grows with its rows; a fixed height cut the last row in
+   half, and eighteen rows do not need an inner scroll. */
 .tableScroll {
-  max-height: 46rem;
-  overflow: auto;
+  overflow-x: auto;
 }
 
 /* Padding comes from the wf table (12px inner, 16px edges, the same on headers and cells). */
@@ -487,10 +494,6 @@
   color: var(--wf-dim);
 }
 
-.previewIcon {
-  border-style: dashed;
-}
-
 .cellText {
   display: block;
   overflow: hidden;
@@ -506,6 +509,18 @@
   gap: 6px;
   color: var(--wf-ink-2);
   white-space: nowrap;
+}
+
+/* The travel band line ends in an ellipsis rather than clipping mid-word. */
+.travel {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.travel > span[aria-hidden="true"] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .travel svg {
@@ -1224,47 +1239,6 @@ fieldset.formRow {
   color: var(--wf-hero-ink);
 }
 
-.phoneTile {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-width: 0;
-  min-height: var(--ward-tap, 3rem);
-  padding: 10px 10px 10px var(--wf-s-3);
-  border: 1px solid transparent;
-  border-radius: var(--wf-r-lg);
-  background: transparent;
-  color: var(--wf-hero-ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.phoneTile[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
-  background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
-}
-
-.phoneTile:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: -2px;
-}
-
-.phoneTileValue {
-  font: 600 var(--wf-fs-28) / 34px var(--wf-mono);
-  letter-spacing: -0.03em;
-}
-
-.phoneTileLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--wf-hero-ink-2);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
 .phoneTabs {
   width: 100%;
 }
@@ -1729,10 +1703,13 @@ fieldset.formRow {
    capsule; the main button is a full pill and copy a round button. */
 .phoneBar {
   right: 0;
-  bottom: 0;
+  /* Sits flush on the phone dock's flat edge (Josh, 12 Oct 2026, iPhone); its padding clears the
+     + hump, which it covered when it sat at the foot of the screen. */
+  bottom: var(--wf-dock-top, 0px);
   left: 0;
+  /* Under the shell bar's layer (z 30), which holds the dock, so the + hump draws over the bar. */
+  z-index: 29;
   align-items: center;
-  padding: var(--wf-s-4) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
   border: 0;
   border-radius: 0;
   background: linear-gradient(180deg, transparent, var(--wf-canvas) 45%);
@@ -1795,26 +1772,28 @@ fieldset.formRow {
  * a hairline above it, as the mockup's sticky action bar, so the cards never show through the
  * buttons. The phone bar renders on the phone alone. */
 .phoneBar {
-  padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  /* Above the dock the home-bar inset is already cleared, so it is added only without a dock. */
+  padding: var(--wf-s-3) var(--wf-s-4)
+    max(
+      var(--wf-s-3),
+      calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px) - var(--wf-dock-top, 0px)),
+      calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px))
+    );
   border-top: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
   box-shadow: 0 -6px 16px -12px color-mix(in srgb, var(--wf-ink-1) 28%, transparent);
 }
 
 /* v10 phone: Needs you, Everyone and Beds stay pinned under the bar while the cards scroll, with
- * an 8px canvas collar so no card shows above or below the switch. The bar is 56px at rest and
- * 52px once the page scrolls; the switch only sticks after a scroll. Phone-only element. */
+ * an 8px canvas collar so no card shows above or below the switch. The shared bar keeps the same height
+ * throughout the scroll; the canvas collar fills the join beneath it. Phone-only element. */
 .phoneTabs {
   position: sticky;
-  top: 3.5rem;
+  top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
   z-index: 6;
   box-shadow:
     0 0 0 var(--wf-s-2) var(--wf-canvas),
     inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
-}
-
-:global(body:has([data-scrolled="true"])) .phoneTabs {
-  top: calc(3.25rem + var(--wf-s-2));
 }
 
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
@@ -1831,7 +1810,8 @@ fieldset.formRow {
     position: fixed;
     top: auto;
     right: 12px;
-    bottom: 92px;
+    /* Above the action bar, which rests on the dock. */
+    bottom: calc(92px + var(--wf-dock-clear, 0px));
     left: 12px;
     width: fit-content;
     max-width: calc(100% - 24px);
@@ -1858,5 +1838,24 @@ fieldset.formRow {
   /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
   :global(html:has([role="dialog"][aria-modal="true"])) .phoneToast {
     bottom: 136px;
+  }
+}
+
+/* Phone compact switch (Josh, 12 Oct 2026): Needs you, Everyone and Beds take the shared phone track
+ * (`--wf-phone-*`), whose 48px box carries a transparent band round the 34px track. The pinned
+ * switch paints that band in the canvas and sits flush under the bar; the collar runs to the sides
+ * and below only, so it never covers the bar. Phone only. */
+@media (max-width: 48rem) {
+  .phoneTabs [role="radio"] {
+    min-height: 0;
+  }
+
+  .phoneTabs {
+    top: var(--wf-header-height, 3.5rem);
+    background-color: var(--wf-canvas);
+    box-shadow:
+      var(--wf-s-2) 0 0 var(--wf-canvas),
+      calc(-1 * var(--wf-s-2)) 0 0 var(--wf-canvas),
+      0 var(--wf-s-2) 0 var(--wf-canvas);
   }
 }
