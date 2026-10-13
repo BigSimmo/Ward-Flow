@@ -2,6 +2,18 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const routing = vi.hoisted(() => ({ available: false, back: vi.fn() }));
+vi.mock("next/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/navigation")>();
+  return {
+    ...actual,
+    useRouter: () => {
+      if (!routing.available) throw new Error("No router in this isolated render");
+      return { back: routing.back };
+    },
+  };
+});
+
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>
@@ -40,6 +52,8 @@ function openViaUrl(bed: string) {
 const drawer = () => document.querySelector('[role="dialog"][aria-labelledby="drawer-bed-title"]');
 
 beforeEach(() => {
+  routing.available = false;
+  routing.back.mockReset();
   window.history.replaceState(null, "", PATH);
   window.sessionStorage.clear();
 });
@@ -49,6 +63,40 @@ afterEach(() => {
 });
 
 describe("ward bed drawer history", () => {
+  it("ordinary Close still returns through the matching Census opener when a router exists", () => {
+    routing.available = true;
+    renderWard();
+    window.sessionStorage.setItem("wardflow:census-bed-opener-target", `${UNIT.id}:1`);
+    openViaUrl("1");
+    fireEvent.click(screen.getByRole("button", { name: "Close bed drawer" }));
+    expect(routing.back).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { bed: 1, action: /^Move (?:bed|to another bed)$/ },
+    { bed: undefined, action: /^Place someone here$/ },
+  ])("$action stays on the ward board instead of returning to Census", ({ bed, action }) => {
+    routing.available = true;
+    renderWard();
+    const actionBed =
+      bed ??
+      Number(
+        screen
+          .getAllByRole("button", { name: /^Bed \d+, Ready\b/ })[0]
+          .getAttribute("aria-label")!
+          .match(/^Bed (\d+)/)![1],
+      );
+    window.sessionStorage.setItem("wardflow:census-bed-opener", "synthetic-census-row");
+    window.sessionStorage.setItem("wardflow:census-bed-opener-target", `${UNIT.id}:${actionBed}`);
+    openViaUrl(String(actionBed));
+    fireEvent.click(screen.getByRole("button", { name: action }));
+    expect(routing.back).not.toHaveBeenCalled();
+    expect(drawer()).toBeNull();
+    expect(screen.getByTestId("ward-bed-board-plan")).toBeInTheDocument();
+    expect(window.sessionStorage.getItem("wardflow:census-bed-opener-target")).toBeNull();
+    expect(window.sessionStorage.getItem("wardflow:census-bed-opener")).toBeNull();
+  });
+
   it("closing a drawer this screen pushed goes back over that entry rather than adding another", () => {
     renderWard();
     const push = vi.spyOn(window.history, "pushState");

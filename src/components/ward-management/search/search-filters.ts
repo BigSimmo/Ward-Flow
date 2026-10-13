@@ -118,10 +118,11 @@ export function matchesSetting(
 
   if (result.kind === "referral") {
     if (setting === "ed") {
+      // The recorded ED medical source and an ED-bearing origin site establish ED origin.
+      // Other referring channels do not establish a patient's physical location.
       return (
-        result.referral.source !== "community" &&
-        !result.referral.originSiteCode.includes("CMHT") &&
-        !result.referral.originSiteCode.includes("Clinic")
+        result.referral.source === "ed_medical" &&
+        Boolean(siteByCode.get(result.referral.originSiteCode)?.emergencyDepartment)
       );
     }
     if (setting === "community") {

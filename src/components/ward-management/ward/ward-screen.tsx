@@ -634,32 +634,35 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
-  const closeBedDrawer = useCallback(() => {
-    if (selectedBed !== null) {
-      if (typeof window !== "undefined") {
-        // Return to Census only for the exact bed its link opened, and only with a router to go
-        // back through; a stale or unrelated marker is dropped and the drawer closes normally.
-        const target = window.sessionStorage.getItem(CENSUS_BED_OPENER_TARGET);
-        const fromCensus = target !== null && target === censusBedOpenerTarget(unitId, selectedBed);
-        window.sessionStorage.removeItem(CENSUS_BED_OPENER_TARGET);
-        if (fromCensus && router) {
-          router.back();
-          return;
+  const closeBedDrawer = useCallback(
+    (returnToCensus = true) => {
+      if (selectedBed !== null) {
+        if (typeof window !== "undefined") {
+          // Return to Census only for the exact bed its link opened, and only with a router to go
+          // back through; a stale or unrelated marker is dropped and the drawer closes normally.
+          const target = window.sessionStorage.getItem(CENSUS_BED_OPENER_TARGET);
+          const fromCensus = target !== null && target === censusBedOpenerTarget(unitId, selectedBed);
+          window.sessionStorage.removeItem(CENSUS_BED_OPENER_TARGET);
+          if (fromCensus && router && returnToCensus) {
+            router.back();
+            return;
+          }
+          if (target !== null) window.sessionStorage.removeItem("wardflow:census-bed-opener");
         }
-        if (target !== null) window.sessionStorage.removeItem("wardflow:census-bed-opener");
+        const bedNum = selectedBed;
+        setSelectedBed(null);
+        // The drawer hands focus back to whatever opened it (a tile, a list row, a Ward flow row).
+        // Only when that is gone does focus fall back to the bed's own tile, if it is still drawn.
+        setTimeout(() => {
+          const active = document.activeElement;
+          if (active instanceof HTMLElement && active !== document.body && active.isConnected) return;
+          const tile = bedTriggerRefs.current.get(bedNum);
+          if (tile?.isConnected) tile.focus();
+        }, 0);
       }
-      const bedNum = selectedBed;
-      setSelectedBed(null);
-      // The drawer hands focus back to whatever opened it (a tile, a list row, a Ward flow row).
-      // Only when that is gone does focus fall back to the bed's own tile, if it is still drawn.
-      setTimeout(() => {
-        const active = document.activeElement;
-        if (active instanceof HTMLElement && active !== document.body && active.isConnected) return;
-        const tile = bedTriggerRefs.current.get(bedNum);
-        if (tile?.isConnected) tile.focus();
-      }, 0);
-    }
-  }, [selectedBed, router, unitId]);
+    },
+    [selectedBed, router, unitId],
+  );
 
   // Focus goes back to whichever control opened the modal (the header button or the home tab's),
   // and falls back to the header button only when that control is gone.
@@ -1510,7 +1513,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const stayId = bed.stayAdmissionId;
     if (!stayId) return;
     const fromBed = Number(bed.bedNumber);
-    closeBedDrawer();
+    closeBedDrawer(false);
     setActiveTab("board");
     pickOnBoard({
       kind: "stay",
@@ -3053,7 +3056,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   onKeyDown={handleBedDrawerKeyDown}
                   onMove={selectedBedItem?.stayAdmissionId ? () => moveStayOnBoard(selectedBed) : undefined}
                   onOpenBoard={() => {
-                    closeBedDrawer();
+                    closeBedDrawer(false);
                     setActiveTab("board");
                   }}
                 />
