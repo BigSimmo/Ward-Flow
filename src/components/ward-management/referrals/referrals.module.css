@@ -3639,14 +3639,6 @@
   box-shadow: 0 2px 6px rgb(var(--ward-shadow-rgb) / 0.15);
 }
 
-@media (pointer: coarse), (max-width: 640px) {
-  .acceptPresentationBtn,
-  .confirmAcceptBtn,
-  .cancelBtn {
-    min-height: 48px;
-  }
-}
-
 .selectWithActionRow {
   display: flex;
   align-items: center;
@@ -5472,4 +5464,13 @@
 
 .v10AskActions .confirmActionRow > button {
   min-width: 0;
+}
+
+/* Touch targets: last in the file so the base .cancelBtn and .confirmAcceptBtn rules cannot override them. */
+@media (pointer: coarse), (max-width: 640px) {
+  .acceptPresentationBtn,
+  .confirmAcceptBtn,
+  .cancelBtn {
+    min-height: 48px;
+  }
 }

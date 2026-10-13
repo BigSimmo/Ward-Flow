@@ -41,7 +41,7 @@ describe("CoordinatorCockpit (WF-A1-15)", () => {
     expect(footer).toBeInTheDocument();
   });
 
-  it("never rewrites a child's role to coordinator (no privilege escalation through the wrapper)", () => {
+  it("stamps the coordinator role on every dispatch (owner ruling 13 Oct)", () => {
     const onDispatch = vi.fn();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -56,7 +56,7 @@ describe("CoordinatorCockpit (WF-A1-15)", () => {
 
     expect(onDispatch).toHaveBeenCalledTimes(1);
     const event = onDispatch.mock.calls[0][0] as WardFlowEvent;
-    expect(event.role).toBe("ward");
+    expect(event.role).toBe("coordinator");
     expect(event.type).toBe("SET_CONFIGURATION");
     expect(event.now).toBe(NOW_ANCHOR - 60);
   });

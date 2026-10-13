@@ -158,7 +158,10 @@ const devHost = process.env.WARD_FLOW_DEV_HOST?.trim() || "127.0.0.1";
 if (devHost !== "127.0.0.1")
   console.log(`WARD_FLOW_DEV_HOST=${devHost}: this server is reachable beyond this machine.`);
 const nextBin = path.join(projectRoot, "node_modules", "next", "dist", "bin", "next");
-const url = `http://localhost:${freePort}`;
+// Print a URL that reaches the bound server: localhost for loopback or the wildcard bind, the
+// opted-in host otherwise (a LAN address is what another device must use).
+const urlHost = devHost === "127.0.0.1" || devHost === "0.0.0.0" || devHost === "localhost" ? "localhost" : devHost;
+const url = `http://${urlHost.includes(":") ? `[${urlHost}]` : urlHost}:${freePort}`;
 
 if (freePort !== preferredPort) {
   const portKind = preferred.source === "stable" ? "Stable project port" : "Configured port";

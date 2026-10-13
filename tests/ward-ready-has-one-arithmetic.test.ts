@@ -117,7 +117,14 @@ describe("the ruled Ready expression has exactly the sanctioned homes", () => {
         readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
           .split(NL)
           .map((line, index) => ({ file, line: line.trim(), number: index + 1 }))
-          .filter((row) => row.line.includes(RETIRED_READY_EXPRESSION) && /^const\s+\w+\s*=/u.test(row.line)),
+          .filter(
+            (row) =>
+              row.line.includes(RETIRED_READY_EXPRESSION) &&
+              // Any executable use counts (const, property, argument): only comments and the
+              // claims register's quoted citation strings are not code.
+              !/^(?:\/\/|\/?\*)/u.test(row.line) &&
+              !/^["'`]/u.test(row.line),
+          ),
       )
       .map((row) => `${row.file}:${row.number}`);
     expect(retired, "a second Ready arithmetic has come back; call boundedBedAvailability instead").toEqual([]);

@@ -31,6 +31,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { declineReasonLabels } from "@/components/ward-management/movements/movement-workspace-derivations";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 
 /* ------------------------------------------------------------------ shifts */
 
@@ -592,7 +593,7 @@ export function toHandoverWard(
     beds: unit.beds,
     occupied: here.length,
     empty: unit.empty.value,
-    ready: Math.min(unit.allocatable.value, unit.empty.value),
+    ready: boundedBedAvailability(unit).available,
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     confirmedAt: unit.empty.confirmedAt,
     staleAfter: unit.empty.staleAfterMinutes,

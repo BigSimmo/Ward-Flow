@@ -93,13 +93,13 @@ test.describe("apiMutationCsrfVerdict pure contract under simulated proxy header
   const externalHost = "clinical-kb.up.railway.app";
   const externalOrigin = `https://${externalHost}`;
 
-  test("isCsrfGuardedApiRequest guards state-changing API endpoints and excludes webhooks", () => {
+  test("isCsrfGuardedApiRequest guards state-changing API endpoints, webhooks included (A4-15)", () => {
     expect(isCsrfGuardedApiRequest("POST", "/api/answer-feedback")).toBe(true);
     expect(isCsrfGuardedApiRequest("PUT", "/api/account/preferences")).toBe(true);
     expect(isCsrfGuardedApiRequest("PATCH", "/api/clinical-quality")).toBe(true);
     expect(isCsrfGuardedApiRequest("DELETE", "/api/documents/123")).toBe(true);
     expect(isCsrfGuardedApiRequest("GET", "/api/documents")).toBe(false);
-    expect(isCsrfGuardedApiRequest("POST", "/api/webhooks/incoming")).toBe(false);
+    expect(isCsrfGuardedApiRequest("POST", "/api/webhooks/incoming")).toBe(true);
   });
 
   test("matching Origin & Host -> allowed verdict", () => {

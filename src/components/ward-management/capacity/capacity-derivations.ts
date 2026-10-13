@@ -31,6 +31,7 @@ import type {
   Unit,
   BedRelease,
 } from "@/components/ward-management/ward-model";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 
 /**
  * The four bed kinds a coordinator actually reasons about, in the order the design lock fixes
@@ -80,6 +81,8 @@ function bedKindOfMovement(cohort: Cohort, security: Security): BedKindId {
  * disappear behind a bed nobody may actually place a detained patient in.
  */
 function bedsOfKindAtUnit(unit: Unit, kind: BedKindId): number {
+  // A closed or zero-bed ward supplies no bed of any kind (R-B-09, owner ruling 13 Oct 2026).
+  if (boundedBedAvailability(unit).available === 0) return 0;
   switch (kind) {
     case "locked_adult":
       return unit.cohort === "Adult" ? lockedBedsFree(unit) : 0;
