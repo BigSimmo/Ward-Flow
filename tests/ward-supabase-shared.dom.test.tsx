@@ -319,3 +319,24 @@ it("keeps a deliberate sign-out quiet when remote logout fails", async () => {
   expect(result.current.error ?? null).toBeNull();
   expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
 });
+it("stops polling and signs out the view when the workspace refuses access", async () => {
+  const fetcher = vi.fn(async (url: string | URL | Request) =>
+    String(url).includes("/v1/workspace")
+      ? Response.json({}, { status: 403 })
+      : String(url).endsWith("/user")
+        ? Response.json(user)
+        : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  const interval = vi.spyOn(globalThis, "setInterval");
+  const { result } = renderHook(() => useWardShared(true));
+  await waitFor(() => expect(result.current.status).toBe("ready"));
+  await act(async () => {
+    await result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
+  });
+  expect(result.current.status).toBe("not-authorised");
+  expect(result.current.error).toMatch(/coordinator access/);
+  expect(result.current.signedIn).toBe(false);
+  expect(interval.mock.calls.some(([, ms]) => ms === 3000)).toBe(false);
+  expect(fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace"))).toHaveLength(1);
+});

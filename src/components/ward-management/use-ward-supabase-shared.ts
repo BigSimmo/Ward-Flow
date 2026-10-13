@@ -73,7 +73,13 @@ export function useWardSupabaseShared(enabled: boolean) {
         baseUrl: baseUrl.replace(/\/$/, ""),
         token: () => instance.token(),
         changed: (next) => {
-          if (!closed) setView(next);
+          if (closed) return;
+          if (next.status === "not-authorised") {
+            // A refused session or role ends this connection: stop polling and sign the view out,
+            // but keep the not-authorised message visible.
+            disconnect();
+          }
+          setView(next);
         },
       });
       connection.current = client;
