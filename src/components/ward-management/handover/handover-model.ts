@@ -334,15 +334,16 @@ export function destinationText(row: HandoverRow): string {
 /** Short due text for the table: whichever comes first of a bed hold and a typed form time. */
 export function dueShort(row: HandoverRow, now: Instant): string | null {
   const collected = isCollected(row);
-  if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
+  if (
+    !collected &&
+    row.pullExpiresAt !== undefined &&
+    (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)
+  ) {
     const hold = bedHold(row.pullExpiresAt, now)!;
-    if (hold.state === "lapsed") {
-      return collected ? "In transit" : hold.label;
-    }
-    return `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
+    return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
   if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
-  return null;
+  return collected && row.pullExpiresAt !== undefined ? "In transit" : null;
 }
 
 /**
@@ -351,23 +352,24 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
  */
 export function dueParts(row: HandoverRow, now: Instant): { when: string; what: string; atRisk?: boolean } | null {
   const collected = isCollected(row);
-  if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
+  if (
+    !collected &&
+    row.pullExpiresAt !== undefined &&
+    (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)
+  ) {
     // Audit A4-3: the one bed-hold rule. Under an hour left carries the amber at-risk dot (not Act now).
     const hold = bedHold(row.pullExpiresAt, now)!;
-    if (hold.state === "lapsed") {
-      return collected
-        ? { when: "In transit", what: "Pull active" }
-        : { when: durMinutes(hold.minutes), what: "Pull expired" };
-    }
-    return {
-      when: formatInstantWithDay(row.pullExpiresAt, now),
-      what: "Pull ends",
-      ...(hold.state === "at-risk" ? { atRisk: true } : {}),
-    };
+    return hold.state === "lapsed"
+      ? { when: durMinutes(hold.minutes), what: "Pull expired" }
+      : {
+          when: formatInstantWithDay(row.pullExpiresAt, now),
+          what: "Pull ends",
+          ...(hold.state === "at-risk" ? { atRisk: true } : {}),
+        };
   }
   if (row.formDueAt !== undefined)
     return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };
-  return null;
+  return collected && row.pullExpiresAt !== undefined ? { when: "In transit", what: "Pull active" } : null;
 }
 
 /** Long due text for the panel: the bed hold and the typed form time, both when both are held. */

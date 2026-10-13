@@ -480,6 +480,39 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       // Verify isActNow does not flag false alarm for in-transit bed hold
       expect(isActNow(row, NOW)).toBe(false);
     });
+
+    it("preserves statutory form due times for in-transit patients instead of hiding them behind 'In transit'", () => {
+      const state = seedWardFlowState();
+      const inTransitMovementWithForm: Movement = {
+        ...state.movements[0],
+        id: "WF-INTRANSIT-FORM" as const,
+        stage: "moving" as const,
+        acceptedUnitId: "scgh-adult-open",
+        pullExpiresAt: NOW - 60, // expired 60 minutes ago
+        legalForm: { code: "1A", dueAt: NOW + 120 },
+        transport: {
+          id: "TJ-INTRANSIT-2",
+          provider: "Ambulance service" as const,
+          escortRequired: false,
+          cadNumber: "CAD-998",
+          transportLegalStatus: "involuntary" as const,
+          acceptedAt: NOW - 90,
+          enRouteAt: NOW - 80,
+          collectedAt: NOW - 30,
+        },
+      };
+
+      const row = toHandoverRow(inTransitMovementWithForm, state.units, state.patients, state.referrals);
+      expect(row.stage).toBe("moving");
+
+      // Verify dueParts shows the form due time, not "In transit"
+      const parts = dueParts(row, NOW);
+      expect(parts?.what).toBe("1A due");
+
+      // Verify dueShort shows the form due time, not "In transit"
+      const short = dueShort(row, NOW);
+      expect(short).toContain("1A due");
+    });
   });
 
   describe("Fix A1-4: Statutory continuation legal forms in audit trail", () => {
