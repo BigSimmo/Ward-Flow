@@ -618,7 +618,10 @@ async function goToBoardViaPhoneRail(page: Page) {
   // phone page, and the phone menu shows each page once, so it leaves Referrals out. A phone user
   // taps the dock; opening the menu first would only cover that link with the sheet.
   const dockReferrals = page.getByTestId("ward-phone-dock").getByRole("link", { name: /^Referrals\b/iu });
-  if (await dockReferrals.isVisible()) {
+  if (await page.getByTestId("ward-bar-phone-menu").isVisible()) {
+    // Sending closes a sheet: wait for the dock to become visible instead of routing a
+    // transiently hidden dock through the phone menu, which deliberately omits Referrals.
+    await expect(dockReferrals).toBeVisible();
     await dockReferrals.click();
   } else if (await openRailSheetIfNeeded(page, rail)) {
     await page
