@@ -38,7 +38,10 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
       actorId = await authenticate(request.headers.get("authorization"));
     } catch (error) {
       return reply(error instanceof verifierUnavailable ? 503 : 401, {
-        error: "Microsoft sign-in verification unavailable or required",
+        error:
+          error instanceof verifierUnavailable
+            ? "Sign-in verification unavailable; try again shortly"
+            : "Sign in with the authorised account",
       });
     }
     // One application role, explicit named accounts. Tenant membership and client role fields
