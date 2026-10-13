@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronRight as RowChevron, ShieldCheck, UserRound } from "lucide-react";
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
@@ -214,16 +214,13 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     return (
       <div className={styles.answerScreen} data-testid="ward-unit-screen">
         <main id="main-content" className={styles.workspace}>
-          <h1 className={styles.panelTitle}>Ward not found</h1>
-          <p data-testid="ward-unit-unresolved">
-            No synthetic unit matches &ldquo;{unitId}&rdquo;. It may have been renamed or removed, or the id in the
-            address is incorrect &mdash; this never falls back to a different ward.
-          </p>
-          <div>
-            <Link href="/mockups/ward-flow/wards" className={styles.backLink}>
-              &larr; View all {units.length} available wards
-            </Link>
-          </div>
+          <WardNotFoundBody
+            title="Ward not found"
+            testId="ward-unit-unresolved"
+            list={{ href: "/mockups/ward-flow/wards", label: "All wards" }}
+          >
+            No ward matches this link. It never falls back to a different ward.
+          </WardNotFoundBody>
         </main>
       </div>
     );

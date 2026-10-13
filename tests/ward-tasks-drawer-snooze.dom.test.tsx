@@ -239,3 +239,45 @@ describe("tasks drawer: ownership and snooze", () => {
     expect(onSelectMovement).not.toHaveBeenCalled();
   });
 });
+
+describe("phone tasks: act now, then oldest, and a Seen marker (remaining-pages audit ops-8, ops-9)", () => {
+  it("orders by the age each row shows and marks acknowledged rows Seen", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      const review = (id: string, since?: number): InboxItem => ({
+        ...red,
+        id: `review-${id}`,
+        kind: "fact",
+        tone: "warning",
+        icon: CircleAlert,
+        title: `Row ${id}`,
+        detail: "Synthetic row",
+        since,
+        dueAt: undefined,
+      });
+      const recent = review("recent", NOW_ANCHOR - 15);
+      const oldest = review("oldest", NOW_ANCHOR - 72);
+      renderDrawer({
+        items: [recent, review("untimed"), oldest, red],
+        acknowledgements: { [recent.id]: [{ at: NOW_ANCHOR, by: "Flow coordinator" }] },
+      });
+      const titles = screen
+        .getAllByRole("button", { name: /^(Row (recent|oldest|untimed)|.*expired.*)$/iu })
+        .map((node) => node.textContent);
+      expect(titles).toEqual([red.title, "Row oldest", "Row recent", "Row untimed"]);
+      expect(screen.getAllByText("1h 12m").length).toBeGreaterThan(0);
+      expect(screen.getByTestId(`ward-task-seen-${recent.id}`)).toHaveTextContent("Seen");
+      expect(screen.queryByTestId(`ward-task-seen-${oldest.id}`)).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});

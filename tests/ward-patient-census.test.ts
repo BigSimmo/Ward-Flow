@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildCensus } from "@/components/ward-management/search/patient-census";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { foldPatientSearchText } from "@/components/ward-management/ward-patients";
 
 const NOW = 642;
 const DAY_ZERO = new Date("2026-10-01T00:00:00+08:00");
@@ -20,6 +21,14 @@ function census(state: ReturnType<typeof seedWardFlowState>) {
 }
 
 describe("patient census", () => {
+  it("finds a row by the formal name it displays, surname first", () => {
+    const rows = census(seedWardFlowState()).rows.filter((row) => row.name.includes(", "));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.searchText).toContain(foldPatientSearchText(row.name));
+    }
+  });
+
   it("gives one row per record key", () => {
     const keys = census(seedWardFlowState()).rows.map((row) => row.key);
     expect(new Set(keys).size).toBe(keys.length);

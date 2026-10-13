@@ -13,6 +13,12 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+// The Go to a desk drawer reads the route; jsdom has no App Router.
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/mockups/ward-flow/settings",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
@@ -142,6 +148,16 @@ describe("the settings screen", () => {
     expect(screen.getByTestId("ward-settings-rail")).toBeInTheDocument();
   });
 
+  // Audit settings-27: "workstation" finds Go to a desk, and choosing it opens the desk drawer.
+  it("finds Go to a desk by the old word and opens the desk drawer", () => {
+    renderSettings();
+    fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
+      target: { value: "workstation" },
+    });
+    fireEvent.click(screen.getByRole("option", { name: /Go to a desk/ }));
+    expect(screen.getByRole("dialog", { name: "Go to a desk" })).toBeInTheDocument();
+  });
+
   it("finding Fixed defaults opens the Data tab with that reference panel showing", () => {
     renderSettings();
     fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
@@ -212,7 +228,7 @@ describe("the settings screen's thresholds panel", () => {
     // actually happens and that it is recorded, rather than claiming nothing can change at all.
     // Workspaces rebuild (8 Oct 2026): the editable rules moved to their own tab.
     expect(screen.getByTestId("ward-settings-thresholds").textContent).toMatch(
-      /change only through the Rules tab, and every change is recorded/i,
+      /change only in Rules, and every change is recorded/i,
     );
     expect(within(screen.getByTestId("ward-settings-thresholds")).queryAllByRole("button")).toHaveLength(0);
   });
@@ -263,7 +279,7 @@ describe("settings screen elevations: touch envelopes, focus-visible, and the re
     fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     const callout = screen.getByTestId("ward-settings-thresholds").querySelector('[data-tone="accent"]');
     expect(callout).toBeInTheDocument();
-    expect(callout?.textContent).toContain("Figures here change only through the Rules tab");
+    expect(callout?.textContent).toContain("Figures here change only in Rules");
   });
 });
 

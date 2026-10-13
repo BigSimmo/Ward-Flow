@@ -3,10 +3,12 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ContextualBackLink } from "@/components/contextual-back-link";
+import { handOffPatientSearchText, isNewTabClick } from "@/components/ward-management/search/patient-query-handoff";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { type MovementId } from "@/components/ward-management/ward-model";
 import styles from "./ward-management.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { MovementWorkspaceCockpit } from "@/components/ward-management/movements/movement-workspace-cockpit";
 
 export {
@@ -74,8 +76,19 @@ export function WardMovementNotFound({
   reason,
 }: {
   requestedId: string;
-  reason: "no-such-movement" | "not-a-movement-id" | "not-a-person-id";
+  reason: "no-such-movement" | "not-a-movement-id" | "not-a-person-id" | "no-such-umrn";
 }) {
+  const aboutPerson = reason === "not-a-person-id" || reason === "no-such-umrn";
+  // shell-6: a way on to the patient search. An unknown UMRN travels to it in memory (the
+  // read-once handoff), never in the link, so the search opens with it typed in.
+  const searchLink = (
+    <Link
+      href="/mockups/ward-flow/search"
+      onClick={(event) => handOffPatientSearchText(isNewTabClick(event) ? undefined : requestedId)}
+    >
+      Search patients for {requestedId}
+    </Link>
+  );
   return (
     <div className={styles.patientWorkspace} data-testid="ward-patient-workspace">
       <header className={styles.workspaceHeader}>
@@ -84,51 +97,34 @@ export function WardMovementNotFound({
         </ContextualBackLink>
         <div>
           <span>Ward Flow</span>
-          <span className={styles.headerCrumb}>
-            {reason === "not-a-person-id" ? "Person not found" : "Movement not found"}
-          </span>
+          <span className={styles.headerCrumb}>{aboutPerson ? "Person not found" : "Movement not found"}</span>
         </div>
       </header>
       <main id="main-content" className={styles.workspaceMain}>
-        <div className={styles.masthead}>
-          <span className={styles.eyebrow}>
-            {reason === "not-a-person-id" ? "Person record" : "Movement workspace"}
-          </span>
-          <h1 className={styles.mastheadTitle}>
-            {reason === "not-a-person-id" ? "Person not found" : "Movement not found"}
-          </h1>
-        </div>
-        <p className={styles.governanceNote}>
-          {reason === "not-a-person-id" ? (
-            <>
-              &ldquo;{requestedId}&rdquo; is not a person&rsquo;s record number.{" "}
-              {requestedId.startsWith("WF-") ? (
-                <>
-                  It is a movement id.{" "}
-                  <Link href={`/mockups/ward-flow/movements/${requestedId}`}>Open that movement instead</Link>.
-                </>
-              ) : (
-                <>Record numbers (UMRN) identify a person. This screen shows one person&rsquo;s own record.</>
-              )}
-            </>
-          ) : reason === "not-a-movement-id" && requestedId.startsWith("PT-") ? (
-            <>
-              &ldquo;{requestedId}&rdquo; is a person&rsquo;s record identifier, not a movement id. This screen shows
-              one movement at a time.{" "}
-              <Link href={`/mockups/ward-flow/people/${requestedId}`}>Open that person&rsquo;s record instead</Link>.
-            </>
-          ) : reason === "not-a-movement-id" ? (
-            <>
-              &ldquo;{requestedId}&rdquo; is not a movement id. Movement ids begin with WF-. This screen shows one
-              movement at a time.
-            </>
-          ) : (
-            <>
-              No synthetic movement matches &ldquo;{requestedId}&rdquo;. It may have arrived and closed, or the id is
-              incorrect.
-            </>
-          )}
-        </p>
+        {/* shell-11/12: the one not-found pattern; no internal id (WF-, PT-) is ever echoed. */}
+        {aboutPerson ? (
+          <WardNotFoundBody
+            title="Person not found"
+            list={{ href: "/mockups/ward-flow/search", label: "All patients" }}
+            search={reason === "no-such-umrn" ? searchLink : null}
+          >
+            {reason === "no-such-umrn" ? `No one with UMRN ${requestedId}.` : "No person matches this link."}
+          </WardNotFoundBody>
+        ) : (
+          <WardNotFoundBody
+            title="Movement not found"
+            list={{ href: "/mockups/ward-flow/movements", label: "All movements" }}
+            extra={
+              reason === "not-a-movement-id" && requestedId.startsWith("PT-") ? (
+                <Link href={`/mockups/ward-flow/people/${requestedId}`}>Open their patient record</Link>
+              ) : null
+            }
+          >
+            {reason === "not-a-movement-id" && requestedId.startsWith("PT-")
+              ? "This link is to a patient record, not a movement."
+              : "No movement matches this link. It may have closed, or the link is wrong."}
+          </WardNotFoundBody>
+        )}
         <WardPrototypeFooter testId="ward-console-governance" />
       </main>
     </div>

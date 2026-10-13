@@ -140,6 +140,10 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/patients/person-by-umrn.tsx",
+    why: "a UMRN in /people/ is no longer resolved (D-39, PR #280); patient links use the person id and an unknown id gets the plain not-found",
+  },
+  {
     module: "src/components/ward-management/shell/ward-dynamic-island.tsx",
     why: "its one route use was the ED page's 24 hour timeline, which left the page on 11 Oct 2026 (device audit, owner pick A2) as a link to Governance",
   },
