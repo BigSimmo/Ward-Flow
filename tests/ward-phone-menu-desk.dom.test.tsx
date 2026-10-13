@@ -82,3 +82,23 @@ describe("Menu desk wording and Update a bed (shell-2)", () => {
     expect(updateABedHref()).not.toBe(unitHref(allUnits()[0].id));
   });
 });
+
+describe("Create sheet items match the + button's name (shell-5)", () => {
+  it("offers transport and Add patient, and the + names every item", () => {
+    openMenu();
+    const plus = screen.getByTestId("ward-phone-create");
+    expect(plus).toHaveAccessibleName("Create: new referral, delay, bed, transport or patient");
+    fireEvent.click(plus);
+    const sheet = screen.getByTestId("ward-phone-create-sheet");
+    expect(within(sheet).getByRole("button", { name: /New referral/u })).toBeInTheDocument();
+    expect(within(sheet).getByRole("link", { name: /Log a delay/u })).toBeInTheDocument();
+    expect(within(sheet).getByRole("link", { name: /Book transport/u })).toHaveAttribute(
+      "href",
+      "/mockups/ward-flow/transport/officer",
+    );
+    expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute(
+      "href",
+      "/mockups/ward-flow/people/new",
+    );
+  });
+});

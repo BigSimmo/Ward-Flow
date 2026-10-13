@@ -14,8 +14,11 @@ import {
   Plus,
   Search,
   Settings,
+  Truck,
+  UserPlus,
   Wrench,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/ui/sheet";
 import { Dot } from "@/components/wf";
@@ -25,6 +28,7 @@ import {
   wardTasksAreActionableForRole,
   type WardChromeRole,
 } from "@/components/ward-management/ward-chrome-role";
+import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
@@ -107,10 +111,23 @@ const OVERDUE_NEED_IDS = ["delays", "discharges"] as const;
  * Book transport is left out (audit round 2, A4-10) until a phone booking entry is wired: it opened
  * the officer's job list, which cannot start a booking.
  */
-const CREATE_LINKS = [
-  { id: "delays", label: "Log a delay", meta: "Reason and who it waits on", icon: Clock3 },
+/*
+ * shell-5 (13 Oct 2026): the Create items match the + button's name. Transport and Add patient join;
+ * a delay is logged on its patient, so the row says it starts by choosing them. `href` names a page
+ * that is not a Menu entry.
+ */
+const CREATE_LINKS: readonly { id: string; label: string; meta: string; icon: LucideIcon; href?: string }[] = [
+  { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
   { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
-] as const;
+  { id: "officer", label: "Book transport", meta: "Transport jobs and bookings", icon: Truck },
+  {
+    id: "add-patient",
+    label: "Add patient",
+    meta: "New record with a UMRN",
+    icon: UserPlus,
+    href: WARD_ADD_PERSON_HREF,
+  },
+];
 
 export type WardPhoneMenuProps = {
   /** The bar's Menu button, where focus returns when the menu closes. */
@@ -396,7 +413,7 @@ function PhoneDock({
         <button
           type="button"
           className={styles.rise}
-          aria-label="Create: new referral, transport, delay or bed"
+          aria-label="Create: new referral, delay, bed, transport or patient"
           aria-haspopup="dialog"
           data-testid="ward-phone-create"
           onClick={onCreate}
@@ -575,7 +592,7 @@ function CreateSheet({
       </button>
       <ul className={`${styles.list} ${styles.rich}`}>
         {CREATE_LINKS.flatMap((item) => {
-          const entry = byId.get(item.id);
+          const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
           return entry
             ? [
                 <li key={item.id}>
