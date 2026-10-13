@@ -259,7 +259,7 @@ describe("a withdrawal reason cannot name the ward that won", () => {
       "a new write to withdrawnReferrals appeared. If it records a DIFFERENT cause then the existing " +
         "reason codes are no longer true of every entry: add a member to WITHDRAWAL_REASONS for it " +
         "rather than reusing one, and update this count.",
-    ).toBe(7);
+    ).toBe(8);
     expect(stripped, "one of the six writes is the empty initialisation, which records no cause").toContain(
       "withdrawnReferrals: []",
     );

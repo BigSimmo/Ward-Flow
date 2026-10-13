@@ -430,8 +430,7 @@ export function CapacityScreen() {
                 aria-label="Sort wards"
                 value={wardSort}
                 onChange={(event) => {
-                  const nextSort = event.target.value;
-                  startTransition(() => setWardSort(nextSort));
+                  setWardSort(event.target.value);
                 }}
               >
                 <option value="name">Ward A–Z</option>

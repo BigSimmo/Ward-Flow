@@ -333,9 +333,6 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         whereabouts: "Back at the sending emergency department",
       });
 
-      if (state.rejections.length > 0) {
-        console.error("STATE_REJECTIONS:", JSON.stringify(state.rejections, null, 2));
-      }
       expect(state.rejections).toHaveLength(0);
       const stoppedMv = state.movements.find((m) => m.id === movementId)!;
       expect(stoppedMv.closure?.outcome).toBe("did_not_proceed");

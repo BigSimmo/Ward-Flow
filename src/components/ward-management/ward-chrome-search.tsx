@@ -117,8 +117,11 @@ export function WardChromeSearch({
   const plannedAdmissions = context?.plannedAdmissions;
 
   const precomputedTasks = useMemo(
-    () => buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions ? { plannedAdmissions } : undefined),
-    [movements, now, plannedAdmissions, units],
+    () =>
+      debouncedTrimmed.length === 0
+        ? undefined
+        : buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions ? { plannedAdmissions } : undefined),
+    [debouncedTrimmed, movements, now, plannedAdmissions, units],
   );
 
   const smartResults = useMemo(

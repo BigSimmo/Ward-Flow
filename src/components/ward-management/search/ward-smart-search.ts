@@ -650,7 +650,10 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
   );
 
   const shouldDeriveTasks =
-    intent === "task" || intent === "general" || /\b(tasks?|actions?|inbox|pending|overdue)\b/i.test(typed);
+    intent === "task" ||
+    intent === "general" ||
+    intent === "identifier" ||
+    /\b(tasks?|actions?|inbox|pending|overdue)\b/i.test(typed);
 
   const tasksInbox = shouldDeriveTasks
     ? (input.precomputedTasks ??
@@ -660,16 +663,15 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
         input.units,
         input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
       ))
-    : (input.precomputedTasks ?? []);
-  const tasks =
-    shouldDeriveTasks || (input.precomputedTasks && input.precomputedTasks.length > 0)
-      ? rankAndLimit(
-          searchTasks(typed, tasksInbox),
-          typed,
-          (task) => [task.task.title, task.task.detail, task.task.movementId, task.task.owner],
-          limit,
-        )
-      : [];
+    : [];
+  const tasks = shouldDeriveTasks
+    ? rankAndLimit(
+        searchTasks(typed, tasksInbox),
+        typed,
+        (task) => [task.task.title, task.task.detail, task.task.movementId, task.task.owner],
+        limit,
+      )
+    : [];
 
   const totalCount =
     people.length +

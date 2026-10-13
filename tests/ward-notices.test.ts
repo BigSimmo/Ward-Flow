@@ -358,7 +358,8 @@ describe("assertion 2 — a decision NOT in the table produces none (the anti-va
     });
     expect(after.rejections).toEqual([]);
     const added = after.notices.slice(before);
-    expect(added.length).toBeGreaterThan(0);
+    expect(added).toHaveLength(2);
+    expect(added.map((n) => n.to.placeId).sort()).toEqual([ACCEPTED_UNIT_ID, DECLINED_UNIT_ID].sort());
     expect(added.every((n) => n.kind === "ward_request_withdrawn")).toBe(true);
   });
 });

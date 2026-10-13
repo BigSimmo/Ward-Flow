@@ -3989,12 +3989,6 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
       const acceptingUnitId = movement.acceptedUnitId;
       const hadLiveTransportJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
-      const referredUnitsToNotify = [...movement.referredUnitIds];
-      const withdrawnLiveRequests = movement.referredUnitIds.map((unitId) => ({
-        unitId,
-        at: event.now,
-        reason: "referrer_withdrew" as const,
-      }));
       const updated: Movement = {
         ...movement,
         examination: { at: event.now, outcome: event.outcome },
@@ -4012,7 +4006,6 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // S1-5: Clear acceptedUnitId and referredUnitIds so the closed movement does not linger as live.
         acceptedUnitId: undefined,
         referredUnitIds: [],
-        withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
       };
       const next = replaceMovement(withoutPulledBed, movement.id, updated);
       const outcomeNotices: Notice[] = [];
@@ -4042,20 +4035,6 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             `Transport for ${movement.id} was cancelled (examination outcome ${event.outcome}); no bed is held and nothing has been rebooked.`,
           ),
         );
-      }
-      for (const unitId of referredUnitsToNotify) {
-        if (unitId !== acceptingUnitId) {
-          outcomeNotices.push(
-            makeNotice(
-              event.now,
-              noticeCount++,
-              "ward_request_withdrawn",
-              { role: "ward", placeId: unitId },
-              { movementId: movement.id, unitId },
-              `The request for ${movement.id} was withdrawn: examination outcome ${event.outcome}.`,
-            ),
-          );
-        }
       }
       return appendNotices(next, outcomeNotices);
     }

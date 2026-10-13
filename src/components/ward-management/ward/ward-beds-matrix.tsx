@@ -183,14 +183,23 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
   return (
     p.bedNumber === n.bedNumber &&
     p.status === n.status &&
+    p.statusText === n.statusText &&
     p.patientAlias === n.patientAlias &&
     p.stayDays === n.stayDays &&
+    p.expectedDays === n.expectedDays &&
     p.departureExpectedAt === n.departureExpectedAt &&
     p.isClosed === n.isClosed &&
     p.isPulled === n.isPulled &&
     p.pastDate === n.pastDate &&
     p.admissionId === n.admissionId &&
     p.awayAtEdHours === n.awayAtEdHours &&
+    p.blockReason === n.blockReason &&
+    p.isSpecialling === n.isSpecialling &&
+    p.isHdu === n.isHdu &&
+    p.age === n.age &&
+    p.sex === n.sex &&
+    p.legalStatusLabel === n.legalStatusLabel &&
+    p.tentativeDiagnosis === n.tentativeDiagnosis &&
     p.notes === n.notes &&
     p.isPlannedAdmission === n.isPlannedAdmission &&
     p.isLeave === n.isLeave

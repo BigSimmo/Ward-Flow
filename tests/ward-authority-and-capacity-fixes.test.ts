@@ -392,31 +392,13 @@ describe("Option B: Flow & Capacity Discrepancy Safeguards", () => {
       expect(mvAfter.closure?.outcome).toBe("did_not_proceed");
       expect(mvAfter.closure?.reason).toBe("examination outcome revoked");
 
-      // 2. referredUnitIds and acceptedUnitId cleared
+      // 2. referredUnitIds and acceptedUnitId cleared (S1-5)
       expect(mvAfter.referredUnitIds).toEqual([]);
       expect(mvAfter.acceptedUnitId).toBeUndefined();
 
-      // 3. withdrawnReferrals contains entries for the previously referred units
-      expect(mvAfter.withdrawnReferrals).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ unitId: "scgh-adult-open", reason: "referrer_withdrew" }),
-          expect.objectContaining({ unitId: "arm-adult-open", reason: "referrer_withdrew" }),
-        ]),
-      );
-
-      // 4. Notices sent to referred units
+      // 3. No spurious notices sent when no bed was held / accepted
       const addedNotices = next.notices.slice(beforeNoticesCount);
-      const wardNotices = addedNotices.filter((n) => n.kind === "ward_request_withdrawn");
-      expect(wardNotices.length).toBe(2);
-      expect(wardNotices.map((n) => n.to.placeId)).toEqual(
-        expect.arrayContaining(["scgh-adult-open", "arm-adult-open"]),
-      );
-
-      // 5. Notice does not claim a bed was released when no bed was pulled
-      const revokedNotices = addedNotices.filter((n) => n.kind === "examination_revoked_ward");
-      for (const notice of revokedNotices) {
-        expect(notice.sentence).not.toContain("the bed has been released");
-      }
+      expect(addedNotices.filter((n) => n.kind === "examination_revoked_ward")).toHaveLength(0);
     });
 
     it("reports bed released if a bed was held before revoked examination", () => {

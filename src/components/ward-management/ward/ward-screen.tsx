@@ -136,10 +136,7 @@ const WardNotificationCenter = dynamic(
   () => import("./ward-notification-center").then((m) => m.WardNotificationCenter),
   { ssr: false },
 );
-const WardAnswerView = dynamic(() => import("./ward-answer-view").then((m) => m.WardAnswerView), {
-  ssr: false,
-  loading: () => <p role="status">Loading ward answer…</p>,
-});
+import { WardAnswerView } from "./ward-answer-view";
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
 type BoardCheck = {
@@ -776,7 +773,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (rejections.length > priorRejectionCountRef.current) {
       const newest = rejections[rejections.length - 1];
       setLastActionRejection(
-        newest.attempted === "ACCEPT_IN_PRINCIPLE" || newest.attempted === "PULL_PATIENT" ? newest : undefined,
+        newest.attempted === "ACCEPT_IN_PRINCIPLE" ||
+          newest.attempted === "PULL_PATIENT" ||
+          newest.attempted === "RELEASE_HELD_BED"
+          ? newest
+          : undefined,
       );
     } else {
       setLastActionRejection(undefined);

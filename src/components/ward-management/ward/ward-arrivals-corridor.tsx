@@ -487,15 +487,17 @@ export function WardArrivalsCorridor({
                   type="button"
                   className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
                   data-testid={`ward-release-stopped-bed-${movement.id}`}
-                  onClick={() =>
+                  onClick={() => {
+                    priorRejectionCountRef.current = rejections.length;
                     dispatch({
                       type: "RELEASE_HELD_BED",
                       role: "ward",
                       now,
                       movementId: movement.id,
                       actingUnitId: unit.id,
-                    })
-                  }
+                    });
+                    setCheckToken((t) => t + 1);
+                  }}
                 >
                   Release held bed
                 </button>
