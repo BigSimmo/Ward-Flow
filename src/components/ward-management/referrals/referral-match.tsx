@@ -424,6 +424,7 @@ export function ReferralMatchView({
    * until there is one.
    */
   const [declineReason, setDeclineReason] = useState<ReferralDeclineReason | undefined>(undefined);
+  const [edDeclineReason, setEdDeclineReason] = useState<ReferralDeclineReason | undefined>(undefined);
   const [expandedUnitGates, setExpandedUnitGates] = useState<Set<string>>(new Set());
   /**
    * A SEPARATE draft from `declineReason` above, deliberately — not a second use of the same
@@ -1089,13 +1090,13 @@ export function ReferralMatchView({
    * Every caller names its own destinationKind rather than defaulting it, so the reducer is never
    * left to guess which destination replied.
    */
-  function handleDecline(destinationKind: ReferralDestinationKind) {
+  function handleDecline(destinationKind: ReferralDestinationKind, reason: ReferralDeclineReason = declineReason!) {
     priorRejectionCountRef.current = rejections.length;
     // ⚠️ GUARDED HERE TOO, NOT ONLY ON THE BUTTON. `aria-disabled` keeps the control focusable on
     // purpose, so it can still be activated — and an unstated reason must never reach the record
     // by that route. Belt and braces, because the thing being prevented is a fabricated clinical
     // judgement rather than an inconvenience.
-    if (declineReason === undefined) return;
+    if (reason === undefined) return;
     dispatch({
       type: "DECLINE_REFERRAL",
       role: "coordinator",
@@ -1103,7 +1104,7 @@ export function ReferralMatchView({
       referralId: referral.id,
       destinationKind,
       unitId: destinationKind === "psychiatric_ward" ? ward?.destination.unitId : undefined,
-      reason: declineReason,
+      reason,
     });
     setCheckToken((token) => token + 1);
     onDecision?.("Referral declined");
@@ -1267,6 +1268,7 @@ export function ReferralMatchView({
                 "Accepted — unit not recorded."
             : referralAddressingStateLabel(ward)}
         </p>
+        {renderEdControls()}
         {communityArmLive ? (
           <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls-community_team">
             <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-reason-community_team">
@@ -1392,8 +1394,8 @@ export function ReferralMatchView({
       </>
     ) : null;
 
-  const edControls =
-    edAddressing && edAddressing.state === "queued" && edAddressing.withdrawnAt === undefined ? (
+  function renderEdControls() {
+    return edAddressing && edAddressing.state === "queued" && edAddressing.withdrawnAt === undefined ? (
       <>
         <div
           className={styles.matchRowTop}
@@ -1452,10 +1454,10 @@ export function ReferralMatchView({
               id="ward-referral-match-decline-reason-emergency_department"
               data-testid="ward-referral-match-decline-reason-emergency_department"
               className={styles.select}
-              value={declineReason ?? ""}
+              value={edDeclineReason ?? ""}
               onChange={(event) => {
                 const chosen = event.target.value;
-                setDeclineReason(
+                setEdDeclineReason(
                   ED_DECLINE_REASONS.includes(chosen as ReferralDeclineReason)
                     ? (chosen as ReferralDeclineReason)
                     : undefined,
@@ -1473,19 +1475,21 @@ export function ReferralMatchView({
               type="button"
               className={styles.declineButton}
               data-testid="ward-referral-match-decline-emergency_department"
-              aria-disabled={declineReason === undefined ? "true" : undefined}
+              aria-disabled={edDeclineReason === undefined ? "true" : undefined}
               aria-describedby={
-                declineReason === undefined ? "ward-referral-match-decline-blocked-emergency_department" : undefined
+                edDeclineReason === undefined ? "ward-referral-match-decline-blocked-emergency_department" : undefined
               }
-              title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
+              title={edDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
               onClick={
-                declineReason === undefined ? ignoreUnavailableActivation : () => handleDecline("emergency_department")
+                edDeclineReason === undefined
+                  ? ignoreUnavailableActivation
+                  : () => handleDecline("emergency_department", edDeclineReason)
               }
             >
               Decline referral
             </button>
           </div>
-          {declineReason === undefined ? (
+          {edDeclineReason === undefined ? (
             <span id="ward-referral-match-decline-blocked-emergency_department" className="sr-only">
               {DECLINE_REASON_UNCHOSEN_ED}
             </span>
@@ -1493,6 +1497,9 @@ export function ReferralMatchView({
         </div>
       </>
     ) : null;
+  }
+
+  const edControls = renderEdControls();
 
   /*
    * v10 phone: the decision reads as ONE scrolling sheet — three candidate lists, the board's own
@@ -2679,6 +2686,13 @@ function MatchRow({
                 {OVERRIDE_REASON_UNCHOSEN}
               </span>
             ) : null}
+          </div>
+        </div>
+      )}
+    </li>
+  );
+}
+ull}
           </div>
         </div>
       )}
