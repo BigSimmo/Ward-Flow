@@ -8,6 +8,7 @@
 import {
   INBOX_CATEGORIES,
   type InboxItemKind,
+  STAGE_TRANSITION_BLOCKERS,
   SUITABILITY_GATES,
 } from "@/components/ward-management/ward-flow-reducer";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
@@ -265,6 +266,18 @@ export function examinationRevokedWhileBedHeld(movement: Movement): boolean {
   const outcome = movement.examination?.outcome;
   if (outcome !== "community_order" && outcome !== "revoked") return false;
   return movement.admissionId !== undefined;
+}
+
+/**
+ * A movement whose transport was stopped mid-journey but whose held bed has not yet been released.
+ * Surfaced to clinicians so the held bed is visible and can be released.
+ */
+export function isStoppedTransportAwaitingRelease(movement: Movement): boolean {
+  return (
+    movement.transport?.stoppedAt !== undefined &&
+    (movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||
+      movement.admissionId !== undefined)
+  );
 }
 
 /**
@@ -1528,11 +1541,18 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
     .sort((a, b) => now - b.openedAt - (now - a.openedAt))
     .map((movement) => ({ movement }));
 
+  const stoppedAwaitingRelease = movements.filter(isStoppedTransportAwaitingRelease);
+
   const pulledBeds = open
     .filter((movement) => movement.pullExpiresAt !== undefined)
     .map((movement) => {
       const pullExpiresAt = movement.pullExpiresAt as Instant;
-      return { movement, unit: destinationUnit(movement, units), expired: pullExpiresAt <= now };
+      const isCollected = movement.stage === "moving" || movement.transport?.collectedAt !== undefined;
+      return {
+        movement,
+        unit: destinationUnit(movement, units),
+        expired: !isCollected && pullExpiresAt <= now,
+      };
     });
 
   const inTransit = open
@@ -1571,12 +1591,17 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
     }
   }
 
+  const stoppedGoneWrong = stoppedAwaitingRelease.map((movement) => ({
+    movement,
+    kind: "acceptance_withdrawn" as const,
+  }));
+
   return {
     takenAt: now,
     longestWaits,
     pulledBeds,
     inTransit,
-    placementGoneWrong: [...escalated, ...declinedByAll, ...acceptanceWithdrawn],
+    placementGoneWrong: [...escalated, ...declinedByAll, ...acceptanceWithdrawn, ...stoppedGoneWrong],
   };
 }
 

@@ -27,7 +27,20 @@ import {
   type LegalStatus,
 } from "./ward-model";
 import { validateConfiguration, type WardConfiguration } from "./ward-configuration";
-import { SELECTABLE_LEGAL_FORMS } from "./ward-legal-forms";
+import { SELECTABLE_LEGAL_FORMS, CONTINUATION_LEGAL_FORMS } from "./ward-legal-forms";
+import { LEGAL_CLOCK_FORM_CODES } from "./ward-legal-clock";
+
+/**
+ * Every form code the reducer accepts on a legal-form record (A1-4): intake forms, the continuation
+ * list and the legal-clock codes (5B, 3C, 6B, 6C among them), so a continuation keeps its code.
+ */
+export const AUDITABLE_FORM_CODES: readonly string[] = [
+  ...new Set([
+    ...SELECTABLE_LEGAL_FORMS.map((form) => form.code),
+    ...CONTINUATION_LEGAL_FORMS.map((form) => form.code),
+    ...LEGAL_CLOCK_FORM_CODES,
+  ]),
+];
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -354,7 +367,10 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
       return {
         kind: "movement",
         movementId: movement.id,
-        patientId: patientReference(state, uniqueRecord(state.referrals, movement.referralId)?.patientId),
+        patientId: patientReference(
+          state,
+          uniqueRecord(state.referrals, movement.referralId)?.patientId ?? movement.patientId,
+        ),
       };
   } else if ("referralId" in event) {
     const referral = uniqueRecord(state.referrals, event.referralId);
@@ -383,7 +399,10 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
       return {
         kind: "movement",
         movementId: movement.id,
-        patientId: patientReference(state, uniqueRecord(state.referrals, movement.referralId)?.patientId),
+        patientId: patientReference(
+          state,
+          uniqueRecord(state.referrals, movement.referralId)?.patientId ?? movement.patientId,
+        ),
       };
   }
   return { kind: "unresolved" };
@@ -459,7 +478,10 @@ export function appendAudit(
       subject = {
         kind: "movement",
         movementId: created.id,
-        patientId: patientReference(after, uniqueRecord(after.referrals, created.referralId)?.patientId),
+        patientId: patientReference(
+          after,
+          uniqueRecord(after.referrals, created.referralId)?.patientId ?? created.patientId,
+        ),
       };
   }
   const base: AuditBase = {
@@ -658,10 +680,7 @@ export function appendAudit(
           dueAt: finiteInstant(event.paperExpiresAt),
           ...(event.type === "RECORD_LEGAL_FORM_CONTINUATION"
             ? {
-                formCode: enumValue(
-                  SELECTABLE_LEGAL_FORMS.map((f) => f.code),
-                  event.formCode,
-                ),
+                formCode: enumValue(AUDITABLE_FORM_CODES, event.formCode),
                 startedAt: finiteInstant(event.startedAt),
               }
             : {}),
