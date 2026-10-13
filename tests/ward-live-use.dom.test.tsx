@@ -1,8 +1,10 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { useEffect } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ToastProvider, useToast } from "@/components/ui/toast";
+import { ToastDeviceSaveContext, ToastProvider, useToast } from "@/components/ui/toast";
+import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { LiveChip, WfServerPhoneProvider, guessPhoneFromRequest, useIsPhone } from "@/components/wf";
 import { WARD_OFFLINE_LINK_NOTICE, WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
@@ -93,6 +95,68 @@ describe("A2-21 / A3-22: a toast pushed offline says it was saved on this device
     );
     fireEvent.click(screen.getByRole("button", { name: "push" }));
     expect(screen.getByTestId("toast")).not.toHaveTextContent(WARD_OFFLINE_SAVED_NOTE);
+  });
+});
+
+describe("Codex P1 (PR #267): the offline note only claims a save that is really kept", () => {
+  it("leaves the note off when the app says nothing is saved on this device", () => {
+    setOnline(false);
+    render(
+      <ToastDeviceSaveContext.Provider value={() => false}>
+        <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
+          <Pusher />
+        </ToastProvider>
+      </ToastDeviceSaveContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "push" }));
+    expect(screen.getByTestId("toast")).not.toHaveTextContent(WARD_OFFLINE_SAVED_NOTE);
+  });
+
+  it("drops the note from the moment typed text stops the ward demonstration saving", () => {
+    window.sessionStorage.clear();
+    setOnline(false);
+    let flow: ReturnType<typeof useWardFlow> | undefined;
+    let toastApi: ReturnType<typeof useToast> | undefined;
+    function Capture() {
+      const currentFlow = useWardFlow();
+      const currentToast = useToast();
+      useEffect(() => {
+        flow = currentFlow;
+        toastApi = currentToast;
+      });
+      return null;
+    }
+    render(
+      <WardFlowProvider>
+        <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
+          <Capture />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    expect(toastApi!.savesOnDevice?.()).toBe(true);
+    act(() => {
+      toastApi!.push({ tone: "success", title: "Before" });
+    });
+    expect(screen.getByTestId("toast")).toHaveTextContent(WARD_OFFLINE_SAVED_NOTE);
+
+    // The toast pushed in the same handler as the typed-text dispatch must not claim a save either.
+    act(() => {
+      flow!.dispatch({
+        type: "ADD_PATIENT",
+        role: "coordinator",
+        now: flow!.now,
+        umrn: "UMRN-TEST-267",
+        givenName: "Typed",
+        familyName: "Synthetic",
+        dateOfBirth: "1990-01-01",
+      });
+      toastApi!.push({ tone: "success", title: "After" });
+    });
+    const after = screen.getAllByTestId("toast").find((node) => node.textContent?.includes("After"));
+    expect(after).toBeDefined();
+    expect(after).not.toHaveTextContent(WARD_OFFLINE_SAVED_NOTE);
+    expect(toastApi!.savesOnDevice?.()).toBe(false);
+    window.sessionStorage.clear();
   });
 });
 
