@@ -49,6 +49,13 @@ describe("D-30: transfers from a ward at another hospital", () => {
     expect(wardTransferNeedsCoordinator(fromWard, elsewhere.id, seed.units)).toBe(true);
     if (sameSite) expect(wardTransferNeedsCoordinator(fromWard, sameSite.id, seed.units)).toBe(false);
     expect(wardTransferNeedsCoordinator({ source: "psychiatric_ward" }, elsewhere.id, seed.units)).toBe(true);
+    expect(
+      wardTransferNeedsCoordinator(
+        { source: "inter_hospital", originUnitId: ORIGIN_UNIT_ID },
+        elsewhere.id,
+        seed.units,
+      ),
+    ).toBe(true);
     expect(wardTransferNeedsCoordinator({ source: "community" }, elsewhere.id, seed.units)).toBe(false);
   });
 

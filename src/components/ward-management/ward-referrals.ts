@@ -46,7 +46,7 @@ export function wardTransferNeedsCoordinator(
   destinationUnitId: string,
   units: readonly Pick<Unit, "id" | "siteCode">[],
 ): boolean {
-  if (referral.source !== "psychiatric_ward") return false;
+  if (referral.source !== "psychiatric_ward" && referral.source !== "inter_hospital") return false;
   const originSite = units.find((unit) => unit.id === referral.originUnitId)?.siteCode;
   const destinationSite = units.find((unit) => unit.id === destinationUnitId)?.siteCode;
   return originSite === undefined || destinationSite === undefined || originSite !== destinationSite;
