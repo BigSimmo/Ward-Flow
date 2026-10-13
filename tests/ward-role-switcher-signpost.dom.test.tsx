@@ -123,7 +123,7 @@ describe("ward role switcher — other wards are named to coordinators only (own
 
     fireEvent.click(screen.getByRole("button", { name: "Change view" }));
 
-    const focus = within(screen.getByRole("dialog", { name: "Switch workstation" })).getByRole("group", {
+    const focus = within(screen.getByRole("dialog", { name: "Go to a desk" })).getByRole("group", {
       name: "Patient in focus",
     });
     for (const wardName of THREE_REFERRED_UNIT_NAMES) {
@@ -147,7 +147,7 @@ describe("ward role switcher — other wards are named to coordinators only (own
     expect(screen.getByTestId("ward-role-switcher-ward-count")).toHaveTextContent("3");
 
     fireEvent.click(trigger);
-    const focus = within(screen.getByRole("dialog", { name: "Switch workstation" })).getByRole("group", {
+    const focus = within(screen.getByRole("dialog", { name: "Go to a desk" })).getByRole("group", {
       name: "Patient in focus",
     });
     for (const wardName of THREE_REFERRED_UNIT_NAMES) {
@@ -177,7 +177,7 @@ describe("ward role switcher — the 'Change view' wording ruling (2026-09-03), 
     renderSwitcher(undefined, COORDINATOR_ROUTE);
 
     fireEvent.click(screen.getByRole("button", { name: /change view/i }));
-    const drawer = screen.getByRole("dialog", { name: "Switch workstation" });
+    const drawer = screen.getByRole("dialog", { name: "Go to a desk" });
     expect(within(drawer).getByRole("group", { name: "Statewide desks" })).toBeInTheDocument();
     expect(within(drawer).queryByRole("group", { name: "Patient in focus" })).not.toBeInTheDocument();
   });
@@ -186,7 +186,7 @@ describe("ward role switcher — the 'Change view' wording ruling (2026-09-03), 
     renderSwitcher(undefined, WARD_ROUTE);
 
     fireEvent.click(screen.getByRole("button", { name: /change view/i }));
-    const drawer = screen.getByRole("dialog", { name: "Switch workstation" });
+    const drawer = screen.getByRole("dialog", { name: "Go to a desk" });
     const tile = within(drawer).getByRole("button", { name: /Bed manager/ });
     // Site review (12 Oct 2026): a working tile (D-16), never greyed, and no colon in the sentence.
     expect(tile).not.toHaveAttribute("aria-disabled");

@@ -236,6 +236,26 @@ function canInert(element: Element): element is HTMLElement {
 }
 
 /**
+ * Inerts a background element whole, unless it holds an opt-out somewhere inside. `inert` is
+ * inherited, so an opted-out control nested in an inerted container would still be dead; such a
+ * container is instead walked, and every part of it except the opt-out (and the path down to it)
+ * is inerted. A sheet that deliberately sits below the phone header uses this to keep the
+ * header's Menu and Search live (Josh, 13 Oct 2026).
+ */
+function pushBackgroundAround(element: Element, background: HTMLElement[]) {
+  if (
+    element instanceof HTMLElement &&
+    !element.hasAttribute(SHEET_INERT_SKIP_ATTRIBUTE) &&
+    (!element.hasAttribute("inert") || inertedElements.has(element)) &&
+    element.querySelector(`[${SHEET_INERT_SKIP_ATTRIBUTE}]`) !== null
+  ) {
+    for (const child of Array.from(element.children)) pushBackgroundAround(child, background);
+    return;
+  }
+  if (canInert(element)) background.push(element);
+}
+
+/**
  * Everything outside the sheet's own subtree: walking to `document.body` and
  * taking the siblings at each level covers both portaled sheets (a direct body
  * child) and inline sheets nested deep in the page tree.
@@ -248,7 +268,7 @@ function collectBackgroundElements(root: HTMLElement) {
     if (parent == null) break;
     for (const sibling of Array.from(parent.children)) {
       if (sibling === node) continue;
-      if (canInert(sibling)) background.push(sibling);
+      pushBackgroundAround(sibling, background);
       // OverlayPortal carries a meaningful layer/name on a display:contents
       // wrapper. Inert that logical wrapper and its direct surface so both the
       // platform containment and the Sheet's historical backdrop contract stay

@@ -42,6 +42,7 @@ import {
   Tabs,
   buttonClass,
   cx,
+  useIsPhone,
 } from "@/components/wf";
 
 import type { RowDensity } from "./row-density";
@@ -168,6 +169,8 @@ export function AlertsPane({
                   >
                     Snooze 15m
                   </Button>
+                  {/* Audit settings-26: not wired, so it carries the Preview tag like every other. */}
+                  <PreviewTag />
                 </span>
               }
             />
@@ -202,13 +205,13 @@ export function AlertsPane({
               <RowSwitch name="Buzz sound" checked={buzz} onCheckedChange={onBuzzChange} />
             </SettingRow>
             <SettingRow setting="flash" title="Flash on urgent" sub="Screen edge flashes once" preview>
-              <RowSwitch name="Flash on urgent" checked onCheckedChange={() => onPreview("Flash on urgent")} />
+              <RowSwitch name="Flash on urgent" checked={false} onCheckedChange={() => onPreview("Flash on urgent")} />
             </SettingRow>
             <SettingRow setting="buzz-again" title="Buzz again if not seen" sub="Until someone acknowledges" preview>
               <PreviewSegmented
                 name="Buzz again if not seen"
                 items={["Off", "2m", "5m", "10m"]}
-                value="5m"
+                value="Off"
                 onPreview={onPreview}
               />
             </SettingRow>
@@ -224,7 +227,7 @@ export function AlertsPane({
             >
               <RowSwitch
                 name="Summary at shift start"
-                checked
+                checked={false}
                 onCheckedChange={() => onPreview("Summary at shift start")}
               />
             </SettingRow>
@@ -329,11 +332,19 @@ const SHORTCUTS: readonly { readonly label: string; readonly keys: readonly stri
   { label: "Close, dismiss", keys: ["Esc"] },
 ];
 
+/** Theme with Glare as a fourth choice (audit settings-15, Josh 13 Oct 2026). Glare uses light. */
+export type ThemeChoice = WardAppearance | "glare";
+
+export const THEME_CHOICES: readonly { id: ThemeChoice; label: string }[] = [
+  { id: "auto", label: "Auto" },
+  { id: "light", label: "Light" },
+  { id: "dark", label: "Dark" },
+  { id: "glare", label: "Glare" },
+];
+
 export function DisplayPane({
-  appearance,
-  onAppearanceChange,
-  glare,
-  onGlareChange,
+  theme,
+  onThemeChange,
   railOpen,
   onRailChange,
   reducedMotion,
@@ -346,10 +357,8 @@ export function DisplayPane({
   onDiscreetNamesChange,
   onPreview,
 }: {
-  appearance: WardAppearance;
-  onAppearanceChange: (next: WardAppearance) => void;
-  glare: boolean;
-  onGlareChange: (next: boolean) => void;
+  theme: ThemeChoice;
+  onThemeChange: (next: ThemeChoice) => void;
   railOpen: boolean;
   onRailChange: (open: boolean) => void;
   reducedMotion: boolean;
@@ -370,25 +379,13 @@ export function DisplayPane({
           <Card aria-labelledby="display-title">
             <CardHead iconPlain id="display-title" icon={Palette} title="Display" />
             <SettingRow setting="theme" title="Theme" testId="ward-settings-appearance">
-              <Segmented<WardAppearance>
+              <Segmented<ThemeChoice>
                 className={styles.pillSeg}
                 label="Theme"
-                items={[
-                  { id: "light", label: "Light" },
-                  { id: "dark", label: "Dark" },
-                  { id: "auto", label: "Auto" },
-                ]}
-                value={appearance}
-                onChange={onAppearanceChange}
+                items={[...THEME_CHOICES]}
+                value={theme}
+                onChange={onThemeChange}
               />
-            </SettingRow>
-            <SettingRow
-              setting="glare"
-              title="Glare mode"
-              sub="Stronger contrast for bright rooms"
-              testId="ward-settings-glare"
-            >
-              <RowSwitch name="Glare mode" checked={glare} onCheckedChange={onGlareChange} />
             </SettingRow>
             <SettingRow
               setting="sidebar"
@@ -447,6 +444,8 @@ export function DisplayPane({
         </div>
 
         <div className={styles.column}>
+          {/* Audit settings-14: Preview controls that do not run read Off, never On. A protection
+              that is not running must not look as if it is. */}
           <Card aria-labelledby="privacy-title">
             <CardHead iconPlain id="privacy-title" icon={EyeOff} title="Privacy" aside={<PreviewTag />} />
             <SettingRow
@@ -457,7 +456,7 @@ export function DisplayPane({
             >
               <RowSwitch
                 name="Initials only on shared screens"
-                checked
+                checked={false}
                 onCheckedChange={() => onPreview("Initials only on shared screens")}
               />
             </SettingRow>
@@ -465,7 +464,7 @@ export function DisplayPane({
               <PreviewSegmented
                 name="Lock after idle"
                 items={["5m", "10m", "15m", "Off"]}
-                value="10m"
+                value="Off"
                 onPreview={onPreview}
               />
             </SettingRow>
@@ -477,7 +476,7 @@ export function DisplayPane({
             >
               <RowSwitch
                 name="Clear session on close"
-                checked
+                checked={false}
                 onCheckedChange={() => onPreview("Clear session on close")}
               />
             </SettingRow>
@@ -518,7 +517,7 @@ export const HANDOVER_SHEET_SECTIONS = [
   "Handover signatures",
 ] as const;
 
-export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
+export function ProfilePane({ onPreview, onGoToDesk }: { onPreview: OnPreview; onGoToDesk: () => void }) {
   const service = useServiceScope();
   return (
     <>
@@ -529,6 +528,15 @@ export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
             <CardHead iconPlain id="profile-title" icon={UserRound} title="Profile" />
             <SettingRow setting="role" title="Role" sub="From sign-in once accounts exist">
               <span className={styles.readout}>{SETTINGS_DEMO_PROFILE.role}</span>
+              {/* Audit settings-27: the role row leads to the desk drawer, not a dead end. */}
+              <button
+                type="button"
+                className={buttonClass({ variant: "sec", size: "sm", className: styles.pill })}
+                onClick={onGoToDesk}
+                data-setting="go-to-desk"
+              >
+                Go to a desk
+              </button>
             </SettingRow>
             <SettingRow
               setting="service"
@@ -654,6 +662,8 @@ export function DataPane({
   onClearSession: () => void;
   onRestore: () => void;
 }) {
+  // Audit settings-24: the thresholds table is five columns wide, laid out for a tablet or computer.
+  const isPhone = useIsPhone();
   return (
     <>
       <div className={styles.columns}>
@@ -709,7 +719,7 @@ export function DataPane({
               <button
                 type="button"
                 className={buttonClass({
-                  variant: "danger",
+                  variant: "sec",
                   size: "sm",
                   className: `${styles.pill} ${styles.pushEnd}`,
                 })}
@@ -767,22 +777,29 @@ export function DataPane({
           title="Reference"
           meta="Read only"
           action={
-            <Tabs
-              label="Reference"
-              idPrefix="settings-reference"
-              value={reference}
-              onChange={onReferenceChange}
-              items={[
-                { id: "thresholds", label: "Thresholds" },
-                { id: "defaults", label: "Fixed defaults", count: OPERATIONAL_DEFAULTS.length },
-              ]}
-            />
+            isPhone ? undefined : (
+              <Tabs
+                label="Reference"
+                idPrefix="settings-reference"
+                value={reference}
+                onChange={onReferenceChange}
+                items={[
+                  { id: "thresholds", label: "Thresholds" },
+                  { id: "defaults", label: "Fixed defaults", count: OPERATIONAL_DEFAULTS.length },
+                ]}
+              />
+            )
           }
         />
-        <TabPanel idPrefix="settings-reference" id="thresholds" hidden={reference !== "thresholds"}>
+        {isPhone ? (
+          <p className={styles.cardNote} data-testid="ward-settings-thresholds-phone">
+            The thresholds table is laid out for a tablet or computer. Fixed defaults are below.
+          </p>
+        ) : null}
+        <TabPanel idPrefix="settings-reference" id="thresholds" hidden={isPhone || reference !== "thresholds"}>
           <div data-testid="ward-settings-thresholds">
             <p className={styles.cardNote} data-tone="accent">
-              Figures here change only through the Rules tab, and every change is recorded.
+              Figures here change only in Rules, and every change is recorded.
             </p>
             <div className={styles.tableWrap} role="region" aria-label="Published thresholds" tabIndex={0}>
               <table className={styles.table}>
@@ -791,7 +808,6 @@ export function DataPane({
                     <th scope="col">Figure</th>
                     <th scope="col">Triggers</th>
                     <th scope="col">Right now</th>
-                    <th scope="col">Lives in</th>
                     <th scope="col">Set by</th>
                   </tr>
                 </thead>
@@ -807,9 +823,6 @@ export function DataPane({
                           {threshold.state === "fires-now" ? `, ${threshold.reached}` : null}
                         </span>
                       </td>
-                      <td>
-                        <code className={styles.code}>{threshold.livesIn}</code>
-                      </td>
                       <td>{threshold.setBy}</td>
                     </tr>
                   ))}
@@ -818,7 +831,7 @@ export function DataPane({
             </div>
           </div>
         </TabPanel>
-        <TabPanel idPrefix="settings-reference" id="defaults" hidden={reference !== "defaults"}>
+        <TabPanel idPrefix="settings-reference" id="defaults" hidden={!isPhone && reference !== "defaults"}>
           <dl className={styles.defaultsGrid} aria-label="Fixed defaults" data-setting="fixed-defaults">
             {OPERATIONAL_DEFAULTS.map((item) => (
               <div key={item.name} data-testid={`ward-settings-operational-default-${item.name}`}>

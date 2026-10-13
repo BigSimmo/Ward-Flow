@@ -1,5 +1,6 @@
 "use client";
 
+import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { Field, Select, TextInput } from "@/components/wf";
@@ -1230,13 +1231,9 @@ export function WardBoard({
     return (
       <div className={styles.screen} data-testid="ward-board-unknown-unit" data-ward-design="third-edition">
         <main id="main-content" className={styles.main}>
-          <h1 className={styles.unitName}>Ward not found</h1>
-          <p className={styles.constraint}>No ward is recorded with the id “{unitId}”.</p>
-          <div className={styles.recoveryContainer}>
-            <Link href="/mockups/ward-flow" className={styles.recoveryLink}>
-              Return to Ward Flow Dashboard
-            </Link>
-          </div>
+          <WardNotFoundBody title="Ward not found" list={{ href: "/mockups/ward-flow/wards", label: "All wards" }}>
+            No ward matches this link. It never falls back to a different ward.
+          </WardNotFoundBody>
         </main>
       </div>
     );

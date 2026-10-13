@@ -40,7 +40,9 @@ describe("Ward Flow role screens unique test id contract", () => {
     const screens = screen.getAllByTestId("ward-unit-screen");
     expect(screens).toHaveLength(1);
     expect(screen.getByTestId("ward-unit-unresolved")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-unit-screen")).toHaveTextContent("nonexistent-unit-xyz");
+    // Not-found pages quote no ids (shell-12): the plain sentence, never the requested id.
+    expect(screen.getByTestId("ward-unit-screen")).toHaveTextContent("No ward matches this link.");
+    expect(screen.getByTestId("ward-unit-screen")).not.toHaveTextContent("nonexistent-unit-xyz");
   });
 
   it("renders exactly one ward-ed-screen element for a valid emergency department id", () => {
@@ -66,7 +68,9 @@ describe("Ward Flow role screens unique test id contract", () => {
     const screens = screen.getAllByTestId("ward-ed-screen");
     expect(screens).toHaveLength(1);
     expect(screen.getByTestId("ward-ed-unresolved")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-ed-screen")).toHaveTextContent("nonexistent-ed-xyz");
+    // Not-found pages quote no ids (shell-12): the plain sentence, never the requested id.
+    expect(screen.getByTestId("ward-ed-screen")).toHaveTextContent("No emergency department matches this link.");
+    expect(screen.getByTestId("ward-ed-screen")).not.toHaveTextContent("nonexistent-ed-xyz");
   });
 
   it("renders exactly one ward-officer-screen element for transport officer view", () => {

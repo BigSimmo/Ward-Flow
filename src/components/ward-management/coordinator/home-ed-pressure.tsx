@@ -7,8 +7,7 @@ import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
-import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { edPressure } from "@/components/ward-management/ward-pressure";
+import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward-pressure";
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 
@@ -96,14 +95,11 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                       ? { tone: "neutral", text: "No deadlines", spoken: "No deadline recorded" }
                       : { tone: "neutral", text: "No deadlines", spoken: "No patients waiting" };
 
-          const longestTone: WfTone | null =
-            row.waiting === 0
-              ? null
-              : row.longestWaitMinutes >= configuration.edAccessTargetMinutes
-                ? "danger"
-                : row.longestWaitMinutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES
-                  ? "warning"
-                  : null;
+          const longestTone: WfTone | null = edLongestWaitTone(
+            row.waiting,
+            row.longestWaitMinutes,
+            configuration.edAccessTargetMinutes,
+          );
 
           const spoken = [`${edShortName(row.ed)} (${serviceAcronym || rawService || "Department"})`];
           if (row.waiting === 0) spoken.push("no patients waiting");

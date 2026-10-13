@@ -53,8 +53,7 @@
     "Core": {
       "Home": "/mockups/ward-flow",
       "Sign in": "/mockups/ward-flow-sign-in",
-      "Settings": "/mockups/ward-flow/settings",
-      "Work mode": "/mockups/work-mode"
+      "Settings": "/mockups/ward-flow/settings"
     },
     "Patients": {
       "Patients": "/mockups/ward-flow/search",

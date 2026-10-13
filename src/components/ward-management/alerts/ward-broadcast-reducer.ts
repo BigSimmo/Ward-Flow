@@ -4,7 +4,7 @@ import type { Instant } from "../ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
 import { REFERRAL_DECLINE_REASONS, type Unit } from "../ward-model";
-import { edById, siteByCode } from "../ward-sites";
+import { edById } from "../ward-sites";
 import {
   PULL_NOW_ANSWER_MINUTES,
   PULL_NOW_LIVE_MINUTES,
@@ -23,10 +23,12 @@ import {
   isAlertActive,
   latestReplies,
   PULL_NOW_LIVE_STAGES,
+  pullNowWards,
   pullNowStillWaiting,
   type BroadcastAlert,
   type BroadcastReply,
 } from "./ward-broadcast-model";
+import { wardsInBroadcastScope } from "./global-alert-view";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
 
@@ -39,22 +41,9 @@ function isRealDesk(state: WardFlowState, unitId: string): boolean {
   return Boolean(findUnit(state, unitId) || edById(unitId));
 }
 
-const METRO_SERVICES = ["East Metro", "North Metro", "South Metro"];
-
 /** The wards a bed call's chosen target covers. ED liaison names no ward, so it asks none. */
 function wardsInScope(state: WardFlowState, scope: BroadcastAlert["targetScope"]): string[] {
-  return state.units
-    .filter((unit) => {
-      const service = siteByCode(unit.siteCode)?.service ?? "";
-      if (scope === "all") return true;
-      if (scope === "metro_adult") return unit.cohort === "Adult" && METRO_SERVICES.includes(service);
-      if (scope === "forensic") return unit.forensic;
-      if (scope === "adolescent") return unit.cohort === "Youth";
-      if (scope === "older_adult") return unit.cohort === "Older adult";
-      if (scope === "regional_wachs") return service === "WACHS";
-      return false;
-    })
-    .map((unit) => unit.id);
+  return wardsInBroadcastScope(state.units, scope);
 }
 
 /**
@@ -227,10 +216,7 @@ export function reduceBroadcastAlertEvent(
       }
       // The accepting ward, else every ward still considering the referral. D-30 is kept by the
       // role table: only the coordinator raises this, for any hospital's patient.
-      const declined = new Set(movement.declines.map((decline) => decline.unitId));
-      const targetUnitIds = movement.acceptedUnitId
-        ? [movement.acceptedUnitId]
-        : movement.referredUnitIds.filter((unitId) => !declined.has(unitId) && findUnit(state, unitId));
+      const targetUnitIds = pullNowWards(movement, (unitId) => Boolean(findUnit(state, unitId)));
       if (targetUnitIds.length === 0) {
         return reject(state, event, "RAISE_PULL_NOW has no ward to ask, refer the patient to wards first");
       }

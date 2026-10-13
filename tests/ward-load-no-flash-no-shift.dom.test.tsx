@@ -90,6 +90,19 @@ describe("header: no light flash on load", () => {
     expect(arms.length).toBeGreaterThan(0);
     for (const arm of arms) expect(arm).toBe(':has([data-wf-hero="band"]:not([data-band="off"]))');
   });
+
+  // Batch 5 (13 Oct 2026): the phone bar flashed light on slow loads, because only desktop had the
+  // pre-band arm. The phone ink face now takes it too, except once the bar has scrolled.
+  it("paints the phone bar ink before it has its own data-band, but not once it has scrolled", () => {
+    const css = strip(readFileSync("src/components/ward-management/shell/ward-bar.module.css", "utf8"));
+    // The arm that skips a scrolled bar is the phone one; desktop has no data-scrolled face.
+    const inkRule =
+      /\.bar\.bar:is\(\s*\[data-band="ink"\],\s*:where\(([^{]*:not\(\[data-band\]\):not\(\[data-scrolled\]\))\s*\)\s*\)\s*\{[^}]*background:\s*var\(--wf-hero-1\)/u.exec(
+        css,
+      );
+    expect(inkRule, "the phone ink face has no pre-band arm").not.toBeNull();
+    expect(inkRule![1]).toContain(':has([data-wf-hero="band"]:not([data-band="off"]))');
+  });
 });
 
 describe("Governance: the server band sits where the measure will put it", () => {
@@ -109,6 +122,26 @@ describe("Governance: the server band sits where the measure will put it", () =>
     expect(content).toMatch(/--wf-band-page-x:\s*1\.5rem/u);
     // The published insets are the padding itself, so they cannot drift apart.
     expect(content).toMatch(/padding:\s*var\(--wf-band-page-top\)\s+var\(--wf-band-page-x\)\s+1\.5rem/u);
+  });
+});
+
+describe("phone Home: the hero paints as the band before it is measured", () => {
+  it("uses the Home page's phone insets and the phone band's own spacing", () => {
+    const home = strip(readFileSync("src/components/ward-management/coordinator/home.module.css", "utf8"));
+    const serverBand =
+      /:global\(\[data-wf-scroller\]\)\s*\.homeHero\[data-wf-hero="band"\]:not\(\[data-band\]\)\s*\{([^}]*)\}/u.exec(
+        home,
+      )?.[1];
+    // The Home body pads 12px on top and 16px at the sides on a phone; the measure pulls the band
+    // out by exactly that, so the server band does the same (layout shift 0.18 to 0.001, 390px).
+    expect(home).toMatch(/\.body\s*\{\s*padding:\s*var\(--wf-s-3\)\s+var\(--wf-s-4\);/u);
+    expect(serverBand).toMatch(/margin:\s*calc\(-1 \* var\(--wf-s-3\)\)\s+calc\(-1 \* var\(--wf-s-4\)\)\s+-10px;/u);
+    // The same padding as the phone `.hero[data-band="on"]` rule in hero.module.css.
+    expect(serverBand).toMatch(/padding:\s*6px var\(--wf-s-4\) calc\(18px \+ var\(--wf-band-lip\)\);/u);
+    const hero = strip(readFileSync("src/components/wf/hero.module.css", "utf8"));
+    expect(hero).toMatch(
+      /padding-top:\s*6px;\s*padding-right:\s*16px;\s*padding-bottom:\s*calc\(18px \+ var\(--wf-band-lip\)\);/u,
+    );
   });
 });
 

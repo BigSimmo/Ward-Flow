@@ -49,7 +49,6 @@ import {
   STATISTICS_WARDS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -69,7 +68,7 @@ import {
   type BedMap,
 } from "./statistics-bed-map";
 import { PhoneBody, PhoneList, PhonePinnedAction, phoneBodyStyles as phone } from "./statistics-phone-parts";
-import { dateOf, fromToday, weekdayOf } from "./statistics-dates";
+import { dateOf, fromToday, isPastDate, weekdayOf } from "./statistics-dates";
 import { csvCell } from "./statistics-csv";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
@@ -251,6 +250,7 @@ export function StatisticsWardScreen({
         figures: () => [
           ["Beds", unit.beds],
           ["Occupied", wardOccupancy.occupied],
+          ["In use (occupied or pulled)", wardOccupancy.inUse],
           ["Occupancy percent (occupied or pulled)", occupancyPct],
           ["Pulled, not arrived", wardOccupancy.pulled],
           ["Ready", capacity.available],
@@ -260,12 +260,13 @@ export function StatisticsWardScreen({
       }}
       phone={{
         eyebrow: site?.name ?? "Hospital not recorded",
-        sub: `${cohortLabel} · ${unit.beds} beds${averageStay === null ? "" : ` · average stay ${averageStay}d`}`,
+        // The % sits in the sub line so the hero label never clips (audit stats-15).
+        sub: `${cohortLabel} · ${occupancyPct}% of ${unit.beds} beds in use${averageStay === null ? "" : ` · average stay ${averageStay}d`}`,
         stats: (
           <>
             <HeroStat
-              value={wardOccupancy.occupied}
-              label={`Occupied, ${occupancyPct}% in use`}
+              value={wardOccupancy.inUse}
+              label="In use"
               tone={occupancyPct >= BED_ALERT_THRESHOLD_PERCENT ? "warning" : undefined}
             />
             <HeroStat value={capacity.available} label="Ready" />
@@ -277,7 +278,7 @@ export function StatisticsWardScreen({
         <>
           {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
               out; the export still carries it. */}
-          <HeroStat value={wardOccupancy.occupied} label={`Occupied, ${occupancyPct}% in use`} />
+          <HeroStat value={wardOccupancy.inUse} label={`In use, ${occupancyPct}%`} />
           <HeroStat
             value={wardOccupancy.pulled}
             label={
@@ -621,7 +622,6 @@ function WardPhone({
   dayZero: Date;
   leaveBeds: readonly { admissionId: string }[];
 }) {
-  const patientOf = usePatientOf();
   const [tab, setTab] = useState<"roster" | "discharges" | "blockers">("roster");
   const byStay = (a: Admission, b: Admission) => (stayDaysOf(b, now) ?? -1) - (stayDaysOf(a, now) ?? -1);
   const roster = [...current].sort(byStay);
@@ -687,7 +687,6 @@ function WardPhone({
           }
         >
           {shown.map((admission) => {
-            const person = patientOf(admission);
             const days = stayDaysOf(admission, now);
             const onLeave = leaveBeds.some((bed) => bed.admissionId === admission.id);
             const status = onLeave ? "On leave" : ADMISSION_STATE_LABELS[admission.state];
@@ -695,13 +694,12 @@ function WardPhone({
               <PhoneListRow
                 key={admission.id}
                 as="li"
-                name={person.formalName}
-                meta={
-                  <>
-                    <span className={phone.mono}>{person.umrn}</span>
-                    {` · ${tab === "blockers" && admission.blockReason ? admission.blockReason : status}`}
-                  </>
-                }
+                name={<span className={phone.mono}>{admission.id}</span>}
+                meta={`${tab === "blockers" && admission.blockReason ? admission.blockReason : status}${
+                  admission.expectedDischargeAt !== null && isPastDate(admission.expectedDischargeAt, now)
+                    ? " · past date"
+                    : ""
+                }`}
                 value={
                   days === null ? (
                     "none"
@@ -712,7 +710,16 @@ function WardPhone({
                   )
                 }
                 time={
-                  admission.expectedDischargeAt === null ? "no date" : dateOf(admission.expectedDischargeAt, dayZero)
+                  admission.expectedDischargeAt === null ? (
+                    "no date"
+                  ) : isPastDate(admission.expectedDischargeAt, now) ? (
+                    <span className={phone.flagged}>
+                      <StatusGlyph tone="warning" size={9} />
+                      {dateOf(admission.expectedDischargeAt, dayZero)}
+                    </span>
+                  ) : (
+                    dateOf(admission.expectedDischargeAt, dayZero)
+                  )
                 }
               />
             );
@@ -1161,10 +1168,16 @@ function Roster({
                         <SrOnly>No discharge date set</SrOnly>
                       </span>
                     ) : (
-                      <>
+                      <span className={styles.flagged}>
+                        {isPastDate(admission.expectedDischargeAt, now) ? (
+                          <StatusGlyph tone="warning" size={9} />
+                        ) : null}
                         {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
-                        <span className={styles.muted}>{fromToday(admission.expectedDischargeAt, now)}</span>
-                      </>
+                        <span className={styles.muted}>
+                          {fromToday(admission.expectedDischargeAt, now)}
+                          {isPastDate(admission.expectedDischargeAt, now) ? ", past date" : ""}
+                        </span>
+                      </span>
                     )}
                   </td>
                   <td className={admission.blockReason === null ? styles.muted : undefined}>

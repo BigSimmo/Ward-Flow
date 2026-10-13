@@ -46,7 +46,7 @@ describe("the Forms screen", () => {
   it("has the page shell — a main landmark, one <h1>, and the synthetic-data disclosure every ward screen carries", () => {
     renderScreen();
     expect(screen.getByRole("main")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: "Forms" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Legal forms" })).toBeInTheDocument();
     // `tests/ward-prototype-disclosure.test.ts` walks every ROUTE for the `prototypeBadge` class;
     // this is the component-level half, checked directly by its visible text rather than assumed.
     expect(screen.getAllByText("Synthetic prototype")[0]).toBeInTheDocument();
@@ -72,7 +72,7 @@ describe("the Forms screen", () => {
    */
   it("states the population above the groups without claiming an order for them", () => {
     renderScreen();
-    const heading = screen.getByRole("heading", { level: 1, name: "Forms" });
+    const heading = screen.getByRole("heading", { level: 1, name: "Legal forms" });
     const subtitle = screen.getByText("Recorded forms and deadlines for open movements.");
 
     expect(heading).toBeVisible();

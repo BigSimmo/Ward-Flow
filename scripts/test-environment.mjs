@@ -136,6 +136,9 @@ export function offlineTestEnvironment(source = process.env, overrides = {}) {
     RAG_PROVIDER_MODE: "offline",
     NEXT_PUBLIC_DEMO_MODE: "true",
     NEXT_PUBLIC_WARD_SHARED_ENABLED: "false",
+    // The design-system showcase answers not found in production builds (shell-20) except in this
+    // offline test build, so the browser journeys can still check it.
+    WARD_FLOW_SHOWCASE: "1",
     ...overrides,
   };
 }

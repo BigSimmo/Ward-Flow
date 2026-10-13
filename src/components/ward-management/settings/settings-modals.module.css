@@ -37,15 +37,17 @@
 .btnSecondary {
   composes: btn;
 }
-.btnDanger {
+/* Audit settings-29 (Josh, 13 Oct 2026): a restore can be undone, so its confirm is the plain
+ * primary, not red. Red stays for act now. */
+.btnPrimary {
   composes: btn;
-  background: var(--danger);
+  background: var(--accent);
   color: var(--on-accent);
-  border-color: var(--danger);
+  border-color: var(--accent);
 }
-.btnDanger:hover {
-  background: var(--danger-ink);
-  border-color: var(--danger-ink);
+.btnPrimary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 .modalOverlay {
   position: fixed;
@@ -106,20 +108,13 @@
   flex-direction: column;
   gap: 0.375rem;
 }
-.dangerBadge {
+/* Neutral words; the warning glyph carries the tone (audit settings-29). */
+.noticeLine {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.125rem 0.5rem;
-  border-radius: var(--pill);
-  background: var(--danger-soft);
-  color: var(--danger-ink);
-  border: 1px solid var(--danger);
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  gap: 0.375rem;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
   align-self: flex-start;
 }
 .baselineParametersCard {

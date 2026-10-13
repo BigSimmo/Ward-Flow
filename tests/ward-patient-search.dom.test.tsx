@@ -19,7 +19,11 @@ vi.mock("next/link", () => ({
 }));
 
 import { PatientSearchPage, ResultsSection } from "@/components/ward-management/search/patient-search";
-import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
+import {
+  handOffPatientSearchText,
+  takeHandedOffPatientQuery,
+  takeHandedOffPatientSearchText,
+} from "@/components/ward-management/search/patient-query-handoff";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -314,9 +318,9 @@ describe("search finds PEOPLE, including ones the movement search structurally c
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "hallow" } });
 
     const people = screen.getByTestId("ward-patient-search-people-list");
-    expect(within(people).getByText(/Talia Halloway/)).toBeInTheDocument();
+    expect(within(people).getByText(/Halloway, Talia/)).toBeInTheDocument();
     expect(
-      within(people).getByText(/Marcus Hallowin/),
+      within(people).getByText(/Hallowin, Marcus/),
       "the near-miss pair is seeded for exactly this. A search that returned only the exact spelling " +
         "would look correct on this fixture and hide the person a clinician was actually looking for.",
     ).toBeInTheDocument();
@@ -328,7 +332,7 @@ describe("search finds PEOPLE, including ones the movement search structurally c
     const seed = seedWardFlowState();
     const movement = seed.movements.find((m) => isOpen(m) && m.patientId === "PT-006");
     if (!movement) throw new Error("fixture WF-308 / PT-006 is required by this test and is missing");
-    const { displayName } = resolveSubjectPatient(movement, seed);
+    const { formalName: displayName } = resolveSubjectPatient(movement, seed);
     expect(displayName).toMatch(/Oquinn/i);
 
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "oquinn" } });
@@ -1211,5 +1215,38 @@ describe("census counts agree (device audit 11 Oct 2026)", () => {
     expect(hero?.textContent).toContain(String(listed));
     expect(listed).toBeGreaterThan(10);
     expect(within(group!).getByRole("button", { name: `Show all ${listed}` })).toBeTruthy();
+  });
+});
+
+describe("the highlight chips follow the search (shell-16)", () => {
+  it("counts only what a UMRN search leaves, and drops the History count while searching", () => {
+    renderSearch();
+    const chipCount = (label: string): number => {
+      const chip = within(screen.getByRole("group", { name: "Highlight" })).getByRole("button", {
+        name: new RegExp(`^${label}`),
+      });
+      return Number((chip.textContent ?? "").replace(label, "").replace(/\D/gu, "") || "0");
+    };
+    const tierOneBefore = chipCount("Tier 1");
+    expect(tierOneBefore, "fixture drifted: no Tier 1 row to narrow from").toBeGreaterThan(1);
+
+    const seed = seedWardFlowState();
+    const movement = seed.movements.find((m) => isOpen(m) && m.patientId === "PT-006");
+    if (!movement) throw new Error("fixture WF-308 / PT-006 is required by this test and is missing");
+    const { umrn } = resolveSubjectPatient(movement, seed);
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: umrn } });
+
+    expect(chipCount("Tier 1")).toBeLessThanOrEqual(1);
+    expect(chipCount("Over 24 hours")).toBeLessThanOrEqual(1);
+    expect(screen.getByRole("tab", { name: /^History/u }).textContent).toBe("History");
+  });
+});
+
+describe("a UMRN handed over from Person not found (shell-6)", () => {
+  it("opens the search with that UMRN typed in, read once from memory", () => {
+    handOffPatientSearchText("UM999999");
+    renderSearch();
+    expect(screen.getByLabelText("Search")).toHaveValue("UM999999");
+    expect(takeHandedOffPatientSearchText(), "the handoff is read once").toBeUndefined();
   });
 });

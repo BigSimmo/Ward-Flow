@@ -7,7 +7,7 @@ import { BedSingle, Building2, ClipboardList, FileText, Hospital, LayoutDashboar
 import { StatusGlyph, TierTile, durMinutes, type WfTone } from "@/components/wf";
 import { destinationUnit, isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
 import type { Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
-import { patientAgeYears, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
+import { patientAgeYears, patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import {
   movementUmrn,
   resolveSubjectPatient,
@@ -184,10 +184,10 @@ function MovementPreview({
     <>
       <div className={styles.head}>
         <span className={styles.avatar} aria-hidden="true">
-          {initials(subject.displayName)}
+          {initials(subject.formalName)}
         </span>
         <div className={styles.headText}>
-          <p className={styles.title}>{subject.displayName}</p>
+          <p className={styles.title}>{subject.formalName}</p>
           <p className={styles.sub}>{patient ? personSub(patient) : subject.umrn}</p>
         </div>
         <TierTile tier={movement.urgency} />
@@ -271,7 +271,7 @@ function PersonPreview({
   now?: number;
   onOpen: PreviewProps["onOpen"];
 }) {
-  const name = patientDisplayName(patient);
+  const name = patientListName(patient);
   // Through the shared resolver, never the raw patient link (D-14 default-deny).
   const openMovement = movements.find(
     (movement) => isOpen(movement) && resolveSubjectPatient(movement, lookup).patient?.id === patient.id,

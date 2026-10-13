@@ -44,10 +44,15 @@ import { buildActionInbox, isOpen } from "@/components/ward-management/ward-deri
 import { refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchMovements } from "@/components/ward-management/ward-derivations";
 import { wardMovements } from "@/components/ward-management/ward-movements";
-import { findPatients, patientDisplayName } from "@/components/ward-management/ward-patients";
+import {
+  findPatients,
+  formatDateOfBirth,
+  patientDisplayName,
+  patientListName,
+} from "@/components/ward-management/ward-patients";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { allUnits } from "@/components/ward-management/ward-sites";
-import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
+import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 
 const units = allUnits();
 
@@ -141,9 +146,9 @@ describe("WardGlobalSearch", () => {
     const row = screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`);
     expect(row.tagName).toBe("A");
     expect(row).toHaveAttribute("href", `/mockups/ward-flow/people/${targetPatient.id}`);
-    expect(row).toHaveTextContent(patientDisplayName(targetPatient));
+    expect(row).toHaveTextContent(patientListName(targetPatient));
     expect(row).toHaveTextContent(targetPatient.umrn);
-    expect(row).toHaveTextContent(targetPatient.dateOfBirth);
+    expect(row).toHaveTextContent(formatDateOfBirth(targetPatient.dateOfBirth));
     expect(row).toHaveTextContent("Person");
     expect(screen.getByTestId("ward-global-search-intent")).toHaveTextContent("People");
   });
@@ -508,12 +513,44 @@ describe("WardGlobalSearch palette (option B)", () => {
     expect(rows[0]).toHaveAttribute("href", `/mockups/ward-flow/movements/${inbox[0].movementId}`);
   });
 
+  it("says how many tasks a cut Needs you now list holds, names the patient and offers See all tasks (shell-4)", () => {
+    if (inbox.length <= 3) throw new Error("fixture drifted: the seeded inbox has 3 or fewer rows, so nothing is cut");
+    clearGlobalSearchRecents();
+    const onSeeAllTasks = vi.fn();
+    render(
+      <WardGlobalSearch
+        movements={wardMovements}
+        patients={wardPatients}
+        units={units}
+        tasks={inbox}
+        now={0}
+        onNavigate={vi.fn()}
+        onSeeAllTasks={onSeeAllTasks}
+      />,
+    );
+    fireEvent.focus(screen.getByTestId("ward-global-search-input"));
+
+    expect(screen.getByTestId("ward-global-search-group-needs")).toHaveTextContent(
+      `Needs you now · 3 of ${inbox.length}`,
+    );
+    const lookup = { patients: wardPatients, movements: wardMovements };
+    const named = inbox
+      .slice(0, 3)
+      .find((task) => resolveSubjectPatient({ movementId: task.movementId }, lookup).patient);
+    if (!named) throw new Error("fixture drifted: no leading task resolves to a patient");
+    const info = resolveSubjectPatient({ movementId: named.movementId }, lookup);
+    expect(screen.getByTestId(`ward-global-search-result-task-${named.id}`)).toHaveTextContent(info.formalName);
+
+    fireEvent.click(screen.getByTestId("ward-global-search-see-all-tasks"));
+    expect(onSeeAllTasks).toHaveBeenCalledTimes(1);
+  });
+
   it("previews the highlighted person with their UMRN and an Open patient action", () => {
     const { input } = renderPalette();
     fireEvent.change(input, { target: { value: personQuery } });
 
     const preview = screen.getByTestId("ward-global-search-preview");
-    expect(preview).toHaveTextContent(patientDisplayName(targetPatient));
+    expect(preview).toHaveTextContent(patientListName(targetPatient));
     expect(preview).toHaveTextContent(targetPatient.umrn);
     expect(within(preview).getByTestId("ward-global-search-preview-open")).toHaveAttribute(
       "href",
