@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { azInvocation, azResponse, escapeWindowsArgument } from "./az-command.mjs";
+import { azInvocation, azResponse, priorDeployment, escapeWindowsArgument } from "./az-command.mjs";
 
 // Real values azure-setup passes: a JMESPath query with `||`, JSON for `--set`, a path with spaces,
 // and a hostile administrator name that would run `calc` if cmd.exe saw its `&`.
@@ -29,7 +29,8 @@ test("every platform bounds CLI execution and preserves a longer deployment budg
 });
 
 test("a hanging local child times out using the shared spawn options", () => {
-  const { options } = azInvocation(["account", "show"]);
+  // POSIX options so the node child is quoted normally on Windows too (verbatim mode would mangle "-e").
+  const { options } = azInvocation(["account", "show"], "linux");
   const started = performance.now();
   // A small test budget exercises the actual spawnSync timeout without running Azure or waiting
   // for the production budget. The child has no descendants or external effects.
@@ -145,4 +146,18 @@ test("on Windows, az.cmd receives every argument intact", { skip: process.platfo
   } finally {
     await rm(folder, { recursive: true, force: true });
   }
+});
+
+test("a timed-out database deployment is resumed rather than blocking setup retries", () => {
+  const name = "wardflow-shared-database";
+  assert.equal(priorDeployment([], name), null);
+  assert.equal(priorDeployment([{ name: "other", properties: { provisioningState: "Succeeded" } }], name), null);
+  const done = {
+    name,
+    properties: { provisioningState: "Succeeded", outputs: { functionSubnetId: { value: "/sub/x" } } },
+  };
+  assert.equal(priorDeployment([done], name), done);
+  for (const state of ["Running", "Accepted", "Deleting"])
+    assert.throws(() => priorDeployment([{ name, properties: { provisioningState: state } }], name), /still running/);
+  assert.throws(() => priorDeployment([{ name, properties: { provisioningState: "Failed" } }], name), /Failed/);
 });

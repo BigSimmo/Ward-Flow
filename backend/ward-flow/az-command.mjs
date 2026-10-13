@@ -66,3 +66,18 @@ export function azResponse(result, args, expected = "object", requiredStrings = 
     invalid("missing required string fields");
   return value;
 }
+
+/**
+ * Find an earlier run of a named deployment (for example one whose local wait timed out) so setup can
+ * resume from its outputs instead of rejecting the network that run created. Returns the succeeded
+ * deployment, null when there is none, and throws while it is still running or after it failed.
+ */
+export function priorDeployment(deployments, name) {
+  const found = deployments.find((row) => row?.name === name);
+  if (!found) return null;
+  const state = found.properties?.provisioningState;
+  if (state === "Succeeded") return found;
+  if (["Running", "Accepted", "Deleting", "Updating", "Creating"].includes(state))
+    throw new Error(`Deployment ${name} is still running in Azure; wait for it to finish, then rerun setup`);
+  throw new Error(`Deployment ${name} ended as ${state ?? "unknown"}; inspect it in Azure before retrying`);
+}

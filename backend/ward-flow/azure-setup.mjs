@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { azInvocation, azResponse } from "./az-command.mjs";
+import { azInvocation, azResponse, priorDeployment } from "./az-command.mjs";
 
 const [mode, settingsPath] = process.argv.slice(2);
 if (!["inspect", "provision", "configure", "verify"].includes(mode) || !settingsPath)
@@ -88,28 +88,39 @@ if (mode === "provision" && !server) {
     throw new Error(
       "The existing Function has network integration. Reuse its reviewed network or provide a reviewed peering design before adding a new database network",
     );
-  const networks = az(["network", "vnet", "list", "--resource-group", config.resourceGroup], true, "array");
-  if (networks.some((row) => row.name === "vnet-wardflow-dev-aue"))
-    throw new Error("An existing Ward Flow network needs inspection before this template may manage it");
   const serverName = config.serverName || "wardflow-dev-pg-aue";
-  const deployment = az([
-    "deployment",
-    "group",
-    "create",
-    "--resource-group",
-    config.resourceGroup,
-    "--name",
-    "wardflow-shared-database",
-    "--template-file",
-    fileURLToPath(new URL("./infra/database.bicep", import.meta.url)),
-    "--parameters",
-    `serverName=${serverName}`,
-    `tenantId=${config.tenantId}`,
-    `administratorObjectId=${config.administratorObjectId}`,
-    `administratorName=${config.administratorName}`,
-    `administratorType=${config.administratorType || "User"}`,
-    `location=${app.location.toLowerCase().replaceAll(" ", "")}`,
-  ]);
+  const networks = az(["network", "vnet", "list", "--resource-group", config.resourceGroup], true, "array");
+  const hasNetwork = networks.some((row) => row.name === "vnet-wardflow-dev-aue");
+  // A previous run may have timed out locally while Azure finished (or is still running) this deployment,
+  // leaving its network behind; resume from that deployment rather than rejecting its own network.
+  const previous = hasNetwork
+    ? priorDeployment(
+        az(["deployment", "group", "list", "--resource-group", config.resourceGroup], true, "array"),
+        "wardflow-shared-database",
+      )
+    : null;
+  if (hasNetwork && !previous)
+    throw new Error("An existing Ward Flow network needs inspection before this template may manage it");
+  const deployment =
+    previous ??
+    az([
+      "deployment",
+      "group",
+      "create",
+      "--resource-group",
+      config.resourceGroup,
+      "--name",
+      "wardflow-shared-database",
+      "--template-file",
+      fileURLToPath(new URL("./infra/database.bicep", import.meta.url)),
+      "--parameters",
+      `serverName=${serverName}`,
+      `tenantId=${config.tenantId}`,
+      `administratorObjectId=${config.administratorObjectId}`,
+      `administratorName=${config.administratorName}`,
+      `administratorType=${config.administratorType || "User"}`,
+      `location=${app.location.toLowerCase().replaceAll(" ", "")}`,
+    ]);
   config.serverName = serverName;
   config.functionSubnetId = deployment.properties.outputs.functionSubnetId.value;
   server = az(["postgres", "flexible-server", "show", "--resource-group", config.resourceGroup, "--name", serverName]);
