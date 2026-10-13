@@ -145,6 +145,37 @@ describe("read-only report screens", () => {
     expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);
   });
 
+  it("on a phone prints all four full tables, whichever section is open", () => {
+    route.pathname = "/mockups/ward-flow/reports/downtime";
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      inProvider(<DowntimePackScreen />);
+      const printPack = within(screen.getByTestId("ward-downtime-print-pack"));
+      const pack = lastDowntimePack();
+      expect(pack).not.toBeNull();
+      expect(printPack.getByTestId("ward-downtime-beds")).toBeTruthy();
+      const ed = printPack.getByTestId("ward-downtime-ed");
+      expect(within(ed).getAllByRole("row")).toHaveLength(pack!.edQueue.length + 1);
+      expect(within(ed).getByRole("columnheader", { name: "Legal status" })).toBeTruthy();
+      expect(within(printPack.getByTestId("ward-downtime-moves")).getAllByRole("row")).toHaveLength(
+        pack!.pendingMoves.length + 1,
+      );
+      expect(within(printPack.getByTestId("ward-downtime-legal")).getAllByRole("row")).toHaveLength(
+        pack!.legalForms.length + 1,
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("reads the coordinator audit only on a coordinator route, and says so elsewhere", () => {
     route.pathname = "/mockups/ward-flow/reports/chronology";
     const { unmount } = inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);

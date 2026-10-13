@@ -277,168 +277,444 @@ export function DowntimePackScreen() {
     </span>
   ) : null;
 
+  // The four tables, shared by desktop and by the phone's printout: paper from any device carries
+  // every table in full, never only the section a phone had open (remaining-pages audit 13 Oct 2026).
+  const packTables = (
+    <>
+      <Card aria-labelledby="downtime-beds-title" id={SECTION_IDS.beds} className={styles.packCard}>
+        <CardHead
+          id="downtime-beds-title"
+          icon={BedDouble}
+          title="Beds by ward"
+          aside={
+            <span className={styles.headMeta}>
+              <b>{pack.totals.ready}</b> ready
+              {pack.totals.pendingPreparation > 0 ? (
+                <>
+                  {" "}
+                  · <b>{pack.totals.pendingPreparation}</b> being made ready
+                </>
+              ) : null}{" "}
+              · <b>{pack.totals.occupied}</b> occupied of <b>{pack.totals.beds}</b>
+            </span>
+          }
+        />
+        <div className={styles.tableWrap}>
+          <table
+            className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
+            data-testid="ward-downtime-beds"
+          >
+            <caption className={styles.srOnly}>Beds by ward at {at(pack.generatedAt)}, synthetic</caption>
+            <thead>
+              <tr>
+                <th scope="col">Ward</th>
+                <th scope="col" className={styles.num}>
+                  Beds
+                </th>
+                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.ready}>
+                  {BED_STATE_LABELS.ready}
+                </th>
+                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.beingMadeReady}>
+                  {BED_STATE_LABELS.beingMadeReady}
+                </th>
+                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.occupied}>
+                  {BED_STATE_LABELS.occupied}
+                </th>
+                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.onLeave}>
+                  {BED_STATE_LABELS.onLeave}
+                </th>
+                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.pulled}>
+                  {BED_STATE_LABELS.pulled}
+                </th>
+                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.closed}>
+                  {BED_STATE_LABELS.closed}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {groups.map((group) => (
+                <Fragment key={group.service}>
+                  <tr className={styles.subtotal} data-testid="ward-downtime-subtotal">
+                    <th scope="rowgroup">
+                      {group.service}
+                      <span className={styles.subtotalCount}>
+                        {group.wards.length} {group.wards.length === 1 ? "ward" : "wards"}
+                      </span>
+                    </th>
+                    <td className={styles.num}>{group.total.beds}</td>
+                    <td className={styles.num}>{group.total.ready}</td>
+                    <td className={styles.num}>{group.total.pending}</td>
+                    <td className={styles.num}>{group.total.occupied}</td>
+                    <td className={styles.num}>{group.total.onLeave}</td>
+                    <td className={styles.num}>{group.total.pulled}</td>
+                    <td className={styles.num}>{group.total.closed}</td>
+                  </tr>
+                  {group.wards.map((ward) => (
+                    <tr key={ward.unitId}>
+                      <th scope="row">{ward.name}</th>
+                      <td className={styles.num}>{ward.beds}</td>
+                      <td className={styles.num}>
+                        {ward.counts.ready > 0 ? <span className={styles.fit}>{ward.counts.ready}</span> : 0}
+                      </td>
+                      <td className={styles.num}>{ward.pendingPreparation}</td>
+                      <td className={styles.num}>{ward.counts.occupied}</td>
+                      <td className={styles.num}>{ward.counts.onLeave}</td>
+                      <td className={styles.num}>{ward.counts.pulled}</td>
+                      <td className={styles.num}>{ward.counts.closed}</td>
+                    </tr>
+                  ))}
+                </Fragment>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className={styles.total}>
+                <th scope="row">All wards</th>
+                <td className={styles.num}>{pack.totals.beds}</td>
+                <td className={styles.num} data-testid="ward-downtime-total-ready">
+                  {pack.totals.ready}
+                </td>
+                <td className={styles.num}>{pack.totals.pendingPreparation}</td>
+                <td className={styles.num}>{pack.totals.occupied}</td>
+                <td className={styles.num}>{pack.totals.onLeave}</td>
+                <td className={styles.num}>{pack.totals.pulled}</td>
+                <td className={styles.num}>{pack.totals.closed}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <p className={styles.cardNote}>
+          Beds in “Being made ready” are counted in Ready. Beds “On leave” are held for a patient on leave and counted
+          in Occupied.
+        </p>
+      </Card>
+
+      <Card aria-labelledby="downtime-ed-title" id={SECTION_IDS.ed} className={styles.packCard}>
+        <CardHead
+          id="downtime-ed-title"
+          icon={Users}
+          title="ED queue"
+          aside={
+            <span className={styles.headMeta}>
+              <b>{pack.edQueue.length}</b> still in ED
+            </span>
+          }
+        />
+        {pack.edQueue.length === 0 ? (
+          <p className={styles.cardNote}>0 waiting. Nobody was in an ED queue when the pack was taken.</p>
+        ) : (
+          <div className={styles.tableWrap}>
+            <table
+              className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
+              data-testid="ward-downtime-ed"
+            >
+              <caption className={styles.srOnly}>Emergency department queue, synthetic</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Patient</th>
+                  <th scope="col">ED</th>
+                  <th scope="col">Arrived</th>
+                  <th scope="col" className={styles.num}>
+                    Waited
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Urgency
+                  </th>
+                  <th scope="col">Legal status</th>
+                  <th scope="col">Stage</th>
+                  {edAccepted ? (
+                    <th scope="col" className={styles.packAccepted}>
+                      Accepted by
+                    </th>
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody>
+                {pack.edQueue.map((line) => (
+                  <tr key={line.movementId}>
+                    <th scope="row">{line.person}</th>
+                    <td className={styles.edCell}>{line.ed}</td>
+                    <td className={styles.time}>{at(line.openedAt)}</td>
+                    <td className={styles.num}>{splitDuration(line.waitedMinutes)}</td>
+                    <td className={styles.num}>{line.urgency}</td>
+                    <td>{line.legalStatus}</td>
+                    <td>{line.stage}</td>
+                    {edAccepted ? <td className={styles.packAccepted}>{line.acceptedWard || NOT_RECORDED}</td> : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {edPopulation ? <p className={styles.cardNote}>{edPopulation}</p> : null}
+      </Card>
+
+      <Card aria-labelledby="downtime-moves-title" id={SECTION_IDS.moves} className={styles.packCard}>
+        <CardHead
+          id="downtime-moves-title"
+          icon={Ambulance}
+          title="Pending moves"
+          aside={
+            <span className={styles.headMeta}>
+              <b>{pack.pendingMoves.length}</b> accepted
+            </span>
+          }
+        />
+        {pack.pendingMoves.length === 0 ? (
+          <p className={styles.cardNote}>0 pending. No accepted move was under way when the pack was taken.</p>
+        ) : (
+          <div className={styles.tableWrap}>
+            <table
+              className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
+              data-testid="ward-downtime-moves"
+            >
+              <caption className={styles.srOnly}>Pending moves, synthetic</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Patient</th>
+                  <th scope="col">From</th>
+                  <th scope="col">To</th>
+                  <th scope="col">Stage</th>
+                  <th scope="col">Planned move</th>
+                  {movesEta ? <th scope="col">Transport ETA</th> : null}
+                </tr>
+              </thead>
+              <tbody>
+                {pack.pendingMoves.map((line) => (
+                  <tr key={line.movementId}>
+                    <th scope="row">{line.person}</th>
+                    <td className={styles.edCell}>{line.from}</td>
+                    <td>{line.to}</td>
+                    <td>{line.stage}</td>
+                    <td className={styles.time}>{at(line.plannedAt)}</td>
+                    {movesEta ? <td className={styles.time}>{at(line.transportEta)}</td> : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      <Card aria-labelledby="downtime-legal-title" id={SECTION_IDS.forms} className={styles.packCard}>
+        <CardHead
+          id="downtime-legal-title"
+          icon={FileText}
+          title="Legal forms"
+          meta="Recorded times only, not legally checked"
+          aside={
+            <span className={styles.headMeta}>
+              <b>{pack.legalForms.length}</b> forms
+            </span>
+          }
+        />
+        {pack.legalForms.length === 0 ? (
+          <p className={styles.cardNote}>0 forms. No legal form was on an open movement when the pack was taken.</p>
+        ) : (
+          <div className={styles.tableWrap}>
+            <table
+              className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
+              data-testid="ward-downtime-legal"
+            >
+              <caption className={styles.srOnly}>Legal forms with recorded times, synthetic</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Patient</th>
+                  <th scope="col">Form</th>
+                  <th scope="col">Legal status</th>
+                  <th scope="col">Made</th>
+                  {formsReceived ? <th scope="col">Received</th> : null}
+                  <th scope="col">Typed expiry</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pack.legalForms.map((line) => (
+                  <tr key={line.movementId}>
+                    <th scope="row">{line.person}</th>
+                    <td>{line.form || NOT_RECORDED}</td>
+                    <td>{line.legalStatus}</td>
+                    <td className={styles.time}>{at(line.madeAt)}</td>
+                    {formsReceived ? <td className={styles.time}>{at(line.receivedAt)}</td> : null}
+                    <td className={styles.time}>{at(line.typedExpiryAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </>
+  );
+
   if (isPhone) {
     return (
       <div className={cx(styles.page, styles.phonePage)} data-testid="ward-downtime-pack" data-ward-design="v10">
         <main id="main-content" className={styles.main}>
-          <PhoneHero
-            level={1}
-            className={styles.downtimePhoneHero}
-            eyebrow="Downtime pack"
-            title={`Frozen at ${frozenAt}`}
-            sub={`${reportDay(pack.generatedAt, dayZero)} · does not update while open`}
-            figures={[
-              { id: "ready", value: totals.ready, label: "Beds ready" },
-              { id: "ed", value: totals.ed, label: "Still in ED" },
-              { id: "moves", value: totals.moves, label: "Moves" },
-            ]}
-            actions={
-              <>
-                {snapshotButton("onHero")}
-                {/* Phone printing is rare: Print is a secondary here, never the area's primary. */}
-                {printButtonOnHero}
-              </>
-            }
-          />
-          {staleLine ? <p className={styles.phoneNote}>{staleLine}</p> : null}
-          <Segmented<Section>
-            className={cx(styles.phoneSeg, styles.phoneSegPinned)}
-            size="md"
-            label="Downtime pack section"
-            value={section}
-            onChange={setSection}
-            items={[
-              { id: "beds", label: "Beds", count: totals.ready },
-              { id: "ed", label: "ED", count: totals.ed },
-              { id: "moves", label: "Moves", count: totals.moves },
-              { id: "forms", label: "Forms", count: totals.forms },
-            ]}
-          />
-          {section === "beds" ? (
-            groups.map((group) => (
-              <section key={group.service} className={styles.phoneGroup} aria-label={group.service}>
-                <GroupHead
-                  title={group.service}
-                  aside={
-                    <>
-                      <b className={styles.phoneGroupFigure}>{group.total.ready}</b> ready
-                    </>
-                  }
-                  variant="letter"
-                  className={styles.phoneGroupHead}
-                />
-                <ul className={styles.phoneList}>
-                  {group.wards.map((ward) => (
-                    <PhoneListRow
-                      key={ward.unitId}
-                      as="li"
-                      name={ward.name}
-                      meta={wardLine(ward)}
-                      value={
-                        <span className={styles.phoneReady}>
-                          {ward.counts.ready > 0 ? <StatusGlyph tone="success" size={9} /> : null}
-                          {ward.counts.ready}
-                        </span>
-                      }
-                      time="ready"
-                      onSelect={() =>
-                        setSheet({
-                          title: ward.name,
-                          facts: [
-                            { id: "beds", label: "Beds", value: String(ward.beds) },
-                            { id: "ready", label: BED_STATE_LABELS.ready, value: String(ward.counts.ready) },
-                            { id: "occupied", label: BED_STATE_LABELS.occupied, value: String(ward.counts.occupied) },
-                            {
-                              id: "closed",
-                              label: `${BED_STATE_LABELS.pulled} or ${BED_STATE_LABELS.closed.toLowerCase()}`,
-                              value: String(ward.counts.pulled + ward.counts.closed),
-                            },
-                          ],
-                        })
-                      }
-                    />
-                  ))}
-                </ul>
-              </section>
-            ))
-          ) : section === "ed" ? (
-            <PhoneSection empty="Nobody waiting" count={pack.edQueue.length}>
-              {pack.edQueue.map((line) => (
-                <PhoneListRow
-                  key={line.movementId}
-                  as="li"
-                  name={line.person}
-                  meta={`${line.ed} · ${line.stage}`}
-                  value={splitDuration(line.waitedMinutes)}
-                  time="waited"
-                  onSelect={() =>
-                    setSheet({
-                      title: line.person,
-                      facts: [
-                        { id: "ed", label: "ED", value: line.ed },
-                        { id: "arrived", label: "Arrived", value: at(line.openedAt) },
-                        { id: "legal", label: "Legal status", value: line.legalStatus },
-                        { id: "accepted", label: "Accepted by", value: line.acceptedWard || NOT_RECORDED },
-                      ],
-                    })
-                  }
-                />
-              ))}
-            </PhoneSection>
-          ) : null}
-          {section === "ed" && edPopulation ? <p className={styles.phoneNote}>{edPopulation}</p> : null}
-          {section === "beds" || section === "ed" ? null : section === "moves" ? (
-            <PhoneSection empty="No moves pending" count={pack.pendingMoves.length}>
-              {pack.pendingMoves.map((line) => (
-                <PhoneListRow
-                  key={line.movementId}
-                  as="li"
-                  name={line.person}
-                  meta={`${line.from} to ${line.to}`}
-                  value={line.plannedAt === null ? "None" : formatInstantWithDay(line.plannedAt, now)}
-                  time="planned"
-                  onSelect={() =>
-                    setSheet({
-                      title: line.person,
-                      facts: [
-                        { id: "to", label: "To", value: line.to },
-                        { id: "stage", label: "Stage", value: line.stage },
-                        { id: "planned", label: "Planned move", value: at(line.plannedAt) },
-                        { id: "eta", label: "Transport ETA", value: at(line.transportEta) },
-                      ],
-                    })
-                  }
-                />
-              ))}
-            </PhoneSection>
-          ) : (
-            <PhoneSection empty="No legal forms on open movements" count={pack.legalForms.length}>
-              {pack.legalForms.map((line) => (
-                <PhoneListRow
-                  key={line.movementId}
-                  as="li"
-                  name={line.person}
-                  meta={`${line.form || NOT_RECORDED} · ${line.legalStatus}`}
-                  value={line.madeAt === null ? "None" : formatInstantWithDay(line.madeAt, now)}
-                  time="made"
-                  onSelect={() =>
-                    setSheet({
-                      title: line.person,
-                      facts: [
-                        { id: "form", label: "Form", value: line.form || NOT_RECORDED },
-                        { id: "made", label: "Made", value: at(line.madeAt) },
-                        { id: "received", label: "Received", value: at(line.receivedAt) },
-                        { id: "expiry", label: "Typed expiry", value: at(line.typedExpiryAt) },
-                      ],
-                    })
-                  }
-                />
-              ))}
-            </PhoneSection>
-          )}
-          <PhoneSheet open={sheet !== null} onClose={() => setSheet(null)} title={sheet?.title ?? ""}>
-            {sheet ? <FactGrid facts={sheet.facts} /> : null}
-          </PhoneSheet>
+          <div className={styles.phoneScreenOnly} data-print-hide>
+            <PhoneHero
+              level={1}
+              className={styles.downtimePhoneHero}
+              eyebrow="Downtime pack"
+              title={`Frozen at ${frozenAt}`}
+              sub={`${reportDay(pack.generatedAt, dayZero)} · does not update while open`}
+              figures={[
+                { id: "ready", value: totals.ready, label: "Beds ready" },
+                { id: "ed", value: totals.ed, label: "Still in ED" },
+                { id: "moves", value: totals.moves, label: "Moves" },
+              ]}
+              actions={
+                <>
+                  {snapshotButton("onHero")}
+                  {/* Phone printing is rare: Print is a secondary here, never the area's primary. */}
+                  {printButtonOnHero}
+                </>
+              }
+            />
+            {staleLine ? <p className={styles.phoneNote}>{staleLine}</p> : null}
+            <Segmented<Section>
+              className={cx(styles.phoneSeg, styles.phoneSegPinned)}
+              size="md"
+              label="Downtime pack section"
+              value={section}
+              onChange={setSection}
+              items={[
+                { id: "beds", label: "Beds", count: totals.ready },
+                { id: "ed", label: "ED", count: totals.ed },
+                { id: "moves", label: "Moves", count: totals.moves },
+                { id: "forms", label: "Forms", count: totals.forms },
+              ]}
+            />
+            {section === "beds" ? (
+              groups.map((group) => (
+                <section key={group.service} className={styles.phoneGroup} aria-label={group.service}>
+                  <GroupHead
+                    title={group.service}
+                    aside={
+                      <>
+                        <b className={styles.phoneGroupFigure}>{group.total.ready}</b> ready
+                      </>
+                    }
+                    variant="letter"
+                    className={styles.phoneGroupHead}
+                  />
+                  <ul className={styles.phoneList}>
+                    {group.wards.map((ward) => (
+                      <PhoneListRow
+                        key={ward.unitId}
+                        as="li"
+                        name={ward.name}
+                        meta={wardLine(ward)}
+                        value={
+                          <span className={styles.phoneReady}>
+                            {ward.counts.ready > 0 ? <StatusGlyph tone="success" size={9} /> : null}
+                            {ward.counts.ready}
+                          </span>
+                        }
+                        time="ready"
+                        onSelect={() =>
+                          setSheet({
+                            title: ward.name,
+                            facts: [
+                              { id: "beds", label: "Beds", value: String(ward.beds) },
+                              { id: "ready", label: BED_STATE_LABELS.ready, value: String(ward.counts.ready) },
+                              { id: "occupied", label: BED_STATE_LABELS.occupied, value: String(ward.counts.occupied) },
+                              {
+                                id: "closed",
+                                label: `${BED_STATE_LABELS.pulled} or ${BED_STATE_LABELS.closed.toLowerCase()}`,
+                                value: String(ward.counts.pulled + ward.counts.closed),
+                              },
+                            ],
+                          })
+                        }
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ))
+            ) : section === "ed" ? (
+              <PhoneSection empty="Nobody waiting" count={pack.edQueue.length}>
+                {pack.edQueue.map((line) => (
+                  <PhoneListRow
+                    key={line.movementId}
+                    as="li"
+                    name={line.person}
+                    meta={`${line.ed} · ${line.stage}`}
+                    value={splitDuration(line.waitedMinutes)}
+                    time="waited"
+                    onSelect={() =>
+                      setSheet({
+                        title: line.person,
+                        facts: [
+                          { id: "ed", label: "ED", value: line.ed },
+                          { id: "arrived", label: "Arrived", value: at(line.openedAt) },
+                          { id: "legal", label: "Legal status", value: line.legalStatus },
+                          { id: "accepted", label: "Accepted by", value: line.acceptedWard || NOT_RECORDED },
+                        ],
+                      })
+                    }
+                  />
+                ))}
+              </PhoneSection>
+            ) : null}
+            {section === "ed" && edPopulation ? <p className={styles.phoneNote}>{edPopulation}</p> : null}
+            {section === "beds" || section === "ed" ? null : section === "moves" ? (
+              <PhoneSection empty="No moves pending" count={pack.pendingMoves.length}>
+                {pack.pendingMoves.map((line) => (
+                  <PhoneListRow
+                    key={line.movementId}
+                    as="li"
+                    name={line.person}
+                    meta={`${line.from} to ${line.to}`}
+                    value={line.plannedAt === null ? "None" : formatInstantWithDay(line.plannedAt, now)}
+                    time="planned"
+                    onSelect={() =>
+                      setSheet({
+                        title: line.person,
+                        facts: [
+                          { id: "to", label: "To", value: line.to },
+                          { id: "stage", label: "Stage", value: line.stage },
+                          { id: "planned", label: "Planned move", value: at(line.plannedAt) },
+                          { id: "eta", label: "Transport ETA", value: at(line.transportEta) },
+                        ],
+                      })
+                    }
+                  />
+                ))}
+              </PhoneSection>
+            ) : (
+              <PhoneSection empty="No legal forms on open movements" count={pack.legalForms.length}>
+                {pack.legalForms.map((line) => (
+                  <PhoneListRow
+                    key={line.movementId}
+                    as="li"
+                    name={line.person}
+                    meta={`${line.form || NOT_RECORDED} · ${line.legalStatus}`}
+                    value={line.madeAt === null ? "None" : formatInstantWithDay(line.madeAt, now)}
+                    time="made"
+                    onSelect={() =>
+                      setSheet({
+                        title: line.person,
+                        facts: [
+                          { id: "form", label: "Form", value: line.form || NOT_RECORDED },
+                          { id: "made", label: "Made", value: at(line.madeAt) },
+                          { id: "received", label: "Received", value: at(line.receivedAt) },
+                          { id: "expiry", label: "Typed expiry", value: at(line.typedExpiryAt) },
+                        ],
+                      })
+                    }
+                  />
+                ))}
+              </PhoneSection>
+            )}
+            <PhoneSheet open={sheet !== null} onClose={() => setSheet(null)} title={sheet?.title ?? ""}>
+              {sheet ? <FactGrid facts={sheet.facts} /> : null}
+            </PhoneSheet>
+          </div>
+          <div className={styles.printOnly} data-testid="ward-downtime-print-pack">
+            <p className={styles.printMeta}>
+              Downtime pack · synthetic data · frozen {frozenAt}, {reportDay(pack.generatedAt, dayZero)}
+            </p>
+            {packTables}
+          </div>
           <WardPrototypeFooter testId="ward-downtime-footer" note="Synthetic data" />
         </main>
       </div>
@@ -506,267 +782,7 @@ export function DowntimePackScreen() {
           ))}
         </nav>
 
-        <Card aria-labelledby="downtime-beds-title" id={SECTION_IDS.beds} className={styles.packCard}>
-          <CardHead
-            id="downtime-beds-title"
-            icon={BedDouble}
-            title="Beds by ward"
-            aside={
-              <span className={styles.headMeta}>
-                <b>{pack.totals.ready}</b> ready
-                {pack.totals.pendingPreparation > 0 ? (
-                  <>
-                    {" "}
-                    · <b>{pack.totals.pendingPreparation}</b> being made ready
-                  </>
-                ) : null}{" "}
-                · <b>{pack.totals.occupied}</b> occupied of <b>{pack.totals.beds}</b>
-              </span>
-            }
-          />
-          <div className={styles.tableWrap}>
-            <table
-              className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
-              data-testid="ward-downtime-beds"
-            >
-              <caption className={styles.srOnly}>Beds by ward at {at(pack.generatedAt)}, synthetic</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Ward</th>
-                  <th scope="col" className={styles.num}>
-                    Beds
-                  </th>
-                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.ready}>
-                    {BED_STATE_LABELS.ready}
-                  </th>
-                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.beingMadeReady}>
-                    {BED_STATE_LABELS.beingMadeReady}
-                  </th>
-                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.occupied}>
-                    {BED_STATE_LABELS.occupied}
-                  </th>
-                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.onLeave}>
-                    {BED_STATE_LABELS.onLeave}
-                  </th>
-                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.pulled}>
-                    {BED_STATE_LABELS.pulled}
-                  </th>
-                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.closed}>
-                    {BED_STATE_LABELS.closed}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {groups.map((group) => (
-                  <Fragment key={group.service}>
-                    <tr className={styles.subtotal} data-testid="ward-downtime-subtotal">
-                      <th scope="rowgroup">
-                        {group.service}
-                        <span className={styles.subtotalCount}>
-                          {group.wards.length} {group.wards.length === 1 ? "ward" : "wards"}
-                        </span>
-                      </th>
-                      <td className={styles.num}>{group.total.beds}</td>
-                      <td className={styles.num}>{group.total.ready}</td>
-                      <td className={styles.num}>{group.total.pending}</td>
-                      <td className={styles.num}>{group.total.occupied}</td>
-                      <td className={styles.num}>{group.total.onLeave}</td>
-                      <td className={styles.num}>{group.total.pulled}</td>
-                      <td className={styles.num}>{group.total.closed}</td>
-                    </tr>
-                    {group.wards.map((ward) => (
-                      <tr key={ward.unitId}>
-                        <th scope="row">{ward.name}</th>
-                        <td className={styles.num}>{ward.beds}</td>
-                        <td className={styles.num}>
-                          {ward.counts.ready > 0 ? <span className={styles.fit}>{ward.counts.ready}</span> : 0}
-                        </td>
-                        <td className={styles.num}>{ward.pendingPreparation}</td>
-                        <td className={styles.num}>{ward.counts.occupied}</td>
-                        <td className={styles.num}>{ward.counts.onLeave}</td>
-                        <td className={styles.num}>{ward.counts.pulled}</td>
-                        <td className={styles.num}>{ward.counts.closed}</td>
-                      </tr>
-                    ))}
-                  </Fragment>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className={styles.total}>
-                  <th scope="row">All wards</th>
-                  <td className={styles.num}>{pack.totals.beds}</td>
-                  <td className={styles.num} data-testid="ward-downtime-total-ready">
-                    {pack.totals.ready}
-                  </td>
-                  <td className={styles.num}>{pack.totals.pendingPreparation}</td>
-                  <td className={styles.num}>{pack.totals.occupied}</td>
-                  <td className={styles.num}>{pack.totals.onLeave}</td>
-                  <td className={styles.num}>{pack.totals.pulled}</td>
-                  <td className={styles.num}>{pack.totals.closed}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-          <p className={styles.cardNote}>
-            Beds in “Being made ready” are counted in Ready. Beds “On leave” are held for a patient on leave and counted
-            in Occupied.
-          </p>
-        </Card>
-
-        <Card aria-labelledby="downtime-ed-title" id={SECTION_IDS.ed} className={styles.packCard}>
-          <CardHead
-            id="downtime-ed-title"
-            icon={Users}
-            title="ED queue"
-            aside={
-              <span className={styles.headMeta}>
-                <b>{pack.edQueue.length}</b> still in ED
-              </span>
-            }
-          />
-          {pack.edQueue.length === 0 ? (
-            <p className={styles.cardNote}>0 waiting. Nobody was in an ED queue when the pack was taken.</p>
-          ) : (
-            <div className={styles.tableWrap}>
-              <table
-                className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
-                data-testid="ward-downtime-ed"
-              >
-                <caption className={styles.srOnly}>Emergency department queue, synthetic</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Patient</th>
-                    <th scope="col">ED</th>
-                    <th scope="col">Arrived</th>
-                    <th scope="col" className={styles.num}>
-                      Waited
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      Urgency
-                    </th>
-                    <th scope="col">Legal status</th>
-                    <th scope="col">Stage</th>
-                    {edAccepted ? (
-                      <th scope="col" className={styles.packAccepted}>
-                        Accepted by
-                      </th>
-                    ) : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {pack.edQueue.map((line) => (
-                    <tr key={line.movementId}>
-                      <th scope="row">{line.person}</th>
-                      <td className={styles.edCell}>{line.ed}</td>
-                      <td className={styles.time}>{at(line.openedAt)}</td>
-                      <td className={styles.num}>{splitDuration(line.waitedMinutes)}</td>
-                      <td className={styles.num}>{line.urgency}</td>
-                      <td>{line.legalStatus}</td>
-                      <td>{line.stage}</td>
-                      {edAccepted ? <td className={styles.packAccepted}>{line.acceptedWard || NOT_RECORDED}</td> : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {edPopulation ? <p className={styles.cardNote}>{edPopulation}</p> : null}
-        </Card>
-
-        <Card aria-labelledby="downtime-moves-title" id={SECTION_IDS.moves} className={styles.packCard}>
-          <CardHead
-            id="downtime-moves-title"
-            icon={Ambulance}
-            title="Pending moves"
-            aside={
-              <span className={styles.headMeta}>
-                <b>{pack.pendingMoves.length}</b> accepted
-              </span>
-            }
-          />
-          {pack.pendingMoves.length === 0 ? (
-            <p className={styles.cardNote}>0 pending. No accepted move was under way when the pack was taken.</p>
-          ) : (
-            <div className={styles.tableWrap}>
-              <table
-                className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
-                data-testid="ward-downtime-moves"
-              >
-                <caption className={styles.srOnly}>Pending moves, synthetic</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Patient</th>
-                    <th scope="col">From</th>
-                    <th scope="col">To</th>
-                    <th scope="col">Stage</th>
-                    <th scope="col">Planned move</th>
-                    {movesEta ? <th scope="col">Transport ETA</th> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {pack.pendingMoves.map((line) => (
-                    <tr key={line.movementId}>
-                      <th scope="row">{line.person}</th>
-                      <td className={styles.edCell}>{line.from}</td>
-                      <td>{line.to}</td>
-                      <td>{line.stage}</td>
-                      <td className={styles.time}>{at(line.plannedAt)}</td>
-                      {movesEta ? <td className={styles.time}>{at(line.transportEta)}</td> : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-
-        <Card aria-labelledby="downtime-legal-title" id={SECTION_IDS.forms} className={styles.packCard}>
-          <CardHead
-            id="downtime-legal-title"
-            icon={FileText}
-            title="Legal forms"
-            meta="Recorded times only, not legally checked"
-            aside={
-              <span className={styles.headMeta}>
-                <b>{pack.legalForms.length}</b> forms
-              </span>
-            }
-          />
-          {pack.legalForms.length === 0 ? (
-            <p className={styles.cardNote}>0 forms. No legal form was on an open movement when the pack was taken.</p>
-          ) : (
-            <div className={styles.tableWrap}>
-              <table
-                className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
-                data-testid="ward-downtime-legal"
-              >
-                <caption className={styles.srOnly}>Legal forms with recorded times, synthetic</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Patient</th>
-                    <th scope="col">Form</th>
-                    <th scope="col">Legal status</th>
-                    <th scope="col">Made</th>
-                    {formsReceived ? <th scope="col">Received</th> : null}
-                    <th scope="col">Typed expiry</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pack.legalForms.map((line) => (
-                    <tr key={line.movementId}>
-                      <th scope="row">{line.person}</th>
-                      <td>{line.form || NOT_RECORDED}</td>
-                      <td>{line.legalStatus}</td>
-                      <td className={styles.time}>{at(line.madeAt)}</td>
-                      {formsReceived ? <td className={styles.time}>{at(line.receivedAt)}</td> : null}
-                      <td className={styles.time}>{at(line.typedExpiryAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+        {packTables}
 
         <WardPrototypeFooter testId="ward-downtime-footer" note="Synthetic data" />
       </main>
