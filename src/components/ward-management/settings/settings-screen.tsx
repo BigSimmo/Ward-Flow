@@ -283,8 +283,6 @@ export function maskDiagnosticPatient<
 >(patient: T): T {
   return {
     ...(patient.id !== undefined ? { id: patient.id } : {}),
-    ...(patient.gender !== undefined ? { gender: patient.gender } : {}),
-    ...(patient.addedAt !== undefined ? { addedAt: patient.addedAt } : {}),
   } as T;
 }
 
