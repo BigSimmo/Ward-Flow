@@ -2,7 +2,7 @@
 
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { isOfficerJob } from "./officer-jobs";
+import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
 import {
   useCallback,
   useEffect,
@@ -392,7 +392,7 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  * forms pack yet.
  */
 export function OfficerScreen() {
-  const { movements, units, dispatch, rejections, patients, referrals, dayZero } = useWardFlow();
+  const { movements, units, dispatch, rejections, patients, referrals, dayZero, notices } = useWardFlow();
   const [isPhone, setIsPhone] = useState(false);
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
@@ -427,6 +427,7 @@ export function OfficerScreen() {
 
   const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
   const jobs = movements.filter(isOfficerJob);
+  const cancellations = officerCancellationNotices(notices ?? [], now);
   const collectCheck = collectCheckId ? movements.find((movement) => movement.id === collectCheckId) : undefined;
   const unitFor = (movement: Movement): Unit | undefined =>
     movement.acceptedUnitId ? units.find((unit) => unit.id === movement.acceptedUnitId) : undefined;
@@ -1601,6 +1602,21 @@ export function OfficerScreen() {
             </div>
           }
         />
+
+        {cancellations.length > 0 ? (
+          <section
+            className={styles.nextCard}
+            aria-label="Cancelled transport"
+            data-testid="officer-cancellation-notices"
+          >
+            <h2 className={styles.eyebrow}>Cancelled transport</h2>
+            <ul>
+              {cancellations.map((notice) => (
+                <li key={notice.id}>{notice.sentence}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {topJob && topJob.transport ? (
           <Card className={styles.nextCard} aria-label="Next action">

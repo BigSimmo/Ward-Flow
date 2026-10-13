@@ -106,19 +106,24 @@ a screen.
 never typed by a user. This phase covers exactly the cases an existing ruling already requires, and
 no more:
 
-| The decision                             | Who is told                         | Why it is required                                                         |
-| ---------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------- |
-| `RELEASE_PULL` — a bed pull is cancelled | the referrer of that referral       | 🔴 The named ruling. A referrer not told goes on believing a bed is coming |
-| `DECLINE_REFERRAL` / `DECLINE`           | the referrer                        | `FD-23` — a team sees the decline reason **for its own referrals only**    |
-| `ACCEPT_IN_PRINCIPLE`                    | the referrer                        | the answer to the question they asked                                      |
-| `ACCEPT_REFERRAL`                        | the referrer and the receiving ward | both sides of a commitment                                                 |
-| `CANCEL_TRANSPORT`                       | the officer and the receiving ward  | somebody is expecting a person who is no longer coming                     |
-| `WITHDRAW_REFERRAL` after acceptance     | the accepting ward                  | owner ruling `WLQ-38`, 2026-09-15 — the referral it said yes to is revoked |
-| `STOP_TRANSPORT` (after collection)      | the receiving ward                  | owner ruling `WLQ-38`, 2026-09-15 — a journey already under way is stopped |
+| The decision                             | Who is told                                                           | Why it is required                                                                                                       |
+| ---------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `RELEASE_PULL` — a bed pull is cancelled | the referrer of that referral                                         | 🔴 The named ruling. A referrer not told goes on believing a bed is coming                                               |
+| `DECLINE_REFERRAL` / `DECLINE`           | the referrer                                                          | `FD-23` — a team sees the decline reason **for its own referrals only**                                                  |
+| `ACCEPT_IN_PRINCIPLE`                    | the referrer                                                          | the answer to the question they asked                                                                                    |
+| `ACCEPT_REFERRAL`                        | the referrer and the receiving ward                                   | both sides of a commitment                                                                                               |
+| `CANCEL_TRANSPORT`                       | the officer and the receiving ward                                    | somebody is expecting a person who is no longer coming                                                                   |
+| `WITHDRAW_REFERRAL` after acceptance     | the accepting ward                                                    | owner ruling `WLQ-38`, 2026-09-15 — the referral it said yes to is revoked                                               |
+| `STOP_TRANSPORT` (after collection)      | the receiving ward                                                    | owner ruling `WLQ-38`, 2026-09-15 — a journey already under way is stopped                                               |
+| `WITHDRAW_REFERRAL` before acceptance    | every ward still reviewing it; the officer if a live job is cancelled | owner ruling, 2026-10-13 22:13 AWST (PR #279) — a ward reviewing a request is told it was withdrawn, whoever withdrew it |
 
 **Added 2026-09-15 by owner ruling, not by a builder.** `WLQ-38` (`owner-decisions-2026-09-15.md`) let the
 referrer and the coordinator revoke an accepted referral and stop a collected transport, with the ward told.
 The two rows above are that ruling, and the `NoticeKind` union carries them.
+
+**Added 2026-10-13 by owner ruling (PR #279).** `WITHDRAW_REFERRAL` before acceptance tells every ward still
+reviewing the request (`ward_request_withdrawn`), for a referrer or a coordinator withdrawal alike, and tells the
+officer (`transport_cancelled_officer`) when it cancels a live transport job.
 
 ⚠️ **`FD-23` is a privacy rule, not a display preference.** The decline notice carries its reason to
 the referrer of _that_ referral and to nobody else. A notice list that leaks another team's decline
