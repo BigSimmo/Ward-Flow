@@ -21,7 +21,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState, type Dispatch } from "react";
+import { useRef, useState, type Dispatch } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, durMinutes, useIsPhone, useOptionalToast, type WfTone } from "@/components/wf";
@@ -252,33 +252,7 @@ export function WardTasksDrawer({
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
-  useWardModalFocus(withBackdrop, drawerRef, onClose);
-  useEffect(() => {
-    if (withBackdrop) return;
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const panel = drawerRef.current;
-    if (panel) {
-      if (!panel.hasAttribute("tabindex")) panel.setAttribute("tabindex", "-1");
-      const first = panel.querySelector<HTMLElement>(
-        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
-      );
-      (first ?? panel).focus();
-    }
-    return () => {
-      if (previous?.isConnected) previous.focus({ preventScroll: true });
-    };
-  }, [withBackdrop]);
-  useEffect(() => {
-    if (withBackdrop) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [withBackdrop, onClose]);
+  useWardModalFocus(true, drawerRef, onClose);
   // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
   const isPhone = useIsPhone();
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
