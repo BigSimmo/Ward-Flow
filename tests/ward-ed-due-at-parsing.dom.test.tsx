@@ -97,6 +97,8 @@ function raiseTransportReferral(typed: { date: string; time: string } | undefine
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+  // A2-1: the form starts from a person; these cases raise for one not yet identified.
+  fireEvent.click(screen.getByTestId("ward-ed-referral-unidentified"));
   for (const field of REQUIRED) {
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }
