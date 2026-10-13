@@ -15,7 +15,7 @@ import type { HubEntry } from "@/components/ward-management/hub/hub-derivations"
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { HEALTH_SERVICES, type HealthService, type Movement } from "@/components/ward-management/ward-model";
-import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { CHROME_ROLE_LABELS, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { isOfficerJob } from "@/components/ward-management/officer/officer-jobs";
 
@@ -152,8 +152,13 @@ export function deskMatches(desk: Desk, query: string): boolean {
   return [desk.name, desk.site ?? "", desk.service ?? "", deskRoleLabel(desk.role)].join(" ").toLowerCase().includes(q);
 }
 
+/**
+ * shell-3 (Josh, 13 Oct 2026: one role label map): the switcher names a role exactly as the Menu,
+ * header and rail do (`CHROME_ROLE_LABELS`), so "Bed coordinator" is never "Flow coordinator" one
+ * sheet later. Only the demonstration control, which the shell never shows, keeps its own label.
+ */
 export function deskRoleLabel(role: DeskRole | WardFlowRole): string {
-  return WARD_FLOW_ROLE_LABELS[role];
+  return role === "demo" ? WARD_FLOW_ROLE_LABELS.demo : CHROME_ROLE_LABELS[role];
 }
 
 /**
@@ -215,7 +220,7 @@ export function deskActions(role: DeskRole): DeskActions {
     if (allowed.includes(role)) {
       can.push(action.label);
     } else {
-      const by = allowed.filter((r) => r !== "demo").map((r) => WARD_FLOW_ROLE_LABELS[r]);
+      const by = allowed.filter((r) => r !== "demo").map((r) => deskRoleLabel(r));
       if (by.length) cannot.push({ label: action.label, by: by.join(" or ") });
     }
   }

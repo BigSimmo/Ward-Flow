@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { CHROME_ROLE_LABELS } from "../src/components/ward-management/ward-chrome-role";
 import { edHomeSummaries } from "../src/components/ward-management/ed/ed-home-derivations";
 import { hubEntries } from "../src/components/ward-management/hub/hub-derivations";
 import { isOfficerJob } from "../src/components/ward-management/officer/officer-screen";
@@ -7,6 +8,7 @@ import {
   COORDINATOR_DESK_ID,
   currentDeskId,
   deskActions,
+  deskRoleLabel,
   deskMatches,
   OFFICER_DESK_ID,
   workstationDesks,
@@ -60,7 +62,7 @@ describe("workstation desks", () => {
   it("finds a desk by hospital or role, and an empty search keeps everything", () => {
     const moodjar = siteDesks.find((desk) => desk.id === "arm-adult-open")!;
     expect(deskMatches(moodjar, "armadale")).toBe(true);
-    expect(deskMatches(moodjar, "ward manager")).toBe(true);
+    expect(deskMatches(moodjar, "nurse in charge")).toBe(true);
     expect(deskMatches(moodjar, "fremantle")).toBe(false);
     expect(deskMatches(moodjar, "  ")).toBe(true);
   });
@@ -85,7 +87,7 @@ describe("what a desk can do comes from EVENT_ROLE", () => {
     const ward = deskActions("ward");
     expect(ward.can).toContain("Accept for the ward");
     expect(ward.can).not.toContain("Refer to wards");
-    expect(ward.cannot).toContainEqual({ label: "Refer to wards", by: "Flow coordinator" });
+    expect(ward.cannot).toContainEqual({ label: "Refer to wards", by: "Bed coordinator" });
   });
 
   it("the coordinator refers and books transport, since it may take every action (Josh, 10 Oct 2026)", () => {
@@ -96,5 +98,13 @@ describe("what a desk can do comes from EVENT_ROLE", () => {
 
   it("an ED can record medical clearance", () => {
     expect(deskActions("ed").can).toContain("Record medical clearance");
+  });
+});
+
+describe("one role label map (shell-3)", () => {
+  it("names every desk role exactly as the Menu and rail do", () => {
+    for (const role of ["coordinator", "ward", "ed", "community", "officer"] as const) {
+      expect(deskRoleLabel(role)).toBe(CHROME_ROLE_LABELS[role]);
+    }
   });
 });
