@@ -5,7 +5,7 @@ import { Copy, FileText, Printer, X } from "lucide-react";
 import { buttonClass, Card, CardHead, CountBubble, Icon, StatusGlyph, type WfTone } from "@/components/wf";
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
   admissionsForUnit,
@@ -420,7 +420,12 @@ export function WardDailySheet({
 }: WardDailySheetProps) {
   const isEmbedded = embedded ?? onClose !== undefined;
   const clockNow = useWardFlowClock(-1);
-  const currentNow = now !== undefined && now > 0 ? now : clockNow > 0 ? clockNow : Date.now();
+  const currentNow =
+    now !== undefined && Number.isFinite(now)
+      ? now
+      : Number.isFinite(clockNow) && clockNow > 0
+        ? clockNow
+        : WARD_ADMISSIONS_ANCHOR;
   // Prefer the provider's live admissions when this sheet is opened from ward-screen's unit-only
   // path; the frozen seed is only a last resort for isolated renders without a provider.
   const liveFlow = useContext(WardFlowContext);
