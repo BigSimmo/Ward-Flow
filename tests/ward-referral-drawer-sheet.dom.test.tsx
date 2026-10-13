@@ -41,7 +41,12 @@ function renderDrawer(props: Partial<Parameters<typeof WardReferralDrawer>[0]> =
   const onClose = vi.fn();
   const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <WardReferralDrawer onClose={onClose} {...props} />
+      <WardReferralDrawer
+        onClose={onClose}
+        // A2-3: the sheet no longer opens on a demo person; these tests name WF-009's person.
+        {...(props.initialCategory ? {} : { initialPatientId: "PT-023" })}
+        {...props}
+      />
     </WardFlowProvider>,
   );
   return { onClose, ...view };
@@ -92,7 +97,9 @@ describe("referral slide-out, option B", () => {
       .map((button) => Number(/(\d+) needed/u.exec(button.parentElement?.textContent ?? "")?.[1] ?? 0))
       .reduce((sum, n) => sum + n, 0);
     expect(stepNeeds).toBeGreaterThan(0);
-    expect(Number(total) - Number(ready)).toBe(stepNeeds);
+    // A2-9 (audit 13 Oct 2026): the contact details asked at Send are counted too, on their own row.
+    const contactNeeds = Number(/(\d+) to fill at Send/u.exec(rail.textContent ?? "")?.[1] ?? 0);
+    expect(Number(total) - Number(ready)).toBe(stepNeeds + contactNeeds);
   });
 
   it("closes straight away when nothing was entered", () => {
@@ -215,6 +222,30 @@ describe("referral slide-out, option B", () => {
     });
     await waitFor(() => expect(document.body.textContent).toMatch(/Synthetica, Demo/));
     expect(screen.getByLabelText("Age band")).toBeInTheDocument();
+  });
+});
+
+describe("one ready count (audit A2-9)", () => {
+  it("counts the contact details asked at Send, so nothing reads ready while Send would refuse", () => {
+    renderDrawer();
+    const ready = screen.getByTestId("ward-referral-phone-ready").textContent ?? "";
+    const match = /(\d+) of (\d+)/u.exec(ready);
+    expect(match).not.toBeNull();
+    const [readyCount, total] = [Number(match![1]), Number(match![2])];
+    // The rail's own fraction and the step footer say the same count.
+    const rail = screen.getByTestId("ward-referral-summary-rail");
+    expect(rail).toHaveTextContent(`${readyCount} of ${total} ready`);
+    expect(document.body.textContent).toContain(`${total - readyCount} of ${total} items still needed`);
+    // The five empty contact fields are among the items still needed, named on their row.
+    expect(rail).toHaveTextContent("5 to fill at Send");
+    expect(total - readyCount).toBeGreaterThanOrEqual(5);
+  });
+
+  it("marks the clearance checklist optional, because its six items are not in the count", () => {
+    renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Clearance" }));
+    const checklist = screen.getByTestId("ward-referral-clearance-checklist");
+    expect(checklist).toHaveTextContent("Optional");
   });
 });
 

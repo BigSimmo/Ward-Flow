@@ -1,10 +1,11 @@
 "use client";
 
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import Link from "next/link";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
-import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   isOpen,
   movementHealthService,
@@ -95,6 +96,21 @@ function meaningfulBlocker(movement: Movement): string | null {
   return blocker && !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === blocker)
     ? movement.blocker
     : null;
+}
+
+/**
+ * Design check 13 Oct 2026: the act-now reason a "Needs you" row leads with — a recorded legal form
+ * whose due time has passed, or is approaching (`clockState` critical, the same threshold Delays
+ * reads). Worded as the `legal_breached`/`legal_expiring` causes below; never a computed limit (D5).
+ */
+function legalActNowReason(movement: Movement, now: Instant): string | null {
+  const form = movement.legalForm;
+  const dueAt = currentLegalDueAt(movement);
+  if (!form || dueAt === undefined) return null;
+  const state = clockState(dueAt, now);
+  if (state === "breached") return `Form ${form.code} · legal due time passed`;
+  if (state === "critical") return `Form ${form.code} · expiry approaching`;
+  return null;
 }
 
 export interface CauseDefinition {
@@ -730,8 +746,8 @@ export function MovementsScreen() {
   // The earliest opened open movement, not the worklist order (which puts legal expiry first).
   const longestWaiting = [...openMovements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id))[0];
   const nextExpiry = openMovements
-    .filter((movement) => movement.legalForm?.dueAt !== undefined && movement.legalForm.dueAt >= now)
-    .sort((a, b) => a.legalForm!.dueAt! - b.legalForm!.dueAt!)[0];
+    .filter((movement) => (currentLegalDueAt(movement) ?? -Infinity) >= now)
+    .sort((a, b) => currentLegalDueAt(a)! - currentLegalDueAt(b)!)[0];
   const myQueue = byLongestWait(
     openMovements.filter((movement) => isCoordinatorStep(movementNextStep(movement))),
     now,
@@ -898,7 +914,7 @@ export function MovementsScreen() {
                   >
                     <span className={flow.jumpLabel}>Next expiry</span>
                     <span className={flow.jumpName}>{surname(nextExpiry)}</span>
-                    <span className={flow.jumpValue}>{formatInstantWithDay(nextExpiry.legalForm!.dueAt!, now)}</span>
+                    <span className={flow.jumpValue}>{formatInstantWithDay(currentLegalDueAt(nextExpiry)!, now)}</span>
                   </button>
                 ) : null}
                 <LiveChip state="live" onHero />
@@ -985,20 +1001,21 @@ export function MovementsScreen() {
               // D-b (Ward Lead's decisions, 2026-09-17): built off `openMovements`, never the scoped
               // worklist, and a movement outside the chosen service says so.
               <ul className={flow.needsList}>
-                {attentionMovements.map((movement, index) => {
+                {attentionMovements.map((movement) => {
                   const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
                   const subject = resolveSubjectPatient(movement, { patients, referrals });
                   // Surname first on every device, as the worklist and timeline list people.
                   const who = subject.formalName;
-                  const reason = meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
+                  const legalReason = legalActNowReason(movement, now);
+                  const reason = legalReason ?? meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
                   return (
                     <li key={movement.id} className={flow.needsCell}>
                       <button
                         type="button"
                         className={flow.needsItem}
                         data-record-key={movement.id}
-                        // v10: the first act-now item (past the access target) takes the thin red edge.
-                        data-act-now={index === 0 && now - movement.openedAt >= accessTarget ? "true" : undefined}
+                        // The thin red edge marks act-now rows only: a legal authority passed or approaching.
+                        data-act-now={legalReason ? "true" : undefined}
                         onClick={() => jumpToMovement(movement.id)}
                         aria-label={`Find ${who} in worklist: ${reason}${outsideService ? ` — outside ${service}` : ""}`}
                       >
@@ -1832,7 +1849,7 @@ function heroHighlights(now: Instant, accessTarget: number): HeroHighlight[] {
       tone: "warning",
       test: (m) => isOpen(m) && waited(m) >= ED_SEVERE_PRESSURE_WAIT_MINUTES && waited(m) < accessTarget,
     },
-    { id: "form", label: "Form expiry", test: (m) => isOpen(m) && m.legalForm?.dueAt !== undefined },
+    { id: "form", label: "Form expiry", test: (m) => isOpen(m) && currentLegalDueAt(m) !== undefined },
     { id: "escort", label: "Escort", test: (m) => isOpen(m) && m.transport?.escortRequired === true },
   ];
 }
@@ -1991,14 +2008,17 @@ function StageRow({
   const patientInfo = resolveSubjectPatient(movement, { patients, referrals });
 
   // Legal line: register title plus the recorded expiry only. Never a computed limit (D5).
-  const dueAt = movement.legalForm?.dueAt;
+  const dueAt = currentLegalDueAt(movement);
   const isBreached = dueAt !== undefined && dueAt < now;
   const isExpiring = dueAt !== undefined && dueAt >= now && dueAt - now < 60;
   let legalTagTone: "danger" | "warn" | undefined = undefined;
   let legalText = "";
   if (movement.legalForm) {
     const formTitle = legalFormNameLabelFirst(movement.legalForm);
-    if (dueAt === undefined) {
+    if (dueAt === undefined && movement.legalForm.dueAt !== undefined) {
+      // Ended at the examination or on arrival: its typed expiry is history, not a deadline (S-6).
+      legalText = `${formTitle} - ended`;
+    } else if (dueAt === undefined) {
       legalText = `${formTitle} - no recorded expiry on this record`;
     } else if (isBreached) {
       legalTagTone = "danger";

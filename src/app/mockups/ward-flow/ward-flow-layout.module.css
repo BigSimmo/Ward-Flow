@@ -175,3 +175,33 @@
   --line: var(--ink) !important;
   --line-strong: var(--ink) !important;
 }
+
+/*
+ * A1-17 (audit 13 Oct 2026, slow signal): the server draws the page before its code arrives, and
+ * taps do nothing until it does. This quiet line says so, and goes as soon as the header is ready
+ * (`data-wf-bar-ready`, set by `replayEarlyHeaderTap`). Neutral words, no tint of its own.
+ */
+.loadingNote {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+:global(html[data-wf-bar-ready]) .loadingNote {
+  display: none;
+}

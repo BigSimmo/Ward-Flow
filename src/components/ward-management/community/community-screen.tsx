@@ -14,6 +14,7 @@ import Link from "next/link";
 import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import {
+  DisabledReason,
   Badge,
   Button,
   CheckingFoot,
@@ -122,6 +123,7 @@ import {
 } from "./community-team-phone";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import v6 from "./community-team-v6.module.css";
+import { matchReferralPatient } from "@/components/ward-management/referrals/referral-patient-match";
 import {
   DEMO_COMMUNITY_REFERRALS,
   DEMO_COMMUNITY_INPATIENTS,
@@ -325,8 +327,19 @@ type CaseloadRow = {
   addressingState: ReferralAddressing["state"] | undefined;
 };
 
+/** The history sent: an unidentified person's description leads, so the referral says who it is for. */
+function intakeHistory(draft: Pick<IntakeDraft, "unidentified" | "description" | "history">): string {
+  if (!draft.unidentified) return draft.history;
+  const described = `Unidentified person: ${draft.description.trim()}`;
+  return draft.history.trim() === "" ? described : `${described}\n\n${draft.history}`;
+}
+
 type IntakeDraft = {
+  /** A2-12 (audit 13 Oct 2026): the person's name or UMRN, matched to a registered patient. */
   umrn: string;
+  /** The clinician's explicit "Unidentified" path; `description` then says who the person is. */
+  unidentified: boolean;
+  description: string;
   ageBand: Cohort | "";
   homeRegion: HomeRegion | "";
   urgency: "" | "1" | "2" | "3";
@@ -336,6 +349,8 @@ type IntakeDraft = {
 
 const BLANK_INTAKE_DRAFT: IntakeDraft = {
   umrn: "",
+  unidentified: false,
+  description: "",
   ageBand: "",
   homeRegion: "",
   urgency: "",
@@ -928,18 +943,24 @@ export function CommunityScreen({
   }, [referrals, liveReferrals, handleCompleteContact, handleConfirmAccept, handleConfirmDecline, now, setActiveTab]);
 
   function intakeBlockedReason(draft: IntakeDraft): string | undefined {
+    // A2-12 (audit 13 Oct 2026): a referral nobody can name cannot be actioned. A registered
+    // person by name or UMRN, or "Unidentified" with a description, comes first.
+    if (draft.unidentified) {
+      if (draft.description.trim() === "") return "Describe the unidentified person before sending.";
+    } else if (draft.umrn.trim() === "") {
+      return "Enter the patient's name or UMRN, or choose Unidentified.";
+    } else if (!matchReferralPatient(patients, draft.umrn)) {
+      return "No one on file matches that name or UMRN. Check it, or choose Unidentified.";
+    }
     if (draft.ageBand === "") return "Choose an age band before sending this follow-up referral.";
     if (draft.homeRegion === "") return "Choose a home region before sending this follow-up referral.";
     if (draft.urgency === "") return "Choose urgency before sending this follow-up referral.";
     if (!siteByCode(draft.originSiteCode)) {
       return "Choose the originating site before sending this follow-up referral.";
     }
-    if (draft.history.length > REFERRAL_HISTORY_LIMITS.history) {
-      return `The history is ${draft.history.length} characters and the limit is ${REFERRAL_HISTORY_LIMITS.history}.`;
-    }
-    const umrn = draft.umrn.trim();
-    if (umrn !== "" && !patients.some((patient) => patient.umrn === umrn)) {
-      return "No person on file with that UMRN. Leave it blank if nobody is on file.";
+    const history = intakeHistory(draft);
+    if (history.length > REFERRAL_HISTORY_LIMITS.history) {
+      return `The history is ${history.length} characters and the limit is ${REFERRAL_HISTORY_LIMITS.history}.`;
     }
     return undefined;
   }
@@ -947,10 +968,10 @@ export function CommunityScreen({
   function submitCommunityFollowUp(teamName: string) {
     const blocked = intakeBlockedReason(intakeDraft);
     if (blocked !== undefined) return;
-    const { ageBand, homeRegion, urgency, originSiteCode, history } = intakeDraft;
+    const { ageBand, homeRegion, urgency, originSiteCode } = intakeDraft;
     if (ageBand === "" || homeRegion === "" || urgency === "") return;
-    const umrn = intakeDraft.umrn.trim();
-    const patient = umrn === "" ? undefined : patients.find((candidate) => candidate.umrn === umrn);
+    const history = intakeHistory(intakeDraft);
+    const patient = intakeDraft.unidentified ? undefined : matchReferralPatient(patients, intakeDraft.umrn);
     dispatch({
       type: "RECEIVE_REFERRAL",
       role: "community",
@@ -5459,16 +5480,46 @@ export function CommunityScreen({
                       />
                     </label>
                     <label className={styles.intakeField}>
-                      <span>UMRN (optional)</span>
+                      <span>Patient name or UMRN</span>
                       <input
                         type="text"
                         value={intakeDraft.umrn}
+                        disabled={intakeDraft.unidentified}
                         onChange={(event) => setIntakeDraft((current) => ({ ...current, umrn: event.target.value }))}
-                        placeholder="Leave blank if nobody is on file"
+                        placeholder="For example Smith, Jo or UM100046"
+                        autoComplete="off"
                         className={styles.searchInput}
                         data-testid="ward-community-intake-umrn"
                       />
                     </label>
+                    <label className={styles.intakeCheck}>
+                      <input
+                        type="checkbox"
+                        checked={intakeDraft.unidentified}
+                        onChange={(event) =>
+                          setIntakeDraft((current) => ({ ...current, unidentified: event.target.checked, umrn: "" }))
+                        }
+                        data-testid="ward-community-intake-unidentified"
+                      />
+                      Unidentified
+                    </label>
+                    {intakeDraft.unidentified ? (
+                      <label className={styles.intakeField}>
+                        <span>Describe the person</span>
+                        <input
+                          type="text"
+                          value={intakeDraft.description}
+                          maxLength={200}
+                          onChange={(event) =>
+                            setIntakeDraft((current) => ({ ...current, description: event.target.value }))
+                          }
+                          placeholder="Age, appearance, where they are"
+                          autoComplete="off"
+                          className={styles.searchInput}
+                          data-testid="ward-community-intake-description"
+                        />
+                      </label>
+                    ) : null}
                     <label className={styles.intakeField}>
                       <span>Age band</span>
                       <select
@@ -5581,9 +5632,9 @@ export function CommunityScreen({
                         Send for community follow-up
                       </button>
                       {intakeBlocked === undefined ? null : (
-                        <span id="ward-community-intake-blocked" className="sr-only">
-                          {intakeBlocked}
-                        </span>
+                        // A2-10 (audit 13 Oct 2026): visible beside the greyed button, not only to a
+                        // screen reader or on hover.
+                        <DisabledReason id="ward-community-intake-blocked">{intakeBlocked}</DisabledReason>
                       )}
                     </div>
                   </form>
