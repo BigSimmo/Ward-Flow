@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { useRef, useState, type Dispatch } from "react";
+import { usePatientNameDisplay } from "./settings/discreet-names";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
@@ -185,6 +186,7 @@ export function WardTasksDrawer({
   records,
   withBackdrop = false,
 }: WardTasksDrawerProps) {
+  const nameFor = usePatientNameDisplay();
   const drawerRef = useRef<HTMLElement>(null);
   useWardModalFocus(true, drawerRef, onClose);
   // Phone (v10 Tasks sheet): a plain list, due first. A row opens in place to show its actions.

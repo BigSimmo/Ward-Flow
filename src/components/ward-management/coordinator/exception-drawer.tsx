@@ -10,6 +10,7 @@ import { OverrideRegister } from "@/components/ward-management/override-register
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DeclineEntry, InboxItem, OverrideEntry } from "@/components/ward-management/ward-derivations";
 import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { dischargeHref } from "@/components/ward-management/shell/ward-facade";
 import type { Rejection, Unit } from "@/components/ward-management/ward-model";
 
@@ -209,7 +210,7 @@ export function ExceptionDrawer({
                   item.plannedAdmission ??
                     (item.movementId ? { movementId: item.movementId } : { id: item.admissionId }),
                 );
-                const whoName = who.displayName === "Unknown Patient" ? null : who.displayName;
+                const whoName = who.displayName === "Unknown Patient" ? null : nameFor(who.displayName, who.umrn);
                 const content = (
                   <>
                     <span className={styles.registerMain}>
