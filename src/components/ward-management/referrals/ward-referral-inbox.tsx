@@ -259,9 +259,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                 </button>
                 {roleRefusal ? <DisabledReason id={declineReasonId}>{roleRefusal}</DisabledReason> : null}
                 {!roleRefusal && !reasons[entry.id] ? (
-                  <span className="sr-only" id={`${declineReasonId}-choose`}>
-                    Choose a decline reason first.
-                  </span>
+                  <DisabledReason id={`${declineReasonId}-choose`}>Choose a decline reason first.</DisabledReason>
                 ) : null}
               </div>
             )}

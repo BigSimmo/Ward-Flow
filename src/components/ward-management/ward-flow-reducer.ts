@@ -4542,7 +4542,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           reason:
             event.role === "coordinator"
               ? "The coordinator withdrew the referral"
-              : "The referrer withdrew the referral",
+              : event.role === "ward"
+                ? "The ward withdrew the referral"
+                : "The referrer withdrew the referral",
         },
         // Nothing is blocking a movement that is over. Left saying "Awaiting destination response"
         // it would keep a withdrawn patient looking like a live obstruction.
@@ -4550,7 +4552,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       const next = replaceMovement(state, movement.id, updated);
       let noticeCount = state.notices.length;
-      const actorLabel = event.role === "coordinator" ? "coordinator" : "referrer";
+      const actorLabel = event.role === "coordinator" ? "coordinator" : event.role === "ward" ? "ward" : "referrer";
       const wardNotices = movement.referredUnitIds.map((unitId) =>
         makeNotice(
           event.now,
