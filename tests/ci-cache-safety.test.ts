@@ -32,6 +32,13 @@ describe("CI cache safety", () => {
     expect(nodeSetup).not.toContain("cache-hit");
   });
 
+  it("uses npm's cache in the Ward Flow CI workflow", () => {
+    const wardCiUrl = new URL("../.github/workflows/ward-flow.yml", import.meta.url);
+    expect(existsSync(wardCiUrl)).toBe(true);
+    const wardWorkflow = readFileSync(wardCiUrl, "utf8");
+    expect(wardWorkflow).toContain("cache: npm");
+  });
+
   describe.skipIf(!existsSync(ciUrl))("monorepo CI workflow jobs", () => {
     it("keeps quarantined and mockup UI specs in one advisory lane", () => {
       expect(workflow).toContain("ui-advisory:");
