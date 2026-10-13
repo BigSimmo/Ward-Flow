@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useOptionalToast } from "@/components/wf";
 
 /** What an in-app link says while the device is offline, instead of leaving the app. */
-export const WARD_OFFLINE_LINK_NOTICE = "Offline. Other pages open again when the connection returns.";
+export const WARD_OFFLINE_LINK_NOTICE = "Offline. Pages open when back online.";
 
 /**
  * A1-18 (audit 13 Oct 2026): offline, a tap on an in-app link to another page made the router
