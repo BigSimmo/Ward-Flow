@@ -194,6 +194,7 @@ function AlertsWorkspace() {
   // so "Now" and the badge agree; the arrival and discharge notification rows are no longer dropped.
   const admissions = state.admissions;
   const supportNotifications = state.supportNotifications;
+  const leaveBeds = state.leaveBeds;
   const allInbox = useMemo(
     () =>
       taskItems(
@@ -207,6 +208,7 @@ function AlertsWorkspace() {
           referrals,
           supportNotifications,
           plannedAdmissions,
+          leaveBeds,
         },
         now,
       ).filter(isQueueItem),
@@ -220,6 +222,7 @@ function AlertsWorkspace() {
       referrals,
       supportNotifications,
       plannedAdmissions,
+      leaveBeds,
       now,
     ],
   );

@@ -14,12 +14,14 @@ import { edById } from "@/components/ward-management/ward-sites";
  */
 
 export type AlertKind =
-  "legal" | "declines" | "unsuitable" | "hold" | "transport" | "planned" | "notify" | "target" | "running";
+  "awol" | "legal" | "declines" | "unsuitable" | "hold" | "transport" | "planned" | "notify" | "target" | "running";
 
 /** The queue's three groups: act now (red), waiting (amber, counted) and running targets (listed, never counted). */
 export type AlertGroup = "act" | "wait" | "running";
 
 const KIND_PREFIXES: [AlertKind, string][] = [
+  // Audit A3-1 (13 Oct 2026): a person on an order absent without leave. Its remainder is a stay.
+  ["awol", INBOX_CATEGORIES.absent_without_leave.idPrefix],
   ["legal", INBOX_CATEGORIES.legal_timing_breached.idPrefix],
   ["declines", INBOX_CATEGORIES.destinations_declined.idPrefix],
   ["unsuitable", INBOX_CATEGORIES.destination_unlawful.idPrefix],
@@ -55,10 +57,14 @@ export function alertGroupOf(item: InboxItem): AlertGroup {
 }
 
 /** The movement an inbox id names, for the categories whose remainder is a movement id. */
-/** The discharged stay a discharge notification row names, read from its id. */
+/** The stay a discharge notification or absence row names, read from its id. */
 export function admissionIdOfInboxId(id: string): string | undefined {
-  const prefix = INBOX_CATEGORIES.support_notification_discharge.idPrefix;
-  return id.startsWith(prefix) ? id.slice(prefix.length) || undefined : undefined;
+  for (const prefix of [
+    INBOX_CATEGORIES.support_notification_discharge.idPrefix,
+    INBOX_CATEGORIES.absent_without_leave.idPrefix,
+  ])
+    if (id.startsWith(prefix)) return id.slice(prefix.length) || undefined;
+  return undefined;
 }
 
 export function movementIdOfInboxId(id: string): string | undefined {
@@ -66,6 +72,7 @@ export function movementIdOfInboxId(id: string): string | undefined {
   // A planned arrival row names a booking, never a movement; a discharge notification row names a stay.
   if (!match || match[0] === "planned") return undefined;
   if (match[1] === INBOX_CATEGORIES.support_notification_discharge.idPrefix) return undefined;
+  if (match[0] === "awol") return undefined;
   return id.slice(match[1].length);
 }
 
@@ -83,6 +90,7 @@ export function bookingOfInboxId(
 
 /** Short name for a condition, used in History and the Today chart. */
 export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
+  awol: "Absent without leave on an order",
   legal: "Form due time passed",
   declines: "Every ward asked declined",
   unsuitable: "Destination unsuitable",
@@ -184,6 +192,8 @@ export type AlertAction = { kind: "link"; label: string; href: string } | { kind
 export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAction {
   const patientHref = subject.patientHref ?? "/mockups/ward-flow/movements";
   switch (alertKindOf(item.id)) {
+    case "awol":
+      return { kind: "link", label: "Open patient", href: item.href ?? patientHref };
     case "legal":
       return { kind: "link", label: "Open forms", href: "/mockups/ward-flow/legal-forms" };
     case "declines":

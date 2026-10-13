@@ -1,4 +1,5 @@
 import { referralIntakeError } from "./referrals/referral-submission";
+import { transportExceptionRecord } from "@/components/ward-management/ward-transport-checks";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
 import { movementPatientIdentityMatchesRecord, withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
 import {
@@ -753,6 +754,8 @@ function subjectId(event: WardFlowEvent): string {
       return event.admissionId;
     // v10 pass 3: a step undo is filed against the subject it names; a handover sign-off has none.
     case "UNDO_REPATRIATION":
+    case "UNDO_DEPARTURE":
+    case "UNDO_ABSENT_WITHOUT_LEAVE":
     case "UNDO_ED_STEP":
     case "UNDO_SUPPORT_NOTIFICATION":
       return undoStepSubjectId(event);
@@ -1492,7 +1495,6 @@ function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, 
     allocatable: {
       ...unit.allocatable,
       value: Math.min(unit.beds, unit.allocatable.value + 1),
-      confirmedAt: now,
     },
     allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + (lockedBedReleased ? 1 : 0)),
     ...(releaseCountDisagrees
@@ -1692,23 +1694,22 @@ function departAdmission(
   // An admission carries only `sex`, so the gender comes from the movement that admitted it.
   const admittingMovement = state.movements.find((m) => m.admissionId === admission.id);
   const leaverSex = mixSexOf(admission.gender ?? admittingMovement?.gender, admission.sex);
+  // Audit A1-11 (13 Oct 2026): a departure moves the figures but never stamps them as confirmed;
+  // only the ward's own Confirm numbers (`CONFIRM_CAPACITY`) sets `confirmedAt`.
   const updatedUnit: Unit =
     releaseAlreadyIncremented || arrivalAwaitingCapacity
       ? {
           ...unit,
-          empty: { ...unit.empty, confirmedAt: now },
-          allocatable: { ...unit.allocatable, confirmedAt: now },
           allocatableLocked: unit.allocatableLocked + restoreLocked,
           sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
           ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
         }
       : {
           ...unit,
-          empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1), confirmedAt: now },
+          empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) },
           allocatable: {
             ...unit.allocatable,
             value: Math.min(unit.beds, unit.allocatable.value + 1),
-            confirmedAt: now,
           },
           allocatableLocked: unit.allocatableLocked + restoreLocked,
           sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
@@ -2062,8 +2063,8 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       );
       next = replaceUnit(next, receiving.id, {
         ...receiving,
-        empty: { ...receiving.empty, value: receiving.empty.value - 1, confirmedAt: event.now },
-        allocatable: { ...receiving.allocatable, value: receiving.allocatable.value - 1, confirmedAt: event.now },
+        empty: { ...receiving.empty, value: receiving.empty.value - 1 },
+        allocatable: { ...receiving.allocatable, value: receiving.allocatable.value - 1 },
         allocatableLocked: receiving.allocatableLocked - (bedKind === "locked" ? 1 : 0),
         sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
       });
@@ -2299,6 +2300,8 @@ const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_HANDOVER_SIGN_OFF: "There is no handover sign-off to undo",
   UNDO_ED_STEP: "There is no ED step on this patient to undo",
   UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
+  UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
+  UNDO_ABSENT_WITHOUT_LEAVE: "There is no absence on this stay to undo",
 };
 
 /**
@@ -2343,7 +2346,11 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
     (!safeCounter(state.auditSequence) || state.auditSequence >= Number.MAX_SAFE_INTEGER)
   )
     return state;
-  if (protectedEvent) return advanceResourceRevisions(state, reduceRecordEvent(state, event));
+  if (protectedEvent) {
+    const recorded = advanceResourceRevisions(state, reduceRecordEvent(state, event));
+    // Audit A1-12: a recorded discharge ("Has left") keeps what it changed, so its toast can undo it.
+    return event.type === "RECORD_PATIENT_DISCHARGE" ? withStepUndo(state, recorded, event) : recorded;
+  }
   if (
     (event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO") &&
     (!safeCounter(state.worldGeneration) || state.worldGeneration >= Number.MAX_SAFE_INTEGER)
@@ -2565,7 +2572,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "UNDO_REPATRIATION":
     case "UNDO_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
-    case "UNDO_TRANSPORT_STEP": {
+    case "UNDO_TRANSPORT_STEP":
+    case "UNDO_DEPARTURE":
+    case "UNDO_ABSENT_WITHOUT_LEAVE": {
       // v10 pass 3: takes back the newest step of this kind on this subject, exactly (`ward-undo.ts`).
       const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
       if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);
@@ -4360,7 +4369,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const callerPlaceId = caller.placeId ?? caller.actingPlaceId;
       const referral = movement.referralId ? state.referrals.find((r) => r.id === movement.referralId) : undefined;
       const originSiteId = referral?.originSiteId ?? referral?.originSiteCode ?? movement.originEdId;
-      if (caller.role !== "coordinator" && (callerPlaceId === undefined || callerPlaceId !== originSiteId)) {
+      // A stated place that is not the referral's origin is refused. No event surface states one
+      // yet (claim-not-proof, the same discipline as BOOK_TRANSPORT's actingPlaceId), so an absent
+      // place falls through to the role rules below rather than refusing every ED/community withdrawal.
+      if (caller.role !== "coordinator" && callerPlaceId !== undefined && callerPlaceId !== originSiteId) {
         return reject(
           state,
           event,
@@ -4891,7 +4903,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       const updatedUnit: Unit = {
         ...unit,
-        allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1, confirmedAt: event.now },
+        // Audit A1-11: a pull moves the figure; only Confirm numbers stamps it confirmed.
+        allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1 },
         // Item 11, owner answer 11 — decremented ONLY when the bed taken was one of the locked
         // ones, exactly mirroring the restore in `releasePulledBedAndAdmission`. Taking an open bed
         // leaves this untouched: the locked ones remaining are exactly as many as before.
@@ -5393,10 +5406,21 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // The last of the four re-checks: `PATIENT_ARRIVED` deliberately has none.
       const collectedGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
       if (collectedGenderRefusal) return reject(state, event, collectedGenderRefusal);
+      // Audit fix (13 Oct 2026): collected with a check open (no Form 4A, no clearance) records why.
+      const collectedException =
+        event.exception === undefined
+          ? undefined
+          : transportExceptionRecord(event.exception, event.now, event.role, "collected");
+      if (typeof collectedException === "string")
+        return reject(state, event, `PATIENT_COLLECTED ${collectedException}`);
       const updated: Movement = {
         ...movement,
         stage: "moving",
-        transport: { ...movement.transport, collectedAt: event.now },
+        transport: {
+          ...movement.transport,
+          collectedAt: event.now,
+          ...(collectedException ? { exceptions: [...(movement.transport.exceptions ?? []), collectedException] } : {}),
+        },
         // Nothing is blocking a patient who is in a vehicle — and the SEED already says so in these
         // exact words on its two `moving` movements. Reused verbatim rather than reworded.
         blocker: STAGE_TRANSITION_BLOCKERS.collected,
@@ -5578,7 +5602,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       const updatedUnit: Unit = {
         ...unit,
-        empty: { ...unit.empty, value: Math.max(0, unit.empty.value - 1), confirmedAt: event.now },
+        empty: { ...unit.empty, value: Math.max(0, unit.empty.value - 1) },
         sexMix: adjustSexMix(unit.sexMix, arriverSex, 1),
         ...(isBedTurnaround
           ? {
@@ -6557,12 +6581,6 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `release ${release.id} completes when admission ${releasedAdmission.id} is recorded as having left (RECORD_LEAVING); they are still ${releasedAdmission.state}`,
         );
       }
-      const movement = (event as { movementId?: MovementId }).movementId
-        ? findMovement(state, (event as { movementId?: MovementId }).movementId!)
-        : releasedAdmission.movementId
-          ? findMovement(state, releasedAdmission.movementId)
-          : undefined;
-      if (movement && movement.allocatedBed === undefined) return state;
       // Fix round 2 (P2, spec D7): same freshness restatement as CONFIRM_BED_RELEASE's own case
       // (see its comment in full) — `confirmedAt` moves to `event.now` on this transition too,
       // and `confirmedBy` stays untouched for the same reason.
@@ -6609,20 +6627,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // the leaver's gender (owner rulings 2026-09-25), so the count moves when the admission
       // departs (`departAdmission`), never by guessing a sex here. 5d7f438126's guess (decrement
       // the larger bucket) was removed 2026-09-25; it also subtracted twice when the occupant later left.
+      // Audit A1-11: recording the stage never stamps the ward's figures as confirmed.
       const updatedUnit: Unit = departureAlreadyIncremented
-        ? {
-            ...unit,
-            allocatable: { ...unit.allocatable, confirmedAt: event.now },
-            empty: { ...unit.empty, confirmedAt: event.now },
-          }
+        ? unit
         : {
             ...unit,
             allocatable: {
               ...unit.allocatable,
               value: Math.min(unit.beds, unit.allocatable.value + 1),
-              confirmedAt: event.now,
             },
-            empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1), confirmedAt: event.now },
+            empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) },
           };
       const withUnit = replaceUnit(state, unit.id, updatedUnit);
       decision.outcome = "accepted";
@@ -8532,6 +8546,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const priorTransportCancellations = movement.unwinds.filter(
         (entry) => entry.kind === "transport_cancelled",
       ).length;
+      // Audit fix (13 Oct 2026): a booking whose status differs from Legal now records why.
+      const bookingException =
+        event.exception === undefined
+          ? undefined
+          : transportExceptionRecord(event.exception, event.now, event.role, "booked");
+      if (typeof bookingException === "string") return reject(state, event, `BOOK_TRANSPORT ${bookingException}`);
       const booked: Movement = {
         ...movement,
         transport: {
@@ -8546,6 +8566,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           cadNumber: event.cadNumber,
           transportLegalStatus: event.transportLegalStatus,
           estimatedAt: event.estimatedAt,
+          ...(bookingException ? { exceptions: [bookingException] } : {}),
           // Carried forward from RECORD_TRANSPORT_NEED so the "no transport needed" branches in
           // HANDOVER_READY / PATIENT_ARRIVED can read a runtime-booked job the same way they read a
           // seed-authored one.

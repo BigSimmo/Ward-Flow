@@ -209,8 +209,10 @@ export function clockState(due: Instant, now: Instant): ClockState {
   if (!Number.isFinite(remaining)) return "due";
   if (remaining < 0) return "breached";
   // The 1-hour and 3-hour warnings are Josh's defaults, not legal limits (26 Sept 2026 card).
-  if (remaining < dueSoonThresholds.urgentMinutes) return "critical";
-  if (remaining < dueSoonThresholds.soonMinutes) return "due";
+  // Inclusive at each threshold (audit A3-4, 13 Oct 2026): exactly 60m left is act now on every
+  // page, matching the Delays board's `dueTone`/`isDueSoon`, so Forms and Delays never disagree.
+  if (remaining <= dueSoonThresholds.urgentMinutes) return "critical";
+  if (remaining <= dueSoonThresholds.soonMinutes) return "due";
   return "clear";
 }
 

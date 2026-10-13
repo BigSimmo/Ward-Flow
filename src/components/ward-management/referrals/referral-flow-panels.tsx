@@ -198,16 +198,16 @@ function PanelHead({ icon: Icon, title, children }: { icon: typeof User; title: 
   );
 }
 
+/**
+ * A2-6 (audit 13 Oct 2026): the referrer's name is asked once, on the Before you send sheet with
+ * the rest of their contact details, not here as well.
+ */
 export function DocumentationPanel({
   draft,
   onChange,
-  referrerName,
-  onReferrerNameChange,
 }: {
   draft: DocumentationDraft;
   onChange: Dispatch<SetStateAction<DocumentationDraft>>;
-  referrerName: string;
-  onReferrerNameChange: (name: string) => void;
 }) {
   const id = useId();
   function changeChart(kind: ReferralChart["kind"], chart?: ReferralChart) {
@@ -354,27 +354,6 @@ export function DocumentationPanel({
             <Lock aria-hidden="true" />
             Synthetic documents only, kept for this session
           </p>
-        </div>
-      </section>
-      <section className={styles.refCard}>
-        <PanelHead icon={User} title="Referrer" />
-        <div className={styles.cardBody}>
-          <div className={styles.fieldGrid}>
-            <div className={styles.formField}>
-              <div className={styles.fieldLabelRow}>
-                <label htmlFor={`${id}-referrer`}>Referrer name</label>
-              </div>
-              <input
-                id={`${id}-referrer`}
-                className={styles.fieldInput}
-                value={referrerName}
-                maxLength={200}
-                placeholder="Your name"
-                onChange={(e) => onReferrerNameChange(e.target.value)}
-              />
-            </div>
-          </div>
-          <p className={styles.bodyMeta}>Confirm your email, phone, role and location before sending</p>
         </div>
       </section>
     </>

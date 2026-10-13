@@ -194,8 +194,9 @@ function PatientRow({
           <b className={styles.prowName}>{row.name}</b>
           {highlighted ? <SrOnly>, highlighted</SrOnly> : null}
         </span>
+        {/* Audit A4-28: the UMRN on every phone row, as on desktop, so two people of one name differ. */}
         <span className={styles.prowLine}>
-          {row.edShort} to {destinationText(row)}
+          <span className={styles.prowUmrn}>{row.umrn}</span> · {row.edShort} to {destinationText(row)}
         </span>
         <span className={`${styles.prowLine} ${styles.prowNext}`}>
           {step.tone === "act" ? (
@@ -307,7 +308,7 @@ function IsbarSheet({
         />
         <h3 className={styles.isbarHead}>ISBAR</h3>
         <dl className={styles.isbar}>
-          {isbarLines(row, ctx.now).map((line) => (
+          {isbarLines(row, ctx.now, ctx.readyBeds).map((line) => (
             <div key={line.key}>
               <dt>
                 <b aria-hidden="true">{line.key}</b>

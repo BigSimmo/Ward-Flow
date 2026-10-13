@@ -2692,10 +2692,3 @@ function MatchRow({
     </li>
   );
 }
-ull}
-          </div>
-        </div>
-      )}
-    </li>
-  );
-}

@@ -101,7 +101,8 @@ describe("absent without leave (D-38)", () => {
     }
     const steps = next.leaveBeds.find((b) => b.admissionId === stay.id)!.absentWithoutLeave!.steps;
     expect(steps.map((done) => done.step)).toEqual([...ABSENCE_STEPS]);
-    expect(steps.map((done) => done.at)).toEqual([NOW + 1, NOW + 2, NOW + 3, NOW + 4, NOW + 5]);
+    // Audit A3-2 added the return order step, so the times follow the step list.
+    expect(steps.map((done) => done.at)).toEqual(ABSENCE_STEPS.map((_, i) => NOW + i + 1));
     const again = wardFlowReducer(next, {
       type: "RECORD_ABSENCE_STEP",
       role: "ward",

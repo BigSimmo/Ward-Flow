@@ -7,7 +7,7 @@ import {
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 
 describe("Settings Diagnostics Privacy Masking (WF-A4-10)", () => {
-  it("masks patient given name, family name, preferred name and replaces UMRN digits with asterisks", () => {
+  it("keeps only allowlisted patient fields: no names, record numbers or date of birth", () => {
     const rawPatient = {
       id: "P-12345",
       givenName: "Jane",
@@ -21,16 +21,10 @@ describe("Settings Diagnostics Privacy Masking (WF-A4-10)", () => {
 
     const masked = maskDiagnosticPatient(rawPatient);
 
-    expect(masked.givenName).toBe("[MASKED]");
-    expect(masked.familyName).toBe("[MASKED]");
-    expect(masked.preferredName).toBe("[MASKED]");
-    expect(masked.displayName).toBe("[MASKED]");
-    expect(masked.name).toBe("[MASKED]");
-    expect(masked.umrn).toBe("UMRN-*******");
-    expect(masked.dateOfBirth).toBe("1980-05-12");
+    expect(masked).toEqual({ id: "P-12345" });
   });
 
-  it("masks movement patient name and patient UMRN", () => {
+  it("keeps only allowlisted movement fields: no patient name or UMRN", () => {
     const rawMovement = {
       id: "M-101",
       patientName: "John Smith",
@@ -40,8 +34,7 @@ describe("Settings Diagnostics Privacy Masking (WF-A4-10)", () => {
 
     const masked = maskDiagnosticMovement(rawMovement);
 
-    expect(masked.patientName).toBe("[MASKED]");
-    expect(masked.patientUmrn).toBe("*******");
+    expect(masked).toEqual({ id: "M-101" });
   });
 
   it("writes diagnostic JSON payload to navigator.clipboard with all patient names and MRNs masked", async () => {
@@ -79,8 +72,7 @@ describe("Settings Diagnostics Privacy Masking (WF-A4-10)", () => {
     expect(text).not.toContain("Marley");
     expect(text).not.toContain("1122334");
     expect(text).not.toContain("9988776");
-    expect(text).toContain("[MASKED]");
-    expect(text).toContain("UMRN-*******");
-    expect(text).toContain("*******");
+    expect(JSON.parse(text).patients).toEqual([{ id: "P-202" }]);
+    expect(JSON.parse(text).movements).toEqual([{ id: "M-101" }]);
   });
 });

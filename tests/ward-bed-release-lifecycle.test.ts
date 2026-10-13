@@ -1045,7 +1045,7 @@ describe("ward bed release lifecycle", () => {
     expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value);
   });
 
-  it("14. RELEASE_BED returns state unchanged if linked movement has not been allocated a bed (WF-S2-07)", () => {
+  it("14. RELEASE_BED still discharges a departed admission whose movement predates allocatedBed (legacy state)", () => {
     const state = seeded();
     const target = expectedUnblockedRelease(state);
     const beforeAdmission = admission(state, target.admissionId);
@@ -1080,8 +1080,10 @@ describe("ward bed release lifecycle", () => {
       releaseId: target.id,
       actingUnitId: target.unitId,
     });
-    // Returns state unchanged without modifying release state or unit capacity
-    expect(release(next, target.id)).toEqual(target);
+    // A patient who has physically left frees the bed whether or not the movement carries the
+    // newer allocatedBed field; a silent no-op here would strand the bed as occupied.
+    expect(next.rejections).toHaveLength(0);
+    expect(release(next, target.id).state).toBe("discharged");
     const afterUnit = unit(next, target.unitId);
     expect(afterUnit.empty.value).toBe(beforeUnit.empty.value);
     expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value);
