@@ -53,6 +53,7 @@ import {
   referralDestinationLabel,
   referralDestinationLabels,
   referralState,
+  referralStatusDisplay,
   referralSuburbLabel,
   referralClocks,
 } from "@/components/ward-management/ward-referrals";
@@ -155,10 +156,7 @@ function decidedWaitLabel(referral: Referral): string {
 }
 
 function outcomeLabel(referral: Referral): string {
-  const state = referralState(referral);
-  if (state === "accepted") return "Accepted";
-  if (state === "declined") return "Declined";
-  return "Queued";
+  return referralStatusDisplay(referral);
 }
 
 /**
