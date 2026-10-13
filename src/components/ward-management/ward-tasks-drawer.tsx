@@ -189,6 +189,21 @@ export function WardTasksDrawer({
   useWardModalFocus(withBackdrop, drawerRef, onClose);
   useEffect(() => {
     if (withBackdrop) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const panel = drawerRef.current;
+    if (panel) {
+      if (!panel.hasAttribute("tabindex")) panel.setAttribute("tabindex", "-1");
+      const first = panel.querySelector<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
+      );
+      (first ?? panel).focus();
+    }
+    return () => {
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
+    };
+  }, [withBackdrop]);
+  useEffect(() => {
+    if (withBackdrop) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
