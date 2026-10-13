@@ -368,4 +368,11 @@ describe("the written history on a sample scenario is labelled as an example", (
     renderScreen();
     expect(screen.getByTestId("pn-history-example-label").textContent).toBe("Example history");
   });
+
+  it("opens the patient's chronology from History in one tap (remaining-pages audit ops-17)", () => {
+    renderScreen({ movementId: "WF-009" });
+    const link = screen.getByTestId("pn-history-chronology");
+    expect(link).toHaveTextContent("Chronology");
+    expect(link.getAttribute("href")).toMatch(/^\/mockups\/ward-flow\/reports\/chronology\?patient=[A-Za-z0-9-]+$/u);
+  });
 });
