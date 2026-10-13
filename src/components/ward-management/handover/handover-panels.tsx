@@ -296,6 +296,7 @@ export function HandoverSignOffPanel({
   canSignOff,
   cannotSignReason,
   onSignOff,
+  onUndoSignOff,
 }: {
   title: string;
   subtitle: string;
@@ -305,6 +306,8 @@ export function HandoverSignOffPanel({
   canSignOff: boolean;
   cannotSignReason?: string;
   onSignOff: () => void;
+  /** Takes back this shift's sign-off. Once signed, the foot offers this instead of a second sign-off. */
+  onUndoSignOff: () => void;
 }) {
   return (
     <Card
@@ -366,17 +369,24 @@ export function HandoverSignOffPanel({
         </div>
       ) : null}
       <div className={styles.signFoot}>
-        <Button
-          variant="pri"
-          size="sm"
-          icon={Check}
-          onClick={onSignOff}
-          disabled={!canSignOff}
-          disabledReason={cannotSignReason}
-          data-testid="ward-handover-sign-off-button"
-        >
-          {signedAt !== null ? `Sign off again at ${formatInstant(now)}` : `Sign off at ${formatInstant(now)}`}
-        </Button>
+        {signedAt !== null ? (
+          // A4-27 (audit round 2): once signed, no second primary. The signed time shows above.
+          <Button variant="ghost" size="sm" onClick={onUndoSignOff} data-testid="ward-handover-sign-off-undo">
+            Undo sign-off
+          </Button>
+        ) : (
+          <Button
+            variant="pri"
+            size="sm"
+            icon={Check}
+            onClick={onSignOff}
+            disabled={!canSignOff}
+            disabledReason={cannotSignReason}
+            data-testid="ward-handover-sign-off-button"
+          >
+            {`Sign off at ${formatInstant(now)}`}
+          </Button>
+        )}
       </div>
     </Card>
   );

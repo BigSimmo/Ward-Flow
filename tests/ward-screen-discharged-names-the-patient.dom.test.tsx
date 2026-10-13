@@ -45,7 +45,7 @@ function expectedRelease(predicate: (legalStatus: string | undefined) => boolean
   );
 }
 
-const VOLUNTARY_RELEASE = expectedRelease((status) => status === "Voluntary patient");
+const VOLUNTARY_RELEASE = expectedRelease((status) => status === "Voluntary");
 const INVOLUNTARY_RELEASE = expectedRelease(isInvoluntary);
 
 /** Reads the live state for one ward, so each test can see exactly who changed. */

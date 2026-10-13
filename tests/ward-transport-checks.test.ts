@@ -4,6 +4,7 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import {
+  arrivalGaps,
   collectionGaps,
   holdEndsBeforeEta,
   legalNowTransportStatus,
@@ -182,5 +183,13 @@ describe("recorded exceptions", () => {
         reason: "paper_sighted",
       },
     ]);
+  });
+});
+
+describe("arrival gaps with no transport leg (audit r1 item 4)", () => {
+  it("asks fit to travel only when nobody collected the patient and no clearance is recorded", () => {
+    expect(arrivalGaps(job({}))).toEqual(["fit_to_travel_missing"]);
+    expect(arrivalGaps(job({ medicalClearance: { cleared: true, at: 0 } }))).toEqual([]);
+    expect(arrivalGaps(job({ transport: { collectedAt: 5 } as never }))).toEqual([]);
   });
 });

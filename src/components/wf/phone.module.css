@@ -866,4 +866,13 @@
   .hero[data-band="on"] .heroEyebrowRow {
     align-items: center;
   }
+
+  /* Phone taps (13 Oct 2026): the plain scroller clipped its 32px chips' 48px hit areas to its own
+     40px box. An 8px band, taken back by the negative margin, lets them run the full 48px; the row
+     does not move. A track given its own `rowClassName` (one with a space in its class) already
+     sets its own band, so it is left alone. */
+  .scrollTrack:not([class*=" "]) {
+    margin-block: -4px;
+    padding-block: 8px;
+  }
 }

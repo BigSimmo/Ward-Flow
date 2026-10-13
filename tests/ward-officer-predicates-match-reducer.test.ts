@@ -38,9 +38,39 @@ describe("officer transport predicates agree with the reducer", () => {
 
     const movement = state.movements.find((candidate) => candidate.id === moving.id)!;
     expect(arrivedBlockedReason(movement, unit)).toBeUndefined();
-    const after = wardFlowReducer(state, { type: "PATIENT_ARRIVED", role: "officer", now: NOW_ANCHOR, movementId: moving.id });
+    const after = wardFlowReducer(state, {
+      type: "PATIENT_ARRIVED",
+      role: "officer",
+      now: NOW_ANCHOR,
+      movementId: moving.id,
+    });
     expect(after.rejections).toHaveLength(state.rejections.length);
-    expect(after.movements.find((candidate) => candidate.id === moving.id)!.stage).toBe("arrived");
+    // A4-16 (Josh, 13 Oct 2026): the officer's Delivered ends the transport leg only. The movement
+    // stays open until the receiving ward (or the coordinator) confirms arrival.
+    const delivered = after.movements.find((candidate) => candidate.id === moving.id)!;
+    expect(delivered.stage).toBe("moving");
+    expect(delivered.closure).toBeUndefined();
+    expect(delivered.transport?.arrivedAt).toBe(NOW_ANCHOR);
+    expect(arrivedBlockedReason(delivered, unit)).toBeDefined();
+    const again = wardFlowReducer(after, {
+      type: "PATIENT_ARRIVED",
+      role: "officer",
+      now: NOW_ANCHOR + 1,
+      movementId: moving.id,
+    });
+    expect(again.rejections.length, "a second Delivered is refused").toBe(after.rejections.length + 1);
+
+    const confirmed = wardFlowReducer(after, {
+      type: "PATIENT_ARRIVED",
+      role: "coordinator",
+      now: NOW_ANCHOR + 5,
+      movementId: moving.id,
+    });
+    expect(confirmed.rejections).toHaveLength(after.rejections.length);
+    const closed = confirmed.movements.find((candidate) => candidate.id === moving.id)!;
+    expect(closed.stage).toBe("arrived");
+    expect(closed.closure?.outcome).toBe("arrived");
+    expect(closed.transport?.arrivedAt, "the officer's delivery time is kept").toBe(NOW_ANCHOR);
   });
 
   it("does not offer Accepted or En route while the bed awaits release after a revoked examination", () => {

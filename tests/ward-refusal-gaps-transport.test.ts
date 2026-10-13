@@ -67,7 +67,9 @@ function driveTo(stop: "collected" | "arrived"): WardFlowState {
   const steps = [
     { type: "TRANSPORT_EN_ROUTE", role: "officer", now: NOW + 1, movementId: MOVEMENT },
     { type: "PATIENT_COLLECTED", role: "officer", now: NOW + 2, movementId: MOVEMENT },
-    ...(stop === "arrived" ? [{ type: "PATIENT_ARRIVED", role: "officer", now: NOW + 3, movementId: MOVEMENT }] : []),
+    ...(stop === "arrived"
+      ? [{ type: "PATIENT_ARRIVED", role: "coordinator", now: NOW + 3, movementId: MOVEMENT }]
+      : []),
   ] as const;
   for (const step of steps) {
     const before = state;

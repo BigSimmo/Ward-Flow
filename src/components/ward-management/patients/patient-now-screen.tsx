@@ -36,7 +36,7 @@ import type {
   TransportLegalStatus,
 } from "@/components/ward-management/ward-model";
 import {
-  ABSENCE_STEPS,
+  absenceStepsFor,
   ABSENCE_STEP_LABELS,
   TRANSPORT_PROVIDERS,
   ARRIVAL_MODE_LABELS,
@@ -101,6 +101,7 @@ import {
 } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
 import { isOnOrder } from "../ward-stay-legal";
+import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -391,7 +392,16 @@ export function PatientNowScreen({
     leaveBed: stayLeaveBed,
     patient: livePatient,
   });
-  const modeMeta = PATIENT_MODES[mode];
+  /* A3-13: absent without leave is the involuntary term under the Act. A voluntary patient who is
+   * not back reads "Not back from leave"; the missing person steps stay the same. Either source
+   * reading involuntary wins, as in the reducer's guards, so the return-order step is kept. */
+  const voluntaryNow =
+    /^voluntary\b/i.test((liveMovement?.legalStatus ?? livePatient?.legalStatus ?? "").trim()) &&
+    !legalStatusTextIsInvoluntary(livePatient?.legalStatus);
+  const modeMeta =
+    mode === "awol" && voluntaryNow
+      ? { ...PATIENT_MODES.awol, label: "Not back from leave", pill: "Not back from leave" }
+      : PATIENT_MODES[mode];
   const isLiveBedflow = modeMeta.placing;
   // A movement's forms are the authority in force only while it is open or its stay is current.
   const stayCurrent = mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed";
@@ -429,13 +439,13 @@ export function PatientNowScreen({
     const absence = mode === "awol" ? stayLeaveBed?.absentWithoutLeave : undefined;
     if (absence) {
       // The missing person summary is the absence record only: when, where the bed is held, the steps.
-      const steps = ABSENCE_STEPS.map((step) => {
+      const steps = absenceStepsFor(voluntaryNow).map((step) => {
         const at = absence.steps.find((done) => done.step === step)?.at;
         return `${ABSENCE_STEP_LABELS[step]}: ${at === undefined ? "not recorded" : `done ${clock(at)}`}`;
       });
       const text = [
         `Ward Flow missing person summary — ${displayName}`,
-        `Absent without leave, recorded ${clock(absence.since)}`,
+        `${voluntaryNow ? "Not back from leave" : "Absent without leave"}, recorded ${clock(absence.since)}`,
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
         ...steps,
       ].join("\n");
@@ -1518,12 +1528,14 @@ export function PatientNowScreen({
           {mode === "leave" && stayLeaveBed ? (
             <PatientLeaveCard
               dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
+              voluntary={voluntaryNow}
               onMarkAbsent={markAbsent}
             />
           ) : null}
           {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
             <PatientLastSeenCard
               wardName={stayUnit?.name}
+              voluntary={voluntaryNow}
               since={clock(stayLeaveBed.absentWithoutLeave.since)}
               onRecordReturn={recordReturn}
             />
@@ -1600,8 +1612,12 @@ export function PatientNowScreen({
                   sub={
                     tab.key === "community"
                       ? record.community.teams.length > 0
-                        ? `${record.community.teams.length} team on record`
-                        : "No community team on record"
+                        ? `${record.community.teams.length} ${record.community.teams.length === 1 ? "team" : "teams"} on record`
+                        : // A4-20, S-27: Who to call lists the catchment team from the patient record, so
+                          // this row reads the same field rather than denying a team that list shows.
+                          livePatient?.catchmentCommunityTeam
+                          ? "Catchment team, care not confirmed"
+                          : "No community team on record"
                       : "UMRN, date of birth, where they live"
                   }
                   onOpen={() => {
@@ -1678,7 +1694,8 @@ export function PatientNowScreen({
             }
             phoneEyebrow={
               phoneMovement ? (
-                `Movement · Tier ${urgencyTier ?? "not recorded"}`
+                // A3-20: the phone hero keeps the desktop's tier, bed type and specialling on one line.
+                `Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}${liveMovement?.specialling ? " · 1:1 specialling" : ""}`
               ) : (
                 <span className={styles.phEyebrow}>
                   <StatusGlyph tone={modeMeta.tone} size={10} />
@@ -1781,7 +1798,8 @@ export function PatientNowScreen({
                             },
                             {
                               key: "steps",
-                              value: `${stayLeaveBed.absentWithoutLeave.steps.length}/${ABSENCE_STEPS.length}`,
+                              // A3-13: the same step list the status card counts.
+                              value: `${absenceStepsFor(voluntaryNow).filter((step) => stayLeaveBed.absentWithoutLeave!.steps.some((done) => done.step === step)).length}/${absenceStepsFor(voluntaryNow).length}`,
                               label: "Steps done",
                             },
                             { key: "legal", ...phoneLegal },
@@ -2136,6 +2154,8 @@ export function PatientNowScreen({
                 dayZero={dayZero}
                 unitName={(id) => units.find((u) => u.id === id)?.name}
                 stays={resolved.stays}
+                absence={stayLeaveBed?.absentWithoutLeave}
+                absenceVoluntary={voluntaryNow}
                 open={!modeMeta.quiet}
                 onBackToNow={() => {
                   setActiveTab("now");
@@ -2269,6 +2289,12 @@ export function PatientNowScreen({
               <p>No notification is sent. This records the stated outcome in the shared synthetic journey.</p>
             </div>
             <div className={styles.clearanceModalFoot}>
+              {/* A4-32: say why Save is not yet available, beside it. */}
+              {clearanceGate.allowed && (!clearanceDraft || !clearanceAttested) ? (
+                <p id="clearanceSaveReason" className={styles.clearanceReason}>
+                  {!clearanceDraft ? "Choose the outcome to save" : "Tick the statement to save"}
+                </p>
+              ) : null}
               <button type="button" className={styles.ctl} onClick={closeClearanceModal}>
                 Close
               </button>
@@ -2276,7 +2302,11 @@ export function PatientNowScreen({
                 type="button"
                 className={`${styles.ctl} ${styles.ctlPrimary}`}
                 disabled={!clearanceDraft || !clearanceAttested || !liveMovement || !clearanceGate.allowed}
-                aria-describedby={clearanceGate.buttonProps["aria-describedby"]}
+                aria-describedby={
+                  clearanceGate.allowed && (!clearanceDraft || !clearanceAttested)
+                    ? "clearanceSaveReason"
+                    : clearanceGate.buttonProps["aria-describedby"]
+                }
                 onClick={() => {
                   if (!liveMovement || !clearanceDraft || !clearanceAttested || !clearanceGate.allowed) return;
                   dispatch({

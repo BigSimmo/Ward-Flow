@@ -29,7 +29,7 @@ import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 const RELEASE = bedReleases.find((release) => {
   const admission = wardAdmissions.find((candidate) => candidate.id === release.admissionId);
   const patient = wardPatients.find((candidate) => candidate.id === admission?.patientId);
-  return release.state === "expected" && release.blocker === null && patient?.legalStatus === "Voluntary patient";
+  return release.state === "expected" && release.blocker === null && patient?.legalStatus === "Voluntary";
 })!;
 const UNIT = RELEASE.unitId;
 const OTHER = wardAdmissions.find(

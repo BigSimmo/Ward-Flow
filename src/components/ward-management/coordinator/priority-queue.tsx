@@ -32,6 +32,7 @@ import {
 } from "@/components/ward-management/ward-priority";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
@@ -162,13 +163,15 @@ export function PriorityQueue({
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
   const [soonOnly, setSoonOnly] = useState(false);
   const patientOf = usePatientOf();
+  // A2-20: initials plus UMRN on a phone when Discreet names is on; the name everywhere else.
+  const nameFor = usePatientNameDisplay();
 
   const edsById = new Map(allEmergencyDepartments().map((ed) => [ed.id, ed]));
   const filterEd = filterEdId ? edsById.get(filterEdId) : undefined;
 
   const soonCount = movements.filter((movement) => isSoon(movement, now)).length;
-  // Soon is not offered on the phone, so a filter set on a wider screen does not carry over.
-  const rows = soonOnly && !phone ? movements.filter((movement) => isSoon(movement, now)) : movements;
+  // Form due is offered on the phone too, so the count stays visible there (audit A1-16).
+  const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now)) : movements;
   const total = totalMovements ?? movements.length;
   const isOverdue = (movement: Movement) =>
     Math.max(0, now - movement.openedAt) >= queueWaitThresholds(movement.urgency).overdue;
@@ -205,8 +208,8 @@ export function PriorityQueue({
           value={activeTab}
           onChange={setActiveTab}
         />
-        {/* The phone queue (v10 Home phone A) is the switch alone; Soon stays on the larger screens. */}
-        {activeTab === "patients" && !phone ? (
+        {/* Shown on the phone as well so the form-due count is not lost there (audit A1-16). */}
+        {activeTab === "patients" ? (
           <FilterChip
             pressed={soonOnly}
             onPressedChange={setSoonOnly}
@@ -307,7 +310,7 @@ export function PriorityQueue({
                 </span>
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
-                    <strong>{who.formalName}</strong>
+                    <strong>{nameFor(who.formalName, who.umrn)}</strong>
                   </span>
                   <span className={styles.queueSub}>
                     {/* v10 Home: "▲ Flagged · Adult open · RPH · UM827674". The word stays neutral and
@@ -459,7 +462,7 @@ export function PriorityQueue({
                 <TierTile tier={referral.urgency} className={styles.queueTier} />
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
-                    <strong>{patientOf(referral).formalName}</strong>
+                    <strong>{nameFor(patientOf(referral).formalName, patientOf(referral).umrn)}</strong>
                   </span>
                   <span className={styles.queueSub}>
                     <span className={styles.queueSubText}>

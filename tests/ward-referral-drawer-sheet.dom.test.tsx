@@ -92,9 +92,11 @@ describe("referral slide-out, option B", () => {
     // L1 (review 12 Oct 2026): one count. The summary's items left are the steps' needed items.
     const [, ready, total] = /(\d+) of (\d+) ready/u.exec(rail.textContent ?? "") ?? [];
     expect(ready).toBeDefined();
-    const stepNeeds = steps()
-      .getAllByRole("button")
-      .map((button) => Number(/(\d+) needed/u.exec(button.parentElement?.textContent ?? "")?.[1] ?? 0))
+    // Each step's "N needed", read once from the steps group (the step buttons share one parent).
+    const stepNeeds = [
+      ...(screen.getByRole("group", { name: "Referral sections" }).textContent ?? "").matchAll(/(\d+) needed/gu),
+    ]
+      .map((match) => Number(match[1]))
       .reduce((sum, n) => sum + n, 0);
     expect(stepNeeds).toBeGreaterThan(0);
     // A2-9 (audit 13 Oct 2026): the contact details asked at Send are counted too, on their own row.
@@ -227,7 +229,8 @@ describe("referral slide-out, option B", () => {
 
 describe("one ready count (audit A2-9)", () => {
   it("counts the contact details asked at Send, so nothing reads ready while Send would refuse", () => {
-    renderDrawer();
+    // Opened plainly: from an entry point (option B) the referrer's profile fills the contact in.
+    renderDrawer({ initialCategory: "ward" });
     const ready = screen.getByTestId("ward-referral-phone-ready").textContent ?? "";
     const match = /(\d+) of (\d+)/u.exec(ready);
     expect(match).not.toBeNull();
