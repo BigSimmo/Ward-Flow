@@ -56,13 +56,24 @@ export interface ArrivalTimeModalProps {
   onClose: () => void;
   movement: Movement;
   role?: "coordinator" | "ed" | "ward" | "community";
+  /**
+   * The ward a `ward` caller acts for (strict ward scoping, 12 Oct 2026). Only the destination ward
+   * may set arrival details, so it defaults to the movement's accepted ward when not given.
+   */
+  actingUnitId?: string;
 }
 
 export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
   return props.isOpen ? <ArrivalTimeModalContent key={props.movement.id} {...props} /> : null;
 }
 
-function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
+function ArrivalTimeModalContent({
+  isOpen,
+  onClose,
+  movement,
+  role = "coordinator",
+  actingUnitId,
+}: ArrivalTimeModalProps) {
   const { dispatch, configuration } = useWardFlow();
   const now = useWardFlowClock();
   // Feature 11: the route's role must be one that may set arrival details (`ward-role-permissions.ts`).
@@ -91,6 +102,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
       role,
       now,
       movementId: movement.id,
+      ...(role === "ward" ? { actingUnitId: actingUnitId ?? movement.acceptedUnitId } : {}),
       arrivalMode,
       trackingNumber: trackingNumber.trim() || undefined,
       estimatedArrivalAt: etaMinutes,

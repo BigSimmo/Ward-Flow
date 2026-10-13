@@ -68,9 +68,9 @@ function admittedPatient(h: Harness, umrn: string, unitId = "scgh-adult-open") {
   h.ok({ type: "RAISE_REFERRAL", role: "ed", edId: "jhc-ed", patientId: patient.id, draft });
   const inbound = h.state.movements.at(-1)!;
   h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: inbound.id, unitIds: [unitId] });
-  h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: inbound.id, unitId });
-  h.ok({ type: "PULL_PATIENT", role: "ward", movementId: inbound.id, unitId });
-  h.ok({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId: inbound.id, needed: false });
+  h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: inbound.id, unitId, actingUnitId: unitId });
+  h.ok({ type: "PULL_PATIENT", role: "ward", movementId: inbound.id, unitId, actingUnitId: unitId });
+  h.ok({ type: "RECORD_TRANSPORT_NEED", actingUnitId: unitId, role: "ward", movementId: inbound.id, needed: false });
   h.ok({ type: "PATIENT_ARRIVED", role: "ward", movementId: inbound.id, actingUnitId: unitId });
   const admission = h.state.admissions.find((a) => a.movementId === inbound.id)!;
   expect(admission.state).toBe("occupied");
@@ -93,8 +93,8 @@ function collectedRepatriation(h: Harness, admissionId: string, sendingUnitId: s
   });
   const movement = h.state.movements.at(-1)!;
   h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: [dest] });
-  h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: movement.id, unitId: dest });
-  h.ok({ type: "PULL_PATIENT", role: "ward", movementId: movement.id, unitId: dest });
+  h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: movement.id, unitId: dest, actingUnitId: dest });
+  h.ok({ type: "PULL_PATIENT", role: "ward", movementId: movement.id, unitId: dest, actingUnitId: dest });
   h.ok({
     type: "BOOK_TRANSPORT",
     role: "ward",

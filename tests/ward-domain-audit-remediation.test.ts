@@ -45,8 +45,8 @@ function journey(atsCategory?: number) {
   });
   const movementId = state.movements.at(-1)!.id;
   send({ type: "REFER_TO_UNITS", role: "coordinator", movementId, unitIds: [unitId] });
-  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId });
-  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId });
+  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId, actingUnitId: unitId });
+  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId, actingUnitId: unitId });
   expect(state.rejections).toEqual([]);
   return {
     get state() {
@@ -57,7 +57,7 @@ function journey(atsCategory?: number) {
     unitId,
     movementId,
     arrive() {
-      send({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId, needed: false });
+      send({ type: "RECORD_TRANSPORT_NEED", actingUnitId: unitId, role: "ward", movementId, needed: false });
       send({ type: "PATIENT_ARRIVED", role: "ward", movementId, actingUnitId: unitId });
     },
     book() {
@@ -104,7 +104,7 @@ describe("audit domain regressions — valid producers and complete recovery", (
     expect(f.state.units.find((u) => u.id === f.unitId)!.allocatable.value).toBe(unit.allocatable.value);
     for (const event of [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [f.unitId] },
-      { type: "PULL_PATIENT", role: "ward", unitId: f.unitId },
+      { type: "PULL_PATIENT", role: "ward", unitId: f.unitId, actingUnitId: f.unitId },
       {
         type: "BOOK_TRANSPORT",
         role: "ed",
@@ -128,8 +128,14 @@ describe("audit domain regressions — valid producers and complete recovery", (
       now: now + 1,
     });
     f.send({ type: "REFER_TO_UNITS", role: "coordinator", movementId: f.movementId, unitIds: [f.unitId] });
-    f.send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: f.movementId, unitId: f.unitId });
-    f.send({ type: "PULL_PATIENT", role: "ward", movementId: f.movementId, unitId: f.unitId });
+    f.send({
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      movementId: f.movementId,
+      unitId: f.unitId,
+      actingUnitId: f.unitId,
+    });
+    f.send({ type: "PULL_PATIENT", role: "ward", movementId: f.movementId, unitId: f.unitId, actingUnitId: f.unitId });
     expect(f.state.movements.find((m) => m.id === f.movementId)!.stage).toBe("pulled");
     expect(valid(f.state)).toBe(true);
   });
@@ -170,6 +176,7 @@ describe("audit domain regressions — valid producers and complete recovery", (
     expect(valid(corrupted)).toBe(false);
     const ready = wardFlowReducer(corrupted, {
       type: "RECORD_TRANSPORT_NEED",
+      actingUnitId: f.unitId,
       role: "ward",
       now,
       movementId: f.movementId,
@@ -239,6 +246,7 @@ describe("audit domain regressions — valid producers and complete recovery", (
     expect(valid(full)).toBe(true);
     const ready = wardFlowReducer(full, {
       type: "RECORD_TRANSPORT_NEED",
+      actingUnitId: f.unitId,
       role: "ward",
       now,
       movementId: f.movementId,
@@ -393,6 +401,7 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     expect(held.unitId).toBe(movement.acceptedUnitId);
     const ready = wardFlowReducer(state, {
       type: "RECORD_TRANSPORT_NEED",
+      actingUnitId: movement.acceptedUnitId,
       role: "ward",
       now,
       movementId: movement.id,
@@ -423,6 +432,7 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     expect(valid(full)).toBe(true);
     const ready = wardFlowReducer(full, {
       type: "RECORD_TRANSPORT_NEED",
+      actingUnitId: movement.acceptedUnitId,
       role: "ward",
       now,
       movementId: movement.id,
@@ -481,6 +491,7 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     };
     const ready = wardFlowReducer(full, {
       type: "RECORD_TRANSPORT_NEED",
+      actingUnitId: f.unitId,
       role: "ward",
       now,
       movementId: f.movementId,

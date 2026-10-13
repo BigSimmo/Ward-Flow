@@ -89,6 +89,7 @@ describe("a ward accepting a patient does not cancel their community follow-up",
       referralId: "RF-TEST-BOTH-ARMS",
       destinationKind: "psychiatric_ward",
       unitId: "bty-youth",
+      actingUnitId: "bty-youth",
     });
 
     expect(next.rejections).toHaveLength(0);

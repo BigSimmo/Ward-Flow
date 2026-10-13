@@ -151,6 +151,7 @@ describe("re-anchoring moves every instant and nothing else", () => {
       now: NOW_ANCHOR,
       movementId,
       unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
     });
     state = wardFlowReducer(state, {
       type: "RECORD_ED_MEDICAL_DETERIORATION",

@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { CANCEL_TRANSPORT_REASONS, GENDER_PLACEMENT_REASONS } from "../src/components/ward-management/ward-change-reasons";
+import {
+  CANCEL_TRANSPORT_REASONS,
+  GENDER_PLACEMENT_REASONS,
+} from "../src/components/ward-management/ward-change-reasons";
 import { TRANSPORT_PROVIDERS } from "../src/components/ward-management/ward-model";
-import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import {
+  seedWardFlowState,
+  wardFlowReducer,
+  type WardFlowState,
+} from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 /**
@@ -58,8 +65,8 @@ function pulledAndBookedMovement(movementId = CAPACITY_MOVEMENT, unitId = CAPACI
       genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
       genderPlacementChecked: true,
     },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId },
-    { type: "PULL_PATIENT", role: "ward", unitId },
+    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId, actingUnitId: unitId },
+    { type: "PULL_PATIENT", role: "ward", unitId, actingUnitId: unitId },
   ] as const) {
     state = wardFlowReducer(state, { ...step, now: NOW, movementId } as never);
   }
@@ -87,6 +94,7 @@ describe("RECORD_TRANSPORT_NEED refuses to override a live booked job (audit 202
     const recorded = wardFlowReducer(booked, {
       type: "RECORD_TRANSPORT_NEED",
       role: "ward",
+      actingUnitId: CAPACITY_UNIT,
       now: NOW + 2,
       movementId,
       needed: false,
@@ -118,6 +126,7 @@ describe("RECORD_TRANSPORT_NEED refuses to override a live booked job (audit 202
     const recorded = wardFlowReducer(cancelled, {
       type: "RECORD_TRANSPORT_NEED",
       role: "ward",
+      actingUnitId: CAPACITY_UNIT,
       now: NOW + 3,
       movementId,
       needed: false,
@@ -133,13 +142,12 @@ describe("RECORD_TRANSPORT_NEED refuses to override a live booked job (audit 202
     const recorded = wardFlowReducer(booked, {
       type: "RECORD_TRANSPORT_NEED",
       role: "ward",
+      actingUnitId: CAPACITY_UNIT,
       now: NOW + 2,
       movementId,
       needed: true,
     });
-    expect(recorded.rejections, "needed:true must never be refused by the booked-job guard").toEqual(
-      booked.rejections,
-    );
+    expect(recorded.rejections, "needed:true must never be refused by the booked-job guard").toEqual(booked.rejections);
   });
 });
 
@@ -182,6 +190,7 @@ describe("PATIENT_ARRIVED's no-transport-needed route requires no live job (audi
     expect(cancelled.rejections).toEqual(booked.rejections);
     const recorded = wardFlowReducer(cancelled, {
       type: "RECORD_TRANSPORT_NEED",
+      actingUnitId: unitId,
       role: "ward",
       now: NOW + 3,
       movementId,

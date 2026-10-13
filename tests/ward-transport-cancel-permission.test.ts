@@ -70,8 +70,8 @@ function withBookedTransport(): { state: WardFlowState; movementId: string } {
   const movementId = "WF-001";
   const events = [
     { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [ACCEPTING_UNIT] },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTING_UNIT },
-    { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTING_UNIT },
+    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTING_UNIT, actingUnitId: ACCEPTING_UNIT },
+    { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTING_UNIT, actingUnitId: ACCEPTING_UNIT },
     // Booking is a step of its own since 2026-08-31: `HANDOVER_READY` used to fabricate the
     // transport job and answer the escort question by deriving it from legal status. It no
     // longer invents either, so a walk that reaches handover without booking is refused.
@@ -108,8 +108,8 @@ function withWardBookedTransport(): { state: WardFlowState; movementId: string }
   const movementId = "WF-001";
   const events = [
     { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [ACCEPTING_UNIT] },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTING_UNIT },
-    { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTING_UNIT },
+    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTING_UNIT, actingUnitId: ACCEPTING_UNIT },
+    { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTING_UNIT, actingUnitId: ACCEPTING_UNIT },
     {
       type: "BOOK_TRANSPORT",
       role: "ward",
@@ -142,8 +142,8 @@ function withCommunityBookedTransport(): { state: WardFlowState; movementId: str
   const movementId = "WF-001";
   const events = [
     { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [ACCEPTING_UNIT] },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTING_UNIT },
-    { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTING_UNIT },
+    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTING_UNIT, actingUnitId: ACCEPTING_UNIT },
+    { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTING_UNIT, actingUnitId: ACCEPTING_UNIT },
     {
       type: "BOOK_TRANSPORT",
       role: "community",

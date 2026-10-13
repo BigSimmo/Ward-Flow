@@ -157,6 +157,7 @@ describe("a value outside the model's own vocabulary is refused at runtime, not 
       now: NOW,
       movementId: "WF-002",
       unitId,
+      actingUnitId: unitId,
       reason: OFF_LIST as DeclineReason,
     });
     expect(added(seeded, off)).toEqual(["DECLINE reason must be chosen from DECLINE_REASONS"]);
@@ -167,6 +168,7 @@ describe("a value outside the model's own vocabulary is refused at runtime, not 
       now: NOW,
       movementId: "WF-002",
       unitId,
+      actingUnitId: unitId,
       reason: DECLINE_REASONS[0],
     });
     expect(added(seeded, on)).not.toContain("DECLINE reason must be chosen from DECLINE_REASONS");

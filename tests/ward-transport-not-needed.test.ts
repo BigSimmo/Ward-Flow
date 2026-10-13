@@ -48,6 +48,7 @@ function pulledWithCapacity(state: WardFlowState) {
     now: NOW,
     movementId: open.id,
     unitId,
+    actingUnitId: unitId,
     overrideReason: "The bed information is known to be out of date",
   });
   expect(accepted.rejections, "ACCEPT_IN_PRINCIPLE was itself refused, so nothing below holds").toHaveLength(0);
@@ -57,6 +58,7 @@ function pulledWithCapacity(state: WardFlowState) {
     now: NOW + 1,
     movementId: open.id,
     unitId,
+    actingUnitId: unitId,
   });
   expect(pulled.rejections, "PULL_PATIENT was itself refused, so nothing below holds").toHaveLength(0);
   return { state: pulled, movementId: open.id, unitId };
@@ -69,6 +71,7 @@ describe('"No transport needed" — owner answer 10 (second round, 2026-09-17)',
 
     const recorded = wardFlowReducer(pulled, {
       type: "RECORD_TRANSPORT_NEED",
+      actingUnitId: unitId,
       role: "ward",
       now: NOW + 2,
       movementId,
@@ -106,11 +109,13 @@ describe('"No transport needed" — owner answer 10 (second round, 2026-09-17)',
       now: NOW,
       movementId: open.id,
       unitId,
+      actingUnitId: unitId,
       overrideReason: "The bed information is known to be out of date",
     });
     expect(accepted.rejections, "ACCEPT_IN_PRINCIPLE was itself refused, so nothing below holds").toHaveLength(0);
     const recorded = wardFlowReducer(accepted, {
       type: "RECORD_TRANSPORT_NEED",
+      actingUnitId: unitId,
       role: "ward",
       now: NOW + 1,
       movementId: open.id,
@@ -146,6 +151,7 @@ describe('"No transport needed" — owner answer 10 (second round, 2026-09-17)',
     const { state: pulled, movementId, unitId } = pulledWithCapacity(seedWardFlowState());
     const recorded = wardFlowReducer(pulled, {
       type: "RECORD_TRANSPORT_NEED",
+      actingUnitId: unitId,
       role: "ward",
       now: NOW + 2,
       movementId,

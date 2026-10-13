@@ -45,9 +45,15 @@ const WALK_EVENTS = [
   { type: "ACCEPT_IN_PRINCIPLE", role: "coordinator", unitId: DECLINED_UNIT_ID },
   { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [DECLINED_UNIT_ID, WITHDRAWN_UNIT_ID, ACCEPTED_UNIT_ID] },
   // Owner ruling 2026-09-25: a "no bed" decline waitlists; capability_mismatch still declines.
-  { type: "DECLINE", role: "ward", unitId: DECLINED_UNIT_ID, reason: "capability_mismatch" },
-  { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTED_UNIT_ID },
-  { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTED_UNIT_ID },
+  {
+    type: "DECLINE",
+    role: "ward",
+    unitId: DECLINED_UNIT_ID,
+    actingUnitId: DECLINED_UNIT_ID,
+    reason: "capability_mismatch",
+  },
+  { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTED_UNIT_ID, actingUnitId: ACCEPTED_UNIT_ID },
+  { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTED_UNIT_ID, actingUnitId: ACCEPTED_UNIT_ID },
   // Booking is a step of its own since 2026-08-31: `HANDOVER_READY` used to fabricate the
   // transport job and answer the escort question by deriving it from legal status. It no
   // longer invents either, so a walk that reaches handover without booking is refused.

@@ -426,6 +426,7 @@ function RaiseWardAndReviewThenAcceptWardHarness({ edId }: { edId: string }) {
             referralId: last.id,
             destinationKind: "psychiatric_ward",
             unitId: acceptingUnit.id,
+            actingUnitId: acceptingUnit.id,
           })
         }
       >

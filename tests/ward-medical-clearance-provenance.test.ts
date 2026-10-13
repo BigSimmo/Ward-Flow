@@ -47,8 +47,8 @@ function journey(linked = false) {
   const movementId = state.movements.at(-1)!.id;
   const unitId = "scgh-adult-open";
   send({ type: "REFER_TO_UNITS", role: "coordinator", movementId, unitIds: [unitId] });
-  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId });
-  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId });
+  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId, actingUnitId: unitId });
+  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId, actingUnitId: unitId });
   const book = () =>
     send({
       type: "BOOK_TRANSPORT",

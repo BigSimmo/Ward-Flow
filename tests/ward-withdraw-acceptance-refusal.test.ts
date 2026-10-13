@@ -303,6 +303,7 @@ describe("a capacity refusal reports the count it read, not a cause it did not c
       role: "ward",
       movementId: movement!.id,
       unitId: unit!.id,
+      actingUnitId: unit!.id,
       now: NOW_ANCHOR,
     } as never);
 

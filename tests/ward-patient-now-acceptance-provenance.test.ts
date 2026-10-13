@@ -41,7 +41,7 @@ function acceptedJourney() {
   const movementId = state.movements.at(-1)!.id;
   const unitId = "scgh-adult-open";
   send({ type: "REFER_TO_UNITS", role: "coordinator", now: NOW_ANCHOR, movementId, unitIds: [unitId] });
-  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW_ANCHOR, movementId, unitId });
+  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW_ANCHOR, movementId, unitId, actingUnitId: unitId });
   return {
     get state() {
       return state;
@@ -49,7 +49,7 @@ function acceptedJourney() {
     send,
     movementId,
     patientId,
-    pull: () => send({ type: "PULL_PATIENT", role: "ward", now: NOW_ANCHOR, movementId, unitId }),
+    pull: () => send({ type: "PULL_PATIENT", role: "ward", now: NOW_ANCHOR, movementId, unitId, actingUnitId: unitId }),
     resolve: (id: string) =>
       resolvePatientNowRecord(
         id,

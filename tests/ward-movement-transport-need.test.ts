@@ -123,7 +123,7 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
     });
     const second = wardFlowReducer(first, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 120,
       movementId: openMovement().id,
       needed: true,

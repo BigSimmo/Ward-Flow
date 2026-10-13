@@ -61,6 +61,7 @@ describe("D-30: transfers from a ward at another hospital", () => {
       referralId,
       destinationKind: "psychiatric_ward",
       unitId: elsewhere.id,
+      actingUnitId: elsewhere.id,
     });
     expect(after.rejections.at(-1)?.reason).toMatch(/^D-30:/);
     const arm = after.referrals.find((referral) => referral.id === referralId)!.destinations[0];

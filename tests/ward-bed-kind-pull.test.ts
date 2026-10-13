@@ -141,6 +141,7 @@ function pull(
     now: PULL_NOW,
     movementId,
     unitId: UNIT_ID,
+    actingUnitId: UNIT_ID,
     overrideReason,
   });
 }
@@ -213,6 +214,7 @@ describe("PULL_PATIENT decides bed kind from the request's own security (item 11
       now: PULL_NOW,
       movementId: "WF-BK-SEC-C",
       unitId: UNIT_ID,
+      actingUnitId: UNIT_ID,
       overrideReason: "Ward manager agreed on the phone" as never,
     });
     expect(bogusReason.rejections).toHaveLength(1);
@@ -384,8 +386,8 @@ describe("every release path restores the bed kind PULL_PATIENT took", () => {
     let next = raised;
     for (const step of [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [UNIT_ID] },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: UNIT_ID },
-      { type: "PULL_PATIENT", role: "ward", unitId: UNIT_ID },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: UNIT_ID, actingUnitId: UNIT_ID },
+      { type: "PULL_PATIENT", role: "ward", unitId: UNIT_ID, actingUnitId: UNIT_ID },
     ] as const) {
       next = wardFlowReducer(next, { ...step, now: PULL_NOW, movementId } as never);
     }

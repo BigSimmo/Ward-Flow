@@ -2529,7 +2529,8 @@ export function EdScreen({ edId }: EdScreenProps) {
   }
 
   function confirmWithdrawReferral(movementId: string) {
-    dispatch({ type: "WITHDRAW_REFERRAL", role: "ed", now, movementId });
+    // A1-2: the ED names itself; only the movement's own origin department may withdraw.
+    dispatch({ type: "WITHDRAW_REFERRAL", role: "ed", now, movementId, actingPlaceId: thisEdId });
     setWithdrawOpenFor(undefined);
   }
 

@@ -58,10 +58,10 @@ function beforePull(): WardFlowState {
     genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
     genderPlacementChecked: true,
   });
-  return apply(s, { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId: id, unitId });
+  return apply(s, { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId: id, unitId, actingUnitId: unitId });
 }
 function pulled() {
-  return apply(beforePull(), { type: "PULL_PATIENT", role: "ward", now, movementId: id, unitId });
+  return apply(beforePull(), { type: "PULL_PATIENT", role: "ward", now, movementId: id, unitId, actingUnitId: unitId });
 }
 function book(s: WardFlowState) {
   return apply(s, {
@@ -81,7 +81,14 @@ describe("23 September engine audit repairs", () => {
   it("invalidates a pre-pull capacity draft and allows a fresh ward observation", () => {
     const initial = beforePull();
     const captured = unit(initial).allocatable;
-    const held = apply(initial, { type: "PULL_PATIENT", role: "ward", now, movementId: id, unitId });
+    const held = apply(initial, {
+      type: "PULL_PATIENT",
+      role: "ward",
+      now,
+      movementId: id,
+      unitId,
+      actingUnitId: unitId,
+    });
     expect(unit(held).allocatable.revision).toBe((captured.revision ?? 0) + 1);
     const stale = wardFlowReducer(held, {
       type: "CONFIRM_CAPACITY",
@@ -322,6 +329,7 @@ describe("23 September engine audit repairs", () => {
       now,
       movementId: id,
       unitId,
+      actingUnitId: unitId,
       overrideReason: OVERRIDE_REASONS[0],
     });
     const added = movement(accepted).overrides.slice(movement(initial).overrides.length);
@@ -339,6 +347,7 @@ describe("23 September engine audit repairs", () => {
       now,
       movementId: id,
       unitId,
+      actingUnitId: unitId,
       overrideReason: OVERRIDE_REASONS[0],
     });
     expect(movement(ordinary).overrides).toEqual(movement(clean).overrides);
@@ -360,6 +369,7 @@ describe("23 September engine audit repairs", () => {
       now,
       movementId: id,
       unitId,
+      actingUnitId: unitId,
       overrideReason: OVERRIDE_REASONS[0],
       numConsulted: true,
     });
@@ -389,6 +399,7 @@ describe("23 September engine audit repairs", () => {
       now: now + 2,
       movementId: id,
       unitId,
+      actingUnitId: unitId,
       overrideReason: OVERRIDE_REASONS[0],
       numConsulted: true,
     });

@@ -124,6 +124,7 @@ describe("no dispatch in this application can create an unresolvable department 
       now: NOW,
       movementId: movement!.id,
       unitId: NO_SUCH_UNIT,
+      actingUnitId: NO_SUCH_UNIT,
     });
 
     expect(

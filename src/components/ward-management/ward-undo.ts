@@ -341,7 +341,12 @@ export function undoWindowRefusal(at: Instant, now: Instant): string | null {
     : null;
 }
 
-/** Rule 3. The coordinator may always; otherwise the same role, and a ward only for its own unit. */
+/**
+ * Rule 3. The coordinator may always; otherwise the same role, and a ward only for its own unit.
+ * Strict ward scoping (Josh, 12 Oct 2026): every ward-scoped step now records its ward, so its undo
+ * must name that same ward; a ward naming none is refused. A record from an event that names no
+ * ward at all (a Tell record) keeps no unit, and there is nothing to compare.
+ */
 export function undoRoleRefusal(
   record: { role: WardFlowRole; unitId: string | null },
   role: WardFlowRole,

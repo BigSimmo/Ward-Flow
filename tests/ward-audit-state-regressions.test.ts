@@ -45,13 +45,13 @@ function fixture() {
   const pull = (id: string, unitId: string) => {
     const events: TestEvent[] = [
       { type: "REFER_TO_UNITS", role: "coordinator", movementId: id, unitIds: [unitId] },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: id, unitId },
-      { type: "PULL_PATIENT", role: "ward", movementId: id, unitId },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: id, unitId, actingUnitId: unitId },
+      { type: "PULL_PATIENT", role: "ward", movementId: id, unitId, actingUnitId: unitId },
     ];
     for (const event of events) send(event);
   };
   const arrive = (id: string, unitId: string) => {
-    send({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId: id, needed: false });
+    send({ type: "RECORD_TRANSPORT_NEED", actingUnitId: unitId, role: "ward", movementId: id, needed: false });
     send({ type: "PATIENT_ARRIVED", role: "ward", movementId: id, actingUnitId: unitId });
   };
   const movement = raise();
@@ -104,7 +104,13 @@ describe("audit core state regressions", () => {
     const f = fixture();
     const m = f.repatriate();
     f.send({ type: "REFER_TO_UNITS", role: "coordinator", movementId: m.id, unitIds: ["rph-adult-secure"] });
-    f.send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: m.id, unitId: "rph-adult-secure" });
+    f.send({
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      movementId: m.id,
+      unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
+    });
     const beds = f.state.units.find((u) => u.id === "rph-adult-secure")!.allocatable.value;
     f.send({
       type: "RELEASE_AND_REOPEN_SEARCH",
@@ -120,7 +126,13 @@ describe("audit core state regressions", () => {
     const f = fixture();
     const m = f.repatriate();
     f.send({ type: "REFER_TO_UNITS", role: "coordinator", movementId: m.id, unitIds: ["rph-adult-secure"] });
-    f.send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: m.id, unitId: "rph-adult-secure" });
+    f.send({
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      movementId: m.id,
+      unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
+    });
     const stale = {
       ...f.state,
       movements: f.state.movements.map((row) => (row.id === m.id ? { ...row, admissionId: f.admission.id } : row)),

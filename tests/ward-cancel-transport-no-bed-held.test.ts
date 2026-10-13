@@ -86,8 +86,8 @@ function pulledAndBookedMovement(movementId = CAPACITY_MOVEMENT, unitId = CAPACI
       genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
       genderPlacementChecked: true,
     },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId },
-    { type: "PULL_PATIENT", role: "ward", unitId },
+    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId, actingUnitId: unitId },
+    { type: "PULL_PATIENT", role: "ward", unitId, actingUnitId: unitId },
   ] as const) {
     state = wardFlowReducer(state, { ...step, now: NOW, movementId } as never);
   }
@@ -208,6 +208,7 @@ describe("CANCEL_TRANSPORT when no bed is held", () => {
       now: NOW + 4,
       movementId,
       unitId,
+      actingUnitId: unitId,
     });
     expect(repulled.rejections, "the re-pull was refused").toEqual([]);
     expect(movement(repulled, movementId).stage).toBe("pulled");

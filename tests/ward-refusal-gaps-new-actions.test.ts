@@ -157,6 +157,7 @@ describe("the network-wide alert refuses what it cannot act on", () => {
       now: NOW,
       alertId: "BCAST-NOT-REAL",
       unitId,
+      actingUnitId: unitId,
     });
     expect(added(withAlert, refused)).toEqual(["ACKNOWLEDGE_BROADCAST_ALERT alertId BCAST-NOT-REAL not found"]);
 
@@ -166,6 +167,7 @@ describe("the network-wide alert refuses what it cannot act on", () => {
       now: NOW,
       alertId: alertId!,
       unitId,
+      actingUnitId: unitId,
     });
     expect(added(withAlert, control)).toEqual([]);
     expect(control.broadcastAlerts?.[0]?.acknowledgedUnits).toContain(unitId);

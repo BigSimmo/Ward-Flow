@@ -173,10 +173,19 @@ export type AuditEvent = AuditBase &
         // movement's legal form — see `RECORD_LEGAL_FORM_EXPIRY`'s own doc comment in
         // `ward-flow-events.ts` for why the two share one event and one audit shape.
         category: "legal-form";
-        action: "RECORD_LEGAL_FORM_EXPIRY" | "RECORD_COUNTRY_EXTENSION" | "RECORD_LEGAL_FORM_CONTINUATION";
+        action:
+          | "RECORD_LEGAL_FORM_EXPIRY"
+          | "RECORD_COUNTRY_EXTENSION"
+          | "RECORD_LEGAL_FORM_CONTINUATION"
+          | "RECORD_LEGAL_FORM_WRITTEN";
         details: {
-          operation: "expiry-recorded" | "extension-recorded" | "continuation-recorded";
+          operation: "expiry-recorded" | "extension-recorded" | "continuation-recorded" | "written-recorded";
           dueAt: Instant | null;
+          /**
+           * Review finding A1-5 (Josh, 12 Oct 2026): the expiry on record BEFORE this event, so every
+           * change shows old and new. `null` when none was recorded. Absent on rows captured before.
+           */
+          previousDueAt?: Instant | null;
           formCode?: string | null;
           startedAt?: Instant | null;
         };
@@ -274,6 +283,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "RAISE_REFERRAL":
       return event.draft?.legalFormCode !== undefined ? "legal-form" : null;
     case "RECORD_LEGAL_FORM_EXPIRY":
+    case "RECORD_LEGAL_FORM_WRITTEN":
     case "RECORD_COUNTRY_EXTENSION":
     case "RECORD_LEGAL_FORM_CONTINUATION":
     case "CORRECT_LEGAL_FORM_RECEIPT":
@@ -700,6 +710,32 @@ export function appendAudit(
         details: {
           operation: priorDueAt !== undefined ? "extension-recorded" : "expiry-recorded",
           dueAt: finiteInstant(event.dueAt),
+          previousDueAt: finiteInstant(priorDueAt ?? null),
+        },
+      };
+      break;
+    }
+    case "RECORD_LEGAL_FORM_WRITTEN": {
+      // A1-5: old and new expiry, both read from the records themselves (before and after this
+      // event), so a refused write shows the expiry unchanged rather than the one it asked for.
+      const priorDueAt = mayResolveSubject
+        ? uniqueRecord(before.movements, event.movementId)?.legalForm?.dueAt
+        : undefined;
+      const nextDueAt = mayResolveSubject
+        ? uniqueRecord(after.movements, event.movementId)?.legalForm?.dueAt
+        : undefined;
+      captured = {
+        ...base,
+        category: "legal-form",
+        action: event.type,
+        details: {
+          operation: "written-recorded",
+          dueAt: finiteInstant(nextDueAt ?? null),
+          previousDueAt: finiteInstant(priorDueAt ?? null),
+          formCode: enumValue(
+            SELECTABLE_LEGAL_FORMS.map((f) => f.code),
+            event.formCode,
+          ),
         },
       };
       break;

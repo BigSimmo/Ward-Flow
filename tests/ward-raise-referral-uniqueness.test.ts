@@ -154,8 +154,8 @@ describe("RAISE_REFERRAL refuses a second journey while an earlier one is still 
 
     for (const event of [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [UNIT_ID] },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: UNIT_ID },
-      { type: "PULL_PATIENT", role: "ward", unitId: UNIT_ID },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: UNIT_ID, actingUnitId: UNIT_ID },
+      { type: "PULL_PATIENT", role: "ward", unitId: UNIT_ID, actingUnitId: UNIT_ID },
       {
         type: "BOOK_TRANSPORT",
         role: "ed",
@@ -300,6 +300,7 @@ describe("ACCEPT_REFERRAL (ward arm) refuses while a linked movement is open", (
       referralId: referral.id,
       destinationKind: "psychiatric_ward",
       unitId: "bty-youth",
+      actingUnitId: "bty-youth",
     });
     expect(accepted.rejections.slice(raised.rejections.length)).toHaveLength(1);
     expect(accepted.rejections.at(-1)?.reason).toContain(movementUmrn(linkedMovement, accepted));
@@ -368,6 +369,7 @@ describe("ACCEPT_REFERRAL (ward arm) refuses while a linked movement is open", (
       referralId: referral.id,
       destinationKind: "psychiatric_ward",
       unitId: "bty-youth",
+      actingUnitId: "bty-youth",
     });
     expect(
       accepted.rejections.slice(closed.rejections.length),

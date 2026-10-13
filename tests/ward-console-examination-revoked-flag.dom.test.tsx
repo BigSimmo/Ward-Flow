@@ -80,7 +80,14 @@ function ConsoleFlagHarness() {
             type="button"
             data-testid="console-test-accept"
             onClick={() =>
-              dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId: target.id, unitId: unit.id })
+              dispatch({
+                type: "ACCEPT_IN_PRINCIPLE",
+                role: "ward",
+                now,
+                movementId: target.id,
+                unitId: unit.id,
+                actingUnitId: unit.id,
+              })
             }
           >
             accept
@@ -89,7 +96,14 @@ function ConsoleFlagHarness() {
             type="button"
             data-testid="console-test-pull"
             onClick={() =>
-              dispatch({ type: "PULL_PATIENT", role: "ward", now, movementId: target.id, unitId: unit.id })
+              dispatch({
+                type: "PULL_PATIENT",
+                role: "ward",
+                now,
+                movementId: target.id,
+                unitId: unit.id,
+                actingUnitId: unit.id,
+              })
             }
           >
             pull

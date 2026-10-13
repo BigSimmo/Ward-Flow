@@ -54,6 +54,7 @@ function readyForHandover(state: WardFlowState) {
     now: NOW,
     movementId: open.id,
     unitId,
+    actingUnitId: unitId,
     overrideReason: "The bed information is known to be out of date",
   });
   expect(accepted.rejections, "ACCEPT_IN_PRINCIPLE was itself refused, so nothing below holds").toHaveLength(0);
@@ -63,6 +64,7 @@ function readyForHandover(state: WardFlowState) {
     now: NOW + 1,
     movementId: open.id,
     unitId,
+    actingUnitId: unitId,
   });
   expect(pulled.rejections, "PULL_PATIENT was itself refused, so nothing below holds").toHaveLength(0);
   const booked = wardFlowReducer(pulled, {

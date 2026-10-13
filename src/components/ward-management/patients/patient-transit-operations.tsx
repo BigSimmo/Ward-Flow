@@ -49,6 +49,8 @@ export function PatientTransitOperations({
   const { units, admissions, dispatch, rejections, readAuditEvents } = useWardFlow();
   const now = useWardFlowClock();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
+  // A1-15 (12 Oct 2026): this cockpit records the coordinator's own accept, override and arrival
+  // decisions as `coordinator`, never as a ward it is not.
   const gate = useRoleGate();
   const bookGate = gate("BOOK_TRANSPORT");
   const handoverGate = gate("HANDOVER_READY");
@@ -190,7 +192,7 @@ export function PatientTransitOperations({
                 if (!unitId) return;
                 dispatch({
                   type: "ACCEPT_IN_PRINCIPLE",
-                  role: "ward",
+                  role: "coordinator",
                   now,
                   movementId: movement.id,
                   unitId,
@@ -326,7 +328,7 @@ export function PatientTransitOperations({
                       noteAttempt();
                       dispatch({
                         type: "ACCEPT_IN_PRINCIPLE",
-                        role: "ward",
+                        role: "coordinator",
                         now,
                         movementId: movement.id,
                         unitId: unit.id,
@@ -616,7 +618,7 @@ export function PatientTransitOperations({
                     noteAttempt();
                     dispatch({
                       type: "PATIENT_ARRIVED",
-                      role: "ward",
+                      role: "coordinator",
                       now,
                       movementId: movement.id,
                       actingUnitId: destination.id,

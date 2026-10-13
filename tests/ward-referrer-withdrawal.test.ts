@@ -225,6 +225,7 @@ describe("recording that a referrer withdrew just a referral's community-team ar
       referralId: created.id,
       destinationKind: "psychiatric_ward",
       unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
     });
     expect(accepted.rejections, "accepting the ward arm must not itself be refused").toEqual([]);
     return { state: accepted, referralId: created.id };

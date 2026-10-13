@@ -430,6 +430,7 @@ describe("session audit capture and review", () => {
       now: NOW_ANCHOR,
       movementId: "WF-009",
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       overrideReason: OVERRIDE_REASONS[0],
     });
     // S1-6: with no override filed at referral (rph-adult-secure needed none then), the acceptance
@@ -447,6 +448,7 @@ describe("session audit capture and review", () => {
       now: NOW_ANCHOR,
       movementId: "WF-009",
       unitId: unit.id,
+      actingUnitId: unit.id,
       overrideReason: OVERRIDE_REASONS[0],
     });
     expect(pulled.auditEvents.at(-1)).toMatchObject({ outcome: "accepted", details: { overrideFactRecorded: false } });

@@ -154,6 +154,7 @@ function buildDrivenFixture() {
     now: t(20),
     movementId: MOVEMENT_ID,
     unitId: UNIT_DECLINED,
+    actingUnitId: UNIT_DECLINED,
     // Owner ruling 2026-09-25: a DECLINE with reason "no_bed" now waitlists the patient instead of
     // declining, and would append zero stageChanges entries — capability_mismatch still declines,
     // which is what this fixture's own stageChanges-count and referredAt-agreement tests need.
@@ -181,6 +182,7 @@ function buildDrivenFixture() {
     now: t(40),
     movementId: MOVEMENT_ID,
     unitId: UNIT_ACCEPTED,
+    actingUnitId: UNIT_ACCEPTED,
   });
   assertStepAccepted(s3, s4, "ACCEPT_IN_PRINCIPLE");
 
@@ -225,6 +227,7 @@ function buildDrivenFixture() {
     now: t(50),
     movementId: MOVEMENT_ID,
     unitId: UNIT_ACCEPTED,
+    actingUnitId: UNIT_ACCEPTED,
   });
   assertStepAccepted(s4, s5, "PULL_PATIENT");
 

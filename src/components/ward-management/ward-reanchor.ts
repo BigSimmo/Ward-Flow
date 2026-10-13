@@ -89,6 +89,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "confirmedAt",
   "decidedAt",
   "dueAt",
+  // A1-5 (12 Oct 2026): the expiry a legal-form audit row records as on file before the change.
+  "previousDueAt",
   "enRouteAt",
   "expectedAt",
   "expectedReturn",

@@ -62,6 +62,7 @@ describe("stageReachedAt reports the current visit, not the first one ever", () 
       now: t(20),
       movementId: MOVEMENT_ID,
       unitId: UNIT_A,
+      actingUnitId: UNIT_A,
     });
     accepted(s1, s2, "ACCEPT_IN_PRINCIPLE (first)");
 
@@ -89,6 +90,7 @@ describe("stageReachedAt reports the current visit, not the first one ever", () 
       now: t(50),
       movementId: MOVEMENT_ID,
       unitId: UNIT_A,
+      actingUnitId: UNIT_A,
     });
     accepted(s4, state, "ACCEPT_IN_PRINCIPLE (second)");
 

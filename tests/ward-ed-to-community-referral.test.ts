@@ -500,8 +500,8 @@ describe("REFER_TO_COMMUNITY_TEAM — P1-4 (Ward Lead audit, 2026-09-17): tells 
     const unitId = "scgh-adult-open";
     for (const event of [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [unitId] },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId },
-      { type: "PULL_PATIENT", role: "ward", unitId },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId, actingUnitId: unitId },
+      { type: "PULL_PATIENT", role: "ward", unitId, actingUnitId: unitId },
       {
         type: "BOOK_TRANSPORT",
         role: "ed",

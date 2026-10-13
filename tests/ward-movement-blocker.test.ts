@@ -298,11 +298,11 @@ describe("Movement.blocker — the staleness that made it wrong on screen", () =
       STAGE_TRANSITION_BLOCKERS.referred,
     );
     step(
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW + 20, movementId, unitId: unit.id },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW + 20, movementId, unitId: unit.id, actingUnitId: unit.id },
       STAGE_TRANSITION_BLOCKERS.accepted,
     );
     step(
-      { type: "PULL_PATIENT", role: "ward", now: NOW + 30, movementId, unitId: unit.id },
+      { type: "PULL_PATIENT", role: "ward", now: NOW + 30, movementId, unitId: unit.id, actingUnitId: unit.id },
       // ⚠️ A PULL DOES NOT RESTATE IT, and that is deliberate rather than an omission. The seed
       // carries three different sentences for three `pulled` movements ("Escort provider organising
       // secure transport", "Awaiting single-room clean", "Ward finalising bed clean"), so the stage
@@ -705,8 +705,15 @@ describe("the transport legs restate what is holding a movement up", () => {
     };
 
     dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now: NOW + 10, movementId, unitIds: [unit.id] });
-    dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW + 20, movementId, unitId: unit.id });
-    dispatch({ type: "PULL_PATIENT", role: "ward", now: NOW + 30, movementId, unitId: unit.id });
+    dispatch({
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      now: NOW + 20,
+      movementId,
+      unitId: unit.id,
+      actingUnitId: unit.id,
+    });
+    dispatch({ type: "PULL_PATIENT", role: "ward", now: NOW + 30, movementId, unitId: unit.id, actingUnitId: unit.id });
     dispatch({
       type: "BOOK_TRANSPORT",
       role: "ed",

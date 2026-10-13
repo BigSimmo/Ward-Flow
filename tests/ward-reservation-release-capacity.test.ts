@@ -34,8 +34,8 @@ function journey() {
   });
   const movementId = state.movements.at(-1)!.id;
   send({ type: "REFER_TO_UNITS", role: "coordinator", movementId, unitIds: [unitId] });
-  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId });
-  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId });
+  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId, actingUnitId: unitId });
+  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId, actingUnitId: unitId });
   const admissionId = state.movements.at(-1)!.admissionId!;
   expect(admissionId).toBeTruthy();
   expect(state.rejections).toEqual([]);
@@ -122,7 +122,7 @@ describe("reservation release against a newer saturated offered observation", ()
     expect(valid(f.state)).toBe(true);
     const marker = f.unit().reservationReleaseCapacityConflicts;
     expect(marker).toHaveLength(1);
-    f.send({ type: "PULL_PATIENT", role: "ward", movementId: f.movementId, unitId: f.unitId });
+    f.send({ type: "PULL_PATIENT", role: "ward", movementId: f.movementId, unitId: f.unitId, actingUnitId: f.unitId });
     expect(f.state.rejections).toEqual([]);
     expect(f.unit().reservationReleaseCapacityConflicts).toEqual(marker);
     expect(valid(f.state)).toBe(true);

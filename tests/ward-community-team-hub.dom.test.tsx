@@ -95,6 +95,7 @@ function multiDestinationReferral(): Referral {
     now: WARD_DECIDED_AT,
     referralId: created.id,
     destinationKind: "psychiatric_ward",
+    actingUnitId: "scgh-adult-open",
     reason: "no_suitable_bed",
   });
   expect(declined.rejections, "the reducer refused the ward's own decline").toEqual([]);

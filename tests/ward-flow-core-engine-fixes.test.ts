@@ -140,6 +140,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
         now: NOW + 10,
         movementId: movement.id,
         unitId,
+        actingUnitId: unitId,
       });
 
       state = wardFlowReducer(state, {
@@ -148,6 +149,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
         now: NOW + 15,
         movementId: movement.id,
         unitId,
+        actingUnitId: unitId,
       });
 
       const pulledAdmission = state.admissions.find((a) => a.movementId === movement.id);
@@ -297,6 +299,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
         now: NOW + 10,
         movementId: returnMovement.id,
         unitId: destination.id,
+        actingUnitId: destination.id,
       });
       next = wardFlowReducer(next, {
         type: "PULL_PATIENT",
@@ -304,6 +307,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
         now: NOW + 15,
         movementId: returnMovement.id,
         unitId: destination.id,
+        actingUnitId: destination.id,
       });
 
       expect(next.rejections.map((rejection) => rejection.reason)).toEqual([]);
@@ -316,6 +320,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
       const sendingUnitEmptyBefore = next.units.find((unit) => unit.id === admission.unitId)!.empty.value;
       next = wardFlowReducer(next, {
         type: "RECORD_TRANSPORT_NEED",
+        actingUnitId: destination.id,
         role: "ward",
         now: NOW + 20,
         movementId: returnMovement.id,

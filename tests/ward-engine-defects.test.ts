@@ -149,6 +149,7 @@ function pull(
     now: NOW,
     movementId,
     unitId,
+    actingUnitId: unitId,
     overrideReason: overrideReason as (typeof OVERRIDE_REASONS)[number] | undefined,
     numConsulted,
   });
@@ -351,8 +352,8 @@ function pulledWithRoom(): WardFlowState {
       genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
       genderPlacementChecked: true,
     },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: REPULL_UNIT },
-    { type: "PULL_PATIENT", role: "ward", unitId: REPULL_UNIT },
+    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: REPULL_UNIT, actingUnitId: REPULL_UNIT },
+    { type: "PULL_PATIENT", role: "ward", unitId: REPULL_UNIT, actingUnitId: REPULL_UNIT },
   ] as const) {
     state = wardFlowReducer(state, { ...step, now: NOW, movementId: REPULL_MOVEMENT } as never);
   }
@@ -389,6 +390,7 @@ function pullAgain(state: WardFlowState, now = NOW + 10): WardFlowState {
     now,
     movementId: REPULL_MOVEMENT,
     unitId: REPULL_UNIT,
+    actingUnitId: REPULL_UNIT,
   });
 }
 
@@ -530,7 +532,7 @@ describe("a revoked examination gives back a bed held by a stepped-back movement
         genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
         genderPlacementChecked: true,
       },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: REPULL_UNIT },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: REPULL_UNIT, actingUnitId: REPULL_UNIT },
     ] as const) {
       accepted = wardFlowReducer(accepted, { ...step, now: NOW, movementId: REPULL_MOVEMENT } as never);
     }

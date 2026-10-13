@@ -68,6 +68,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                         referralId: entry.id,
                         destinationKind: "psychiatric_ward",
                         unitId,
+                        actingUnitId: unitId,
                       });
                       watchDecision(entry.id, "Referral accepted");
                     }}
@@ -87,6 +88,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                       referralId: entry.id,
                       destinationKind: "psychiatric_ward",
                       unitId,
+                      actingUnitId: unitId,
                       reason: "no_suitable_bed",
                       waitlist: true,
                     });
@@ -130,6 +132,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                         referralId: entry.id,
                         destinationKind: "psychiatric_ward",
                         unitId,
+                        actingUnitId: unitId,
                         reason,
                       });
                       watchDecision(entry.id, "Referral declined");
