@@ -45,8 +45,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     pool = createPortableMigrationPool(readMigrationConfig());
     await migratePortablePostgres(pool);
     console.log("Ward Flow PostgreSQL schema and restricted grants applied; set the runtime password privately");
-  } catch {
-    console.error("PostgreSQL migration refused or unavailable; inspect the private administrator configuration");
+  } catch (error) {
+    const safeReasons = new Set([
+      "Migration and runtime targets must match with separate identities",
+      "Invalid database CA certificate configuration",
+      "Unrecognised or unsafe Ward Flow database namespace",
+      "Unsupported database migration version",
+    ]);
+    const reason = safeReasons.has(error?.message) ? `: ${error.message}` : "";
+    console.error(`PostgreSQL migration refused or unavailable; inspect the private administrator configuration${reason}`);
     process.exitCode = 1;
   } finally {
     await pool?.end();
