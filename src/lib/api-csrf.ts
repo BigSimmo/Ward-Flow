@@ -18,9 +18,10 @@
  * request, so an `Origin` host that does not match the host the request was
  * addressed to is rejected. `Referer` is consulted only when there is neither
  * Fetch Metadata nor an `Origin` — the shape an old browser produces. A request
- * carrying none of the three is a non-browser client (curl, a server-to-server
- * call, the ingestion worker) and passes: CSRF needs a browser to be tricked, and
- * blocking here would break every API client instead.
+ * carrying none of the three is refused (12 October 2026 review, A4-12): Ward Flow
+ * has no non-browser API client, and failing closed means a future mutation route
+ * cannot be reached by a stripped-header request. A legitimate client sends
+ * `Origin` or Fetch Metadata.
  *
  * This is defence in depth. It does not rely on any cookie's `SameSite`
  * attribute (the former clinical app's @supabase/ssr session cookies, which
@@ -30,18 +31,20 @@
 const CSRF_GUARDED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 /**
- * Whether a request is a state-changing API call the guard covers.
- *
- * `/api/webhooks/**` is excluded: those callers are third-party services that
- * authenticate with a signed payload and never send browser headers.
+ * Whether a request is a state-changing API call the guard covers: every one under
+ * `/api`, the bare `/api` path included. There is no webhook exemption any more
+ * (A4-15): Ward Flow has no webhook route, and a blanket path exemption would fail
+ * open for whatever route is added there later. A future webhook must be exempted
+ * by its exact path, with its own signature check, in a reviewed change.
  */
 export function isCsrfGuardedApiRequest(method: string, pathname: string): boolean {
   if (!CSRF_GUARDED_METHODS.has(method.toUpperCase())) return false;
-  return pathname.startsWith("/api/") && !pathname.startsWith("/api/webhooks/");
+  return pathname === "/api" || pathname.startsWith("/api/");
 }
 
 export type ApiMutationCsrfVerdict =
-  { allowed: true } | { allowed: false; reason: "cross_site" | "origin_mismatch" | "referer_mismatch" };
+  | { allowed: true }
+  | { allowed: false; reason: "cross_site" | "origin_mismatch" | "referer_mismatch" | "missing_browser_headers" };
 
 const ALLOWED: ApiMutationCsrfVerdict = { allowed: true };
 
@@ -107,6 +110,7 @@ export function apiMutationCsrfVerdict(headers: Headers, requestHost: string): A
     return refererHost && hosts.has(refererHost) ? ALLOWED : { allowed: false, reason: "referer_mismatch" };
   }
 
-  // No Fetch Metadata, no Origin, no Referer: not a browser.
-  return ALLOWED;
+  // No Fetch Metadata, no Origin, no Referer: nothing vouches for where the request
+  // came from, so it is refused rather than assumed to be a non-browser client.
+  return { allowed: false, reason: "missing_browser_headers" };
 }

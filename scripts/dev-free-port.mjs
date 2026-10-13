@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+// Starts the local Ward Flow server on a free project port.
+//
+// Binds to 127.0.0.1 (this machine only) by default. To reach it from another device on the
+// local network, such as a phone, opt in for that run with WARD_FLOW_DEV_HOST=0.0.0.0 (or a
+// specific interface address). Only do that on a trusted network: the dev server has no sign-in.
+// The hosted deployment does not use this script; it runs `next start` with its own hostname.
 import { execFile, spawn } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
@@ -147,6 +153,10 @@ const freePort = await selectedStartupPort(preferredPort, {
   isReserved: isReservedDevPort,
   findFree: findFreePort,
 });
+// 12 October 2026 review, A4-13: loopback unless the caller explicitly opts into the LAN.
+const devHost = process.env.WARD_FLOW_DEV_HOST?.trim() || "127.0.0.1";
+if (devHost !== "127.0.0.1")
+  console.log(`WARD_FLOW_DEV_HOST=${devHost}: this server is reachable beyond this machine.`);
 const nextBin = path.join(projectRoot, "node_modules", "next", "dist", "bin", "next");
 const url = `http://localhost:${freePort}`;
 
@@ -176,7 +186,7 @@ const child = spawn(
     nextBin,
     parsedCommand.command,
     "--hostname",
-    "0.0.0.0",
+    devHost,
     "--port",
     String(freePort),
     ...removePortArgs(forwardedArgs),
