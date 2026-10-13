@@ -1063,7 +1063,7 @@ export function HandoverPage() {
                 : id === "due"
                   ? `Due by ${formatInstantWithDay(cutoff, now)}`
                   : id === "bed"
-                    ? "Waiting for a bed"
+                    ? "Finding a ward"
                     : "Moving"}
             </button>
           ))}
@@ -1115,9 +1115,9 @@ export function HandoverPage() {
         </div>
       }
       footAside={
-        <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} waiting for a bed`}>
+        <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} finding a ward`}>
           <span>
-            <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> waiting for a bed
+            <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> finding a ward
           </span>
           <span className={styles.gapBar} aria-hidden="true">
             {readyTotal > 0 ? <i className={styles.gapReady} style={{ flex: readyTotal }} /> : null}

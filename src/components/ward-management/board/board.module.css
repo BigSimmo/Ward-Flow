@@ -364,13 +364,6 @@
   display: none;
 }
 
-.asAtFixed {
-  margin: var(--ward-space-4) 0 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
-}
-
 /*
  * THE DAILY SHEET — D19's ward handover sheet, page one of anything printed from this board.
  *
@@ -400,115 +393,11 @@
   font-weight: 700;
 }
 
-.sheetIntro {
-  margin: var(--ward-space-4) 0 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
-}
-
-/* The one-line orientation figure. Ordinary ink at body weight — it is a sentence, not a figure
-   panel, and the board's own "Since yesterday" panel is where the three numbers are set out. */
-.sheetSince {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  margin: var(--ward-space-8) 0 0;
-  padding: 0;
-  color: var(--ink-soft);
-  font-size: var(--t-1, 13px);
-  font-weight: 600;
-  line-height: var(--ward-leading-body);
-}
-
-.sheetSince span {
-  white-space: nowrap;
-}
-
-.sheetSince strong {
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-}
-
-.sheetKpiRibbon {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin: 14px 0 10px;
-}
-
-.sheetKpiCard {
-  background: var(--surface);
-  border: 1px solid var(--line-strong, var(--line));
-  border-radius: var(--r2, 6px);
-  padding: 10px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  box-shadow: var(--lift-sm);
-}
-
-.sheetKpiValue {
-  font-size: 24px;
-  font-weight: 800;
-  font-family: var(--mono);
-  color: var(--ink);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.sheetKpiLabel {
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--ink-soft);
-}
-
-.sheetKpiSub {
-  font-size: var(--wf-fs-12);
-  color: var(--muted);
-}
-
-/* Four groups, side by side where there is room and stacked where there is not. `auto-fit` with a
-   minimum rather than a fixed column count, so a narrow phone gets one column without a media
-   query and A4 gets two. */
-.sheetGroups {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ward-space-8);
-  margin: var(--ward-space-8) 0 0;
-}
-
-/* A left rule rather than a fill — the same channel `.flowRow` and `.destination` use, and for the
-   same reason: it survives greyscale, a stripped-background print and forced-colors. */
-.sheetGroup {
-  min-width: 0;
-  border-left: var(--ward-space-3) solid var(--ward-border-strong);
-  padding-left: var(--ward-space-8);
-}
-
 .sheetGroupHeading {
   margin: 0;
   color: var(--ink);
   font-size: var(--t-3);
   font-weight: 700;
-}
-
-.sheetGroupCount {
-  margin: var(--ward-space-4) 0 0;
-  color: var(--ink-soft);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
-}
-
-.sheetList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ward-space-8);
-  margin: var(--ward-space-8) 0 0;
-  padding: 0;
-  list-style: none;
 }
 
 /* A hairline BETWEEN rows, never on the first — a rule on the first row would read as a separator
@@ -518,55 +407,6 @@
   padding-top: var(--ward-space-8);
 }
 
-.sheetRowLead {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--ward-space-4) var(--ward-space-8);
-  margin: 0;
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 700;
-  line-height: var(--ward-leading-body);
-}
-
-/* The stay band in WORDS beside the day count. The board's tiles carry the band as a shade and the
-   count as text; a sheet has room for the words, and the words are what a greyscale page keeps. */
-.sheetRowBand {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-
-.sheetRowLine {
-  margin: var(--ward-space-4) 0 0;
-  color: var(--ink-soft);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
-}
-
-/*
- * "At an emergency department" on the printed sheet. Bolder than `.sheetRowLine` because it
- * qualifies every line beneath it, and because this sheet is read aloud — the reader's eye has to
- * catch it before they start reciting a discharge plan for somebody who is not on the ward.
- *
- * Weight and words, never a fill: a printer drops backgrounds, and the whole defect this board has
- * already been through once is ink that vanishes on paper.
- */
-.sheetRowAway {
-  margin: 0 0 var(--ward-space-4);
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.sheetDestinations {
-  margin: var(--ward-space-4) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
 /* The standing note about what the record does NOT hold, set apart by a rule rather than a tint —
    identical treatment to `.flowNote`, because it is the same kind of sentence. */
 .sheetNote {
@@ -574,16 +414,6 @@
   border-top: var(--ward-space-1) solid var(--ward-divider);
   padding-top: var(--ward-space-8);
   color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
-}
-
-/* "Off the ward: …" — one line under the group grid rather than a sixth column (owner,
- * 2026-08-30). Sits with the sheet's other standing notes and takes their ink on paper, which is
- * why it is listed in the print block beside `.sheetNote`. */
-.sheetAwayLine {
-  margin: var(--ward-space-8) 0 0;
-  color: var(--ink);
   font-size: var(--t-0);
   line-height: var(--ward-leading-body);
 }
@@ -913,9 +743,7 @@
 }
 
 .waiting,
-.blockedLabel,
-.emptyLabel,
-.heldLabel {
+.blockedLabel {
   font-size: var(--t-0);
   font-weight: 600;
   line-height: var(--ward-leading-body);
@@ -929,15 +757,6 @@
  * a struck-through bed rather than as a fifth colour.
  */
 .blockedLabel {
-  border-radius: var(--radius-xs);
-  background: var(--surface-raised);
-  padding: 0 var(--ward-space-4);
-  color: var(--ink-soft);
-}
-
-/* Same plate treatment as `.blockedLabel`, for the same reason: the word "Held" sits on top of
-   the dot pattern and needs a solid rest rather than dots running through the letterforms. */
-.heldLabel {
   border-radius: var(--radius-xs);
   background: var(--surface-raised);
   padding: 0 var(--ward-space-4);
@@ -1177,38 +996,6 @@
   line-height: var(--ward-leading-body);
 }
 
-.workBandList {
-  display: grid;
-  gap: var(--ward-space-8);
-  margin: 0;
-  border-top: var(--ward-space-1) solid var(--ward-divider);
-  padding: var(--ward-space-12);
-  list-style: none;
-}
-
-/* The count in its own column so the numbers form an edge a reader can scan down, which is the
-   whole reason this band is quicker to read than the six panels it summarises. */
-.workBandItem {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--ward-space-8);
-}
-
-.workBandCount {
-  color: var(--ward-heading);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-  font-size: var(--t-4);
-  font-weight: 700;
-}
-
-.workBandWhat {
-  color: var(--ward-text);
-  font-size: var(--t-3);
-  line-height: var(--ward-leading-body);
-}
-
 .workBandEmpty {
   margin: 0;
   border-top: var(--ward-space-1) solid var(--ward-divider);
@@ -1319,41 +1106,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ward-space-8);
-}
-
-.triageToggleLabel {
-  color: var(--muted);
-  font-size: var(--t-0);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-}
-
-/* A real tap target at the production floor of 3rem — never the 44px a generic checklist asks
-   for; this repository uses 48px because 44 hit a sub-pixel rounding flake in `ui-smoke`. */
-.triageToggleButton {
-  min-height: var(--ward-tap);
-  border: var(--ward-space-1) solid var(--ward-border-strong);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  padding: 0 var(--ward-space-12);
-  color: var(--ink-soft);
-  font-family: inherit;
-  font-size: var(--t-0);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* The pressed state is a heavier EDGE plus bolder ink, not a fill — same rule as everywhere else
-   on this board, and `aria-pressed` is what states it to a screen reader. */
-.triageToggleButtonOn {
-  border-width: var(--ward-space-3);
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.triageToggleButton:focus-visible {
-  outline: var(--ward-space-3) solid var(--focus-ring, var(--primary));
-  outline-offset: 0.125rem;
 }
 
 /*
@@ -1563,17 +1315,6 @@
   line-height: var(--ward-leading-body);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
-}
-
-/* The empty-selection state, said in words under the grid rather than as a blank panel beside it.
-   Dashed rule above it so it reads as an instruction rather than as a finding about the ward. */
-.selectHint {
-  margin: 0;
-  border-top: var(--ward-space-1) dashed var(--ward-divider);
-  padding-top: var(--ward-space-8);
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
 }
 
 /*
@@ -2029,8 +1770,6 @@
   .daysUnit,
   .waiting,
   .blockedLabel,
-  .emptyLabel,
-  .heldLabel,
   .selectedMark {
     color: CanvasText;
   }
@@ -2058,13 +1797,6 @@
    * here: on a white sheet it is an invisible rectangle at best and a grey box at worst.
    */
   .blockedLabel {
-    background: transparent;
-    padding: 0;
-  }
-
-  /* Same reason as `.blockedLabel` just above: on a white sheet the plate is a grey box at best,
-     and the word "Held" is what carries the fact once the dot pattern may be gone. */
-  .heldLabel {
     background: transparent;
     padding: 0;
   }
@@ -2217,7 +1949,6 @@
   .constraint,
   .asAtValue,
   .asAtNote,
-  .asAtFixed,
   .legend,
   .occupancy,
   .peopleAbsence,
@@ -2333,20 +2064,9 @@
     display: block;
   }
 
-  .sheetGroups {
-    gap: var(--ward-space-8);
-    margin-top: var(--ward-space-8);
-  }
-
   .sheetNote {
     margin-top: var(--ward-space-4);
     padding-top: var(--ward-space-4);
-  }
-
-  /* The rows already divide on a hairline, so the screen's extra gap around it is doing the job
-     twice. Halved rather than removed: a rule with no air either side reads as a table border. */
-  .sheetList {
-    gap: var(--ward-space-4);
   }
 
   .sheetRow:not(:first-child) {
@@ -2363,26 +2083,9 @@
   }
 
   .sheetHeading,
-  .sheetIntro,
-  .sheetSince,
   .sheetGroupHeading,
-  .sheetGroupCount,
-  .sheetRowLead,
-  .sheetRowBand,
-  .sheetRowLine,
-  /* Added 2026-08-30 WITH the element itself, not after somebody noticed a blank line on paper.
-     `.sheetRowAway` sets its own `--ink`, which resolves to a near-white in the dark
-     theme — so without this the one line saying a patient is not on the ward printed white on
-     white, on the sheet that is read aloud at handover. Exactly the defect this block already
-     exists to fix, reintroduced by a new rule that set a colour. */
-  .sheetRowAway,
-  .sheetAwayLine,
   .sheetNote {
     color: CanvasText;
-  }
-
-  .sheetGroup {
-    border-left-color: CanvasText;
   }
 
   .sheetRow:not(:first-child),
@@ -2397,7 +2100,6 @@
 
   /* A group split across a page break loses either its heading or its rows, and a reader has no way
      to tell which half they are holding. Kept whole, the same way `.bed` and `.person` already are. */
-  .sheetGroup,
   .sheetRow {
     break-inside: avoid;
   }
@@ -2419,7 +2121,6 @@
    * lost by removing the group entirely.
    */
   .detail,
-  .selectHint,
   .triageToggle {
     display: none !important;
   }
@@ -2542,29 +2243,6 @@
 
 .leavingButton:focus-visible {
   outline: 2px solid var(--clinical-accent-contrast);
-  outline-offset: 2px;
-}
-
-/*
- * Recording a trip to an emergency department and a return from one. Deliberately quieter than
- * `.leavingButton`: a discharge frees a bed and this changes no figure at all, so it must not
- * carry the same visual weight as the one control on this board that does. Same 3rem minimum
- * height as every other production tap target here.
- */
-.awayButton {
-  min-height: 3rem;
-  padding: 0 var(--ward-space-16);
-  border: 1px solid var(--wb-control-edge);
-  border-radius: var(--wb-control-radius);
-  background: var(--surface);
-  color: var(--ink-soft);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.awayButton:focus-visible {
-  outline: 2px solid var(--clinical-accent);
   outline-offset: 2px;
 }
 
@@ -3236,87 +2914,11 @@
   font-size: var(--t-1);
 }
 
-.workBandList {
-  grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr));
-  gap: 0.5rem;
-  padding: 0.625rem 0.75rem 0.75rem;
-}
-
-.workBandItem {
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.25rem 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 0.5rem 0.6875rem;
-  background: var(--surface);
-}
-
-.workBandCount {
-  color: var(--ink);
-  font-family: var(--mono);
-  font-size: var(--t-4);
-  font-weight: 600;
-}
-
-.workBandWhat,
 .workBandEmpty {
   color: var(--ink-soft);
   font-size: var(--t-1);
   line-height: 1.45;
   padding: 0.75rem 1rem;
-}
-
-.shiftTabbar {
-  display: flex;
-  gap: 0.25rem;
-  padding: 0.5rem 0.75rem 0;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
-}
-
-.shiftTabBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: var(--ward-tap, 48px);
-  padding: 0.375rem 0.75rem;
-  /* `--sans` was never declared in `ward-flow-shell-tokens.module.css` — `--body` is the same
-   * declared value (both resolve to the Geist sans stack), so this is not a font change. */
-  font-family: var(--body);
-  font-size: var(--t-1);
-  font-weight: 500;
-  color: var(--ink-soft);
-  background: transparent;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  margin-bottom: -1px;
-  transition:
-    color 0.15s,
-    border-color 0.15s;
-}
-
-.shiftTabBtn:hover {
-  color: var(--ink);
-}
-
-.shiftTabBtnActive {
-  color: var(--accent-ink);
-  font-weight: 600;
-  border-bottom-color: var(--accent);
-}
-
-.shiftTabNum {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.1rem 0.4rem;
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  font-weight: 600;
-  border-radius: var(--pill);
-  background: var(--surface);
-  border: 1px solid var(--line);
 }
 
 .shiftGrid {
@@ -3734,8 +3336,6 @@
 
 :global([data-theme="dark"]) .flowPanel,
 :global([data-theme="dark"]) .detail,
-:global([data-theme="dark"]) .personPanel,
-:global([data-theme="dark"]) .slideOut,
 :global([data-theme="dark"]) .workBandFold,
 :global([data-theme="dark"]) .legend,
 :global([data-theme="dark"]) .wardSwitchBody {
@@ -4193,7 +3793,6 @@
 
 .detailClose,
 .leavingButton,
-.awayButton,
 .sheetFoldSummary {
   min-height: var(--spacing-tap);
   border: 1px solid var(--line-strong);
@@ -4205,43 +3804,6 @@
   font-weight: 600;
 }
 
-.detailEmptyWrapper {
-  padding: 1rem 0.875rem;
-}
-
-.detailEmptyCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 1.5rem 1.25rem;
-  border-radius: 8px;
-  border: 1px dashed var(--line-strong);
-  background: var(--surface-2);
-  gap: 0.75rem;
-}
-
-.detailEmptyIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--muted);
-  box-shadow: var(--lift-sm);
-}
-
-.detailEmptyTitle {
-  font-family: var(--display);
-  font-size: var(--t-2);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
 .detailEmpty {
   margin: 0;
   padding: 0;
@@ -4249,55 +3811,6 @@
   font-size: var(--t-1);
   line-height: 1.45;
   font-weight: 500;
-}
-
-.detailEmptyGuide {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  width: 100%;
-  text-align: left;
-  margin-top: 0.25rem;
-  padding: 0.75rem 0.875rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
-
-.detailEmptyGuideItem {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--ink-soft);
-  line-height: 1.35;
-}
-
-.detailEmptyBullet {
-  color: var(--accent);
-  font-size: var(--t-0, 0.75rem);
-  line-height: 1;
-}
-
-.detailEmptyStats {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-top: 0.25rem;
-}
-
-.detailEmptyBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.75rem;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
 }
 
 .detail > :not(.detailBar) {
@@ -4707,10 +4220,6 @@
   }
   .shiftRowActs {
     gap: 8px;
-  }
-  .shiftTabBtn {
-    min-height: var(--ward-tap, 48px);
-    padding-inline: 0.75rem;
   }
   .shiftBedLink {
     min-height: var(--ward-tap, 48px);

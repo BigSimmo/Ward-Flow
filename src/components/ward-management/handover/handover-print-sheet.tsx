@@ -306,7 +306,7 @@ export function HandoverPrintSheet({
     ["Open", rows.length],
     ["Act now", rows.filter((row) => isActNow(row, ctx.now)).length],
     [dueTitle, rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "due").length],
-    ["Waiting for a bed", rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "bed").length],
+    ["Finding a ward", rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "bed").length],
     ["Moving", rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "mov").length],
     ["Beds ready", wards.reduce((sum, ward) => sum + ward.ready, 0)],
     ["Being made ready", wards.reduce((sum, ward) => sum + ward.pendingPreparation, 0)],

@@ -2804,6 +2804,8 @@
  *
  * Desktop and tablet only. `data-band` comes from `useWfBandActive()` (src/components/wf/band.ts),
  * which is true while the page opens on the shared Hero. Pages without a hero keep the glass bar.
+ * Until the bar has its own `data-band`, the `:has()` arm paints it ink while a band hero is not
+ * measured `"off"`, so the server render, the hero's measure and hydration never show glass.
  *
  * `ink`: at rest over the band. The bar paints the band's top colour, the hero rises to meet it,
  * and the two read as one surface. Title in hero ink, the service pill and search on the on-hero
@@ -2830,7 +2832,7 @@
 
   .bar.bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     ) {
     --wf-focus-ring: var(--wf-hero-ink);
     --wf-focus-gap: var(--wf-hero-1);
@@ -2852,7 +2854,7 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .place {
     color: var(--wf-hero-ink);
@@ -2860,17 +2862,17 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .scopeBadgeBtn,
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .drawerTrigger,
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .triggerIcon {
     color: var(--wf-hero-ink);
@@ -2878,12 +2880,12 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .scopeCaret,
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .triggerCaret {
     color: var(--wf-hero-ink-2);
@@ -2891,12 +2893,12 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .scopeBadgeBtn::before,
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .searchWrap
     :global([data-testid="ward-global-search"])
@@ -2908,7 +2910,7 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .searchWrap
     :global([data-testid="ward-global-search"]):focus-within
@@ -2919,12 +2921,12 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .scopeBadgeBtn:hover::before,
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .drawerTrigger:hover::before {
     background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
@@ -2932,7 +2934,7 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .drawerTrigger[aria-expanded="true"]::before {
     border-color: var(--wf-on-hero-line);
@@ -2943,7 +2945,7 @@
   /* The service dot keeps its own colour; its halo takes the band so it never smudges. */
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .scopeDot {
     box-shadow: 0 0 0 2px var(--wf-on-hero-line);
@@ -2951,7 +2953,7 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .searchWrap
     :global([data-testid="ward-global-search"])
@@ -2959,7 +2961,7 @@
     > svg,
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .searchWrap
     :global([data-testid="ward-global-search-input"])::placeholder {
@@ -2968,7 +2970,7 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .searchWrap
     :global([data-testid="ward-global-search-input"]) {
@@ -2977,7 +2979,7 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .searchWrap
     :global([data-ward-search-shortcut]) {
@@ -2988,7 +2990,7 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .unread {
     background: var(--wf-hero-ink-2);
@@ -2996,7 +2998,7 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .badge {
     background: transparent;
@@ -3006,7 +3008,7 @@
 
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .vsep {
     background: var(--wf-on-hero-line);
@@ -3015,7 +3017,7 @@
   /* The primary keeps its blue face; its focus gap takes the band colour. */
   .bar:is(
       [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band]))) :not([data-band]))
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
     )
     .primary {
     --wf-focus-ring: var(--wf-hero-ink);

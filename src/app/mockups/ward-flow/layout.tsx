@@ -6,6 +6,7 @@ import { WardAccessibility } from "@/components/ward-management/shell/ward-acces
 import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
 import { WardBarMount } from "@/components/ward-management/shell/ward-bar";
 import { WARD_EARLY_TAP_SCRIPT } from "@/components/ward-management/shell/ward-early-tap";
+import { WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-rail-early";
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardOfflineBanner } from "@/components/ward-management/shell/ward-offline-banner";
@@ -122,6 +123,9 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
         <WardActNowNotifier />
         <div className={styles.shellRow}>
           <WardRail />
+          {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
+              so the sidebar does not fold and slide the page once the app loads. */}
+          <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }} />
           <div className={styles.shellContent} data-wf-scroller="">
             <WardBarMount />
             <WardBroadcastBanner />

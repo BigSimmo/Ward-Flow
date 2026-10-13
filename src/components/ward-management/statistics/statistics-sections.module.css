@@ -210,23 +210,6 @@
   line-height: var(--ward-leading-relaxed);
 }
 
-/*
- * "This is not built yet, and here is what it will hold." Deliberately NOT the `.absence` warning
- * treatment the home page uses: an absence there means a figure that CANNOT be measured against
- * today's model, which is a permanent property of the data. This is a section nobody has written
- * yet, which is a temporary property of the work. Dressing the second as the first would tell a
- * reader the figures are impossible when they are merely absent — and would leave no distinct
- * treatment for the ones that really are impossible.
- */
-.notBuilt {
-  margin: 0;
-  border-left: 0.125rem solid var(--ward-border-strong);
-  padding-left: var(--ward-space-10);
-  color: var(--text);
-  font-size: var(--text-xs);
-  line-height: var(--ward-leading-relaxed);
-}
-
 .note {
   margin: 0;
   color: var(--text-muted);
@@ -569,32 +552,6 @@
 }
 
 /*
- * 🔴 `.section` AND `.sectionHeading` WERE DELETED 2026-09-05. THEY WERE A SECOND PANEL.
- *
- * Both re-implemented what `WardPanel` (`../ward-panel.tsx`) already draws — a bordered card with
- * its own header — and they drew it with the edge the design system moved AWAY from on the same
- * day. `ward-panel.module.css` records the measurement: `--ward-border` is neutral-500 at 4.97:1
- * on white, four times the contrast of the app's own card edge, and "most of why the ward screens
- * read as heavier than the rest of the app". The system's answer is a lighter line PLUS elevation
- * (`--border` + `--e1`), and these four screens had adopted neither half because they had never
- * adopted the primitive.
- *
- * So this is not a tidy-up. Every statistics section page was still painting the pre-2026-09-05
- * ward edge, and nothing was going to report that: a duplicated card fails no test and conflicts
- * with nothing.
- *
- * ⚠️ TWO SITES DELIBERATELY DID NOT BECOME PANELS, and both refusals are on the call site.
- * The two "not found" blocks carry no heading on purpose — the frame's own `<h1>` already reads
- * "Ward not found" — and `WardPanel` requires a title, so making them panels would restore the
- * near-duplicate heading an earlier fix removed. `.notFoundBlock` below is what they use instead:
- * no card, because they are the page's only content rather than one section of it.
- */
-.notFoundBlock {
-  display: grid;
-  gap: var(--ward-space-12);
-}
-
-/*
  * The padding a CONSUMER of `WardPanel` supplies. The primitive gives the border, the radius and the header, and leaves the
  * content's own padding to the screen, exactly as `community.module.css` records of its
  * `.panelBody`. Without it the content sits one border-width from the panel edge, which is what it
@@ -627,56 +584,18 @@
   }
 }
 
-/*
- * 5-Domain Chooser Cards (.domainChooser / .sectionCards)
- * On viewports < 480px (mobile phones), clamp cards so they wrap cleanly without causing horizontal scrolling.
- */
-.domainChooser {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.sectionCards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
-  gap: var(--ward-space-8, 0.5rem);
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-@media (max-width: 479.98px) {
-  .domainChooser {
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  .sectionCards {
-    grid-template-columns: 1fr;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-}
-
 /* Metric values and KPI figures — tabular numerals to eliminate jitter */
 .metricValue,
 .kpiValue,
-.kpiVal,
 .measuredValue,
 .headlineValue,
-.tallyCount,
 .count,
 .mono {
   font-variant-numeric: tabular-nums;
 }
 
 /* Section switcher buttons — standardized min 44px tap target size */
-.segBtn,
-.sectionSwitcherButton {
+.segBtn {
   min-height: 44px;
   min-width: 44px;
 }

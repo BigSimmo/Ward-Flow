@@ -224,11 +224,6 @@
   list-style: none;
 }
 
-.phItemIcon {
-  flex: none;
-  color: var(--wf-ink-2);
-}
-
 .phStep {
   flex: none;
   width: 16px;

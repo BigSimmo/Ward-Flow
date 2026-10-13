@@ -475,7 +475,8 @@ export function HandoverPhone({
           {
             id: "bed",
             value: waitCount,
-            label: "Waiting",
+            // Short form of the "Finding a ward" group so it fits a 375px phone chip untruncated.
+            label: "Finding ward",
             tone: "neutral",
             pressed: pill === "bed",
             onPress: () => onPill("bed"),

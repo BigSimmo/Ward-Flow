@@ -379,7 +379,6 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
        */
       [
         "--focus-ring",
-        "--success-bg-hover",
         "--text-2xl",
         /*
          * `--ease` left this list on 7 October 2026: the v6 rail restyle replaced
@@ -392,14 +391,12 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
          * not declared; declaring any of them is a design decision.
          * 2026-10-05: `--accent-hover` and `--surface-hover` left this list when PR #66 declared
          * them on the shell token layer (aliases of `--accent-press` / `--surface-2`).
+         * 2026-10-13: `--danger-line`, `--success-bg-hover` and the four `--svc-*-soft` names left
+         * this list when the unused-CSS sweep removed the never-applied rules that read them
+         * (`.systemicCardDanger`, `.confirmAllButton:hover`, `.serviceTag[data-service]`).
          */
-        "--danger-line",
         "--r3",
         "--radius-card",
-        "--svc-east-soft",
-        "--svc-north-soft",
-        "--svc-south-soft",
-        "--svc-wachs-soft",
       ].sort(),
     );
   });

@@ -25,15 +25,6 @@
   border: 0;
 }
 
-/* Grids. Every grid collapses to one column under 1100px. Cards in a row end flush (Josh, 9 Oct
- * 2026): each row stretches its cards, and a stack's last card takes the stack's spare height. */
-.gridMain {
-  display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
-  gap: var(--wf-s-3);
-  align-items: stretch;
-}
-
 .grid2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -48,7 +39,6 @@
   align-items: stretch;
 }
 
-.gridMain > .stack > :last-child,
 .grid2 > .stack > :last-child,
 .grid3 > .stack > :last-child {
   flex: 1 1 auto;
@@ -66,7 +56,6 @@
 }
 
 @media (max-width: 1100px) {
-  .gridMain,
   .grid2,
   .grid3 {
     grid-template-columns: minmax(0, 1fr);
