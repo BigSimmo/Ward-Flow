@@ -57,7 +57,7 @@ import {
   broadcastKind,
   type BroadcastKind,
 } from "./ward-broadcast-model";
-import { isAlertLive } from "./global-alert-view";
+import { broadcastScopeCount, directiveAcknowledgements, isAlertLive } from "./global-alert-view";
 import { PullNowCard, ReplyBoardList } from "./global-alert-panels";
 
 import {
@@ -88,7 +88,6 @@ import {
   AlertPhoneRow,
   AlertRow,
   GroupHead,
-  ownedByBookingWard,
   ownerShort,
   type QueueEntry,
   type QueueHandlers,
@@ -356,6 +355,8 @@ function AlertsWorkspace() {
     broadcastRefused || (actionResult !== undefined && !actionResult.accepted && !broadcastRequest);
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
+  // Ops-11: acknowledgements count against the wards the directive's target covers, as the banner does.
+  const broadcastAcks = activeBroadcast ? directiveAcknowledgements(activeBroadcast, units) : undefined;
   const livePullNows = (broadcastAlerts ?? []).filter(
     (alert) => broadcastKind(alert) === "pull_now" && isAlertLive(alert, movements, now),
   );
@@ -505,7 +506,11 @@ function AlertsWorkspace() {
     );
     return ranked.length > 0 ? ranked : countedActive;
   }, [countedActive]);
-  const openCount = countedActive.length;
+  // Ops-3 (remaining-pages audit, 13 Oct 2026): "open" is the one active list the Now tab and the
+  // header's Tasks badge count, running targets included, so the three figures always agree. The
+  // running targets are named beside it, so Act now plus Waiting plus running adds up to open.
+  const openCount = activeEntries.length;
+  const runningText = runningEntries.length > 0 ? ` · ${runningEntries.length} running` : "";
 
   const chosen = allEntries.find((entry) => entry.item.id === chosenId);
   // On the desktop the panel always shows an alert: the chosen one, else the first in line.
@@ -1223,7 +1228,7 @@ function AlertsWorkspace() {
               title={heroTitle}
               sub={
                 openCount > 0
-                  ? `${openCount} open${
+                  ? `${openCount} open${runningText}${
                       oldestRaised !== undefined ? ` · oldest ${minutesText(Math.max(0, now - oldestRaised))}` : ""
                     }`
                   : "Checking every condition below"
@@ -1256,12 +1261,14 @@ function AlertsWorkspace() {
               ]}
               actions={
                 <div className={styles.phoneHeroActions}>
-                  <Button variant="onHero" icon={ChevronRight} onClick={handleNext}>
+                  {/* Ops-14 (13 Oct 2026): working the next alert is the common action, so it is the
+                      one primary; a statewide broadcast stays one tap away as a secondary. */}
+                  <Button variant="light" icon={ChevronRight} onClick={handleNext} data-testid="ward-alerts-phone-next">
                     Next alert
                   </Button>
                   <Button
                     ref={broadcastTriggerRef}
-                    variant="light"
+                    variant="onHero"
                     icon={Radio}
                     onClick={(event) => openComposer(event.currentTarget)}
                   >
@@ -1285,8 +1292,8 @@ function AlertsWorkspace() {
                 <span className={styles.phoneCardText}>
                   <span className={styles.phoneCardTitle}>{activeBroadcast.title}</span>
                   <span className={styles.phoneCardMeta}>
-                    <b className={styles.mono}>{activeBroadcast.acknowledgedUnits.length}</b> of{" "}
-                    <span className={styles.mono}>{units.length}</span> answered · ends{" "}
+                    <b className={styles.mono}>{broadcastAcks?.acknowledged}</b> of{" "}
+                    <span className={styles.mono}>{broadcastAcks?.of}</span> answered · ends{" "}
                     <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
                   </span>
                 </span>
@@ -1306,6 +1313,7 @@ function AlertsWorkspace() {
               openCount > 0 ? (
                 <span className={styles.heroMeta}>
                   <span className={styles.mono}>{openCount}</span> open
+                  {runningText}
                   {oldestRaised !== undefined ? (
                     <>
                       {" "}
@@ -1387,7 +1395,7 @@ function AlertsWorkspace() {
                       ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
                       <span className={styles.deskOnly}>
                         {" "}
-                        · <span className={styles.mono}>{activeBroadcast.acknowledgedUnits.length}</span> acknowledged
+                        · <span className={styles.mono}>{broadcastAcks?.acknowledged}</span> acknowledged
                       </span>
                     </span>
                   </button>
@@ -1504,10 +1512,7 @@ function AlertsWorkspace() {
                           onPressedChange={() => setOwnerHighlight((current) => (current === owner ? null : owner))}
                           count={allEntries.filter((entry) => entry.owner === owner).length}
                         >
-                          {ownerShort(
-                            owner,
-                            allEntries.some((entry) => entry.owner === owner && ownedByBookingWard(entry)),
-                          )}
+                          {ownerShort(owner)}
                         </FilterChip>
                       ))}
                     </div>
@@ -1548,10 +1553,7 @@ function AlertsWorkspace() {
                                 <b className={styles.mono}>
                                   {allEntries.filter((entry) => entry.owner === owner).length}
                                 </b>
-                                {ownerShort(
-                                  owner,
-                                  allEntries.some((entry) => entry.owner === owner && ownedByBookingWard(entry)),
-                                )}
+                                {ownerShort(owner)}
                               </FilterChip>
                             ))}
                         </div>
@@ -1628,7 +1630,7 @@ function AlertsWorkspace() {
                             <dt>Acknowledged</dt>
                             <dd>
                               <span>
-                                {activeBroadcast.acknowledgedUnits.length} of {units.length} units acknowledged
+                                {broadcastAcks?.acknowledged} of {broadcastAcks?.of} units acknowledged
                               </span>
                             </dd>
                           </div>
@@ -1936,7 +1938,7 @@ function AlertsWorkspace() {
                     >
                       <option value="advisory">Advisory</option>
                       <option value="warning">Warning</option>
-                      <option value="critical">Gridlock</option>
+                      <option value="critical">Critical</option>
                     </Select>
                   </Field>
                   <Field label="Expires" id="alerts-broadcast-duration">
@@ -1959,13 +1961,24 @@ function AlertsWorkspace() {
                     value={broadcastScope}
                     onChange={(e) => setBroadcastScope(e.target.value as BroadcastTargetScope)}
                   >
-                    <option value="all">All 23 inpatient wards and 8 ED desks</option>
-                    <option value="metro_adult">Metropolitan adult units</option>
-                    <option value="ed_liaison">ED mental health liaison desks</option>
-                    <option value="forensic">Frankland Centre forensic</option>
-                    <option value="adolescent">CAMHS adolescent acute units</option>
-                    <option value="older_adult">Older adult units</option>
-                    <option value="regional_wachs">WACHS regional network</option>
+                    {/* Ops-12: each count is read from the unit list, never typed. */}
+                    <option value="all">All inpatient wards and ED desks, {broadcastScopeCount(units, "all")}</option>
+                    <option value="metro_adult">
+                      Metropolitan adult units, {broadcastScopeCount(units, "metro_adult")}
+                    </option>
+                    <option value="ed_liaison">
+                      ED mental health liaison desks, {broadcastScopeCount(units, "ed_liaison")}
+                    </option>
+                    <option value="forensic">
+                      Frankland Centre forensic, {broadcastScopeCount(units, "forensic")}
+                    </option>
+                    <option value="adolescent">
+                      CAMHS adolescent acute units, {broadcastScopeCount(units, "adolescent")}
+                    </option>
+                    <option value="older_adult">Older adult units, {broadcastScopeCount(units, "older_adult")}</option>
+                    <option value="regional_wachs">
+                      WACHS regional network, {broadcastScopeCount(units, "regional_wachs")}
+                    </option>
                   </Select>
                 </Field>
 

@@ -146,7 +146,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
     severity: "critical",
     category: "capacity_gridlock",
     targetScope: "all",
-    targetScopeLabel: "All 23 Inpatient Wards & 8 ED Desks",
+    targetScopeLabel: "All Inpatient Wards & ED Desks",
     defaultDurationMinutes: 240,
     defaultMessage:
       "Demo alert. Not a live broadcast. Metropolitan HDU is shown full in this prototype. Check morning discharges and step-down candidates.",
@@ -206,7 +206,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
     severity: "warning",
     category: "transport_delay",
     targetScope: "all",
-    targetScopeLabel: "All 23 Inpatient Wards & 8 ED Desks",
+    targetScopeLabel: "All Inpatient Wards & ED Desks",
     defaultDurationMinutes: 180,
     defaultMessage:
       "Demo alert. Not a live broadcast. Secure psychiatric transport is shown 90–120 minutes late. Hold current patients and watch form times.",
@@ -278,6 +278,26 @@ export const PULL_NOW_LIVE_STAGES: readonly Movement["stage"][] = [
 ];
 
 /**
+ * The wards a Pull now for this patient would ask: the accepting ward, else every ward still
+ * considering the referral. `knownUnit` drops a ward id the unit list no longer holds.
+ */
+export function pullNowWards(movement: Movement, knownUnit: (unitId: string) => boolean = () => true): string[] {
+  if (movement.acceptedUnitId) return [movement.acceptedUnitId];
+  const declined = new Set(movement.declines.map((decline) => decline.unitId));
+  return movement.referredUnitIds.filter((unitId) => !declined.has(unitId) && knownUnit(unitId));
+}
+
+/**
+ * Ops-4 (13 Oct 2026): Pull now is offered only where RAISE_PULL_NOW accepts it, a patient still
+ * waiting for a bed with a ward to ask. Elsewhere the alert's own stage-right action stands alone
+ * (Release bed, Chase transport, Find a bed), so no control is offered that can only be refused.
+ */
+export function pullNowOffered(movement: Movement, knownUnit?: (unitId: string) => boolean): boolean {
+  if (movement.closure || !PULL_NOW_LIVE_STAGES.includes(movement.stage)) return false;
+  return pullNowWards(movement, knownUnit).length > 0;
+}
+
+/**
  * The patient is still waiting for the bed this Pull now asked for. A pull recorded since the alert
  * was sent ends it for good, so a later RELEASE_PULL back to `accepted_awaiting_bed` does not
  * revive an answered, overdue alert; the coordinator sends a fresh one if it is still needed.
@@ -310,7 +330,12 @@ export function alertAsksDesk(alert: BroadcastAlert, desk: { role: string; id: s
     return desk.role === "ward" && (alert.targetUnitIds === undefined || alert.targetUnitIds.includes(desk.id));
   }
   // The coordinator desk acknowledges as COORDINATOR_DESK_ACKNOWLEDGER_ID (owner ruling 2026-09-25).
-  return desk.role === "ward" || desk.role === "ed" || desk.role === "coordinator";
+  // Ops-13 (13 Oct 2026): the coordinator desk is never asked to acknowledge a directive it sent.
+  return (
+    desk.role === "ward" ||
+    desk.role === "ed" ||
+    (desk.role === "coordinator" && alert.dispatchedByRole !== "coordinator")
+  );
 }
 
 /** Whether this desk has already answered (a reply, or an acknowledgement for a directive). */

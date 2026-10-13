@@ -7,8 +7,8 @@ import { Card, CardHead, Segmented, StatusGlyph, useIsPhone, type WfTone } from 
 import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
-import type { HealthService, Movement } from "@/components/ward-management/ward-model";
-import { edPressure } from "@/components/ward-management/ward-pressure";
+import { ED_ACCESS_TARGET_MINUTES, type HealthService, type Movement } from "@/components/ward-management/ward-model";
+import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward-pressure";
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 
@@ -39,6 +39,8 @@ type PressureStripProps = {
   service?: HealthService | null;
   /** A line under the departments, such as the network's "no common deadline scale" note. */
   foot?: ReactNode;
+  /** The ED access target from Settings, for the long-wait mark Home's ED strip uses too. */
+  edAccessTargetMinutes?: number;
 };
 
 const TONE_GLYPH: Record<string, WfTone> = {
@@ -61,7 +63,15 @@ function phoneSiteName(siteCode: string): string {
  * and the recorded legal deadlines. Pressing a tile selects that department (`aria-pressed`,
  * `ward-ed-<id>`). Every visible figure is `aria-hidden` and restated in the tile's accessible name.
  */
-export function PressureStrip({ now, selectedEdId, onSelectEd, movements, service = null, foot }: PressureStripProps) {
+export function PressureStrip({
+  now,
+  selectedEdId,
+  onSelectEd,
+  movements,
+  service = null,
+  foot,
+  edAccessTargetMinutes = ED_ACCESS_TARGET_MINUTES,
+}: PressureStripProps) {
   const [order, setOrder] = useState<Order>("worst");
   // Phone (v10 Network): a worst-first list of departments, three shown until asked for more.
   const isPhone = useIsPhone();
@@ -154,10 +164,12 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
                       ? "No deadline recorded"
                       : "No patients waiting";
 
+          // Ops-16: deadlines and the longest wait together, by the rule Home's ED strip uses.
+          const waitTone = edLongestWaitTone(row.waiting, row.longestWaitMinutes, edAccessTargetMinutes);
           const pressureTone =
-            row.breaching > 0 || critical > 0
+            row.breaching > 0 || critical > 0 || waitTone === "danger"
               ? "danger"
-              : due > 0
+              : due > 0 || waitTone === "warning"
                 ? "warn"
                 : deadlines.length > 0
                   ? "good"

@@ -203,6 +203,27 @@ describe("task workspace state filters and actions", () => {
     expect(within(drawer).queryByRole("button", { name: "Mark done" })).toBeNull();
   });
 
+  it("on desktop shows the open count in the header and the All filter, not in a stats row (ops-22)", () => {
+    const { drawer } = renderDrawer();
+    expect(within(drawer).queryByText("To acknowledge")).toBeNull();
+    expect(within(drawer).queryByText("Critical facts")).toBeNull();
+    expect(within(drawer).getByTestId("ward-tasks-drawer-count")).toHaveTextContent(`${items.length} open`);
+    expect(within(drawer).getByRole("button", { name: `All ${items.length}` })).toBeTruthy();
+    const stateFilter = within(drawer).getByRole("combobox", { name: "Filter task state" });
+    expect(stateFilter.parentElement).not.toHaveTextContent(String(items.length));
+  });
+
+  it("records the escalation to a pick when its Call is pressed (ops-6)", () => {
+    const { drawer, dispatch } = renderDrawer({ records: seed });
+    const item = items.find((item) => item.title === "Multiple destinations declined")!;
+    const card = within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!;
+    fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
+    fireEvent.click(within(card).getByRole("button", { name: /^Call State bed desk, / }));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "RECORD_ESCALATION", movementId: item.movementId, contact: "State bed desk" }),
+    );
+  });
+
   it("shows linked patient identity and routes actions with the correct patient context", () => {
     const { drawer, onSelectMovement, dispatch } = renderDrawer({ records: seed });
     const item = items.find((item) => item.title === "Multiple destinations declined")!;
@@ -213,9 +234,20 @@ describe("task workspace state filters and actions", () => {
     expect(card).not.toHaveTextContent("Flow coordinator");
     fireEvent.click(within(card).getByRole("button", { name: "Refer" }));
     expect(onSelectMovement).toHaveBeenLastCalledWith(item.movementId, "refer");
+    // Ops-5: Contact opens the numbers this task needs, in place; the patient's contacts stay one tap on.
     fireEvent.click(within(card).getByRole("button", { name: "Contact" }));
+    const contacts = within(card).getByTestId(`ward-task-contacts-${item.id}`);
+    expect(within(contacts).getByText("ED mental health liaison")).toBeInTheDocument();
+    expect(within(contacts).getAllByRole("button", { name: /^Call .*, 08 0000 \d{4}$/u }).length).toBeGreaterThan(0);
+    fireEvent.click(within(contacts).getByRole("button", { name: "Open patient contacts" }));
     expect(onSelectMovement).toHaveBeenLastCalledWith(item.movementId, "contact");
     fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
+    // Ops-6: each escalation pick shows its number with Call.
+    for (const pick of ["Duty consultant", "State bed desk", "Executive on call"]) {
+      expect(
+        within(card).getByRole("button", { name: new RegExp(`^Call ${pick}, 08 0000 \\d{4}$`, "u") }),
+      ).toBeTruthy();
+    }
     fireEvent.change(within(card).getByRole("textbox"), { target: { value: "Duty coordinator" } });
     fireEvent.click(within(card).getByRole("button", { name: "Record escalation" }));
     expect(dispatch).toHaveBeenCalledWith(
@@ -223,18 +255,25 @@ describe("task workspace state filters and actions", () => {
     );
   });
 
-  it("acknowledges only visible, unacknowledged facts", () => {
+  it("acknowledges only visible, unacknowledged review facts, never act-now rows in bulk", () => {
     const critical = items.filter((item) => item.tone === "danger");
-    const acked = critical[0];
+    const review = items.filter((item) => item.kind === "fact" && item.tone !== "danger");
+    expect(critical.length, "the seed has act-now rows").toBeGreaterThan(0);
+    expect(review.length, "the seed has at least two review rows").toBeGreaterThan(1);
+    const acked = review[0];
     const { drawer, dispatch } = renderDrawer({
       acknowledgements: {
         [acked.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }],
       },
     });
     fireEvent.click(within(drawer).getByRole("button", { name: /^Critical/u }));
+    expect(within(drawer).queryByRole("button", { name: /Acknowledge visible/ })).toBeNull();
+    fireEvent.click(within(drawer).getByRole("button", { name: /^All/u }));
     fireEvent.click(within(drawer).getByRole("button", { name: /Acknowledge visible/ }));
-    expect(dispatch).toHaveBeenCalledTimes(critical.length - 1);
-    for (const item of critical.slice(1))
+    expect(dispatch).toHaveBeenCalledTimes(review.length - 1);
+    for (const item of critical)
+      expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ inboxItemId: item.id }));
+    for (const item of review.slice(1))
       expect(dispatch).toHaveBeenCalledWith({
         type: "ACKNOWLEDGE_INBOX_ITEM",
         role: "coordinator",

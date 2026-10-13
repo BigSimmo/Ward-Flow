@@ -4,6 +4,7 @@ import { isTierOverdue } from "../ward-shared-figures";
 import { scrollWardPageToTop, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import Link from "next/link";
+import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
 import {
   AlertCircle,
   BedDouble,
@@ -2156,6 +2157,7 @@ export function PatientNowScreen({
                 stays={resolved.stays}
                 absence={stayLeaveBed?.absentWithoutLeave}
                 absenceVoluntary={voluntaryNow}
+                chronologyHref={livePatient ? patientChronologyHref(livePatient.id) : undefined}
                 open={!modeMeta.quiet}
                 onBackToNow={() => {
                   setActiveTab("now");
