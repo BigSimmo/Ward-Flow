@@ -13,7 +13,13 @@
 import { clockState, dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import { isOpen, stageCopy, transportLeg, type TransportLeg } from "@/components/ward-management/ward-derivations";
+import {
+  isGenuineDecline,
+  isOpen,
+  stageCopy,
+  transportLeg,
+  type TransportLeg,
+} from "@/components/ward-management/ward-derivations";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import {
@@ -386,6 +392,8 @@ export function refusedCorridorCounts(movements: Movement[], now: Instant): Refu
   for (const movement of movements) {
     for (const decline of movement.declines) {
       if (decline.at > now || dayOf(decline.at) !== dayOf(now)) continue;
+      // A3-6 (12 Oct 2026 review): a waitlist answer ("no bed yet") is not a refusal.
+      if (!isGenuineDecline(decline)) continue;
       const key = `${movement.originEdId} ${decline.unitId}`;
       const existing = rows.get(key);
       if (existing) {

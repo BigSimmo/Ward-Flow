@@ -27,7 +27,8 @@ import {
   type LegalStatus,
 } from "./ward-model";
 import { validateConfiguration, type WardConfiguration } from "./ward-configuration";
-import { SELECTABLE_LEGAL_FORMS } from "./ward-legal-forms";
+import { CONTINUATION_LEGAL_FORMS, SELECTABLE_LEGAL_FORMS } from "./ward-legal-forms";
+import { LEGAL_CLOCK_FORM_CODES } from "./ward-legal-clock";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -336,6 +337,25 @@ export function auditActor(state: WardFlowState, event: WardFlowEvent): AuditAct
 function patientReference(state: WardFlowState, id: unknown): PatientId | null {
   return uniqueRecord(state.patients, id)?.id ?? null;
 }
+/**
+ * The patient a movement is for (A1-6, 12 Oct 2026 review): the linked referral's patient, or the
+ * movement's own `patientId` when there is no referral — a walk-in journey has none.
+ */
+function movementPatientReference(state: WardFlowState, movement: { referralId?: string; patientId?: string }) {
+  const referral = uniqueRecord(state.referrals, movement.referralId);
+  return patientReference(state, referral ? referral.patientId : movement.patientId);
+}
+/**
+ * Every form code the reducer accepts on a legal-form record (A1-4): intake forms, the continuation
+ * list and the legal-clock codes (5B, 3C, 6B, 6C among them), so a continuation keeps its code.
+ */
+const AUDITABLE_FORM_CODES: readonly string[] = [
+  ...new Set([
+    ...SELECTABLE_LEGAL_FORMS.map((form) => form.code),
+    ...CONTINUATION_LEGAL_FORMS.map((form) => form.code),
+    ...LEGAL_CLOCK_FORM_CODES,
+  ]),
+];
 export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditSubject {
   if ("admissionId" in event) {
     const admission = uniqueRecord(state.admissions, event.admissionId);
@@ -352,7 +372,7 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
       return {
         kind: "movement",
         movementId: movement.id,
-        patientId: patientReference(state, uniqueRecord(state.referrals, movement.referralId)?.patientId),
+        patientId: movementPatientReference(state, movement),
       };
   } else if ("referralId" in event) {
     const referral = uniqueRecord(state.referrals, event.referralId);
@@ -381,7 +401,7 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
       return {
         kind: "movement",
         movementId: movement.id,
-        patientId: patientReference(state, uniqueRecord(state.referrals, movement.referralId)?.patientId),
+        patientId: movementPatientReference(state, movement),
       };
   }
   return { kind: "unresolved" };
@@ -457,7 +477,7 @@ export function appendAudit(
       subject = {
         kind: "movement",
         movementId: created.id,
-        patientId: patientReference(after, uniqueRecord(after.referrals, created.referralId)?.patientId),
+        patientId: movementPatientReference(after, created),
       };
   }
   const base: AuditBase = {
@@ -654,10 +674,7 @@ export function appendAudit(
           dueAt: finiteInstant(event.paperExpiresAt),
           ...(event.type === "RECORD_LEGAL_FORM_CONTINUATION"
             ? {
-                formCode: enumValue(
-                  SELECTABLE_LEGAL_FORMS.map((f) => f.code),
-                  event.formCode,
-                ),
+                formCode: enumValue(AUDITABLE_FORM_CODES, event.formCode),
                 startedAt: finiteInstant(event.startedAt),
               }
             : {}),
@@ -669,9 +686,13 @@ export function appendAudit(
       // Read from `before`, the same discipline `RECORD_LEGAL_FORM_RECEIVED`'s own "already
       // recorded" check uses in the reducer: whether this was the first typed expiry or an
       // extension is a fact about the record BEFORE this event, never guessed from the outcome.
-      const priorDueAt = mayResolveSubject
-        ? uniqueRecord(before.movements, event.movementId)?.legalForm?.dueAt
-        : undefined;
+      // A1-11 (12 Oct 2026 review): the reducer's own basis. A legacy calculated clock's expiry is
+      // not paper authority, so the first typed expiry over it is "written on the form", not an
+      // extension.
+      const prior = mayResolveSubject ? uniqueRecord(before.movements, event.movementId) : undefined;
+      const currentDueAt = prior?.legalForm?.dueAt;
+      const legacyCalculatedExpiry = prior?.legalClock !== undefined && currentDueAt === prior.legalClock.expiresAt;
+      const priorDueAt = currentDueAt !== undefined && !legacyCalculatedExpiry ? currentDueAt : undefined;
       captured = {
         ...base,
         category: "legal-form",

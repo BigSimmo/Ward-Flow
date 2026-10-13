@@ -118,14 +118,26 @@ export function referralSenderRole(referral: Referral): "ed" | "community" {
 
 /**
  * Whether the whole-referral withdrawal (`RECORD_REFERRER_WITHDRAWAL` with no `destinationKind`)
- * would be accepted — the reducer's own three refusals, read once so a screen does not offer a
- * control the reducer would refuse.
+ * would be accepted — the reducer's own refusals, read once so a screen does not offer a control
+ * the reducer would refuse. S2-14 (12 Oct 2026 review): that includes the refusal when a linked
+ * open movement's patient has already been collected, which needs the movements to see; a caller
+ * that passes none cannot see it.
  */
-export function referralWithdrawable(referral: Referral): boolean {
+export function referralWithdrawable(referral: Referral, movements: readonly Movement[] = []): boolean {
   if (referralState(referral) === "accepted") return false;
   if (
     referral.destinations.some(
       (addressing) => addressing.destination.kind !== "community_team" && addressing.withdrawnAt !== undefined,
+    )
+  ) {
+    return false;
+  }
+  if (
+    movements.some(
+      (movement) =>
+        movement.referralId === referral.id &&
+        movement.closure === undefined &&
+        movement.transport?.collectedAt !== undefined,
     )
   ) {
     return false;
@@ -696,7 +708,7 @@ export const RECENTLY_DECIDED_DISPLAY_LIMIT = 10;
  */
 export function recentlyDecidedReferrals(referrals: Referral[]): Referral[] {
   return decidedReferrals(referrals)
-    .sort((a, b) => (referralDecidedAt(b) ?? -Infinity) - (referralDecidedAt(a) ?? -Infinity))
+    .sort((a, b) => (referralClosedAt(b) ?? -Infinity) - (referralClosedAt(a) ?? -Infinity))
     .slice(0, RECENTLY_DECIDED_DISPLAY_LIMIT);
 }
 
@@ -716,7 +728,29 @@ export function recentlyDecidedReferrals(referrals: Referral[]): Referral[] {
  * board the same day (census §8).
  */
 export function decidedReferrals(referrals: Referral[]): Referral[] {
-  return referrals.filter((referral) => referralState(referral) !== "queued");
+  // A3-8 (12 Oct 2026 review): a referral whose every arm was withdrawn stays "queued" by state
+  // but has left the queue (`referralQueueOrder`), so it is closed and belongs here. The two
+  // lists stay exact complements over the referrals a coordinator works.
+  return referrals.filter(
+    (referral) => referralState(referral) !== "queued" || !referral.destinations.some(isAwaitingAnswer),
+  );
+}
+
+/** Whether every arm of this referral was withdrawn with nothing accepted or declined (A3-8). */
+export function referralFullyWithdrawn(referral: Referral): boolean {
+  return (
+    referralState(referral) === "queued" &&
+    referral.destinations.length > 0 &&
+    referral.destinations.every((addressing) => addressing.withdrawnAt !== undefined)
+  );
+}
+
+/** When this referral left the queue: its latest decision or withdrawal, for ordering (A3-8). */
+export function referralClosedAt(referral: Referral): Instant | undefined {
+  const times = referral.destinations
+    .flatMap((addressing) => [addressing.decidedAt, addressing.withdrawnAt])
+    .filter((at): at is Instant => at !== undefined);
+  return times.length > 0 ? Math.max(...times) : undefined;
 }
 
 /**
@@ -1491,6 +1525,8 @@ export function isBedHoldExpired(
   if (pulledAt === undefined || pulledAt === null || !Number.isFinite(pulledAt)) {
     return false;
   }
+  // A3-2: once the patient is collected, the hold is no longer waiting on anything.
+  if (movement.transport?.collectedAt !== undefined) return false;
   // If transport is already dispatched/in-transit, hold is not expired/stalled
   const transportStage = (movement.transport as { stage?: string } | undefined)?.stage;
   if (transportStage === "in_transit" || transportStage === "arrived") {

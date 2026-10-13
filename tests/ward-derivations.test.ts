@@ -12,7 +12,6 @@ import {
 } from "../src/components/ward-management/ward-derivations";
 import { eligibility, requiresAuthorisedDestination } from "../src/components/ward-management/ward-eligibility";
 import {
-  DECLINE_REASONS,
   PARALLEL_REFERRAL_CAP,
   type Decline,
   type Movement,
@@ -156,7 +155,7 @@ describe("buildActionInbox", () => {
   // depend on how many fixture movements happen to qualify. No legal form and no deadline is
   // involved here at all — this category counts declines.
   it("emits a declines item for EVERY capped movement, not just the first", () => {
-    const decline = (unitId: string): Decline => ({ unitId, at: NOW_ANCHOR - 60, reason: DECLINE_REASONS[0] });
+    const decline = (unitId: string): Decline => ({ unitId, at: NOW_ANCHOR - 60, reason: "acuity_mix" }); // a genuine refusal: "no_bed" waitlists (A3-6)
     const capped = (id: MovementId): Movement =>
       movementFrom({ id, declines: [decline("unit-a"), decline("unit-b"), decline("unit-c")] });
     const underCap = movementFrom({ id: "WF-TEST-declines-under", declines: [decline("unit-a")] });

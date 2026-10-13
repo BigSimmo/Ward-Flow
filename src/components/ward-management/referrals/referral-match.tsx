@@ -27,6 +27,7 @@ import {
   REFERRAL_DECLINE_REASONS,
   genderReviewNeeded,
   type CommunityDeclineReason,
+  type Movement,
   type Referral,
   type ReferralDeclineReason,
   type ReferralDestinationKind,
@@ -195,6 +196,8 @@ type ReferralMatchViewProps = {
   now: Instant;
   dispatch: Dispatch<WardFlowEvent>;
   rejections: Rejection[];
+  /** S2-14: linked movements, so the whole-referral Withdraw is not offered where the reducer refuses it. */
+  movements?: readonly Movement[];
   patientInfo?: { displayName: string; umrn: string };
   hideDossierHeader?: boolean;
   /**
@@ -360,6 +363,7 @@ export function ReferralMatchView({
   now,
   dispatch,
   rejections,
+  movements,
   patientInfo,
   hideDossierHeader = false,
   onDecision,
@@ -518,7 +522,7 @@ export function ReferralMatchView({
    * withdrawn; any answer already given stands. Offered only while the reducer would accept it.
    */
   // Audit 11 Oct 2026: Decide holds the decision; withdrawing sits one tap away in a disclosure.
-  const wholeWithdrawControl = referralWithdrawable(referral) ? (
+  const wholeWithdrawControl = referralWithdrawable(referral, movements) ? (
     <details className={styles.moreActions} data-testid="ward-referral-match-more-actions">
       <summary className={styles.moreActionsSummary}>Referrer cancelled?</summary>
       <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">

@@ -32,7 +32,6 @@ import { announceToWardShell } from "@/components/ward-management/shell/ward-liv
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
-import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
@@ -107,6 +106,7 @@ import {
   isbarText,
   pillTest,
   summaryText,
+  onHandover,
   toHandoverRow,
   toHandoverWard,
   wardIsStale,
@@ -440,7 +440,7 @@ export function HandoverPage() {
 
   /* rows and wards */
   const allRows = useMemo(
-    () => movements.filter(isOpen).map((movement) => toHandoverRow(movement, units, patients, referrals)),
+    () => movements.filter(onHandover).map((movement) => toHandoverRow(movement, units, patients, referrals)),
     [movements, units, patients, referrals],
   );
   const rows = useMemo(

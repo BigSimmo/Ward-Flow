@@ -13,7 +13,8 @@ import {
   minuteOfDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { transportLeg, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { isOpen, livePullExpiresAt, transportLeg, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { stoppedTransportBedOutstanding } from "@/components/ward-management/ward-movement-bed-hold";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type {
@@ -140,6 +141,11 @@ export type HandoverRow = {
   asked: { unitId: string; name: string }[];
   declines: { unitId: string; name: string; reason: string; at: Instant }[];
   pullExpiresAt?: Instant;
+  /**
+   * A3-10 (12 Oct 2026 review): transport was stopped after collection, so the journey is closed,
+   * but its bed is still held until the coordinator, the ward or the referrer releases it.
+   */
+  heldAfterStop: boolean;
   transport?: { provider: string; escort: boolean; leg?: string };
   escalated: boolean;
   urgent: boolean;
@@ -194,7 +200,9 @@ export function toHandoverRow(
       reason: declineReasonLabels[decline.reason] ?? "Reason not recorded",
       at: decline.at,
     })),
-    pullExpiresAt: movement.pullExpiresAt,
+    // A3-2: once collected, the pull deadline no longer applies (never "Pull over by").
+    pullExpiresAt: livePullExpiresAt(movement),
+    heldAfterStop: stoppedTransportBedOutstanding(movement),
     transport:
       movement.transport === undefined || leg === "Cancelled"
         ? undefined
@@ -205,6 +213,14 @@ export function toHandoverRow(
   };
 }
 
+/**
+ * The journeys a handover lists: every open one, plus a stopped journey whose bed is still held
+ * (A3-10), so the incoming coordinator can see a bed waiting to be released.
+ */
+export function onHandover(movement: Movement): boolean {
+  return isOpen(movement) || stoppedTransportBedOutstanding(movement);
+}
+
 /* ------------------------------------------------------------------ groups */
 
 export type HandoverGroupId = "act" | "due" | "bed" | "acc" | "mov";
@@ -213,6 +229,7 @@ export type HandoverTone = "act" | "due" | "calm";
 export function isActNow(row: HandoverRow, now: Instant): boolean {
   return (
     row.urgent ||
+    row.heldAfterStop ||
     (row.pullExpiresAt !== undefined && row.pullExpiresAt <= now) ||
     (row.formDueAt !== undefined && row.formDueAt <= now)
   );
@@ -240,7 +257,11 @@ export function groupOf(row: HandoverRow, now: Instant, cutoff: Instant): Handov
 
 export function handoverGroups(cutoff: Instant, now: Instant) {
   return [
-    { id: "act", title: "Act now", why: "Flagged urgent, typed form time passed or bed pull expired" },
+    {
+      id: "act",
+      title: "Act now",
+      why: "Flagged urgent, typed form time passed, bed pull expired or a pulled bed left after transport stopped",
+    },
     {
       id: "due",
       title: `Due by ${formatInstantWithDay(cutoff, now)}`,
@@ -335,7 +356,9 @@ export function nextStep(
   const tone: HandoverTone = isActNow(row, now) ? "act" : isDueBy(row, now, cutoff) ? "due" : "calm";
   let text: string;
   const hold = row.pullExpiresAt === undefined ? null : row.pullExpiresAt - now;
-  if (row.stage === "pulled") {
+  if (row.heldAfterStop) {
+    text = `Transport stopped. Release the pulled bed at ${row.to?.name ?? "the ward"}`;
+  } else if (row.stage === "pulled") {
     text =
       hold !== null && hold <= 0
         ? `Pull expired ${durMinutes(-hold)} ago. Move or release`

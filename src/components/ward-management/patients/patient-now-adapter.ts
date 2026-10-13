@@ -38,6 +38,14 @@ function movementVerdict(
 ): PatientNowRecord["verdict"] {
   if (departed)
     return { tone: "warn", short: "Departed", title: "Departure recorded; no current ward stay.", gates: [] };
+  // A3-10: a journey stopped in transit is closed, but its bed stays held until someone releases it.
+  if (movement.closure?.outcome === "did_not_proceed" && movementHasBedHold(movement, admissions))
+    return {
+      tone: "warn",
+      short: "Bed Still Held",
+      title: `Transport was stopped; the bed at ${acceptedUnit?.name ?? "the receiving ward"} is held until it is released.`,
+      gates: [],
+    };
   if (movement.closure?.outcome === "did_not_proceed")
     return {
       tone: "warn",

@@ -122,7 +122,11 @@ describe("escalationBoard", () => {
       // something. **What no longer holds is the scenario's usefulness as a stress case**, and
       // that is a product question about what the scarce night is for, not a number to adjust.
       // Recorded here and raised with the owner rather than absorbed into the list.
-    ).toEqual(["WF-009", "WF-021", "WF-308"]);
+      //
+      // SHRANK FROM THREE TO TWO ON 2026-10-12 (review finding A3-3): WF-021 is already accepted at
+      // `bty-youth` (`handover_ready`), so it HAS a bed; its own pull failing that ward's bed gate
+      // is what listed it. A patient with a bed is not stranded, so it no longer appears.
+    ).toEqual(["WF-009", "WF-308"]);
     // The honest empty state does not exist on either measured night — the scarce night is
     // strictly a superset of the standard night's two, never a disjoint or smaller set. This
     // guards against a scenario change that shrinks the scarce list back toward the standard
@@ -132,7 +136,9 @@ describe("escalationBoard", () => {
     for (const id of standardIds) {
       expect(board.nowhereEligible.map((movement) => movement.id)).toContain(id);
     }
-    expect(board.nowhereEligible.length).toBeGreaterThan(standardBoard.nowhereEligible.length);
+    // Since A3-3 the scarce night adds no stranded patient beyond the standard night's two, so
+    // the superset is no longer strict (see the shrink recorded above).
+    expect(board.nowhereEligible.length).toBeGreaterThanOrEqual(standardBoard.nowhereEligible.length);
   });
 
   it("excludes closed movements from both groups", () => {

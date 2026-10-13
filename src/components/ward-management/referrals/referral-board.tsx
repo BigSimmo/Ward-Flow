@@ -50,6 +50,7 @@ import {
   declinedAddressings,
   referralAddressingStateLabel,
   referralDecidedAt,
+  referralFullyWithdrawn,
   referralDestinationLabel,
   referralDestinationLabels,
   referralState,
@@ -157,6 +158,8 @@ function outcomeLabel(referral: Referral): string {
   const state = referralState(referral);
   if (state === "accepted") return "Accepted";
   if (state === "declined") return "Declined";
+  // A3-8: a fully withdrawn referral now sits in the decided list, so it says so.
+  if (referralFullyWithdrawn(referral)) return "Withdrawn";
   return "Queued";
 }
 
@@ -1187,6 +1190,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       now={now}
                       dispatch={dispatch}
                       rejections={rejections}
+                      movements={movements}
                       patientInfo={selectedPatientInfo}
                       hideDossierHeader
                       onDecision={(title) => watchDecision(selectedReferral.id, title)}
@@ -1272,6 +1276,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         now={now}
                         dispatch={dispatch}
                         rejections={rejections}
+                        movements={movements}
                         patientInfo={selectedPatientInfo}
                         hideDossierHeader
                         onDecision={(title) => watchDecision(selectedReferral.id, title)}

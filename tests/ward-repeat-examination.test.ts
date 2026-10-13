@@ -153,7 +153,10 @@ describe("PATIENT_COLLECTED — refused while examinationRevokedWhileBedHeld (T9
       ...flagged,
       movements: flagged.movements.map((m) => (m.id === TARGET ? { ...m, admissionId: undefined } : m)),
     };
-    expect(examinationRevokedWhileBedHeld(movement(released, TARGET))).toBe(false);
+    // 12 Oct 2026 review: the derivation now also reads the bed-holding stage (the reducer's
+    // `movementHoldsBedByStage`, S2-1), so a splice that clears only `admissionId` at
+    // `handover_ready` still reads as held. This case pins the reducer's own collection guard.
+    expect(examinationRevokedWhileBedHeld(movement(released, TARGET))).toBe(true);
 
     const collected = wardFlowReducer(released, {
       type: "PATIENT_COLLECTED",

@@ -66,6 +66,12 @@ function expectedKind(cohort: Cohort, security: Security): BedKindId {
 describe("bedKindGaps", () => {
   const units = allUnits();
   const open = wardMovements.filter(isOpen);
+  // A3-1 (12 Oct 2026 review): a movement already holding a bed (pulled, ready to hand over,
+  // moving, or linked to an admission) is not waiting — its bed has already left supply.
+  const waitingPopulation = open.filter(
+    (movement) =>
+      !["pulled", "handover_ready", "moving"].includes(movement.stage) && movement.admissionId === undefined,
+  );
 
   it("walks a non-empty population of open movements and units, or every assertion below is vacuous", () => {
     expect(open.length, "no open movement in the fixture").toBeGreaterThan(0);
@@ -80,7 +86,9 @@ describe("bedKindGaps", () => {
   it("counts `waiting` as open movements of that kind, matching an independently derived mapping", () => {
     const rows = bedKindGaps(wardMovements, units, NOW);
     for (const row of rows) {
-      const expected = open.filter((movement) => expectedKind(movement.cohort, movement.security) === row.id).length;
+      const expected = waitingPopulation.filter(
+        (movement) => expectedKind(movement.cohort, movement.security) === row.id,
+      ).length;
       expect(row.waiting, row.id).toBe(expected);
     }
   });
@@ -93,7 +101,7 @@ describe("bedKindGaps", () => {
     const totalWaiting = rows.reduce((sum, row) => sum + row.waiting, 0);
     // Every open movement lands in exactly one kind (the mapping above is total), so the sum of
     // `waiting` across all four rows must equal the open count exactly — not merely be no larger.
-    expect(totalWaiting).toBe(open.length);
+    expect(totalWaiting).toBe(waitingPopulation.length);
   });
 
   it("sums `bedsThatFit` from the real locked/open free-bed split, per cohort", () => {

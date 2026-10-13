@@ -12,11 +12,12 @@ import {
 } from "@/components/ward-management/ward-clock";
 import {
   destinationNoLongerLawful,
+  examinationRevokedWhileBedHeld,
   isOpen,
   referralForMovement,
   shortlistCandidates,
 } from "@/components/ward-management/ward-derivations";
-import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { Movement, MovementStage, Referral, Unit, UnwindRecord } from "@/components/ward-management/ward-model";
 import {
   LONG_WAIT_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
@@ -249,14 +250,26 @@ export function delayGroups(movements: Movement[], units: Unit[], now: Instant):
     // capitals — so its length is zero only when the network holds no wards at all. This group
     // would have been permanently empty, and an empty group is dropped, so the two people with
     // nowhere to go would simply not have appeared on the screen built to find them.
-    if (movement.acceptedUnitId === undefined) {
-      const candidates = shortlistCandidates(movement, units, now);
-      if (!candidates.some((candidate) => candidate.availability === "eligible")) return "no_eligible_bed";
-    }
-
+    //
+    // 12 Oct 2026 review (A3-4): a live referral is checked FIRST — a ward still deciding is not
+    // "no suitable bed". And a ward that only declined before (`previously_declined`: nothing but
+    // the informational gate failed) may be referred again, so it counts as somewhere to go.
     if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
       return "awaiting_ward_answer";
     }
+    if (movement.acceptedUnitId === undefined) {
+      const candidates = shortlistCandidates(movement, units, now);
+      if (
+        !candidates.some(
+          (candidate) => candidate.availability === "eligible" || candidate.availability === "previously_declined",
+        )
+      )
+        return "no_eligible_bed";
+    }
+
+    // A3-12: a bed still held after the examination was revoked waits on a release decision the
+    // coordinator can make; Transport cannot act on it, so it is never filed as a transport delay.
+    if (examinationRevokedWhileBedHeld(movement)) return "awaiting_coordinator";
     if (movement.stage === "pulled") {
       // ⚠️ AUDIT GAP 1: condition mirrored exactly from `buildActionInbox`'s `expiredBedPulls`
       // filter (ward-derivations.ts) — `stage === "pulled" && pullExpiresAt !== undefined &&
@@ -347,6 +360,23 @@ export function legalDeadlineMinutes(movement: Movement, now: Instant): number |
  * produce gets a defined answer. `tests/ward-delays-derivations.test.ts` proves this rather than
  * assuming it: a movement with every optional field absent still returns the floor.
  */
+const STAGE_CHANGE_ACTIVITY: Record<MovementStage, string> = {
+  placement_requested: "the search for a bed was reopened",
+  destination_review: "the referral moved to ward review",
+  accepted_awaiting_bed: "a ward accepted",
+  pulled: "a bed was pulled",
+  handover_ready: "the patient was made ready to hand over",
+  moving: "the patient was collected",
+  arrived: "the patient arrived",
+};
+
+const UNWIND_ACTIVITY: Record<UnwindRecord["kind"], string> = {
+  pull_released: "a pulled bed was released",
+  transport_cancelled: "transport was cancelled",
+  stage_corrected: "the stage was stepped back",
+  acceptance_withdrawn: "an acceptance was withdrawn",
+};
+
 function pickLatest(candidates: readonly { at: Instant; what: string }[]): { at: Instant; what: string } {
   let best = candidates[0];
   for (const candidate of candidates.slice(1)) {
@@ -396,6 +426,15 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
     candidates.push({ at: transport.acceptedAt, what: "transport accepted the job" });
   if (movement.referredAt !== undefined) {
     candidates.push({ at: movement.referredAt, what: "referral raised" });
+  }
+  // A3-11 (12 Oct 2026 review): acceptance, pull, handover and step-back are recorded too, so a
+  // patient pulled minutes ago never reads as idle since the referral.
+  if (movement.acceptedAt !== undefined) candidates.push({ at: movement.acceptedAt, what: "a ward accepted" });
+  for (const change of movement.stageChanges) {
+    candidates.push({ at: change.at, what: STAGE_CHANGE_ACTIVITY[change.to] });
+  }
+  for (const unwind of movement.unwinds) {
+    candidates.push({ at: unwind.at, what: UNWIND_ACTIVITY[unwind.kind] });
   }
   if (movement.formedAt !== undefined) {
     candidates.push({ at: movement.formedAt, what: "the legal form was raised" });
@@ -616,7 +655,37 @@ export function answerSilenceReminder(movement: Movement, referrals: Referral[],
     return silentCommunityReminder(referral.raisedAt, now);
   }
   if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
-    return silentWardReminder(movement.referredAt, now);
+    // A3-7 (12 Oct 2026 review): measured per ward, from when THAT ward was referred, and only for
+    // wards that have not answered — a ward that waitlisted the patient has answered. The longest
+    // silence among them is the one shown.
+    const waitlisted = movement.waitlistedUnitIds ?? [];
+    const silentStarts = movement.referredUnitIds
+      .filter((unitId) => !waitlisted.includes(unitId))
+      .map((unitId) => wardReferredAt(movement, unitId))
+      .filter((at): at is Instant => at !== undefined);
+    if (silentStarts.length === 0) return undefined;
+    return silentWardReminder(Math.min(...silentStarts), now);
   }
   return undefined;
+}
+
+/**
+ * The best-known moment a ward still live on this movement was referred (A3-7). The record keeps
+ * no per-ward referral time, so this is the latest of what it does hold: when the current wait
+ * opened (`referralDecisionOpenedAt`, reset when wards are referred into an empty live set, else
+ * the first `referredAt`), and any later record naming this ward — its own earlier decline or
+ * withdrawn request (it was re-referred after that), or an override or gender-placement record
+ * written by the act that referred it. A ward added beside others still live, with none of those,
+ * is measured from when the current wait opened, never earlier.
+ */
+export function wardReferredAt(movement: Movement, unitId: string): Instant | undefined {
+  const opened = movement.referralDecisionOpenedAt ?? movement.referredAt;
+  const named = [
+    ...movement.declines.filter((decline) => decline.unitId === unitId).map((decline) => decline.at),
+    ...movement.withdrawnReferrals.filter((entry) => entry.unitId === unitId).map((entry) => entry.at),
+    ...movement.overrides.filter((entry) => entry.unitIds.includes(unitId)).map((entry) => entry.at),
+    ...(movement.genderPlacements ?? []).filter((entry) => entry.unitIds.includes(unitId)).map((entry) => entry.at),
+  ];
+  const all = opened === undefined ? named : [opened, ...named];
+  return all.length === 0 ? undefined : Math.max(...all);
 }
