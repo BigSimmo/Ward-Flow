@@ -28,7 +28,7 @@ export function CoordinatorCockpit({ className, onDispatchAction, children }: Co
       dispatch: (event: WardFlowEvent) => {
         const coordinatorEvent: WardFlowEvent = {
           ...event,
-          role: "coordinator",
+          role: event.role,
           now: event.now ?? now,
         } as WardFlowEvent;
         if (onDispatchAction) {

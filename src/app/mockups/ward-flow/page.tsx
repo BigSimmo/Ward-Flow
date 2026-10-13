@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function WardManagementPage() {
-  return <CoordinatorScreen />;
+  return <CoordinatorCockpit />;
 }
