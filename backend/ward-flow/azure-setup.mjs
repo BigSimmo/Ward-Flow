@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { azInvocation } from "./az-command.mjs";
 
 const [mode, settingsPath] = process.argv.slice(2);
 if (!["inspect", "provision", "configure", "verify"].includes(mode) || !settingsPath)
@@ -30,11 +31,13 @@ if (new URL(config.frontendOrigin).origin !== config.frontendOrigin || !config.f
 const apiClientId = "9b7b160d-9bc7-4712-b748-17ff3e70b706"; // gitleaks:allow -- public Entra client ID, not a credential
 
 function az(args, json = true) {
-  const result = spawnSync(
-    "az",
-    [...args, "--subscription", config.subscriptionId, ...(json ? ["--output", "json"] : ["--output", "none"])],
-    { encoding: "utf8", maxBuffer: 4 * 1024 * 1024, shell: process.platform === "win32" },
-  );
+  const call = azInvocation([
+    ...args,
+    "--subscription",
+    config.subscriptionId,
+    ...(json ? ["--output", "json"] : ["--output", "none"]),
+  ]);
+  const result = spawnSync(call.command, call.args, call.options);
   if (result.error || result.status !== 0)
     throw new Error(
       `Azure command failed (${args.slice(0, 3).join(" ")}). Use the selected Ward Flow identity and check Azure access. ${result.error?.code ?? ""}`,
@@ -43,10 +46,8 @@ function az(args, json = true) {
 }
 // Account/ad commands do not accept --subscription; retain the selected identity and verify its tenant.
 function directory(args) {
-  const result = spawnSync(process.platform === "win32" ? "az.cmd" : "az", [...args, "--output", "json"], {
-    encoding: "utf8",
-    maxBuffer: 4 * 1024 * 1024,
-  });
+  const call = azInvocation([...args, "--output", "json"]);
+  const result = spawnSync(call.command, call.args, call.options);
   if (result.error || result.status !== 0) throw new Error("Azure identity/directory access unavailable");
   return JSON.parse(result.stdout || "null");
 }
