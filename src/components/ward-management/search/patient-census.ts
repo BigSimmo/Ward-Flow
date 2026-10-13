@@ -104,10 +104,6 @@ export type CensusRow = {
   searchText: string;
   /** Places on the row, folded, so "Joondalup" or "RPH" finds the people there. */
   placeText: string;
-  /** Unit ID for admission rows, linking directly to ward bed board. */
-  unitId?: string;
-  /** Bed number for admission rows, linking directly to bed on ward board. */
-  bedIndex?: number;
 };
 
 export type ClosedTodayRow = {
@@ -379,8 +375,6 @@ export function buildCensus(state: {
       rows.push({
         key: `adm:${admission.id}`,
         kind: "admission",
-        unitId: admission.unitId,
-        bedIndex: admission.bedNumber,
         group: pulled ? "found" : "wait",
         tier: null,
         ...who,
@@ -433,8 +427,6 @@ export function buildCensus(state: {
     rows.push({
       key: `adm:${admission.id}`,
       kind: "admission",
-      unitId: admission.unitId,
-      bedIndex: admission.bedNumber,
       group: "ward",
       tier: null,
       ...who,
