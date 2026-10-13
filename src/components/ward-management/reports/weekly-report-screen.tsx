@@ -114,6 +114,10 @@ export function WeeklyReportScreen() {
   const phoneTargetText = `over ${longHoursLabel}`;
   // A wait still open is counted to the end of the week shown, so the figure says when it stops.
   const waitedBy = `by ${dateOf(week.countedEnd - 1, dayZero)}`;
+  // Statistics names a person by AD- admission number only, never a name, UMRN or WF- id (D-39).
+  // A wait that has not led to an admission says so; the live page still shows who it is.
+  const admissionLabel = (movementId: string) =>
+    admissions.find((admission) => admission.movementId === movementId)?.id ?? "Not yet admitted";
   // Expected dates set after the week began leave the week only partly measured (audit stats-11).
   const delayedFrom = report.delayedDischarge.recordedFrom;
   const delayedUnknown = delayedFrom !== null && delayedFrom >= week.countedEnd;
@@ -273,7 +277,7 @@ export function WeeklyReportScreen() {
                       <PhoneListRow
                         key={row.movement.id}
                         as="li"
-                        name={row.movement.id}
+                        name={admissionLabel(row.movement.id)}
                         meta={`${edShortName(edById(row.movement.originEdId)) || row.movement.originEdId}${row.stillWaiting ? " · still waiting" : ""}`}
                         value={
                           <span className={phone.flagged}>
@@ -422,7 +426,7 @@ export function WeeklyReportScreen() {
                     <caption className={styles.srOnly}>ED waits {targetText} in the week, synthetic</caption>
                     <thead>
                       <tr>
-                        <th scope="col">Record</th>
+                        <th scope="col">Admission</th>
                         <th scope="col">Emergency department</th>
                         <th scope="col">Opened</th>
                         <th scope="col" className={styles.num}>
@@ -434,7 +438,7 @@ export function WeeklyReportScreen() {
                     <tbody>
                       {report.edWaits.rows.map((row) => (
                         <tr key={row.movement.id}>
-                          <th scope="row">{row.movement.id}</th>
+                          <th scope="row">{admissionLabel(row.movement.id)}</th>
                           <td>{edById(row.movement.originEdId)?.name ?? row.movement.originEdId}</td>
                           <td className={styles.time}>
                             {formatSheetMoment(row.movement.openedAt as Instant, dayZero)}

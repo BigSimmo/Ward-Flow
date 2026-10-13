@@ -63,6 +63,9 @@ describe("Weekly ED waits (stats-9)", () => {
     // The seeded last full week has long waits, one still open (the audit's own example).
     const list = screen.getByRole("list", { name: /^ED waits over/u });
     const rows = within(list).getAllByRole("listitem");
+    // D-39: never a WF- journey id; an AD- number or "Not yet admitted".
+    expect(list.textContent).not.toMatch(/WF-/u);
+    for (const row of rows) expect(row.textContent).toMatch(/^(AD-|Not yet admitted)/u);
     for (const row of rows) {
       expect(row.textContent).toMatch(/by \w{3} \d{1,2} \w{3}/u);
       const days = /(\d+)d \d+h/u.exec(row.textContent ?? "");

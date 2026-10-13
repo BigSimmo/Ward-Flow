@@ -48,6 +48,9 @@ import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 import ed from "./statistics-ed-third-edition.module.css";
 
+/** The row label for a person waiting in ED: no AD- number exists yet, and a WF- id is never shown (D-39). */
+const NOT_YET_ADMITTED = "Not yet admitted";
+
 /**
  * ONE EMERGENCY DEPARTMENT IN DETAIL — the per-department statistics page.
  *
@@ -127,9 +130,10 @@ export function StatisticsEdScreen({
   const { onTheList, urgent, unplaced, waitingMovements, over24h, over48h, longestWait, allDepartmentMovements } =
     edWaitFigures(movements, department.id, now);
   const bands = edWaitBands(movements, department.id, now);
-  // Statistics shows record ids only, no names or UMRN, on phone and desktop (Josh, 13 Oct 2026;
-  // D-39). Each row links to the live movement, where the name is shown.
-  const nameOf = (movement: Movement) => movement.id;
+  // Statistics shows AD- admission numbers only, no names or UMRN (Josh, 13 Oct 2026), and never a
+  // WF- journey id (D-39). A person waiting in ED has no admission yet, so the row says so and
+  // links to the live movement, where the name is shown.
+  const nameOf: (movement: Movement) => string = () => NOT_YET_ADMITTED;
 
   const sortedWaits = [...waitingMovements].map((entry) => entry.waitMinutes).sort((a, b) => a - b);
   const middle = Math.floor(sortedWaits.length / 2);
@@ -567,7 +571,7 @@ function EdPhone({
         <div className={phone.next} data-testid="ward-statistics-ed-phone-next">
           <span className={phone.ring0} aria-hidden="true" />
           <span className={phone.nextText}>
-            <b>{`Next to cross ${longHours}h: ${nameOf(next.movement)}`}</b>
+            <b>{`Next to cross ${longHours}h`}</b>
             <span>
               <b>{splitDuration(LONG_WAIT_MINUTES - next.waitMinutes)}</b> left
             </span>
@@ -770,7 +774,7 @@ function Waits({
               {veryLongHours} hours, your default, not a legal limit.
             </p>
             <p data-testid="ward-stat-ed-longest-wait">
-              Longest wait, {longestName}, {longestText} waiting.
+              Longest wait, {longestName.toLowerCase()}, {longestText} waiting.
             </p>
           </SrOnly>
           <div className={ed.waitChart} data-testid="ward-stat-ed-wait-chart" data-ward-primitive="wait-chart">
