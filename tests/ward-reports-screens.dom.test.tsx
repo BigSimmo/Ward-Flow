@@ -107,6 +107,8 @@ describe("read-only report screens", () => {
     );
     try {
       inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+      // Ops-19: the hero repeats no count the source tabs already carry.
+      expect(screen.queryByText("From records")).toBeNull();
       const filters = screen.getByTestId("ward-chronology-phone-filters");
       expect(filters).toHaveTextContent("Every record kind · Bed coordinator");
       fireEvent.click(within(filters).getByRole("button"));
@@ -119,6 +121,30 @@ describe("read-only report screens", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it("lists patients Family, Given in family-name order, and groups each board day once (ops-24, ops-18)", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    inProvider(<PatientChronologyScreen />);
+    const picker = screen.getByTestId("ward-chronology-patient") as HTMLSelectElement;
+    const options = [...picker.options].filter((option) => option.value !== "");
+    expect(options.length).toBeGreaterThan(1);
+    const names = options.map((option) => option.textContent!.split(" · ")[0]!);
+    for (const name of names) expect(name).toMatch(/^[^,]+, [^,]+$/u);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+    // Every day heading appears once per patient, whatever the device's time zone.
+    let headings = 0;
+    for (const option of options) {
+      fireEvent.change(picker, { target: { value: option.value } });
+      const days = screen
+        .queryAllByRole("rowheader")
+        .concat(screen.queryAllByRole("columnheader"))
+        .filter((cell) => cell.getAttribute("scope") === "rowgroup")
+        .map((cell) => cell.firstElementChild?.firstChild?.textContent ?? "");
+      expect(new Set(days).size, `${option.value}: ${days.join(" | ")}`).toBe(days.length);
+      headings += days.length;
+    }
+    expect(headings).toBeGreaterThan(options.length);
   });
 
   it("asks for a patient before showing any chronology", () => {
