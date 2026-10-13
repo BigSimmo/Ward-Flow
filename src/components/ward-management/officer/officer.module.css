@@ -1761,6 +1761,10 @@
     border: 1px solid var(--wf-line);
     border-radius: var(--wf-r-pill);
     background: var(--wf-track);
+    /* Phone taps (13 Oct 2026): the shared tab row's edge-fade mask clipped the hit areas to the
+       34px track. The track never scrolls, so the fade never shows; dropping it changes nothing seen. */
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   .tabsRow [role="tab"] {

@@ -1136,6 +1136,13 @@
     box-shadow: 0 6px 16px -12px color-mix(in srgb, var(--wf-ink-1) 28%, transparent);
   }
 
+  /* Phone taps (13 Oct 2026, "the side burger"): the broadcast banner (`ward-broadcast-banner`,
+     z-index 30) follows the bar in the same scroller, so once the page scrolled it slid over the
+     sticky bar and took every press on Menu, the title and Search. One step up keeps the bar on top. */
+  .bar {
+    z-index: 31;
+  }
+
   .phoneOnly {
     display: inline-flex;
     flex: none;

@@ -36,6 +36,15 @@
   cursor: pointer;
 }
 
+/* Phone taps (13 Oct 2026): the hero lines above and below painted over the button's 44px box,
+ * leaving a 26px target. Raised above them; it has no fill, so nothing looks different. */
+@media (max-width: 48rem) {
+  .who {
+    position: relative;
+    z-index: 1;
+  }
+}
+
 .who:focus-visible {
   outline: 2px solid var(--wf-hero-ink, currentColor);
   outline-offset: 0;
