@@ -8579,7 +8579,7 @@ Evidence: PR #258 passed the repository's Ward Flow required gate on its head `b
 
 ## §7.77 — Estate Reconciliation & Safety Remediation (13 October 2026)
 
-Baseline: `origin/main` at commit `0ddcf95612e77b0b7bc91a1b1f0c93caff285aae` (PR #258 / #260).
+Historical reconciliation snapshot: `0ddcf95612e77b0b7bc91a1b1f0c93caff285aae` (the merge of PR #258), rather than the current `origin/main` ref. The entries below describe that snapshot. This PR subsequently incorporated main checkpoint `686531e3fd1ab18a44b79a7a12cfb8c539d6c50b` (PR #277); fetch and verify the ref again for later reconciliation.
 Branch: `feat/task-ledger-safety-fixes`.
 
 ### 1. Landed Estate Baseline (PRs #246 – #260)
@@ -8593,7 +8593,7 @@ Branch: `feat/task-ledger-safety-fixes`.
 
 ### 2. Immediate Clinical & Safety Remediations
 
-- **AUD-01 (Verified Closed)**: Verified that the Fremantle Hospital real phone number (`9431 3333`) was previously expunged from `src/components/ward-management/movements/movement-drawer.tsx` in PR #196 (commit `0d3fe7f9`). Entire `src/` tree contains zero instances of this number.
+- **AUD-01 (movement drawer scope)**: At PR263 checkpoint `387168b7`, `rg -n -F '9431 3333' src/components/ward-management/movements/movement-drawer.tsx` found no matches. The same search over `src` found one retained public reference entry: `publishedPhone: "08 9431 3333"` in `reference/ward-reference-teams.ts`. This records removal from the movement drawer, not removal from all source files or verification that a published reference number has been call-tested.
 - **AUD-02 (Scripts Drive Casing Guard)**: Patched `scripts/guard-push.mjs` and `scripts/check-ward-data.mjs` with case-insensitive `isDirectInvocation` on Windows (`win32`), preventing CLI entry point mismatches caused by drive letter casing (`D:` vs `d:`). Covered by `tests/ward-script-direct-invocation.test.ts`.
 - **AUD-04 (WardDailySheet Epoch-0 Bug)**: Resolved fallback clock in `src/components/ward-management/board/ward-daily-sheet.tsx`. When `now` prop is omitted or invalid, the component uses a finite provider value from `useWardFlowClock(WARD_ADMISSIONS_ANCHOR)` or falls back to the deterministic `WARD_ADMISSIONS_ANCHOR`, preventing accidental epoch-0 (1970) calculations in `daysInBed`, `stayBand`, and discharge projections. Precedence: a finite explicit `now` prop, then a finite provider clock, then the anchor. Finite explicit and provider Instants, including zero and negative values, remain valid. Covered by `tests/ward-daily-sheet-provider-clock.dom.test.tsx`.
 - **AUD-05 (In-Transit Bed Expiry Alarm)**: Corrected phantom property check in `src/components/ward-management/ward-referrals.ts`. The nonexistent `movement.transport.stage` read never matched; the rule now also checks the real `transport.enRouteAt` and `transport.arrivedAt` on `TransportJob` (ignoring a job with `cancelledAt`), eliminating false-positive bed hold expiry alarms for patients actively en route or arrived; a cancelled job still alarms. Covered by `tests/ward-bed-hold-expiry-in-transit.test.ts`.
