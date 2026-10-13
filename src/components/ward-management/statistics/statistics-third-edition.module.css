@@ -6,20 +6,14 @@
  */
 
 .overviewGrid,
-.overviewColumn,
 .compareRegion,
 .panelBody {
   display: grid;
   min-width: 0;
 }
 
-.overviewGrid,
-.overviewColumn {
+.overviewGrid {
   gap: 0.875rem;
-}
-
-.overviewColumn {
-  align-content: start;
 }
 
 .panelBody {
@@ -67,51 +61,6 @@
   border-radius: var(--r2);
   background: var(--surface-2);
   overflow: hidden;
-}
-
-.kvItem {
-  display: grid;
-  min-width: 0;
-  grid-template-rows: auto auto 1fr;
-  align-content: start;
-  gap: 0.25rem;
-  padding: 0.75rem 1rem 0.875rem;
-}
-
-.kvItem:not(:last-child) {
-  border-right: 1px solid var(--line);
-}
-
-.kvItem > dt,
-.kvItem > dd {
-  min-width: 0;
-  margin: 0;
-}
-
-.kvItem > dt {
-  color: var(--muted);
-  font-family: var(--body);
-  font-size: var(--t-0);
-  font-weight: 600;
-  line-height: 1.35;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.kvValue {
-  color: var(--ink);
-  font-family: var(--display);
-  font-size: var(--t-6);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  line-height: 1.1;
-}
-
-.kvCaption {
-  color: var(--ink-soft);
-  font-family: var(--body);
-  font-size: var(--t-1);
-  line-height: 1.45;
 }
 
 .reveal {
@@ -325,28 +274,6 @@
   text-align: right;
 }
 
-.tableRowLink {
-  display: inline-flex;
-  min-height: var(--spacing-tap, 44px);
-  align-items: center;
-  color: var(--accent-ink);
-  font-weight: 600;
-  line-height: 1.35;
-  text-decoration: underline;
-  text-decoration-thickness: 0.08em;
-  text-underline-offset: 0.18em;
-  overflow-wrap: anywhere;
-}
-
-.tableRowLink:hover {
-  color: var(--ink);
-}
-
-.tableRowLink:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
 .unmeasured {
   color: var(--muted);
   font-family: var(--body);
@@ -386,36 +313,6 @@
   .overviewGrid {
     align-items: start;
   }
-
-  .overviewColumn {
-    align-content: start;
-  }
-
-  .overviewColumn > :global([data-ward-primitive="panel"]) {
-    display: flex;
-    min-height: 0;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .overviewColumn .panelBody {
-    min-height: 0;
-    max-height: none;
-    flex: 1 1 auto;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-  }
-
-  .overviewColumn > :global([data-testid="ward-statistics-overview-capacity"]),
-  .overviewColumn > :global([data-testid="ward-statistics-overview-worklist"]) {
-    max-height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
-  }
-
-  .overviewColumn > :global([data-testid="ward-statistics-overview-stages"]),
-  .overviewColumn > :global([data-testid="ward-statistics-overview-declines"]) {
-    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-  }
 }
 
 @media (max-width: 40rem) {
@@ -435,17 +332,11 @@
     grid-template-columns: minmax(0, 1fr);
     margin-inline: 0;
   }
-
-  .kvItem:not(:last-child) {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
 }
 
 @media (forced-colors: active) {
   .reveal,
   .unitLink,
-  .tableRowLink,
   .kv {
     border-color: CanvasText;
   }
@@ -463,15 +354,6 @@
 
   .overviewGrid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .overviewColumn {
-    height: auto;
-  }
-
-  .overviewColumn .panelBody {
-    max-height: none;
-    overflow: visible;
   }
 
   .reveal {
@@ -531,19 +413,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.chartSubtitle {
-  margin: 0 0 0.75rem;
-  font-size: var(--t-1);
-  color: var(--ink-soft);
-  line-height: 1.45;
-}
-
-.barChartBox {
-  position: relative;
-  width: 100%;
-  overflow-x: auto;
-}
-
 .compareTooltip {
   position: absolute;
   pointer-events: none;
@@ -557,178 +426,11 @@
   min-width: 150px;
 }
 
-.chartBarInteractive {
-  cursor: pointer;
-  transition:
-    filter 0.15s ease,
-    opacity 0.15s ease;
-}
-
-.chartBarInteractive:hover {
-  filter: brightness(1.15);
-}
-
 .statusPill,
 .overviewGrid :global(.chip),
 .overviewGrid :global(.badge),
 .compareRegion :global(.chip),
 .compareRegion :global(.badge) {
-  white-space: nowrap !important;
-  flex-shrink: 0;
-}
-
-/* Gauge Grid & Cards */
-.gaugeGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
-  gap: 0.875rem;
-  margin-bottom: 0.875rem;
-}
-
-.gaugeCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.gaugeCardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.gaugeTitle {
-  font-size: var(--t-1);
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.gaugeBadge {
-  font-size: var(--t-0);
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill, 9999px);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.gaugeHospitals {
-  font-size: var(--t-0);
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-.gaugeRadialWrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  padding: 0.5rem 0 0.25rem;
-}
-
-.gaugeRadialSvg {
-  width: 140px;
-  height: 82px;
-  overflow: visible;
-}
-
-.gaugeRadialText {
-  position: absolute;
-  bottom: 4px;
-  text-align: center;
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.gaugeRadialPct {
-  font-size: var(--t-4);
-  font-weight: 600;
-  color: var(--ink);
-  line-height: 1;
-}
-
-.gaugeRadialBeds {
-  font-size: var(--t-0);
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-.gaugeFoot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--line);
-  font-size: var(--t-0);
-  color: var(--muted);
-}
-
-.gaugeFoot strong {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-}
-
-/* Interactive Bed Lifecycle Pipeline */
-.lifecyclePipeline {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
-  gap: 0.5rem;
-  margin: 0.75rem 0;
-}
-
-.pipelineStep {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 0.625rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  cursor: pointer;
-  transition:
-    border-color 0.15s,
-    background 0.15s,
-    box-shadow 0.15s;
-  user-select: none;
-}
-
-.pipelineStep:hover {
-  border-color: var(--line-strong);
-  background: var(--sunk);
-}
-
-.pipelineStepSelected {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px var(--accent-soft);
-  background: var(--surface);
-}
-
-.stepHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: var(--t-0);
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.stepBadge {
-  font-size: var(--t-0);
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  padding: 1px 6px;
-  border-radius: 4px;
-  align-self: flex-start;
-  font-weight: 600;
   white-space: nowrap !important;
   flex-shrink: 0;
 }
@@ -739,28 +441,6 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
-}
-
-.stepDwell {
-  font-size: var(--t-0);
-  color: var(--muted);
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.pipelineDetailCard {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 0.75rem 1rem;
-  margin-top: 0.5rem;
-}
-
-.pipelineDetailText {
-  margin: 0;
-  font-size: var(--t-0);
-  color: var(--ink);
-  line-height: 1.45;
 }
 
 /* ══════════ FIGURE BAND & KPI TILES ══════════ */
@@ -818,16 +498,6 @@
   margin-top: 6px;
 }
 
-/* ══════════ TABLE SEARCH & SORTING TOOLS ══════════ */
-.tableTools {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0.75rem 0;
-}
-
 .tableSearch {
   padding: 0.4rem 0.75rem;
   font-size: var(--t-0);
@@ -843,36 +513,6 @@
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-.toolsAction {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.tableSortBtn {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: inherit;
-  color: inherit;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.tableSortBtn.n {
-  justify-content: flex-end;
-  width: 100%;
-}
-
-.tableSortBtn:hover {
-  color: var(--accent);
 }
 
 .zero {
@@ -1016,14 +656,6 @@
   }
 }
 
-/* Compare Screen KPI Cards */
-.kpiGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
 .kpiCard {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1068,131 +700,9 @@
   color: var(--muted);
 }
 
-.kpiValRow {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-
-.kpiVal {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--t-5);
-  font-weight: 600;
-  color: var(--ink);
-  line-height: 1.1;
-}
-
 .kpiSub {
   font-size: var(--t-0);
   color: var(--muted);
-}
-
-.kpiSpark {
-  margin-top: 0.375rem;
-  height: 22px;
-  width: 100%;
-}
-
-/* Flow Balance Card */
-.flowBalanceCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 1rem 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-  box-shadow: var(--lift, 0 1px 3px var(--ward-shadow-black-05));
-}
-
-.balanceInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.balanceTitle {
-  margin: 0;
-  font-size: var(--t-2);
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.balanceSubtitle {
-  margin: 0;
-  font-size: var(--t-0);
-  color: var(--muted);
-}
-
-.balanceMetrics {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.balanceItem {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.balanceItem .bVal {
-  font-family: var(--mono);
-  font-size: var(--t-4);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-}
-
-.balanceItem .bLbl {
-  font-size: var(--t-0);
-  color: var(--muted);
-}
-
-/* Sovereign Tabs */
-.sovereignTabs {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 0.5rem;
-  margin-bottom: 1rem;
-  overflow-x: auto;
-}
-
-.sovereignTab {
-  appearance: none;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--muted);
-  font-family: var(--body);
-  font-size: var(--t-1);
-  font-weight: 500;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius-pill, 9999px);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  transition: all 0.15s ease;
-}
-
-.sovereignTab:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-}
-
-.sovereignTab.activeTab {
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 600;
-  border-color: var(--line);
-  box-shadow: 0 1px 2px var(--ward-shadow-black-05);
 }
 
 .tabBadge {
@@ -1203,36 +713,11 @@
   padding: 0.125rem 0.375rem;
   border-radius: var(--radius-pill, 9999px);
 }
-
-.measureDetails {
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface);
-  margin-bottom: 1rem;
-  overflow: hidden;
-}
-
-.measureDetails > summary {
-  padding: 0.625rem 0.875rem;
-  font-size: var(--t-0);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  cursor: pointer;
-  user-select: none;
-}
-
-.measureDetails[open] > summary {
-  border-bottom: 1px solid var(--line);
-}
 /* Lower overview and directory modules follow the page, without height-driven inner scrollbars. */
-.overviewColumn > :global([data-ward-primitive="panel"]),
 .compareRegion > :global([data-ward-primitive="panel"]) {
   max-height: none;
   overflow: visible;
 }
-.overviewColumn .panelBody,
 .compareRegion > :global([data-ward-primitive="panel"]) > .panelBody {
   overflow-y: visible;
   max-height: none;
@@ -1240,7 +725,6 @@
 }
 
 /* Aligned disclosure rows: the whole row opens, with a single inset chevron. */
-.measureDetails > summary,
 .reveal > summary {
   display: flex;
   align-items: center;
@@ -1259,19 +743,15 @@
   text-transform: none;
   letter-spacing: normal;
 }
-.measureDetails > summary::-webkit-details-marker,
 .reveal > summary::-webkit-details-marker {
   display: none;
 }
-.measureDetails > summary::marker,
 .reveal > summary::marker {
   content: "";
 }
-.measureDetails > summary::before,
 .reveal > summary::before {
   content: none;
 }
-.measureDetails > summary::after,
 .reveal > summary::after {
   content: "";
   width: 0.4375rem;
@@ -1283,15 +763,12 @@
   transform: rotate(-45deg);
   transition: none;
 }
-.measureDetails[open] > summary::after,
 .reveal[open] > summary::after {
   transform: rotate(45deg);
 }
-.measureDetails > summary:hover,
 .reveal > summary:hover {
   background: var(--surface-2);
 }
-.measureDetails > summary:focus-visible,
 .reveal > summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;

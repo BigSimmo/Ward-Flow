@@ -259,7 +259,7 @@ export function handoverGroups(cutoff: Instant, now: Instant) {
       title: `Due by ${formatInstantWithDay(cutoff, now)}`,
       why: "Bed pulls and typed form times before then",
     },
-    { id: "bed", title: "Waiting for a bed", why: "Placement requested or a ward is reviewing" },
+    { id: "bed", title: "Finding a ward", why: "Placement requested or a ward is reviewing" },
     { id: "acc", title: "Accepted, bed not ready", why: "Ward accepted, bed not yet free" },
     { id: "mov", title: "Moving", why: "Transport accepted or collected" },
   ] as const satisfies readonly { id: HandoverGroupId; title: string; why: string }[];

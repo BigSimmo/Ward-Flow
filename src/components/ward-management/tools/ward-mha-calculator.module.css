@@ -231,25 +231,6 @@
   border-left-color: var(--ward-success, var(--success-text));
 }
 
-.statusUrgent {
-  background-color: var(--ward-warning-soft, var(--warning-bg));
-  color: var(--ward-warning, var(--warning-text));
-  border-left-color: var(--ward-warning, var(--warning-text));
-}
-
-.statusCritical {
-  background-color: var(--ward-danger-soft, var(--danger-bg));
-  color: var(--ward-danger, var(--danger-text));
-  border-left-color: var(--ward-danger, var(--danger-text));
-}
-
-.statusLapsed {
-  background-color: var(--ward-danger-soft, var(--danger-bg));
-  color: var(--ward-danger, var(--danger-text));
-  border-left-color: var(--ward-danger, var(--danger-text));
-  font-weight: 600;
-}
-
 .statusBannerHeader {
   display: flex;
   align-items: center;

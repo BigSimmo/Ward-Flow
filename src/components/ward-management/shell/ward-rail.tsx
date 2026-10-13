@@ -51,6 +51,7 @@ import {
 } from "./ward-service-bed-alerts";
 import { useServiceScope } from "./ward-service-store";
 import { openWardDrawer, closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
+import { RAIL_OPEN_STORAGE_KEY, readWardRailEarlyShape } from "./ward-rail-early";
 import styles from "./ward-rail.module.css";
 
 export type { ServiceBedAlert } from "./ward-service-bed-alerts";
@@ -74,8 +75,6 @@ export type { ServiceBedAlert } from "./ward-service-bed-alerts";
  * reads "Service: South Metro"; closed, the dot keeps the short form ("South"). Under All services
  * it renders nothing at all, because there is no state to echo.
  */
-
-const RAIL_OPEN_STORAGE_KEY = "ward-flow-rail";
 
 // Item 52's swatch key, mirroring `ed.module.css`'s own `data-svc` attribute-selector convention
 // rather than an inline colour, so the CSS stays the one place that names a token.
@@ -132,7 +131,8 @@ function subscribeRailOpen(onChange: () => void) {
  * `setRailOpenPreference` dispatches `ward-flow-rail-change`, and a duplicate writer that omitted
  * that dispatch would leave the rail stale until a reload.
  *
- * `RAIL_OPEN_STORAGE_KEY` stays private, deliberately, so a two-keys catcher can still fail.
+ * `RAIL_OPEN_STORAGE_KEY` is not re-exported from here, deliberately, so a two-keys catcher can
+ * still fail. It lives in `./ward-rail-early` only so the pre-paint script reads the same key.
  */
 export const useRailOpenStore = createBrowserStore(subscribeRailOpen, getRailOpenSnapshot, true);
 
@@ -146,7 +146,6 @@ export function setRailOpenPreference(open: boolean) {
   window.dispatchEvent(new Event(railOpenChangeEvent));
 }
 
-const COMPACT_CORE_ENTRY_IDS = new Set<string>(RAIL_GROUPS.flatMap((group) => group.entries.map(([id]) => id)));
 const NARROW_CORE_ENTRY_IDS = new Set(["command", "movements", "capacity"]);
 
 const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 1001px)";
@@ -173,6 +172,10 @@ const COMPACT_LABELS: Record<string, string> = {
   referrals: "Referrals",
   "out-of-area": "Out of area",
 };
+
+const subscribeNever = () => () => {};
+const hydratedSnapshot = () => true;
+const notHydratedSnapshot = () => false;
 
 function subscribeToClosedRailCards(callback: () => void) {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
@@ -317,6 +320,11 @@ export function WardRail() {
   const isTabletLandscape = useSyncExternalStore(subscribeToTabletLandscape, getTabletLandscapeSnapshot, () => false);
   // The shape drawn: the stored preference, except tablet landscape always draws the icon rail.
   const shownOpen = open && !isTabletLandscape;
+  // Hydration only: the layout's early script may already have drawn the closed or tablet rail
+  // (ward-rail-early.ts). Hydrating with its attributes keeps the page as painted; the render
+  // after hydration uses the live values above, which agree with it.
+  const hydrated = useSyncExternalStore(subscribeNever, hydratedSnapshot, notHydratedSnapshot);
+  const earlyShape = hydrated ? null : readWardRailEarlyShape();
   const entries = railEntries();
   const currentPersona = CLINICAL_PERSONAS.find((p) => p.id === activePersona) ?? CLINICAL_PERSONAS[0];
   const boardMinute = minuteOfDay(now);
@@ -480,8 +488,10 @@ export function WardRail() {
   }));
   const activeEntry = entries.find((entry) => isActiveRailEntry(pathname, entry));
   // Narrow navigation keeps the operational entry points plus the current route; the same Sheet
-  // holds the rest.
-  const compactPrimaryIds = new Set(isClosedRailCardViewport ? COMPACT_CORE_ENTRY_IDS : NARROW_CORE_ENTRY_IDS);
+  // holds the rest. Only the narrow CSS (1000px and below) hides the extras. This is the same at
+  // every width, so the server render matches the browser's and the desktop rail does not grow on
+  // load (13 Oct 2026: it used to depend on a width the server cannot know).
+  const compactPrimaryIds = new Set(NARROW_CORE_ENTRY_IDS);
   if (activeEntry) compactPrimaryIds.add(activeEntry.id);
 
   function openMore(trigger: HTMLButtonElement) {
@@ -588,8 +598,8 @@ export function WardRail() {
   return (
     <nav
       className={styles.rail}
-      data-rail={shownOpen ? "open" : "closed"}
-      data-tablet={isTabletLandscape ? "landscape" : undefined}
+      data-rail={earlyShape ? earlyShape.rail : shownOpen ? "open" : "closed"}
+      data-tablet={earlyShape ? (earlyShape.tablet ?? undefined) : isTabletLandscape ? "landscape" : undefined}
       aria-label="Ward Flow sections"
       data-testid="ward-rail"
     >

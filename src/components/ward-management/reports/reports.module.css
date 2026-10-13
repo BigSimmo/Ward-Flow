@@ -743,24 +743,6 @@
   gap: var(--wf-s-3);
 }
 
-/* Download CSV stays one tap away at the foot of the phone screen. */
-.phoneActionBar {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: var(--wf-s-2);
-  margin: 0 calc(-1 * var(--wf-s-3));
-  padding: var(--wf-s-2) var(--wf-s-3);
-  background: var(--wf-surface);
-  border-top: 1px solid var(--wf-line);
-}
-
-.phoneActionBar :is(a, button) {
-  min-height: 48px;
-}
-
 /* Tablet landscape keeps the table beside the summary; portrait (and below) stacks them. */
 @media (max-width: 62.5rem) {
   .chronoSplit {

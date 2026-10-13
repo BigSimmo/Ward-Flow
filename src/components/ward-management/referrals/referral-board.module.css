@@ -1412,7 +1412,6 @@
 }
 
 @media (max-width: 48rem) {
-  .heroNew,
   .heroMedian,
   .tickTier {
     display: none;

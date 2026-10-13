@@ -266,14 +266,6 @@
   gap: var(--ward-space-4);
 }
 
-.kpiVal {
-  font-family: var(--mono);
-  font-size: var(--t-5, 1.5rem);
-  font-weight: 700;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-
 @media (max-width: 55rem) {
   .kpiStrip {
     grid-template-columns: repeat(2, 1fr);
@@ -295,8 +287,7 @@
 .countBadge,
 .timestamp,
 .asOf,
-.moment,
-.secondaryMoment {
+.moment {
   font-variant-numeric: tabular-nums;
 }
 
@@ -434,23 +425,6 @@
   .sectionLive {
     border-color: CanvasText;
   }
-}
-
-/* ─── Non-Color Status Indicators ─── */
-.badgeGlyph {
-  display: inline-block;
-  margin-right: 0.35rem;
-  font-size: 0.75em;
-  line-height: 1;
-  vertical-align: baseline;
-}
-
-.statusIndicator {
-  display: inline-block;
-  margin-right: 0.35rem;
-  font-size: 0.75em;
-  line-height: 1;
-  vertical-align: baseline;
 }
 
 /* ─── Dark Theme High Contrast Boundaries ─── */

@@ -101,18 +101,3 @@
   font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
   cursor: pointer;
 }
-
-/* v10 phone: the worklist's per-group "Show N more" row (movements-screen, phone only). */
-.groupMore {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 48px;
-  border: 0;
-  border-top: 1px solid var(--wf-line);
-  background: var(--wf-surface);
-  color: var(--wf-accent);
-  font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
-  cursor: pointer;
-}

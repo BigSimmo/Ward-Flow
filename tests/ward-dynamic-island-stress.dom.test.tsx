@@ -447,7 +447,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       const hud = screen.getByTestId("ward-handover-kpi-strip");
       expect(hud).toBeDefined();
       expect(within(hud).getByRole("button", { name: /Act now/ })).toBeDefined();
-      expect(within(hud).getByRole("button", { name: /Waiting for a bed/ })).toBeDefined();
+      expect(within(hud).getByRole("button", { name: /Finding a ward/ })).toBeDefined();
     });
 
     it("Mounts DischargeBoard with WardFlowProvider and tests interactive filter clicking", () => {

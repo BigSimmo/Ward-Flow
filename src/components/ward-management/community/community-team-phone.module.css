@@ -71,13 +71,6 @@
   border-radius: var(--wf-r-pill);
 }
 
-.heroPrimary.heroPrimary {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 44px;
-  border-radius: var(--wf-r-pill);
-}
-
 .body {
   display: flex;
   flex-direction: column;
