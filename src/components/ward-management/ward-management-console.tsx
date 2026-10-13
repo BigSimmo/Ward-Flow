@@ -3,6 +3,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ContextualBackLink } from "@/components/contextual-back-link";
+import { handOffPatientSearchText, isNewTabClick } from "@/components/ward-management/search/patient-query-handoff";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { type MovementId } from "@/components/ward-management/ward-model";
 import styles from "./ward-management.module.css";
@@ -77,11 +78,14 @@ export function WardMovementNotFound({
   reason: "no-such-movement" | "not-a-movement-id" | "not-a-person-id" | "no-such-umrn";
 }) {
   const aboutPerson = reason === "not-a-person-id" || reason === "no-such-umrn";
-  // shell-6: a way on to the patient search. Only a UMRN, already in the address, is carried into
-  // the search link; other typed text never goes into a URL.
+  // shell-6: a way on to the patient search. An unknown UMRN travels to it in memory (the
+  // read-once handoff), never in the link, so the search opens with it typed in.
   const searchLink =
     reason === "no-such-umrn" ? (
-      <Link href={`/mockups/ward-flow/search?q=${encodeURIComponent(requestedId)}`}>
+      <Link
+        href="/mockups/ward-flow/search"
+        onClick={(event) => handOffPatientSearchText(isNewTabClick(event) ? undefined : requestedId)}
+      >
         Search patients for {requestedId}
       </Link>
     ) : (

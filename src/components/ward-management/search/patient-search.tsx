@@ -39,7 +39,6 @@ import {
   formatDateOfBirth,
   patientListName,
   patientAgeYears,
-  UMRN_IN_ADDRESS,
   type Patient,
 } from "@/components/ward-management/ward-patients";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -61,7 +60,7 @@ const LONG_WAIT_HOURS = LONG_WAIT_MINUTES / 60;
 
 import { recordSearch, type AccessEntry } from "./access-record";
 import { PatientTypeahead } from "./patient-typeahead";
-import { handOffTypedPatientQuery, isNewTabClick } from "./patient-query-handoff";
+import { handOffTypedPatientQuery, isNewTabClick, takeHandedOffPatientSearchText } from "./patient-query-handoff";
 import { RecordPreview, buildMovementSummary, buildReferralSummary, type PreviewSelection } from "./record-preview";
 import { refusalFor } from "./search-refusals";
 import { movementOriginService, movementSearchState, referralOriginService } from "./search-operational-state";
@@ -230,7 +229,8 @@ export interface UnifiedCaseloadPatient {
 export function PatientSearchPage() {
   const { movements, referrals, units, patients, admissions, plannedAdmissions = [], dayZero } = useWardFlow();
   const now = useWardFlowClock();
-  const [text, setText] = useState("");
+  // shell-6: a "Person not found" page can hand a UMRN over in memory, never in the address.
+  const [text, setText] = useState(() => takeHandedOffPatientSearchText() ?? "");
   const [stage, setStage] = useState<MovementStage | "">("");
   const [edId, setEdId] = useState("");
   const [presenceFilter, setPresenceFilter] = useState<PresenceFilter>("all");
@@ -270,16 +270,6 @@ export function PatientSearchPage() {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const showToast = (msg: string) => setCopyNote(msg);
-
-  // shell-6: a not-found patient page links here as `?q=UMRN`, so the search opens with it typed in.
-  // Read once on mount from the address rather than `useSearchParams`, which would need a Suspense
-  // boundary on this statically rendered route.
-  useEffect(() => {
-    // Only a UMRN is accepted, the one value that page puts in the address.
-    const requested = new URLSearchParams(window.location.search).get("q");
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the address cannot be read during render without breaking hydration
-    if (requested && UMRN_IN_ADDRESS.test(requested)) setText(requested.toUpperCase());
-  }, []);
 
   useEffect(() => {
     // The record drawer is modal: the search behind it stays put until it closes.

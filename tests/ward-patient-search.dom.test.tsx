@@ -19,7 +19,11 @@ vi.mock("next/link", () => ({
 }));
 
 import { PatientSearchPage, ResultsSection } from "@/components/ward-management/search/patient-search";
-import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
+import {
+  handOffPatientSearchText,
+  takeHandedOffPatientQuery,
+  takeHandedOffPatientSearchText,
+} from "@/components/ward-management/search/patient-query-handoff";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -1211,5 +1215,14 @@ describe("census counts agree (device audit 11 Oct 2026)", () => {
     expect(hero?.textContent).toContain(String(listed));
     expect(listed).toBeGreaterThan(10);
     expect(within(group!).getByRole("button", { name: `Show all ${listed}` })).toBeTruthy();
+  });
+});
+
+describe("a UMRN handed over from Person not found (shell-6)", () => {
+  it("opens the search with that UMRN typed in, read once from memory", () => {
+    handOffPatientSearchText("UM999999");
+    renderSearch();
+    expect(screen.getByLabelText("Search")).toHaveValue("UM999999");
+    expect(takeHandedOffPatientSearchText(), "the handoff is read once").toBeUndefined();
   });
 });
