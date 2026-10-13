@@ -2909,10 +2909,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     setToastMessage(`Bed ${bedNum} patient marked returned to ward.`);
                   }}
                   onMarkReady={() => {
-                    // A4-24: one tap clears the oldest bed this ward still has being made ready.
-                    const preparing = bedReleases
+                    // A4-24: map the visible preparing tile to its corresponding release, rather than
+                    // clearing whichever release happens to be oldest.
+                    const preparingReleases = bedReleases
                       .filter((r) => r.unitId === unitId && r.state === "discharged" && r.preparing)
-                      .sort((left, right) => left.confirmedAt - right.confirmedAt)[0];
+                      .sort((left, right) => left.confirmedAt - right.confirmedAt);
+                    const readyIndex = selectedBedItem
+                      ? bedsList.filter((bed) => bed.status === "ready").findIndex((bed) => bed.bedNumber === selectedBedItem.bedNumber)
+                      : -1;
+                    const preparing = readyIndex >= 0 ? preparingReleases[readyIndex] : undefined;
                     if (!preparing) return;
                     dispatch({
                       type: "SET_BED_PREPARATION",
