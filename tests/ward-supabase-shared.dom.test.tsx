@@ -339,4 +339,5 @@ it("stops polling and signs out the view when the workspace refuses access", asy
   expect(result.current.signedIn).toBe(false);
   expect(interval.mock.calls.some(([, ms]) => ms === 3000)).toBe(false);
   expect(fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace"))).toHaveLength(1);
+  expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
 });

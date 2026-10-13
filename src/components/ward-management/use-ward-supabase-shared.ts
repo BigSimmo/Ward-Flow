@@ -75,9 +75,10 @@ export function useWardSupabaseShared(enabled: boolean) {
         changed: (next) => {
           if (closed) return;
           if (next.status === "not-authorised") {
-            // A refused session or role ends this connection: stop polling and sign the view out,
-            // but keep the not-authorised message visible.
+            // A refused session or role ends this connection: stop polling, drop the refused
+            // local session so it is not left stored, and keep the not-authorised message visible.
             disconnect();
+            void instance.signOut().catch(() => {});
           }
           setView(next);
         },
