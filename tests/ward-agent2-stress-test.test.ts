@@ -47,10 +47,11 @@ describe("Agent 2 Stress Test Suite", () => {
       allocatable: { value: 2, source: "ward", confirmedAt: 0, staleAfterMinutes: 60 },
     };
     const capInc = unitCapacity(inconsistentZero, []);
-    // available = 2, held = 0, notEmpty = max(0-2, 0) = 0, blocked = 0, occupied = 0
-    // Total sum = available (2) + held (0) + blocked (0) + occupied (0) = 2 > beds (0)!
-    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBe(2);
-    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBeGreaterThan(inconsistentZero.beds);
+    // Empty capacity is clamped to the physical bed total, so this inconsistent feed has no capacity.
+    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBe(0);
+    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBeLessThanOrEqual(
+      inconsistentZero.beds,
+    );
   });
 
   it("Scenario 2: blocked beds when empty.value === unit.beds", () => {
