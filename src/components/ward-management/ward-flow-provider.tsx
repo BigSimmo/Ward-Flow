@@ -826,37 +826,6 @@ function WardFlowWorld({
 
   const [, setTick] = useState(0);
   useEffect(() => {
-    if (initialNow !== undefined) return; // pinned: never tick in a test
-    let timeoutTimer: NodeJS.Timeout | null = null;
-
-    const scheduleNextTick = () => {
-      const nowMs = Date.now();
-      const remainder = nowMs % 30_000;
-      // Schedule against the upcoming 30s mark (:00 and :30), ensuring clean top-of-minute flips
-      const delay = remainder === 0 ? 30_000 : 30_000 - remainder;
-      timeoutTimer = setTimeout(() => {
-        setTick((tick) => tick + 1);
-        scheduleNextTick();
-      }, delay);
-    };
-
-    scheduleNextTick();
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        setTick((tick) => tick + 1);
-        if (timeoutTimer) clearTimeout(timeoutTimer);
-        scheduleNextTick();
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
-    return () => {
-      if (timeoutTimer) clearTimeout(timeoutTimer);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }, [initialNow, mountedAtAbsolute]);
-  useEffect(() => {
     if (!shared.enabled) return;
     if (!shared.snapshot) {
       dispatchContainer({
