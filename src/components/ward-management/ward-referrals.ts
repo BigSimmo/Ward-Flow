@@ -1491,9 +1491,14 @@ export function isBedHoldExpired(
   if (pulledAt === undefined || pulledAt === null || !Number.isFinite(pulledAt)) {
     return false;
   }
-  // If transport is already dispatched/in-transit, hold is not expired/stalled
-  const transportStage = (movement.transport as { stage?: string } | undefined)?.stage;
-  if (transportStage === "in_transit" || transportStage === "arrived") {
+  // If transport is already en route, collected or arrived, the hold is not expired/stalled.
+  // `TransportJob` records progress as timestamps; it has no `stage` field.
+  const transport = movement.transport;
+  if (
+    transport !== undefined &&
+    transport.cancelledAt === undefined &&
+    (transport.enRouteAt !== undefined || transport.collectedAt !== undefined || transport.arrivedAt !== undefined)
+  ) {
     return false;
   }
   return now - pulledAt >= thresholdMinutes;

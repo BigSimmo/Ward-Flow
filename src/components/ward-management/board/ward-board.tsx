@@ -3592,6 +3592,7 @@ export function WardBoard({
               outgoingBasisLabel={OUTGOING_BASIS_LABEL[outgoingBasis]}
               destinations={targets}
               people={occupants}
+              now={now}
             />
           </div>
         </section>
