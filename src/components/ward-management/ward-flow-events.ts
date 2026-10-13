@@ -57,6 +57,8 @@ import type {
   Security,
   RecordedSex,
   StepBackReason,
+  TransportExceptionGap,
+  TransportExceptionReason,
   TransportLegalStatus,
   TransportProvider,
   AbsenceStep,
@@ -74,6 +76,10 @@ import type { InboxSnoozeReason } from "@/components/ward-management/ward-inbox-
  * `ward-model.ts` into this whole file put the release model inside the module graph the D15
  * contract (`tests/ward-referral-matching.test.ts`) walks from matching's own entry points.
  */
+
+/** The open checks a transport step went ahead with, and the coded reason the person chose. */
+export type TransportExceptionInput = { gaps: TransportExceptionGap[]; reason: TransportExceptionReason };
+
 export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -489,7 +495,14 @@ export type WardFlowEvent =
     }
   | { type: "TRANSPORT_ACCEPTED"; role: WardFlowRole; now: Instant; movementId: string }
   | { type: "TRANSPORT_EN_ROUTE"; role: WardFlowRole; now: Instant; movementId: string }
-  | { type: "PATIENT_COLLECTED"; role: WardFlowRole; now: Instant; movementId: string }
+  | {
+      type: "PATIENT_COLLECTED";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      /** Audit fix (13 Oct 2026): collected with a check open (no Form 4A, no clearance), and why. */
+      exception?: TransportExceptionInput;
+    }
   | {
       type: "PATIENT_ARRIVED";
       role: WardFlowRole;
@@ -805,6 +818,8 @@ export type WardFlowEvent =
       cadNumber: string;
       transportLegalStatus: TransportLegalStatus;
       estimatedAt: Instant;
+      /** Audit fix (13 Oct 2026): booked with a check open (status differs from Legal now), and why. */
+      exception?: TransportExceptionInput;
     }
   | {
       type: "CANCEL_TRANSPORT";

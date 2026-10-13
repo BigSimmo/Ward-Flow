@@ -922,6 +922,27 @@ export type TransportProvider = (typeof TRANSPORT_PROVIDERS)[number];
 export const TRANSPORT_LEGAL_STATUSES = ["voluntary", "involuntary"] as const;
 export type TransportLegalStatus = (typeof TRANSPORT_LEGAL_STATUSES)[number];
 
+/**
+ * Audit fix (13 Oct 2026): a transport step taken while a paperwork or clearance check was not met.
+ * The coordinator (and the officer) is warned and never blocked; the step records which checks were
+ * open and a coded reason, never free text, so the event stays off the typed-text list.
+ */
+export const TRANSPORT_EXCEPTION_GAPS = [
+  "legal_status_differs",
+  "transport_order_missing",
+  "fit_to_travel_missing",
+] as const;
+export type TransportExceptionGap = (typeof TRANSPORT_EXCEPTION_GAPS)[number];
+export const TRANSPORT_EXCEPTION_REASONS = ["paper_sighted", "treating_team_confirmed", "urgent_to_follow"] as const;
+export type TransportExceptionReason = (typeof TRANSPORT_EXCEPTION_REASONS)[number];
+export type TransportException = {
+  at: Instant;
+  by: WardFlowRole;
+  step: "booked" | "collected";
+  gaps: TransportExceptionGap[];
+  reason: TransportExceptionReason;
+};
+
 export type TransportJob = {
   id: string;
   /** From `TRANSPORT_PROVIDERS`. Never free text — see that list's own doc comment. */
@@ -978,6 +999,8 @@ export type TransportJob = {
    * Optional on the type for the same seed-predates-this reason `cadNumber` above states.
    */
   transportLegalStatus?: TransportLegalStatus;
+  /** Audit fix (13 Oct 2026): steps taken with a check open, oldest first. Absent when none. */
+  exceptions?: TransportException[];
   /**
    * THE ESTIMATED TIME THE BOOKER WAS GIVEN — owner's third ruling, 2026-09-17, the third of the
    * three booking-popup answers. Typed as HH:MM by the person logging the call and resolved to an

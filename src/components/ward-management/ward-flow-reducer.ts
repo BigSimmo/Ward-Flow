@@ -1,4 +1,5 @@
 import { referralIntakeError } from "./referrals/referral-submission";
+import { transportExceptionRecord } from "@/components/ward-management/ward-transport-checks";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
 import { movementPatientIdentityMatchesRecord, withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
 import {
@@ -5377,10 +5378,21 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // The last of the four re-checks: `PATIENT_ARRIVED` deliberately has none.
       const collectedGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
       if (collectedGenderRefusal) return reject(state, event, collectedGenderRefusal);
+      // Audit fix (13 Oct 2026): collected with a check open (no Form 4A, no clearance) records why.
+      const collectedException =
+        event.exception === undefined
+          ? undefined
+          : transportExceptionRecord(event.exception, event.now, event.role, "collected");
+      if (typeof collectedException === "string")
+        return reject(state, event, `PATIENT_COLLECTED ${collectedException}`);
       const updated: Movement = {
         ...movement,
         stage: "moving",
-        transport: { ...movement.transport, collectedAt: event.now },
+        transport: {
+          ...movement.transport,
+          collectedAt: event.now,
+          ...(collectedException ? { exceptions: [...(movement.transport.exceptions ?? []), collectedException] } : {}),
+        },
         // Nothing is blocking a patient who is in a vehicle — and the SEED already says so in these
         // exact words on its two `moving` movements. Reused verbatim rather than reworded.
         blocker: STAGE_TRANSITION_BLOCKERS.collected,
@@ -8502,6 +8514,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const priorTransportCancellations = movement.unwinds.filter(
         (entry) => entry.kind === "transport_cancelled",
       ).length;
+      // Audit fix (13 Oct 2026): a booking whose status differs from Legal now records why.
+      const bookingException =
+        event.exception === undefined
+          ? undefined
+          : transportExceptionRecord(event.exception, event.now, event.role, "booked");
+      if (typeof bookingException === "string") return reject(state, event, `BOOK_TRANSPORT ${bookingException}`);
       const booked: Movement = {
         ...movement,
         transport: {
@@ -8516,6 +8534,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           cadNumber: event.cadNumber,
           transportLegalStatus: event.transportLegalStatus,
           estimatedAt: event.estimatedAt,
+          ...(bookingException ? { exceptions: [bookingException] } : {}),
           // Carried forward from RECORD_TRANSPORT_NEED so the "no transport needed" branches in
           // HANDOVER_READY / PATIENT_ARRIVED can read a runtime-booked job the same way they read a
           // seed-authored one.
