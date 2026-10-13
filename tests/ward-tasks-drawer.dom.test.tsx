@@ -223,18 +223,25 @@ describe("task workspace state filters and actions", () => {
     );
   });
 
-  it("acknowledges only visible, unacknowledged facts", () => {
+  it("acknowledges only visible, unacknowledged review facts, never act-now rows in bulk", () => {
     const critical = items.filter((item) => item.tone === "danger");
-    const acked = critical[0];
+    const review = items.filter((item) => item.kind === "fact" && item.tone !== "danger");
+    expect(critical.length, "the seed has act-now rows").toBeGreaterThan(0);
+    expect(review.length, "the seed has at least two review rows").toBeGreaterThan(1);
+    const acked = review[0];
     const { drawer, dispatch } = renderDrawer({
       acknowledgements: {
         [acked.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }],
       },
     });
     fireEvent.click(within(drawer).getByRole("button", { name: /^Critical/u }));
+    expect(within(drawer).queryByRole("button", { name: /Acknowledge visible/ })).toBeNull();
+    fireEvent.click(within(drawer).getByRole("button", { name: /^All/u }));
     fireEvent.click(within(drawer).getByRole("button", { name: /Acknowledge visible/ }));
-    expect(dispatch).toHaveBeenCalledTimes(critical.length - 1);
-    for (const item of critical.slice(1))
+    expect(dispatch).toHaveBeenCalledTimes(review.length - 1);
+    for (const item of critical)
+      expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ inboxItemId: item.id }));
+    for (const item of review.slice(1))
       expect(dispatch).toHaveBeenCalledWith({
         type: "ACKNOWLEDGE_INBOX_ITEM",
         role: "coordinator",

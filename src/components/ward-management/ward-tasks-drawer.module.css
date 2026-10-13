@@ -1186,6 +1186,15 @@
     text-overflow: ellipsis;
   }
 
+  /* An acknowledged row says so while collapsed, so Acknowledge visible shows what it did. */
+  .rowSeen {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+    color: var(--wf-ink-2);
+  }
+
   .rowDue {
     color: var(--wf-ink-2);
     font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);

@@ -148,9 +148,25 @@ function rowTiming(
       tone: "closed",
     };
   }
+  // Ops-8 (remaining-pages audit, 13 Oct 2026): a row that records when it started (a planned
+  // arrival not yet recorded) shows how long it has waited, the figure the phone list sorts by.
+  if (item.tone !== "danger" && item.since !== undefined && item.since <= now) {
+    return { value: durMinutes(now - item.since), word: "waiting", state: "Review", tone: "warning" };
+  }
   return item.tone === "danger"
     ? { state: "Act now", tone: "danger", stateTone: "danger" }
     : { state: "Review", tone: "warning" };
+}
+
+/**
+ * Phone order, as Alerts orders its queue: act now first, then the longest waiting. A row's wait
+ * runs from its due time, or from when it started where it records no due time, so the age each
+ * row shows is the age it is sorted by. Rows with neither keep their order and go last.
+ */
+function sortOldestFirst(items: readonly InboxItem[]): InboxItem[] {
+  return sortDueFirst(items, (item) => item.dueAt ?? item.since).sort(
+    (a, b) => (a.tone === "danger" ? 0 : 1) - (b.tone === "danger" ? 0 : 1),
+  );
 }
 
 /** The row's one sentence, from the movement's own recorded times where it holds them. */
@@ -188,7 +204,7 @@ export function WardTasksDrawer({
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
   useWardModalFocus(true, drawerRef, onClose);
-  // Phone (v10 Tasks sheet): a plain list, due first. A row opens in place to show its actions.
+  // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
   const isPhone = useIsPhone();
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
   const nameFor = usePatientNameDisplay();
@@ -237,7 +253,11 @@ export function WardTasksDrawer({
 
   // Snoozed rows leave the active list and come back by themselves when their time passes.
   const { active: activeItems, snoozed: snoozedItems } = partitionSnoozed(allItems, snoozes, now);
-  const items = sortMode === "due-first" || isPhone ? sortDueFirst(activeItems, (item) => item.dueAt) : activeItems;
+  const items = isPhone
+    ? sortOldestFirst(activeItems)
+    : sortMode === "due-first"
+      ? sortDueFirst(activeItems, (item) => item.dueAt)
+      : activeItems;
 
   const isComplete = (item: InboxItem) =>
     item.kind === "commitment" && inboxItemCompletionState(completions[item.id]) === "complete";
@@ -261,7 +281,11 @@ export function WardTasksDrawer({
   });
   const filteredFacts = filteredItems.filter((item) => item.kind === "fact");
   const filteredCommitments = filteredItems.filter((item) => item.kind === "commitment");
-  const visibleUnacknowledged = filteredFacts.filter((item) => !acknowledgements[item.id]?.length);
+  // Ops-9 (remaining-pages audit, 13 Oct 2026): act-now rows are never acknowledged in bulk; each
+  // one is opened and acknowledged on its own.
+  const visibleUnacknowledged = filteredFacts.filter(
+    (item) => item.tone !== "danger" && !acknowledgements[item.id]?.length,
+  );
   // One row at a time shows its full detail; the first visible row until someone picks another.
   // Phone: nothing is open until a row is tapped, so the sheet reads as a plain list first.
   const expanded = filteredItems.some((item) => item.id === expandedId)
@@ -462,6 +486,12 @@ export function WardTasksDrawer({
                       already carry the UMRN, so it is not repeated. */}
                   {patient?.patient && phoneName === patient.displayName ? ` · ${patient.umrn}` : ""}
                 </span>
+                {latestAck && !isExpanded ? (
+                  <span className={styles.rowSeen} data-testid={`ward-task-seen-${item.id}`}>
+                    <StatusGlyph tone="info" size={8} />
+                    Seen
+                  </span>
+                ) : null}
               </p>
             ) : null}
             <p className={styles.rowMeta} data-phone-hidden={isPhone || undefined}>
@@ -648,7 +678,9 @@ export function WardTasksDrawer({
           <div className={styles.headerText}>
             <h2 className={styles.heading}>Tasks</h2>
             <p className={styles.headerNote}>
-              {isPhone ? `${openCount} open · due first` : `${ROLE_LABELS[role] ?? "Tasks"} · synthetic movements`}
+              {isPhone
+                ? `${openCount} open · act now, then oldest`
+                : `${ROLE_LABELS[role] ?? "Tasks"} · synthetic movements`}
             </p>
           </div>
           <span className={styles.headingCount} data-testid="ward-tasks-drawer-count">
