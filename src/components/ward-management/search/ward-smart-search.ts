@@ -649,18 +649,14 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     limit,
   );
 
-  const shouldDeriveTasks =
-    intent === "task" || intent === "general" || /\b(tasks?|actions?|inbox|pending|overdue)\b/i.test(typed);
-
-  const tasksInbox = shouldDeriveTasks
-    ? (input.precomputedTasks ??
+  const tasksInbox =
+    input.precomputedTasks ??
       buildActionInbox(
         input.movements.filter(isOpen),
         input.now ?? 0,
         input.units,
         input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
-      ))
-    : [];
+      );
   const tasks = rankAndLimit(
     searchTasks(typed, tasksInbox),
     typed,
