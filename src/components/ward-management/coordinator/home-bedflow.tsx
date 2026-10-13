@@ -110,7 +110,10 @@ export function HomeBedflow({
   );
   const byUnitId = useMemo(() => new Map(shortlist.map((candidate) => [candidate.unit.id, candidate])), [shortlist]);
   const fits = shortlist.filter((candidate) => candidate.verdict.eligible);
-  const bestFit: Candidate | undefined = fits[0];
+  // Rank only wards whose final movement-aware classification remains usable.
+  const bestFit: Candidate | undefined = fits.find(
+    (candidate) => restrictionNotice(movement, candidate.unit)?.level !== "voluntary_on_locked",
+  );
   const [fitsFirst, setFitsFirst] = useState(false);
 
   // FitHighlight (`home-fit.ts`): every ward in the network that fits this patient, not only the
