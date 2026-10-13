@@ -85,7 +85,9 @@ function WorkspaceTestControls({ movementId }: { movementId: MovementId }) {
             cadNumber: "CAD-STUB-0001",
             transportLegalStatus: "voluntary",
             estimatedAt: 0,
-            actingUnitId: "fre-adult-open",
+            // Review finding S2-10 (13 Oct 2026): a ward books only for a move into or out of its own
+            // ward, so for this ED-to-ward move the booking ward is the receiving ward.
+            actingUnitId: acceptedUnitId ?? "",
           })
         }
       >
@@ -135,25 +137,20 @@ describe("the orphaned-transport panel's cancel-authority copy", () => {
     expect(wf005?.transport?.bookedBy).toBeUndefined();
   });
 
-  it("names the booking ward and says the receiving ward may not cancel, when the record proves a ward booked it", () => {
+  it("names the booking ward, and does not tell that same ward it may not cancel, when the receiving ward booked it", () => {
     renderWorkspaceWithControls("WF-003");
     fireEvent.click(screen.getByTestId("test-pull-patient"));
     fireEvent.click(screen.getByTestId("test-book-transport-as-ward"));
     fireEvent.click(screen.getByTestId("test-step-back"));
 
     const panel = screen.getByTestId("ward-patient-orphaned-transport");
-    // The specific ward that booked it, named — not "a ward" or left for the reader to infer.
-    // Matched as a string, not a regex: the real ward name contains parentheses, which a regex
-    // literal would read as a capture group and silently stop matching.
-    expect(
-      within(panel).getByText((content) => content.includes("Maali (Ward 4.2) — open, which booked it")),
-    ).toBeInTheDocument();
-    // And the receiving ward — Ward 2K, distinct from the booking ward above — is told
-    // it may not cancel this job itself: "No other ward — including the ward receiving this
-    // patient — can cancel it themselves" already negates "can" with "No other ward".
-    expect(
-      within(panel).getByText(/no other ward.*the ward receiving this patient.*can cancel it themselves/i),
-    ).toBeInTheDocument();
+    // The specific ward that booked it, named. Matched as a string, not a regex: the real ward name
+    // contains parentheses.
+    expect(within(panel).getByText((content) => content.includes("Dabakarn, which booked it"))).toBeInTheDocument();
+    // Since S2-10 the booker of an ED-to-ward move is the receiving ward, so the sentence must not
+    // also tell the receiving ward it cannot cancel (it can: it booked the job).
+    expect(within(panel).getByText(/no other ward can cancel it themselves/i)).toBeInTheDocument();
+    expect(within(panel).queryByText(/including the ward receiving this patient/i)).not.toBeInTheDocument();
   });
 
   it("names only the coordinator and the referring ED for a job with no recorded booker", () => {

@@ -1400,7 +1400,11 @@ export function MovementWorkspaceCockpit({
                 </p>
                 <p className={styles.actionSay}>
                   {movement.transport?.bookedBy?.role === "ward" && movement.transport.bookedBy.unitId
-                    ? `A transport job can be cancelled by the flow coordinator, by the referring emergency department, or by ${unitName(movement.transport.bookedBy.unitId)}, which booked it. No other ward — including the ward receiving this patient — can cancel it themselves.`
+                    ? `A transport job can be cancelled by the flow coordinator, by the referring emergency department, or by ${unitName(movement.transport.bookedBy.unitId)}, which booked it. ${
+                        movement.transport.bookedBy.unitId === movement.acceptedUnitId
+                          ? "No other ward can cancel it themselves."
+                          : "No other ward — including the ward receiving this patient — can cancel it themselves."
+                      }`
                     : movement.transport?.bookedBy?.role === "community" && movement.transport.bookedBy.placeId
                       ? `A transport job can be cancelled by the flow coordinator, by the referring emergency department, or by ${communityTeamById(movement.transport.bookedBy.placeId)?.name ?? "the community team"}, which booked it.`
                       : "A transport job can be cancelled by the flow coordinator or by the referring emergency department. Anyone else, including a ward with no recorded booking, cannot cancel it themselves — they have to ask one of those two."}
