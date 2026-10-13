@@ -91,6 +91,45 @@ describe("settings screen: every Preview control says it is not wired", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Text size is not wired in this prototype.");
   });
 
+  // Audit settings-14 (13 Oct 2026): a protection that is not running never reads as On.
+  it.each([
+    { tab: /^Display/, name: "Initials only on shared screens" },
+    { tab: /^Display/, name: "Clear session on close" },
+    { tab: /^Alerts/, name: "Flash on urgent" },
+    { tab: /^Alerts/, name: "Summary at shift start" },
+  ])("shows the Preview switch $name as Off", ({ tab, name }) => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: tab }));
+    expect(screen.getByRole("switch", { name })).toHaveAttribute("aria-checked", "false");
+  });
+
+  // Audit settings-26: Snooze is not wired, so it carries the Preview tag.
+  it("tags Snooze 15m as Preview", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
+    const snooze = screen.getByRole("main").querySelector<HTMLElement>('[data-setting="snooze"]')!;
+    expect(snooze).toHaveTextContent("Preview");
+  });
+
+  it("shows Lock after idle and Buzz again as Off while they are Preview", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
+    const lock = screen.getByText("Lock after idle").closest<HTMLElement>("[data-setting]")!;
+    expect(within(lock).getByRole("radio", { name: "Off" })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
+    const again = screen.getByText("Buzz again if not seen").closest<HTMLElement>("[data-setting]")!;
+    expect(within(again).getByRole("radio", { name: "Off" })).toHaveAttribute("aria-checked", "true");
+  });
+
+  // Audit settings-17 (Josh, 13 Oct 2026): one hold length, the Pull hold. No second Preview timer.
+  it("keeps one bed hold rule: Pull hold, with no separate Bed hold expires row", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    expect(screen.getByText("Pull hold")).toBeInTheDocument();
+    expect(screen.queryByText("Bed hold expires")).not.toBeInTheDocument();
+    expect(SETTINGS_SEARCH_ENTRIES.some((entry) => entry.label === "Bed hold expires")).toBe(false);
+  });
+
   it("wires Row density: Compact sets dense rows on the page and Comfortable clears them", () => {
     renderSettings();
     fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));

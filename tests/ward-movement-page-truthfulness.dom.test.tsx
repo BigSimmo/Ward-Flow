@@ -347,7 +347,9 @@ describe("the movement page does not print sentences the record contradicts", ()
     expect(movementById("WF-999" as MovementId), "WF-999 must not exist for this to test anything").toBeUndefined();
 
     const text = pageTextFor("WF-999" as MovementId);
-    expect(text).toContain("WF-999");
+    // shell-11: the sentence never echoes an internal WF- id; it says no movement matches the link.
+    expect(text).toContain("No movement matches this link");
+    expect(text).not.toContain("WF-999");
     expect(text).not.toMatch(/matches “WF-”|matches "WF-"/u);
   });
 });

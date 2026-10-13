@@ -20,7 +20,18 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { Badge, Drawer, Icon, Kbd, StatusGlyph, TextInput, buttonClass, cx, durMinutes } from "@/components/wf";
+import {
+  Badge,
+  Drawer,
+  Icon,
+  Kbd,
+  StatusGlyph,
+  TextInput,
+  buttonClass,
+  cx,
+  durMinutes,
+  useIsPhone,
+} from "@/components/wf";
 import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -120,6 +131,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
   const here = allDesks.find((desk) => desk.id === hereId);
   const [openSites, setOpenSites] = useState<ReadonlySet<string>>(() => new Set(here?.site ? [here.site] : []));
   const isCoordinatorRoute = wardChromeRole(pathname) === "coordinator";
+  const isPhone = useIsPhone();
   const searching = query.trim().length > 0;
 
   function open(desk: Desk) {
@@ -190,6 +202,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
       onGo={() => go(desk)}
       onOpen={() => open(desk)}
       accessTargetMinutes={configuration.edAccessTargetMinutes}
+      compact={isPhone}
     />
   );
 
@@ -258,9 +271,10 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
     <Drawer
       open={isOpen}
       onClose={onClose}
-      title="Switch workstation"
+      title="Go to a desk"
       testId="ward-operator-switcher-modal"
-      initialFocusRef={searchRef}
+      // Audit settings-23: no search focus on a phone, so the keyboard does not cover the list.
+      initialFocusRef={isPhone ? undefined : searchRef}
       contentClassName={styles.drawer}
       bodyClassName={styles.body}
       footer={
@@ -271,7 +285,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
       footerClassName={styles.foot}
     >
       {top}
-      {here && !searching ? (
+      {/* shell-14 (13 Oct 2026): a statewide desk already shows as its own tile below (marked as the
+          current page), so the "You are here" row is only for a site or team desk. */}
+      {here && !searching && !statewide.some((desk) => desk.id === here.id) ? (
         <section className={styles.here} aria-label="Your desk">
           <button
             type="button"
@@ -495,7 +511,8 @@ function DeskFigure({ desk, now, accessTargetMinutes }: { desk: Desk; now: numbe
         <b className={styles.mono}>{desk.waiting ?? 0}</b>
         <span className={styles.unit}>waiting</span>
         {desk.pastTarget ? (
-          <span className={cx(styles.age, styles.danger)}>
+          // shell-13: words stay neutral; the red glyph before the figure carries the tone.
+          <span className={styles.age}>
             {desk.pastTarget} over {targetLabel(accessTargetMinutes)}
           </span>
         ) : null}
@@ -524,7 +541,9 @@ function DeskRow({
   onGo,
   onOpen,
   accessTargetMinutes,
+  compact = false,
 }: {
+  compact?: boolean;
   desk: Desk;
   label?: string;
   now: number;
@@ -562,8 +581,19 @@ function DeskRow({
       </button>
       {isOpen ? (
         <div id={previewId} className={styles.preview2}>
-          <DeskFacts desk={desk} now={now} accessTargetMinutes={accessTargetMinutes} />
-          <CanList role={desk.role} short />
+          {/* Audit settings-23: a phone already shows the figure in the row, so it skips the fact grid
+              and folds what the desk can do, keeping Open desk in view. */}
+          {compact ? (
+            <details className={styles.canFold}>
+              <summary>What this desk can do</summary>
+              <CanList role={desk.role} short />
+            </details>
+          ) : (
+            <>
+              <DeskFacts desk={desk} now={now} accessTargetMinutes={accessTargetMinutes} />
+              <CanList role={desk.role} short />
+            </>
+          )}
           <div className={styles.previewFoot}>
             <span className={styles.roleName}>{deskRoleLabel(desk.role)}</span>
             {isAtHome ? (
@@ -612,13 +642,7 @@ function DeskFacts({ desk, now, accessTargetMinutes }: { desk: Desk; now: number
       ["Waiting", desk.waiting ?? 0, "for a bed"],
       [
         "Longest",
-        desk.waiting ? (
-          <span className={desk.pastTarget ? styles.danger : undefined}>
-            {durMinutes(desk.longestWaitMinutes ?? 0)}
-          </span>
-        ) : (
-          "None"
-        ),
+        desk.waiting ? <span>{durMinutes(desk.longestWaitMinutes ?? 0)}</span> : "None",
         `target ${targetLabel(accessTargetMinutes)}`,
       ],
     ];

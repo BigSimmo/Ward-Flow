@@ -14,8 +14,10 @@ import {
   Plus,
   Search,
   Settings,
+  UserPlus,
   Wrench,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/ui/sheet";
 import { Dot } from "@/components/wf";
@@ -25,6 +27,7 @@ import {
   wardTasksAreActionableForRole,
   type WardChromeRole,
 } from "@/components/ward-management/ward-chrome-role";
+import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
@@ -44,7 +47,7 @@ import { OperatorSwitcherModal } from "@/components/ward-management/settings/ope
 
 import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
-import { settingsHref } from "./ward-facade";
+import { settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
 import styles from "./ward-phone-menu.module.css";
@@ -108,10 +111,23 @@ const OVERDUE_NEED_IDS = ["delays", "discharges"] as const;
  * Book transport is left out (audit round 2, A4-10) until a phone booking entry is wired: it opened
  * the officer's job list, which cannot start a booking.
  */
-const CREATE_LINKS = [
-  { id: "delays", label: "Log a delay", meta: "Reason and who it waits on", icon: Clock3 },
+/*
+ * shell-5 (13 Oct 2026): the Create items match the + button's name. Add patient joins (transport stays
+ * out until a phone booking entry exists, per A4-10);
+ * a delay is logged on its patient, so the row says it starts by choosing them. `href` names a page
+ * that is not a Menu entry.
+ */
+const CREATE_LINKS: readonly { id: string; label: string; meta: string; icon: LucideIcon; href?: string }[] = [
+  { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
   { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
-] as const;
+  {
+    id: "add-patient",
+    label: "Add patient",
+    meta: "New record with a UMRN",
+    icon: UserPlus,
+    href: WARD_ADD_PERSON_HREF,
+  },
+];
 
 export type WardPhoneMenuProps = {
   /** The bar's Menu button, where focus returns when the menu closes. */
@@ -188,7 +204,8 @@ function strictNeeds(byId: ReadonlyMap<string, RailEntry>, counts: CountMap): Ne
         label: entry.label,
         meta: count.noun,
         count: count.value,
-        href: entry.href,
+        // shell-9: Delays opens filtered to the severe causes this row counts.
+        href: id === "delays" ? `${entry.href}?show=severe` : entry.href,
         icon: entry.icon,
         actNow: false,
       });
@@ -396,7 +413,7 @@ function PhoneDock({
         <button
           type="button"
           className={styles.rise}
-          aria-label="Create: new referral, transport, delay or bed"
+          aria-label="Create: new referral, delay, bed or patient"
           aria-haspopup="dialog"
           data-testid="ward-phone-create"
           onClick={onCreate}
@@ -499,8 +516,8 @@ function DataModeRow({ onClose }: { onClose: () => void }) {
 }
 
 /**
- * Audit round 2 (S-34): the who-you-are row opens the Switch workstation drawer itself. It used to
- * go to Settings, where a second Switch workstation button opened the same drawer.
+ * Audit round 2 (S-34): the who-you-are row opens the Go to a desk drawer itself. It used to
+ * go to Settings, where a second button opened the same drawer.
  */
 function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => void }) {
   return (
@@ -509,7 +526,7 @@ function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => voi
       className={styles.who}
       onClick={onSwitch}
       aria-haspopup="dialog"
-      aria-label={`${CHROME_ROLE_LABELS[role]}. Switch workstation`}
+      aria-label={`${CHROME_ROLE_LABELS[role]}. Go to a desk`}
       data-testid="ward-phone-menu-switch-workstation"
     >
       {/* v10 Menu sheet: an initials avatar. The prototype has no signed-in person, so the
@@ -523,7 +540,9 @@ function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => voi
       </span>
       <span className={styles.whoText}>
         <span className={styles.whoName}>{CHROME_ROLE_LABELS[role]}</span>
-        <span className={styles.whoMeta}>Switch workstation</span>
+        {/* shell-2 (Josh, 13 Oct 2026): "Go to a desk", not "Switch workstation". Opening a desk
+            goes to that desk's page; the Menu, Needs you and Tasks stay this workstation's own. */}
+        <span className={styles.whoMeta}>Go to a desk</span>
       </span>
     </button>
   );
@@ -542,6 +561,8 @@ function CreateSheet({
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
 }) {
+  // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
+  const currentUnitId = /^\/mockups\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   return (
     <Sheet
       id="ward-phone-create"
@@ -571,11 +592,19 @@ function CreateSheet({
       </button>
       <ul className={`${styles.list} ${styles.rich}`}>
         {CREATE_LINKS.flatMap((item) => {
-          const entry = byId.get(item.id);
+          const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
           return entry
             ? [
                 <li key={item.id}>
-                  <Link href={entry.href} className={styles.row} onClick={onClose}>
+                  <Link
+                    href={
+                      item.id === "wards" && currentUnitId !== undefined
+                        ? unitHref(decodeURIComponent(currentUnitId))
+                        : entry.href
+                    }
+                    className={styles.row}
+                    onClick={onClose}
+                  >
                     <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
                     <Chevron />
                   </Link>

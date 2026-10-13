@@ -79,7 +79,7 @@ import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
-import { hoursText, occupancyPercent, occupiedBeds } from "./statistics-occupancy";
+import { hoursText, occupiedBeds } from "./statistics-occupancy";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
@@ -223,7 +223,8 @@ export function StatisticsScreen({
   const occupiedCount = occupancy.occupied;
   // L1: the percentage and the count beside it are the one occupancy figure, Occupied + Pulled.
   const inUseCount = occupancy.inUse;
-  const occupiedPct = occupancyPercent(occupancy);
+  // One decimal place, the precision Home, Overview and Wards print (audit stats-20: 85.2%, not 85%).
+  const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 1000) / 10 : 0;
   const availableNow = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).available, 0);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
   const pendingPreparation = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
@@ -488,7 +489,7 @@ export function StatisticsScreen({
           chips={
             <HeroChips label="Network at a glance">
               <HeroChip value={totalBeds} label="Beds" />
-              <HeroChip value={inUseCount} label={`${occupiedPct}% in use`} />
+              <HeroChip value={inUseCount} label={`${occupiedPct.toFixed(1)}% in use`} />
               <HeroChip value={pendingPreparation} label="Being made ready" />
               <HeroChip
                 value={<span data-testid="ward-statistics-discharges-today-count">{dischargesCount}</span>}

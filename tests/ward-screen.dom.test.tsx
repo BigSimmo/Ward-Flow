@@ -147,13 +147,15 @@ describe("ward screen restriction notice", () => {
     expect(notice).toHaveAttribute("data-level", "voluntary_on_locked");
   });
 
-  it("names bty-adult-secure's unresolved id when the route carries one, never a substituted ward", () => {
+  it("shows the plain not-found sentence for an unresolved ward id, never the id or a substituted ward", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="does-not-exist-in-the-fixture" />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId("ward-unit-screen")).toHaveTextContent("does-not-exist-in-the-fixture");
+    // Not-found pages quote no ids (shell-12).
+    expect(screen.getByTestId("ward-unit-screen")).toHaveTextContent("No ward matches this link.");
+    expect(screen.getByTestId("ward-unit-screen")).not.toHaveTextContent("does-not-exist-in-the-fixture");
     expect(screen.queryByTestId("ward-unit-beds")).not.toBeInTheDocument();
   });
 });

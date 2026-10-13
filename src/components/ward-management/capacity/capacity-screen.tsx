@@ -245,6 +245,8 @@ export function CapacityScreen() {
   const totalPulled = useMemo(() => networkRows.reduce((sum, row) => sum + row.pulled, 0), [networkRows]);
   // Phone hero: the ring's figure without the ring, one decimal with %.
   const occupancyPercentText = formatWardOccupancy(occupancy, "Not known");
+  // shell-1: the hero's figures are all whole-network, whatever service is chosen.
+  const heroScopeLabel = service === null ? "Statewide" : `Statewide, not only ${service}`;
   // The ward whose count is oldest: the hero's jump chip opens it.
   const oldestCount = useMemo(
     () =>
@@ -665,11 +667,14 @@ export function CapacityScreen() {
           className={styles.capacityHero}
           level={1}
           // v10: the Wards count appears once, here, never as a chip.
-          eyebrow={
+          // shell-1 (13 Oct 2026): every hero figure is whole-network (`networkRows`, `gapTotals`),
+          // so the eyebrow says Statewide even with a service chosen; it never names the service as
+          // the figures' scope. The ward list below is the part the service narrows.
+          eyebrow={`Capacity · ${heroScopeLabel}${
             isPhone
-              ? `Capacity · ${service ?? "Statewide"}`
-              : `Capacity · ${service ?? "Statewide"} · ${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} · as at ${formatInstant(now)}`
-          }
+              ? ""
+              : ` · ${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} · as at ${formatInstant(now)}`
+          }`}
           title={
             <>
               <SrOnly>Capacity, </SrOnly>
@@ -706,11 +711,7 @@ export function CapacityScreen() {
           lead={
             // v10 Capacity: the one ring on the page, ahead of the title. Option A: figures only on a phone.
             isPhone ? undefined : (
-              <OccupancyRing
-                percent={occupancy.percent}
-                alertAt={BED_ALERT_THRESHOLD_PERCENT}
-                scope={service ?? "Statewide"}
-              />
+              <OccupancyRing percent={occupancy.percent} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope="Statewide" />
             )
           }
           bar={

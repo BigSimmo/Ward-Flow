@@ -23,7 +23,6 @@ import {
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   statisticsSectionById,
   STATISTICS_SERVICE_CHOOSER_HREF,
@@ -533,13 +532,14 @@ function ServicePhone({
   edWaiting: number;
   outOfArea: ReturnType<typeof outOfAreaLedger>["entries"];
 }) {
-  const patientOf = usePatientOf();
   const sum = (pick: (entry: (typeof states)[number]) => number) =>
     states.reduce((total, entry) => total + pick(entry), 0);
   const wards = states
     .map((entry) => ({
       ...entry,
-      rate: entry.unit.beds > 0 ? Math.round((entry.states.occupied / entry.unit.beds) * 100) : 0,
+      // In use (Occupied + Pulled), the one occupancy count every page prints (ward-occupancy.ts).
+      rate:
+        entry.unit.beds > 0 ? Math.round(((entry.states.occupied + entry.states.pulled) / entry.unit.beds) * 100) : 0,
     }))
     .sort((a, b) => b.rate - a.rate || a.unit.name.localeCompare(b.unit.name));
   const busiest = [...eds].sort((a, b) => b.figures.onTheList - a.figures.onTheList || a.name.localeCompare(b.name));
@@ -616,13 +616,12 @@ function ServicePhone({
         ) : (
           <PhoneList label="Far from home">
             {outOfArea.map((entry) => {
-              const person = patientOf(entry.admission);
               return (
                 <PhoneListRow
                   key={entry.admission.id}
                   as="li"
-                  name={person.formalName}
-                  meta={`${person.umrn} · ${entry.unit.name} · ${TRAVEL_BAND_LABELS[entry.band]}`}
+                  name={entry.admission.id}
+                  meta={`${entry.unit.name} · ${TRAVEL_BAND_LABELS[entry.band]}`}
                   value={durMinutes(Math.max(0, entry.sinceArrival))}
                   time="since arrival"
                 />

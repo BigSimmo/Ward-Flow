@@ -384,6 +384,8 @@ test.describe("@mockup Ward scroll geometry", () => {
   test("the shared header stays pinned with stable height on phone, tablet and desktop", async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto("/mockups/ward-flow/search", { waitUntil: "domcontentloaded" });
+    // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
+    await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
     await page.waitForLoadState("networkidle");
     const bar = page.getByTestId("ward-bar");
@@ -425,6 +427,8 @@ test.describe("@mockup Ward scroll geometry", () => {
   test("keyboard search reveals the last result without moving the page", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/mockups/ward-flow/search", { waitUntil: "domcontentloaded" });
+    // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
+    await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
     await page.waitForLoadState("networkidle");
     await scrollColumn(page, 500);
@@ -454,6 +458,8 @@ test.describe("@mockup Ward scroll geometry", () => {
   test("a sheet follows responsive scroll owners and restores the desktop position", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/mockups/ward-flow/search", { waitUntil: "domcontentloaded" });
+    // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
+    await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
     await page.waitForLoadState("networkidle");
     const column = page.locator("[data-wf-scroller]");
@@ -488,6 +494,8 @@ test.describe("@mockup Ward scroll geometry", () => {
   test("desktop Back returns to the previous position in the patient list", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/mockups/ward-flow/search", { waitUntil: "domcontentloaded" });
+    // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
+    await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
     await page.waitForLoadState("networkidle");
     const column = page.locator("[data-wf-scroller]");
@@ -501,6 +509,8 @@ test.describe("@mockup Ward scroll geometry", () => {
     await expect(page).toHaveURL(/\/wards$/);
     await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(0);
     await page.goBack();
+    // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
+    await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
     await page.waitForLoadState("networkidle");
     await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(420);

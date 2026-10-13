@@ -146,7 +146,7 @@ async function ensureToolsClosed(page: Page) {
 async function switchView(page: Page, pick: (drawer: Locator) => Locator | Promise<Locator>, screenTestId: string) {
   await ensureToolsOpen(page);
   await page.getByRole("button", { name: /^Change view/ }).click();
-  const drawer = page.getByRole("dialog", { name: "Switch workstation" });
+  const drawer = page.getByRole("dialog", { name: "Go to a desk" });
   await expect(drawer).toBeVisible();
   const item = await pick(drawer);
   const href = await item.getAttribute("href");

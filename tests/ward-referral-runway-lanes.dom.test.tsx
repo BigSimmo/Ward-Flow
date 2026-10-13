@@ -3,7 +3,9 @@ import { render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   RUNWAY_MARKER_GAP_PX,
+  RUNWAY_MARKER_HALF_PX,
   WaitRunway,
+  runwayMarkerPercent,
   runwayGapPercent,
   runwayLanes,
 } from "@/components/ward-management/referrals/referral-board-parts";
@@ -53,6 +55,17 @@ describe("Referrals waiting runway keeps close markers apart", () => {
     expect(runwayGapPercent(undefined, false)).toBe(4);
     expect(runwayGapPercent(undefined, true)).toBe(8);
     expect(runwayGapPercent(280, false)).toBeCloseTo((RUNWAY_MARKER_GAP_PX / 280) * 100);
+  });
+
+  it("holds a marker at either end of the track inside it, by half a marker", () => {
+    const half = (px: number) => (RUNWAY_MARKER_HALF_PX / px) * 100;
+    expect(runwayMarkerPercent(100, 600, false)).toBeCloseTo(100 - half(600));
+    expect(runwayMarkerPercent(0, 600, false)).toBeCloseTo(half(600));
+    expect(runwayMarkerPercent(50, 600, false)).toBe(50);
+    // Before measuring, the same fallback width as the lane gap (4% stands for 28px).
+    expect(runwayMarkerPercent(100, undefined, false)).toBeCloseTo(
+      100 - (4 * RUNWAY_MARKER_HALF_PX) / RUNWAY_MARKER_GAP_PX,
+    );
   });
 
   for (const trackPx of [236, 271, 306, 462, 670, 1150]) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
@@ -18,7 +19,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
-import { Button, Card, CardHead, StatusGlyph, cx, tableClasses, type WfTone } from "@/components/wf";
+import { Button, Card, CardHead, StatusGlyph, buttonClass, cx, tableClasses, type WfTone } from "@/components/wf";
 import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
 import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
 import type { Patient } from "../ward-patients";
@@ -137,8 +138,11 @@ export function PatientHistoryTab({
   stays = [],
   absence,
   absenceVoluntary = false,
+  chronologyHref,
 }: {
   record: PatientNowRecord;
+  /** Ops-17 (13 Oct 2026): this person's full chronology, one tap from their history. */
+  chronologyHref?: string;
   movement?: Movement;
   /** S-5: an open absence from the stay's held bed, so its recorded times show in the log. */
   absence?: LeaveBed["absentWithoutLeave"];
@@ -234,7 +238,23 @@ export function PatientHistoryTab({
       </Card>
       <div className={styles.cols}>
         <Card>
-          <CardHead level={3} icon={List} title="Episodes" meta={`${items.length} shown`} />
+          <CardHead
+            level={3}
+            icon={List}
+            title="Episodes"
+            meta={`${items.length} shown`}
+            action={
+              chronologyHref ? (
+                <Link
+                  href={chronologyHref}
+                  className={buttonClass({ size: "sm", variant: "ghost" })}
+                  data-testid="pn-history-chronology"
+                >
+                  Chronology
+                </Link>
+              ) : undefined
+            }
+          />
           <div className={styles.bodyPad}>
             <div className={legacy.toolbar}>
               <label className={legacy.search}>
