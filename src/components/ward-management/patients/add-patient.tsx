@@ -375,8 +375,13 @@ export function AddPatientForm() {
       throw new Error("AddPatientForm: patients grew but no new id was found against the prior snapshot.");
     }
     priorSubmissionRef.current = null;
+    // shell-24 (13 Oct 2026): say the save worked. The toast outlives the page change.
+    toast?.push({
+      tone: "success",
+      title: `${added[0].givenName} ${added[0].familyName} added, ${added[0].umrn}`,
+    });
     router.push(`/mockups/ward-flow/people/${added[0].id}`);
-  }, [patients, rejections, router]);
+  }, [patients, rejections, router, toast]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
