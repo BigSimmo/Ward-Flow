@@ -271,7 +271,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
       footerClassName={styles.foot}
     >
       {top}
-      {here && !searching ? (
+      {/* shell-14 (13 Oct 2026): a statewide desk already shows as its own tile below (marked as the
+          current page), so the "You are here" row is only for a site or team desk. */}
+      {here && !searching && !statewide.some((desk) => desk.id === here.id) ? (
         <section className={styles.here} aria-label="Your desk">
           <button
             type="button"
