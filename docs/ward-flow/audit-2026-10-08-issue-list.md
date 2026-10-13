@@ -4,6 +4,29 @@ Every bug and issue found in the core-engine review and the four follow-up area 
 
 **88 issues:** P1 13, P2 28, P3 31, P4 16. S2-12 is merged into A2-2.
 
+## Status, 13 October 2026
+
+All 88 are now addressed on branch `claude/bold-galileo-01489k`, except where noted below. The four
+owner decisions of 12 October were applied: strict ward scoping (A1-1, A1-3, S2-11 and the other
+scope items), referrer-or-coordinator withdrawal (A1-2), the stage-based revoked-examination hold
+(S2-2) and ED-plus-coordinator legal form expiry with an audit entry (A1-5). A4-3 adds a server-side
+identifier scan; A4-5 keeps the mockups public by the 28 September decision and corrects the
+comments.
+
+Regression tests: `tests/ward-review-2026-10-12-{permissions,lifecycle,storage,screens,security}.test.ts`
+and `tests/ward-review-2026-10-12-storage-provider.dom.test.tsx`, alongside the 8 October file.
+
+Not changed, with the reason:
+
+- **A3-5** (accepted referrals missing from search): already fixed on `main` by the search census on
+  11 October. A derivation-level change double-counted and read the patient link, which the D-14
+  guard forbids, so search was left as `main` has it.
+- **A1-11** applies only to sessions saved before the engine stopped creating `legalClock`; the audit
+  label is corrected for them.
+- **S2-9**: the referral path now asks the same "does the ward have locked beds" question as the
+  movement path, and a ward that has locked beds but none free fails the capacity gate, which no
+  override reason can reach.
+
 **Evidence levels.** _Reproduced_: replayed against the real reducer (slices 1–2 by the verification file; area items by the area reviewer). _Script-confirmed_: checked by running the code. _Code-confirmed_: plainly visible in the code. _Unverified_: found by one reviewer reading the code, not yet checked. Reproduced: 28; Script-confirmed: 7; Code-confirmed: 7; Unverified: 46.
 
 **ID prefixes.** S1/S2: core-engine slices 1 and 2. A1: who may do what. A2: saving and loading state. A3: what the screens show. A4: security plumbing.
