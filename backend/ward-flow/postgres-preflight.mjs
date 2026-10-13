@@ -72,9 +72,7 @@ function normalise(value) {
 }
 
 function expression(value) {
-  return normalise(value).replace(/'(?:''|[^'])*'|::(?:text|integer|bigint)\b|[()]/g, (token) =>
-    token.startsWith("'") ? token : "",
-  );
+  return normalise(value).replace(/'(?:''|[^'])*'|[()]/g, (token) => (token.startsWith("'") ? token : ""));
 }
 
 const tableColumns = {
@@ -233,7 +231,7 @@ function expectedConstraints(version, tables) {
 }
 
 function verifyCatalog(catalog, version, runtimeRole) {
-  if (!catalog.owner || [runtimeRole, "wardflow_backend"].includes(catalog.owner)) refuse();
+  if (!catalog.owner || [runtimeRole, "wardflow_backend", "anon", "authenticated"].includes(catalog.owner)) refuse();
   const tables = Object.keys(tableColumns).filter((name) => version >= 3 || !name.startsWith("push_"));
   const expectedObjects = [
     ...tables,
@@ -245,6 +243,7 @@ function verifyCatalog(catalog, version, runtimeRole) {
   for (const object of catalog.objects) {
     if (
       object.owner !== catalog.owner ||
+      ["anon", "authenticated"].includes(object.owner) ||
       object.persistence !== "p" ||
       object.rls ||
       object.force_rls ||
