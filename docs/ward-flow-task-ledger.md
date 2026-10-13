@@ -8567,6 +8567,7 @@ Small follow-up (same task, 13 October 2026):
 
 - The record preview banner said "In hospital now" for any open movement, which includes people in transit. It now says "On this board now" and "Not on this board now", matching Patient search.
 - The Community "How to reach" card is labelled "Published, not call-tested" so the published phone numbers are not read as a verified call list (AUD-M-CONTACTS). Referral and contact data are unchanged.
+- The record preview now follows the search row: a person with no open movement and no queued referral (across all their referrals) reads "Not on this board now", and a declined referral selected directly no longer says it is awaiting acceptance (`tests/ward-search-preview-closed-referral.dom.test.tsx`).
 - `STATUS.md` records that main has moved on since the audited baseline.
 
 Still open after this task, with the reason:
