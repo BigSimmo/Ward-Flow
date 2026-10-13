@@ -1,13 +1,14 @@
 /**
- * Security-plumbing fixes ported from #268 (8 Oct 2026 review, A4-6, A4-12, A4-13, A4-15).
+ * Security-plumbing fixes ported from #268 (8 Oct 2026 review, A4-6, A4-7, A4-12 to A4-15).
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf";
 import { localProjectRequestIdentityPayload } from "@/lib/local-project-guard";
+import { GET as digestGet } from "../src/app/mockups/ward-flow-digest/route";
 import { config as proxyConfig, proxy } from "../src/proxy";
 
 const read = (relativePath: string) => readFileSync(resolve(process.cwd(), relativePath), "utf8");
@@ -66,5 +67,36 @@ describe("A4-13: local server exposure", () => {
     const script = read("scripts/dev-free-port.mjs");
     expect(script).toContain('process.env.WARD_FLOW_DEV_HOST?.trim() || "127.0.0.1"');
     expect(script).not.toMatch(/"--hostname",\s*"0\.0\.0\.0"/);
+  });
+});
+
+describe("A4-7: root public/*.html mockups", () => {
+  it("are sent with a noindex header", () => {
+    const config = read("next.config.ts");
+    expect(config).toMatch(
+      /source: "\/:file\(\[\^\/\]\+\\\\\.html\)",\s*headers: \[\{ key: "X-Robots-Tag", value: "noindex, nofollow" \}\]/,
+    );
+  });
+  it("load no unpinned third-party script", () => {
+    for (const file of ["public/capacity-table-mockup.html", "public/referral-board-mockup.html"]) {
+      const html = read(file);
+      expect(html, file).not.toContain("gstatic.com/antigravity");
+      for (const [, src] of html.matchAll(/<script[^>]*\bsrc="(https?:[^"]+)"/g)) {
+        expect(src, file).toMatch(/\d+\.\d+\.\d+/);
+      }
+    }
+  });
+});
+
+describe("A4-14: the digest route checks production itself", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("answers 404 in production without relying on the proxy", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect((await digestGet()).status).toBe(404);
+  });
+  it("still serves the design reference outside production", async () => {
+    vi.stubEnv("NODE_ENV", "test");
+    const response = await digestGet();
+    expect(response.status).toBe(200);
   });
 });
