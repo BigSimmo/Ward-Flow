@@ -246,7 +246,7 @@ export function createWorkspaceStore(
   return {
     pushEnabled: !!push,
     async ready() {
-      const version = push ? 3 : 2;
+      const version = 4;
       const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=$1", [version]);
       if (!rows.length) throw new Error("Shared schema unavailable");
     },
@@ -426,4 +426,19 @@ export function createWorkspaceStore(
       return response;
     },
   };
+}
+
+/** Azure startup gate: shared traffic needs the complete migration 1-4 ledger, including the trigger hardening. */
+export async function verifyAzureMigrations(pool) {
+  let versions;
+  try {
+    const { rows } = await pool.query(
+      "SELECT array_agg(version ORDER BY version) AS versions FROM ward_flow.migrations",
+    );
+    versions = rows[0]?.versions;
+  } catch {
+    throw new Error("Azure database runtime verification unavailable");
+  }
+  if (!Array.isArray(versions) || versions.length !== 4 || !versions.every((version, index) => version === index + 1))
+    throw new Error("Unsafe or unprepared Azure database runtime");
 }

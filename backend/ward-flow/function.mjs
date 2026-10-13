@@ -1,41 +1,10 @@
 import { app } from "@azure/functions";
 import { randomUUID } from "node:crypto";
-import { readConfig } from "./config.mjs";
-import { openStorage, createStore } from "./database.mjs";
-import { createPush, errorFields } from "./push.mjs";
-import { createAuthenticator } from "./auth.mjs";
-import { createHandler } from "./server.mjs";
+import { errorFields } from "./push.mjs";
+import { createFunctionRuntime } from "./function-runtime.mjs";
 
-let handlerPromise;
-let sharedStoreRef;
-
-function handler() {
-  handlerPromise ??= (async () => {
-    const config = readConfig();
-    const storage = await openStorage(config.storage);
-    let sharedStore;
-    if (config.shared) {
-      const { createPostgresPool, createWorkspaceStore } = await import("./postgres.mjs");
-      const engine = await import("./dist/engine.mjs");
-      sharedStore = createWorkspaceStore(createPostgresPool(config.postgres), {
-        workspaceId: config.workspaceId,
-        engine,
-        push: await createPush(config),
-      });
-    }
-    sharedStoreRef = sharedStore;
-    return createHandler({
-      config,
-      store: createStore(storage),
-      authenticate: await createAuthenticator(config),
-      sharedStore,
-    });
-  })().catch((error) => {
-    handlerPromise = undefined;
-    throw error;
-  });
-  return handlerPromise;
-}
+const runtime = createFunctionRuntime();
+const handler = () => runtime.getHandler();
 
 export async function handleHttp(
   request,
@@ -103,7 +72,7 @@ export async function sweepPush(
 ) {
   try {
     await getHandler();
-    await sharedStoreRef?.sweepPush();
+    await runtime.getSharedStore()?.sweepPush();
   } catch (error) {
     // Name, code (such as a PostgreSQL SQLSTATE) and a URL-free message tell a missing grant from
     // an engine or configuration fault. Never an endpoint, key or payload.
