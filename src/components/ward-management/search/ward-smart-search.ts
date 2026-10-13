@@ -563,6 +563,20 @@ export function normaliseCommaNameQuery(query: string): string {
   return parts.join(" ");
 }
 
+/** Determines whether a query has potential task intent requiring inbox action derivation. */
+export function shouldDeriveSearchTasks(query: string): boolean {
+  const trimmed = normaliseCommaNameQuery(query);
+  const typed = query.trim();
+  if (typed.length === 0) return false;
+  const intent = detectSearchIntent(trimmed);
+  return (
+    intent === "task" ||
+    intent === "general" ||
+    intent === "identifier" ||
+    /\b(tasks?|actions?|inbox|pending|overdue)\b/i.test(typed)
+  );
+}
+
 /**
  * Unified multi-entity search runner.
  * Prefix and word-start matches lead each group. No score, no provider calls.
@@ -649,11 +663,7 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     limit,
   );
 
-  const shouldDeriveTasks =
-    intent === "task" ||
-    intent === "general" ||
-    intent === "identifier" ||
-    /\b(tasks?|actions?|inbox|pending|overdue)\b/i.test(typed);
+  const shouldDeriveTasks = shouldDeriveSearchTasks(input.query);
 
   const tasksInbox = shouldDeriveTasks
     ? (input.precomputedTasks ??

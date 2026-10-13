@@ -182,6 +182,7 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
   const n = next.bed;
   return (
     p.bedNumber === n.bedNumber &&
+    p.bedLabel === n.bedLabel &&
     p.status === n.status &&
     p.statusText === n.statusText &&
     p.patientAlias === n.patientAlias &&

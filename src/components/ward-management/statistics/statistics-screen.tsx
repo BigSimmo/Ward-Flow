@@ -64,7 +64,7 @@ import {
 import { FlushRow, Follow } from "./statistics-layout";
 import { StatisticsViewBar, useStatisticsView } from "./statistics-view-bar";
 
-import { StatisticsJourneyView } from "./statistics-journey-view";
+const StatisticsJourneyView = dynamic(() => import("./statistics-journey-view").then((m) => m.StatisticsJourneyView));
 
 const StatisticsMapView = dynamic(() => import("./statistics-map-view").then((m) => m.StatisticsMapView), {
   ssr: false,

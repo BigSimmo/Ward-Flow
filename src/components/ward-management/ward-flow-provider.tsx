@@ -900,7 +900,6 @@ function WardFlowWorld({
   }, [shared.enabled, shared.snapshot, anchorOffsetMinutes]);
 
   useEffect(() => {
-    if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
     let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -930,7 +929,7 @@ function WardFlowWorld({
       if (timeoutTimer) clearTimeout(timeoutTimer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [initialNow, mountedAtAbsolute, shared.enabled]);
+  }, [initialNow, mountedAtAbsolute]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;

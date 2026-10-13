@@ -16,7 +16,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
+import { searchWardFlow, shouldDeriveSearchTasks } from "@/components/ward-management/search/ward-smart-search";
 import { useDebouncedValue } from "./search/use-debounced-value";
 import { buildActionInbox, destinationUnit, isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -113,12 +113,12 @@ export function WardChromeSearch({
     setActiveIndex(-1);
   }
 
-  const now = useWardFlowClock();
+  const now = useWardFlowClock(0);
   const plannedAdmissions = context?.plannedAdmissions;
 
   const precomputedTasks = useMemo(
     () =>
-      debouncedTrimmed.length === 0
+      debouncedTrimmed.length === 0 || !shouldDeriveSearchTasks(debouncedTrimmed)
         ? undefined
         : buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions ? { plannedAdmissions } : undefined),
     [debouncedTrimmed, movements, now, plannedAdmissions, units],
