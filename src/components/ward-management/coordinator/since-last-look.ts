@@ -214,7 +214,7 @@ function stringArray(field: unknown): boolean {
   return Array.isArray(field) && field.every((entry) => typeof entry === "string");
 }
 function snapshotHeaderInvalid(v: Record<string, unknown>): boolean {
-  return v.version !== 1 || typeof v.at !== "number" || typeof v.scenario !== "string";
+  return v.version !== 1 || typeof v.at !== "number" || !Number.isFinite(v.at) || typeof v.scenario !== "string";
 }
 function snapshotListsInvalid(v: Record<string, unknown>): boolean {
   return ![v.referralIds, v.movementIds, v.delayKeys, v.escalatedMovementIds].every(stringArray);

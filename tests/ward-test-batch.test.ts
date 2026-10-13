@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
@@ -31,6 +31,12 @@ const plan = { schemaVersion: 1, tests: ["tests/one.test.ts", "tests/one.test.ts
 const hash = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
 
 describe("exact focused selection", () => {
+  it("refuses a unit-test-named link to a live test", () => {
+    const root = fixture();
+    writeFileSync(path.join(root, "tests/real.live.test.ts"), "live fixture");
+    symlinkSync("real.live.test.ts", path.join(root, "tests/alias.test.ts"));
+    expect(() => prepareBatch({ schemaVersion: 1, tests: ["tests/alias.test.ts"] }, root)).toThrow(/offline unit test/);
+  });
   it("deduplicates files and retains both intended tests", () => {
     expect(prepareBatch(plan, fixture()).tests).toEqual(["tests/one.test.ts", "tests/two.test.ts"]);
   });
@@ -343,6 +349,19 @@ describe("owned process deadline", () => {
     expect((await executeBatch({ ...base, timeoutMs: 100, args: ["-e", "setInterval(()=>{},1000)"] })).status).toBe(
       "timed_out",
     );
+  }, 30000);
+  it("reports an operator interrupt as interrupted, not timed out", async () => {
+    const root = fixture();
+    const run = executeBatch({
+      root,
+      environment: process.env,
+      logFile: path.join(root, "run.log"),
+      timeoutMs: 20000,
+      args: ["-e", "setInterval(()=>{},1000)"],
+    });
+    await new Promise((done) => setTimeout(done, 300));
+    process.emit("SIGINT", "SIGINT");
+    expect((await run).status).toBe("interrupted");
   }, 30000);
   it("refuses success and stops detached descendants after the root exits", async () => {
     const root = fixture(),

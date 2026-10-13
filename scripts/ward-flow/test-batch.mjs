@@ -73,6 +73,9 @@ function selectTests(plan, root, changedFiles) {
   for (const file of selected) {
     if (!isOfflineUnitTestFile(file)) throw new Error(`Not an offline unit test: ${file}`);
     exactPath(root, file);
+    // A link named like a unit test must not point at a live test, helper or browser spec.
+    const target = path.relative(realpathSync(root), realpathSync(path.resolve(root, file))).replaceAll("\\", "/");
+    if (!isOfflineUnitTestFile(target)) throw new Error(`Not an offline unit test: ${file} -> ${target}`);
   }
   return selected;
 }
@@ -263,6 +266,7 @@ export function executeBatch({ root, args, environment, timeoutMs, logFile, guar
       child.send({ command: process.execPath, args, cwd: root, env: environment, options: { windowsHide: true } });
     }
     let timedOut = false,
+      interrupted = false,
       finished = false,
       grace;
     const finish = (status, exitCode) => {
@@ -295,7 +299,11 @@ export function executeBatch({ root, args, environment, timeoutMs, logFile, guar
       }
     };
     const timer = setTimeout(cancel, timeoutMs);
-    const interrupt = cancel;
+    const interrupt = () => {
+      if (finished || timedOut) return;
+      interrupted = true;
+      cancel();
+    };
     process.once("SIGINT", interrupt);
     process.once("SIGTERM", interrupt);
     child.once("error", (error) => {
@@ -308,7 +316,10 @@ export function executeBatch({ root, args, environment, timeoutMs, logFile, guar
     child.once("close", (code) => {
       const exitCode = guarded ? code : (completion?.status ?? null);
       const proven = guarded || Boolean(completion && !completion.error);
-      finish(timedOut ? "timed_out" : proven && exitCode === 0 ? "passed" : "failed", exitCode);
+      finish(
+        interrupted ? "interrupted" : timedOut ? "timed_out" : proven && exitCode === 0 ? "passed" : "failed",
+        exitCode,
+      );
     });
   });
 }
