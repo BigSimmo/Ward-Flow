@@ -777,7 +777,7 @@ export function WardTasksDrawer({
             </div>
           </>
         )}
-        {renderContacts(item, movement)}
+        {!isPhone || isExpanded ? renderContacts(item, movement) : null}
         {renderEscalation(item, movement)}
       </li>
     );

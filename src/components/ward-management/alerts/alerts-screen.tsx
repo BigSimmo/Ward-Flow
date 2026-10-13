@@ -1416,6 +1416,7 @@ function AlertsWorkspace() {
                   size="sm"
                   icon={ChevronRight}
                   aria-label={`Next alert, ${nextQueue.length} in turn`}
+                  disabled={nextQueue.length === 0}
                   onClick={handleNext}
                 >
                   {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
@@ -1638,7 +1639,8 @@ function AlertsWorkspace() {
                             <dt>Acknowledged</dt>
                             <dd>
                               <span>
-                                {broadcastAcks?.acknowledged} of {broadcastAcks?.of} units acknowledged
+                                {broadcastAcks?.acknowledged} of {broadcastAcks?.of} units{" "}
+                                {broadcastKind(activeBroadcast) === "directive" ? "acknowledged" : "answered"}
                               </span>
                             </dd>
                           </div>
