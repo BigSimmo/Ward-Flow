@@ -1427,6 +1427,12 @@ button.taskLabel[aria-pressed="true"] {
 
 /* v10 phone second pass: the two hero actions share the row equally, and the view switch stays
  * under the bar while the list scrolls. Phone only (both render on the phone alone). */
+/* Phone hero figures size to their words, so "Time not written" reads in full beside the two short
+ * labels instead of truncating in an equal third. Still one row; a narrow screen shrinks them. */
+.phoneHero [data-count] {
+  grid-auto-columns: auto;
+}
+
 .phoneHeroAction {
   flex: 1 1 0;
   justify-content: center;

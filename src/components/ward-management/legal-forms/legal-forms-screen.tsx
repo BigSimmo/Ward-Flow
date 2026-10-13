@@ -662,6 +662,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           <>
             <PhoneHero
               data-testid="ward-legal-hud-island"
+              className={styles.phoneHero}
               eyebrow="Mental Health Act forms"
               chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
               title={`${rows.length} forms on open moves`}

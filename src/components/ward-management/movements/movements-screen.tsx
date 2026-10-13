@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
-import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   isOpen,
   movementHealthService,
@@ -95,6 +95,20 @@ function meaningfulBlocker(movement: Movement): string | null {
   return blocker && !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === blocker)
     ? movement.blocker
     : null;
+}
+
+/**
+ * Design check 13 Oct 2026: the act-now reason a "Needs you" row leads with — a recorded legal form
+ * whose due time has passed, or is approaching (`clockState` critical, the same threshold Delays
+ * reads). Worded as the `legal_breached`/`legal_expiring` causes below; never a computed limit (D5).
+ */
+function legalActNowReason(movement: Movement, now: Instant): string | null {
+  const form = movement.legalForm;
+  if (form?.dueAt === undefined) return null;
+  const state = clockState(form.dueAt, now);
+  if (state === "breached") return `Form ${form.code} · legal due time passed`;
+  if (state === "critical") return `Form ${form.code} · expiry approaching`;
+  return null;
 }
 
 export interface CauseDefinition {
@@ -985,20 +999,21 @@ export function MovementsScreen() {
               // D-b (Ward Lead's decisions, 2026-09-17): built off `openMovements`, never the scoped
               // worklist, and a movement outside the chosen service says so.
               <ul className={flow.needsList}>
-                {attentionMovements.map((movement, index) => {
+                {attentionMovements.map((movement) => {
                   const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
                   const subject = resolveSubjectPatient(movement, { patients, referrals });
                   // Surname first on every device, as the worklist and timeline list people.
                   const who = subject.formalName;
-                  const reason = meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
+                  const legalReason = legalActNowReason(movement, now);
+                  const reason = legalReason ?? meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
                   return (
                     <li key={movement.id} className={flow.needsCell}>
                       <button
                         type="button"
                         className={flow.needsItem}
                         data-record-key={movement.id}
-                        // v10: the first act-now item (past the access target) takes the thin red edge.
-                        data-act-now={index === 0 && now - movement.openedAt >= accessTarget ? "true" : undefined}
+                        // The thin red edge marks act-now rows only: a legal authority passed or approaching.
+                        data-act-now={legalReason ? "true" : undefined}
                         onClick={() => jumpToMovement(movement.id)}
                         aria-label={`Find ${who} in worklist: ${reason}${outsideService ? ` — outside ${service}` : ""}`}
                       >

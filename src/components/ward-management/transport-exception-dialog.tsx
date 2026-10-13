@@ -47,7 +47,7 @@ export function TransportExceptionDialog({
       onClose={close}
       title={`${action} for ${who}?`}
       description="Not recorded yet. You can go ahead; the reason is recorded with the step."
-      size="sm"
+      // Default width (not "sm"): Cancel, the "Choose a reason first" note and the primary fit one line.
       data-testid={testId}
       primary={{
         label: `${action}, record reason`,

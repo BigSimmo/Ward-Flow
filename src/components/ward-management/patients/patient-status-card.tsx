@@ -951,7 +951,7 @@ export function PatientStatusCard({
         {phoneQuiet ? <p className={styles.phFoot}>{phoneFoot ?? status.meta}</p> : null}
       </section>
       {isPhone && (pinned || barLead || barMain) ? (
-        <div className={styles.phBar} data-testid="ward-patient-phone-action-bar">
+        <div className={styles.phBar} data-testid="ward-patient-phone-action-bar" data-wf-phone-action-bar="">
           {barLead ? <span className={styles.phLead}>{barLead}</span> : null}
           {pinned ? (
             <CellAction
