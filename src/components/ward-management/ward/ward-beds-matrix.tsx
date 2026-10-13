@@ -47,6 +47,8 @@ export interface BedItem {
   stayAdmissionId?: string;
   /** On a free bed held for an accepted referral (`heldBedNumber`): the person it is held for. */
   heldFor?: string;
+  /** A4-24: a free bed vacated and still being made ready; not offered until someone taps Ready. */
+  preparing?: boolean;
   age?: number | null;
   sex?: string | null;
   homeRegion?: string | null;
@@ -148,7 +150,7 @@ type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
  * for a free bed.
  */
 export function bedGlyphTone(bed: BedItem): WfTone | null {
-  if (bed.status === "ready") return "success";
+  if (bed.status === "ready") return bed.preparing ? "neutral" : "success";
   if (bed.status === "closed") return "closed";
   if (bed.blockReason) return "danger";
   if (bed.awayAtEdHours != null || bed.pastDate || bed.dischargeBarrier) return "warning";

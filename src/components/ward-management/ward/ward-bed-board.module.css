@@ -274,6 +274,12 @@
   color: var(--wf-ink-1);
 }
 
+/* A4-24: vacated and being made ready. Not offered yet, so no free tint. */
+.cell[data-state="preparing"] {
+  border-style: dashed;
+  color: var(--wf-ink-1);
+}
+
 .cell[data-state="closed"] {
   border-style: dashed;
   background: transparent;
