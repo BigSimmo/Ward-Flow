@@ -71,6 +71,7 @@ import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
 import styles from "./out-of-area-board.module.css";
+import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -359,9 +360,19 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     setRepatNotice(`${recorded}${movementFeedback}`);
   }
 
+  // Audit A3-18 (13 Oct 2026): every card and the return sheet carry the legal status or form.
+  const legalOf = (entry: OutOfAreaEntry): string | undefined =>
+    stayLegalShort(entry.admission, { movements, patients, referrals });
+
   const planPatient = (entry: OutOfAreaEntry): PlanPatient => {
     const info = patientOf(entry);
-    return { displayName: info.displayName, umrn: info.umrn, profileHref: getPatientProfileHref(info) };
+    return {
+      displayName: info.displayName,
+      umrn: info.umrn,
+      profileHref: getPatientProfileHref(info),
+      legal: legalOf(entry),
+      onOrder: isOnOrder(stayLegalStatus(entry.admission, { movements, patients, referrals })),
+    };
   };
 
   const renderPlan = (entry: OutOfAreaEntry, header: ReactNode | undefined, idPrefix: string) => (
@@ -499,6 +510,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         name: info.displayName,
         umrn: info.umrn,
         profileHref: getPatientProfileHref(info),
+        legal: legalOf(entry),
         daysLabel: sinceArrivalLabel(entry, now),
         offset: offsetOf(entry),
         status: statusOf(entry),
@@ -868,18 +880,21 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                             <td>
                               <span className={styles.two}>
                                 <b title={info.displayName}>{info.displayName}</b>
-                                {href ? (
-                                  <Link
-                                    href={href}
-                                    className={styles.umrnLink}
-                                    onClick={(event) => event.stopPropagation()}
-                                    title={`Open profile for ${info.displayName} (${info.umrn})`}
-                                  >
-                                    {info.umrn}
-                                  </Link>
-                                ) : (
-                                  <span className={styles.mono}>{info.umrn}</span>
-                                )}
+                                <span className={styles.legalUmrn}>
+                                  {legalOf(entry) ? <span>{legalOf(entry)} · </span> : null}
+                                  {href ? (
+                                    <Link
+                                      href={href}
+                                      className={styles.umrnLink}
+                                      onClick={(event) => event.stopPropagation()}
+                                      title={`Open profile for ${info.displayName} (${info.umrn})`}
+                                    >
+                                      {info.umrn}
+                                    </Link>
+                                  ) : (
+                                    <span className={styles.mono}>{info.umrn}</span>
+                                  )}
+                                </span>
                               </span>
                             </td>
                             <td>

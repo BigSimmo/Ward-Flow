@@ -56,6 +56,8 @@ import { PATIENT_MODES, patientMode, type PatientMode } from "./patient-mode";
 import { buildPatientStatus, dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { usePathname } from "next/navigation";
 import {
@@ -83,6 +85,8 @@ import {
   useIsPhone,
 } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
+import { useUndoableStep } from "../use-undoable-step";
+import { isOnOrder } from "../ward-stay-legal";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -218,6 +222,8 @@ export function PatientNowScreen({
   const routeRole = useRouteRole();
   const pathname = usePathname() ?? "";
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
+  // Audit A3-10 (13 Oct 2026): Mark absent offers the standard toast with Undo, as other moves do.
+  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
   // timestamp, so the calendar date used to derive a patient's age must be rebuilt from `dayZero`.
@@ -563,6 +569,8 @@ export function PatientNowScreen({
           : undefined;
   const phoneStayStages: JourneyStage[] | undefined = (() => {
     if (!isPhone || isLiveBedflow || !heroStay || heroStay.arrivedAt === null) return undefined;
+    // Audit A3-12: a missing person is not "On ward"; the absence card and figures carry the story.
+    if (mode === "awol") return undefined;
     const arrivedAt = heroStay.arrivedAt;
     const before = heroStayMovement
       ? patientJourneyStages(heroStayMovement, arrivedAt).map((stage) => ({ ...stage, now: undefined }))
@@ -580,7 +588,7 @@ export function PatientNowScreen({
     if (heroStay.leftAt === null && awaySince !== undefined)
       stages.push({
         id: "away",
-        label: mode === "leave" ? "On leave" : mode === "awol" ? "Absent" : "At ED",
+        label: mode === "leave" ? "On leave" : "At ED",
         minutes: Math.max(0, now - awaySince),
         now: true,
       });
@@ -588,19 +596,47 @@ export function PatientNowScreen({
   })();
   const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
   const ctoInForce = activeCommunityTreatmentOrder(livePatient);
+  // Audit A3-3: one time left for a typed expiry, the same the Forms and Delays pages show.
+  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now);
+  const movementTimeLeft =
+    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now) : undefined;
+  // Audit S-6: an ended form with Form 6A still to record says so, never "In force".
+  const formMovementNext = formProgression(formMovement);
   const phoneLegal = ctoInForce
     ? { value: ctoInForce.form, label: "In force" }
-    : formMovement?.legalForm
-      ? { value: formMovement.legalForm.code, label: "In force" }
-      : {
-          // A figure, so the status's first word ("Voluntary"); the full words are on Legal now.
-          value:
-            (
-              (mode === "idle" ? livePatient?.legalStatus : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ??
-              "Not recorded"
-            ).split(" ")[0] ?? "Not recorded",
-          label: "Legal status",
-        };
+    : formMovementNext
+      ? { value: formMovementNext.nextCode, label: "To record", tone: "warning" as const }
+      : formMovement?.legalForm
+        ? {
+            value: formMovement.legalForm.code,
+            label: formMovementLeft ? formMovementLeft.text : "In force",
+            ...(formMovementLeft && formMovementLeft.standing !== "later"
+              ? { tone: formMovementLeft.actNow ? ("danger" as const) : ("warning" as const) }
+              : {}),
+          }
+        : {
+            // A figure, so the status's first word ("Voluntary"); the full words are on Legal now.
+            value:
+              (
+                (mode === "idle"
+                  ? livePatient?.legalStatus
+                  : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ?? "Not recorded"
+              ).split(" ")[0] ?? "Not recorded",
+            label: "Legal status",
+          };
+  // Audit S-32: the leave sheet names the form in force and says when the person is on an order.
+  const stayLegalStatusNow = liveMovement?.legalStatus ?? livePatient?.legalStatus;
+  const leaveLegal = {
+    form: [
+      ctoInForce
+        ? `Form ${ctoInForce.form}`
+        : formMovement?.legalForm
+          ? `Form ${formMovement.legalForm.code}`
+          : "No form recorded",
+      stayLegalStatusNow ?? "legal status not recorded",
+    ].join(" · "),
+    onOrder: isOnOrder(stayLegalStatusNow),
+  };
   const heroStayOrigin = heroStayMovement ? edById(heroStayMovement.originEdId)?.name : undefined;
   const phoneStatusFoot =
     mode === "ward" && heroStay?.arrivedAt != null
@@ -624,13 +660,26 @@ export function PatientNowScreen({
   function markAbsent() {
     const stay = resolved?.liveAdmission;
     if (stay && gate("RECORD_ABSENT_WITHOUT_LEAVE").allowed)
-      dispatch({
-        type: "RECORD_ABSENT_WITHOUT_LEAVE",
-        role: routeRole,
-        now,
-        admissionId: stay.id,
-        actingUnitId: stay.unitId,
-      });
+      runStep(
+        {
+          type: "RECORD_ABSENT_WITHOUT_LEAVE",
+          role: routeRole,
+          now,
+          admissionId: stay.id,
+          actingUnitId: stay.unitId,
+        },
+        {
+          success: "Marked absent without leave",
+          undo: (at) => ({
+            type: "UNDO_ABSENT_WITHOUT_LEAVE",
+            role: routeRole,
+            now: at,
+            admissionId: stay.id,
+            ...(routeRole === "ward" ? { actingUnitId: stay.unitId } : {}),
+          }),
+          undone: "Undone. Back on leave.",
+        },
+      );
   }
   const wardForm: WardChangeForm = wardFormFor.admissionId === resolved?.liveAdmission?.id ? wardFormFor.form : "none";
   function setWardForm(form: WardChangeForm) {
@@ -1235,6 +1284,8 @@ export function PatientNowScreen({
             movement={movementInForce ? liveMovement : undefined}
             patient={livePatient}
             onAllForms={() => openTab("documents")}
+            now={now}
+            absent={mode === "awol"}
           />
         ) : null
       }
@@ -1273,6 +1324,7 @@ export function PatientNowScreen({
               dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
               refusal={wardRefusal}
               roleLimit={(eventType) => gate(eventType).reason}
+              leaveLegal={leaveLegal}
             />
           ) : null}
           {mode === "leave" && stayLeaveBed ? (
@@ -1488,6 +1540,17 @@ export function PatientNowScreen({
                     <span>Stage</span>
                   </span>
                   <PhoneClearFact mode={mode} context={statusContext} />
+                  {movementTimeLeft ? (
+                    <span className={styles.v6HeroFact} data-testid="ward-patient-hero-form-left">
+                      <strong className={styles.v6HeroWait}>{movementTimeLeft.text}</strong>
+                      <span className={styles.phFigLabel}>
+                        {movementTimeLeft.standing !== "later" ? (
+                          <StatusGlyph tone={movementTimeLeft.tone} size={9} />
+                        ) : null}
+                        {movementTimeLeft.code}
+                      </span>
+                    </span>
+                  ) : null}
                 </span>
               ) : isPhone && !isLiveBedflow ? (
                 /* v10 Patient, phone: three figures, the value over its label, from the record. */
@@ -1610,6 +1673,16 @@ export function PatientNowScreen({
                     <strong className={styles.v6HeroWait}>{waitedStr}</strong>
                     since opened
                   </span>
+                  {movementTimeLeft ? (
+                    <span className={styles.v6HeroFact} data-testid="ward-patient-hero-form-left">
+                      {movementTimeLeft.standing !== "later" ? (
+                        <StatusGlyph tone={movementTimeLeft.tone} size={9} />
+                      ) : (
+                        <Scale size={14} aria-hidden="true" />
+                      )}
+                      {movementTimeLeft.code} · <strong className={styles.v6HeroWait}>{movementTimeLeft.text}</strong>
+                    </span>
+                  ) : null}
                 </span>
               ) : (
                 <span className={styles.v6HeroFacts}>
