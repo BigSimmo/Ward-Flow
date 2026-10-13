@@ -495,6 +495,9 @@ function documentationItems(draft: DocumentationDraft): number {
   return 5 + (draft.medical === "no" ? 3 : 0) + (draft.additional === "yes" ? 1 : 0);
 }
 
+/** The contact fields asked at Send (`contactFieldErrors` checks each one), counted as items. */
+const CONTACT_FIELD_COUNT = 5;
+
 /** Per-field contact messages for display; `referralContactError` stays the gate. */
 function contactFieldErrors(contact: ReferralContact): Partial<Record<keyof ReferralContact, string>> {
   const errors: Partial<Record<keyof ReferralContact, string>> = {};
@@ -1241,8 +1244,10 @@ function WardReferralDrawerContent({
   // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed"
   // all count the same items, so the steps add up to the summary and four Complete steps read as
   // all ready. The checklist rows below are labels for the letter, not a second count.
-  const itemsTotal = 4 + (sourceKind === "community" ? 3 : 2) + documentationItems(documentation) + 1;
-  const itemsReady = itemsTotal - totalNeeded;
+  // A2-9 (audit 13 Oct 2026): the contact details asked at Send are items too, so the hero never
+  // reads "0 items left" while Confirm refuses for an empty contact field (`itemsLeft` below).
+  const itemsTotal =
+    4 + (sourceKind === "community" ? 3 : 2) + documentationItems(documentation) + 1 + CONTACT_FIELD_COUNT;
   function sectionFor(error: string | null): DrawerSection | null {
     if (!error) return null;
     if (patientError() === error) return "patient";
@@ -1401,6 +1406,8 @@ function WardReferralDrawerContent({
         : { label: "Not answered", tone: "neutral" };
   const contactErrors = attempted.contact ? contactFieldErrors(contact) : {};
   const contactNeeded = Object.keys(contactFieldErrors(contact)).length;
+  const itemsLeft = totalNeeded + contactNeeded;
+  const itemsReady = itemsTotal - itemsLeft;
   const patientShowErrors = attempted.patient && activeSection === "patient";
   // The sender's own submission, read back from the created referral.
   const sentDetails = sentReferralId ? referrals.find((referral) => referral.id === sentReferralId)?.intake : undefined;
@@ -1473,8 +1480,8 @@ function WardReferralDrawerContent({
     },
     {
       label: "Your contact",
-      value: contactNeeded ? "Asked at Send" : contact.name,
-      state: contactNeeded ? "follow" : "done",
+      value: contactNeeded ? `${contactNeeded} to fill at Send` : contact.name,
+      state: contactNeeded ? "needed" : "done",
     },
     { label: destination.places, value: placeRow, state: selectedDestinations.length ? "done" : "needed" },
   ];
@@ -1555,9 +1562,9 @@ function WardReferralDrawerContent({
       };
     }
     return {
-      tone: (totalNeeded ? "neutral" : "success") as WfTone,
+      tone: (itemsLeft ? "neutral" : "success") as WfTone,
       // Audit 11 Oct 2026: the same unit as Ready to send, so "4 of 9" and this line agree.
-      first: totalNeeded > 0 ? `${totalNeeded} of ${itemsTotal} items still needed` : "All items in",
+      first: itemsLeft > 0 ? `${itemsLeft} of ${itemsTotal} items still needed` : "All items in",
       second: recipientSummary(recipientLabels),
     };
   })();
@@ -1708,7 +1715,7 @@ function WardReferralDrawerContent({
                       {/* Audit 11 Oct 2026: one unit (items, as "N of M ready to send" counts), and no
                           decision time before anything is sent. */}
                       <span className={styles.phFigure}>
-                        <b className={styles.mono}>{totalNeeded}</b>
+                        <b className={styles.mono}>{itemsLeft}</b>
                         <span>Items left</span>
                       </span>
                       <span className={styles.phFigure}>
@@ -1768,7 +1775,7 @@ function WardReferralDrawerContent({
               {sentReferralId ? null : (
                 /* v10 phone: a compact answer line, how many items are ready to send. Phone only. */
                 <p className={styles.phReady} data-testid="ward-referral-phone-ready">
-                  <StatusGlyph tone={totalNeeded === 0 ? "success" : "neutral"} size={10} />
+                  <StatusGlyph tone={itemsLeft === 0 ? "success" : "neutral"} size={10} />
                   <span className={styles.phReadyText}>
                     <b>
                       {itemsReady} of {itemsTotal}
@@ -3133,7 +3140,9 @@ function WardReferralDrawerContent({
                     <section className={styles.refCard} data-testid="ward-referral-clearance-checklist">
                       <CardHead icon={Stethoscope} title="Medical clearance checklist">
                         <span className={styles.chip}>
-                          <span className={styles.mono}>{checksDone ?? 0}</span> of {CLEARANCE_CHECKS.length} done
+                          {/* A2-9: recorded for the letter, not counted in the items left. */}
+                          Optional · <span className={styles.mono}>{checksDone ?? 0}</span> of{" "}
+                          {CLEARANCE_CHECKS.length} done
                         </span>
                       </CardHead>
                       <div className={styles.cardBody} data-tight="true">
@@ -3532,7 +3541,7 @@ function WardReferralDrawerContent({
               <span className={styles.phChecklistText}>
                 <span className={styles.phChecklistTitle}>Send checklist</span>
                 <span className={styles.phChecklistMeta}>
-                  Every row the letter needs, <b>{readyRows.length}</b> in all
+                  <b>{itemsReady}</b> of {itemsTotal} items ready
                 </span>
               </span>
               <ChevronDown aria-hidden="true" data-open={summaryOpen ? "true" : undefined} />
@@ -3563,7 +3572,7 @@ function WardReferralDrawerContent({
                         done={itemsReady}
                         total={itemsTotal}
                         label="items ready to send"
-                        tone={totalNeeded === 0 ? "success" : undefined}
+                        tone={itemsLeft === 0 ? "success" : undefined}
                         className={styles.railFrac}
                       />
                       {kept || draftKeptAt !== null ? (
