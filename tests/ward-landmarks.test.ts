@@ -39,8 +39,20 @@ import { COMMUNITY_TEAM_PAGES } from "../src/components/ward-management/communit
  * absent value as a real case (see its own comment).
  */
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...rest }: { children: ReactNode; href: string; [key: string]: unknown }) =>
-    createElement("a", { href, ...rest }, children),
+  default: ({
+    children,
+    href,
+    prefetch: _prefetch,
+    ...rest
+  }: {
+    children: ReactNode;
+    href: string;
+    prefetch?: boolean;
+    [key: string]: unknown;
+  }) => {
+    void _prefetch;
+    return createElement("a", { href, ...rest }, children);
+  },
 }));
 
 const router = vi.hoisted(() => ({
@@ -90,11 +102,14 @@ import { StatisticsServicesIndexScreen } from "@/components/ward-management/stat
 import { StatisticsWardsIndexScreen } from "@/components/ward-management/statistics/statistics-wards-index";
 import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistics/statistics-eds-index";
 import { StatisticsTeamsIndexScreen } from "@/components/ward-management/statistics/statistics-teams-index";
+import { WardFlowSignInScreen } from "@/components/ward-flow-sign-in/ward-flow-sign-in-screen";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const WARD_FLOW_ROOT = path.join(REPO_ROOT, "src", "app", "mockups", "ward-flow");
+const WARD_FLOW_SIGN_IN_ROOT = path.join(REPO_ROOT, "src", "app", "mockups", "ward-flow-sign-in");
 const ROUTE_PREFIX = "/mockups/ward-flow";
+const SIGN_IN_ROUTE = "/mockups/ward-flow-sign-in";
 
 type WardFlowRoute = { route: string; dynamic: boolean };
 
@@ -103,22 +118,26 @@ type WardFlowRoute = { route: string; dynamic: boolean };
  * than imported, matching that file's own established pattern of every structural-contract test
  * owning its own filesystem scan, so a change to one enumeration can never silently blind the
  * other. Enumerated straight from the filesystem, never a hand-written list.
+ * Includes both `/mockups/ward-flow` and its sibling `/mockups/ward-flow-sign-in` (R09).
  */
-function collectWardFlowRoutes(dir: string, segments: string[] = []): WardFlowRoute[] {
+function collectWardFlowRoutes(dir: string, segments: string[] = [], prefix = ROUTE_PREFIX): WardFlowRoute[] {
   const routes: WardFlowRoute[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      routes.push(...collectWardFlowRoutes(path.join(dir, entry.name), [...segments, entry.name]));
+      routes.push(...collectWardFlowRoutes(path.join(dir, entry.name), [...segments, entry.name], prefix));
     } else if (entry.name === "page.tsx") {
       const dynamic = segments.some((segment) => segment.startsWith("[") && segment.endsWith("]"));
-      const route = segments.length === 0 ? ROUTE_PREFIX : `${ROUTE_PREFIX}/${segments.join("/")}`;
+      const route = segments.length === 0 ? prefix : `${prefix}/${segments.join("/")}`;
       routes.push({ route, dynamic });
     }
   }
   return routes;
 }
 
-const wardFlowRoutes = collectWardFlowRoutes(WARD_FLOW_ROOT);
+const wardFlowRoutes = [
+  ...collectWardFlowRoutes(WARD_FLOW_ROOT),
+  ...collectWardFlowRoutes(WARD_FLOW_SIGN_IN_ROOT, [], SIGN_IN_ROUTE),
+];
 
 /**
  * `/mockups/ward-flow/constellation` is a `redirect()`-only stub (its own doc comment: "Phase 2
@@ -273,6 +292,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/statistics/teams`, render: () => createElement(StatisticsTeamsIndexScreen) },
   { route: `${ROUTE_PREFIX}/reports/downtime`, render: () => createElement(DowntimePackScreen) },
   { route: `${ROUTE_PREFIX}/reports/chronology`, render: () => createElement(PatientChronologyScreen) },
+  // Ward Flow sign-in screen (R09: sibling mockup route verified for landmark and heading contracts).
+  { route: SIGN_IN_ROUTE, render: () => createElement(WardFlowSignInScreen) },
 ];
 
 describe("Ward Flow route/render-map coverage (sanity check on the scan and the map)", () => {
