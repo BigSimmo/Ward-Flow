@@ -746,8 +746,8 @@ export function MovementsScreen() {
   // The earliest opened open movement, not the worklist order (which puts legal expiry first).
   const longestWaiting = [...openMovements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id))[0];
   const nextExpiry = openMovements
-    .filter((movement) => movement.legalForm?.dueAt !== undefined && movement.legalForm.dueAt >= now)
-    .sort((a, b) => a.legalForm!.dueAt! - b.legalForm!.dueAt!)[0];
+    .filter((movement) => (currentLegalDueAt(movement) ?? -Infinity) >= now)
+    .sort((a, b) => currentLegalDueAt(a)! - currentLegalDueAt(b)!)[0];
   const myQueue = byLongestWait(
     openMovements.filter((movement) => isCoordinatorStep(movementNextStep(movement))),
     now,
@@ -914,7 +914,7 @@ export function MovementsScreen() {
                   >
                     <span className={flow.jumpLabel}>Next expiry</span>
                     <span className={flow.jumpName}>{surname(nextExpiry)}</span>
-                    <span className={flow.jumpValue}>{formatInstantWithDay(nextExpiry.legalForm!.dueAt!, now)}</span>
+                    <span className={flow.jumpValue}>{formatInstantWithDay(currentLegalDueAt(nextExpiry)!, now)}</span>
                   </button>
                 ) : null}
                 <LiveChip state="live" onHero />
@@ -1849,7 +1849,7 @@ function heroHighlights(now: Instant, accessTarget: number): HeroHighlight[] {
       tone: "warning",
       test: (m) => isOpen(m) && waited(m) >= ED_SEVERE_PRESSURE_WAIT_MINUTES && waited(m) < accessTarget,
     },
-    { id: "form", label: "Form expiry", test: (m) => isOpen(m) && m.legalForm?.dueAt !== undefined },
+    { id: "form", label: "Form expiry", test: (m) => isOpen(m) && currentLegalDueAt(m) !== undefined },
     { id: "escort", label: "Escort", test: (m) => isOpen(m) && m.transport?.escortRequired === true },
   ];
 }
@@ -2008,14 +2008,17 @@ function StageRow({
   const patientInfo = resolveSubjectPatient(movement, { patients, referrals });
 
   // Legal line: register title plus the recorded expiry only. Never a computed limit (D5).
-  const dueAt = movement.legalForm?.dueAt;
+  const dueAt = currentLegalDueAt(movement);
   const isBreached = dueAt !== undefined && dueAt < now;
   const isExpiring = dueAt !== undefined && dueAt >= now && dueAt - now < 60;
   let legalTagTone: "danger" | "warn" | undefined = undefined;
   let legalText = "";
   if (movement.legalForm) {
     const formTitle = legalFormNameLabelFirst(movement.legalForm);
-    if (dueAt === undefined) {
+    if (dueAt === undefined && movement.legalForm.dueAt !== undefined) {
+      // Ended at the examination or on arrival: its typed expiry is history, not a deadline (S-6).
+      legalText = `${formTitle} - ended`;
+    } else if (dueAt === undefined) {
       legalText = `${formTitle} - no recorded expiry on this record`;
     } else if (isBreached) {
       legalTagTone = "danger";
