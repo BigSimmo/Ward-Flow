@@ -1,3 +1,4 @@
+import { EVENT_ROLE } from "@/components/ward-management/ward-flow-events";
 import type { AuditDecision } from "../ward-audit";
 import { enumValue, finiteInstant } from "../ward-audit";
 import type { Instant } from "../ward-clock";
@@ -350,6 +351,8 @@ export function reduceBroadcastAlertEvent(
  * Returns undefined if the event is rejected.
  */
 export function reduceBroadcastEvent(state: WardFlowState, event: WardFlowEvent): WardFlowState | undefined {
+  // Same role gate as normal dispatch, so a direct caller cannot skip it.
+  if (!EVENT_ROLE[event.type]?.includes(event.role)) return undefined;
   let rejected = false;
   const decision: AuditDecision = { outcome: "accepted", reasonCode: "none" };
   const reject: RejectFn = () => {

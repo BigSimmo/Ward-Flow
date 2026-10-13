@@ -422,7 +422,7 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
       what: movement.closure.outcome === "arrived" ? "the patient arrived" : "the movement closed without an admission",
     });
   }
-  if (movement.referralAbsence !== undefined && movement.acceptedAt === undefined) {
+  if (movement.referralAbsence !== undefined) {
     candidates.push({
       at: movement.referralAbsence.at,
       what:

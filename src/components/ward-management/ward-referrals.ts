@@ -139,7 +139,7 @@ export const isMovementWithdrawable = movementWithdrawable;
  */
 export function referralWithdrawable(referral: Referral, movements?: readonly Movement[]): boolean {
   if (movements) {
-    const linkedMovements = movements.filter((m) => m.referralId === referral.id && !m.closure);
+    const linkedMovements = movements.filter((m) => m.referralId === referral.id);
     if (linkedMovements.some((m) => !movementWithdrawable(m))) {
       return false;
     }
