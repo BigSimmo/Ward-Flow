@@ -7,7 +7,8 @@ import { Card, CardHead, Segmented, StatusGlyph, useIsPhone, type WfTone } from 
 import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
-import { ED_ACCESS_TARGET_MINUTES, type HealthService, type Movement } from "@/components/ward-management/ward-model";
+import type { HealthService, Movement } from "@/components/ward-management/ward-model";
+import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward-pressure";
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
@@ -70,7 +71,7 @@ export function PressureStrip({
   movements,
   service = null,
   foot,
-  edAccessTargetMinutes = ED_ACCESS_TARGET_MINUTES,
+  edAccessTargetMinutes = defaultWardConfiguration().edAccessTargetMinutes,
 }: PressureStripProps) {
   const [order, setOrder] = useState<Order>("worst");
   // Phone (v10 Network): a worst-first list of departments, three shown until asked for more.

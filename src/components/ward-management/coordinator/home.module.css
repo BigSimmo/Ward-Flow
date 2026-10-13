@@ -1289,7 +1289,7 @@ button.registerRow:hover {
     border-radius: 0;
     box-shadow: none;
     background:
-      radial-gradient(720px 200px at 88% -40%, rgba(122, 170, 220, 0.16), transparent 70%),
+      radial-gradient(720px 200px at 88% -40%, var(--wf-hero-glow), transparent 70%),
       linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
   }
 

@@ -29,7 +29,7 @@ import { callRows, type CallRow, type CallTarget } from "./patients/patient-call
 import { edHealthService } from "./ward-service-scope";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
-import { edById, unitById } from "./ward-sites";
+import { edById } from "./ward-sites";
 import { stageCopy } from "./ward-derivations";
 import type { Admission } from "./ward-admissions";
 import type { Movement, Referral, Unit } from "./ward-model";
@@ -123,7 +123,7 @@ function escalationTargets(movement: Movement): CallTarget[] {
  * directory: transport when a leg is booked or waiting, the sending ED's liaison and the
  * receiving ward's nurse in charge.
  */
-function contactTargets(item: InboxItem, movement: Movement): CallTarget[] {
+function contactTargets(item: InboxItem, movement: Movement, units: readonly Unit[] | undefined): CallTarget[] {
   const targets: CallTarget[] = [];
   if (movement.transport || /transport/i.test(item.title)) {
     targets.push({ kind: "transport", name: "Patient transport", role: "Transport bookings" });
@@ -138,7 +138,9 @@ function contactTargets(item: InboxItem, movement: Movement): CallTarget[] {
       line: "liaison",
     });
   }
-  const ward = movement.acceptedUnitId ? unitById(movement.acceptedUnitId) : undefined;
+  const ward = movement.acceptedUnitId
+    ? units?.find((candidate) => candidate.id === movement.acceptedUnitId)
+    : undefined;
   if (ward) targets.push({ kind: "ward", name: ward.name, role: "Nurse in charge", unitId: ward.id });
   return targets;
 }
@@ -425,7 +427,7 @@ export function WardTasksDrawer({
 
   function renderContacts(item: InboxItem, movement?: Movement) {
     if (contacting !== item.id || !movement) return null;
-    const rows = callRows(contactTargets(item, movement), now);
+    const rows = callRows(contactTargets(item, movement, records?.units), now);
     return (
       <div className={styles.escalationForm} data-testid={`ward-task-contacts-${item.id}`}>
         <ul className={styles.callList} aria-label="Who to call, mock numbers">

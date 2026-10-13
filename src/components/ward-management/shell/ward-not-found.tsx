@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { patientSearchHref } from "./ward-facade";
 
 import styles from "./ward-not-found.module.css";
 
@@ -15,7 +16,7 @@ export function WardNotFoundBody({
   children,
   list,
   extra,
-  search = <Link href="/mockups/ward-flow/search">Search patients</Link>,
+  search = <Link href={patientSearchHref()}>Search patients</Link>,
 }: {
   title: string;
   testId?: string;

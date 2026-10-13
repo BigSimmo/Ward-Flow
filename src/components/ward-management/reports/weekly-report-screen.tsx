@@ -38,7 +38,7 @@ import styles from "./reports.module.css";
 /** The out of area bands, in the words the rest of the app uses for them. */
 const OUT_OF_AREA_META = OUT_OF_AREA_BANDS.map((band) => TRAVEL_BAND_LABELS[band]).join(" or ");
 /** The same bands in the few words a phone card's aside holds without clipping (audit stats-14). */
-const OUT_OF_AREA_PHONE_META = "3h+ from home, or air only";
+const OUT_OF_AREA_PHONE_META = "Far from home, or by air";
 
 /** Offsets offered in the week picker: this week so far, the last full week, then seven before it. */
 const WEEK_OFFSETS = [-1, 0, 1, 2, 3, 4, 5, 6, 7] as const;
