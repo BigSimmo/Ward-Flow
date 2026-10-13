@@ -10,6 +10,7 @@ import { WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardOfflineBanner } from "@/components/ward-management/shell/ward-offline-banner";
+import { WardDemoNotSavedNote } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -130,6 +131,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
             <WardBarMount />
             <WardBroadcastBanner />
             <WardOfflineBanner />
+            <WardDemoNotSavedNote />
             <WardPhoneDesktopOnly />
             <WardGround>{children}</WardGround>
           </div>
