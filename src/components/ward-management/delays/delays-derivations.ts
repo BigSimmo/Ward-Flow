@@ -634,11 +634,14 @@ export function answerSilenceReminder(movement: Movement, referrals: Referral[],
     // Only destinations still awaiting an answer (and not waitlisted) count, and the OLDEST silent one drives the
     // reminder, so an answered, withdrawn or newer arm can never reset an older silence.
     const wardArms = (referral?.destinations ?? []).filter((d) => d.destination.kind === "psychiatric_ward");
-    const silentWardTimes = wardArms
-      .filter((d) => isAwaitingAnswer(d) && d.waitlistedAt === undefined && d.referredAt !== undefined)
-      .map((d) => d.referredAt!);
-    if (silentWardTimes.length > 0) return silentWardReminder(Math.min(...silentWardTimes), now);
-    if (wardArms.length > 0) return undefined;
+    if (wardArms.length > 0) {
+      const silentWardTimes = wardArms
+        .filter((d) => isAwaitingAnswer(d) && d.waitlistedAt === undefined)
+        .map((d) => d.referredAt ?? movement.referredAt)
+        .filter((t): t is Instant => t !== undefined);
+      if (silentWardTimes.length > 0) return silentWardReminder(Math.min(...silentWardTimes), now);
+      return undefined;
+    }
     return silentWardReminder(movement.referredAt, now);
   }
   return undefined;

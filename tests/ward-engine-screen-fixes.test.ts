@@ -324,6 +324,35 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
       const reminder3 = answerSilenceReminder(linkedMixedMov, [mixedReferral], NOW);
       expect(reminder3).toBeDefined();
       expect(reminder3).toContain("Ward silent 2 hours");
+
+      // Case 4: Older queued ward destination without arm-level referredAt -> falls back to movement.referredAt
+      const olderReferral: Referral = {
+        ...baseReferral,
+        id: "REF-WARD-3",
+        patientId: mov.patientId,
+        raisedAt: NOW - 200,
+        destinations: [
+          {
+            destination: {
+              kind: "psychiatric_ward",
+              unitId: "U4",
+              sex: "Female",
+              secureBedNeeded: false,
+              involuntaryBedNeeded: false,
+              highAcuityNursingNeeded: false,
+            },
+            state: "queued",
+            // referredAt is absent (older record)
+          },
+        ],
+      };
+      const linkedOlderMov: Movement = {
+        ...mov,
+        referralId: "REF-WARD-3",
+      };
+      const reminder4 = answerSilenceReminder(linkedOlderMov, [olderReferral], NOW);
+      expect(reminder4).toBeDefined();
+      expect(reminder4).toContain("Ward silent 2 hours");
     });
   });
 
