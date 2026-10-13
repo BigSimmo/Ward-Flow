@@ -10,6 +10,7 @@ import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivati
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
 import type { WardRecordTone } from "@/components/ward-management/ward-record-row";
+import { formProgression } from "./legal-form-progression";
 
 /**
  * LEGAL FORMS AND DEADLINES — pure derivations for `LegalFormsScreen`.
@@ -94,7 +95,18 @@ export function legalFormHasClockConcept(legalForm: LegalForm): boolean {
 export type LegalFormGroup = "with-deadline" | "no-deadline";
 
 export function legalFormGroupOf(movement: Movement): LegalFormGroup {
-  return movement.legalForm?.dueAt === undefined ? "no-deadline" : "with-deadline";
+  return currentLegalDueAt(movement) === undefined ? "no-deadline" : "with-deadline";
+}
+
+/**
+ * The typed expiry that still governs, or `undefined`. Audit S-6 (13 Oct 2026): once
+ * `formProgression` says the form ended (an inpatient order at the examination, or arrival), the
+ * old form's typed expiry is history, not a current deadline, so Forms and Delays never count it
+ * in force or overdue. The record keeps it; this only stops it being read as live.
+ */
+export function currentLegalDueAt(movement: Movement): Instant | undefined {
+  if (formProgression(movement) !== undefined) return undefined;
+  return movement.legalForm?.dueAt;
 }
 
 /**
@@ -105,7 +117,7 @@ export function legalFormGroupOf(movement: Movement): LegalFormGroup {
 export function legalFormGroupRows(movements: Movement[], now: Instant, group: LegalFormGroup): Movement[] {
   const rows = legalFormPopulation(movements).filter((movement) => legalFormGroupOf(movement) === group);
   if (group === "with-deadline") {
-    return rows.sort((a, b) => minutesUntil(a.legalForm!.dueAt!, now) - minutesUntil(b.legalForm!.dueAt!, now));
+    return rows.sort((a, b) => minutesUntil(currentLegalDueAt(a)!, now) - minutesUntil(currentLegalDueAt(b)!, now));
   }
   return rows.sort((a, b) => a.openedAt - b.openedAt);
 }
@@ -114,7 +126,7 @@ export function legalFormGroupRows(movements: Movement[], now: Instant, group: L
  *  predicate already used by `ward-pressure.ts` and `ward-derivations.ts`'s inbox builder:
  *  `dueAt !== undefined && clockState(dueAt, now) === "breached"`. Not re-derived differently here. */
 export function isLegalDeadlineBreached(movement: Movement, now: Instant): boolean {
-  const dueAt = movement.legalForm?.dueAt;
+  const dueAt = currentLegalDueAt(movement);
   return dueAt !== undefined && clockState(dueAt, now) === "breached";
 }
 
@@ -127,7 +139,7 @@ export function isLegalDeadlineBreached(movement: Movement, now: Instant): boole
  * nearest deadline, then the longest wait").
  */
 function legalSortKey(movement: Movement, now: Instant): number {
-  const dueAt = movement.legalForm?.dueAt;
+  const dueAt = currentLegalDueAt(movement);
   return dueAt === undefined ? Infinity : minutesUntil(dueAt, now);
 }
 
@@ -176,6 +188,9 @@ export function legalDeadlineText(movement: Movement, now: Instant): string {
   if (!legalForm) {
     throw new Error(`legalDeadlineText called on movement ${movement.id}, which carries no legal form`);
   }
+  const progression = formProgression(movement);
+  if (progression)
+    return `Form ${progression.endedCode} ended ${progression.endedWhen}; Form ${progression.nextCode} to record`;
   if (legalForm.dueAt !== undefined) {
     const remaining = minutesUntil(legalForm.dueAt, now);
     return remaining < 0
@@ -298,7 +313,7 @@ export function legalFormRowClassification(movement: Movement, now: Instant): Le
 export type LegalExpiryReminder = "within-urgent" | "within-soon";
 
 export function legalExpiryReminderOf(movement: Movement, now: Instant): LegalExpiryReminder | undefined {
-  const dueAt = movement.legalForm?.dueAt;
+  const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) return undefined;
   const state = clockState(dueAt, now);
   if (state === "critical") return "within-urgent";

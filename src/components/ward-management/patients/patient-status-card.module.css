@@ -68,6 +68,11 @@
   font-size: var(--wf-fs-12);
 }
 
+/* The card's next step once every gate is clear (desktop; the phone pins it in the bar). */
+.headAction {
+  display: inline-flex;
+}
+
 .cells {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

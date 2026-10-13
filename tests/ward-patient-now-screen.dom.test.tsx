@@ -100,7 +100,10 @@ describe("the patient-now screen", () => {
 
     renderScreen({ movementId: "WF-004" });
     expect(screen.getByTestId("ward-person-screen")).toHaveAttribute("data-patient-mode", "held");
-    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent(/ready to move/i);
+    // Audit A4-1 (13 Oct 2026): WF-004's pull has lapsed, so the card says so and the bed gate
+    // offers Move or release, rather than a green tick and "Ready to move".
+    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Bed pull expired");
+    expect(screen.getByTestId("ward-patient-gate-bed")).toHaveTextContent(/Pull expired/);
     expect(screen.getByTestId("ward-patient-gate-transport")).toBeInTheDocument();
   });
 

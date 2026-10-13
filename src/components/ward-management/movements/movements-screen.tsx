@@ -1,10 +1,11 @@
 "use client";
 
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import Link from "next/link";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
-import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   isOpen,
   movementHealthService,
@@ -95,6 +96,21 @@ function meaningfulBlocker(movement: Movement): string | null {
   return blocker && !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === blocker)
     ? movement.blocker
     : null;
+}
+
+/**
+ * Design check 13 Oct 2026: the act-now reason a "Needs you" row leads with — a recorded legal form
+ * whose due time has passed, or is approaching (`clockState` critical, the same threshold Delays
+ * reads). Worded as the `legal_breached`/`legal_expiring` causes below; never a computed limit (D5).
+ */
+function legalActNowReason(movement: Movement, now: Instant): string | null {
+  const form = movement.legalForm;
+  const dueAt = currentLegalDueAt(movement);
+  if (!form || dueAt === undefined) return null;
+  const state = clockState(dueAt, now);
+  if (state === "breached") return `Form ${form.code} · legal due time passed`;
+  if (state === "critical") return `Form ${form.code} · expiry approaching`;
+  return null;
 }
 
 export interface CauseDefinition {
@@ -445,6 +461,12 @@ export function MovementsScreen() {
   );
   const legs = transportLegs(openMovements, now);
   const counts = transportCounts(legs);
+  // Audit round 2, A4-18: only a pulled bed or later needs transport, so a referred-stage movement
+  // is not "without" a leg.
+  const legMovementIds = new Set(legs.map((leg) => leg.movement.id));
+  const withoutTransport = openMovements.filter(
+    (m) => (m.stage === "pulled" || m.stage === "handover_ready" || m.stage === "moving") && !legMovementIds.has(m.id),
+  ).length;
   const activeCorridorCount = new Set(
     corridors.map((corridor) => JSON.stringify([corridor.originEdId, corridor.acceptedUnitId])),
   ).size;
@@ -730,8 +752,8 @@ export function MovementsScreen() {
   // The earliest opened open movement, not the worklist order (which puts legal expiry first).
   const longestWaiting = [...openMovements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id))[0];
   const nextExpiry = openMovements
-    .filter((movement) => movement.legalForm?.dueAt !== undefined && movement.legalForm.dueAt >= now)
-    .sort((a, b) => a.legalForm!.dueAt! - b.legalForm!.dueAt!)[0];
+    .filter((movement) => (currentLegalDueAt(movement) ?? -Infinity) >= now)
+    .sort((a, b) => currentLegalDueAt(a)! - currentLegalDueAt(b)!)[0];
   const myQueue = byLongestWait(
     openMovements.filter((movement) => isCoordinatorStep(movementNextStep(movement))),
     now,
@@ -775,7 +797,7 @@ export function MovementsScreen() {
               {stateLabel}
             </span>
             <span className={flow.trWhen}>
-              <span className="sr-only">Booked </span>
+              <span className="sr-only">Accepted </span>
               {durMinutes(leg.minutesSinceBooked)}
               <span className="sr-only"> ago</span>
             </span>
@@ -898,7 +920,7 @@ export function MovementsScreen() {
                   >
                     <span className={flow.jumpLabel}>Next expiry</span>
                     <span className={flow.jumpName}>{surname(nextExpiry)}</span>
-                    <span className={flow.jumpValue}>{formatInstantWithDay(nextExpiry.legalForm!.dueAt!, now)}</span>
+                    <span className={flow.jumpValue}>{formatInstantWithDay(currentLegalDueAt(nextExpiry)!, now)}</span>
                   </button>
                 ) : null}
                 <LiveChip state="live" onHero />
@@ -985,20 +1007,21 @@ export function MovementsScreen() {
               // D-b (Ward Lead's decisions, 2026-09-17): built off `openMovements`, never the scoped
               // worklist, and a movement outside the chosen service says so.
               <ul className={flow.needsList}>
-                {attentionMovements.map((movement, index) => {
+                {attentionMovements.map((movement) => {
                   const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
                   const subject = resolveSubjectPatient(movement, { patients, referrals });
                   // Surname first on every device, as the worklist and timeline list people.
                   const who = subject.formalName;
-                  const reason = meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
+                  const legalReason = legalActNowReason(movement, now);
+                  const reason = legalReason ?? meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
                   return (
                     <li key={movement.id} className={flow.needsCell}>
                       <button
                         type="button"
                         className={flow.needsItem}
                         data-record-key={movement.id}
-                        // v10: the first act-now item (past the access target) takes the thin red edge.
-                        data-act-now={index === 0 && now - movement.openedAt >= accessTarget ? "true" : undefined}
+                        // The thin red edge marks act-now rows only: a legal authority passed or approaching.
+                        data-act-now={legalReason ? "true" : undefined}
                         onClick={() => jumpToMovement(movement.id)}
                         aria-label={`Find ${who} in worklist: ${reason}${outsideService ? ` — outside ${service}` : ""}`}
                       >
@@ -1068,8 +1091,7 @@ export function MovementsScreen() {
               <span className={flow.phNavText}>
                 <strong>Transport now</strong>
                 <span>
-                  <b>{legs.length}</b> {legs.length === 1 ? "leg" : "legs"} ·{" "}
-                  <b>{openMovements.length - legs.length}</b> without
+                  <b>{legs.length}</b> {legs.length === 1 ? "leg" : "legs"} · <b>{withoutTransport}</b> without
                 </span>
               </span>
               <ChevronRight size={16} className={flow.phNavChevron} aria-hidden="true" />
@@ -1142,7 +1164,7 @@ export function MovementsScreen() {
               open={phoneSheet === "transport"}
               onClose={() => setPhoneSheet(null)}
               title="Transport now"
-              description={`${legs.length} ${legs.length === 1 ? "leg" : "legs"} · ${openMovements.length - legs.length} movements without one`}
+              description={`${legs.length} ${legs.length === 1 ? "leg" : "legs"} · ${withoutTransport} movements without one`}
               height="tall"
             >
               {legs.length === 0 ? (
@@ -1489,7 +1511,7 @@ export function MovementsScreen() {
                   </div>
                   <div className={flow.sideFigure} data-testid="movements-day-metric">
                     <span>No transport leg</span>
-                    <strong>{openMovements.length - legs.length}</strong>
+                    <strong>{withoutTransport}</strong>
                   </div>
                 </div>
               ) : null}
@@ -1832,7 +1854,7 @@ function heroHighlights(now: Instant, accessTarget: number): HeroHighlight[] {
       tone: "warning",
       test: (m) => isOpen(m) && waited(m) >= ED_SEVERE_PRESSURE_WAIT_MINUTES && waited(m) < accessTarget,
     },
-    { id: "form", label: "Form expiry", test: (m) => isOpen(m) && m.legalForm?.dueAt !== undefined },
+    { id: "form", label: "Form expiry", test: (m) => isOpen(m) && currentLegalDueAt(m) !== undefined },
     { id: "escort", label: "Escort", test: (m) => isOpen(m) && m.transport?.escortRequired === true },
   ];
 }
@@ -1991,14 +2013,17 @@ function StageRow({
   const patientInfo = resolveSubjectPatient(movement, { patients, referrals });
 
   // Legal line: register title plus the recorded expiry only. Never a computed limit (D5).
-  const dueAt = movement.legalForm?.dueAt;
+  const dueAt = currentLegalDueAt(movement);
   const isBreached = dueAt !== undefined && dueAt < now;
   const isExpiring = dueAt !== undefined && dueAt >= now && dueAt - now < 60;
   let legalTagTone: "danger" | "warn" | undefined = undefined;
   let legalText = "";
   if (movement.legalForm) {
     const formTitle = legalFormNameLabelFirst(movement.legalForm);
-    if (dueAt === undefined) {
+    if (dueAt === undefined && movement.legalForm.dueAt !== undefined) {
+      // Ended at the examination or on arrival: its typed expiry is history, not a deadline (S-6).
+      legalText = `${formTitle} - ended`;
+    } else if (dueAt === undefined) {
       legalText = `${formTitle} - no recorded expiry on this record`;
     } else if (isBreached) {
       legalTagTone = "danger";
@@ -2236,13 +2261,10 @@ function StageRow({
  * `transportCounts` tally beside it can never disagree about which state a given leg is in. The
  * segment strip above reads its labels from this same map for the same reason.
  *
- * ⚠️ **`Accepted` STILL READS "Booked", DELIBERATELY.** The five-state collapse (Ward Lead,
- * 2026-09-05) was a ruling about the TYPE, not about the words on the board. This screen has always
- * called an accepted job "Booked" — the row's clock says "since booked" and `bookedAt` is the job's
- * `acceptedAt` — and the module's own comment defines "booked" as "a provider has accepted". Ward
- * vocabulary here is owner territory (pull-not-hold, discharged-not-released), so the collapse
- * changes no coordinator-facing word except by ADDING one: `Collected` was previously folded into
- * "En route" and had no word of its own.
+ * ⚠️ **`Accepted` READS "Accepted" (audit round 2, A4-18, 13 Oct 2026).** It used to read "Booked",
+ * while the officer page called the same leg "Accepted", so one leg had two names. One step
+ * vocabulary now runs across both screens: Requested, Accepted, En route, Collected, Delivered.
+ * `Collected` was previously folded into "En route" and had no word of its own.
  *
  * ⚠️ **THAT ADDITION MOVES A NUMBER A COORDINATOR MAY KNOW BY SIGHT.** In today's fixture the old
  * "En route" tile read 6; it now reads 0 with a "Collected" tile at 6, because those six patients
@@ -2291,7 +2313,7 @@ const LEG_STATE_TONE: Record<MovementLegState, WfTone> = {
 };
 
 const LEG_STATE_LABEL: Record<MovementLegState, string> = {
-  Accepted: "Booked",
+  Accepted: "Accepted",
   "En route": "En route",
   Collected: "Collected",
   Arrived: "Arrived",
@@ -2316,7 +2338,7 @@ function TransportRow({ leg, units, name }: { leg: TransportLegRow; units: Unit[
       recordKey={movement.id}
       tone={leg.state === "Cancelled" ? "danger" : leg.state === "Arrived" ? "good" : "neutral"}
       states={[{ level: LEG_STATE_LEVEL[leg.state], text: LEG_STATE_LABEL[leg.state] }]}
-      clock={{ value: splitDuration(Math.max(leg.minutesSinceBooked, 0)), sub: "since booked" }}
+      clock={{ value: splitDuration(Math.max(leg.minutesSinceBooked, 0)), sub: "since accepted" }}
       attributes={[`Provider: ${leg.provider}`, `From ${originLabel}`, `To ${destinationLabel}`]}
       actions={
         <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>

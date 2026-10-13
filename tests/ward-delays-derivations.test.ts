@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 
 import {
   DELAY_CAUSE_ORDER,
@@ -206,10 +207,12 @@ describe("delayGroups", () => {
       const state = clockState(dueAt, NOW);
       return state === "due" || state === "clear";
     });
+    // Audit A3-4 (13 Oct 2026): the warning windows are inclusive, so the seeded form at exactly
+    // 60 minutes is now act now on Forms and Delays alike; the rest stay non-urgent.
     expect(
       nonUrgent.length,
       "every seeded legal deadline is breached or critical — this test no longer covers the non-urgent case it names",
-    ).toBe(withDeadline.length);
+    ).toBeGreaterThan(0);
 
     const groups = delayGroups(wardMovements, allUnits(), NOW);
     const legalIds = new Set(
@@ -245,7 +248,11 @@ describe("delayGroups", () => {
    * seed. The constructed case below goes red under that same swap.
    */
   it("ranks a passed legal deadline above an approaching one, on movements built to populate both", () => {
-    const carryingLegalForm = wardMovements.filter((movement) => isOpen(movement) && movement.legalForm !== undefined);
+    // Audit S-6 (13 Oct 2026): a form ended by an inpatient order at the examination is history,
+    // never a legal cause, so the clones are built only from forms still in force.
+    const carryingLegalForm = wardMovements.filter(
+      (movement) => isOpen(movement) && movement.legalForm !== undefined && formProgression(movement) === undefined,
+    );
     // Floor on the POPULATION the case is built from, never on the result: if the seed stops
     // carrying open movements with a legal form, the clones below cannot be made and this test
     // would otherwise construct nothing and pass.

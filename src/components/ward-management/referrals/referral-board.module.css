@@ -1603,6 +1603,10 @@
     margin-block: var(--wf-phone-seg-band);
     padding: 2px;
     overflow: visible;
+    /* Phone taps (13 Oct 2026): the shared tab row's edge-fade mask clipped the hit areas to the
+       34px track. The track never scrolls, so the fade never shows; dropping it changes nothing seen. */
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   .viewTabs [role="tab"] {
@@ -1632,6 +1636,10 @@
     margin-block: var(--wf-phone-seg-band);
     padding: 2px;
     overflow: visible;
+    /* Phone taps (13 Oct 2026): the shared tab row's edge-fade mask clipped the hit areas to the
+       34px track. The track never scrolls, so the fade never shows; dropping it changes nothing seen. */
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   .panelTabs [role="tab"] {

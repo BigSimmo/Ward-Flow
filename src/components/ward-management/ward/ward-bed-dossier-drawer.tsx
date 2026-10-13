@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
+import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
@@ -35,6 +36,8 @@ interface WardBedDossierDrawerProps {
   onMove?: () => void;
   /** Bed board (v10 pass 3): opens the board, where a waiting referral can be placed here. */
   onOpenBoard?: () => void;
+  /** A4-24: one tap marks a vacated bed being made ready as Ready, so it is offered again. */
+  onMarkReady?: () => void;
 }
 
 const VITAL_SIGNS_NOTE = "Not recorded in Ward Flow. Check the ward's own observation chart.";
@@ -57,7 +60,7 @@ function recordedBlocker(value: string | undefined): BedReleaseBlocker {
 
 /** The same shape the Every bed tile shows, so the badge and the tile always agree. */
 function bedTone(bedItem: BedItem | undefined, isReady: boolean): WfTone | null {
-  if (isReady) return "success";
+  if (isReady && !bedItem?.preparing) return "success";
   return bedItem ? bedGlyphTone(bedItem) : null;
 }
 
@@ -109,6 +112,7 @@ export function WardBedDossierDrawer({
   onMarkAtEd,
   onMove,
   onOpenBoard,
+  onMarkReady,
   onMarkBack,
   onPrevBed,
   onNextBed,
@@ -136,6 +140,9 @@ export function WardBedDossierDrawer({
 
   const bedLabel = `Bed ${String(selectedBed).padStart(2, "0")}`;
   const isReady = bedItem?.status === "ready";
+  // A4-24: vacated and still being made ready. Not offered until someone taps Ready.
+  const isPreparing = isReady && bedItem?.preparing === true;
+  const readyWord = isPreparing ? BED_STATE_LABELS.beingMadeReady : "Ready bed";
   const occupantAlias = bedItem?.patientAlias ?? "No occupant recorded";
   const isOccupied = Boolean(bedItem?.patientAlias);
   const isAwayAtEd = bedItem?.awayAtEdHours !== null && bedItem?.awayAtEdHours !== undefined;
@@ -282,6 +289,7 @@ export function WardBedDossierDrawer({
         onMarkBack={onMarkBack}
         onMove={onMove}
         onOpenBoard={onOpenBoard}
+        onMarkReady={isPreparing ? onMarkReady : undefined}
         bedDrawerRef={bedDrawerRef}
         onKeyDown={onKeyDown}
       />
@@ -309,7 +317,7 @@ export function WardBedDossierDrawer({
           </span>
           <div className={styles.drawerHeading}>
             <h2 id="drawer-bed-title" className={styles.drawerTitle}>
-              {isReady ? "Ready bed" : occupantAlias}
+              {isReady ? readyWord : occupantAlias}
             </h2>
             <p className={styles.drawerKicker}>{subline}</p>
           </div>
@@ -346,7 +354,11 @@ export function WardBedDossierDrawer({
         {isReady ? (
           <>
             <div className={styles.facts}>
-              <FactTile label="State" value="Ready" tone="success" />
+              <FactTile
+                label="State"
+                value={isPreparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
+                tone={isPreparing ? "neutral" : "success"}
+              />
               <FactTile label="Held for" value="No one" />
               {bedItem.designation ? <FactTile label="Bed" value={bedItem.designation} /> : null}
             </div>
@@ -554,13 +566,22 @@ export function WardBedDossierDrawer({
         <footer className={styles.drawerFoot}>
           {isReady ? (
             <>
+              {isPreparing && onMarkReady ? (
+                <Button variant="pri" size="lg" className={styles.pill} onClick={onMarkReady}>
+                  Ready
+                </Button>
+              ) : null}
               <Link
-                className={buttonClass({ variant: "pri", size: "lg", className: styles.pill })}
+                className={buttonClass({
+                  variant: isPreparing && onMarkReady ? "sec" : "pri",
+                  size: "lg",
+                  className: styles.pill,
+                })}
                 href="/mockups/ward-flow/referrals"
               >
                 Review current referrals
               </Link>
-              {onOpenBoard ? (
+              {onOpenBoard && !isPreparing ? (
                 <Button variant="sec" size="lg" className={styles.pill} onClick={onOpenBoard}>
                   Place someone here
                 </Button>
@@ -703,6 +724,8 @@ interface PhoneBedSheetProps {
   onMarkBack?: (bedNumber: number) => void;
   onMove?: () => void;
   onOpenBoard?: () => void;
+  /** Set only for a bed being made ready (A4-24). */
+  onMarkReady?: () => void;
   bedDrawerRef: React.RefObject<HTMLElement | null>;
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
 }
@@ -741,6 +764,7 @@ function PhoneBedSheet({
   onMarkBack,
   onMove,
   onOpenBoard,
+  onMarkReady,
   bedDrawerRef,
   onKeyDown,
 }: PhoneBedSheetProps) {
@@ -748,6 +772,13 @@ function PhoneBedSheet({
   const sub = [bedItem?.umrn, bedItem?.podLabel ?? bedItem?.designation].filter(Boolean).join(" · ");
   const admissionId = bedItem?.admissionId;
   const canMove = Boolean(onMove && bedItem?.stayAdmissionId);
+  // A1-13 (audit round 2): the filled button follows the stay. Leaving means Record that they have
+  // left; held up means Update blocker; a settled stay has no primary step.
+  const heldUpNow = Boolean(bedItem?.blockReason);
+  const leavingNow =
+    isOccupied &&
+    !heldUpNow &&
+    (bedItem?.dischargeConfirmed === true || (bedItem?.expectedDays != null && bedItem.expectedDays <= 0));
   const toggleBlocker = () => {
     const opening = !quickBlockerOpen;
     setQuickBlockerOpen(opening);
@@ -771,7 +802,8 @@ function PhoneBedSheet({
         <header className={styles.phoneHead}>
           <div className={styles.drawerHeading}>
             <h2 id="drawer-bed-title" className={styles.phoneTitle}>
-              {bedLabel} · {isReady ? "Ready bed" : occupantAlias}
+              {bedLabel} ·{" "}
+              {isReady ? (bedItem?.preparing ? BED_STATE_LABELS.beingMadeReady : "Ready bed") : occupantAlias}
             </h2>
             {sub ? <p className={styles.drawerKicker}>{sub}</p> : null}
             {chip && tone ? (
@@ -795,7 +827,11 @@ function PhoneBedSheet({
           {isReady ? (
             <>
               <div className={styles.phoneFacts}>
-                <FactTile label="Now" value="Ready" tone="success" />
+                <FactTile
+                  label="Now"
+                  value={bedItem?.preparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
+                  tone={bedItem?.preparing ? "neutral" : "success"}
+                />
                 <FactTile label="Held for" value={bedItem?.heldFor ?? "No one"} />
               </div>
               <h3 className={styles.phoneSec}>Placement</h3>
@@ -890,15 +926,25 @@ function PhoneBedSheet({
 
           <div className={styles.phoneMore}>
             {isOccupied && admissionId ? (
-              <Button
-                variant="sec"
-                className={styles.pill}
-                onClick={() => {
-                  onRecordLeft(admissionId, occupantAlias, drawerLeavingDestination);
-                }}
-              >
-                Record that they have left
-              </Button>
+              <>
+                {/* Audit A1-12: the phone says plainly which destination "Has left" records too. */}
+                <p className={styles.footDestination} id="drawer-leaving-summary-phone">
+                  Going to{" "}
+                  <strong>
+                    {LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label}
+                  </strong>
+                </p>
+                <Button
+                  variant={leavingNow ? "pri" : "sec"}
+                  className={styles.pill}
+                  aria-describedby="drawer-leaving-summary-phone"
+                  onClick={() => {
+                    onRecordLeft(admissionId, occupantAlias, drawerLeavingDestination);
+                  }}
+                >
+                  Record that they have left
+                </Button>
+              </>
             ) : null}
             {admissionId ? (
               <Button
@@ -933,9 +979,13 @@ function PhoneBedSheet({
           </div>
         </div>
 
-        {(isReady && onOpenBoard) || canMove || admissionId ? (
+        {(isReady && (onOpenBoard || onMarkReady)) || canMove || admissionId ? (
           <footer className={styles.phoneFoot}>
-            {isReady && onOpenBoard ? (
+            {isReady && onMarkReady ? (
+              <Button variant="pri" size="lg" className={styles.pill} onClick={onMarkReady}>
+                Ready
+              </Button>
+            ) : isReady && onOpenBoard && !bedItem?.preparing ? (
               <Button variant="pri" size="lg" className={styles.pill} onClick={onOpenBoard}>
                 Place someone here
               </Button>
@@ -947,7 +997,7 @@ function PhoneBedSheet({
             ) : null}
             {admissionId ? (
               <Button
-                variant="pri"
+                variant={heldUpNow ? "pri" : "sec"}
                 size="lg"
                 className={styles.pill}
                 aria-expanded={quickBlockerOpen}

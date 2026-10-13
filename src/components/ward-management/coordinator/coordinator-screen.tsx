@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { createBrowserStore } from "@/lib/client-store-factory";
 
 import { Copy } from "lucide-react";
 import {
@@ -36,6 +37,8 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
+import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
@@ -71,6 +74,45 @@ import { useHomeLayout } from "./home-layout";
 import { HomeWardSheet } from "./home-phone-sheets";
 
 const HANDOVER_HREF = "/mockups/ward-flow/handover";
+
+/*
+ * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
+ * back keeps it (the "Filtered to" chip shows it is on). sessionStorage, wrapped so a blocked
+ * store never throws; the server snapshot is no filter.
+ */
+const HOME_ED_FILTER_KEY = "ward_flow_home_ed_filter";
+const HOME_ED_FILTER_EVENT = "ward_flow_home_ed_filter_change";
+let homeEdFilterFallback: string | null | undefined;
+
+function readHomeEdFilter(): string | null {
+  try {
+    return window.sessionStorage.getItem(HOME_ED_FILTER_KEY);
+  } catch {
+    return homeEdFilterFallback ?? null;
+  }
+}
+
+function writeHomeEdFilter(edId: string | undefined): void {
+  try {
+    if (edId) window.sessionStorage.setItem(HOME_ED_FILTER_KEY, edId);
+    else window.sessionStorage.removeItem(HOME_ED_FILTER_KEY);
+  } catch {
+    // A blocked store: the filter lasts for this page only.
+    homeEdFilterFallback = edId ?? null;
+  }
+  try {
+    window.dispatchEvent(new Event(HOME_ED_FILTER_EVENT));
+  } catch {
+    // Nothing else depends on the notification.
+  }
+}
+
+function subscribeHomeEdFilter(onChange: () => void) {
+  window.addEventListener(HOME_ED_FILTER_EVENT, onChange);
+  return () => window.removeEventListener(HOME_ED_FILTER_EVENT, onChange);
+}
+
+const useHomeEdFilter = createBrowserStore(subscribeHomeEdFilter, readHomeEdFilter, null);
 /** Activity lines shown under "Since you looked". */
 const SINCE_TIMELINE_LINES = 8;
 const DELAYS_HREF = "/mockups/ward-flow/delays";
@@ -141,7 +183,8 @@ export function CoordinatorScreen() {
     return restored && isOpen(restored) ? restored.id : undefined;
   });
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>(undefined);
-  const [selectedEdId, setSelectedEdId] = useState<string | undefined>(undefined);
+  const selectedEdId = useHomeEdFilter() ?? undefined;
+  const setSelectedEdId = writeHomeEdFilter;
   // The shortlist's other possible subject. Switching the queue between Patients and Referrals
   // never touches either selection.
   const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(undefined);
@@ -239,6 +282,7 @@ export function CoordinatorScreen() {
             referrals,
             supportNotifications,
             plannedAdmissions,
+            leaveBeds,
           },
           now,
         ).map((item) => item.movementId),
@@ -253,6 +297,7 @@ export function CoordinatorScreen() {
       referrals,
       supportNotifications,
       plannedAdmissions,
+      leaveBeds,
       now,
     ],
   );
@@ -348,7 +393,7 @@ export function CoordinatorScreen() {
     const candidate = shortlistCandidates(movement, [unit], liveNow)[0];
     const plain =
       candidate !== undefined &&
-      fitKind(candidate) === "bed" &&
+      fitKind(candidate, movement) === "bed" &&
       referralBlockedReason(movement) === undefined &&
       !(
         genderReviewNeeded(movement.gender, movement.sex) &&
@@ -375,20 +420,21 @@ export function CoordinatorScreen() {
   }
 
   /*
-   * Refer from the phone patient sheet (v10 Home phone "Refer to <ward>"): the same
-   * `REFER_TO_UNITS` the panel would dispatch, run through the Undo step so the toast says Offered
-   * with Undo, as the bedflow Offer does. The sheet closes so the toast is not under its footer.
+   * Option B (Josh, 13 Oct 2026; D-30): Refer on Home's placement shortlist writes a referral, not an
+   * instant offer to the ward. It opens the one referral slide-out for this person, from their ED,
+   * with the wards already picked here preselected, so the referral reaches the coordinator queue
+   * and Referrals like any other. The sheet closes so the slide-out is not under it.
    */
-  function referFromSheet(movement: Movement, unitIds: string[], unitNames: string[]) {
-    const who = patientOf(movement);
-    const names = unitNames.join(", ");
-    runStep(
-      { type: "REFER_TO_UNITS", role: "coordinator", now: liveNow, movementId: movement.id, unitIds },
-      {
-        success: `Offered ${names} to ${who.umrn}`,
-        undo: (at) => ({ type: "UNDO_REFER_TO_UNITS", role: "coordinator", now: at, movementId: movement.id }),
-        undone: `Offer withdrawn. ${names} ${unitNames.length === 1 ? "is" : "are"} no longer asked.`,
-      },
+  function referFromSheet(movement: Movement, unitIds: string[]) {
+    const personId = patientOf(movement).patient?.id;
+    openReferralSheet(
+      raiseReferralHref({
+        ...(personId ? { patientId: personId } : {}),
+        source: "ed_medical",
+        refer: "ward",
+        originEdId: movement.originEdId,
+        unitIds,
+      }),
     );
     closeShortlist();
   }
@@ -409,6 +455,7 @@ export function CoordinatorScreen() {
           referrals,
           supportNotifications,
           plannedAdmissions,
+          leaveBeds,
         },
         now,
       ).map((item) => {
@@ -429,6 +476,7 @@ export function CoordinatorScreen() {
       referrals,
       supportNotifications,
       plannedAdmissions,
+      leaveBeds,
       now,
     ],
   );
@@ -628,11 +676,7 @@ export function CoordinatorScreen() {
                 dispatch={dispatch}
                 parallelReferralCap={configuration.parallelReferralCap}
                 pullHoldMinutes={configuration.pullHoldMinutes}
-                onRefer={
-                  isPhone && panelMovement
-                    ? (unitIds, unitNames) => referFromSheet(panelMovement, unitIds, unitNames)
-                    : undefined
-                }
+                onRefer={panelMovement ? (unitIds) => referFromSheet(panelMovement, unitIds) : undefined}
               />
             )}
           </aside>
@@ -879,6 +923,7 @@ export function CoordinatorScreen() {
               <div className={styles.side}>
                 <PriorityQueue
                   movements={queue}
+                  units={units}
                   referralQueue={referralQueue}
                   now={now}
                   selectedId={selectedMovementId}

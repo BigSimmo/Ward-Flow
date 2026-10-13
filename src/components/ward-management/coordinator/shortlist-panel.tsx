@@ -4,7 +4,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
-import { Fragment, useCallback, useMemo, useState, type Dispatch, type FormEvent } from "react";
+import { Fragment, useCallback, useContext, useMemo, useState, type Dispatch, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
@@ -41,6 +41,7 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
@@ -74,10 +75,12 @@ import {
   type LegalStatus,
   type Movement,
   type Referral,
+  type Rejection,
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { referralSuburbLabel } from "@/components/ward-management/ward-referrals";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { operationalScore, urgencyTierLabel } from "@/components/ward-management/ward-priority";
@@ -91,7 +94,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./coordinator.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
+import { FIT_LABEL, fitGroups, fitKind, type FitKind } from "./home-fit";
 import { TIER_TARGETS_NOTE, queueWaitThresholds } from "./priority-queue";
 
 /**
@@ -154,9 +157,10 @@ type ShortlistPanelProps = {
    *  existing direct-render tests keep their older prop set. */
   pullHoldMinutes?: number;
   /**
-   * Phone only (v10 Home "Refer to <ward>"): when given, Refer hands the chosen wards to the page,
-   * which records the same `REFER_TO_UNITS` through `useUndoableStep` so the toast says Offered
-   * with Undo. Absent (desktop, tablet, direct-render tests), Refer dispatches as before.
+   * Home (option B, Josh, 13 Oct 2026; D-30): when given, Refer hands the chosen wards (none is
+   * fine) to the page, which opens the referral slide-out for this person so the referral reaches
+   * the coordinator queue rather than offering the ward at once. Never greyed: the coordinator is
+   * never blocked. Absent (direct-render tests), Refer dispatches `REFER_TO_UNITS` as before.
    */
   onRefer?: (unitIds: string[], unitNames: string[]) => void;
 };
@@ -408,6 +412,8 @@ function Fact({
  * driven by something other than the gate's own `pass` boolean. Every icon below reads directly
  * off `gate.pass`; nothing else is permitted to decide it (see the report's red/green proof).
  */
+const NO_REJECTIONS: readonly Rejection[] = [];
+
 export function ShortlistPanel({
   movement,
   now,
@@ -428,6 +434,15 @@ export function ShortlistPanel({
   const resolvePatientIdentity = usePatientOf();
   // Phone (v10 Home "Patient open"): a 2x2 facts card and less text. Desktop is unchanged.
   const isPhone = useIsPhone();
+  // S-8: "Accept for this ward" offers Undo on the toast, like the ward's own acceptance. Read
+  // through the context, not `useWardFlow()`, so a direct render without a provider still works.
+  const flowRejections = useContext(WardFlowContext)?.rejections ?? NO_REJECTIONS;
+  const { run: runStep } = useUndoableStep({
+    dispatch,
+    rejections: flowRejections,
+    now,
+    routeRole: "coordinator",
+  });
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   /**
    * ⚠️ EVERY WARD, NOT A FILTERED THREE. This was `eligibleCandidatesAmong(…, PARALLEL_REFERRAL_CAP)`,
@@ -442,7 +457,7 @@ export function ShortlistPanel({
   const offerable = useMemo(() => shortlist.filter((c) => c.availability !== "unavailable"), [shortlist]);
   /** FitHighlight groups (v10 Home): fits with a bed, fits with no bed now, needs review, and what
    *  no reason can buy (collapsed behind a disclosure that states its count). */
-  const groups = useMemo(() => fitGroups(shortlist), [shortlist]);
+  const groups = useMemo(() => fitGroups(shortlist, movement), [shortlist, movement]);
   const [unavailableOpen, setUnavailableOpen] = useState(false);
   const [candidatesOpen, setCandidatesOpen] = useState(true);
 
@@ -459,10 +474,13 @@ export function ShortlistPanel({
   // Whole-branch review Critical 1: resolved from the live `units` the provider hands back —
   // never `unitById`, which reads the frozen fixture and would still call this ward "Eligible
   // now" after it confirmed zero allocatable beds on its own screen.
+  const acceptedUnitId = movement?.acceptedUnitId;
   const activeUnit = useMemo(() => {
     if (selectedUnitId) return units.find((unit) => unit.id === selectedUnitId);
-    return shortlist[0]?.unit;
-  }, [selectedUnitId, shortlist, units]);
+    // Audit A1-20: once a destination is accepted, explain that ward's gates, not the list's first.
+    const accepted = acceptedUnitId ? units.find((unit) => unit.id === acceptedUnitId) : undefined;
+    return accepted ?? shortlist[0]?.unit;
+  }, [selectedUnitId, shortlist, units, acceptedUnitId]);
 
   const activeVerdict = useMemo(() => {
     if (!movement || !activeUnit) return undefined;
@@ -698,7 +716,9 @@ export function ShortlistPanel({
   // never be presented as a suggestion at all (review Important 3).
   const acceptedUnit = movement.acceptedUnitId ? units.find((unit) => unit.id === movement.acceptedUnitId) : undefined;
   // L3: the one next step once a destination has accepted (see the "Next step" section below).
-  const placementNextStep: "hold" | "book" | "booked" | undefined = !acceptedUnit
+  // Audit A1-4: the one bed-hold rule (`ward-bed-hold.ts`); a lapsed hold asks for Move or release.
+  const hold = bedHold(movement.pullExpiresAt, now);
+  const placementNextStep: "hold" | "book" | "booked" | "release" | undefined = !acceptedUnit
     ? undefined
     : movement.transport !== undefined && movement.transport.cancelledAt === undefined
       ? "booked"
@@ -706,12 +726,18 @@ export function ShortlistPanel({
           movement.stage === "destination_review" ||
           movement.stage === "accepted_awaiting_bed"
         ? "hold"
-        : "book";
+        : hold?.state === "lapsed"
+          ? "release"
+          : "book";
   const referredUnits = movement.referredUnitIds.map((id) => ({ id, unit: units.find((unit) => unit.id === id) }));
   const recordedDestination = destinationUnit(movement, units);
   const hasRecordedReferral =
     recordedDestination !== undefined || Boolean(movement.acceptedUnitId) || movement.referredUnitIds.length > 0;
-  const topEligible = shortlist.find((candidate) => candidate.verdict.eligible);
+  // Audit S-21: suggest an eligible ward that is not a Review (a voluntary patient's locked ward)
+  // first; the locked ward is suggested only when nothing else is eligible.
+  const topEligible =
+    shortlist.find((candidate) => candidate.verdict.eligible && fitKind(candidate, movement) !== "review") ??
+    shortlist.find((candidate) => candidate.verdict.eligible);
   const topEligibleNotice = topEligible ? restrictionNotice(movement, topEligible.unit) : undefined;
 
   // Whole-branch review Critical 2, carried forward into Task 5's Refer/Override. The old Confirm
@@ -813,9 +839,13 @@ export function ShortlistPanel({
    * straight from the provider, never a value this function sets and then leaves behind.
    */
   function handleRefer() {
+    if (onRefer) {
+      onRefer([...referTargets], referTargetNames);
+      setOverrideOpen(false);
+      return;
+    }
     if (!canRefer) return;
-    if (onRefer) onRefer([...referTargets], referTargetNames);
-    else dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
+    dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
     setOverrideOpen(false);
   }
 
@@ -1295,6 +1325,32 @@ export function ShortlistPanel({
                 >
                   Withdraw this request
                 </button>
+                {/* S-8 (audit 13 Oct 2026): the coordinator can do everything, so an offer the
+                    coordinator made can also be accepted here for that ward, not only withdrawn. */}
+                {unit && !movement.acceptedUnitId ? (
+                  <button
+                    type="button"
+                    data-testid={`ward-shortlist-accept-for-ward-${id}`}
+                    className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
+                    onClick={() =>
+                      runStep(
+                        { type: "ACCEPT_IN_PRINCIPLE", role: "coordinator", now, movementId, unitId: id },
+                        {
+                          success: `Accepted in principle for ${unit.name}.`,
+                          undo: (at) => ({
+                            type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                            role: "coordinator",
+                            now: at,
+                            movementId,
+                          }),
+                          undone: "Acceptance undone. The referral is back with the ward.",
+                        },
+                      )
+                    }
+                  >
+                    Accept for this ward
+                  </button>
+                ) : null}
                 {withdrawUnitId === id ? (
                   <form
                     className={styles.shortlistOverrideForm}
@@ -1394,7 +1450,7 @@ export function ShortlistPanel({
                   ? (ARRIVAL_MODE_LABELS[movement.arrivalDetails.mode] ?? movement.arrivalDetails.mode)
                   : movement.arrivalMode
                     ? (ARRIVAL_MODE_LABELS[movement.arrivalMode as ArrivalMode] ?? movement.arrivalMode)
-                    : "St John Ambulance")
+                    : "Not booked")
               }
               testId="ward-shortlist-transit-mode"
             />
@@ -1412,11 +1468,14 @@ export function ShortlistPanel({
                   ? now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
                     ? `Overdue (+${Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h)`
                     : `ETA in ${Math.max(0, movement.arrivalDetails.estimatedArrivalAt - now)}m`
-                  : `${holdLabel} countdown active (${holdLabel} hold)`
+                  : hold
+                    ? hold.label
+                    : `${holdLabel} pull, end time not recorded`
               }
               urgent={
-                movement.arrivalDetails?.estimatedArrivalAt !== undefined &&
-                now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
+                movement.arrivalDetails?.estimatedArrivalAt !== undefined
+                  ? now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
+                  : hold?.state === "lapsed"
               }
               testId="ward-shortlist-transit-countdown"
             />
@@ -1455,19 +1514,29 @@ export function ShortlistPanel({
               ? `${acceptedUnit.name} has accepted. Hold the bed so it is kept for this patient.`
               : placementNextStep === "book"
                 ? `The bed at ${acceptedUnit.name} is held. Book transport to move the patient.`
-                : `Transport is booked to ${acceptedUnit.name}.`}
+                : placementNextStep === "release" && hold
+                  ? `${hold.label} at ${acceptedUnit.name}. Move the patient or release the bed.`
+                  : `Transport is booked to ${acceptedUnit.name}.`}
           </p>
           <div className={styles.shortlistActionRow}>
             <Link
               href={movementHref(movement.id)}
-              data-testid={placementNextStep === "hold" ? "ward-shortlist-hold-bed" : "ward-shortlist-book-transport"}
+              data-testid={
+                placementNextStep === "hold"
+                  ? "ward-shortlist-hold-bed"
+                  : placementNextStep === "release"
+                    ? "ward-shortlist-move-or-release"
+                    : "ward-shortlist-book-transport"
+              }
               className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
             >
               {placementNextStep === "hold"
                 ? "Hold the bed"
                 : placementNextStep === "book"
                   ? "Book transport"
-                  : "Open patient"}
+                  : placementNextStep === "release"
+                    ? "Move or release"
+                    : "Open patient"}
             </Link>
             {otherBedsFor === movement.id ? null : (
               <button
@@ -1632,7 +1701,7 @@ export function ShortlistPanel({
               {/* Phone (v10): with no ward picked yet, Refer is never shown greyed. It reads "Choose a
               ward to refer" and takes the person to the fits list; nothing is referred against a
               default (Critical 2), so the choice stays a human tap on a ward. */}
-              {isPhone && !hasReferSelection && referralBlocked === undefined ? (
+              {isPhone && !onRefer && !hasReferSelection && referralBlocked === undefined ? (
                 <button
                   type="button"
                   data-testid="ward-shortlist-refer"
@@ -1646,11 +1715,11 @@ export function ShortlistPanel({
                 <button
                   type="button"
                   data-testid="ward-shortlist-refer"
-                  aria-disabled={canRefer ? undefined : "true"}
-                  aria-describedby={canRefer ? undefined : "ward-shortlist-refer-unavailable"}
-                  title={canRefer ? undefined : referUnavailableReason}
+                  aria-disabled={canRefer || onRefer ? undefined : "true"}
+                  aria-describedby={canRefer || onRefer ? undefined : "ward-shortlist-refer-unavailable"}
+                  title={canRefer || onRefer ? undefined : referUnavailableReason}
                   className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
-                  onClick={canRefer ? handleRefer : ignoreUnavailableActivation}
+                  onClick={canRefer || onRefer ? handleRefer : ignoreUnavailableActivation}
                 >
                   {referTargetNames.length === 1 ? `Refer to ${referTargetNames[0]}` : "Refer"}
                 </button>

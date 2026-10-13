@@ -129,6 +129,24 @@ describe("gate board status card review fixes", () => {
     expect(new Set(names).size).toBe(names?.length);
   });
 
+  it("keeps the return order step when either the movement or the patient record is involuntary", () => {
+    const stepsFor = (patientLegal: string) =>
+      buildPatientStatus(
+        "awol",
+        ctx(
+          { ...base, legalStatus: "Voluntary", legalForm: undefined, closure: undefined },
+          {
+            patient: { legalStatus: patientLegal } as PatientStatusContext["patient"],
+            leaveBed: {
+              absentWithoutLeave: { since: NOW_ANCHOR - 30, steps: [] },
+            } as unknown as PatientStatusContext["leaveBed"],
+          },
+        ),
+      ).rows?.map((row) => row.key);
+    expect(stepsFor("Involuntary patient (recorded)")).toContain("return_order_made");
+    expect(stepsFor("Voluntary")).not.toContain("return_order_made");
+  });
+
   it("keeps an arrived stay's form in force on leave, and drops a movement that did not proceed", () => {
     const legalOnLeave = (outcome: "arrived" | "did_not_proceed") =>
       buildPatientStatus(
@@ -163,5 +181,20 @@ describe("gate board status card review fixes", () => {
       },
     } as PatientStatusContext["patient"]);
     expect(ended).toMatchObject({ kind: "button", label: "Record CTO" });
+  });
+
+  it("keeps an active CTO and its Record ended beside an accepted referral (Qodo, 13 Oct 2026)", () => {
+    const patient = {
+      communityTreatmentOrder: { form: "5A", recordedAt: NOW_ANCHOR - 120, recordedBy: "Community" },
+    } as PatientStatusContext["patient"];
+    const acceptedReferral = { unitName: "Synthetic Ward", boardHref: "/ward" };
+    const status = buildPatientStatus("cto", ctx(base, { patient, acceptedReferral }));
+    const cto = status.cells.find((cell) => cell.key === "cto");
+    expect(cto?.value).toBe("Form 5A in force");
+    expect(cto?.action).toMatchObject({ kind: "button", label: "Record ended" });
+    expect(status.cells.find((cell) => cell.key === "bed")?.value).toBe("Hold on Synthetic Ward");
+    expect(status.meta).toBe("Accepted at Synthetic Ward. Next: hold the bed");
+    // Idle keeps the accepted-referral card.
+    expect(buildPatientStatus("idle", ctx(base, { acceptedReferral })).verdict).toBe("Accepted, no bed held");
   });
 });

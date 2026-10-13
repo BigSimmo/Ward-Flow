@@ -171,7 +171,8 @@ describe("patient-linked discharge transition", () => {
     expect(afterUnit.allocatable).toEqual({
       ...beforeUnit.allocatable,
       value: Math.min(beforeUnit.beds, beforeUnit.allocatable.value + 1),
-      confirmedAt: event.now,
+      // Audit A1-11 (13 Oct 2026): a departure never stamps the figures as confirmed.
+      confirmedAt: beforeUnit.allocatable.confirmedAt,
       revision: (beforeUnit.allocatable.revision ?? 0) + 1,
     });
     expect(next.dischargeRevisions[admission.id]).toBe(1);

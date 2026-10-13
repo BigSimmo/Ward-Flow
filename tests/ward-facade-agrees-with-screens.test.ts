@@ -406,6 +406,15 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     component: DelaysScreen,
     read: (markup) => {
       const document = new JSDOM(markup).window.document;
+      // Audit A3-14: the board opens on Longest wait, one flat list with every person's row and no
+      // cause headers. Each row carries `data-severe`, so the severe rows are counted directly.
+      const flatRows = [...document.querySelectorAll<HTMLElement>("tr[data-severe]")].filter((row) =>
+        row.querySelector("[data-testid^='delays-select-']"),
+      );
+      if (document.querySelector("button[data-testid^='delays-cause-']") === null) {
+        expect(flatRows.length, "the Delays screen rendered no rows to count").toBeGreaterThan(0);
+        return flatRows.filter((row) => row.dataset.severe === "true").length;
+      }
       const buttons = [...document.querySelectorAll<HTMLButtonElement>("button[data-testid^='delays-cause-']")];
       expect(buttons.length, "the Delays screen rendered no cause rows to count").toBeGreaterThan(0);
       return buttons.reduce((total, button) => {

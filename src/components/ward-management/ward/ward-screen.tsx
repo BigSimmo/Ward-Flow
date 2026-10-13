@@ -80,6 +80,7 @@ import {
   daysInBed as admissionStayDays,
   stayBand,
   isPastExpectedDischarge,
+  LEAVING_DESTINATIONS,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
@@ -99,6 +100,7 @@ import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management
 import { WardDecisionsCockpit, openDecisionCount } from "./ward-decisions-cockpit";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
+import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
 import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
 import { WardDischargesMatrix } from "./ward-discharges-matrix";
@@ -113,8 +115,10 @@ import {
   whyBedDoesNotFit,
   type BoardPick,
 } from "./ward-bed-board-logic";
-import { layoutBedNumbers } from "./ward-bed-layout";
+import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
+import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
 import type { BedItem } from "./ward-beds-matrix";
+import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
@@ -282,6 +286,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     configuration,
     dayZero,
     wardReferralInbox,
+    patients,
   } = useWardFlow();
   const now = useWardFlowClock();
   // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
@@ -341,7 +346,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // at a time.
   const [releaseOpenFor, setReleaseOpenFor] = useState<string | undefined>(undefined);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | undefined>(undefined);
-  const dischargeCheckRef = useRef<{ prior: number; success: string; who: string; codes: string[] } | null>(null);
+  const dischargeCheckRef = useRef<{
+    prior: number;
+    success: string;
+    who: string;
+    codes: string[];
+    /** Audit A1-12: the stay a recorded departure can take back from its toast. */
+    undoAdmissionId?: string;
+  } | null>(null);
   const [dischargeToken, setDischargeToken] = useState(0);
   const [answerIndex, setAnswerIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"attn" | "board" | "coming" | "out" | "beds" | "return">(
@@ -460,7 +472,50 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       reason !== undefined && check.codes.length > 0 && !reason.includes(check.who)
         ? `${check.who}: ${reason}`
         : reason;
-    setToastMessage(namedReason !== undefined ? `Not recorded: ${namedReason}. Nothing was changed.` : check.success);
+    if (namedReason !== undefined) {
+      setToastMessage(`Not recorded: ${namedReason}. Nothing was changed.`);
+      return;
+    }
+    // Audit A1-12: "Has left" offers Undo like Move bed, through the same toast.
+    // A1-18 (audit 13 Oct 2026): a departure recorded offline says it has not gone anywhere.
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    const successText =
+      offline && toast?.savesOnDevice?.() ? `${check.success} ${WARD_OFFLINE_SAVED_NOTE}` : check.success;
+    const undoAdmissionId = check.undoAdmissionId;
+    if (!toast || undoAdmissionId === undefined) {
+      setToastMessage(successText);
+      return;
+    }
+    const undoLimit = roleLimitReason(routeRole, "UNDO_DEPARTURE");
+    toast.push({
+      tone: "success",
+      title: successText,
+      ...(undoLimit
+        ? { body: `Undo: ${undoLimit}` }
+        : {
+            undo: {
+              durationMs: UNDO_TOAST_MS,
+              onUndo: () => {
+                dischargeCheckRef.current = {
+                  prior: rejectionCountRef.current,
+                  success: `Undone. ${check.who} is back in their bed.`,
+                  who: check.who,
+                  codes: check.codes,
+                };
+                dispatch({
+                  type: "UNDO_DEPARTURE",
+                  role: "ward",
+                  now: nowRef.current,
+                  admissionId: undoAdmissionId,
+                  actingUnitId: unitId,
+                });
+                setDischargeToken((token) => token + 1);
+              },
+            },
+          }),
+    });
+    // `toast`, `routeRole`, `dispatch` and `unitId` are stable for the screen's life; the token drives this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dischargeToken, rejections]);
 
   // The outcome of a Bed board place or undo: a refusal says why on the board; a placement offers
@@ -772,9 +827,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const priorRejectionCountRef = useRef(rejections.length);
   const [checkToken, setCheckToken] = useState(0);
   const [lastActionRejection, setLastActionRejection] = useState<Rejection | undefined>(undefined);
+  // A1-8 (audit round 2): an accept from the Ward flow list offers Undo on its toast, as the Ward
+  // answer view and the Bed board already do. Set by the accept, read once by the check below.
+  const acceptUndoRef = useRef<{ movementId: string; unitId: string } | null>(null);
 
   useEffect(() => {
     if (checkToken === 0) return;
+    const acceptUndo = acceptUndoRef.current;
+    acceptUndoRef.current = null;
     if (rejections.length > priorRejectionCountRef.current) {
       const newest = rejections[rejections.length - 1];
       setLastActionRejection(
@@ -782,8 +842,40 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       );
     } else {
       setLastActionRejection(undefined);
+      if (acceptUndo && toast) {
+        const success = "Accepted in principle.";
+        const undoLimit = roleLimitReason(routeRole, "UNDO_ACCEPT_IN_PRINCIPLE");
+        toast.push({
+          tone: "success",
+          title: success,
+          ...(undoLimit
+            ? { body: `Undo: ${undoLimit}` }
+            : {
+                undo: {
+                  durationMs: UNDO_TOAST_MS,
+                  onUndo: () => {
+                    boardCheckRef.current = {
+                      prior: rejectionCountRef.current,
+                      bed: 0,
+                      success: "Acceptance undone. The referral is back with this ward.",
+                    };
+                    dispatch({
+                      type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                      role: "ward",
+                      now: nowRef.current,
+                      movementId: acceptUndo.movementId,
+                      actingUnitId: acceptUndo.unitId,
+                    });
+                    setBoardToken((token) => token + 1);
+                  },
+                },
+              }),
+        });
+      }
     }
     priorRejectionCountRef.current = rejections.length;
+    // `toast`, `routeRole` and `dispatch` are stable for the screen's life; the token drives this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, checkToken]);
 
   if (!unit) {
@@ -797,7 +889,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           </p>
           <div>
             <Link href="/mockups/ward-flow/wards" className={styles.notFoundAction}>
-              &larr; View all 23 available wards
+              &larr; View all {units.length} available wards
             </Link>
           </div>
         </main>
@@ -919,10 +1011,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     unitRefreshRequests.length > 0 ? unitRefreshRequests[unitRefreshRequests.length - 1] : undefined;
 
   // Awaiting an answer: this unit holds a live referral and nothing has been decided yet.
-  const incoming = movements.filter(
-    (movement) =>
-      isOpen(movement) && movement.stage === "destination_review" && movement.referredUnitIds.includes(unit.id),
-  );
+  // A1-9 (audit round 2): longest wait first, as the Referrals board orders its queue.
+  const incoming = movements
+    .filter(
+      (movement) =>
+        isOpen(movement) && movement.stage === "destination_review" && movement.referredUnitIds.includes(unit.id),
+    )
+    .sort((left, right) => left.openedAt - right.openedAt);
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
   const visibleIncoming =
     presentation === "answer" ? incoming.slice(activeAnswerIndex, activeAnswerIndex + 1) : incoming;
@@ -1116,6 +1211,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const otherOccupants = unitOccupantAdmissions.filter((a) => !leaveAdmissionIds.has(a.id));
   const unitPulledAdmissions = admissions?.filter((a) => a.unitId === unit.id && a.state === "pulled") ?? [];
   let otherOccupantCursor = 0;
+  // A4-24: a vacated bed reads "Being made ready" until someone taps Ready. Each marker belongs to
+  // one discharged release, oldest first; the tile it sits on is chosen once bed numbers are known
+  // (below), so Ready on a bed clears that bed's own release.
+  const preparingReleases = bedReleases
+    .filter((r) => r.unitId === unit.id && r.state === "discharged" && r.preparing)
+    .sort((left, right) => left.confirmedAt - right.confirmedAt);
 
   const rawBeds = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
@@ -1259,6 +1360,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         admission?.id ??
         (incomingMovement ? unitPulledAdmissions.find((a) => a.movementId === incomingMovement.id)?.id : undefined),
       heldFor: undefined as string | undefined,
+      preparing: false,
+      /** The discharged release this bed is being made ready for, set once bed numbers are known. */
+      preparingReleaseId: undefined as string | undefined,
       age: patientAge,
       sex: patientSex,
       homeRegion: patientHomeRegion,
@@ -1272,6 +1376,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       dischargeConfirmed: admission ? admission.dischargeConfirmedAt != null : null,
       dischargeConfirmedBy: admission?.dischargeConfirmedBy ?? null,
       expectedDischargeLabel,
+      // Audit A1-3: a pulled bed carries its hold, so a lapsed hold reaches the ward's Act now.
+      bedHold: status === "incoming" ? bedHoldOf(linkedMovement?.pullExpiresAt, now) : undefined,
     };
   });
 
@@ -1297,14 +1403,40 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       admission.unitId === unit.id && admission.bedNumber !== undefined ? [[admission.id, admission.bedNumber]] : [],
     ) as [string, number][],
   );
+  // Audit A1-1: every stay keeps a fixed bed, so a departure or absence never renumbers others.
+  const seatedBeds = seatStays(
+    unit.beds,
+    (admissions ?? []).filter((admission) => admission.unitId === unit.id),
+    isMixed ? lockedBeds : 0,
+  );
   const bedNumbers = layoutBedNumbers(
     rawBeds.map((bed) => ({ stayAdmissionId: bed.stayAdmissionId, free: bed.status === "ready" })),
     (admissionId) => recordedBeds.get(admissionId),
     heldBeds.map((held) => held.bed),
+    (admissionId) => seatedBeds.get(admissionId),
   );
+  // A4-24: place each "Being made ready" marker on the bed its stay vacated when that bed is now a
+  // ready tile, then any remaining markers on the lowest-numbered ready beds, oldest release first.
+  // The tile then carries its own release, so Ready clears the bed the user opened.
+  const readyBedNumbers = rawBeds.flatMap((bed, index) => (bed.status === "ready" ? [bedNumbers[index]] : []));
+  const preparingByBed = new Map<number, string>();
+  const unplacedReleases: string[] = [];
+  for (const release of preparingReleases) {
+    const vacated = recordedBeds.get(release.admissionId) ?? seatedBeds.get(release.admissionId);
+    if (vacated !== undefined && readyBedNumbers.includes(vacated) && !preparingByBed.has(vacated)) {
+      preparingByBed.set(vacated, release.id);
+    } else {
+      unplacedReleases.push(release.id);
+    }
+  }
+  for (const bedNumber of [...readyBedNumbers].sort((left, right) => left - right)) {
+    const releaseId = preparingByBed.has(bedNumber) ? undefined : unplacedReleases.shift();
+    if (releaseId !== undefined) preparingByBed.set(bedNumber, releaseId);
+  }
   const bedsList = rawBeds
     .map((bed, index) => {
       const bedNumber = bedNumbers[index];
+      const preparingReleaseId = bed.status === "ready" ? preparingByBed.get(bedNumber) : undefined;
       const designation: "Locked" | "Open" | undefined = isMixed
         ? bedNumber <= lockedBeds
           ? "Locked"
@@ -1318,6 +1450,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         podId: isMixed ? (bedNumber <= lockedBeds ? "locked" : "open") : "all",
         podLabel: isMixed ? `${unit.name} ${designation} Beds` : unit.name,
         heldFor: bed.status === "ready" ? heldBeds.find((held) => held.bed === bedNumber)?.name : undefined,
+        preparing: preparingReleaseId !== undefined,
+        preparingReleaseId,
+        statusText: preparingReleaseId !== undefined ? BED_STATE_LABELS.beingMadeReady : bed.statusText,
       };
     })
     .sort((left, right) => left.bedNumber - right.bedNumber);
@@ -1336,6 +1471,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       .map((entry) => ({
         id: entry.id,
         name: resolvePatientIdentity(entry).displayName,
+        umrn: resolvePatientIdentity(entry).umrn,
         sex: entry.destination.sex === "Female" ? "F" : entry.destination.sex === "Male" ? "M" : entry.destination.sex,
         waitedMinutes: Math.max(0, now - entry.raisedAt),
         secureBedNeeded: entry.destination.secureBedNeeded === true,
@@ -1347,6 +1483,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       kind: "movement" as const,
       id: movement.id,
       name: resolvePatientIdentity(movement).displayName,
+      umrn: resolvePatientIdentity(movement).umrn,
       sex: movement.sex === "Female" ? "F" : movement.sex === "Male" ? "M" : "Not recorded",
       waitedMinutes: Math.max(0, now - (movement.referredAt ?? movement.openedAt)),
       secureBedNeeded: movement.security === "Secure",
@@ -1501,6 +1638,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const targetUnit = units.find((u) => u.id === unitId);
     if (!targetUnit) return;
     priorRejectionCountRef.current = rejections.length;
+    acceptUndoRef.current = { movementId, unitId };
     dispatch({
       type: "ACCEPT_IN_PRINCIPLE",
       role: "ward",
@@ -1769,11 +1907,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function handleDrawerRecordLeft(admissionId: string, who: string) {
     if (!drawerLeavingDestination) return;
     const resolved = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId));
+    const destinationLabel = LEAVING_DESTINATIONS.find(
+      (destination) => destination.id === drawerLeavingDestination,
+    )?.label;
     dischargeCheckRef.current = {
       prior: rejections.length,
-      success: `Recorded: ${who} has left the ward.`,
+      success: `Recorded: ${who} has left the ward${destinationLabel ? ` (${destinationLabel.toLowerCase()})` : ""}.`,
       who,
       codes: resolved.patient ? [resolved.patient.id, admissionId] : [],
+      undoAdmissionId: admissionId,
     };
     if (recordWardDeparture) recordWardDeparture(admissionId, unitId, drawerLeavingDestination);
     else
@@ -1886,11 +2028,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
+  // Audit A3-1: this ward's absences on an order, the same rows the shared task list raises.
+  const absencesOnOrder = absentOnOrder({ leaveBeds: unitLeaveBeds, admissions, movements, patients });
   const actNowCount = wardActNowCount({
+    absences: absencesOnOrder.length,
     alerts: liveFormAlerts.length,
     incoming: incoming.length,
     heldUp: blockedReleases.length,
     rollupOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
+    lapsedHolds: bedsList.filter((bed) => bed.status === "incoming" && bed.bedHold?.state === "lapsed").length,
   });
   const readyByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
   const bedCountsStale = now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
@@ -2421,6 +2567,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           data-active={activeTab === "attn" || activeTab === "board"}
         >
           <WardHomeTab
+            absencesOnOrder={absencesOnOrder}
             phonePanel={isPhone ? phonePanel : undefined}
             onPhonePanelChange={setPhonePanel}
             onTodoCount={setPhoneTodoCount}
@@ -2493,6 +2640,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               openCapacityModal();
             }}
             onOpenArrival={openArrival}
+            onPullPatient={handlePullPatient}
             onOpenDischarges={openDischargesTab}
             bedsList={bedsList}
             onSelectBed={(bedNumber) => {
@@ -2662,8 +2810,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                           {capacity.available === 1 ? "bed" : "beds"} at {unit.name}{" "}
                           {pendingPreparation === 1 ? "is" : "are"} still being made ready.
                         </strong>{" "}
-                        The bed stays offered and stays counted — pulling the next patient takes hours anyway — but the
-                        ward cannot admit into it yet.
+                        It is not offered until someone opens the bed and taps Ready.
                       </span>
                     </div>
                   ) : null}
@@ -2887,6 +3034,20 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       });
                     }
                     setToastMessage(`Bed ${bedNum} patient marked returned to ward.`);
+                  }}
+                  onMarkReady={() => {
+                    // A4-24: one tap clears the release this bed is being made ready for.
+                    const releaseId = selectedBedItem?.preparingReleaseId;
+                    if (!releaseId) return;
+                    dispatch({
+                      type: "SET_BED_PREPARATION",
+                      role: "ward",
+                      now,
+                      releaseId,
+                      actingUnitId: unitId,
+                      preparing: false,
+                    });
+                    setToastMessage("Bed marked Ready. It is offered again.");
                   }}
                   bedDrawerRef={bedDrawerRef}
                   onKeyDown={handleBedDrawerKeyDown}
