@@ -1,5 +1,6 @@
 "use client";
 
+import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { WardReferralInbox } from "../referrals/ward-referral-inbox";
 
@@ -885,16 +886,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     return (
       <div className={styles.screen} data-testid="ward-unit-screen">
         <main id="main-content" className={styles.main}>
-          <h1 className={styles.notFoundHeading}>Ward not found</h1>
-          <p className={styles.notFoundBody} data-testid="ward-unit-unresolved">
-            No synthetic unit matches &ldquo;{unitId}&rdquo;. It may have been renamed or removed, or the id in the
-            address is incorrect — this never falls back to a different ward.
-          </p>
-          <div>
-            <Link href="/mockups/ward-flow/wards" className={styles.notFoundAction}>
-              &larr; View all {units.length} available wards
-            </Link>
-          </div>
+          <WardNotFoundBody
+            title="Ward not found"
+            testId="ward-unit-unresolved"
+            list={{ href: "/mockups/ward-flow/wards", label: "All wards" }}
+          >
+            No ward matches this link. It never falls back to a different ward.
+          </WardNotFoundBody>
         </main>
       </div>
     );

@@ -2,6 +2,23 @@
 import { clockState, type Instant } from "@/components/ward-management/ward-clock";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import type { EmergencyDepartment, Movement } from "@/components/ward-management/ward-model";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+
+/**
+ * The one ED long-wait rule (ops-16, 13 Oct 2026), shared by Home's ED strip and Network's list so
+ * the same department carries the same mark everywhere: red once the longest wait reaches the ED
+ * access target (Settings), amber from a severe wait, nothing below that or with nobody waiting.
+ */
+export function edLongestWaitTone(
+  waiting: number,
+  longestWaitMinutes: number,
+  accessTargetMinutes: number,
+): "danger" | "warning" | null {
+  if (waiting === 0) return null;
+  if (longestWaitMinutes >= accessTargetMinutes) return "danger";
+  if (longestWaitMinutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES) return "warning";
+  return null;
+}
 
 export type EdPressure = {
   ed: EmergencyDepartment;

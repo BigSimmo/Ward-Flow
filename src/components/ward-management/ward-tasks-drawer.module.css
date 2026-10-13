@@ -793,6 +793,45 @@
   outline-offset: 2px;
 }
 
+/* Who to call for a task, and each escalation pick's number (ops-5, ops-6). Mock numbers. */
+.callList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.callRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+}
+
+.callText,
+.callNumber {
+  display: grid;
+  min-width: 0;
+  color: var(--wf-ink-3);
+}
+
+.callText b {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.callNumber {
+  justify-items: end;
+}
+
+.callNumber b {
+  color: var(--wf-ink-1);
+}
+
 .escalationFoot {
   display: flex;
   align-items: center;
@@ -1075,10 +1114,6 @@
     font-size: var(--wf-fs-13);
   }
 
-  .selectWrap .count {
-    display: none;
-  }
-
   .drawerBody {
     padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-4);
   }
@@ -1184,6 +1219,15 @@
   .rowWho {
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* An acknowledged row says so while collapsed, so Acknowledge visible shows what it did. */
+  .rowSeen {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+    color: var(--wf-ink-2);
   }
 
   .rowDue {

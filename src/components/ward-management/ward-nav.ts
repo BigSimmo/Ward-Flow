@@ -372,7 +372,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * shortlist, the console and half a dozen other screens, each showing one movement's own form and
    * none of the others'.
    */
-  { id: "legal-forms", href: "/mockups/ward-flow/legal-forms", label: "Forms", group: "board" },
+  { id: "legal-forms", href: "/mockups/ward-flow/legal-forms", label: "Legal forms", group: "board" },
 ];
 
 /**
@@ -480,7 +480,7 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
    * nested route and is unaffected: it stays listed in WARD_NAV under its own `officer` entry. */
   [
     "/mockups/ward-flow/transport",
-    "A deliberate redirect to /movements (MERGE 03), documented in its own route file (transport/page.tsx) — not a destination in its own right.",
+    "A deliberate redirect to /transport/officer (shell-19; MERGE 03 sent it to /movements), documented in its own route file (transport/page.tsx) — not a destination in its own right.",
   ],
   [
     "/mockups/ward-flow/ed",
@@ -752,7 +752,7 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (normalized === "/mockups/ward-flow" || normalized === "/mockups/ward-flow/command") return "Home";
   if (normalized.startsWith("/mockups/ward-flow/board")) return "Bed Board";
   if (normalized.startsWith("/mockups/ward-flow/ward")) return "Ward";
-  if (normalized.startsWith("/mockups/ward-flow/ed")) return "Emergency";
+  if (normalized.startsWith("/mockups/ward-flow/ed")) return "All EDs";
   if (normalized.startsWith("/mockups/ward-flow/community")) return "Community";
   if (normalized.startsWith("/mockups/ward-flow/movements")) return "Movements";
   if (normalized.startsWith("/mockups/ward-flow/statistics")) return "Statistics";
@@ -767,7 +767,7 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (normalized === "/mockups/ward-flow/people/new") return "Add a patient";
   if (normalized.startsWith("/mockups/ward-flow/people")) return "Patients";
   if (normalized.startsWith("/mockups/ward-flow/transport/officer")) return "Transport";
-  if (normalized.startsWith("/mockups/ward-flow/transport")) return "Movements";
+  if (normalized.startsWith("/mockups/ward-flow/transport")) return "Transport";
   if (normalized.startsWith("/mockups/ward-flow/settings")) return "Settings";
   if (normalized.startsWith("/mockups/ward-flow/sovereign")) return "Sovereign Health";
 

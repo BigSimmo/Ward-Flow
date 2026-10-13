@@ -10,14 +10,12 @@ import {
   ColumnChart,
   HeroStat,
   PhoneListRow,
-  RowSpark,
   StatusGlyph,
   cx,
   durMinutes,
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
-import { edWaitingSeries } from "@/components/ward-management/ed/ed-home-derivations";
 import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
@@ -206,9 +204,8 @@ export function StatisticsEdsIndexScreen() {
           <PhoneList label="Emergency departments, busiest first">
             {swarmRows.map((swarm) => {
               const row = departments.find((each) => each.id === swarm.id)!;
-              const trend = edWaitingSeries(movements, row.id, now);
-              // The last point is now: it reads the same open count as the row, by construction.
-              trend[trend.length - 1] = row.waiting;
+              // No trend line on phone (audit stats-19, 13 Oct 2026): it had no visible span, and with
+              // no closures in the seed every line rose, so it signalled worsening everywhere.
               return (
                 <PhoneListRow
                   key={row.id}
@@ -216,16 +213,10 @@ export function StatisticsEdsIndexScreen() {
                   name={row.name}
                   meta={
                     <span className={phone.dotName}>
-                      <ServiceDot service={row.service} />
                       {row.waiting === 0 ? "No one waiting" : `${row.unplaced} no ward yet`}
                     </span>
                   }
-                  value={
-                    <span className={phone.trendValue}>
-                      <RowSpark values={trend} name={row.name} testId="ward-statistics-eds-phone-spark" />
-                      {row.waiting}
-                    </span>
-                  }
+                  value={row.waiting}
                   time={`longest ${waitText(row.longest)}`}
                   href={edStatisticsHref(row.id)}
                 />

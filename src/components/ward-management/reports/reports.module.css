@@ -842,6 +842,50 @@
   .page [data-print-hide] {
     display: none !important;
   }
+
+  /* Downtime pack on A4 (remaining-pages audit 13 Oct 2026): every column fits the page, so Legal
+     status never prints clipped. Text cells wrap, numbers stay whole, and Accepted by, which the
+     tablet band drops on screen, prints in full. */
+  .page .packTable {
+    --wf-cell-pad-y: 4px;
+    font-size: var(--wf-fs-12);
+  }
+
+  .page .packTable th,
+  .page .packTable td {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .page .packTable thead th,
+  .page .packTable .time,
+  .page .packTable .edCell,
+  .page .packTable tbody th[scope="row"] {
+    white-space: normal;
+  }
+
+  .page .packTable .packAccepted {
+    display: table-cell;
+  }
+
+  .page .printOnly {
+    display: block;
+  }
+}
+
+/* Phone downtime pack: the phone screen prints nothing of its own; a print-only copy of the four
+   full tables prints instead, whichever section was open. */
+.phoneScreenOnly {
+  display: contents;
+}
+
+.printOnly {
+  display: none;
+}
+
+.printMeta {
+  margin: 0 0 var(--wf-s-2);
+  font-size: var(--wf-fs-12);
 }
 
 /* v10 phone downtime pack (11 Oct 2026): each service head reads as a plain caps label with its

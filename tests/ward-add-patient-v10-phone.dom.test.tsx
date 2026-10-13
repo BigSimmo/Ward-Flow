@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -51,19 +51,14 @@ describe("Add a patient v10", () => {
     expect((screen.getByLabelText(/Given name/) as HTMLInputElement).value).toBe("Testa");
   });
 
-  it("on a phone opens on search first, and Show the form anyway gives the short identity form", () => {
+  it("on a phone shows the short identity form straight away, with no larger-screen landing (shell-7)", () => {
     installMatchMediaStub(true);
     try {
       renderForm();
-      const landing = screen.getByTestId("ward-add-patient-phone-landing");
-      const find = within(landing).getByRole("link", { name: /Find an existing patient/ });
-      expect(find).toHaveAttribute("href", "/mockups/ward-flow/search");
-      // Device audit 11 Oct 2026: the landing carries no figures; the short form shows Required.
-      expect(screen.getByTestId("ward-add-patient-phone-hero")).not.toHaveTextContent("0/4");
-      expect(screen.getByTestId("ward-add-patient-phone-hero")).not.toHaveTextContent("Records");
-      fireEvent.click(screen.getByTestId("ward-add-patient-phone-show-form"));
-      expect(screen.getByTestId("ward-add-patient-phone-hero")).toHaveTextContent("0/4");
       expect(screen.queryByTestId("ward-add-patient-phone-landing")).not.toBeInTheDocument();
+      expect(screen.queryByText("Add a patient needs a larger screen")).not.toBeInTheDocument();
+      expect(screen.getByTestId("ward-add-patient-phone-hero")).toHaveTextContent("0/4");
+      expect(screen.getByText("Address, facility and intake")).toBeInTheDocument();
       expect(screen.getByTestId("ward-add-patient-form").closest("main")).toHaveAttribute("data-phone-form", "true");
       expect(screen.getByTestId("ward-add-patient-submit")).toBeInTheDocument();
     } finally {

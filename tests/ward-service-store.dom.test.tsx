@@ -197,7 +197,7 @@ describe("WardBar's Service selector, wired to the store", () => {
       expect(option!.textContent ?? "").toContain(waitingText(expectedCount));
     }
     expect(sum, "the services add up to All services").toBe(waiting.total);
-    const all = options.find((button) => (button.textContent ?? "").startsWith("All services"));
+    const all = options.find((button) => (button.textContent ?? "").startsWith("Statewide"));
     expect(all!.textContent ?? "").toContain(waitingText(waiting.total));
   });
 
@@ -267,7 +267,7 @@ describe("assertion 2's Escape sentence", () => {
     await user.keyboard("{Escape}");
     const live = screen.getByTestId("ward-live-region").textContent ?? "";
     expect(live).toContain(
-      "Nothing more to clear. The service stays South Metro. Choose All services in the selector to widen the lists.",
+      "Nothing more to clear. The service stays South Metro. Choose Statewide in the selector to widen the lists.",
     );
     expect(live).not.toContain("not wired");
   });

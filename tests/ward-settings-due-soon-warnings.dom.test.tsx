@@ -50,11 +50,11 @@ function renderSettings() {
 
 /* v10: each warning is one stepper (a spinbutton between minus and plus); no slider. */
 function urgentStepper() {
-  return screen.getByRole("spinbutton", { name: "First warning before a legal due time" });
+  return screen.getByRole("spinbutton", { name: "Final warning before a legal due time" });
 }
 
 function soonStepper() {
-  return screen.getByRole("spinbutton", { name: "Second warning before a legal due time" });
+  return screen.getByRole("spinbutton", { name: "Early warning before a legal due time" });
 }
 
 const valueOf = (stepper: HTMLElement) => Number(stepper.getAttribute("aria-valuenow"));
@@ -63,8 +63,13 @@ describe("settings screen due-time warning rows", () => {
   it("shows both rows at their defaults, each labelled as a default rather than a legal limit", () => {
     renderSettings();
 
-    expect(screen.getByText("First warning")).toBeVisible();
-    expect(screen.getByText("Second warning")).toBeVisible();
+    expect(screen.getByText("Final warning")).toBeVisible();
+    expect(screen.getByText("Early warning")).toBeVisible();
+    // Audit settings-16: listed in time order, the early (3h) warning before the final (1h) one.
+    expect(
+      screen.getByText("Early warning").compareDocumentPosition(screen.getByText("Final warning")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     // The card that holds both rows says once that these are defaults, not legal limits.
     expect(screen.getByText("Your defaults, not legal limits")).toBeVisible();
 
@@ -81,7 +86,7 @@ describe("settings screen due-time warning rows", () => {
     renderSettings();
     expect(screen.getByTestId("probe-due-soon-urgent")).toHaveTextContent(String(DUE_SOON_URGENT_MINUTES));
 
-    fireEvent.click(screen.getByRole("button", { name: "Increase first warning before a legal due time" }));
+    fireEvent.click(screen.getByRole("button", { name: "Increase final warning before a legal due time" }));
     expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("1h 15m");
     expect(valueOf(urgentStepper())).toBe(DUE_SOON_URGENT_MINUTES + 15);
     // Not dispatched yet.
@@ -95,7 +100,7 @@ describe("settings screen due-time warning rows", () => {
 
   it("never lets the first warning's stepper reach or pass the second, so Save could never send a refused payload", () => {
     renderSettings();
-    const increase = screen.getByRole("button", { name: "Increase first warning before a legal due time" });
+    const increase = screen.getByRole("button", { name: "Increase final warning before a legal due time" });
 
     // 15-minute steps from 60 would reach 180 (equal to the second warning) after 8 clicks;
     // the clamp must stop it one urgent-step short of that, at 165, and hold it there.
@@ -121,7 +126,7 @@ describe("settings screen due-time warning rows", () => {
 
   it("decreasing the second warning down to the first pulls the first down with it, keeping it strictly lower", () => {
     renderSettings();
-    const decreaseSoon = screen.getByRole("button", { name: "Decrease second warning before a legal due time" });
+    const decreaseSoon = screen.getByRole("button", { name: "Decrease early warning before a legal due time" });
 
     // 30-minute steps from 180 reach 60 (equal to the untouched first warning) after 4 clicks,
     // and 30 (the second warning's own floor) after 5; the first must be pulled down each time

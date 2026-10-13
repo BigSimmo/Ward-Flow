@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
+import { UMRN_IN_ADDRESS } from "@/components/ward-management/ward-patients";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import type { PatientId } from "@/components/ward-management/ward-patients";
@@ -30,10 +31,14 @@ export default async function WardPersonPage({
   } catch {
     return <WardMovementNotFound requestedId={patientId} reason="not-a-person-id" />;
   }
+  // D-39: patient links go by person ID, never UMRN, so a UMRN in the address is not resolved. It
+  // gets the plain not-found, which quotes nothing back (the UMRN is not passed on).
+  if (UMRN_IN_ADDRESS.test(id)) return <WardMovementNotFound requestedId="" reason="not-a-person-id" />;
   if (!id.startsWith("PT-") && !id.startsWith("WF-")) {
     return <WardMovementNotFound requestedId={id} reason="not-a-person-id" />;
   }
-  if (query?.view === "governed" || query?.view === "legacy") {
+  const governed = query?.view === "governed" || query?.view === "legacy";
+  if (governed) {
     return <PersonScreen patientId={id as PatientId} />;
   }
   return (

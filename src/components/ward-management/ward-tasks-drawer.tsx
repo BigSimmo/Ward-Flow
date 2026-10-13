@@ -11,6 +11,7 @@ import {
   Filter,
   ListChecks,
   Phone,
+  PhoneCall,
   RotateCcw,
   Search,
   Send,
@@ -23,7 +24,9 @@ import {
 import { useEffect, useRef, useState, type Dispatch } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
+import { StatusGlyph, durMinutes, useIsPhone, useOptionalToast, type WfTone } from "@/components/wf";
+import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
+import { edHealthService } from "./ward-service-scope";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { edById } from "./ward-sites";
@@ -96,6 +99,52 @@ const ACK_FILTER_LABELS: Record<AckFilter, string> = {
 /** Quick picks only fill the box; the person still records the escalation themselves. */
 const ESCALATION_PICKS = ["Duty consultant", "State bed desk", "Executive on call"] as const;
 
+/**
+ * Ops-6 (remaining-pages audit, 13 Oct 2026): each escalation pick with the number that answers
+ * now, from the On-call directory for the patient's service. Every number is a mock.
+ */
+function escalationTargets(movement: Movement): CallTarget[] {
+  const service = edHealthService(movement.originEdId);
+  return [
+    {
+      kind: "consultant",
+      name: "Duty consultant",
+      role: "Consultant psychiatrist on call",
+      siteCode: edById(movement.originEdId)?.siteCode,
+      service,
+    },
+    { kind: "bedFlow", name: "State bed desk", role: "Statewide bed flow", service: undefined },
+    { kind: "executive", name: "Executive on call", role: "Diversion and escalation", service },
+  ];
+}
+
+/**
+ * Ops-5 (remaining-pages audit, 13 Oct 2026): the numbers a task needs, from the On-call
+ * directory: transport when a leg is booked or waiting, the sending ED's liaison and the
+ * receiving ward's nurse in charge.
+ */
+function contactTargets(item: InboxItem, movement: Movement, units: readonly Unit[] | undefined): CallTarget[] {
+  const targets: CallTarget[] = [];
+  if (movement.transport || /transport/i.test(item.title)) {
+    targets.push({ kind: "transport", name: "Patient transport", role: "Transport bookings" });
+  }
+  const ed = edById(movement.originEdId);
+  if (ed) {
+    targets.push({
+      kind: "ed",
+      name: ed.name,
+      role: "ED mental health liaison",
+      siteCode: ed.siteCode,
+      line: "liaison",
+    });
+  }
+  const ward = movement.acceptedUnitId
+    ? units?.find((candidate) => candidate.id === movement.acceptedUnitId)
+    : undefined;
+  if (ward) targets.push({ kind: "ward", name: ward.name, role: "Nurse in charge", unitId: ward.id });
+  return targets;
+}
+
 const ROLE_LABELS: Partial<Record<WardFlowRole, string>> = {
   coordinator: "Bed coordinator",
   ward: "Ward",
@@ -148,9 +197,25 @@ function rowTiming(
       tone: "closed",
     };
   }
+  // Ops-8 (remaining-pages audit, 13 Oct 2026): a row that records when it started (a planned
+  // arrival not yet recorded) shows how long it has waited, the figure the phone list sorts by.
+  if (item.tone !== "danger" && item.since !== undefined && item.since <= now) {
+    return { value: durMinutes(now - item.since), word: "waiting", state: "Review", tone: "warning" };
+  }
   return item.tone === "danger"
     ? { state: "Act now", tone: "danger", stateTone: "danger" }
     : { state: "Review", tone: "warning" };
+}
+
+/**
+ * Phone order, as Alerts orders its queue: act now first, then the longest waiting. A row's wait
+ * runs from its due time, or from when it started where it records no due time, so the age each
+ * row shows is the age it is sorted by. Rows with neither keep their order and go last.
+ */
+function sortOldestFirst(items: readonly InboxItem[]): InboxItem[] {
+  return sortDueFirst(items, (item) => item.dueAt ?? item.since).sort(
+    (a, b) => (a.tone === "danger" ? 0 : 1) - (b.tone === "danger" ? 0 : 1),
+  );
 }
 
 /** The row's one sentence, from the movement's own recorded times where it holds them. */
@@ -214,7 +279,7 @@ export function WardTasksDrawer({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [withBackdrop, onClose]);
-  // Phone (v10 Tasks sheet): a plain list, due first. A row opens in place to show its actions.
+  // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
   const isPhone = useIsPhone();
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
   const nameFor = usePatientNameDisplay();
@@ -229,7 +294,50 @@ export function WardTasksDrawer({
   }
 
   const [escalating, setEscalating] = useState<string | null>(null);
+  const [contacting, setContacting] = useState<string | null>(null);
   const [contact, setContact] = useState("");
+  const toast = useOptionalToast();
+
+  /** Calling is not wired: the number is copied and the toast says so. */
+  function callNumber(row: CallRow) {
+    const number = row.number;
+    if (!number) return;
+    const failed = () =>
+      toast?.push({ tone: "warning", title: "Number not copied", body: `Copy it by hand: ${number}` });
+    // Says copied only once the clipboard has taken it.
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+      failed();
+      return;
+    }
+    navigator.clipboard
+      .writeText(number)
+      .then(() => toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." }), failed);
+  }
+
+  function renderCallRow(row: CallRow, onCall: (from: HTMLElement) => void) {
+    return (
+      <li key={row.key} className={styles.callRow}>
+        <span className={styles.callText}>
+          <b>{row.name}</b>
+          <span>{row.role}</span>
+        </span>
+        <span className={styles.callNumber}>
+          {row.number ? <b className={styles.mono}>{row.number}</b> : <span>No line held</span>}
+          {row.hours ? <span>{row.hours}</span> : null}
+        </span>
+        {row.number ? (
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnIcon}`}
+            aria-label={`Call ${row.name}, ${row.number}`}
+            onClick={(event) => onCall(event.currentTarget)}
+          >
+            <PhoneCall aria-hidden="true" />
+          </button>
+        ) : null}
+      </li>
+    );
+  }
   const [ackFilter, setAckFilter] = useState<AckFilter>("all");
   const [taskFilter, setTaskFilter] = useState<"all" | "critical" | "review">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -263,7 +371,11 @@ export function WardTasksDrawer({
 
   // Snoozed rows leave the active list and come back by themselves when their time passes.
   const { active: activeItems, snoozed: snoozedItems } = partitionSnoozed(allItems, snoozes, now);
-  const items = sortMode === "due-first" || isPhone ? sortDueFirst(activeItems, (item) => item.dueAt) : activeItems;
+  const items = isPhone
+    ? sortOldestFirst(activeItems)
+    : sortMode === "due-first"
+      ? sortDueFirst(activeItems, (item) => item.dueAt)
+      : activeItems;
 
   const isComplete = (item: InboxItem) =>
     item.kind === "commitment" && inboxItemCompletionState(completions[item.id]) === "complete";
@@ -287,7 +399,11 @@ export function WardTasksDrawer({
   });
   const filteredFacts = filteredItems.filter((item) => item.kind === "fact");
   const filteredCommitments = filteredItems.filter((item) => item.kind === "commitment");
-  const visibleUnacknowledged = filteredFacts.filter((item) => !acknowledgements[item.id]?.length);
+  // Ops-9 (remaining-pages audit, 13 Oct 2026): act-now rows are never acknowledged in bulk; each
+  // one is opened and acknowledged on its own.
+  const visibleUnacknowledged = filteredFacts.filter(
+    (item) => item.tone !== "danger" && !acknowledgements[item.id]?.length,
+  );
   // One row at a time shows its full detail; the first visible row until someone picks another.
   // Phone: nothing is open until a row is tapped, so the sheet reads as a plain list first.
   const expanded = filteredItems.some((item) => item.id === expandedId)
@@ -318,8 +434,9 @@ export function WardTasksDrawer({
           className={`${styles.btn} ${styles.btnIcon}`}
           aria-label="Contact"
           title="Contact"
+          aria-expanded={contacting === item.id}
           onClick={() => {
-            onSelectMovement(item.movementId, "contact");
+            setContacting(contacting === item.id ? null : item.id);
           }}
         >
           <Phone aria-hidden="true" />
@@ -328,6 +445,7 @@ export function WardTasksDrawer({
           <button
             type="button"
             className={styles.btn}
+            data-escalate
             aria-expanded={escalating === item.id}
             onClick={() => {
               setEscalating(escalating === item.id ? null : item.id);
@@ -342,24 +460,48 @@ export function WardTasksDrawer({
     );
   }
 
+  function renderContacts(item: InboxItem, movement?: Movement) {
+    if (contacting !== item.id || !movement) return null;
+    const rows = callRows(contactTargets(item, movement, records?.units), now);
+    return (
+      <div className={styles.escalationForm} data-testid={`ward-task-contacts-${item.id}`}>
+        <ul className={styles.callList} aria-label="Who to call, mock numbers">
+          {rows.map((row) => renderCallRow(row, () => callNumber(row)))}
+        </ul>
+        <div className={styles.escalationFoot}>
+          <span className={styles.escalationNote}>Mock numbers from On-call.</span>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGhost}`}
+            onClick={() => onSelectMovement(item.movementId, "contact")}
+          >
+            Open patient contacts
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   function renderEscalation(item: InboxItem, movement?: Movement) {
     if (escalating !== item.id || !movement) return null;
+    const recordEscalation = (who: string) =>
+      dispatch({
+        type: "RECORD_ESCALATION",
+        role,
+        now,
+        movementId: movement.id,
+        triedUnitIds: [...new Set(movement.declines.map((decline) => decline.unitId))],
+        contact: who,
+      });
     const focusTrigger = (from: HTMLElement) =>
-      from.closest("li")?.querySelector<HTMLButtonElement>("button[aria-expanded]")?.focus();
+      from.closest("li[data-expanded]")?.querySelector<HTMLButtonElement>("button[data-escalate]")?.focus();
     return (
       <form
         className={styles.escalationForm}
         onSubmit={(event) => {
           event.preventDefault();
           if (!contact.trim()) return;
-          dispatch({
-            type: "RECORD_ESCALATION",
-            role,
-            now,
-            movementId: movement.id,
-            triedUnitIds: [...new Set(movement.declines.map((decline) => decline.unitId))],
-            contact: contact.trim(),
-          });
+          recordEscalation(contact.trim());
           focusTrigger(event.currentTarget);
           setEscalating(null);
           setContact("");
@@ -396,6 +538,16 @@ export function WardTasksDrawer({
             </button>
           ))}
         </div>
+        {/* Ops-6: each pick's number, with Call. Calling only copies the number and fills in that
+            contact; nothing is recorded until Record escalation is pressed. */}
+        <ul className={styles.callList} aria-label="Escalation contacts, mock numbers">
+          {callRows(escalationTargets(movement), now).map((row) =>
+            renderCallRow(row, () => {
+              callNumber(row);
+              setContact(row.name);
+            }),
+          )}
+        </ul>
         <div className={styles.escalationFoot}>
           <span className={styles.escalationNote}>Records only. Sends nothing.</span>
           <button
@@ -488,6 +640,12 @@ export function WardTasksDrawer({
                       already carry the UMRN, so it is not repeated. */}
                   {patient?.patient && phoneName === patient.displayName ? ` · ${patient.umrn}` : ""}
                 </span>
+                {latestAck && !isExpanded ? (
+                  <span className={styles.rowSeen} data-testid={`ward-task-seen-${item.id}`}>
+                    <StatusGlyph tone="info" size={8} />
+                    Seen
+                  </span>
+                ) : null}
               </p>
             ) : null}
             <p className={styles.rowMeta} data-phone-hidden={isPhone || undefined}>
@@ -645,6 +803,7 @@ export function WardTasksDrawer({
             </div>
           </>
         )}
+        {!isPhone || isExpanded ? renderContacts(item, movement) : null}
         {renderEscalation(item, movement)}
       </li>
     );
@@ -674,7 +833,9 @@ export function WardTasksDrawer({
           <div className={styles.headerText}>
             <h2 className={styles.heading}>Tasks</h2>
             <p className={styles.headerNote}>
-              {isPhone ? `${openCount} open · due first` : `${ROLE_LABELS[role] ?? "Tasks"} · synthetic movements`}
+              {isPhone
+                ? `${openCount} open · act now, then oldest`
+                : `${ROLE_LABELS[role] ?? "Tasks"} · synthetic movements`}
             </p>
           </div>
           <span className={styles.headingCount} data-testid="ward-tasks-drawer-count">
@@ -695,27 +856,31 @@ export function WardTasksDrawer({
         </div>
 
         <div className={styles.controls}>
-          <div className={styles.summary}>
-            <div className={styles.stat}>
-              <strong>{overdueCount}</strong>
-              <span>
-                {overdueCount > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
-                Overdue
-              </span>
+          {/* Ops-22 (13 Oct 2026): on desktop the counts sit in the header and the All filter only;
+              the stats row repeated them. Phone keeps its one quiet line. */}
+          {isPhone ? (
+            <div className={styles.summary}>
+              <div className={styles.stat}>
+                <strong>{overdueCount}</strong>
+                <span>
+                  {overdueCount > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
+                  Overdue
+                </span>
+              </div>
+              <div className={styles.stat}>
+                <strong>{criticalFactsCount}</strong>
+                <span>Critical facts</span>
+              </div>
+              <div className={styles.stat}>
+                <strong>{unacknowledged.length}</strong>
+                <span>To acknowledge</span>
+              </div>
+              <div className={styles.stat}>
+                <strong>{acknowledgedFactsCount}</strong>
+                <span>Acknowledged</span>
+              </div>
             </div>
-            <div className={styles.stat}>
-              <strong>{criticalFactsCount}</strong>
-              <span>Critical facts</span>
-            </div>
-            <div className={styles.stat}>
-              <strong>{unacknowledged.length}</strong>
-              <span>To acknowledge</span>
-            </div>
-            <div className={styles.stat}>
-              <strong>{acknowledgedFactsCount}</strong>
-              <span>Acknowledged</span>
-            </div>
-          </div>
+          ) : null}
 
           <div className={styles.filterBar}>
             <div className={styles.segmented} role="group" aria-label="Filter tasks by status">
@@ -759,9 +924,6 @@ export function WardTasksDrawer({
                   </option>
                 ))}
               </select>
-              <span className={styles.count} aria-hidden="true">
-                {filteredItems.length}
-              </span>
               <ChevronDown aria-hidden="true" />
             </label>
             <label className={styles.selectWrap}>
