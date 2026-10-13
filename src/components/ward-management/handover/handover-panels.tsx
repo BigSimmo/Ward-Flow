@@ -11,6 +11,7 @@ import { Badge, Button, Card, Count, Icon, StatusGlyph, buttonClass, durMinutes 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { MovementStage } from "@/components/ward-management/ward-model";
 import { rowTone, type ColumnContext } from "./handover-columns";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import {
   isbarLines,
   legalLong,
@@ -105,8 +106,8 @@ export function HandoverFlowPanel({
           ? "No pull time recorded"
           : "None"
         : hold !== null && hold <= 0
-          ? `Expired ${formatInstantWithDay(row.pullExpiresAt, now)}`
-          : `Until ${formatInstantWithDay(row.pullExpiresAt, now)}`,
+          ? `${bedHold(row.pullExpiresAt, now)!.label}, at ${formatInstantWithDay(row.pullExpiresAt, now)}`
+          : `Until ${formatInstantWithDay(row.pullExpiresAt, now)}, ${bedHold(row.pullExpiresAt, now)!.short}`,
     ],
     [
       "Transport",

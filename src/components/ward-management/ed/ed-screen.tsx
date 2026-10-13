@@ -41,6 +41,7 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import {
   changeReasonLabels,
   LEGAL_FORM_RECEIPT_CORRECTION_REASONS,
@@ -3858,8 +3859,23 @@ export function EdScreen({ edId }: EdScreenProps) {
                         </span>
                       )
                     ) : movement.stage === "pulled" ? (
+                      // Audit A4-4: the one bed-hold rule (`ward-bed-hold.ts`), the same words as
+                      // Movement detail and Handover. Lapsed: the act-now glyph; under an hour: amber dot.
                       <span className={styles.transitBadgeHold} data-testid={`ward-ed-transit-badge-${movement.id}`}>
-                        ⏱ Pulled · {holdLabel} hold clock active
+                        {(() => {
+                          const hold = bedHold(movement.pullExpiresAt, now);
+                          if (!hold) return <>⏱ Pulled · {holdLabel} pull</>;
+                          return (
+                            <>
+                              {hold.state === "held" ? (
+                                "⏱"
+                              ) : (
+                                <StatusGlyph tone={hold.state === "lapsed" ? "danger" : "warning"} size={8} />
+                              )}{" "}
+                              Pulled · {hold.short}
+                            </>
+                          );
+                        })()}
                       </span>
                     ) : null}
                   </>

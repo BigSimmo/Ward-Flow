@@ -754,6 +754,7 @@ function subjectId(event: WardFlowEvent): string {
       return event.admissionId;
     // v10 pass 3: a step undo is filed against the subject it names; a handover sign-off has none.
     case "UNDO_REPATRIATION":
+    case "UNDO_DEPARTURE":
     case "UNDO_ED_STEP":
     case "UNDO_SUPPORT_NOTIFICATION":
       return undoStepSubjectId(event);
@@ -1493,7 +1494,6 @@ function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, 
     allocatable: {
       ...unit.allocatable,
       value: Math.min(unit.beds, unit.allocatable.value + 1),
-      confirmedAt: now,
     },
     allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + (lockedBedReleased ? 1 : 0)),
     ...(releaseCountDisagrees
@@ -1693,23 +1693,22 @@ function departAdmission(
   // An admission carries only `sex`, so the gender comes from the movement that admitted it.
   const admittingMovement = state.movements.find((m) => m.admissionId === admission.id);
   const leaverSex = mixSexOf(admission.gender ?? admittingMovement?.gender, admission.sex);
+  // Audit A1-11 (13 Oct 2026): a departure moves the figures but never stamps them as confirmed;
+  // only the ward's own Confirm numbers (`CONFIRM_CAPACITY`) sets `confirmedAt`.
   const updatedUnit: Unit =
     releaseAlreadyIncremented || arrivalAwaitingCapacity
       ? {
           ...unit,
-          empty: { ...unit.empty, confirmedAt: now },
-          allocatable: { ...unit.allocatable, confirmedAt: now },
           allocatableLocked: unit.allocatableLocked + restoreLocked,
           sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
           ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
         }
       : {
           ...unit,
-          empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1), confirmedAt: now },
+          empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) },
           allocatable: {
             ...unit.allocatable,
             value: Math.min(unit.beds, unit.allocatable.value + 1),
-            confirmedAt: now,
           },
           allocatableLocked: unit.allocatableLocked + restoreLocked,
           sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
@@ -2063,8 +2062,8 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       );
       next = replaceUnit(next, receiving.id, {
         ...receiving,
-        empty: { ...receiving.empty, value: receiving.empty.value - 1, confirmedAt: event.now },
-        allocatable: { ...receiving.allocatable, value: receiving.allocatable.value - 1, confirmedAt: event.now },
+        empty: { ...receiving.empty, value: receiving.empty.value - 1 },
+        allocatable: { ...receiving.allocatable, value: receiving.allocatable.value - 1 },
         allocatableLocked: receiving.allocatableLocked - (bedKind === "locked" ? 1 : 0),
         sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
       });
@@ -2300,6 +2299,7 @@ const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_HANDOVER_SIGN_OFF: "There is no handover sign-off to undo",
   UNDO_ED_STEP: "There is no ED step on this patient to undo",
   UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
+  UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
 };
 
 /**
@@ -2344,7 +2344,11 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
     (!safeCounter(state.auditSequence) || state.auditSequence >= Number.MAX_SAFE_INTEGER)
   )
     return state;
-  if (protectedEvent) return advanceResourceRevisions(state, reduceRecordEvent(state, event));
+  if (protectedEvent) {
+    const recorded = advanceResourceRevisions(state, reduceRecordEvent(state, event));
+    // Audit A1-12: a recorded discharge ("Has left") keeps what it changed, so its toast can undo it.
+    return event.type === "RECORD_PATIENT_DISCHARGE" ? withStepUndo(state, recorded, event) : recorded;
+  }
   if (
     (event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO") &&
     (!safeCounter(state.worldGeneration) || state.worldGeneration >= Number.MAX_SAFE_INTEGER)
@@ -2566,7 +2570,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "UNDO_REPATRIATION":
     case "UNDO_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
-    case "UNDO_TRANSPORT_STEP": {
+    case "UNDO_TRANSPORT_STEP":
+    case "UNDO_DEPARTURE": {
       // v10 pass 3: takes back the newest step of this kind on this subject, exactly (`ward-undo.ts`).
       const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
       if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);
@@ -4877,7 +4882,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       const updatedUnit: Unit = {
         ...unit,
-        allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1, confirmedAt: event.now },
+        // Audit A1-11: a pull moves the figure; only Confirm numbers stamps it confirmed.
+        allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1 },
         // Item 11, owner answer 11 — decremented ONLY when the bed taken was one of the locked
         // ones, exactly mirroring the restore in `releasePulledBedAndAdmission`. Taking an open bed
         // leaves this untouched: the locked ones remaining are exactly as many as before.
@@ -5574,7 +5580,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       const updatedUnit: Unit = {
         ...unit,
-        empty: { ...unit.empty, value: Math.max(0, unit.empty.value - 1), confirmedAt: event.now },
+        empty: { ...unit.empty, value: Math.max(0, unit.empty.value - 1) },
         sexMix: adjustSexMix(unit.sexMix, arriverSex, 1),
         ...(isBedTurnaround
           ? {
@@ -6592,20 +6598,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // the leaver's gender (owner rulings 2026-09-25), so the count moves when the admission
       // departs (`departAdmission`), never by guessing a sex here. 5d7f438126's guess (decrement
       // the larger bucket) was removed 2026-09-25; it also subtracted twice when the occupant later left.
+      // Audit A1-11: recording the stage never stamps the ward's figures as confirmed.
       const updatedUnit: Unit = departureAlreadyIncremented
-        ? {
-            ...unit,
-            allocatable: { ...unit.allocatable, confirmedAt: event.now },
-            empty: { ...unit.empty, confirmedAt: event.now },
-          }
+        ? unit
         : {
             ...unit,
             allocatable: {
               ...unit.allocatable,
               value: Math.min(unit.beds, unit.allocatable.value + 1),
-              confirmedAt: event.now,
             },
-            empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1), confirmedAt: event.now },
+            empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) },
           };
       const withUnit = replaceUnit(state, unit.id, updatedUnit);
       decision.outcome = "accepted";

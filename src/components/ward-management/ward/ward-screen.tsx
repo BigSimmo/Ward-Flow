@@ -79,6 +79,7 @@ import {
   daysInBed as admissionStayDays,
   stayBand,
   isPastExpectedDischarge,
+  LEAVING_DESTINATIONS,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
@@ -113,7 +114,8 @@ import {
   whyBedDoesNotFit,
   type BoardPick,
 } from "./ward-bed-board-logic";
-import { layoutBedNumbers } from "./ward-bed-layout";
+import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
+import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
 import type { BedItem } from "./ward-beds-matrix";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import {
@@ -312,7 +314,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // at a time.
   const [releaseOpenFor, setReleaseOpenFor] = useState<string | undefined>(undefined);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | undefined>(undefined);
-  const dischargeCheckRef = useRef<{ prior: number; success: string; who: string; codes: string[] } | null>(null);
+  const dischargeCheckRef = useRef<{
+    prior: number;
+    success: string;
+    who: string;
+    codes: string[];
+    /** Audit A1-12: the stay a recorded departure can take back from its toast. */
+    undoAdmissionId?: string;
+  } | null>(null);
   const [dischargeToken, setDischargeToken] = useState(0);
   const [answerIndex, setAnswerIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"attn" | "board" | "coming" | "out" | "beds" | "return">(
@@ -380,15 +389,49 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       reason !== undefined && check.codes.length > 0 && !reason.includes(check.who)
         ? `${check.who}: ${reason}`
         : reason;
+    if (namedReason !== undefined) {
+      setToastMessage(`Not recorded: ${namedReason}. Nothing was changed.`);
+      return;
+    }
+    // Audit A1-12: "Has left" offers Undo like Move bed, through the same toast.
     // A1-18 (audit 13 Oct 2026): a departure recorded offline says it has not gone anywhere.
     const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-    setToastMessage(
-      namedReason !== undefined
-        ? `Not recorded: ${namedReason}. Nothing was changed.`
-        : offline
-          ? `${check.success} ${WARD_OFFLINE_SAVED_NOTE}`
-          : check.success,
-    );
+    const successText = offline ? `${check.success} ${WARD_OFFLINE_SAVED_NOTE}` : check.success;
+    const undoAdmissionId = check.undoAdmissionId;
+    if (!toast || undoAdmissionId === undefined) {
+      setToastMessage(successText);
+      return;
+    }
+    const undoLimit = roleLimitReason(routeRole, "UNDO_DEPARTURE");
+    toast.push({
+      tone: "success",
+      title: successText,
+      ...(undoLimit
+        ? { body: `Undo: ${undoLimit}` }
+        : {
+            undo: {
+              durationMs: UNDO_TOAST_MS,
+              onUndo: () => {
+                dischargeCheckRef.current = {
+                  prior: rejectionCountRef.current,
+                  success: `Undone. ${check.who} is back in their bed.`,
+                  who: check.who,
+                  codes: check.codes,
+                };
+                dispatch({
+                  type: "UNDO_DEPARTURE",
+                  role: "ward",
+                  now: nowRef.current,
+                  admissionId: undoAdmissionId,
+                  actingUnitId: unitId,
+                });
+                setDischargeToken((token) => token + 1);
+              },
+            },
+          }),
+    });
+    // `toast`, `routeRole`, `dispatch` and `unitId` are stable for the screen's life; the token drives this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dischargeToken, rejections]);
 
   // The outcome of a Bed board place or undo: a refusal says why on the board; a placement offers
@@ -1187,6 +1230,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       dischargeConfirmed: admission ? admission.dischargeConfirmedAt != null : null,
       dischargeConfirmedBy: admission?.dischargeConfirmedBy ?? null,
       expectedDischargeLabel,
+      // Audit A1-3: a pulled bed carries its hold, so a lapsed hold reaches the ward's Act now.
+      bedHold: status === "incoming" ? bedHoldOf(linkedMovement?.pullExpiresAt, now) : undefined,
     };
   });
 
@@ -1212,10 +1257,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       admission.unitId === unit.id && admission.bedNumber !== undefined ? [[admission.id, admission.bedNumber]] : [],
     ) as [string, number][],
   );
+  // Audit A1-1: every stay keeps a fixed bed, so a departure or absence never renumbers others.
+  const seatedBeds = seatStays(
+    unit.beds,
+    (admissions ?? []).filter((admission) => admission.unitId === unit.id),
+    isMixed ? lockedBeds : 0,
+  );
   const bedNumbers = layoutBedNumbers(
     rawBeds.map((bed) => ({ stayAdmissionId: bed.stayAdmissionId, free: bed.status === "ready" })),
     (admissionId) => recordedBeds.get(admissionId),
     heldBeds.map((held) => held.bed),
+    (admissionId) => seatedBeds.get(admissionId),
   );
   const bedsList = rawBeds
     .map((bed, index) => {
@@ -1678,11 +1730,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function handleDrawerRecordLeft(admissionId: string, who: string) {
     if (!drawerLeavingDestination) return;
     const resolved = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId));
+    const destinationLabel = LEAVING_DESTINATIONS.find(
+      (destination) => destination.id === drawerLeavingDestination,
+    )?.label;
     dischargeCheckRef.current = {
       prior: rejections.length,
-      success: `Recorded: ${who} has left the ward.`,
+      success: `Recorded: ${who} has left the ward${destinationLabel ? ` (${destinationLabel.toLowerCase()})` : ""}.`,
       who,
       codes: resolved.patient ? [resolved.patient.id, admissionId] : [],
+      undoAdmissionId: admissionId,
     };
     if (recordWardDeparture) recordWardDeparture(admissionId, unitId, drawerLeavingDestination);
     else
@@ -1800,6 +1856,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     incoming: incoming.length,
     heldUp: blockedReleases.length,
     rollupOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
+    lapsedHolds: bedsList.filter((bed) => bed.status === "incoming" && bed.bedHold?.state === "lapsed").length,
   });
   const readyByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
   const bedCountsStale = now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
