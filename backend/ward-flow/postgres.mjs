@@ -246,7 +246,7 @@ export function createWorkspaceStore(
   return {
     pushEnabled: !!push,
     async ready() {
-      const version = push ? 3 : 2;
+      const version = 4;
       const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=$1", [version]);
       if (!rows.length) throw new Error("Shared schema unavailable");
     },

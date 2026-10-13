@@ -1,0 +1,418 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { test } from "node:test";
+import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
+
+const sqlFiles = [
+  "001-shared-workspace",
+  "002-workspace-data-mode",
+  "003-push-subscriptions",
+  "004-trigger-search-path",
+].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
+
+function column(name, definition) {
+  const type = /^(uuid|bigint|integer|jsonb|text|timestamptz)\b/.exec(definition)?.[1];
+  return {
+    name,
+    type: type === "timestamptz" ? "timestamp with time zone" : type,
+    required: /NOT NULL|PRIMARY KEY/.test(definition),
+    identity: /GENERATED ALWAYS AS IDENTITY/.test(definition) ? "a" : "",
+    generated: "",
+    default_value: /DEFAULT (now\(\)|'[^']*'|\d+)/.exec(definition)?.[1] ?? null,
+  };
+}
+
+function checkExpressions(sql) {
+  const result = [];
+  for (const match of sql.matchAll(/CHECK\s*\(/g)) {
+    const start = match.index + match[0].length;
+    let depth = 1;
+    let end = start;
+    for (; end < sql.length && depth; end++) {
+      if (sql[end] === "(") depth++;
+      if (sql[end] === ")") depth--;
+    }
+    result.push(
+      sql
+        .slice(start, end - 1)
+        .replace(/(\w+) IN \(([^)]+)\)/g, "$1 = ANY (ARRAY[$2])")
+        .replace(/ LIKE /g, " ~~ "),
+    );
+  }
+  return result;
+}
+
+function fixture(version = 4) {
+  const owner = "migration_admin";
+  const catalog = {
+    owner,
+    objects: [],
+    constraints: [],
+    functions: [],
+    triggers: [],
+    sequences: [],
+    unknown_types: 0,
+    rules: 0,
+    policies: 0,
+    extensions: 0,
+  };
+  const addConstraint = (table, type, keys, details = {}) =>
+    catalog.constraints.push({
+      table_name: table,
+      type,
+      keys,
+      foreign_schema: null,
+      foreign_table: null,
+      foreign_keys: [],
+      delete_action: " ",
+      update_action: " ",
+      match_type: " ",
+      validated: true,
+      deferrable: false,
+      deferred: false,
+      definition: "",
+      ...details,
+    });
+  const addIndex = (name, table, keys, unique = false, predicate) =>
+    catalog.objects.push({
+      name,
+      kind: "i",
+      owner,
+      persistence: "p",
+      rls: false,
+      force_rls: false,
+      columns: [],
+      valid: true,
+      definition: `CREATE ${unique ? "UNIQUE " : ""}INDEX ${name} ON ward_flow.${table} USING btree (${keys})${predicate ? " WHERE (" + predicate + ")" : ""}`,
+    });
+  const foreign = (table, keys, target, foreignKeys, deletion = "a") =>
+    addConstraint(table, "f", keys, {
+      foreign_schema: "ward_flow",
+      foreign_table: target,
+      foreign_keys: foreignKeys,
+      delete_action: deletion,
+      update_action: "a",
+      match_type: "s",
+    });
+  const checks = (table, sql) => {
+    for (const expression of checkExpressions(sql))
+      addConstraint(table, "c", [], { definition: `CHECK (${expression})` });
+  };
+  for (const sql of sqlFiles.slice(0, version)) {
+    for (const match of sql.matchAll(/CREATE TABLE ward_flow\.(\w+) \(([\s\S]*?)\n\);/g)) {
+      const [, name, body] = match;
+      const table = { name, kind: "r", owner, persistence: "p", rls: false, force_rls: false, columns: [] };
+      catalog.objects.push(table);
+      for (const line of body.split(/\r?\n/).map((line) => line.trim())) {
+        const match = /^(\w+) ((?:uuid|bigint|integer|jsonb|text|timestamptz)\b.*)/.exec(line);
+        if (!match) continue;
+        const [, colName, definition] = match;
+        table.columns.push(column(colName, definition));
+        if (definition.includes("PRIMARY KEY")) {
+          addConstraint(name, "p", [colName]);
+          addIndex(name + "_pkey", name, colName, true);
+        }
+        if (definition.includes(" UNIQUE")) {
+          addConstraint(name, "u", [colName]);
+          addIndex(name + "_" + colName + "_key", name, colName, true);
+        }
+        const reference = /REFERENCES ward_flow\.(\w+)\((\w+)\)/.exec(definition);
+        if (reference)
+          foreign(name, [colName], reference[1], [reference[2]], definition.includes("ON DELETE CASCADE") ? "c" : "a");
+        if (definition.includes("GENERATED ALWAYS AS IDENTITY")) {
+          const seqName = name + "_" + colName + "_seq";
+          catalog.objects.push({
+            name: seqName,
+            kind: "S",
+            owner,
+            persistence: "p",
+            rls: false,
+            force_rls: false,
+            columns: [],
+          });
+          catalog.sequences.push({
+            name: seqName,
+            type: "bigint",
+            start: "1",
+            increment: "1",
+            minimum: "1",
+            maximum: "9223372036854775807",
+            cache: "1",
+            cycle: false,
+            dependency: "i",
+            table_name: name,
+            column_name: colName,
+          });
+        }
+      }
+      const primary = /\n\s*PRIMARY KEY \(([^)]+)\)/.exec(body);
+      if (primary) {
+        addConstraint(name, "p", primary[1].split(/,\s*/));
+        addIndex(name + "_pkey", name, primary[1], true);
+      }
+      const composite = /FOREIGN KEY \(([^)]+)\) REFERENCES ward_flow\.(\w+)\(([^)]+)\)/.exec(body);
+      if (composite) foreign(name, composite[1].split(/,\s*/), composite[2], composite[3].split(/,\s*/));
+      checks(name, body);
+    }
+    for (const match of sql.matchAll(/CREATE INDEX (\w+) ON ward_flow\.(\w+)\(([^)]+)\)(?: WHERE ([^;]+))?;/g))
+      addIndex(match[1], match[2], match[3], false, match[4]);
+    for (const match of sql.matchAll(
+      /CREATE FUNCTION ward_flow\.(\w+)\(\) RETURNS trigger LANGUAGE plpgsql AS \$\$([\s\S]*?)\$\$;/g,
+    ))
+      catalog.functions.push({
+        name: match[1],
+        owner,
+        arguments: 0,
+        return_type: "trigger",
+        language: "plpgsql",
+        security_definer: false,
+        body: match[2],
+        kind: "f",
+        settings: version >= 4 ? ["search_path=pg_catalog, ward_flow"] : null,
+      });
+  }
+  if (version >= 2) {
+    for (const match of sqlFiles[1].matchAll(/ALTER TABLE ward_flow\.(\w+) ADD COLUMN (\w+) ([^;]+);/g)) {
+      catalog.objects.find((o) => o.name === match[1]).columns.push(column(match[2], match[3]));
+      checks(match[1], match[3]);
+    }
+    addConstraint("workspaces", "u", ["id", "data_mode"]);
+    addIndex("workspace_mode_unique", "workspaces", "id, data_mode", true);
+    for (const table of ["commands", "audit"])
+      foreign(table, ["workspace_id", "data_mode"], "workspaces", ["id", "data_mode"]);
+  }
+  for (const fn of catalog.functions)
+    catalog.triggers.push({
+      name: fn.name,
+      table_name: fn.name === "protect_audit" ? "audit" : "workspaces",
+      function_name: fn.name,
+      function_schema: "ward_flow",
+      type: fn.name === "protect_audit" ? 58 : 19,
+      enabled: "O",
+      arguments: 0,
+      columns: "",
+      conditional: false,
+    });
+  for (const object of catalog.objects) object.inherited = false;
+  return catalog;
+}
+
+function pool(catalog, versions = [1, 2, 3, 4]) {
+  const queries = [];
+  return {
+    queries,
+    query: async (sql) => {
+      queries.push(sql);
+      if (sql === "SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 5")
+        return { rows: versions.map((version) => ({ version })) };
+      assert.match(sql, /^WITH namespace/);
+      assert.doesNotMatch(sql, /(?:ALTER|INSERT INTO|UPDATE ward_flow|DELETE FROM|DROP|CREATE SCHEMA|CREATE TABLE)/);
+      return { rows: [catalog] };
+    },
+  };
+}
+
+test("absent namespace is accepted by one read-only catalogue query", async () => {
+  const db = pool({ owner: null });
+  await verifyPostgresNamespace(db);
+  assert.equal(db.queries.length, 1);
+});
+
+for (const version of [1, 2, 3, 4])
+  test(`known migration ${version} namespace permits the separate migration stage`, async () => {
+    const db = pool(
+      fixture(version),
+      Array.from({ length: version }, (_, index) => index + 1),
+    );
+    await verifyPostgresNamespace(db);
+    assert.equal(db.queries.length, 2);
+    assert.match(db.queries[1], /LIMIT 5$/);
+  });
+
+test("reserved empty namespace and wrong migration-table shape refuse before reading versions", async () => {
+  for (const alter of [
+    (c) => {
+      c.objects = [];
+    },
+    (c) => {
+      c.objects.find((o) => o.name === "migrations").kind = "v";
+    },
+    (c) => {
+      c.objects.find((o) => o.name === "migrations").columns[0].type = "text";
+    },
+    (c) => {
+      c.objects.find((o) => o.name === "migrations").rls = true;
+    },
+  ]) {
+    const catalog = fixture();
+    alter(catalog);
+    const db = pool(catalog);
+    await assert.rejects(verifyPostgresNamespace(db), /Unrecognised or unsafe/);
+    assert.equal(db.queries.length, 1);
+  }
+});
+
+test("noncontiguous, empty, unsupported and malformed versions refuse migration", async () => {
+  for (const versions of [[], [0], [2], [1, 3], [1, 2, 3, 5], [1, 2, 3, 4, 5], [1, 2, 2], [1, 2, 3, "4"]])
+    await assert.rejects(verifyPostgresNamespace(pool(fixture(), versions)), /Unrecognised or unsafe/);
+});
+
+test("altered types, defaults, nullability and mismatched owners refuse migration", async () => {
+  for (const alter of [
+    (c) => {
+      c.objects.find((o) => o.name === "workspaces").columns[1].type = "integer";
+    },
+    (c) => {
+      c.objects.find((o) => o.name === "audit").columns[3].default_value = "'coordinator '::text";
+    },
+    (c) => {
+      c.objects.find((o) => o.name === "commands").columns[0].required = false;
+    },
+    (c) => {
+      c.objects.find((o) => o.name === "workspaces").inherited = true;
+    },
+    (c) => {
+      c.objects[0].owner = "foreign_owner";
+    },
+    (c) => {
+      c.owner = "wardflow_backend";
+    },
+    (c) => {
+      c.objects.find((o) => o.name === "audit").columns[0].identity = "d";
+    },
+  ]) {
+    const catalog = fixture();
+    alter(catalog);
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+  await assert.rejects(
+    verifyPostgresNamespace(pool(fixture()), { runtimeRole: "migration_admin" }),
+    /Unrecognised or unsafe/,
+  );
+});
+
+test("unknown classes, functions, indexes and sequences refuse migration", async () => {
+  for (const kind of ["r", "v", "m", "i", "S", "f", "p"]) {
+    const catalog = fixture();
+    catalog.objects.push({ name: "unrelated_sentinel", kind });
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+  for (const key of ["unknown_types", "rules", "policies", "extensions"]) {
+    const catalog = fixture();
+    catalog[key] = 1;
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+  const catalog = fixture();
+  catalog.functions.push({ name: "unrelated_function" });
+  await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+});
+
+test("weakened keys, checks, references, indexes and identity sequence definitions refuse migration", async () => {
+  for (const alter of [
+    (c) => {
+      c.constraints.find((x) => x.table_name === "commands" && x.type === "p").keys = ["command_id"];
+    },
+    (c) => {
+      c.constraints.find((x) => x.type === "c").definition = "CHECK (true)";
+    },
+    (c) => {
+      c.constraints.find((x) => x.type === "f").foreign_schema = "public";
+    },
+    (c) => {
+      c.constraints.find((x) => x.type === "f").delete_action = "c";
+    },
+    (c) => {
+      c.constraints[0].validated = false;
+    },
+    (c) => {
+      c.objects.find((x) => x.name === "audit_workspace_sequence").definition += " WHERE false";
+    },
+    (c) => {
+      c.objects.find((x) => x.kind === "i").valid = false;
+    },
+    (c) => {
+      c.sequences[0].increment = "2";
+    },
+    (c) => {
+      c.sequences[0].table_name = "commands";
+    },
+  ]) {
+    const catalog = fixture();
+    alter(catalog);
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+});
+
+test("changed audit/mode protector bodies, ownership, paths and conditional/disabled triggers refuse migration", async () => {
+  for (const alter of [
+    (c) => {
+      c.functions[0].body = "BEGIN RETURN NEW; END";
+    },
+    (c) => {
+      c.functions[0].owner = "foreign_owner";
+    },
+    (c) => {
+      c.functions[0].settings = ["search_path=public"];
+    },
+    (c) => {
+      c.functions[0].settings = null;
+    },
+    (c) => {
+      c.functions[0].arguments = 1;
+    },
+    (c) => {
+      c.triggers[0].enabled = "D";
+    },
+    (c) => {
+      c.triggers[0].conditional = true;
+    },
+    (c) => {
+      c.triggers[0].type = 16;
+    },
+    (c) => {
+      c.triggers[0].function_schema = "public";
+    },
+  ]) {
+    const catalog = fixture();
+    alter(catalog);
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+});
+
+test("catalogue and migration ledger reads fail without exposing upstream errors", async () => {
+  await assert.rejects(
+    verifyPostgresNamespace({
+      query: async () => {
+        throw new Error("synthetic secret upstream");
+      },
+    }),
+    { message: "Ward Flow database namespace verification unavailable" },
+  );
+  const db = pool(fixture());
+  const query = db.query;
+  db.query = async (sql) => {
+    if (sql.startsWith("SELECT version")) throw new Error("synthetic secret upstream");
+    return query(sql);
+  };
+  await assert.rejects(verifyPostgresNamespace(db), {
+    message: "Ward Flow database migration identity verification unavailable",
+  });
+});
+
+test("bounded catalog overflow and incomplete summaries refuse migration", async () => {
+  for (const alter of [
+    (c) => {
+      c.objects = Array.from({ length: 65 }, () => c.objects[0]);
+    },
+    (c) => {
+      c.constraints = undefined;
+    },
+    (c) => {
+      c.unknown_types = undefined;
+    },
+  ]) {
+    const catalog = fixture();
+    alter(catalog);
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+});
