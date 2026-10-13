@@ -36,9 +36,15 @@
   cursor: pointer;
 }
 
-/* Phone taps (13 Oct 2026): the hero lines above and below painted over the button's 44px box,
- * leaving a 26px target. Raised above them; it has no fill, so nothing looks different. */
+/* Phone taps (13 Oct 2026): the hero title's own `overflow: hidden` (26px tall) cut the button's
+ * 44px box to a 26px target, and the hero lines above and below took the rest. The title lets it
+ * out (the name keeps its own ellipsis) and the button sits above those lines; it has no fill, so
+ * nothing looks different. */
 @media (max-width: 48rem) {
+  :global(h1):has(> .who) {
+    overflow: visible;
+  }
+
   .who {
     position: relative;
     z-index: 1;
