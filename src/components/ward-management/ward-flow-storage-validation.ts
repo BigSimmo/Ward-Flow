@@ -17,11 +17,29 @@ import {
   RECORDED_SEXES,
   REFERRAL_GENDERS,
   BED_RELEASE_STATES,
+  BED_RELEASE_WAITING_ON,
   REFERRAL_ADDRESSING_STATES,
   ABSENCE_STEPS,
   REFERRAL_DECLINE_REASONS,
+  HOME_REGIONS,
+  REFERRAL_SOURCES,
+  REFERRAL_PURPOSES,
+  type ExaminationOutcome,
+  type LeaveBed,
+  type LegalStatus,
+  type Movement,
+  type MovementClosure,
 } from "./ward-model";
-import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
+import { BED_PREPARATION_NOTES, BED_RELEASE_BLOCKERS, WARD_INTAKE_CONSTRAINTS } from "./ward-change-reasons";
+import {
+  BROADCAST_ANSWER_LABELS,
+  BROADCAST_CATEGORIES,
+  BROADCAST_KINDS,
+  BROADCAST_SEVERITIES,
+  BROADCAST_TARGET_SCOPES,
+} from "./alerts/ward-broadcast-model";
+import { WARD_BUZZ_MESSAGES } from "./ward-flow-events";
+import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import { validateConfiguration } from "./ward-configuration";
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
@@ -43,14 +61,66 @@ const nullable = (check: (x: unknown) => boolean) => (v: unknown) => v === null 
 const optional = (v: RecordValue, key: string, check: (x: unknown) => boolean) => !(key in v) || check(v[key]);
 const uniqueIds = (items: RecordValue[]) =>
   items.every((v) => text(v.id) && v.id.length > 0) && new Set(items.map((v) => v.id)).size === items.length;
+/** True when `v` is one of `list`'s own values. Every closed list is checked against its constant. */
+const oneOf =
+  (list: readonly unknown[]) =>
+  (v: unknown): boolean =>
+    list.includes(v);
+/**
+ * A few closed lists exist only as TypeScript unions, with no runtime constant to check against. A
+ * `Record` keyed by the union is the runtime form: `tsc` refuses it the moment a member is missing or
+ * extra, so it cannot drift from the type the way a re-typed array could (review finding A2-5).
+ */
+const keysOf = <K extends string>(members: Record<K, true>): readonly K[] => Object.keys(members) as K[];
+export const STORED_LEGAL_STATUSES = keysOf<LegalStatus>({
+  Voluntary: true,
+  "Referred for psychiatric examination": true,
+  "Detained awaiting examination": true,
+  "Involuntary inpatient": true,
+});
+export const STORED_EXAMINATION_OUTCOMES = keysOf<ExaminationOutcome>({
+  inpatient_order: true,
+  community_order: true,
+  revoked: true,
+  further_examination_ordered: true,
+});
+export const STORED_ED_OUTCOMES = keysOf<NonNullable<Movement["edOutcome"]>>({
+  for_discharge: true,
+  for_community_follow_up: true,
+});
+export const STORED_CLOSURE_OUTCOMES = keysOf<MovementClosure["outcome"]>({ arrived: true, did_not_proceed: true });
+export const STORED_LEAVE_BED_KINDS = keysOf<NonNullable<LeaveBed["kind"]>>({ off_ward: true, medical_trip: true });
+export const STORED_SECURITY_LEVELS = keysOf<Movement["security"]>({ Open: true, Secure: true });
+/** A role is one of `WardFlowRole`'s members, read from the exhaustive label table. */
+export const isWardFlowRole = (v: unknown): v is WardFlowRole =>
+  typeof v === "string" && Object.hasOwn(WARD_FLOW_ROLE_LABELS, v);
+
+/**
+ * The times the model types as `Instant | null`: an admission's and a planned admission's own
+ * not-yet-happened times. Every other stored time is a number or absent, so a `null` there is
+ * refused: a `null` `legalForm.dueAt` or `pullExpiresAt` read as a time long passed and raised
+ * false "legal due time passed" alerts (review finding A2-4). Audit rows are the one other place a
+ * time may be null (`AuditBase.at` and their details' times), allowed below for `auditEvents` only.
+ */
+const NULLABLE_TIME_KEYS: ReadonlySet<string> = new Set([
+  "pulledAt",
+  "arrivedAt",
+  "expectedDischargeAt",
+  "dischargeDateSetAt",
+  "dischargeConfirmedAt",
+  "leftAt",
+  "changedAt",
+  "cancelledAt",
+  "convertedAt",
+]);
 
 /** Check nested containers before any screen or allocator can touch them. This is a recovery
  * fence, not a producer: a rejected payload is never repaired or mixed with fixture records. */
-function nested(value: unknown, depth = 0): boolean {
+function nested(value: unknown, depth = 0, auditRow = false): boolean {
   if (depth > 40) return false;
   if (value === null || text(value) || bool(value)) return true;
   if (typeof value === "number") return finite(value);
-  if (Array.isArray(value)) return value.every((item) => item !== null && nested(item, depth + 1));
+  if (Array.isArray(value)) return value.every((item) => item !== null && nested(item, depth + 1, auditRow));
   if (!object(value)) return false;
   const arrayKeys = [
     "statusChanges",
@@ -106,8 +176,11 @@ function nested(value: unknown, depth = 0): boolean {
       !strings(item)
     )
       return false;
-    if ((key === "at" || key.endsWith("At") || key.endsWith("Minutes")) && !nullable(finite)(item)) return false;
-    if (!nested(item, depth + 1)) return false;
+    if (key === "at" || key.endsWith("At") || key.endsWith("Minutes")) {
+      const nullAllowed = auditRow || NULLABLE_TIME_KEYS.has(key);
+      if (!(nullAllowed ? nullable(finite)(item) : finite(item))) return false;
+    }
+    if (!nested(item, depth + 1, auditRow || (depth === 0 && key === "auditEvents"))) return false;
   }
   if (
     "medicalClearance" in value &&
@@ -294,6 +367,12 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     )
       return false;
     if (!fields(unit, ["authorised", "forensic"], bool)) return false;
+    // A2-5: chosen from the fixed list, never typed (Owner Answer 18).
+    if (
+      unit.intakeConstraints !== undefined &&
+      !(unit.intakeConstraints as unknown[]).every(oneOf(WARD_INTAKE_CONSTRAINTS))
+    )
+      return false;
     if (
       !fields(
         unit,
@@ -402,7 +481,20 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !MOVEMENT_STAGES.includes(movement.stage as never) ||
       !COHORTS.includes(movement.cohort as never) ||
       !RECORDED_SEXES.includes(movement.sex as never) ||
-      !["Open", "Secure"].includes(movement.security as string)
+      !STORED_SECURITY_LEVELS.includes(movement.security as never) ||
+      // A2-5: every closed-list fact a screen looks up is checked against its list on load.
+      !STORED_LEGAL_STATUSES.includes(movement.legalStatus as never) ||
+      (movement.edOutcome !== undefined && !STORED_ED_OUTCOMES.includes(movement.edOutcome as never)) ||
+      (object(movement.closure) && !STORED_CLOSURE_OUTCOMES.includes(movement.closure.outcome as never)) ||
+      (object(movement.examination) && !STORED_EXAMINATION_OUTCOMES.includes(movement.examination.outcome as never)) ||
+      (Array.isArray(movement.supersededExaminations) &&
+        !(movement.supersededExaminations as RecordValue[]).every((row) =>
+          STORED_EXAMINATION_OUTCOMES.includes(row.outcome as never),
+        )) ||
+      (Array.isArray(movement.statusChanges) &&
+        !(movement.statusChanges as RecordValue[]).every(
+          (row) => STORED_LEGAL_STATUSES.includes(row.from as never) && STORED_LEGAL_STATUSES.includes(row.to as never),
+        ))
     )
       return false;
     if (
@@ -454,7 +546,11 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       return false;
     if (
       !fields(admission, ["specialling", "highAcuity"], bool) ||
-      !text(admission.sex) ||
+      // A2-5: closed lists, checked against their constants.
+      !RECORDED_SEXES.includes(admission.sex as never) ||
+      !nullable(oneOf(HOME_REGIONS))(admission.homeRegion) ||
+      !nullable(oneOf(BED_RELEASE_BLOCKERS))(admission.blockReason) ||
+      !optional(admission, "stepDownCandidate", bool) ||
       // R7 / counts follow gender (25 September 2026): optional; absent in older saves, which load as they are.
       (admission.gender !== undefined && !REFERRAL_GENDERS.includes(admission.gender as never)) ||
       !counter(admission.dischargeDateMoves) ||
@@ -594,6 +690,11 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       return false;
     if (
       !fields(referral, ["id", "ageBand", "homeRegion", "source", "originSiteCode", "history"], text) ||
+      // A2-5: closed lists and a real site, checked on load.
+      !COHORTS.includes(referral.ageBand as never) ||
+      !HOME_REGIONS.includes(referral.homeRegion as never) ||
+      !REFERRAL_SOURCES.includes(referral.source as never) ||
+      !siteByCode(referral.originSiteCode as string) ||
       !finite(referral.raisedAt) ||
       !bool(referral.transportNeeded) ||
       ![1, 2, 3].includes(referral.urgency as number) ||
@@ -606,12 +707,15 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       const target = arm.destination;
       if (
         target.kind === "psychiatric_ward"
-          ? !text(target.sex) ||
+          ? !RECORDED_SEXES.includes(target.sex as never) ||
+            !optional(target, "gender", oneOf(REFERRAL_GENDERS)) ||
+            !optional(target, "unitId", (id) => unitIds.has(id)) ||
             !fields(target, ["secureBedNeeded", "involuntaryBedNeeded", "highAcuityNursingNeeded"], bool)
           : target.kind === "community_team"
             ? !text(target.teamName)
             : target.kind === "emergency_department"
-              ? !allEmergencyDepartments().some((ed) => ed.id === target.edId) || !text(target.purpose)
+              ? !allEmergencyDepartments().some((ed) => ed.id === target.edId) ||
+                !REFERRAL_PURPOSES.includes(target.purpose as never)
               : true
       )
         return false;
@@ -638,7 +742,11 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !finite(row.expectedAt) ||
       !finite(row.confirmedAt) ||
       !text(row.confirmedBy) ||
-      !bool(row.preparing)
+      !bool(row.preparing) ||
+      // A2-5: what the bed waits on, its blocker and its preparation note are each a list value.
+      !nullable(oneOf(BED_RELEASE_WAITING_ON))(row.waitingOn) ||
+      !nullable(oneOf(BED_RELEASE_BLOCKERS))(row.blocker) ||
+      !nullable(oneOf(BED_PREPARATION_NOTES))(row.preparationNote)
     )
       return false;
     if (!text(row.admissionId)) return false;
@@ -661,6 +769,8 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   }
   for (const row of value.leaveBeds as RecordValue[]) {
     if (!finite(row.expectedReturn) || !finite(row.confirmedAt) || !text(row.confirmedBy)) return false;
+    // A2-3/A2-5: a leave kind is one of the two fixed kinds, never caller text.
+    if (!optional(row, "kind", oneOf(STORED_LEAVE_BED_KINDS))) return false;
     if (!text(row.admissionId)) return false;
     const onLeave = admissionById.get(row.admissionId);
     if (!onLeave || onLeave.unitId !== row.unitId || onLeave.state !== "occupied") return false;
@@ -685,7 +795,15 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       }
     }
   }
-  for (const row of value.refreshRequests as RecordValue[]) if (!finite(row.at) || !text(row.byRole)) return false;
+  for (const row of value.refreshRequests as RecordValue[])
+    if (
+      !finite(row.at) ||
+      !text(row.byRole) ||
+      // A2-5: a buzz carries one of the preset messages, never a typed one.
+      !optional(row, "message", oneOf(WARD_BUZZ_MESSAGES)) ||
+      !optional(row, "urgent", bool)
+    )
+      return false;
   for (const row of value.auditEvents as RecordValue[]) {
     if (row.action === "RECORD_ADMISSION_CARE") {
       if (
@@ -718,26 +836,21 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   for (const row of value.broadcastAlerts as RecordValue[]) {
     if (
       !fields(row, ["id", "title", "message", "targetScopeLabel", "dispatchedByRole", "dispatchedByName"], text) ||
-      !["critical", "warning", "advisory"].includes(row.severity as string) ||
-      ![
-        "capacity_gridlock",
-        "ed_surge",
-        "unit_closure",
-        "transport_delay",
-        "clinical_stream",
-        "statutory_advisory",
-      ].includes(row.category as string) ||
-      !["all", "metro_adult", "ed_liaison", "forensic", "adolescent", "older_adult", "regional_wachs"].includes(
-        row.targetScope as string,
-      ) ||
+      // A2-13: read from the model's own constants, so a new category or scope cannot make every
+      // saved day holding one fail to load.
+      !BROADCAST_SEVERITIES.includes(row.severity as never) ||
+      !BROADCAST_CATEGORIES.includes(row.category as never) ||
+      !BROADCAST_TARGET_SCOPES.includes(row.targetScope as never) ||
       !["active", "stood_down", "expired"].includes(row.status as string) ||
+      // A2-3: who stood an alert down is a role, never caller text.
+      !optional(row, "stoodDownBy", isWardFlowRole) ||
       !finite(row.dispatchedAt) ||
       !finite(row.expiresAt) ||
       !finite(row.durationMinutes) ||
       row.durationMinutes <= 0 ||
       !strings(row.acknowledgedUnits) ||
       // Global alerts, 10 Oct 2026: every new field is optional, so a version 7 save restores.
-      (row.kind !== undefined && !["directive", "bed_call", "pull_now"].includes(row.kind as string)) ||
+      (row.kind !== undefined && !BROADCAST_KINDS.includes(row.kind as never)) ||
       (row.replies !== undefined &&
         (!Array.isArray(row.replies) ||
           !(row.replies as RecordValue[]).every(
@@ -823,9 +936,8 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   // only the shapes the reducer writes; a referral snapshot is checked by the generic walk above.
   if (value.undoRecords !== undefined) {
     if (!records(value.undoRecords)) return false;
-    const roles = ["coordinator", "ed", "ward", "officer", "demo", "community", "bed_manager", "executive"];
     for (const row of value.undoRecords) {
-      if (!finite(row.at) || !roles.includes(row.role as string)) return false;
+      if (!finite(row.at) || !isWardFlowRole(row.role)) return false;
       if (row.kind === "referral-decision") {
         if (
           !referralIds.has(row.referralId) ||

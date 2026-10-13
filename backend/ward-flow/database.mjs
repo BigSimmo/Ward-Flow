@@ -130,7 +130,12 @@ export function createStore(client) {
         "x-ms-blob-type": "BlockBlob",
         [current.etag ? "if-match" : "if-none-match"]: current.etag ?? "*",
       });
-      if (result.status === 412) {
+      // A first save writes with `if-none-match: *`; Azure answers a racing first save that lost
+      // with 409 BlobAlreadyExists, not 412 (review finding A2-8). Both mean another write won.
+      const lostRace =
+        result.status === 412 ||
+        (!current.etag && result.status === 409 && result.headers.get("x-ms-error-code") === "BlobAlreadyExists");
+      if (lostRace) {
         if (!canonicalRequestId) return null;
         const winner = await get(owner, id);
         return replay(winner.record) ? winner.record.revision : null;

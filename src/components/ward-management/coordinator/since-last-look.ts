@@ -24,6 +24,12 @@ export type LastLookSnapshot = {
   at: Instant;
   /** A picture taken in another synthetic scenario is never compared with this one. */
   scenario: string;
+  /**
+   * The world generation the picture was taken in (review finding A2-10). A reset or a loaded scenario
+   * file starts a new generation and may reuse record ids, so a picture from another generation is
+   * never compared with this one. Absent on a picture taken before 12 Oct 2026.
+   */
+  worldGeneration?: number;
   referralIds: string[];
   movementIds: string[];
   /** "Ready" beds per ward — the same `min(allocatable, empty)` every screen calls Ready. */
@@ -35,6 +41,8 @@ export type LastLookSnapshot = {
 
 export type LastLookWorld = {
   scenario: string;
+  /** `WardFlowState.worldGeneration`; optional so hand-built worlds in tests need not carry it. */
+  worldGeneration?: number;
   referrals: readonly Referral[];
   movements: readonly Movement[];
   units: readonly Unit[];
@@ -68,6 +76,7 @@ export function takeLastLookSnapshot(world: LastLookWorld, now: Instant): LastLo
     version: 1,
     at: now,
     scenario: world.scenario,
+    ...(world.worldGeneration === undefined ? {} : { worldGeneration: world.worldGeneration }),
     referralIds: world.referrals.map((referral) => referral.id),
     movementIds: world.movements.map((movement) => movement.id),
     readyByUnit,
@@ -86,7 +95,8 @@ export function changesSinceLastLook(
   current: LastLookSnapshot,
   world: Pick<LastLookWorld, "movements" | "units">,
 ): ChangesSinceLastLook | undefined {
-  if (!previous || previous.scenario !== current.scenario) return undefined;
+  if (!previous || previous.scenario !== current.scenario || previous.worldGeneration !== current.worldGeneration)
+    return undefined;
 
   const seenReferrals = new Set(previous.referralIds);
   const seenMovements = new Set(previous.movementIds);
@@ -156,6 +166,7 @@ export function parseLastLookSnapshot(raw: string | null): LastLookSnapshot | un
     const v = value as Record<string, unknown>;
     const stringArray = (field: unknown) => Array.isArray(field) && field.every((entry) => typeof entry === "string");
     if (v.version !== 1 || typeof v.at !== "number" || typeof v.scenario !== "string") return undefined;
+    if (v.worldGeneration !== undefined && typeof v.worldGeneration !== "number") return undefined;
     if (![v.referralIds, v.movementIds, v.delayKeys, v.escalatedMovementIds].every(stringArray)) return undefined;
     if (typeof v.readyByUnit !== "object" || v.readyByUnit === null) return undefined;
     if (!Object.values(v.readyByUnit).every((count) => typeof count === "number")) return undefined;

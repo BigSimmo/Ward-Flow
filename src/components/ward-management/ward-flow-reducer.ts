@@ -6582,6 +6582,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `RECORD_LEAVE_BED was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
         );
       }
+      // A2-3: a safe-listed event, so the kind is checked against its fixed list, never stored as typed.
+      if (event.kind !== undefined && event.kind !== "off_ward" && event.kind !== "medical_trip") {
+        return reject(state, event, "RECORD_LEAVE_BED kind must be off_ward or medical_trip");
+      }
       const unit = findUnit(state, event.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       // Owner ruling 2026-09-25: a leave bed names the stay it belongs to, never a guessed one.
@@ -9343,6 +9347,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "SET_STEP_DOWN_CANDIDATE": {
+      // A2-3: a safe-listed event, so anything but a boolean is refused rather than stored.
+      if (typeof event.stepDownCandidate !== "boolean") {
+        return reject(state, event, "SET_STEP_DOWN_CANDIDATE stepDownCandidate must be true or false");
+      }
       const admission = state.admissions.find((a) => a.id === event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       // Same claim-not-proof discipline as RECORD_LEAVING: a ward may only touch its own admission.

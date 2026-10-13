@@ -26,6 +26,7 @@ function seededSnapshot() {
   return takeLastLookSnapshot(
     {
       scenario: state.scenario,
+      worldGeneration: state.worldGeneration,
       referrals: state.referrals,
       movements: state.movements,
       units: state.units,

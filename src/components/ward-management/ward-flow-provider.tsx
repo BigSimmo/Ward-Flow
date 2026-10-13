@@ -423,6 +423,15 @@ const STORAGE_UNAVAILABLE =
   "Demo storage is unavailable. Changes stay in memory and may be lost when this page closes.";
 const SAVE_REJECTED =
   "The saved demonstration could not be restored safely. A fresh synthetic demonstration has started.";
+/** Review finding A2-15: dropping an earlier day is deliberate, so it is not called damaged. */
+const DAY_ROLLOVER =
+  "The saved demonstration was from an earlier day, so a fresh synthetic demonstration has started for today.";
+/** Review finding A2-6: the last changes were never saved, so no older copy is restored in their place. */
+const SAVE_FAILED =
+  "The latest changes in this tab could not be saved, so a fresh synthetic demonstration has started rather than an older copy.";
+
+/** Stored in place of the snapshot when a save fails (A2-6). Holds no state at all. */
+type WardFlowSaveFailedMarker = { version: number; saveFailed: true };
 
 type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string };
 
@@ -448,16 +457,21 @@ function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number): DemoRead {
     } catch {
       return { recoveryNotice: SAVE_REJECTED };
     }
+    if (isPlainObject(stored) && stored.saveFailed === true) return { recoveryNotice: SAVE_FAILED };
     const parsed = upgradeDemoPayload(stored);
     if (
       !isValidDemoPayload(parsed) ||
       parsed.version !== WARD_FLOW_DEMO_STORAGE_VERSION ||
-      parsed.dayZero !== dayZero.getTime() ||
       parsed.worldGeneration !== parsed.state.worldGeneration ||
-      parsed.savedAtAbsolute > mountedAtAbsolute ||
       parsed.now < NOW_ANCHOR + parsed.state.clockOffsetMinutes ||
       parsed.state.auditEvents.some((event) => event.at !== null && event.at > parsed.now)
     )
+      return { recoveryNotice: SAVE_REJECTED };
+    // A sound save from an earlier day after the wall clock passed midnight: the day is dropped on
+    // purpose (no saved time is shifted), and the notice says so rather than calling it damaged.
+    if (parsed.dayZero < dayZero.getTime() && parsed.savedAtAbsolute <= mountedAtAbsolute)
+      return { recoveryNotice: DAY_ROLLOVER };
+    if (parsed.dayZero !== dayZero.getTime() || parsed.savedAtAbsolute > mountedAtAbsolute)
       return { recoveryNotice: SAVE_REJECTED };
     return { saved: { ...parsed, state: withInboxStreamADefaults(parsed.state) } };
   } catch {
@@ -483,7 +497,25 @@ function tryWriteDemoState(state: WardFlowState, dayZero: Date, now: Instant, sa
     window.sessionStorage.setItem(WARD_FLOW_DEMO_STORAGE_KEY, JSON.stringify(payload));
     return true;
   } catch {
+    markDemoSaveFailed();
     return false;
+  }
+}
+
+/**
+ * Review finding A2-6: a failed write used to leave the previous snapshot in place, and a reload then
+ * restored that older day silently. The old snapshot is removed and replaced with a small marker, so
+ * the reload starts fresh with a notice. If even that fails, storage is unusable and nothing more can
+ * be done here.
+ */
+function markDemoSaveFailed(): void {
+  try {
+    const storage = window.sessionStorage;
+    storage.removeItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    const marker: WardFlowSaveFailedMarker = { version: WARD_FLOW_DEMO_STORAGE_VERSION, saveFailed: true };
+    storage.setItem(WARD_FLOW_DEMO_STORAGE_KEY, JSON.stringify(marker));
+  } catch {
+    // Storage is unusable; the unavailable notice is already shown.
   }
 }
 
@@ -732,6 +764,7 @@ function WardFlowWorld({
   );
   const state = container.world;
   const { enabled: sharedEnabled, dispatch: dispatchShared } = shared;
+  const syncChannel = useRef<BroadcastChannel | null>(null);
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
   const dispatch = useCallback<Dispatch<WardFlowEvent>>(
     (event: WardFlowEvent) => {
@@ -740,14 +773,12 @@ function WardFlowWorld({
         return;
       }
       dispatchContainer(event);
-      if (typeof window !== "undefined" && typeof window.BroadcastChannel !== "undefined") {
-        try {
-          const channel = new BroadcastChannel("ward-flow-sync");
-          channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType: event.type });
-          channel.close();
-        } catch {
-          // BroadcastChannel unavailable in this environment
-        }
+      // Review finding A2-12: one channel per provider (opened in the effect below), not one per
+      // dispatch.
+      try {
+        syncChannel.current?.postMessage({ type: "WARD_FLOW_DISPATCH", eventType: event.type });
+      } catch {
+        // A closed or unavailable channel: other tabs simply are not told.
       }
     },
     [dispatchContainer, sharedEnabled, dispatchShared],
@@ -870,16 +901,20 @@ function WardFlowWorld({
     };
   }, [initialNow, mountedAtAbsolute, shared.enabled]);
 
+  // Tabs share no state (each has its own session storage), so another tab's dispatch changes nothing
+  // here except, at most, the minute the clock shows. Setting the same minute again is a no-op React
+  // skips, so a burst of messages from another tab re-renders this one at most once a minute (A2-12).
+  const [, setSyncMinute] = useState(0);
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
     try {
       const channel = new BroadcastChannel("ward-flow-sync");
+      syncChannel.current = channel;
       channel.onmessage = (messageEvent) => {
-        if (messageEvent.data?.type === "WARD_FLOW_DISPATCH") {
-          setTick((tick) => tick + 1);
-        }
+        if (messageEvent.data?.type === "WARD_FLOW_DISPATCH") setSyncMinute(absoluteWallClockMinutes());
       };
       return () => {
+        syncChannel.current = null;
         channel.close();
       };
     } catch {
@@ -945,6 +980,8 @@ function WardFlowWorld({
   }, [initialNow, mountedAtAbsolute, dayZero, shared.enabled]);
 
   const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
+  /** The world last written to storage; the same reference again means nothing changed (A2-11). */
+  const lastSavedWorld = useRef<WardFlowState | null>(null);
 
   useEffect(() => {
     if (shared.enabled) return;
@@ -957,12 +994,20 @@ function WardFlowWorld({
     // `state` is: both come from the same COMMITTED `useReducer` value, never a ref
     // (`trackWardFlowTypedTextDispatch`'s own comment has the race this closes).
     if (container.typedTextSeen) {
+      lastSavedWorld.current = null;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage operation
       if (!clearWardFlowDemoState()) setStorageUnavailable(true);
       return;
     }
     if (storageUnavailable) return;
-    if (!tryWriteDemoState(state, dayZero, now, mountedAtAbsolute + Math.max(0, elapsed))) setStorageUnavailable(true);
+    // Review findings A2-11 and A2-7: the world is written when it changes, not on every clock tick.
+    // `now` and `savedAtAbsolute` advance together, so a reload still resumes the clock correctly from
+    // the last write. This is also what keeps Settings' "Clear session" cleared: nothing rewrites the
+    // unchanged world afterwards, and only a new change in this tab is saved again.
+    if (lastSavedWorld.current === state) return;
+    if (tryWriteDemoState(state, dayZero, now, mountedAtAbsolute + Math.max(0, elapsed)))
+      lastSavedWorld.current = state;
+    else setStorageUnavailable(true);
   }, [
     state,
     container.typedTextSeen,
@@ -1172,12 +1217,15 @@ export function WardFlowClockProvider({
   anchorOffsetMinutes,
   mountedAtAbsolute,
   clockOffsetMinutes,
+  restoredElapsed = 0,
 }: {
   children: ReactNode;
   initialNow?: Instant;
   anchorOffsetMinutes: number;
   mountedAtAbsolute: number | null;
   clockOffsetMinutes: number;
+  /** Minutes already elapsed in a restored session, as the main provider's container carries them. */
+  restoredElapsed?: number;
 }) {
   const [, setTick] = useState(0);
 
@@ -1190,7 +1238,9 @@ export function WardFlowClockProvider({
   const elapsed =
     initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
 
-  const now = NOW_ANCHOR + anchorOffsetMinutes + elapsed + clockOffsetMinutes;
+  // Review finding A2-14: the same formula as the main provider — restored minutes added, and a wall
+  // clock that moved backwards clamped to zero rather than running the demo clock backwards.
+  const now = NOW_ANCHOR + anchorOffsetMinutes + restoredElapsed + Math.max(0, elapsed) + clockOffsetMinutes;
 
   return <WardFlowClockContext.Provider value={now}>{children}</WardFlowClockContext.Provider>;
 }

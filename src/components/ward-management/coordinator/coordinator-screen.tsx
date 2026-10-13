@@ -121,6 +121,7 @@ export function CoordinatorScreen() {
     plannedAdmissions,
     patients,
     supportNotifications,
+    worldGeneration,
   } = useWardFlow();
   const liveNow = useWardFlowClock();
   const service = useServiceScope();
@@ -394,8 +395,8 @@ export function CoordinatorScreen() {
   const declineRegister = useMemo(() => allDeclines(movements), [movements]);
 
   const lastLookWorld = useMemo(
-    () => ({ scenario, referrals, movements, units, bedReleases }),
-    [scenario, referrals, movements, units, bedReleases],
+    () => ({ scenario, worldGeneration, referrals, movements, units, bedReleases }),
+    [scenario, worldGeneration, referrals, movements, units, bedReleases],
   );
   const lastLook = useSinceLastLook(lastLookWorld, now);
   const newEvents = sinceLastLookCount(lastLook.changes);
