@@ -255,6 +255,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     .sort((left, right) => left.openedAt - right.openedAt);
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
   const activeMovement = incoming[activeAnswerIndex];
+  const activeReferral = activeMovement ?? null;
+  const hasPendingReferral = activeReferral !== null;
 
   const recentAnswers = movements
     .flatMap((movement) => {
@@ -1194,24 +1196,26 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         >
                           Decline
                         </button>
-                        <button
-                          type="button"
-                          data-testid={`ward-accept-${activeMovement.id}`}
-                          aria-disabled={blocked ? "true" : undefined}
-                          aria-describedby={blocked ? `ward-accept-unavailable-${activeMovement.id}` : undefined}
-                          title={blocked ?? undefined}
-                          className={buttonClass({ variant: "pri", size: "sm" })}
-                          onClick={() => {
-                            if (blocked) return;
-                            if (isPhone) {
-                              setPhoneSheet("accept");
-                              return;
-                            }
-                            handleAccept(activeMovement.id);
-                          }}
-                        >
-                          Accept in principle
-                        </button>
+                        {hasPendingReferral ? (
+                          <button
+                            type="button"
+                            data-testid={`ward-accept-${activeMovement.id}`}
+                            aria-disabled={blocked ? "true" : undefined}
+                            aria-describedby={blocked ? `ward-accept-unavailable-${activeMovement.id}` : undefined}
+                            title={blocked ?? undefined}
+                            className={buttonClass({ variant: "pri", size: "sm" })}
+                            onClick={() => {
+                              if (blocked) return;
+                              if (isPhone) {
+                                setPhoneSheet("accept");
+                                return;
+                              }
+                              handleAccept(activeMovement.id);
+                            }}
+                          >
+                            Accept in principle
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                   </div>
