@@ -3,8 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import { spawnSync } from "node:child_process";
-import { azInvocation, azResponse, priorDeployment, escapeWindowsArgument } from "./az-command.mjs";
+import { azInvocation, azResponse, executeAz, priorDeployment, escapeWindowsArgument } from "./az-command.mjs";
 
 // Real values azure-setup passes: a JMESPath query with `||`, JSON for `--set`, a path with spaces,
 // and a hostile administrator name that would run `calc` if cmd.exe saw its `&`.
@@ -28,15 +27,20 @@ test("every platform bounds CLI execution and preserves a longer deployment budg
   }
 });
 
-test("a hanging local child times out using the shared spawn options", () => {
-  // POSIX options so the node child is quoted normally on Windows too (verbatim mode would mangle "-e").
+test("a hanging local child times out after receiving correctly quoted Node arguments", async () => {
   const { options } = azInvocation(["account", "show"], "linux");
   const started = performance.now();
-  // A small test budget exercises the actual spawnSync timeout without running Azure or waiting
+  // A small test budget exercises the supervised timeout without running Azure or waiting
   // for the production budget. The child has no descendants or external effects.
-  const result = spawnSync(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { ...options, timeout: 100 });
+  const result = await executeAz({
+    command: process.execPath,
+    args: ["-e", 'process.stdout.write("started");setInterval(() => {}, 1000)'],
+    options: { ...options, timeout: 10_000 },
+  });
+  assert.equal(result.stdout, "started", "the fixture must actually run before the timeout");
   assert.equal(result.error?.code, "ETIMEDOUT");
-  assert.ok(performance.now() - started < 5_000, "the hanging child must not hold the caller indefinitely");
+  assert.ok(performance.now() - started < 20_000, "the hanging child must not hold the caller indefinitely");
+  if (process.platform === "win32") assert.equal(result.treeTermination?.status, 0);
   assert.throws(
     () => azResponse(result, ["account", "show"]),
     /timed out; the provider operation may still be running/,
@@ -47,6 +51,7 @@ test("process failure paths are explicit and do not expose provider output", () 
   for (const [failure, reason] of [
     [{ error: { code: "ETIMEDOUT" } }, /timed out/],
     [{ error: { code: "ENOENT" } }, /execution error ENOENT/],
+    [{ error: { code: "ETREEKILL" } }, /process-tree termination could not be confirmed/],
     [{ signal: "SIGTERM" }, /terminated by signal SIGTERM/],
     [{ status: null }, /missing exit status/],
     [{ status: 2 }, /exit status 2/],
@@ -140,7 +145,7 @@ test("on Windows, az.cmd receives every argument intact", { skip: process.platfo
     await writeFile(join(folder, "az.cmd"), `@node "${join(folder, "echo.mjs")}" %*\r\n`);
     const env = { ...process.env, PATH: `${folder}${delimiter}${process.env.PATH}` };
     const call = azInvocation(hostile, "win32", env);
-    const result = spawnSync(call.command, call.args, { ...call.options, env });
+    const result = await executeAz({ ...call, options: { ...call.options, env } });
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(result.stdout), hostile);
   } finally {
@@ -161,3 +166,51 @@ test("a timed-out database deployment is resumed rather than blocking setup retr
     assert.throws(() => priorDeployment([{ name, properties: { provisioningState: state } }], name), /still running/);
   assert.throws(() => priorDeployment([{ name, properties: { provisioningState: "Failed" } }], name), /Failed/);
 });
+test(
+  "a Windows timeout terminates the mock az.cmd descendant before returning",
+  { skip: process.platform !== "win32" },
+  async () => {
+    const folder = await mkdtemp(join(tmpdir(), "ward-flow-az-tree-"));
+    const heartbeat = join(folder, "heartbeat.json");
+    const ended = join(folder, "ended.json");
+    await writeFile(
+      join(folder, "child.mjs"),
+      `import fs from 'node:fs';const tick=()=>fs.writeFileSync(${JSON.stringify(heartbeat)},JSON.stringify({pid:process.pid,at:Date.now()}));tick();const timer=setInterval(tick,50);setTimeout(()=>{clearInterval(timer);fs.writeFileSync(${JSON.stringify(ended)},'bounded fixture completed');process.exit(0)},20000);`,
+    );
+    await writeFile(join(folder, "az.cmd"), `@node "${join(folder, "child.mjs")}" %*\r\n`);
+    const env = { ...process.env, PATH: `${folder}${delimiter}${process.env.PATH}` };
+    const call = azInvocation(["account", "show"], "win32", env);
+    let result;
+    try {
+      result = await executeAz({ ...call, options: { ...call.options, env, timeout: 10_000 } });
+      const first = JSON.parse(await readFile(heartbeat, "utf8"));
+      assert.ok(Number.isSafeInteger(first.pid), "the descendant must have started");
+      assert.equal(result.error?.code, "ETIMEDOUT");
+      assert.equal(result.treeTermination?.status, 0, "the native tree-kill must complete before reporting timeout");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      assert.deepEqual(
+        JSON.parse(await readFile(heartbeat, "utf8")),
+        first,
+        "the descendant must stop writing heartbeats",
+      );
+      assert.throws(() => azResponse(result, ["account", "show"]), /timed out/);
+    } finally {
+      // Preserve the fixture and its explicit receipt. If cleanup failed, wait for its own bounded
+      // terminal marker rather than killing a PID which might have been reused by another task.
+      if (result?.treeTermination?.status !== 0) {
+        const until = Date.now() + 25_000;
+        while (Date.now() < until) {
+          try {
+            await readFile(ended, "utf8");
+            break;
+          } catch {}
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+      }
+      await writeFile(
+        join(folder, "test-terminal.json"),
+        JSON.stringify({ errorCode: result?.error?.code, treeTermination: result?.treeTermination }),
+      );
+    }
+  },
+);

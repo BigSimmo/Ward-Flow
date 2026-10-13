@@ -1,3 +1,6 @@
+import { spawn, execFile } from "node:child_process";
+import { join } from "node:path";
+
 // Builds a shell-free Azure CLI invocation. On Windows `az` is a batch wrapper (az.cmd), which Node
 // refuses to spawn without a shell, and `shell: true` would join arguments unescaped so values such
 // as `||` in a JMESPath query or a crafted administrator name could run other commands. Instead we
@@ -13,7 +16,7 @@ export function escapeWindowsArgument(value) {
   return arg.replace(CMD_META, "^$1").replace(CMD_META, "^$1");
 }
 
-/** Returns { command, args, options } for spawnSync; never uses `shell: true`. */
+/** Returns a bounded CLI invocation; cmd.exe alone uses verbatim argument mode. */
 export function azInvocation(args, platform = process.platform, env = process.env) {
   for (const arg of args) {
     if (typeof arg !== "string") throw new TypeError("Azure CLI arguments must be strings");
@@ -33,6 +36,110 @@ export function azInvocation(args, platform = process.platform, env = process.en
   };
 }
 
+/** Execute a CLI invocation, terminating its owned Windows tree before reporting a timeout. */
+export function executeAz(call) {
+  const { timeout, killSignal = "SIGKILL", maxBuffer = 4 * 1024 * 1024, encoding = "utf8", ...options } = call.options;
+  if (!Number.isSafeInteger(timeout) || timeout <= 0 || timeout > 600_000)
+    throw new RangeError("Azure CLI timeout must be between 1 and 600000 milliseconds");
+  return new Promise((resolve) => {
+    const child = spawn(call.command, call.args, { ...options, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+    const stdout = [],
+      stderr = [];
+    let outBytes = 0,
+      errBytes = 0,
+      error,
+      status = null,
+      signal = null;
+    let closed = false,
+      exited = false,
+      stopping = false,
+      cleanupPending = false,
+      treeTermination;
+    const finish = () => {
+      if (!closed || cleanupPending) return;
+      clearTimeout(timer);
+      resolve({
+        pid: child.pid,
+        status,
+        signal,
+        error,
+        stdout: Buffer.concat(stdout).toString(encoding),
+        stderr: Buffer.concat(stderr).toString(encoding),
+        treeTermination,
+      });
+    };
+    const unconfirmed = () => {
+      error = Object.assign(new Error("Azure CLI process-tree termination could not be confirmed"), {
+        code: "ETREEKILL",
+      });
+      // Do not target a PID after our own exit receipt: Windows may already have reused it.
+      if (!exited) child.kill(killSignal);
+      child.stdout.destroy();
+      child.stderr.destroy();
+      closed = true;
+      finish();
+    };
+    const stop = (cause) => {
+      if (stopping || closed) return;
+      stopping = true;
+      error = cause;
+      if (exited || !Number.isSafeInteger(child.pid) || child.pid <= 0) {
+        unconfirmed();
+        return;
+      }
+      if (process.platform !== "win32") {
+        if (!child.kill(killSignal)) unconfirmed();
+        return;
+      }
+      cleanupPending = true;
+      const taskkill = join(process.env.SystemRoot || "C:\\Windows", "System32", "taskkill.exe");
+      execFile(
+        taskkill,
+        ["/PID", String(child.pid), "/T", "/F"],
+        { shell: false, windowsHide: true, timeout: 5_000, killSignal: "SIGKILL", maxBuffer: 64 * 1024 },
+        (failure, _stdout, nativeError) => {
+          cleanupPending = false;
+          treeTermination = {
+            status: failure ? null : 0,
+            errorCode: failure?.code ?? null,
+            diagnostic: failure ? nativeError?.trim().slice(0, 2048) : undefined,
+          };
+          if (failure) unconfirmed();
+          else finish();
+        },
+      );
+    };
+    const timer = setTimeout(
+      () => stop(Object.assign(new Error("Azure CLI timed out"), { code: "ETIMEDOUT" })),
+      timeout,
+    );
+    child.on("error", (failure) => {
+      error ??= failure;
+    });
+    child.on("exit", () => {
+      exited = true;
+    });
+    child.on("close", (code, endedBy) => {
+      status = code;
+      signal = endedBy;
+      closed = true;
+      finish();
+    });
+    for (const [stream, chunks, isOut] of [
+      [child.stdout, stdout, true],
+      [child.stderr, stderr, false],
+    ]) {
+      stream.on("data", (chunk) => {
+        if (isOut) outBytes += chunk.length;
+        else errBytes += chunk.length;
+        if ((isOut ? outBytes : errBytes) > maxBuffer)
+          stop(Object.assign(new Error("Azure CLI output limit exceeded"), { code: "ENOBUFS" }));
+        else chunks.push(chunk);
+      });
+    }
+  });
+}
+
 /** Check process completion and the expected JSON shape without including provider output in errors. */
 export function azResponse(result, args, expected = "object", requiredStrings = []) {
   const flag = args.findIndex((arg) => arg.startsWith("--"));
@@ -40,6 +147,7 @@ export function azResponse(result, args, expected = "object", requiredStrings = 
   const fail = (reason) => {
     throw new Error(`Azure command failed (${command}): ${reason}. Inspect the command outcome before retrying`);
   };
+  if (result.error?.code === "ETREEKILL") fail("local process-tree termination could not be confirmed");
   if (result.error?.code === "ETIMEDOUT") fail("timed out; the provider operation may still be running");
   if (result.error) fail(`execution error ${result.error.code ?? "unknown"}`);
   if (result.signal) fail(`terminated by signal ${result.signal}`);
