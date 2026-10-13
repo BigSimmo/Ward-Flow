@@ -200,12 +200,7 @@ export function StatisticsServicesIndexScreen() {
                     <span className={phone.ring0} aria-hidden="true" />
                   )
                 }
-                name={
-                  <span className={phone.dotName}>
-                    <ServiceDot service={entry.service} />
-                    {entry.service}
-                  </span>
-                }
+                name={<span className={phone.dotName}>{entry.service}</span>}
                 meta={
                   entry.beds === 0
                     ? "No inpatient beds"
@@ -237,12 +232,7 @@ export function StatisticsServicesIndexScreen() {
                 <PhoneList key={from} label={`Referrals from ${from}`}>
                   <PhoneListRow
                     as="li"
-                    name={
-                      <span className={phone.dotName}>
-                        <ServiceDot service={from} />
-                        {`From ${from}`}
-                      </span>
-                    }
+                    name={<span className={phone.dotName}>{`From ${from}`}</span>}
                     value={notYet.get(from) ?? 0}
                     time="not yet"
                   />

@@ -676,7 +676,6 @@ function OverviewPhone({
             name={ward.name}
             meta={
               <span className={phone.dotName}>
-                <ServiceDot service={ward.service} />
                 {`${ward.code} · ${ward.inUse} of ${ward.beds} · ${ward.ready} ready`}
               </span>
             }

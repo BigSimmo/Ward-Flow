@@ -68,7 +68,7 @@ import {
   type BedMap,
 } from "./statistics-bed-map";
 import { PhoneBody, PhoneList, PhonePinnedAction, phoneBodyStyles as phone } from "./statistics-phone-parts";
-import { dateOf, fromToday, weekdayOf } from "./statistics-dates";
+import { dateOf, fromToday, isPastDate, weekdayOf } from "./statistics-dates";
 import { csvCell } from "./statistics-csv";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
@@ -694,7 +694,11 @@ function WardPhone({
                 key={admission.id}
                 as="li"
                 name={<span className={phone.mono}>{admission.id}</span>}
-                meta={tab === "blockers" && admission.blockReason ? admission.blockReason : status}
+                meta={`${tab === "blockers" && admission.blockReason ? admission.blockReason : status}${
+                  admission.expectedDischargeAt !== null && isPastDate(admission.expectedDischargeAt, now)
+                    ? " · past date"
+                    : ""
+                }`}
                 value={
                   days === null ? (
                     "none"
@@ -705,7 +709,16 @@ function WardPhone({
                   )
                 }
                 time={
-                  admission.expectedDischargeAt === null ? "no date" : dateOf(admission.expectedDischargeAt, dayZero)
+                  admission.expectedDischargeAt === null ? (
+                    "no date"
+                  ) : isPastDate(admission.expectedDischargeAt, now) ? (
+                    <span className={phone.flagged}>
+                      <StatusGlyph tone="warning" size={9} />
+                      {dateOf(admission.expectedDischargeAt, dayZero)}
+                    </span>
+                  ) : (
+                    dateOf(admission.expectedDischargeAt, dayZero)
+                  )
                 }
               />
             );
@@ -1154,10 +1167,16 @@ function Roster({
                         <SrOnly>No discharge date set</SrOnly>
                       </span>
                     ) : (
-                      <>
+                      <span className={styles.flagged}>
+                        {isPastDate(admission.expectedDischargeAt, now) ? (
+                          <StatusGlyph tone="warning" size={9} />
+                        ) : null}
                         {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
-                        <span className={styles.muted}>{fromToday(admission.expectedDischargeAt, now)}</span>
-                      </>
+                        <span className={styles.muted}>
+                          {fromToday(admission.expectedDischargeAt, now)}
+                          {isPastDate(admission.expectedDischargeAt, now) ? ", past date" : ""}
+                        </span>
+                      </span>
                     )}
                   </td>
                   <td className={admission.blockReason === null ? styles.muted : undefined}>

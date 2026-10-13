@@ -79,7 +79,16 @@ export type WeeklyReport = {
     rows: { movement: Movement; waitedMinutes: number; stillWaiting: boolean }[];
   };
   outOfArea: { bedDays: number; people: number };
-  delayedDischarge: { bedDays: number; people: number };
+  delayedDischarge: {
+    bedDays: number;
+    people: number;
+    /**
+     * When the earliest expected date still held was set, if that falls after the week began: the
+     * week's figure only counts from then, so it reads low (audit stats-11). `null` when the week
+     * is fully covered. Equal to or after the week's counted end means nothing in the week is held.
+     */
+    recordedFrom: Instant | null;
+  };
   declines: { placement: number; referral: number; byReason: ReasonCount[] };
   overrides: { placement: number; referral: number; byReason: ReasonCount[] };
   occupancy: {
@@ -111,6 +120,23 @@ function tally(reasons: string[]): ReasonCount[] {
   return [...counts.entries()]
     .map(([reason, count]) => ({ reason, count }))
     .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason));
+}
+
+/**
+ * The instant the earliest expected discharge date still held was set, when that is after the week
+ * began. Earlier dates are not kept, so a week before it cannot be measured in full. A date with no
+ * set time is treated as always known.
+ */
+function dischargeDatesRecordedFrom(admissions: readonly Admission[], week: ReportWeek): Instant | null {
+  let earliest = Infinity;
+  for (const admission of admissions) {
+    if (admission.expectedDischargeAt === null || !Number.isFinite(admission.expectedDischargeAt)) continue;
+    const setAt = admission.dischargeDateSetAt;
+    if (typeof setAt !== "number" || !Number.isFinite(setAt)) return null;
+    earliest = Math.min(earliest, setAt);
+  }
+  if (!Number.isFinite(earliest)) return null;
+  return earliest > week.start ? (earliest as Instant) : null;
 }
 
 export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWeek): WeeklyReport {
@@ -210,7 +236,11 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       rows: edRows,
     },
     outOfArea: { bedDays: days(outOfAreaMinutes), people: outOfAreaPeople.size },
-    delayedDischarge: { bedDays: days(delayedMinutes), people: delayedPeople.size },
+    delayedDischarge: {
+      bedDays: days(delayedMinutes),
+      people: delayedPeople.size,
+      recordedFrom: dischargeDatesRecordedFrom(admissions, week),
+    },
     declines: {
       placement: placementDeclines.totalCount,
       referral: referralDeclines.length,

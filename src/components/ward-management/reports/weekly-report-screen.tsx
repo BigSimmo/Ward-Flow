@@ -17,6 +17,7 @@ import {
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
+import { VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { edById } from "@/components/ward-management/ward-sites";
 import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
 import { StatCard, StatisticsHero, useStatisticsLive } from "@/components/ward-management/statistics/statistics-hero";
@@ -109,6 +110,19 @@ export function WeeklyReportScreen() {
   // Phone wording in whole hours ("24h"), as the v10 phone drawing reads.
   const longHoursLabel = `${Math.round(report.edWaits.targetMinutes / 60)}h`;
   const phoneTargetText = `over ${longHoursLabel}`;
+  // A wait still open is counted to the end of the week shown, so the figure says when it stops.
+  const waitedBy = `by ${dateOf(week.countedEnd - 1, dayZero)}`;
+  // Expected dates set after the week began leave the week only partly measured (audit stats-11).
+  const delayedFrom = report.delayedDischarge.recordedFrom;
+  const delayedUnknown = delayedFrom !== null && delayedFrom >= week.countedEnd;
+  const delayedNote =
+    delayedFrom === null
+      ? null
+      : delayedUnknown
+        ? "Not enough history. No expected date held for this week."
+        : `Counted from ${dateOf(delayedFrom, dayZero)}, when dates were first recorded`;
+  const delayedDays = delayedUnknown ? "Not known" : report.delayedDischarge.bedDays;
+  const delayedPeople = delayedUnknown ? "Not known" : report.delayedDischarge.people;
 
   return (
     <div className={styles.page} data-testid="ward-weekly-report" data-ward-design="v6">
@@ -148,7 +162,10 @@ export function WeeklyReportScreen() {
             <>
               <HeroStat value={report.edWaits.count} label={`ED waits ${targetText}`} />
               <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
-              <HeroStat value={report.delayedDischarge.bedDays} label="Delayed discharge days" />
+              <HeroStat
+                value={delayedUnknown ? "Not known" : report.delayedDischarge.bedDays}
+                label="Delayed discharge days"
+              />
               <HeroStat value={occupancyText} label="Average occupancy" />
             </>
           }
@@ -205,12 +222,17 @@ export function WeeklyReportScreen() {
                   {
                     id: "days",
                     label: "Bed days",
-                    value: report.delayedDischarge.bedDays,
+                    value: delayedDays,
                     testId: "ward-weekly-delayed-days",
                   },
-                  { id: "people", label: "People", value: report.delayedDischarge.people },
+                  { id: "people", label: "People", value: delayedPeople },
                 ]}
               />
+              {delayedNote ? (
+                <p className={phone.note} data-testid="ward-weekly-delayed-history">
+                  {delayedNote}
+                </p>
+              ) : null}
             </PhoneCard>
             <PhoneCard icon={XCircle} title="Declines" aside="Placement and referral">
               <PhoneFacts
@@ -253,18 +275,25 @@ export function WeeklyReportScreen() {
                         meta={`${edById(row.movement.originEdId)?.name ?? row.movement.originEdId}${row.stillWaiting ? " · still waiting" : ""}`}
                         value={
                           <span className={phone.flagged}>
-                            <StatusGlyph tone="warning" size={9} />
+                            {/* One tone rule with the ED page: red at the long-wait line, amber before. */}
+                            <StatusGlyph
+                              tone={row.waitedMinutes >= VERY_LONG_WAIT_MINUTES ? "danger" : "warning"}
+                              size={9}
+                            />
                             {splitDuration(row.waitedMinutes)}
                           </span>
                         }
-                        time="waited"
+                        time={waitedBy}
                       />
                     );
                   })}
                 </PhoneList>
               )}
             </PhoneGroup>
-            <p className={styles.disclosure}>Counts only stays, movements and decisions held in this prototype.</p>
+            <p className={styles.disclosure}>
+              Counts only stays, movements and decisions held in this prototype. People who left before it started are
+              not held, so earlier weeks read low.
+            </p>
             <PhonePinnedAction icon={Printer} onClick={() => window.print()} testId="ward-weekly-print">
               Print the report
             </PhonePinnedAction>
@@ -330,13 +359,18 @@ export function WeeklyReportScreen() {
                 <dl className={styles.figures}>
                   <div className={styles.figure}>
                     <dt>Bed days</dt>
-                    <dd data-testid="ward-weekly-delayed-days">{report.delayedDischarge.bedDays}</dd>
+                    <dd data-testid="ward-weekly-delayed-days">{delayedDays}</dd>
                   </div>
                   <div className={styles.figure}>
                     <dt>People</dt>
-                    <dd>{report.delayedDischarge.people}</dd>
+                    <dd>{delayedPeople}</dd>
                   </div>
                 </dl>
+                {delayedNote ? (
+                  <p className={styles.disclosure} data-testid="ward-weekly-delayed-history">
+                    {delayedNote}
+                  </p>
+                ) : null}
               </StatCard>
             </div>
 
@@ -390,7 +424,7 @@ export function WeeklyReportScreen() {
                         <th scope="col">Emergency department</th>
                         <th scope="col">Opened</th>
                         <th scope="col" className={styles.num}>
-                          Waited
+                          Waited, {waitedBy}
                         </th>
                         <th scope="col">Now</th>
                       </tr>
@@ -413,7 +447,10 @@ export function WeeklyReportScreen() {
               )}
             </StatCard>
 
-            <p className={styles.disclosure}>Counts only stays, movements and decisions held in this prototype.</p>
+            <p className={styles.disclosure}>
+              Counts only stays, movements and decisions held in this prototype. People who left before it started are
+              not held, so earlier weeks read low.
+            </p>
           </>
         )}
         <WardPrototypeFooter testId="ward-weekly-footer" note="Synthetic data" />

@@ -216,7 +216,6 @@ export function StatisticsEdsIndexScreen() {
                   name={row.name}
                   meta={
                     <span className={phone.dotName}>
-                      <ServiceDot service={row.service} />
                       {row.waiting === 0 ? "No one waiting" : `${row.unplaced} no ward yet`}
                     </span>
                   }
