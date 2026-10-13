@@ -98,6 +98,7 @@ import {
   type DocumentationDraft,
 } from "./referral-flow-panels";
 import { WardReferralInbox } from "./ward-referral-inbox";
+import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import { duplicateCaseHref, duplicateSentence } from "./referral-duplicate";
 import {
   discardReferralDraft,
@@ -1494,7 +1495,8 @@ function WardReferralDrawerContent({
   const itemsReady = itemsTotal - itemsLeft;
   const patientShowErrors = attempted.patient && activeSection === "patient";
   // No "Unknown Patient" referral: with no person on file, the referrer describes who it is for.
-  const unidentifiedName = !patientRecord && unidentified?.trim() ? `Not yet identified, ${unidentified.trim()}` : "";
+  const unidentifiedName =
+    !patientRecord && unidentified?.trim() ? `${UNIDENTIFIED_REFERRAL_PREFIX}${unidentified.trim()}` : "";
   const unidentifiedHistory = unidentifiedName
     ? `${unidentifiedName}${clinicalSummary ? `\n${clinicalSummary}` : ""}`
     : clinicalSummary;

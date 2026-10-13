@@ -20,6 +20,21 @@ export type WardReferralInboxEntry = {
   originUnitId?: Referral["originUnitId"];
 };
 
+/**
+ * A referral sent with no person on file opens its history with "Not yet identified, <description>"
+ * (the referral drawer writes it). The inbox heading reads that line instead of "Unknown Patient".
+ */
+export const UNIDENTIFIED_REFERRAL_PREFIX = "Not yet identified, ";
+
+/** The inbox heading's name: the referrer's description for an unidentified referral, else the resolved name. */
+export function referralInboxName(entry: Pick<WardReferralInboxEntry, "patientId" | "history">, resolvedName: string) {
+  if (entry.patientId !== undefined) return resolvedName;
+  const firstLine = entry.history.split("\n", 1)[0]?.trim() ?? "";
+  return firstLine.startsWith(UNIDENTIFIED_REFERRAL_PREFIX) && firstLine.length > UNIDENTIFIED_REFERRAL_PREFIX.length
+    ? firstLine
+    : resolvedName;
+}
+
 export function wardReferralInboxEntries(referrals: readonly Referral[], unitId: string): WardReferralInboxEntry[] {
   return referrals.flatMap((referral) => {
     const arm = referral.destinations.find(
