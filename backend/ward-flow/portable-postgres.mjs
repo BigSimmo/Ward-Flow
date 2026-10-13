@@ -65,6 +65,14 @@ export const FOREIGN_READ_RELATION_ALLOWLIST = Object.freeze(
     ["cron", "job_run_details"],
   ].map((pair) => Object.freeze(pair)),
 );
+// pg_get_expr decompiles the stored policy and its text is not stable across PostgreSQL majors
+// (parentheses, quoting, implicit casts, "current_user"() on old servers). Compare a normalised
+// form instead: drop whitespace, parentheses and double quotes, then name/text casts. Anything
+// that still differs (an OR, another column, a constant) is refused, so a new format fails closed.
+// Both patterns are valid as JavaScript and PostgreSQL (ARE) regular expressions.
+export const CRON_POLICY_STRIP_PATTERN = '[\\s()"]';
+export const CRON_POLICY_CAST_PATTERN = "::(text|name|charactervarying)";
+export const CRON_OWNER_FILTER_FORMS = Object.freeze(["username=current_user", "current_user=username"]);
 const sqlList = (values) => values.map((value) => `'${value}'`).join(", ");
 
 // One bounded catalogue summary. No payload or credential is read. Missing schema,
@@ -96,11 +104,14 @@ SELECT current_user AS role,
       AND NOT (c.relkind IN ('r', 'v')
         AND (n.nspname::text, c.relname::text) IN (${FOREIGN_READ_RELATION_ALLOWLIST.map((pair) => `(${sqlList(pair)})`).join(", ")})
         -- pg_cron's PUBLIC grant is only safe while RLS limits rows to the caller's own jobs: RLS on, and
-        -- every permissive policy that covers SELECT is pg_cron's stock owner filter (permissive policies
+        -- every permissive policy that covers SELECT is pg_cron's stock owner filter (username = current_user) (permissive policies
         -- are OR-combined; restrictive ones only narrow). The role can't bypass RLS (safe_flags).
         AND (n.nspname <> 'cron' OR (c.relrowsecurity AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policy p
           WHERE p.polrelid = c.oid AND p.polpermissive AND p.polcmd IN ('*', 'r')
-            AND pg_catalog.pg_get_expr(p.polqual, p.polrelid) IS DISTINCT FROM '(username = CURRENT_USER)'))))
+            AND pg_catalog.regexp_replace(pg_catalog.regexp_replace(
+              pg_catalog.lower(COALESCE(pg_catalog.pg_get_expr(p.polqual, p.polrelid), '')),
+              '${CRON_POLICY_STRIP_PATTERN}', '', 'g'), '${CRON_POLICY_CAST_PATTERN}', '', 'g')
+              <> ALL (ARRAY[${sqlList(CRON_OWNER_FILTER_FORMS)}]::text[])))))
       AND CASE WHEN c.relkind IN ('r', 'p', 'v', 'm', 'f') THEN
           (pg_catalog.has_table_privilege(r.oid, c.oid, 'SELECT')
           OR pg_catalog.has_any_column_privilege(r.oid, c.oid, 'SELECT'))

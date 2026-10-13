@@ -10,6 +10,9 @@ import {
   RUNTIME_SUMMARY,
   FOREIGN_READ_SCHEMA_ALLOWLIST,
   FOREIGN_READ_RELATION_ALLOWLIST,
+  CRON_POLICY_STRIP_PATTERN,
+  CRON_POLICY_CAST_PATTERN,
+  CRON_OWNER_FILTER_FORMS,
 } from "./portable-postgres.mjs";
 import { readMigrationConfig, migratePortablePostgres } from "./migrate-postgres.mjs";
 import { createSupabasePool, verifySupabaseRuntimeRole } from "./supabase-postgres.mjs";
@@ -428,6 +431,37 @@ test("Azure startup refuses a database without the complete migration 4 ledger",
   );
 });
 
+test("pg_cron policy normalisation accepts the stock owner filter in any deparse format and refuses anything wider", () => {
+  // Mirrors the SQL: lower, strip whitespace/parentheses/quotes, then strip name/text casts.
+  const normalise = (expr) =>
+    (expr ?? "")
+      .toLowerCase()
+      .replace(new RegExp(CRON_POLICY_STRIP_PATTERN, "g"), "")
+      .replace(new RegExp(CRON_POLICY_CAST_PATTERN, "g"), "");
+  const accepted = (expr) => CRON_OWNER_FILTER_FORMS.includes(normalise(expr));
+  for (const stock of [
+    "(username = CURRENT_USER)", // PostgreSQL 16-18 (verified on 18 with PGlite)
+    "username = CURRENT_USER",
+    "(username = (CURRENT_USER)::text)",
+    '(username = "current_user"())',
+    "(CURRENT_USER = username)",
+    "(username = (CURRENT_USER)::character varying)",
+  ]) {
+    assert.equal(accepted(stock), true, stock);
+  }
+  for (const wider of [
+    "((username = CURRENT_USER) OR true)",
+    "(other = CURRENT_USER)",
+    "(username = SESSION_USER)",
+    "(username <> CURRENT_USER)",
+    "true",
+    "",
+    null,
+  ]) {
+    assert.equal(accepted(wider), false, String(wider));
+  }
+});
+
 test("runtime summary refuses read grants outside ward_flow except stock Supabase system schemas and relations", () => {
   // PUBLIC read grants on a stock Supabase PostgreSQL 17 project (pg_class ACLs): system schemas whole,
   // plus four named extension relations. Anything else, including new relations in extensions or cron, refuses.
@@ -463,9 +497,13 @@ test("runtime summary refuses read grants outside ward_flow except stock Supabas
   // The cron exception only holds while row-level security is on for those tables.
   // ...and only while every permissive SELECT policy is pg_cron's stock owner filter.
   assert.match(clause, /AND \(n\.nspname <> 'cron' OR \(c\.relrowsecurity AND NOT EXISTS/);
+  assert.match(clause, /p\.polpermissive AND p\.polcmd IN \('\*', 'r'\)/);
+  // Compared through a normalised form, never pg_get_expr's exact text, which varies by major.
+  assert.doesNotMatch(clause, /IS DISTINCT FROM '\(username = CURRENT_USER\)'/);
+  assert.ok(clause.includes(`'${CRON_POLICY_STRIP_PATTERN}', '', 'g'), '${CRON_POLICY_CAST_PATTERN}', '', 'g')`));
   assert.match(
     clause,
-    /p\.polpermissive AND p\.polcmd IN \('\*', 'r'\)\s+AND pg_catalog\.pg_get_expr\(p\.polqual, p\.polrelid\) IS DISTINCT FROM '\(username = CURRENT_USER\)'\)\)\)\)/,
+    /lower\(COALESCE\(pg_catalog\.pg_get_expr\(p\.polqual, p\.polrelid\), ''\)\)[\s\S]*<> ALL \(ARRAY\['username=current_user', 'current_user=username'\]::text\[\]\)\)\)\)\)/,
   );
   assert.match(clause, /has_table_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
   assert.match(clause, /has_any_column_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
