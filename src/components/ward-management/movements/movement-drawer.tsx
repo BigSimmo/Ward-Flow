@@ -251,9 +251,7 @@ export function MovementDrawer({
           : undefined;
   const legalTitle = movement.legalForm
     ? legalFormName(movement.legalForm)
-    : movement.legalStatus === "Voluntary"
-      ? "Voluntary"
-      : "No legal form recorded";
+    : (movement.legalStatus ?? "No legal form recorded");
   const legalWhen =
     dueAt === undefined
       ? movement.legalForm
