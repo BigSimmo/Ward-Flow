@@ -52,9 +52,9 @@ describe("ruling (1): stopped journeys are an explicit release-held-bed row", ()
     expect(state.rejections).toHaveLength(0);
     const row = rowOf(state);
     expect(groupOf(row, NOW + 25, NOW + 600)).toBe("rel");
-    expect(situationState(row, NOW + 25)).toMatch(/^Transport stopped, bed held at .+ awaiting release$/);
+    expect(situationState(row, NOW + 25)).toMatch(/^Transport stopped, bed pulled at .+ awaiting release$/);
     const step = nextStep(row, NOW + 25, NOW + 600, () => 0).text;
-    expect(step).toMatch(/^Transport stopped\. Release the held bed at /);
+    expect(step).toMatch(/^Transport stopped\. Release the pulled bed at /);
     expect(step).not.toMatch(/Confirm (collection|arrival)/);
   });
 

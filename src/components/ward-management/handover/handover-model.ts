@@ -248,7 +248,7 @@ export function isCollected(row: HandoverRow): boolean {
 
 /**
  * Owner ruling 2026-10-13 22:13 AWST (PR #279): a journey whose transport was stopped after
- * collection, with its bed still held, is its own row state: "Transport stopped, release held bed".
+ * collection, with its bed still held, is its own row state: "Transport stopped, release pulled bed".
  */
 export function isStoppedAwaitingRelease(row: HandoverRow): boolean {
   return row.movement !== undefined && isStoppedTransportAwaitingRelease(row.movement);
@@ -299,8 +299,8 @@ export function handoverGroups(cutoff: Instant, now: Instant) {
     },
     {
       id: "rel",
-      title: "Transport stopped, release held bed",
-      why: "Journey stopped after collection; the bed is still held",
+      title: "Transport stopped, release pulled bed",
+      why: "Journey stopped after collection; the bed is still pulled",
     },
     { id: "bed", title: "Finding a ward", why: "Placement requested or a ward is reviewing" },
     { id: "acc", title: "Accepted, bed not ready", why: "Ward accepted, bed not yet free" },
@@ -401,7 +401,7 @@ export function nextStep(
   let text: string;
   const hold = shownBedHold(row, now);
   if (isStoppedAwaitingRelease(row)) {
-    text = `Transport stopped. Release the held bed at ${row.to?.name ?? "the ward"}`;
+    text = `Transport stopped. Release the pulled bed at ${row.to?.name ?? "the ward"}`;
   } else if (row.stage === "pulled") {
     text =
       hold?.state === "lapsed"
@@ -453,7 +453,7 @@ function backgroundLine(row: HandoverRow, now: Instant): string {
  */
 export function situationState(row: HandoverRow, now: Instant): string {
   const to = row.to?.name ?? "the ward";
-  if (isStoppedAwaitingRelease(row)) return `Transport stopped, bed held at ${to} awaiting release`;
+  if (isStoppedAwaitingRelease(row)) return `Transport stopped, bed pulled at ${to} awaiting release`;
   if (row.stage === "pulled") {
     if (row.pullExpiresAt === undefined) return `Bed pulled at ${to}`;
     return row.pullExpiresAt <= now

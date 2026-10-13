@@ -108,7 +108,7 @@ export function HandoverFlowPanel({
           ? "No pull time recorded"
           : "None"
         : isCollected(row)
-          ? `Held while the patient is in transit (until ${formatInstantWithDay(row.pullExpiresAt, now)})`
+          ? `Pulled while the patient is in transit (until ${formatInstantWithDay(row.pullExpiresAt, now)})`
           : hold !== null && pullHasLapsed(row, now)
             ? `${bedHold(row.pullExpiresAt, now)!.label}, at ${formatInstantWithDay(row.pullExpiresAt, now)}`
             : `Until ${formatInstantWithDay(row.pullExpiresAt, now)}, ${bedHold(row.pullExpiresAt, now)!.short}`,
