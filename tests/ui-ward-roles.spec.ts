@@ -1085,7 +1085,7 @@ test.describe("@mockup Role switcher — the loop", () => {
       await ensureToolsOpen(page);
       await switcherTrigger().click();
       const matches = page
-        .getByRole("dialog", { name: "Switch workstation" })
+        .getByRole("dialog", { name: "Go to a desk" })
         .getByRole("group", { name: /^(Statewide desks|Patient in focus)$/ })
         .getByRole("link", { name: menuItemName });
       await expect(matches, `"${menuItemName}" must resolve to exactly one drawer link`).toHaveCount(1);
@@ -1131,7 +1131,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await closeEdPatientSheet(page, "WF-315");
 
     // --- Step 2: Coordinator — select WF-315, refer to all three candidates. ---
-    await switchTo("Flow coordinator");
+    await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -1189,7 +1189,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     // role. The shared `focusMovementId` (ward-flow-provider.tsx) re-selects WF-315 on this
     // remount without another click — proving the selection itself, not just the movement data,
     // survived the two role switches so far. ---
-    await switchTo("Flow coordinator");
+    await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toContainText(
@@ -1274,7 +1274,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     // Delivered ends the transport leg only and leaves the movement open; the receiving ward closes
     // it by confirming arrival. The Patient in focus ward chips show only from a coordinator page,
     // so the switch goes through the coordinator, as step 4 did. ---
-    await switchTo("Flow coordinator");
+    await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await switchTo("Dabakarn");
@@ -1285,7 +1285,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-accepted-WF-315")).toHaveCount(0);
 
     // --- Step 11: Coordinator — the patient has left the system. ---
-    await switchTo("Flow coordinator");
+    await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("region", { name: "Priority queue" }).getByTestId("ward-queue-row-WF-315")).toHaveCount(
@@ -1327,7 +1327,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
       await ensureToolsOpen(page);
       await switcherTrigger().click();
       const matches = page
-        .getByRole("dialog", { name: "Switch workstation" })
+        .getByRole("dialog", { name: "Go to a desk" })
         .getByRole("group", { name: /^(Statewide desks|Patient in focus)$/ })
         .getByRole("link", { name: menuItemName });
       await expect(matches, `"${menuItemName}" must resolve to exactly one drawer link`).toHaveCount(1);
@@ -1388,7 +1388,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
 
     // --- Step 5: click through to the coordinator — the role switcher's real <Link>, never a
     // goto. Coordinator is never ambiguous (spec §9: "Statewide — no ward or department"). ---
-    await switchTo("Flow coordinator");
+    await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 

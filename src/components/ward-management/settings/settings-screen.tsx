@@ -59,7 +59,6 @@ import {
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
 import {
-  BED_HOLD_EXPIRY_MINUTES,
   DECISION_TARGET_RANGE_MINUTES,
   DUE_SOON_MINUTES,
   DUE_SOON_RANGE_MINUTES,
@@ -108,11 +107,18 @@ import {
   type ToastInput,
   type WfTone,
 } from "@/components/wf";
-import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
-import { AlertsPane, DataPane, DisplayPane, ProfilePane, type ReferenceTab } from "./settings-panes";
+import {
+  AlertsPane,
+  DataPane,
+  DisplayPane,
+  ProfilePane,
+  THEME_CHOICES,
+  type ReferenceTab,
+  type ThemeChoice,
+} from "./settings-panes";
 import { useDiscreetNamesSetting } from "./discreet-names";
 import { useRowDensity, type RowDensity } from "./row-density";
 import { NOT_WIRED, PreviewTag, RuleRow, ScopeLine, SettingRow } from "./settings-rows";
@@ -164,7 +170,7 @@ function shortDuration(minutes: number): string {
 }
 
 /** The settings a phone shows on its first screen (Find a setting lands there, not in a sheet). */
-const PHONE_QUICK_SETTINGS: ReadonlySet<string> = new Set(["theme", "glare", "density", "buzz"]);
+const PHONE_QUICK_SETTINGS: ReadonlySet<string> = new Set(["theme", "density", "discreet-names", "buzz"]);
 
 function wardsText(count: number): string {
   return `${count} ${count === 1 ? "ward" : "wards"}`;
@@ -207,11 +213,11 @@ function ruleDiffs(before: WardConfiguration, after: WardConfiguration): string[
   if (a.cap !== b.cap) parts.push(`Wards asked ${a.cap} to ${b.cap}`);
   if (a.hold !== b.hold) parts.push(`Pull hold ${shortDuration(a.hold)} to ${shortDuration(b.hold)}`);
   if (a.morning !== b.morning) parts.push(`Morning count ${clock24(a.morning)} to ${clock24(b.morning)}`);
-  if (a.urgent !== b.urgent) {
-    parts.push(`First warning ${shortDuration(a.urgent)} to ${shortDuration(b.urgent)}`);
-  }
   if (a.soon !== b.soon) {
-    parts.push(`Second warning ${shortDuration(a.soon)} to ${shortDuration(b.soon)}`);
+    parts.push(`Early warning ${shortDuration(a.soon)} to ${shortDuration(b.soon)}`);
+  }
+  if (a.urgent !== b.urgent) {
+    parts.push(`Final warning ${shortDuration(a.urgent)} to ${shortDuration(b.urgent)}`);
   }
   if (a.referralTarget !== b.referralTarget) {
     parts.push(`Referral decision ${shortDuration(a.referralTarget)} to ${shortDuration(b.referralTarget)}`);
@@ -316,6 +322,22 @@ export function SettingsScreen() {
       toast?.push({ tone, title: message, duration: 3200 });
     },
     [toast],
+  );
+  // Audit settings-15 (Josh, 13 Oct 2026): Glare is a fourth Theme choice, so Theme never reads Dark
+  // while the page is in Glare's light. One choice, one toast.
+  const theme: ThemeChoice = glare ? "glare" : appearance;
+  const chooseTheme = useCallback(
+    (next: ThemeChoice) => {
+      if (next === "glare") {
+        applyGlare(true);
+      } else {
+        applyGlare(false);
+        applyAppearance(next);
+      }
+      const label = THEME_CHOICES.find((choice) => choice.id === next)?.label ?? "Auto";
+      showToast(`Theme set to ${label}.`);
+    },
+    [showToast],
   );
   // D-16: "<name> is not wired in this prototype." No colon outside a clock time.
   const onPreview = useCallback(
@@ -428,9 +450,15 @@ export function SettingsScreen() {
     if (configuration === pending.before) return;
     pendingSave.current = null;
     const { before, count } = pending;
+    const changed = ruleDiffs(before, configuration);
     toast?.push({
       tone: "success",
-      title: count === 1 ? "Rule saved and recorded." : `${count} rules saved and recorded.`,
+      title:
+        changed.length > 0
+          ? `${changed.join(", ")}, saved and recorded.`
+          : count === 1
+            ? "Rule saved and recorded."
+            : `${count} rules saved and recorded.`,
       // Undo puts the rules back with a second recorded save, so the audit keeps both.
       undo: {
         durationMs: UNDO_TOAST_MS,
@@ -521,6 +549,15 @@ export function SettingsScreen() {
   };
 
   const handleConfirmReset = () => {
+    // Audit settings-18: everything a restore changes can come back from the toast, as a rule save
+    // can. Undo puts the rules back with a second recorded save, so the audit keeps both.
+    const before = {
+      configuration,
+      buzz: audioBuzz,
+      appearance,
+      glare,
+      railOpen,
+    };
     const defaults = defaultWardConfiguration();
     dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: defaults });
     setDraft({ ...defaults });
@@ -530,7 +567,23 @@ export function SettingsScreen() {
     applyGlare(false);
     setRailOpenPreference(true);
     setIsResetModalOpen(false);
-    showToast("Defaults restored and recorded.");
+    toast?.push({
+      tone: "success",
+      title: "Defaults restored and recorded.",
+      undo: {
+        durationMs: UNDO_TOAST_MS,
+        onUndo: () => {
+          dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: before.configuration });
+          setDraft({ ...before.configuration });
+          setAudioBuzz(before.buzz);
+          setAudioBuzzPreference(before.buzz);
+          applyAppearance(before.appearance);
+          applyGlare(before.glare);
+          setRailOpenPreference(before.railOpen);
+          showToast("Settings back as they were. Recorded in the audit.");
+        },
+      },
+    });
   };
 
   /* Find a setting ------------------------------------------------------------------------- */
@@ -576,6 +629,12 @@ export function SettingsScreen() {
   }, [highlight, reducedMotion]);
 
   const jumpTo = (entry: SettingsSearchEntry) => {
+    if (entry.id === "go-to-desk") {
+      setQuery("");
+      setFindOpen(false);
+      setIsOperatorModalOpen(true);
+      return;
+    }
     chooseTab(entry.tab);
     // Fixed defaults sits behind the reference card's second tab; show it before highlighting.
     if (entry.id === "fixed-defaults") setReference("defaults");
@@ -701,6 +760,7 @@ export function SettingsScreen() {
               sub="Access measure only"
               value={rules.ed}
               saved={saved.ed}
+              savedDisplay={`${saved.ed / 60}h`}
               display={`${rules.ed / 60}h`}
               noun="ED access target"
               range={edRange}
@@ -709,7 +769,14 @@ export function SettingsScreen() {
               effect={
                 <>
                   <StatusGlyph tone={draftEdOver > 0 ? "warning" : "success"} size={9} />
-                  {draftEdOver > 0 ? `${draftEdOver} over now` : "None over now"}
+                  {/* Audit settings-25: the count is read from the draft; a changed target says so. */}
+                  {rules.ed !== saved.ed
+                    ? draftEdOver > 0
+                      ? `${draftEdOver} over if saved`
+                      : "None over if saved"
+                    : draftEdOver > 0
+                      ? `${draftEdOver} over now`
+                      : "None over now"}
                   {edDelta !== 0 ? <span className={styles.delta}>{`${edDelta > 0 ? "+" : ""}${edDelta}`}</span> : null}
                 </>
               }
@@ -721,6 +788,7 @@ export function SettingsScreen() {
               sub="Per referral"
               value={rules.cap}
               saved={saved.cap}
+              savedDisplay={wardsText(saved.cap)}
               display={wardsText(rules.cap)}
               noun="parallel referral enquiry limit"
               range={{
@@ -739,6 +807,7 @@ export function SettingsScreen() {
               sub="Before a held bed returns"
               value={rules.hold}
               saved={saved.hold}
+              savedDisplay={shortDuration(saved.hold)}
               display={shortDuration(rules.hold)}
               noun="pulled bed hold duration"
               range={{
@@ -759,6 +828,7 @@ export function SettingsScreen() {
               subTestId="setting-morning-rollup-desc"
               value={rules.morning}
               saved={saved.morning}
+              savedDisplay={clock24(saved.morning)}
               display={clock24(rules.morning)}
               displayTestId="morning-rollup-display"
               noun="morning rollup deadline"
@@ -792,38 +862,17 @@ export function SettingsScreen() {
               meta="Your defaults, not legal limits"
             />
             <RuleRow
-              setting="first-warning"
-              testId="setting-due-soon-urgent-row"
-              title="First warning"
-              sub="Before a legal due time"
-              subTestId="setting-due-soon-urgent-desc"
-              value={rules.urgent}
-              saved={saved.urgent}
-              display={shortDuration(rules.urgent)}
-              displayTestId="due-soon-urgent-display"
-              noun="first warning before a legal due time"
-              max={clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, rules.soon)}
-              range={{
-                id: "setting-due-soon-urgent",
-                ...DUE_SOON_URGENT_RANGE_MINUTES,
-                minLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.min),
-                maxLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.max),
-              }}
-              onChange={(minutes) => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(minutes, rules.soon) })}
-              onReset={() => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(saved.urgent, rules.soon) })}
-              usedBy="Home, every legal due time"
-            />
-            <RuleRow
               setting="second-warning"
               testId="setting-due-soon-row"
-              title="Second warning"
+              title="Early warning"
               sub="Shown as due soon"
               subTestId="setting-due-soon-desc"
               value={rules.soon}
               saved={saved.soon}
+              savedDisplay={shortDuration(saved.soon)}
               display={shortDuration(rules.soon)}
               displayTestId="due-soon-display"
-              noun="second warning before a legal due time"
+              noun="early warning before a legal due time"
               range={{
                 id: "setting-due-soon",
                 ...DUE_SOON_RANGE_MINUTES,
@@ -844,7 +893,30 @@ export function SettingsScreen() {
               }
               usedBy="Home, every legal due time"
             />
-            {/* The two warnings on one window, read from the draft: calm, due soon, first warning. */}
+            <RuleRow
+              setting="first-warning"
+              testId="setting-due-soon-urgent-row"
+              title="Final warning"
+              sub="Before a legal due time"
+              subTestId="setting-due-soon-urgent-desc"
+              value={rules.urgent}
+              saved={saved.urgent}
+              savedDisplay={shortDuration(saved.urgent)}
+              display={shortDuration(rules.urgent)}
+              displayTestId="due-soon-urgent-display"
+              noun="final warning before a legal due time"
+              max={clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, rules.soon)}
+              range={{
+                id: "setting-due-soon-urgent",
+                ...DUE_SOON_URGENT_RANGE_MINUTES,
+                minLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.min),
+                maxLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.max),
+              }}
+              onChange={(minutes) => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(minutes, rules.soon) })}
+              onReset={() => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(saved.urgent, rules.soon) })}
+              usedBy="Home, every legal due time"
+            />
+            {/* The two warnings on one window, read from the draft: calm, early warning, final warning. */}
             <div className={styles.cascade} aria-hidden="true">
               <div className={styles.cascadeTrack}>
                 <span style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - rules.soon) }} />
@@ -894,6 +966,7 @@ export function SettingsScreen() {
                   }
                   value={rules[ruleKey]}
                   saved={saved[ruleKey]}
+                  savedDisplay={shortDuration(saved[ruleKey])}
                   display={shortDuration(rules[ruleKey])}
                   noun={`${step.label.toLowerCase()} target`}
                   range={{
@@ -976,19 +1049,6 @@ export function SettingsScreen() {
                 maxLabel: "4h",
               }}
               onChange={() => onPreview("Ward not answering")}
-              preview
-              previewTag={false}
-            />
-            <RuleRow
-              setting="bed-hold"
-              title="Bed hold expires"
-              sub="After a bed is held"
-              value={BED_HOLD_EXPIRY_MINUTES}
-              saved={BED_HOLD_EXPIRY_MINUTES}
-              display={shortDuration(BED_HOLD_EXPIRY_MINUTES)}
-              noun="bed hold expiry"
-              range={{ min: 60, max: 360, step: 30, minLabel: "1h", maxLabel: "6h" }}
-              onChange={() => onPreview("Bed hold expires")}
               preview
               previewTag={false}
             />
@@ -1099,16 +1159,8 @@ export function SettingsScreen() {
   const displayContent = (
     <>
       <DisplayPane
-        appearance={appearance}
-        onAppearanceChange={(next) => {
-          applyAppearance(next);
-          showToast(`Theme set to ${next === "auto" ? "Auto" : next === "dark" ? "Dark" : "Light"}.`);
-        }}
-        glare={glare}
-        onGlareChange={(next) => {
-          applyGlare(next);
-          showToast(`Glare mode ${next ? "on" : "off"}.`);
-        }}
+        theme={theme}
+        onThemeChange={chooseTheme}
         railOpen={railOpen}
         onRailChange={(open) => {
           setRailOpenPreference(open);
@@ -1135,7 +1187,7 @@ export function SettingsScreen() {
 
   const profileContent = (
     <>
-      <ProfilePane onPreview={onPreview} />
+      <ProfilePane onPreview={onPreview} onGoToDesk={() => setIsOperatorModalOpen(true)} />
     </>
   );
 
@@ -1263,7 +1315,7 @@ export function SettingsScreen() {
             }
             eyebrow={SETTINGS_DEMO_PROFILE.location}
             chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
-            sub={`${SETTINGS_DEMO_PROFILE.role} · nothing here changes care`}
+            sub={SETTINGS_DEMO_PROFILE.role}
             // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
             // are what this hero is for. The save strip still appears when a rule is unsaved.
             actions={
@@ -1273,7 +1325,7 @@ export function SettingsScreen() {
                 className={styles.phoneGrow}
                 onClick={() => setIsOperatorModalOpen(true)}
               >
-                Switch workstation
+                Go to a desk
               </Button>
             }
           />
@@ -1288,31 +1340,13 @@ export function SettingsScreen() {
             </h2>
             <div className={styles.phoneCard}>
               <SettingRow setting="theme" title="Theme" stacked testId="ward-settings-phone-theme">
-                <Segmented<WardAppearance>
+                <Segmented<ThemeChoice>
                   className={styles.phoneSeg}
                   size="md"
                   label="Theme"
-                  items={[
-                    { id: "auto", label: "Auto" },
-                    { id: "light", label: "Light" },
-                    { id: "dark", label: "Dark" },
-                  ]}
-                  value={appearance}
-                  onChange={(next) => {
-                    applyAppearance(next);
-                    showToast(`Theme set to ${next === "auto" ? "Auto" : next === "dark" ? "Dark" : "Light"}.`);
-                  }}
-                />
-              </SettingRow>
-              <SettingRow setting="glare" title="Glare mode" sub="For bright rooms and windows">
-                <Switch
-                  checked={glare}
-                  onCheckedChange={(next) => {
-                    applyGlare(next);
-                    showToast(`Glare mode ${next ? "on" : "off"}.`);
-                  }}
-                  label={<SrOnly>Glare mode</SrOnly>}
-                  className={styles.phoneSwitch}
+                  items={[...THEME_CHOICES]}
+                  value={theme}
+                  onChange={chooseTheme}
                 />
               </SettingRow>
               <SettingRow setting="density" title="Row density" stacked>
@@ -1462,7 +1496,7 @@ export function SettingsScreen() {
             <>
               {findSetting}
               <Button variant="onHero" size="sm" icon={Layers} onClick={() => setIsOperatorModalOpen(true)}>
-                Switch workstation
+                Go to a desk
               </Button>
               <Button variant="light" size="sm" icon={UserRound} onClick={() => chooseTab("profile")}>
                 Edit profile
