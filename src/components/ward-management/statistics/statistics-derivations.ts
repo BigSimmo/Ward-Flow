@@ -163,7 +163,8 @@ function recordedArrivalGap(admission: Admission): number | undefined {
   const { pulledAt, arrivedAt } = admission;
   if (pulledAt === null || arrivedAt === null) return undefined;
   if (!Number.isFinite(pulledAt) || !Number.isFinite(arrivedAt)) return undefined;
-  return arrivedAt - pulledAt;
+  const gap = arrivedAt - pulledAt;
+  return Number.isFinite(gap) ? gap : undefined;
 }
 
 /**

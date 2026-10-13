@@ -73,6 +73,15 @@ describe("exact focused selection", () => {
       prepareBatch({ ...plan, changedFiles: ["src/components/ward-management/fixture.ts"] }, root).tests,
     ).toHaveLength(5);
   });
+  it("accepts a deleted ward source as a changed file and still adds the boundary guards", () => {
+    const root = fixture();
+    for (const name of ["ward-referral-screen-boundary", "ward-no-invented-screen-figures", "ward-override-surfaces"])
+      writeFileSync(path.join(root, `tests/${name}.test.ts`), "fixture");
+    const batch = prepareBatch({ ...plan, changedFiles: ["src/components/ward-management/deleted.ts"] }, root);
+    expect(batch.changedFiles).toEqual(["src/components/ward-management/deleted.ts"]);
+    expect(batch.tests).toHaveLength(5);
+    expect(() => prepareBatch({ ...plan, changedFiles: ["../outside.ts"] }, root)).toThrow("leaves the repository");
+  });
 });
 
 describe("evidence safety", () => {
@@ -311,6 +320,21 @@ describe("evidence safety", () => {
   });
 });
 
+/** A killed child can linger as a zombie until PID 1 reaps it; `kill(pid, 0)` still succeeds then. */
+function processIsLive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+  } catch {
+    return false;
+  }
+  try {
+    const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
+    return stat.slice(stat.lastIndexOf(")") + 2, stat.lastIndexOf(")") + 3) !== "Z";
+  } catch {
+    return process.platform !== "linux";
+  }
+}
+
 describe("owned process deadline", () => {
   it("records failure and timeout instead of a false pass", async () => {
     const root = fixture();
@@ -334,7 +358,7 @@ describe("owned process deadline", () => {
     const pid = Number(readFileSync(pidFile, "utf8"));
     try {
       expect(result.status).toBe("failed");
-      expect(() => process.kill(pid, 0)).toThrow();
+      expect(processIsLive(pid)).toBe(false);
     } finally {
       try {
         process.kill(pid, "SIGTERM");

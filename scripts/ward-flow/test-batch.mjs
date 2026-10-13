@@ -36,16 +36,28 @@ function leavesDirectory(relative) {
   return path.isAbsolute(relative);
 }
 
-export function exactPath(root, file) {
+function containedPath(root, file) {
   requireLiteralPath(file);
   const absolute = path.resolve(root, file);
   const relative = path.relative(root, absolute).replaceAll("\\", "/");
   if (leavesDirectory(relative)) throw new Error("Path leaves the repository");
   if (!relative) throw new Error("An input file is required");
+  return { absolute, relative };
+}
+
+export function exactPath(root, file) {
+  const { absolute, relative } = containedPath(root, file);
   if (!existsSync(absolute)) throw new Error(`Missing input: ${relative}`);
   const resolved = path.relative(realpathSync(root), realpathSync(absolute));
   if (leavesDirectory(resolved)) throw new Error("Input link leaves the repository");
   return relative;
+}
+
+/** A changed file may have been deleted by the batch, so it must stay inside the repository but need not exist. */
+export function changedPath(root, file) {
+  const { absolute, relative } = containedPath(root, file);
+  if (!existsSync(absolute)) return relative;
+  return exactPath(root, file);
 }
 
 function requirePlan(plan) {
@@ -86,7 +98,7 @@ function executionSettings(plan, selected) {
 
 export function prepareBatch(plan, root = ROOT) {
   requirePlan(plan);
-  const changedFiles = (plan.changedFiles ?? []).map((file) => exactPath(root, file));
+  const changedFiles = (plan.changedFiles ?? []).map((file) => changedPath(root, file));
   const selected = selectTests(plan, root, changedFiles);
   return {
     tests: selected,
@@ -164,9 +176,10 @@ function extraInputIdentity(root, batch) {
   const envFiles = [".env", ".env.local", ".env.test", ".env.test.local"].filter((file) =>
     existsSync(path.join(root, file)),
   );
-  return [...new Set([...batch.extraInputs, ...batch.tests, ...batch.changedFiles, ...envFiles])]
-    .sort()
-    .map((file) => [file, digest(readFileSync(path.join(root, file)))]);
+  return [...new Set([...batch.extraInputs, ...batch.tests, ...batch.changedFiles, ...envFiles])].sort().map((file) => {
+    const absolute = path.join(root, file);
+    return [file, existsSync(absolute) ? digest(readFileSync(absolute)) : "deleted"];
+  });
 }
 
 /** @param {string} root

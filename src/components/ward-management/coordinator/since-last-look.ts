@@ -221,7 +221,7 @@ function snapshotListsInvalid(v: Record<string, unknown>): boolean {
 }
 function snapshotReadyCountsInvalid(v: Record<string, unknown>): boolean {
   if (typeof v.readyByUnit !== "object" || v.readyByUnit === null) return true;
-  return !Object.values(v.readyByUnit).every((count) => typeof count === "number");
+  return !Object.values(v.readyByUnit).every((count) => Number.isSafeInteger(count) && (count as number) >= 0);
 }
 function parsedSnapshot(value: unknown): LastLookSnapshot | undefined {
   if (typeof value !== "object" || value === null) return undefined;
