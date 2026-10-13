@@ -40,6 +40,7 @@ async function run(
     account = {},
     app = {},
     extraResponses = {},
+    rawResponses = {},
   } = {},
 ) {
   const folder = await mkdtemp(join(tmpdir(), "ward-flow-azure-setup-test-"));
@@ -76,8 +77,9 @@ async function run(
       ...extraResponses,
     };
     await writeFile(join(folder, "responses.json"), JSON.stringify(responses));
+    await writeFile(join(folder, "raw-responses.json"), JSON.stringify(rawResponses));
     const isWin = process.platform === "win32";
-    const scriptCode = `import fs from 'node:fs';\nconst args=process.argv.slice(2);\nfs.appendFileSync(${JSON.stringify(join(folder, "calls.jsonl"))},JSON.stringify(args)+'\\n');\nconst responses=JSON.parse(fs.readFileSync(${JSON.stringify(join(folder, "responses.json"))},'utf8'));\nconst key=Object.keys(responses).find(key=>args.slice(0,key.split(' ').length).join(' ')===key);\nif(!key) process.exit(2);\nif(key==='deployment group create'){\nconst index=args.indexOf('--template-file');\nif(index<0 || !args[index+1] || !fs.statSync(args[index+1]).isFile()) process.exit(2);\n}\nprocess.stdout.write(JSON.stringify(responses[key]));\n`;
+    const scriptCode = `import fs from 'node:fs';\nconst args=process.argv.slice(2);\nfs.appendFileSync(${JSON.stringify(join(folder, "calls.jsonl"))},JSON.stringify(args)+'\\n');\nconst responses=JSON.parse(fs.readFileSync(${JSON.stringify(join(folder, "responses.json"))},'utf8'));\nconst raw=JSON.parse(fs.readFileSync(${JSON.stringify(join(folder, "raw-responses.json"))},'utf8'));\nconst key=Object.keys(responses).find(key=>args.slice(0,key.split(' ').length).join(' ')===key);\nif(!key) process.exit(2);\nif(key==='deployment group create'){\nconst index=args.indexOf('--template-file');\nif(index<0 || !args[index+1] || !fs.statSync(args[index+1]).isFile()) process.exit(2);\n}\nprocess.stdout.write(Object.hasOwn(raw,key) ? raw[key] : JSON.stringify(responses[key]));\n`;
     if (isWin) {
       await writeFile(join(folder, "az-mock.mjs"), scriptCode);
       await writeFile(join(folder, "az.cmd"), `@node "${join(folder, "az-mock.mjs")}" %*\r\n`);
@@ -106,6 +108,24 @@ async function run(
     await rm(folder, { recursive: true, force: true });
   }
 }
+
+test("invalid directory JSON stops before project inventory with a provider-response error", async () => {
+  for (const output of ["", "not-json", "null", "[]", '"unexpected"', "{}", '{"id":42,"tenantId":"synthetic"}']) {
+    const result = await run("inspect", { rawResponses: { "account show": output } });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Azure response invalid \(account show\)/);
+    assert.equal(result.calls.length, 1);
+  }
+});
+
+test("wrong inventory shape stops with a provider-response error instead of array method failure", async () => {
+  for (const output of ["{}", "[null]", "[42]"]) {
+    const result = await run("inspect", { rawResponses: { "postgres flexible-server list": output } });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Azure response invalid \(postgres flexible-server list\)/);
+    assert.equal(result.calls.length, 5);
+  }
+});
 
 test("Azure inspection accepts unset role placeholders and makes only inventory reads", async () => {
   const result = await run("inspect", {
