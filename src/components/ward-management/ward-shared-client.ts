@@ -2,6 +2,7 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { isValidSharedWardFlowState } from "./ward-shared-state-validation";
+import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
 
 export type SharedSnapshot = {
   dataMode: "prototype";
@@ -126,6 +127,17 @@ export class SharedWorkspaceClient {
           const snapshot = this.view.snapshot;
           const event = this.queue.shift();
           if (!snapshot || !event) break;
+          // Synthetic data only: a command carrying a real-looking identifier is never sent. The
+          // server refuses it too; checking here keeps the value off the network entirely.
+          if (!checkSyntheticPayload(event).safe) {
+            this.queue = [];
+            this.publish({
+              status: "ready",
+              error:
+                "The action was not sent: it looks like it contains a real identifier. Use synthetic details only.",
+            });
+            break;
+          }
           this.pending = {
             classification: "synthetic",
             dataMode: "prototype",

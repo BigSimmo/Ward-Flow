@@ -14,10 +14,10 @@ import { cn, primaryControl } from "@/components/ui-primitives";
  * **not** wrap the `layout.js`... above it in the same segment." `ward-flow/error.tsx` and
  * `ward-flow/layout.tsx` are siblings in the same segment, so nothing placed anywhere inside that
  * folder could ever catch a throw out of `ward-flow/layout.tsx` itself —
- * `DeveloperAreaGate`, `WardFlowProvider`, or the reducer's `useReducer` initialiser
- * (`seedWardFlowStateAt`). Because this file lives one segment further up, at `mockups/`,
+ * `WardFlowProvider` or the reducer's `useReducer` initialiser (`seedWardFlowStateAt`); the former
+ * `DeveloperAreaGate` left with the developer key on 28 September 2026. Because this file lives one segment further up, at `mockups/`,
  * `ward-flow/layout.tsx` is a NESTED layout relative to it and IS wrapped ("error.js wraps... nested
- * layout.js files"). A throw from any of those three now lands here instead of replacing the whole
+ * layout.js files"). A throw from either of those now lands here instead of replacing the whole
  * document via `src/app/error.tsx`. The same reasoning closes the identical gap for
  * `mockups/care-plan/layout.tsx` and `mockups/caring-contacts/layout.tsx`, which follow the same
  * gate-then-provider shape and previously had no nearer boundary either.

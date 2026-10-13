@@ -50,6 +50,16 @@ export function readConfig(env = process.env) {
   const port = Number(env.PORT || 8787);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid port configuration");
   const allowTenantUsers = env.WARD_ALLOW_TENANT_USERS === "true";
+  // Client apps (Entra application IDs) whose tokens tenant-wide mode accepts. Required in that
+  // mode: without it any app registration in the tenant could call this API for its users.
+  const allowedClientIds = (env.WARD_ALLOWED_CLIENT_IDS ?? "")
+    .split(",")
+    .map((id) => id.trim().toLowerCase())
+    .filter(Boolean);
+  if (allowedClientIds.some((id) => !UUID.test(id) || PLACEHOLDER_IDS.has(id)))
+    throw new Error("Invalid client app configuration");
+  if (allowTenantUsers && allowedClientIds.length === 0)
+    throw new Error("Tenant-wide access requires WARD_ALLOWED_CLIENT_IDS");
   const shared = env.WARD_SHARED_ENABLED === "true";
   const dataMode = env.WARD_DATA_MODE || "prototype";
   if (dataMode !== "prototype") throw new Error("Live data mode is not commissioned in this release");
@@ -84,6 +94,7 @@ export function readConfig(env = process.env) {
     audience: env.WARD_API_AUDIENCE,
     allowedObjectId,
     allowTenantUsers,
+    allowedClientIds,
     shared,
     dataMode,
     coordinatorIds,

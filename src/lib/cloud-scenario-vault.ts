@@ -199,6 +199,14 @@ export async function saveCloudScenario(
       };
     }
 
+    // The backend runs the same identifier scan server-side and refuses with 422.
+    if (response.status === 422) {
+      return {
+        status: "unsafe_payload",
+        reason: "The cloud refused the scenario: it looks like it contains a real identifier.",
+      };
+    }
+
     if (response.status === 413) {
       return {
         status: "oversized",

@@ -1,4 +1,5 @@
 import { parseSubscription } from "./push.mjs";
+import { checkSyntheticPayload } from "./synthetic-scan.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PATHS = [
@@ -134,6 +135,14 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
         body.event.type.length > 100
       )
         return reply(400, { error: "A synthetic command, command ID and valid revision are required" });
+      // Same server-side scan as the session save: the client's "synthetic" label is not trusted
+      // on its own. Refused before the command reaches the database.
+      const scan = checkSyntheticPayload(body.event);
+      if (!scan.safe)
+        return reply(422, {
+          error: "The command looks like it contains a real identifier; no change was saved",
+          reason: scan.reason,
+        });
       const result = await store.command(actorId, body.commandId.toLowerCase(), body.expectedRevision, body.event);
       return reply(result.status, result.body);
     } catch (error) {

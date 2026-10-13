@@ -4,20 +4,21 @@ import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf"
 // The proxy's CSRF guard for state-changing /api/* requests. Fetch Metadata is the
 // primary signal; when a browser omits it, or sends `same-site` for a sibling
 // subdomain, the Origin (then Referer) host must match the host the request was
-// addressed to. Absent Origin AND absent Referer is a non-browser client and passes.
+// addressed to. Absent Origin AND absent Referer is refused (12 October 2026 review, A4-12).
 
 function headersOf(entries: Record<string, string>) {
   return new Headers(entries);
 }
 
 describe("isCsrfGuardedApiRequest", () => {
-  it("guards mutating methods on /api/* except webhooks", () => {
+  it("guards mutating methods on every /api path, webhooks and bare /api included (A4-12, A4-15)", () => {
     expect(isCsrfGuardedApiRequest("POST", "/api/documents")).toBe(true);
     expect(isCsrfGuardedApiRequest("PUT", "/api/documents")).toBe(true);
     expect(isCsrfGuardedApiRequest("PATCH", "/api/documents")).toBe(true);
     expect(isCsrfGuardedApiRequest("DELETE", "/api/documents")).toBe(true);
     expect(isCsrfGuardedApiRequest("GET", "/api/documents")).toBe(false);
-    expect(isCsrfGuardedApiRequest("POST", "/api/webhooks/supabase")).toBe(false);
+    expect(isCsrfGuardedApiRequest("POST", "/api/webhooks/supabase")).toBe(true);
+    expect(isCsrfGuardedApiRequest("POST", "/api")).toBe(true);
     expect(isCsrfGuardedApiRequest("POST", "/documents")).toBe(false);
   });
 });
@@ -118,8 +119,11 @@ describe("apiMutationCsrfVerdict", () => {
     });
   });
 
-  it("allows a request with no Fetch Metadata, no Origin and no Referer (non-browser client)", () => {
-    expect(apiMutationCsrfVerdict(headersOf({}), requestHost)).toEqual({ allowed: true });
+  it("refuses a request with no Fetch Metadata, no Origin and no Referer (A4-12)", () => {
+    expect(apiMutationCsrfVerdict(headersOf({}), requestHost)).toEqual({
+      allowed: false,
+      reason: "missing_browser_headers",
+    });
   });
 
   it("does not consult Referer once Fetch Metadata vouches for the request", () => {
