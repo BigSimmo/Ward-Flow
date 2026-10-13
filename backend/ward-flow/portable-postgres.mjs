@@ -94,7 +94,10 @@ SELECT current_user AS role,
   NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
     WHERE n.nspname <> 'ward_flow' AND n.nspname <> ALL (ARRAY[${sqlList(FOREIGN_READ_SCHEMA_ALLOWLIST)}]::text[])
       AND NOT (c.relkind IN ('r', 'v')
-        AND (n.nspname::text, c.relname::text) IN (${FOREIGN_READ_RELATION_ALLOWLIST.map((pair) => `(${sqlList(pair)})`).join(", ")}))
+        AND (n.nspname::text, c.relname::text) IN (${FOREIGN_READ_RELATION_ALLOWLIST.map((pair) => `(${sqlList(pair)})`).join(", ")})
+        -- pg_cron's PUBLIC grant is only safe while RLS limits rows to the caller's own jobs. RLS with
+        -- no policy shows nothing, and the role can't bypass RLS (safe_flags), so RLS on is enough.
+        AND (n.nspname <> 'cron' OR c.relrowsecurity))
       AND CASE WHEN c.relkind IN ('r', 'p', 'v', 'm', 'f') THEN
           (pg_catalog.has_table_privilege(r.oid, c.oid, 'SELECT')
           OR pg_catalog.has_any_column_privilege(r.oid, c.oid, 'SELECT'))

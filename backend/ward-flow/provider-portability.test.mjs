@@ -455,11 +455,13 @@ test("runtime summary refuses read grants outside ward_flow except stock Supabas
   );
   assert.match(
     clause,
-    /AND NOT \(c\.relkind IN \('r', 'v'\)\s+AND \(n\.nspname::text, c\.relname::text\) IN \(\('extensions', 'pg_stat_statements'\), \('extensions', 'pg_stat_statements_info'\), \('cron', 'job'\), \('cron', 'job_run_details'\)\)\)/,
+    /AND NOT \(c\.relkind IN \('r', 'v'\)\s+AND \(n\.nspname::text, c\.relname::text\) IN \(\('extensions', 'pg_stat_statements'\), \('extensions', 'pg_stat_statements_info'\), \('cron', 'job'\), \('cron', 'job_run_details'\)\)/,
   );
   // Schema and relation are compared separately: a quoted schema "extensions.pg_stat" with a table
   // "statements" must not match extensions.pg_stat_statements through string concatenation.
   assert.doesNotMatch(clause, /\|\|/);
+  // The cron exception only holds while row-level security is on for those tables.
+  assert.match(clause, /AND \(n\.nspname <> 'cron' OR c\.relrowsecurity\)\)/);
   assert.match(clause, /has_table_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
   assert.match(clause, /has_any_column_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
   assert.match(clause, /c\.relkind IN \('r', 'p', 'v', 'm', 'f'\)/);
