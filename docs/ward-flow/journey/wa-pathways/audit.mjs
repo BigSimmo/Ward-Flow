@@ -216,7 +216,7 @@ export function createAudit(stages, actions) {
     ],
     unresolved: [
       "Facility-level acceptance, specialty/security/population fit, bed escalation, private funding and cross-border/court authority remain unconfirmed.",
-      "The 40 categories compress many programmes. Child liaison, eating-disorder care, youth outreach, clinical rehabilitation and supported residence have different entry rules; a shared category never grants interchangeable access.",
+      `The ${DATA.nodes.length} categories compress many programmes. Child liaison, eating-disorder care, youth outreach, clinical rehabilitation and supported residence have different entry rules; a shared category never grants interchangeable access.`,
       "Historic source-map defect wording and remaining state/guard/caller behaviour were not re-audited through the app. Static event labels matching a catalogue are not behavioural completeness.",
       "Public referral summaries conflict on the eating-disorder age boundary; verify the current receiving service rule. No universal age threshold is encoded.",
     ],

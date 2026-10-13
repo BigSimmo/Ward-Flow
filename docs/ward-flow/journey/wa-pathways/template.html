@@ -1108,6 +1108,342 @@
           break-inside: avoid;
         }
       }
+
+      /* Master-first exploration: preserve the source canvas, give it the screen. */
+      body.master-mode .shell {
+        max-width: none;
+        padding: 0 20px 12px;
+      }
+      body.master-mode header {
+        padding-top: 12px;
+      }
+      body.master-mode .mast {
+        margin-bottom: 8px;
+      }
+      body.master-mode .hero {
+        display: none;
+      }
+      body.master-mode .notice {
+        padding: 8px 12px;
+        font-size: 12px;
+        margin: 0;
+      }
+      body.master-mode .nav {
+        margin-top: 8px;
+        margin-bottom: 12px;
+      }
+      body.master-mode .nav button {
+        padding: 9px 15px;
+        min-height: 44px;
+      }
+      .master-frame {
+        padding: 14px;
+      }
+      .master-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+      .master-heading h1 {
+        font-size: 20px;
+        margin: 0;
+      }
+      .master-heading p {
+        margin: 4px 0 10px;
+      }
+      .master-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .master-search-group {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex: 1 1 240px;
+        min-width: 0;
+      }
+      .master-search-group input {
+        min-width: 100px;
+      }
+      .master-search-group .btn {
+        padding: 8px;
+      }
+      #master-matches {
+        min-width: 42px;
+        font-variant-numeric: tabular-nums;
+      }
+      #master-jump {
+        width: auto;
+        max-width: 240px;
+      }
+      .master-scale {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      .master-scale .btn {
+        padding: 9px 10px;
+      }
+      .master-tools {
+        position: relative;
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+      .master-tools summary {
+        font-size: 13px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        padding: 9px 14px;
+        cursor: pointer;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .master-tools-body {
+        position: absolute;
+        z-index: 20;
+        right: 0;
+        top: 48px;
+        width: 310px;
+        max-width: 80vw;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 14px 35px #17392a22;
+      }
+      .master-tools-body label {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 13px;
+      }
+      .master-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+      }
+      .master-layout.has-inspector {
+        grid-template-columns: minmax(0, 1fr) 340px;
+      }
+      .master-surface {
+        position: relative;
+        min-width: 0;
+      }
+      .master-viewport {
+        height: calc(100dvh - 280px);
+        min-height: 280px;
+        max-height: none;
+        cursor: grab;
+        touch-action: pan-x pan-y;
+      }
+      .master-viewport.panning {
+        cursor: grabbing;
+        user-select: none;
+      }
+      .master-node {
+        cursor: pointer;
+      }
+      .master-inspector {
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        max-height: calc(100dvh - 280px);
+        overflow: auto;
+      }
+      .master-inspector[hidden] {
+        display: none;
+      }
+      .master-detail {
+        border: 0;
+        padding: 12px 0;
+        margin: 0;
+        background: transparent;
+      }
+      .master-detail details {
+        margin-top: 10px;
+      }
+      .master-detail h4 {
+        margin-top: 18px;
+      }
+      .comparison-note {
+        padding: 10px;
+        background: #eef4f1;
+        border-radius: 8px;
+      }
+      .master-minimap {
+        position: absolute;
+        bottom: 36px;
+        right: 14px;
+        background: #ffffffed;
+        border: 1px solid #a8b8ae;
+        border-radius: 9px;
+        padding: 8px;
+        width: 126px;
+        box-shadow: 0 4px 15px #223a2b19;
+        cursor: crosshair;
+      }
+      .master-minimap svg {
+        display: block;
+        width: 108px;
+        height: 181px;
+        margin-top: 4px;
+      }
+      .master-minimap[hidden] {
+        display: none;
+      }
+      .master-hint {
+        position: absolute;
+        bottom: 8px;
+        left: 12px;
+        background: #ffffffe8;
+        border-radius: 5px;
+        padding: 4px 8px;
+        pointer-events: none;
+      }
+      .unselected-edge {
+        opacity: 0.14;
+      }
+      .master-frame.focus-mode {
+        position: fixed;
+        inset: 10px;
+        z-index: 1000;
+        background: #f7f9f8;
+        box-shadow: 0 0 0 20px #f7f9f8;
+        overflow: auto;
+      }
+      .focus-mode .master-viewport,
+      .focus-mode .master-inspector {
+        height: calc(100dvh - 160px);
+        max-height: calc(100dvh - 160px);
+      }
+      body.map-focus-open {
+        overflow: hidden;
+      }
+      @media (min-width: 1100px) {
+        body.master-mode header {
+          position: relative;
+        }
+        body.master-mode .nav {
+          position: absolute;
+          top: 7px;
+          left: 260px;
+          right: 170px;
+          margin: 0;
+          border-bottom: 0;
+        }
+        body.master-mode .nav button {
+          padding: 9px 8px;
+          font-size: 12px;
+        }
+        body.master-mode .notice {
+          margin-bottom: 12px;
+        }
+      }
+      @media (max-width: 849px) {
+        body.master-mode .shell {
+          padding: 0 10px 12px;
+        }
+        body.master-mode .date {
+          font-size: 10px;
+        }
+        .master-layout.has-inspector {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .master-inspector {
+          display: none;
+        }
+        .master-viewport {
+          height: calc(100dvh - 330px);
+          min-height: 280px;
+        }
+        .master-heading h1 {
+          font-size: 18px;
+        }
+        .master-heading p {
+          max-width: 240px;
+        }
+        .master-search-group {
+          flex-basis: 100%;
+        }
+        .master-minimap {
+          width: 77px;
+          padding: 5px;
+          right: 9px;
+        }
+        .master-minimap svg {
+          width: 65px;
+          height: 109px;
+        }
+        .master-hint {
+          font-size: 10px;
+          max-width: calc(100% - 100px);
+        }
+        .focus-mode .master-viewport {
+          height: calc(100dvh - 240px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
+      @media (forced-colors: active) {
+        .master-node {
+          border: 1px solid CanvasText;
+          color: CanvasText;
+          background: Canvas;
+        }
+        .master-node[aria-current="true"] {
+          outline-color: Highlight;
+        }
+        .master-node.match {
+          outline-color: Highlight;
+        }
+        .master-edge,
+        .master-audit-edge {
+          stroke: CanvasText;
+        }
+        .master-minimap {
+          border-color: CanvasText;
+        }
+      }
+      @media print {
+        .master-toolbar,
+        .master-inspector,
+        .master-minimap,
+        .master-hint,
+        #master-focus {
+          display: none !important;
+        }
+        .master-layout {
+          display: block !important;
+        }
+        .master-viewport {
+          height: auto;
+          min-height: 0;
+          overflow: visible;
+        }
+      }
+      .review-dot {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        width: 9px;
+        height: 9px;
+        background: #245e7a;
+        border: 1px solid #fff;
+        border-radius: 50%;
+      }
     </style>
   </head>
   <body>
@@ -1119,7 +1455,7 @@
             <span class="logo" aria-hidden="true">WF</span
             ><span>Ward Flow <span class="muted small">/ Journey design</span></span>
           </div>
-          <div class="date">Reviewed 8 October 2026<br />Local design proposal</div>
+          <div class="date">Reviewed 13 October 2026<br />Local review wireframe</div>
         </div>
         <div class="hero">
           <div>
@@ -1140,9 +1476,9 @@
           >
         </div>
         <nav class="nav" aria-label="Wireframe views">
-          <button type="button" data-view="overall" aria-current="page">Overall journey</button
-          ><button type="button" data-view="master">Master map</button
-          ><button type="button" data-view="map">Care map</button
+          <button type="button" data-view="master" aria-current="page">Master map</button
+          ><button type="button" data-view="overall">Overall journey</button
+          ><button type="button" data-view="map">WA care pathways</button
           ><button type="button" data-view="journey">Trace a journey</button
           ><button type="button" data-view="connections">All connections</button
           ><button type="button" data-view="review">Review & sources</button>
@@ -1150,6 +1486,92 @@
       </header>
       <div class="workspace" id="workspace">
         <main id="content" tabindex="-1">
+          <section id="view-master" class="panel master-frame" aria-labelledby="master-title">
+            <div class="master-heading">
+              <div>
+                <h1 id="master-title" tabindex="-1">Patient flow master map</h1>
+                <p class="tiny muted" id="master-description"></p>
+              </div>
+              <button class="btn" id="master-focus" type="button" aria-pressed="false">Focus map</button>
+            </div>
+            <div class="master-toolbar">
+              <div class="master-search-group">
+                <label class="sr-only" for="master-search">Find a box in the master map</label
+                ><input id="master-search" type="search" placeholder="Find a step…  /" autocomplete="off" /><button
+                  class="btn"
+                  type="button"
+                  id="master-previous"
+                  aria-label="Previous matching box"
+                >
+                  ←</button
+                ><button class="btn" type="button" id="master-find" aria-label="Next matching box">→</button
+                ><span class="tiny muted" id="master-matches" role="status"></span>
+              </div>
+              <label class="sr-only" for="master-jump">Jump to a section</label
+              ><select id="master-jump" aria-label="Jump to a section">
+                <option value="">Jump to a section…</option>
+                <option value="raised">Referral &amp; front door</option>
+                <option value="placement">Finding a bed</option>
+                <option value="booked">Transport &amp; arrival</option>
+                <option value="occupied">On the ward</option>
+                <option value="personLeaves">Leaving &amp; bed release</option>
+                <option value="parallel">Parallel records</option>
+              </select>
+              <div class="master-scale">
+                <button class="btn" type="button" data-master-zoom="width">Fit width</button
+                ><button class="btn" type="button" data-master-zoom="whole">Whole map</button
+                ><button class="btn" type="button" data-master-zoom="out" aria-label="Zoom out of master map">−</button
+                ><span id="master-zoom-label" class="master-zoom-label small" aria-live="polite"></span
+                ><button class="btn" type="button" data-master-zoom="in" aria-label="Zoom into master map">+</button
+                ><button class="btn" type="button" data-master-zoom="readable">Read labels</button>
+              </div>
+              <details class="master-tools">
+                <summary>Map tools</summary>
+                <div class="master-tools-body">
+                  <label><input id="master-audit-toggle" type="checkbox" checked />Added audit connections</label
+                  ><label><input id="master-highlight-toggle" type="checkbox" />Highlight selected connections</label
+                  ><label><input id="master-minimap-toggle" type="checkbox" checked />Overview navigator</label>
+                  <div class="symbol-legend" id="master-legend"></div>
+                  <p class="tiny muted">
+                    Purple dashed arrows are audit additions. Original colours and symbols stay unchanged. Double arrows
+                    include a return. Original warning wording is historical unless separately reviewed.
+                  </p>
+                </div>
+              </details>
+            </div>
+            <div class="master-layout" id="master-layout">
+              <div class="master-surface">
+                <div
+                  class="master-viewport"
+                  id="master-viewport"
+                  tabindex="0"
+                  role="region"
+                  aria-label="Patient flow master map — scroll or use arrow keys to pan"
+                >
+                  <div id="master-stage" class="master-stage"><div id="master-canvas" class="master-canvas"></div></div>
+                </div>
+                <button
+                  type="button"
+                  id="master-minimap"
+                  class="master-minimap"
+                  aria-label="Map overview: click a position, or press Enter to go to the centre"
+                >
+                  <span class="tiny">Your position</span><svg id="master-minimap-svg" aria-hidden="true"></svg>
+                </button>
+                <div class="master-hint tiny">Scroll or drag empty space · / to find · + / − to zoom</div>
+              </div>
+              <aside class="master-inspector" id="master-inspector" aria-label="Selected workflow step" hidden>
+                <div class="row between">
+                  <b class="small">Selected step</b
+                  ><button class="btn small" type="button" id="master-close" aria-label="Close step details">
+                    Close
+                  </button>
+                </div>
+                <div class="master-detail" id="master-detail" aria-live="polite"></div>
+                <button class="btn" type="button" id="master-read-selected">Read this step on the map</button>
+              </aside>
+            </div>
+          </section>
           <section id="view-overall" class="panel" aria-labelledby="overall-title">
             <div class="row between">
               <div>
@@ -1167,53 +1589,6 @@
               This is the original prototype workflow, not a compulsory clinical route. The Care map retains the broader
               WA pathways, including community alternatives and shared care.
             </p>
-          </section>
-          <section id="view-master" class="panel" hidden aria-labelledby="master-title">
-            <h2 id="master-title" tabindex="-1">The original master map</h2>
-            <p class="small muted" id="master-description"></p>
-            <div class="toolbar">
-              <div class="field grow">
-                <label for="master-search">Find a box in the master map</label
-                ><input id="master-search" type="search" placeholder="Try transport, leave, referral or discharge…" />
-              </div>
-              <button class="btn" type="button" id="master-find">Go to match</button
-              ><span class="small muted" id="master-matches" role="status"></span>
-            </div>
-            <div class="row">
-              <button class="btn" type="button" data-master-zoom="width">Fit width</button
-              ><button class="btn" type="button" data-master-zoom="whole">Whole map</button
-              ><button class="btn" type="button" data-master-zoom="readable">Readable size</button
-              ><button class="btn" type="button" data-master-zoom="out" aria-label="Zoom out of master map">−</button
-              ><span id="master-zoom-label" class="master-zoom-label small" aria-live="polite"></span
-              ><button class="btn" type="button" data-master-zoom="in" aria-label="Zoom into master map">+</button>
-            </div>
-            <details style="margin-top: 16px">
-              <summary>Symbols and connecting lines</summary>
-              <div class="symbol-legend" id="master-legend"></div>
-              <p class="small">
-                Solid arrows continue the route; dotted lines are automatic consequences in this source snapshot; dashed
-                lines mark the original special links. Double arrows return. A bar marks an ending. Purple dashed arrows
-                are added audit connections; select either box for the condition. Other historical findings remain
-                unvalidated.
-              </p>
-              <label class="small"
-                ><input id="master-audit-toggle" type="checkbox" checked /> Show added audit connections</label
-              >
-            </details>
-            <div class="master-detail" id="master-detail" aria-live="polite"></div>
-            <p class="tiny muted">
-              Scroll inside the map to move around. “Readable size” makes box labels larger; “Whole map” shows the
-              complete shape. Search highlights boxes without removing any branches.
-            </p>
-            <div
-              class="master-viewport"
-              id="master-viewport"
-              tabindex="0"
-              role="region"
-              aria-label="Scrollable original master map"
-            >
-              <div id="master-stage" class="master-stage"><div id="master-canvas" class="master-canvas"></div></div>
-            </div>
           </section>
           <section id="view-map" class="panel" hidden aria-labelledby="map-title">
             <div class="toolbar">
@@ -1328,7 +1703,7 @@
       const sourceById = new Map(DATA.sources.map((source) => [source.id, source]));
       const interactionById = new Map(DATA.interactions.map((interaction) => [interaction.id, interaction]));
       const state = {
-        view: "overall",
+        view: "master",
         node: null,
         edge: null,
         query: "",
@@ -1338,6 +1713,7 @@
         journey: ["home"],
         journeyEdges: [],
         masterNode: null,
+        masterDetailsOpen: false,
         masterQuery: "",
         masterMatch: null,
         masterZoom: "width",
@@ -1348,7 +1724,7 @@
           (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
         );
       const nodeName = (id) => nodeById.get(id).label;
-      const basis = (edge) => (edge.basis === "documented" ? "WA pathway family" : "Design connection");
+      const basis = (edge) => (edge.basis === "documented" ? "Documented WA family" : "Proposed connection");
       const kindName = (node) =>
         ({
           location: "Physical setting",
@@ -1361,7 +1737,7 @@
           endpoint: "Episode outcome",
         })[node.kind];
       const tags = (edge) =>
-        `<span class="tag ${edge.basis === "design" ? "design" : ""}">${basis(edge)}</span>${edge.auditAdded ? '<span class="tag">Added in audit</span>' : ""}`;
+        `<span class="tag ${edge.basis === "design" ? "design" : ""}">${basis(edge)}</span>${edge.reviewAdded ? '<span class="tag">Added 13 Oct</span>' : edge.auditAdded ? '<span class="tag">Added 8 Oct</span>' : ""}`;
       const announce = (message) => {
         $("#announcement").textContent = message;
       };
@@ -1369,7 +1745,7 @@
         [...new Set(ids)]
           .map((id) => {
             const source = sourceById.get(id);
-            return `<a class="source-link" href="${escape(source.url)}" target="_blank" rel="noopener noreferrer">${escape(source.title)} ↗</a><p class="source-warning">${escape(source.limitation)}</p>`;
+            return `<a class="source-link" href="${escape(source.url)}" target="_blank" rel="noopener noreferrer">${escape(source.title)} ↗</a><p class="source-warning">${escape(source.limitation)}</p>${(source.relatedUrls || []).map((ref) => `<a class="source-link" href="${escape(ref.url)}" target="_blank" rel="noopener noreferrer">${escape(ref.title)} ↗</a>`).join("")}`;
           })
           .join("");
       function updateHash() {
@@ -1382,6 +1758,8 @@
       function view(next, focus = true) {
         if ($("#mobile-details").open) $("#mobile-details").close();
         state.view = next;
+        document.body.classList.toggle("master-mode", next === "master");
+        if (next !== "master") setMasterFocus(false);
         $("#workspace").classList.toggle("wide", ["overall", "master"].includes(next));
         document
           .querySelectorAll("[data-view]")
@@ -1390,8 +1768,14 @@
           (id) => ($("#view-" + id).hidden = id !== next),
         );
         if (next === "master") {
+          const showInspector = state.masterDetailsOpen && state.masterNode && innerWidth >= 850;
+          $("#master-inspector").hidden = !showInspector;
+          $("#master-layout").classList.toggle("has-inspector", !!showInspector);
           renderMaster();
-          requestAnimationFrame(scaleMaster);
+          requestAnimationFrame(() => {
+            sizeMasterSurface();
+            scaleMaster();
+          });
         }
         if (next === "map") renderMap();
         if (next === "journey") {
@@ -1426,6 +1810,7 @@
               'id="detail-heading"',
               'id="mobile-detail-heading"',
             );
+            $("#mobile-details").setAttribute("aria-label", "Connection details");
             if (!$("#mobile-details").open) $("#mobile-details").showModal();
           } else $("#detail-heading").focus({ preventScroll: true });
         }
@@ -1510,7 +1895,7 @@
           `<div class="overall-lanes"><div class="overall-side">${side("stall", "Stalls and returns", "Waiting, refusals, cancellations and reversals branch away from the main line. Many return to an earlier step.")}${side("end", "A pathway can end early", "Withdrawal, declined care and other endings do not require reaching a ward. Each ending stays visible on the master map.")}<button type="button" class="btn" data-view="master">See every branch</button></div><div class="overall-spine">${steps.map((row) => masterButton(...row)).join('<div class="overall-arrow" aria-hidden="true">↓</div>')}<div class="overall-arrow" aria-hidden="true">↙ &nbsp;&nbsp;&nbsp; ↘</div><div class="overall-split">${masterButton("personLeaves", "8a · The person leaves", "Departure, destination and continuity of care.")}${masterButton("bedReleased", "8b · The bed is released", "A separate named record in the prototype.")}</div><p class="tiny muted">The two final tracks are shown separately; neither is a clinical rule for automatic bed release.</p></div><div class="overall-side">${side("diversion", "Other destinations", "Transfers, repatriation, emergency reassessment and other diversions continue somewhere else.")}${side("record", "Alongside the journey", "Clinical, legal, transport and support records may coexist with the person's actual location.")}${side("absent", "Historic gaps stay visible", "The original open circles and warning symbols are retained as source findings, not freshly verified defects.")}<button type="button" class="btn" data-view="map">Explore the wider WA care map</button></div></div>`;
       }
       function scaleMaster() {
-        if (state.view !== "master") return;
+        if (state.view !== "master") return 1;
         const stages = DATA.prototype.stages;
         const viewport = $("#master-viewport");
         let zoom = state.masterZoom;
@@ -1522,18 +1907,18 @@
         $("#master-stage").style.width = `${stages.width * zoom}px`;
         $("#master-stage").style.height = `${stages.height * zoom}px`;
         $("#master-zoom-label").textContent = `${Math.round(zoom * 100)}%`;
+        updateMinimap();
         return zoom;
       }
       function renderMasterDetail() {
         const selected = masterById.get(state.masterNode);
         if (!selected) {
-          $("#master-detail").innerHTML =
-            '<b>Choose any box to read it.</b><p class="small muted">All original branches, symbols and connecting lines remain on the map. This is a retained source snapshot; current app behaviour and historical findings are not revalidated here.</p>';
+          $("#master-detail").innerHTML = "";
           return;
         }
-        const neighbours = (incoming) =>
+        const connected = (incoming) =>
           masterDirected
-            .filter((e) => (incoming ? e.to : e.from) === selected.id)
+            .filter((e) => (incoming ? e.to : e.from) === selected.id && e.from !== e.to)
             .map((e) => masterById.get(incoming ? e.from : e.to))
             .filter(Boolean);
         const list = (nodes) =>
@@ -1541,17 +1926,19 @@
             .map(
               (n) => `<button class="btn small" type="button" data-master-node="${n.id}">${escape(n.label)}</button>`,
             )
-            .join(" ") || '<span class="small muted">None in this snapshot.</span>';
+            .join(" ") || '<p class="tiny muted">No direct connector in this source map.</p>';
         const actions = DATA.prototype.actionRecords.filter((a) => a.nodes?.includes(selected.id));
         const additions = DATA.audit.masterAdditions.filter((e) => e.from === selected.id || e.to === selected.id);
         const gaps = DATA.audit.masterGaps.filter((g) => g.node === selected.id);
+        const current = DATA.review?.comparisons.find((row) => row.nodes.includes(selected.id));
+        const wa = DATA.review?.waLinks[selected.id];
         $("#master-detail").innerHTML =
-          `<h3 class="symbol-row">${symbol(selected.lane)}${escape(selected.label)}</h3>${selected.sub ? `<p class="small">${escape(selected.sub)}</p>` : ""}<p class="tiny muted">Original source wording. ${escape(masterLanes[selected.lane]?.[1] || "Map heading")} · ${escape(selected.id)}</p>${selected.patient ? `<p class="small"><b>Person:</b> ${escape(selected.patient)}</p>` : ""}${selected.bed ? `<p class="small"><b>Bed:</b> ${escape(selected.bed)}</p>` : ""}${additions.map((e) => `<details ${additions.length === 1 ? "open" : ""}><summary>Added connection: ${escape(e.label)}</summary><p class="small">${escape(e.condition)}</p><p class="small"><b>Action owner:</b> ${escape((DATA.prototype.actionRecords.find((a) => a.event === e.event)?.roles || []).map((role) => ({ ed: "ED clinician", ward: "ward team", coordinator: "flow coordinator", referrer: "referrer" })[role] || role).join(", "))}. The receiving service separately confirms its decision.</p><p class="tiny muted">Source event ${escape(e.event)} · ${escape(e.source)}</p><div class="row">${list([masterById.get(e.from), masterById.get(e.to)])}</div></details>`).join("")}${gaps.map((g) => `<div class="gap"><b>${escape(g.title)}</b><p class="small">${escape(g.detail)}</p></div>`).join("")}<details><summary>Connected boxes and source actions · ${actions.length} action records</summary><p class="small"><b>Incoming:</b></p><div class="row">${list(neighbours(true))}</div><p class="small"><b>Onward:</b></p><div class="row">${list(neighbours(false))}</div><p class="small muted">Includes the return direction of existing double arrows and the identified audit continuations. WA care-map links have separately researched conditions.</p>${actions.length ? `<h4>Catalogued actions at this box</h4><ul class="small">${actions.map((a) => `<li>${escape(a.name)} <span class="tiny muted">(${escape(a.event)})</span></li>`).join("")}</ul>` : ""}</details>`;
+          `<h3 class="symbol-row">${symbol(selected.lane)}${escape(selected.label)}</h3>${current ? `<div class="comparison-note"><span class="tag">${escape(current.status)}</span><p class="small">${escape(current.finding)}</p><p class="tiny muted">Reviewed ${escape(DATA.review.date)} · ${escape(current.limit)}</p></div>` : '<p class="tiny muted">Prototype source snapshot. This step has not been individually revalidated in the deployed app.</p>'}${wa ? `<button class="btn" type="button" data-node="${wa}">Explore related WA care pathways</button>` : ""}${current?.route ? `<p class="small"><a href="${escape(DATA.review.comparedWith.deployedUrl + current.route)}" target="_blank" rel="noopener noreferrer">Open the corresponding live screen ↗</a></p>` : ""}${selected.sub ? `<details ${current ? "" : "open"}><summary>${current ? "Original source wording" : "What happens here"}</summary><p class="small">${escape(selected.sub)}</p></details>` : ""}${selected.patient ? `<p class="small"><b>Person:</b> ${escape(selected.patient)}</p>` : ""}${selected.bed ? `<p class="small"><b>Bed:</b> ${escape(selected.bed)}</p>` : ""}<h4>Connected steps</h4><p class="tiny muted">Incoming</p><div class="row">${list(connected(true))}</div><p class="tiny muted">Onward / return</p><div class="row">${list(connected(false))}</div>${additions.map((e) => `<details><summary>Added connection · ${escape(e.label)}</summary><p class="small">${escape(e.condition)}</p><p class="tiny muted">${escape(e.event)} · ${escape(e.source)}</p></details>`).join("")}${actions.length ? `<h4>People, decisions and handover</h4>${actions.map((action) => `<details><summary>${escape(action.name)}</summary><p class="small"><b>Who:</b> ${escape(action.roles.map((role) => ({ ed: "ED clinician", ward: "ward team", coordinator: "flow coordinator", officer: "transport officer", referrer: "referrer" })[role] || role).join(", "))}</p><p class="small">${escape(action.does || "")}</p>${action.needs ? `<p class="small"><b>Before:</b> ${escape(action.needs)}</p>` : ""}${action.changes ? `<p class="small"><b>Result:</b> ${escape(action.changes)}</p>` : ""}${action.refuses?.length ? `<p class="small"><b>If it cannot proceed:</b> ${escape(action.refuses.map((r) => r.when).join("; "))}</p>` : ""}</details>`).join("")}` : ""}${gaps.map((g) => `<details><summary>Review gap · ${escape(g.title)}</summary><p class="small">${escape(g.detail)}</p></details>`).join("")}<p class="tiny muted">${escape(selected.id)} · ${escape(masterLanes[selected.lane]?.[1] || "Map note")}. Self-loops are record annotations, not a compulsory patient move.</p>`;
       }
       function renderMaster() {
         const { nodes, edges, width, height } = DATA.prototype.stages;
         $("#master-description").textContent =
-          `All ${nodes.length} original boxes and ${edges.length} original connecting paths retained, plus ${DATA.audit.masterAdditions.length} audit connections. Every box, symbol, position and lane colour is preserved.`;
+          `All ${nodes.length} original boxes · ${edges.length} original paths · ${DATA.audit.masterAdditions.length} audited continuations. Blue dots mark the current review; other wording retains the earlier workflow snapshot. Select a step for details.`;
         $("#master-legend").innerHTML = Object.entries(masterLanes)
           .map(([lane, spec]) => `<span>${symbol(lane)}${spec[1]}</span>`)
           .join("");
@@ -1579,7 +1966,7 @@
         const lines = edges
           .map((e) => {
             const lane = masterLanes[e.lane] ? e.lane : "expected";
-            return `<path class="master-edge" d="${escape(e.d)}" fill="none" stroke="${masterColour(lane)}" stroke-width="${["expected", "seam"].includes(lane) ? 2.6 : lane === "record" ? 1.3 : 1.7}" stroke-linecap="round" ${e.dashed ? 'stroke-dasharray="7 5"' : e.auto ? 'stroke-dasharray="1.5 4"' : ""} ${e.terminal || ends.has(e.to) ? `marker-end="url(#master-bar-${lane})"` : e.arrow !== false ? `marker-end="url(#master-arrow-${lane})"` : ""} ${e.both ? `marker-start="url(#master-arrow-${lane})"` : ""}>${e.note ? `<title>${escape(e.note)}</title>` : ""}</path>`;
+            return `<path class="master-edge" data-from="${e.from}" data-to="${e.to}" d="${escape(e.d)}" fill="none" stroke="${masterColour(lane)}" stroke-width="${["expected", "seam"].includes(lane) ? 2.6 : lane === "record" ? 1.3 : 1.7}" stroke-linecap="round" ${e.dashed ? 'stroke-dasharray="7 5"' : e.auto ? 'stroke-dasharray="1.5 4"' : ""} ${e.terminal || ends.has(e.to) ? `marker-end="url(#master-bar-${lane})"` : e.arrow !== false ? `marker-end="url(#master-arrow-${lane})"` : ""} ${e.both ? `marker-start="url(#master-arrow-${lane})"` : ""}>${e.note ? `<title>${escape(e.note)}</title>` : ""}</path>`;
           })
           .join("");
         const canvas = $("#master-canvas");
@@ -1596,15 +1983,17 @@
               e.from === "edToCommunity"
                 ? `M ${a.x} ${ay} H 1248 V 1436 H 546 V ${by} H ${bx}`
                 : `M ${ax} ${ay} H ${e.channel} V ${by} H ${bx}`;
-            return `<path class="master-audit-edge" data-audit-id="${e.id}" d="${d}" fill="none" stroke="#7b4a95" stroke-width="2" stroke-dasharray="10 4 2 4" marker-end="url(#master-audit-arrow)"><title>${escape(e.label + ": " + e.condition)}</title></path>`;
+            return `<path class="master-audit-edge" data-from="${e.from}" data-to="${e.to}" data-audit-id="${e.id}" d="${d}" fill="none" stroke="#7b4a95" stroke-width="2" stroke-dasharray="10 4 2 4" marker-end="url(#master-audit-arrow)"><title>${escape(e.label + ": " + e.condition)}</title></path>`;
           })
           .join("");
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
-        canvas.innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true" style="position:absolute;left:0;top:0"><defs>${defs}<marker id="master-audit-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#7b4a95"/></marker></defs>${masks}${lines}<g id="master-audit-overlay">${auditLines}</g></svg>${nodes.map((n) => `<${n.lane === "heading" ? "div" : "button"} ${n.lane === "heading" ? "" : `type="button" data-master-node="${n.id}" aria-label="Read original box: ${escape(n.label)}"`} class="master-node" data-lane="${n.lane}" data-original-id="${n.id}" aria-current="${n.id === state.masterNode}" style="--lane:${masterColour(n.lane)};left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px">${symbol(n.lane)}<b>${escape(n.label)}</b>${n.sub ? `<small>${escape(n.sub)}</small>` : ""}</${n.lane === "heading" ? "div" : "button"}>`).join("")}`;
+        canvas.innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true" style="position:absolute;left:0;top:0"><defs>${defs}<marker id="master-audit-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#7b4a95"/></marker></defs>${masks}${lines}<g id="master-audit-overlay">${auditLines}</g></svg>${nodes.map((n) => `<${n.lane === "heading" ? "div" : "button"} ${n.lane === "heading" ? "" : `type="button" data-master-node="${n.id}" aria-label="Read workflow step: ${escape(n.label)}"`} class="master-node" data-lane="${n.lane}" data-original-id="${n.id}" aria-current="${n.id === state.masterNode}" style="--lane:${masterColour(n.lane)};left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px">${symbol(n.lane)}<b>${escape(n.label)}</b>${n.sub ? `<small>${escape(DATA.review?.displayOverrides[n.id] || n.sub)}</small>` : ""}${DATA.review?.comparisons.some((row) => row.nodes.includes(n.id)) ? '<span class="review-dot" title="Current project review note available" aria-label="Current project review note available"></span>' : ""}</${n.lane === "heading" ? "div" : "button"}>`).join("")}`;
         $("#master-audit-overlay").style.display = $("#master-audit-toggle").checked ? "" : "none";
         updateMasterMatches();
         renderMasterDetail();
+        renderMinimap();
+        highlightMaster();
       }
       $("#master-audit-toggle").addEventListener("change", () => {
         $("#master-audit-overlay").style.display = $("#master-audit-toggle").checked ? "" : "none";
@@ -1614,49 +2003,250 @@
             : "Original connecting paths shown alone.",
         );
       });
+      const normaliseSearch = (value) => String(value).normalize("NFKC").replace(/\s+/gu, " ").trim().toLowerCase();
       function updateMasterMatches() {
-        const query = state.masterQuery.trim().toLowerCase();
+        const query = normaliseSearch(state.masterQuery);
         let matches = 0;
         for (const node of DATA.prototype.stages.nodes) {
-          const match = !!query && `${node.label} ${node.sub || ""} ${node.id}`.toLowerCase().includes(query);
+          const match =
+            !!query &&
+            query
+              .split(" ")
+              .every((term) =>
+                normaliseSearch(
+                  `${node.label} ${node.sub || ""} ${node.id} ${DATA.review?.displayOverrides[node.id] || ""}`,
+                ).includes(term),
+              );
           $(`[data-original-id="${node.id}"]`)?.classList.toggle("match", match);
           if (match) matches++;
         }
-        $("#master-matches").textContent = query ? `${matches} matching boxes` : "All original boxes shown";
+        $("#master-matches").textContent = query ? `${matches} matches` : `${DATA.prototype.nodes} boxes`;
       }
       function selectMaster(id) {
         if (!masterById.has(id)) return;
+        const previousZoom = state.view === "master" ? scaleMaster() : null;
         state.masterNode = id;
-        state.masterZoom = 1;
+        state.masterDetailsOpen = true;
+        if (previousZoom !== null) state.masterZoom = previousZoom;
+        const scroll = { left: $("#master-viewport").scrollLeft, top: $("#master-viewport").scrollTop };
         view("master", false);
-        scaleMaster();
+        if (innerWidth >= 850) {
+          $("#master-inspector").hidden = false;
+          $("#master-layout").classList.add("has-inspector");
+        }
+        const zoom = scaleMaster();
+        $("#master-viewport").scrollTo(scroll);
+        centreMaster(id, zoom);
         const box = $(`[data-original-id="${id}"]`);
-        box.scrollIntoView({ block: "center", inline: "center" });
         box.focus({ preventScroll: true });
-        announce(`Original master map: ${masterById.get(id).label}`);
+        if (innerWidth < 850) {
+          $("#mobile-detail-body").innerHTML = $("#master-detail").innerHTML;
+          $("#mobile-details").setAttribute("aria-label", "Selected workflow step");
+          $("#mobile-details").showModal();
+        }
+        announce(`${masterById.get(id).label}. Step details opened without changing zoom.`);
       }
       $("#master-search").addEventListener("input", (event) => {
         state.masterQuery = event.target.value;
         state.masterMatch = null;
         updateMasterMatches();
       });
-      const findMaster = () => {
-        const query = state.masterQuery.trim().toLowerCase();
+      const findMaster = (direction = 1) => {
+        const query = normaliseSearch(state.masterQuery);
         const matches = [...document.querySelectorAll(".master-node.match")].sort(
           (a, b) =>
-            Number(masterById.get(b.dataset.originalId).label.toLowerCase().includes(query)) -
-            Number(masterById.get(a.dataset.originalId).label.toLowerCase().includes(query)),
+            Number(normaliseSearch(masterById.get(b.dataset.originalId).label).includes(query)) -
+            Number(normaliseSearch(masterById.get(a.dataset.originalId).label).includes(query)),
         );
         const index = matches.findIndex((box) => box.dataset.originalId === state.masterMatch);
-        const match = matches[(index + 1) % matches.length];
+        const match =
+          matches[
+            index < 0 ? (direction > 0 ? 0 : matches.length - 1) : (index + direction + matches.length) % matches.length
+          ];
         if (match) {
           state.masterMatch = match.dataset.originalId;
           selectMaster(match.dataset.originalId);
         } else announce("No matching master-map box.");
       };
-      $("#master-find").addEventListener("click", findMaster);
+      $("#master-find").addEventListener("click", () => findMaster(1));
+      $("#master-previous").addEventListener("click", () => findMaster(-1));
       $("#master-search").addEventListener("keydown", (event) => {
         if (event.key === "Enter") findMaster();
+      });
+      let masterActualZoom = 1;
+      function sizeMasterSurface() {
+        if (state.view !== "master") return;
+        const viewport = $("#master-viewport");
+        const bottom = $("#view-master").classList.contains("focus-mode") ? 30 : 66;
+        const height = Math.max(280, innerHeight - viewport.getBoundingClientRect().top - bottom);
+        viewport.style.height = `${height}px`;
+        $("#master-inspector").style.maxHeight = `${height}px`;
+      }
+      function centreMaster(id, zoom = scaleMaster()) {
+        const n = masterById.get(id),
+          viewport = $("#master-viewport");
+        viewport.scrollTo({
+          left: (n.x + n.w / 2) * zoom - viewport.clientWidth / 2,
+          top: (n.y + n.h / 2) * zoom - viewport.clientHeight / 2,
+        });
+        updateMinimap();
+      }
+      function zoomMaster(mode) {
+        const viewport = $("#master-viewport"),
+          previous = scaleMaster();
+        const centre = {
+          x: (viewport.scrollLeft + viewport.clientWidth / 2) / previous,
+          y: (viewport.scrollTop + viewport.clientHeight / 2) / previous,
+        };
+        state.masterZoom =
+          mode === "readable"
+            ? 1
+            : mode === "in" || mode === "out"
+              ? Math.max(0.06, Math.min(2, previous + (mode === "in" ? 0.15 : -0.15)))
+              : mode;
+        const zoom = scaleMaster();
+        if (mode === "whole") viewport.scrollTo({ left: 0, top: 0 });
+        else if (mode === "readable" && state.masterNode) centreMaster(state.masterNode, zoom);
+        else
+          viewport.scrollTo({
+            left: centre.x * zoom - viewport.clientWidth / 2,
+            top: centre.y * zoom - viewport.clientHeight / 2,
+          });
+        updateMinimap();
+      }
+      function renderMinimap() {
+        const { nodes, width, height } = DATA.prototype.stages;
+        $("#master-minimap-svg").setAttribute("viewBox", `0 0 ${width} ${height}`);
+        $("#master-minimap-svg").innerHTML =
+          nodes
+            .filter((n) => n.lane !== "heading")
+            .map(
+              (n) =>
+                `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${masterColour(n.lane)}" opacity=".5"/>`,
+            )
+            .join("") + '<rect id="master-mini-position" fill="#17635e26" stroke="#17635e" stroke-width="28"/>';
+        updateMinimap();
+      }
+      function updateMinimap() {
+        const rect = $("#master-mini-position"),
+          viewport = $("#master-viewport");
+        if (!rect || state.view !== "master") return;
+        const match = $("#master-canvas").style.transform.match(/[0-9.]+/);
+        const zoom = match ? Number(match[0]) : 1;
+        masterActualZoom = zoom;
+        for (const [key, value] of Object.entries({
+          x: viewport.scrollLeft / zoom,
+          y: viewport.scrollTop / zoom,
+          width: Math.min(viewport.clientWidth / zoom, DATA.prototype.stages.width),
+          height: Math.min(viewport.clientHeight / zoom, DATA.prototype.stages.height),
+        }))
+          rect.setAttribute(key, value);
+      }
+      function highlightMaster() {
+        const enabled = $("#master-highlight-toggle").checked && !!state.masterNode;
+        for (const edge of document.querySelectorAll(".master-edge,.master-audit-edge"))
+          edge.classList.toggle(
+            "unselected-edge",
+            enabled && edge.dataset.from !== state.masterNode && edge.dataset.to !== state.masterNode,
+          );
+      }
+      function closeMasterInspector() {
+        state.masterDetailsOpen = false;
+        $("#master-inspector").hidden = true;
+        $("#master-layout").classList.remove("has-inspector");
+        scaleMaster();
+        if (state.masterNode) $(`[data-original-id="${state.masterNode}"]`)?.focus({ preventScroll: true });
+      }
+      function setMasterFocus(enabled) {
+        $("#view-master").classList.toggle("focus-mode", enabled);
+        $("#master-focus").setAttribute("aria-pressed", String(enabled));
+        $("#master-focus").textContent = enabled ? "Exit focus view" : "Focus map";
+        document.body.classList.toggle("map-focus-open", enabled);
+        requestAnimationFrame(() => {
+          sizeMasterSurface();
+          scaleMaster();
+        });
+      }
+      $("#master-focus").addEventListener("click", () =>
+        setMasterFocus(!$("#view-master").classList.contains("focus-mode")),
+      );
+      $("#master-close").addEventListener("click", closeMasterInspector);
+      $("#master-read-selected").addEventListener("click", () => zoomMaster("readable"));
+      $("#master-highlight-toggle").addEventListener("change", highlightMaster);
+      $("#master-minimap-toggle").addEventListener("change", () => {
+        $("#master-minimap").hidden = !$("#master-minimap-toggle").checked;
+      });
+      $("#master-viewport").addEventListener("scroll", updateMinimap, { passive: true });
+      $("#master-jump").addEventListener("change", (event) => {
+        const id =
+          event.target.value === "parallel"
+            ? DATA.prototype.stages.nodes.find((n) => n.lane === "record").id
+            : event.target.value;
+        if (masterById.has(id)) {
+          centreMaster(id);
+          $("#master-viewport").focus({ preventScroll: true });
+          announce(`Map moved to ${masterById.get(id).label}.`);
+        }
+        event.target.value = "";
+      });
+      $("#master-minimap").addEventListener("click", (event) => {
+        const r = $("#master-minimap-svg").getBoundingClientRect(),
+          { width, height } = DATA.prototype.stages;
+        const x = event.detail === 0 ? width / 2 : ((event.clientX - r.left) / r.width) * width,
+          y = event.detail === 0 ? height / 2 : ((event.clientY - r.top) / r.height) * height;
+        const viewport = $("#master-viewport");
+        viewport.scrollTo({
+          left: x * masterActualZoom - viewport.clientWidth / 2,
+          top: y * masterActualZoom - viewport.clientHeight / 2,
+        });
+      });
+      let pan = null;
+      $("#master-viewport").addEventListener("pointerdown", (event) => {
+        if (event.button !== 0 || event.pointerType === "touch" || event.target.closest("button")) return;
+        const viewport = $("#master-viewport");
+        pan = { x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop };
+        viewport.setPointerCapture(event.pointerId);
+        viewport.classList.add("panning");
+      });
+      $("#master-viewport").addEventListener("pointermove", (event) => {
+        if (!pan) return;
+        $("#master-viewport").scrollTo({
+          left: pan.left - event.clientX + pan.x,
+          top: pan.top - event.clientY + pan.y,
+        });
+      });
+      for (const event of ["pointerup", "pointercancel"])
+        $("#master-viewport").addEventListener(event, () => {
+          pan = null;
+          $("#master-viewport").classList.remove("panning");
+        });
+      document.addEventListener("keydown", (event) => {
+        if (state.view === "master" && event.key === "Escape" && !$("#mobile-details").open) {
+          if ($("#view-master").classList.contains("focus-mode")) setMasterFocus(false);
+          else closeMasterInspector();
+          return;
+        }
+        if (
+          state.view !== "master" ||
+          $("#mobile-details").open ||
+          event.target.matches("input,textarea,select") ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.altKey
+        )
+          return;
+        if (event.key === "/") {
+          event.preventDefault();
+          $("#master-search").focus();
+        }
+        if (["+", "=", "-"].includes(event.key)) {
+          event.preventDefault();
+          zoomMaster(event.key === "-" ? "out" : "in");
+        }
+        if (event.key === "Escape") {
+          if ($("#view-master").classList.contains("focus-mode")) setMasterFocus(false);
+          else closeMasterInspector();
+        }
       });
       function card(node) {
         return `<button type="button" class="place" data-node="${node.id}"><b>${escape(node.label)}</b><small>${kindName(node)}</small></button>`;
@@ -1765,7 +2355,7 @@
           )
           .join("");
         $("#review-body").innerHTML =
-          `<details open><summary>Connection audit · ${DATA.audit.addedLinks} added WA links · ${DATA.audit.masterAdditions.length} added master connections</summary><p class="small">${DATA.audit.baselineLinks} previous links retained; ${DATA.audit.totalLinks} now explicit. The layout and original map geometry are unchanged.</p>${DATA.audit.findings.map((finding) => `<p class="small">${escape(finding)}</p>`).join("")}<p class="small">Static catalogue check: ${DATA.audit.eventCoverage.roles} role entries and ${DATA.audit.eventCoverage.cases} distinct reducer case labels; ${DATA.audit.eventCoverage.unmappedRoles.length} uncatalogued role entries, ${DATA.audit.eventCoverage.unmappedCases.length} uncatalogued case labels. ${escape(DATA.audit.eventCoverage.method)}</p><h3>Check any pair</h3><p class="small muted">Every ordered pair has a disposition. Unconfirmed direct routes remain unconfirmed; a graph example does not authorise a patient journey.</p><div class="row audit-pair-controls"><label>From <select id="pair-from" aria-label="Audit origin">${DATA.nodes.map((n) => `<option value="${n.id}">${escape(n.label)}</option>`).join("")}</select></label><label>To <select id="pair-to" aria-label="Audit destination">${DATA.nodes.map((n) => `<option value="${n.id}">${escape(n.label)}</option>`).join("")}</select></label></div><div id="pair-result" class="source-card" aria-live="polite"></div><button class="btn" type="button" id="download-added">Download added links CSV</button> <button class="btn" type="button" id="download-master">Download master connections CSV</button><h3 style="margin-top:18px">Connections still requiring confirmation</h3>${DATA.audit.unresolved.map((gap) => `<div class="gap">${escape(gap)}</div>`).join("")}</details><div class="grid2">${cards}</div><details><summary>Review findings and remaining gaps</summary><p class="small">The older diagram focuses on prototype referrals, bed search, transport and admission actions. This model adds the wider care settings, re-entry loops, non-hospital alternatives and explicit boundaries. It separates physical movement from shared care and administrative outcomes.</p>${DATA.gaps.map((gap) => `<div class="gap">${escape(gap)}</div>`).join("")}</details><details><summary>Every mapped way into care · ${DATA.entryRoutes.length} entry families</summary><div class="scroll-table"><table><thead><tr><th>Entry</th><th>People involved</th><th>Assessment / route</th></tr></thead><tbody>${DATA.entryRoutes.map((entry) => `<tr><td>${escape(entry.label)}</td><td>${escape(entry.actors)}</td><td>${escape(entry.route)}<br />${entry.sourceIds.map((id) => `<a href="${escape(sourceById.get(id).url)}" target="_blank" rel="noopener noreferrer">${escape(sourceById.get(id).title)}</a>`).join(" · ")}</td></tr>`).join("")}</tbody></table></div></details><details><summary>Legal status and care decisions · ${DATA.legalTransitions.length} decision families</summary><p class="small muted">A design checklist of decisions to verify. Full current statutory text and local legal procedures were not audited; this is not a legal algorithm.</p>${DATA.legalTransitions.map((row) => `<div class="source-card"><h3>${escape(row.trigger)}</h3><p>${escape(row.options)}</p><p class="muted">${escape(row.condition)}</p></div>`).join("")}</details><details><summary>When the planned pathway changes · ${DATA.exceptions.length} exception families</summary>${DATA.exceptions.map((row) => `<div class="source-card"><h3>${escape(row.label)}</h3><p>${escape(row.response)}</p></div>`).join("")}</details><details><summary>Interaction checklists · ${DATA.interactions.length} kinds</summary>${DATA.interactions.map((i) => `<div class="source-card"><h3>${escape(i.title)}</h3><ol class="small">${i.steps.map((s) => `<li>${escape(s)}</li>`).join("")}</ol><p class="tiny muted">Possible failures: ${escape(i.failures.join(" · "))}</p></div>`).join("")}</details><details><summary>WA source register · ${DATA.sources.length} references</summary><p class="small muted">Source access dates refer to this review. Public pages, historic publications and search excerpts have different evidence limits, recorded below.</p>${DATA.sources.map((s) => `<article class="source-card"><h3><a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">${escape(s.title)} ↗</a></h3><p>${escape(s.finding)}</p><p class="source-warning">${escape(s.limitation)}</p><span class="tiny muted">${escape(s.id)} · checked ${escape(s.checked)}</span></article>`).join("")}</details><details><summary>Prototype reference and reproducibility</summary><p class="small">Existing source snapshot: ${DATA.prototype.nodes} map boxes, ${DATA.prototype.actions} listed actions and ${DATA.prototype.machines} state-machine diagrams. Counts describe those source files, not all current executable engine events.</p><p class="small muted">${escape(DATA.prototype.status)}. The original explorer is preserved. This broader WA map is not installed into the Ward Flow app.</p><p class="tiny muted">Base ${escape(DATA.provenance.base)}<br />Branch ${escape(DATA.provenance.branch)}<br />Inputs SHA-256 ${escape(DATA.provenance.inputHash)}</p></details>`;
+          `<details open id="latest-review"><summary>Current project &amp; pathway review · ${DATA.review.date}</summary><p class="small">This review adds ${DATA.review.addedNodes} care categories and ${DATA.review.addedLinks} conditioned links: ${DATA.review.documentedAdditions} documented families and ${DATA.review.designAdditions} proposals. All ${DATA.review.previousLinks} previous links and all original master-map geometry remain.</p><p class="small">${escape(DATA.review.research.scope)}</p><p class="tiny muted">Deployed UI was inspected directly. Current local source: ${escape(DATA.review.comparedWith.localBranch)} @ ${escape(DATA.review.comparedWith.localHead)} with existing dirty work preserved. ${escape(DATA.review.comparedWith.deployedRevision)}.</p><p class="small">${escape(DATA.review.comparedWith.focusedTests)}</p><h3>Wireframe compared with the project</h3>${DATA.review.comparisons.map((row) => `<article class="source-card"><span class="tag">${escape(row.status)}</span><h4>${escape(row.priority)}</h4><p class="small">${escape(row.finding)}</p><p class="tiny muted">${escape(row.limit)}</p><div class="row">${row.nodes.map((id) => `<button class="btn small" type="button" data-master-node="${id}">${escape(masterById.get(id).label)}</button>`).join("")}</div></article>`).join("")}<h3>WA pathway improvements</h3>${DATA.review.research.findings.map((finding) => `<p class="small">${escape(finding)}</p>`).join("")}<h3>Still needs confirmation</h3>${DATA.review.research.gaps.map((gap) => `<div class="gap">${escape(gap)}</div>`).join("")}<button class="btn" type="button" id="download-latest">Download this review's ${DATA.review.addedLinks} links CSV</button></details><details><summary>Connection register · ${DATA.audit.totalLinks} WA links · ${DATA.audit.masterAdditions.length} added workflow connections</summary><p class="small">${DATA.audit.baselineLinks} previous links retained; ${DATA.audit.totalLinks} now explicit. The layout and original map geometry are unchanged.</p>${DATA.audit.findings.map((finding) => `<p class="small">${escape(finding)}</p>`).join("")}<p class="small">Static catalogue check: ${DATA.audit.eventCoverage.roles} role entries and ${DATA.audit.eventCoverage.cases} distinct reducer case labels; ${DATA.audit.eventCoverage.unmappedRoles.length} uncatalogued role entries, ${DATA.audit.eventCoverage.unmappedCases.length} uncatalogued case labels. ${escape(DATA.audit.eventCoverage.method)}</p><h3>Check any pair</h3><p class="small muted">Every ordered pair has a disposition. Unconfirmed direct routes remain unconfirmed; a graph example does not authorise a patient journey.</p><div class="row audit-pair-controls"><label>From <select id="pair-from" aria-label="Audit origin">${DATA.nodes.map((n) => `<option value="${n.id}">${escape(n.label)}</option>`).join("")}</select></label><label>To <select id="pair-to" aria-label="Audit destination">${DATA.nodes.map((n) => `<option value="${n.id}">${escape(n.label)}</option>`).join("")}</select></label></div><div id="pair-result" class="source-card" aria-live="polite"></div><button class="btn" type="button" id="download-added">Download added links CSV</button> <button class="btn" type="button" id="download-master">Download master connections CSV</button><h3 style="margin-top:18px">Connections still requiring confirmation</h3>${DATA.audit.unresolved.map((gap) => `<div class="gap">${escape(gap)}</div>`).join("")}</details><div class="grid2">${cards}</div><details><summary>Review findings and remaining gaps</summary><p class="small">The older diagram focuses on prototype referrals, bed search, transport and admission actions. This model adds the wider care settings, re-entry loops, non-hospital alternatives and explicit boundaries. It separates physical movement from shared care and administrative outcomes.</p>${DATA.gaps.map((gap) => `<div class="gap">${escape(gap)}</div>`).join("")}</details><details><summary>Every mapped way into care · ${DATA.entryRoutes.length} entry families</summary><div class="scroll-table"><table><thead><tr><th>Entry</th><th>People involved</th><th>Assessment / route</th></tr></thead><tbody>${DATA.entryRoutes.map((entry) => `<tr><td>${escape(entry.label)}</td><td>${escape(entry.actors)}</td><td>${escape(entry.route)}<br />${entry.sourceIds.map((id) => `<a href="${escape(sourceById.get(id).url)}" target="_blank" rel="noopener noreferrer">${escape(sourceById.get(id).title)}</a>`).join(" · ")}</td></tr>`).join("")}</tbody></table></div></details><details><summary>Legal status and care decisions · ${DATA.legalTransitions.length} decision families</summary><p class="small muted">A design checklist of decisions to verify. Full current statutory text and local legal procedures were not audited; this is not a legal algorithm.</p>${DATA.legalTransitions.map((row) => `<div class="source-card"><h3>${escape(row.trigger)}</h3><p>${escape(row.options)}</p><p class="muted">${escape(row.condition)}</p></div>`).join("")}</details><details><summary>When the planned pathway changes · ${DATA.exceptions.length} exception families</summary>${DATA.exceptions.map((row) => `<div class="source-card"><h3>${escape(row.label)}</h3><p>${escape(row.response)}</p></div>`).join("")}</details><details><summary>Interaction checklists · ${DATA.interactions.length} kinds</summary>${DATA.interactions.map((i) => `<div class="source-card"><h3>${escape(i.title)}</h3><ol class="small">${i.steps.map((s) => `<li>${escape(s)}</li>`).join("")}</ol><p class="tiny muted">Possible failures: ${escape(i.failures.join(" · "))}</p></div>`).join("")}</details><details><summary>WA source register · ${DATA.sources.length} references</summary><p class="small muted">Source access dates refer to this review. Public pages, historic publications and search excerpts have different evidence limits, recorded below.</p>${DATA.sources.map((s) => `<article class="source-card"><h3><a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">${escape(s.title)} ↗</a></h3><p>${escape(s.finding)}</p><p class="source-warning">${escape(s.limitation)}</p>${(s.relatedUrls || []).map((ref) => `<p class="small"><a href="${escape(ref.url)}" target="_blank" rel="noopener noreferrer">${escape(ref.title)} ↗</a></p>`).join("")}<span class="tiny muted">${escape(s.id)} · checked ${escape(s.checked)}</span></article>`).join("")}</details><details><summary>Prototype reference and reproducibility</summary><p class="small">Existing source snapshot: ${DATA.prototype.nodes} map boxes, ${DATA.prototype.actions} listed actions and ${DATA.prototype.machines} state-machine diagrams. Counts describe those source files, not all current executable engine events.</p><p class="small muted">${escape(DATA.prototype.status)}. The original explorer is preserved. This broader WA map is not installed into the Ward Flow app.</p><p class="tiny muted">Base ${escape(DATA.provenance.base)}<br />Branch ${escape(DATA.provenance.branch)}<br />Inputs SHA-256 ${escape(DATA.provenance.inputHash)}</p></details>`;
       }
       function renderPairAudit() {
         const pair = DATA.audit.orderedPairs.find(
@@ -1801,17 +2391,7 @@
         }
         if (button.dataset.masterZoom) {
           const mode = button.dataset.masterZoom;
-          state.masterZoom =
-            mode === "readable"
-              ? 1
-              : mode === "in" || mode === "out"
-                ? Math.max(0.06, Math.min(2, scaleMaster() + (mode === "in" ? 0.15 : -0.15)))
-                : mode;
-          scaleMaster();
-          if (["whole", "width"].includes(mode)) {
-            $("#master-viewport").scrollTop = 0;
-            $("#master-viewport").scrollLeft = 0;
-          }
+          zoomMaster(mode);
           return;
         }
         if (button.dataset.view) {
@@ -1987,7 +2567,12 @@
       window.addEventListener("resize", () => {
         cancelAnimationFrame(resizeFrame);
         resizeFrame = requestAnimationFrame(drawConnections);
-        if (["width", "whole"].includes(state.masterZoom)) requestAnimationFrame(scaleMaster);
+        if (state.view === "master")
+          requestAnimationFrame(() => {
+            sizeMasterSurface();
+            if (["width", "whole"].includes(state.masterZoom)) scaleMaster();
+            else updateMinimap();
+          });
       });
       $("#stats").innerHTML =
         `<div class="stat"><strong>${DATA.nodes.length}</strong><span>care categories</span></div><div class="stat"><strong>${DATA.edges.length}</strong><span>conditional links</span></div><div class="stat"><strong>${DATA.sources.length}</strong><span>WA references</span></div>`;
@@ -2008,10 +2593,12 @@
         state.node = nodeById.has(hash.get("place")) ? hash.get("place") : null;
         state.edge = edgeById.has(hash.get("link")) ? hash.get("link") : null;
         state.masterNode = DATA.prototype.stages.nodes.some((n) => n.id === hash.get("box")) ? hash.get("box") : null;
+        state.masterDetailsOpen = !!state.masterNode;
         const tab = ["overall", "master", "map", "journey", "connections", "review"].includes(hash.get("view"))
           ? hash.get("view")
-          : "overall";
+          : "master";
         view(tab, false);
+        if (tab === "master" && state.masterNode) requestAnimationFrame(() => centreMaster(state.masterNode));
         renderDetails();
       }
       renderOverall();
@@ -2021,6 +2608,23 @@
       $("#pair-from").value = "youth";
       $("#pair-to").value = "hith";
       renderPairAudit();
+      $("#download-latest").addEventListener("click", () =>
+        download("wa-pathway-review-20261013.csv", [
+          ["id", "from", "to", "interaction", "route", "basis", "conditions", "source_ids"],
+          ...DATA.edges
+            .filter((e) => e.reviewAdded)
+            .map((e) => [
+              e.id,
+              nodeName(e.from),
+              nodeName(e.to),
+              e.type,
+              e.label,
+              e.basis,
+              [...e.guards, e.note].join(" | "),
+              e.sourceIds.join(" | "),
+            ]),
+        ]),
+      );
       $("#download-added").addEventListener("click", () =>
         download("wa-added-connection-audit.csv", [
           ["id", "from", "to", "interaction", "route", "basis", "conditions", "source_ids"],

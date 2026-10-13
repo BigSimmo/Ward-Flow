@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import DATA from "./data.mjs";
 import { createAudit } from "./audit.mjs";
+import review from "./review-20261013.mjs";
 
 const unique = (items, kind) => {
   assert.equal(new Set(items.map((x) => x.id)).size, items.length, `Duplicate ${kind} ID`);
@@ -84,6 +85,24 @@ assert.equal(new Set(audit.orderedPairs.map((p) => `${p.from}/${p.to}`)).size, D
 assert.deepEqual(audit.eventCoverage.unmappedCases, [], "Reducer event catalogue has drifted");
 assert.deepEqual(audit.eventCoverage.unmappedRoles, [], "Role event catalogue has drifted");
 const masterIds = new Set(stages.nodes.map((n) => n.id));
+for (const row of review.comparisons) {
+  assert(row.status && row.limit && row.finding, "Unqualified project comparison");
+  for (const id of row.nodes) assert(masterIds.has(id), `Missing reviewed master step ${id}`);
+}
+for (const [master, wa] of Object.entries(review.waLinks))
+  assert(masterIds.has(master) && nodes.has(wa), `Invalid workflow / WA bridge ${master}/${wa}`);
+for (const id of Object.keys(review.displayOverrides))
+  assert(masterIds.has(id), "Display override lost original geometry");
+for (const node of DATA.nodes.slice(DATA.reviewBaselineNodeCount))
+  assert(
+    DATA.edges.some((e) => e.reviewAdded && e.from === node.id && e.to !== node.id),
+    "New entry programme has no real onward interface",
+  );
+for (const edge of DATA.edges.filter((e) => e.reviewAdded)) {
+  if (["wish", "waved", "digital"].includes(edge.to))
+    assert(!["transfer", "discharge"].includes(edge.type), "Virtual contact became a physical transfer");
+  assert(edge.sourceIds.length && edge.note, "Unqualified review addition");
+}
 for (const edge of audit.masterAdditions) {
   assert(masterIds.has(edge.from) && masterIds.has(edge.to), `Dangling master overlay: ${edge.id}`);
   assert(edge.condition && edge.source && edge.event, `Unguarded master overlay: ${edge.id}`);

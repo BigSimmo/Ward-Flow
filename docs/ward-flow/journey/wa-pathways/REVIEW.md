@@ -10,6 +10,19 @@ This is a **review design**, not an operational clinical pathway or proof that W
 implements these routes. It covers statewide mental health service categories, with interfaces
 to general medical care, AOD care, housing, aged care, justice and services outside WA.
 
+## Current continuation — 13 October 2026
+
+The master map now opens first and occupies the main viewport, with side inspection, section
+jumps, an overview navigator, focused viewing, consistent zoom and keyboard controls. Original
+111-box geometry/symbols and 161 paths remain. Current project evidence is shown beside the
+retained source wording. The wider register now has 48 categories, 469 links, 42 references,
+2,304 ordered pairs and 11 illustrative examples. This continuation adds 60 links: 27 documented
+families and 33 proposals. The earlier 8 October counts and findings below are retained as history.
+
+Read [the current design, live-project and pathway review](LIVE-AND-DESIGN-REVIEW.md) for exact
+findings, source limits and verification scope. The deployed synthetic UI was reviewed read-only;
+local source/test evidence is separate from deployed revision and service-acceptance proof.
+
 ## What changed
 
 The old diagram is an engine-centred source map: referrals, bed decisions, movements,

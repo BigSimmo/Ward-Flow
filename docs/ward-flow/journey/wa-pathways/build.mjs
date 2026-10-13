@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import DATA from "./data.mjs";
 import { createAudit } from "./audit.mjs";
+import review from "./review-20261013.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../../../..");
@@ -16,6 +17,14 @@ const git = (args) => execFileSync("git", ["-C", root, ...args], { encoding: "ut
 const artifactData = {
   ...DATA,
   audit,
+  review: {
+    ...review,
+    addedNodes: DATA.nodes.length - DATA.reviewBaselineNodeCount,
+    addedLinks: DATA.edges.length - DATA.reviewBaselineEdgeCount,
+    previousLinks: DATA.reviewBaselineEdgeCount,
+    documentedAdditions: DATA.edges.filter((e) => e.reviewAdded && e.basis === "documented").length,
+    designAdditions: DATA.edges.filter((e) => e.reviewAdded && e.basis === "design").length,
+  },
   provenance: {
     base: "ce1f865ba1cdd2983245b5ca072a230977f14000",
     branch: git(["branch", "--show-current"]),
@@ -23,6 +32,7 @@ const artifactData = {
       .update(fs.readFileSync(path.join(here, "data.mjs")))
       .update(fs.readFileSync(path.join(here, "template.html")))
       .update(fs.readFileSync(path.join(here, "audit.mjs")))
+      .update(fs.readFileSync(path.join(here, "review-20261013.mjs")))
       .update(JSON.stringify(audit.inputHashes))
       .update(JSON.stringify({ original, actions, machines }))
       .digest("hex"),
