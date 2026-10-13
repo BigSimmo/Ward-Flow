@@ -38,13 +38,7 @@ export function azInvocation(args, platform = process.platform, env = process.en
 
 /** Execute a CLI invocation, terminating its owned Windows tree before reporting a timeout. */
 export function executeAz(call) {
-  const {
-    timeout,
-    killSignal = "SIGKILL",
-    maxBuffer = 4 * 1024 * 1024,
-    encoding: _encoding,
-    ...options
-  } = call.options;
+  const { timeout, killSignal = "SIGKILL", maxBuffer = 4 * 1024 * 1024, encoding = "utf8", ...options } = call.options;
   if (!Number.isSafeInteger(timeout) || timeout <= 0 || timeout > 600_000)
     throw new RangeError("Azure CLI timeout must be between 1 and 600000 milliseconds");
   return new Promise((resolve) => {
@@ -69,8 +63,8 @@ export function executeAz(call) {
         status,
         signal,
         error,
-        stdout: Buffer.concat(stdout).toString("utf8"),
-        stderr: Buffer.concat(stderr).toString("utf8"),
+        stdout: Buffer.concat(stdout).toString(encoding),
+        stderr: Buffer.concat(stderr).toString(encoding),
         treeTermination,
       });
     };
