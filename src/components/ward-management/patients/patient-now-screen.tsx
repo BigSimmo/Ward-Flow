@@ -44,6 +44,7 @@ import {
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
 import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
+import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
 import {
   activeCommunityTreatmentOrder,
   type Patient,
@@ -775,6 +776,7 @@ export function PatientNowScreen({
       (acceptingUnit ?? stayUnit) !== undefined
         ? `/mockups/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
         : undefined,
+    acceptedReferral: acceptedWardReferralFor(livePatient?.id, referrals, units),
     transportHref:
       liveMovement && !pathname.includes(`/movements/${encodeURIComponent(liveMovement.id)}`)
         ? `/mockups/ward-flow/movements/${encodeURIComponent(liveMovement.id)}`

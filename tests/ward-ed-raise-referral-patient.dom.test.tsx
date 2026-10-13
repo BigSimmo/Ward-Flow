@@ -1,0 +1,99 @@
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
+
+import { ToastProvider } from "@/components/wf";
+import { EdScreen } from "@/components/ward-management/ed/ed-screen";
+import { referralPatientLabel } from "@/components/ward-management/referrals/referral-patient-match";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+afterEach(cleanup);
+
+/**
+ * A2-1 and A2-10 (audit 13 Oct 2026): the ED "Raise referral" form filed an Unknown Patient with no
+ * name or UMRN, off screen and silently, and its greyed button explained itself only to a screen
+ * reader. It now starts from a person, says why it is greyed in visible text, and confirms the raise
+ * with a toast that opens the new row.
+ */
+function LastMovementPatient() {
+  const { movements } = useWardFlow();
+  return (
+    <>
+      <p data-testid="last-movement-patient">{movements[movements.length - 1]?.patientId ?? "no-patient"}</p>
+      <p data-testid="movement-count">{movements.length}</p>
+    </>
+  );
+}
+
+function renderEd() {
+  render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <ToastProvider>
+        <EdScreen edId="jhc-ed" />
+        <LastMovementPatient />
+      </ToastProvider>
+    </WardFlowProvider>,
+  );
+  fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+}
+
+function answerClinicalFields() {
+  for (const [testId, value] of [
+    ["ward-ed-referral-cohort", "Adult"],
+    ["ward-ed-referral-security", "Open"],
+    ["ward-ed-referral-sex", "Female"],
+    ["ward-ed-referral-gender", "Female"],
+    ["ward-ed-referral-legal-status", "Voluntary"],
+    ["ward-ed-referral-urgency", "3"],
+  ] as const) {
+    fireEvent.change(screen.getByTestId(testId), { target: { value } });
+  }
+  fireEvent.click(screen.getByTestId("ward-ed-referral-specialling-not-required"));
+  fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
+}
+
+describe("ED Raise referral starts from a person", () => {
+  it("is greyed with a visible reason until a patient is found or marked not yet identified", () => {
+    renderEd();
+    answerClinicalFields();
+    const submit = screen.getByTestId("ward-ed-referral-submit");
+    expect(submit).toHaveAttribute("aria-disabled", "true");
+    const reason = document.getElementById("ward-ed-referral-blocked");
+    expect(reason).toHaveTextContent("Find the patient by name or UMRN");
+    expect(reason).not.toHaveClass("sr-only");
+    const before = screen.getByTestId("movement-count").textContent;
+    fireEvent.click(submit);
+    expect(screen.getByTestId("movement-count").textContent).toBe(before);
+  });
+
+  it("shows only the first sentence of a long reason beside the button", () => {
+    renderEd();
+    fireEvent.click(screen.getByTestId("ward-ed-referral-unidentified"));
+    expect(document.getElementById("ward-ed-referral-blocked")).toHaveTextContent(
+      /^Choose a cohort before raising this referral\.$/u,
+    );
+  });
+
+  it("raises for the registered person found by UMRN and confirms with Open row", () => {
+    const person = seedWardFlowState().patients.find((patient) => patient.umrn !== "")!;
+    renderEd();
+    fireEvent.change(screen.getByTestId("ward-ed-referral-patient"), { target: { value: person.umrn } });
+    answerClinicalFields();
+    fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+    expect(screen.getByTestId("last-movement-patient")).toHaveTextContent(person.id);
+    expect(screen.getByText("Referral raised")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open row" })).toBeInTheDocument();
+    expect(referralPatientLabel(person)).toContain(person.umrn);
+  });
+});

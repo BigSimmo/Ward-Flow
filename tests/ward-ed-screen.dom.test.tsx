@@ -103,6 +103,8 @@ const REQUIRED_REFERRAL_FIELDS = [
  * clinical-safety fix the `describe` block near the end of this file is about.
  */
 function fillRequiredReferralFields() {
+  // A2-1: the form starts from a person; these cases raise for one not yet identified.
+  fireEvent.click(screen.getByTestId("ward-ed-referral-unidentified"));
   for (const field of REQUIRED_REFERRAL_FIELDS) {
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }
@@ -123,6 +125,8 @@ function fillRequiredReferralFields() {
  * chose and then explicitly cleared is unanswered.
  */
 function fillRequiredReferralFieldsExcept(skipTestId: string) {
+  // A2-1: the form starts from a person; these cases raise for one not yet identified.
+  fireEvent.click(screen.getByTestId("ward-ed-referral-unidentified"));
   for (const field of REQUIRED_REFERRAL_FIELDS) {
     if (field.testId === skipTestId) continue;
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
@@ -365,6 +369,18 @@ describe("emergency department intake picker", () => {
     const outstanding = screen.getByTestId(`ward-ed-outstanding-${FIRST_RAISED_ID}`);
     expect(outstanding).toHaveAttribute("data-kind", "form");
     expect(outstanding).toHaveTextContent("examination recorded (inpatient order)");
+  });
+
+  // S-7 (audit 13 Oct 2026): "Record outcome" (discharge or community follow-up) was the primary
+  // after an inpatient order, ending the bed search. The bed search now carries on.
+  it("makes Refer to a ward the next step after an inpatient order, keeping Record outcome in the menu", () => {
+    renderEd();
+    raiseReferralWithForm("3B");
+    fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${FIRST_RAISED_ID}`));
+    fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    expect(screen.getByTestId(`ward-ed-next-${FIRST_RAISED_ID}`)).toHaveTextContent("Refer to a ward");
+    expect(screen.getByTestId(`ward-ed-outcome-toggle-${FIRST_RAISED_ID}`)).toBeInTheDocument();
   });
 });
 
@@ -626,6 +642,7 @@ describe("emergency department referral form refuses an unanswered submission", 
   it("submits and records exactly the chosen values once every field is answered", () => {
     renderEd();
     fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    fireEvent.click(screen.getByTestId("ward-ed-referral-unidentified"));
     fireEvent.change(screen.getByTestId("ward-ed-referral-cohort"), { target: { value: "Older adult" } });
     fireEvent.change(screen.getByTestId("ward-ed-referral-security"), { target: { value: "Secure" } });
     fireEvent.change(screen.getByTestId("ward-ed-referral-sex"), { target: { value: "Male" } });

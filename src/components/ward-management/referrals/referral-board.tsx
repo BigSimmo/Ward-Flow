@@ -3,6 +3,7 @@
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { acceptedWardOf } from "./accepted-ward-referral";
 import {
   Check,
   ChevronRight,
@@ -1109,17 +1110,45 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     {(() => {
                       const accepted = acceptedAddressing(selectedReferral);
                       const linkedMovement = movements.find((m) => m.referralId === selectedReferral.id && !m.closure);
-                      const targetWardUnitId = accepted?.acceptedUnitId ?? linkedMovement?.acceptedUnitId;
+                      const targetWardUnitId =
+                        accepted?.acceptedUnitId ??
+                        linkedMovement?.acceptedUnitId ??
+                        acceptedWardOf(selectedReferral, units)?.unitId;
                       const targetWard = targetWardUnitId ? units.find((u) => u.id === targetWardUnitId) : undefined;
                       if (!targetWardUnitId) return null;
+                      // S-9 (audit 13 Oct 2026): an accepted referral was a dead end. It links on to
+                      // its movement when one is open, otherwise names the next step, holding the
+                      // bed on the accepting ward, and links the patient record.
                       return (
-                        <Link
-                          href={`/mockups/ward-flow/board/${targetWardUnitId}`}
-                          className={buttonClass({ variant: "ghost", size: "sm" })}
-                          title={`Open ${targetWard?.name ?? "ward"} bed board`}
-                        >
-                          Open ward board
-                        </Link>
+                        <>
+                          {linkedMovement ? (
+                            <Link
+                              href={`/mockups/ward-flow/movements/${encodeURIComponent(linkedMovement.id)}`}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
+                              data-testid="ward-referral-open-movement"
+                            >
+                              Open movement
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/mockups/ward-flow/board/${targetWardUnitId}`}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
+                              title={`Open ${targetWard?.name ?? "ward"} bed board`}
+                              data-testid="ward-referral-hold-bed"
+                            >
+                              Hold the bed
+                            </Link>
+                          )}
+                          {selectedReferral.patientId && !isPhone ? (
+                            <Link
+                              href={`/mockups/ward-flow/people/${encodeURIComponent(selectedReferral.patientId)}`}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
+                              data-testid="ward-referral-open-patient"
+                            >
+                              Patient
+                            </Link>
+                          ) : null}
+                        </>
                       );
                     })()}
                     {!isPhone ? (

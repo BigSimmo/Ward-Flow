@@ -123,6 +123,7 @@ import {
 import { Check } from "lucide-react";
 import {
   buttonClass,
+  DisabledReason,
   JourneyStrip,
   PhoneListRow,
   PhoneSheet,
@@ -138,6 +139,10 @@ import {
 import { EdElsewhereLinks, EdNeedsYou, type EdNeedsItem } from "./ed-needs-you";
 import { edJourneyStages } from "./ed-journey";
 import styles from "./ed.module.css";
+import { EdReferralPatientField } from "./ed-referral-patient-field";
+import type { Patient } from "../ward-patients";
+import { edBedSearchStep, openWardReferralFor, referredToLabel } from "./ed-bed-search-step";
+import { edReferralSheetHref, openReferralSheet } from "../referrals/open-referral-sheet";
 import { EdOverview } from "./ed-overview";
 import { EdActionsMenu, EdPlanPicker, EdPresentation, EdReviewStatus } from "./ed-board-controls";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -461,6 +466,13 @@ type ReferralDraftState = {
    */
   legalFormDueAtDate: string;
   legalFormDueAtTime: string;
+  /**
+   * A2-1 (audit 13 Oct 2026): who the referral is for. A registered person found by name or UMRN,
+   * or the clinician's explicit "Not yet identified". Neither chosen blocks the form, so a referral
+   * is never filed for a person nobody named.
+   */
+  patientId: Patient["id"] | undefined;
+  unidentified: boolean;
 };
 
 /**
@@ -520,6 +532,8 @@ const DEFAULT_DRAFT: ReferralDraftState = {
   // become a default here.
   legalFormDueAtDate: "",
   legalFormDueAtTime: "",
+  patientId: undefined,
+  unidentified: false,
 };
 
 /**
@@ -622,7 +636,16 @@ function instantFromEstimatedTimeInputs(
  * sex, legal status or urgency tier for a patient nobody looked at — the defect this function,
  * the five placeholder options, and `submitReferral`'s own guard all exist to close together.
  */
+/** The first sentence of a blocked reason: the part that fits beside a greyed button. */
+function firstSentence(reason: string): string {
+  const end = reason.search(/\.\s/u);
+  return end === -1 ? reason : reason.slice(0, end + 1);
+}
+
 function referralDraftBlockedReason(draft: ReferralDraftState): string | undefined {
+  if (draft.patientId === undefined && !draft.unidentified) {
+    return 'Find the patient by name or UMRN, or choose "Not yet identified".';
+  }
   if (draft.cohort === undefined) {
     return "Choose a cohort before raising this referral. None is chosen for you: a cohort nobody picked would be filed as this patient's own record.";
   }
@@ -1438,6 +1461,9 @@ export function EdScreen({ edId }: EdScreenProps) {
   const toast = useOptionalToast();
   // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
   const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
+  // A2-1 (audit 13 Oct 2026): a raised referral used to land off screen with no word. The movement
+  // ids held before the raise; the new one is announced with a toast that opens its row.
+  const raisePendingRef = useRef<Set<string> | null>(null);
   function recordEdStep(event: EdStepEvent) {
     const subject = "referralId" in event ? { referralId: event.referralId } : { movementId: event.movementId };
     runStep(event, {
@@ -1611,6 +1637,26 @@ export function EdScreen({ edId }: EdScreenProps) {
     undoCheckRef.current = undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, undoCheckToken]);
+
+  useEffect(() => {
+    const before = raisePendingRef.current;
+    if (before === null) return;
+    const raised = movements.find((movement) => !before.has(movement.id) && movement.originEdId === department?.id);
+    if (!raised) return;
+    raisePendingRef.current = null;
+    const name = resolveSubjectPatient(raised, { patients: registryPatients, referrals, movements }).displayName;
+    toast?.push({
+      tone: "success",
+      title: "Referral raised",
+      body: `${name} is on this department's board.`,
+      action: {
+        label: "Open row",
+        onAction: () => setSelectedPatientId(raised.id),
+      },
+    });
+    announceToWardShell(`Referral raised for ${name}.`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Runs when a raise lands, nothing else.
+  }, [movements]);
 
   if (!department) {
     return (
@@ -2466,6 +2512,7 @@ export function EdScreen({ edId }: EdScreenProps) {
       // the inbox row's own "Raise into a movement" button, which is also what supplied the
       // gender prefill in `draft.gender` above.
       referralId: raisingFromReferralId,
+      ...(draft.patientId === undefined ? {} : { patientId: draft.patientId }),
       draft: {
         cohort,
         security,
@@ -2487,6 +2534,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         legalFormDueAt: instantFromDateAndTimeInputs(draft.legalFormDueAtDate, draft.legalFormDueAtTime, dayZero),
       },
     });
+    raisePendingRef.current = new Set(movements.map((movement) => movement.id));
     setDraft(DEFAULT_DRAFT);
     setReferralOpen(false);
     setRaisingFromReferralId(undefined);
@@ -2840,6 +2888,25 @@ export function EdScreen({ edId }: EdScreenProps) {
                 return (
                   <form className={styles.referralForm} onSubmit={submitReferral} data-testid="ward-ed-referral-form">
                     <div className={styles.referralGrid}>
+                      <EdReferralPatientField
+                        patients={registryPatients}
+                        patientId={draft.patientId}
+                        unidentified={draft.unidentified}
+                        onChange={(next) =>
+                          setDraft((current) => {
+                            const record = registryPatients.find((candidate) => candidate.id === next.patientId);
+                            const recordSex = SEX_OPTIONS.find((option) => option === record?.sex);
+                            const recordGender = GENDER_OPTIONS.find((option) => option === record?.gender);
+                            return {
+                              ...current,
+                              ...next,
+                              // Prefill from the record only what the clinician has not yet answered.
+                              sex: current.sex ?? recordSex,
+                              gender: current.gender ?? recordGender,
+                            };
+                          })
+                        }
+                      />
                       <label className={styles.referralField}>
                         Cohort
                         <select
@@ -3126,9 +3193,9 @@ export function EdScreen({ edId }: EdScreenProps) {
                         Cancel
                       </button>
                       {referralBlocked ? (
-                        <span id="ward-ed-referral-blocked" className="sr-only">
-                          {referralBlocked}
-                        </span>
+                        // A2-10 (audit 13 Oct 2026): the reason shows beside the greyed button, not
+                        // only to a screen reader or on hover; its first sentence fits one line.
+                        <DisabledReason id="ward-ed-referral-blocked">{firstSentence(referralBlocked)}</DisabledReason>
                       ) : null}
                     </div>
                   </form>
@@ -3401,6 +3468,17 @@ export function EdScreen({ edId }: EdScreenProps) {
                 // past the compiler correctly reporting those comparisons as impossible.
                 const isForm1A = movement.legalForm?.code === "1A";
 
+                // S-7 (audit 13 Oct 2026): after an inpatient order the bed search carries on.
+                // "Record outcome" (discharge or community follow-up, which withdraws requests and
+                // releases beds) stays in the menu but is no longer the primary.
+                const openWardReferral = openWardReferralFor(patientInfo.patient?.id, referrals);
+                const referredTo = openWardReferral
+                  ? referredToLabel(
+                      openWardReferral.unitIds,
+                      (unitId) => units.find((unit) => unit.id === unitId)?.name,
+                    )
+                  : undefined;
+                const bedSearch = edBedSearchStep(movement, openWardReferral !== undefined);
                 const primaryAction =
                   movement.edOutcome !== undefined && !movement.leftDepartmentAt
                     ? "left"
@@ -3412,9 +3490,13 @@ export function EdScreen({ edId }: EdScreenProps) {
                           ? "transport"
                           : movement.stage === "pulled" && movement.transport !== undefined
                             ? "handover"
-                            : movement.edOutcome === undefined
-                              ? "outcome"
-                              : undefined;
+                            : bedSearch === "refer"
+                              ? "refer"
+                              : bedSearch === "underway"
+                                ? undefined
+                                : movement.edOutcome === undefined
+                                  ? "outcome"
+                                  : undefined;
                 const nextAction:
                   | {
                       label: string;
@@ -3432,37 +3514,44 @@ export function EdScreen({ edId }: EdScreenProps) {
                         expanded: examOpen,
                         run: () => toggleExamination(movement.id),
                       }
-                    : primaryAction === "outcome"
+                    : primaryAction === "refer"
                       ? {
-                          label: "Record outcome",
-                          blocked: edOutcomeBlocked,
-                          describedBy: `ward-ed-outcome-unavailable-${movement.id}`,
-                          expanded: edOutcomeOpen,
-                          run: () =>
-                            setEdOutcomeOpenFor((current) => (current === movement.id ? undefined : movement.id)),
+                          label: "Refer to a ward",
+                          blocked: undefined,
+                          describedBy: `ward-ed-refer-ward-${movement.id}`,
+                          run: () => openReferralSheet(edReferralSheetHref(patientInfo.patient?.id, thisEdId)),
                         }
-                      : primaryAction === "transport"
+                      : primaryAction === "outcome"
                         ? {
-                            label: "Transport booked",
-                            blocked: transportBlocked,
-                            describedBy: `ward-ed-book-transport-unavailable-${movement.id}`,
-                            expanded: transportOpen,
-                            run: () => toggleBookTransport(movement.id),
+                            label: "Record outcome",
+                            blocked: edOutcomeBlocked,
+                            describedBy: `ward-ed-outcome-unavailable-${movement.id}`,
+                            expanded: edOutcomeOpen,
+                            run: () =>
+                              setEdOutcomeOpenFor((current) => (current === movement.id ? undefined : movement.id)),
                           }
-                        : primaryAction === "handover"
+                        : primaryAction === "transport"
                           ? {
-                              label: "Handover ready",
-                              blocked: handoverBlocked,
-                              describedBy: `ward-ed-handover-unavailable-${movement.id}`,
-                              run: () =>
-                                recordEdStep({
-                                  type: "HANDOVER_READY",
-                                  role: "ed",
-                                  now,
-                                  movementId: movement.id,
-                                }),
+                              label: "Transport booked",
+                              blocked: transportBlocked,
+                              describedBy: `ward-ed-book-transport-unavailable-${movement.id}`,
+                              expanded: transportOpen,
+                              run: () => toggleBookTransport(movement.id),
                             }
-                          : undefined;
+                          : primaryAction === "handover"
+                            ? {
+                                label: "Handover ready",
+                                blocked: handoverBlocked,
+                                describedBy: `ward-ed-handover-unavailable-${movement.id}`,
+                                run: () =>
+                                  recordEdStep({
+                                    type: "HANDOVER_READY",
+                                    role: "ed",
+                                    now,
+                                    movementId: movement.id,
+                                  }),
+                              }
+                            : undefined;
 
                 const menuItems = (
                   <>
@@ -4064,7 +4153,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                         ? acceptedUnit.name
                         : movement.referredUnitIds.length > 0
                           ? "Awaiting bed placement"
-                          : "In department";
+                          : (referredTo ?? "In department");
                 const destinationContent = (
                   <>
                     <span className={styles.dest}>{destinationLabel}</span>
@@ -5190,7 +5279,9 @@ export function EdScreen({ edId }: EdScreenProps) {
                               ? "Left the department"
                               : movement.closure
                                 ? "Withdrawn"
-                                : "Nothing due"}
+                                : bedSearch === "underway"
+                                  ? "Waiting on a ward"
+                                  : "Nothing due"}
                           </span>
                         )}
                         {movement.closure ? null : (
@@ -5347,7 +5438,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                       meta={[
                         // No em-dash and no truncated destination; the form lives in the sheet.
                         phoneBay,
-                        acceptedUnit ? `to ${acceptedUnit.name.split(" — ")[0]}` : "In department",
+                        acceptedUnit ? `to ${acceptedUnit.name.split(" — ")[0]}` : (referredTo ?? "In department"),
                         ...(isPhone
                           ? []
                           : [
@@ -5722,7 +5813,14 @@ export function EdScreen({ edId }: EdScreenProps) {
                                   data-testid={`ward-ed-inbox-raise-${referral.id}`}
                                   onClick={() => {
                                     setRaisingFromReferralId(referral.id);
-                                    setDraft((current) => ({ ...current, gender: referralWardGender(referral) }));
+                                    setDraft((current) => ({
+                                      ...current,
+                                      gender: referralWardGender(referral),
+                                      // A2-1: the referral already says who it is for: its person, or
+                                      // nobody yet identified. Either stays editable on the form.
+                                      patientId: referral.patientId,
+                                      unidentified: referral.patientId === undefined,
+                                    }));
                                     setReferralOpen(true);
                                   }}
                                 >

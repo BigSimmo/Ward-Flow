@@ -118,6 +118,12 @@ export interface PatientStatusContext {
   bedHref?: string;
   /** Decision 2: the movement's own page (its transport job), linked from the Transport cell's value. */
   transportHref?: string;
+  /**
+   * S-9 (audit 13 Oct 2026): a ward accepted a referral for this person and nothing is open yet
+   * (accepting pulls no bed and creates no movement). The card says so, and links the ward board
+   * where the bed is held, instead of reading "Not active".
+   */
+  acceptedReferral?: { unitName: string; boardHref: string };
 }
 
 function clearanceCell(movement: Movement, onClearance: PatientStatusContext["onClearance"]): StatusCell {
@@ -639,6 +645,34 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       meta: `Since ${clock(absence.since)}, owner nurse in charge`,
       cells: [],
       rows,
+    };
+  }
+
+  if ((mode === "idle" || mode === "cto") && ctx.acceptedReferral) {
+    const { unitName, boardHref } = ctx.acceptedReferral;
+    return {
+      tone: "info",
+      verdict: "Accepted, no bed held",
+      meta: `Accepted at ${unitName}. Next: hold the bed`,
+      cells: [
+        {
+          key: "bed",
+          icon: BedDouble,
+          label: "Bed",
+          owner: "Ward",
+          value: `Hold on ${unitName}`,
+          sub: "Accepted referral, no bed held yet",
+          href: boardHref,
+        },
+        {
+          key: "catchment",
+          icon: Users,
+          label: "Catchment team",
+          owner: "Community",
+          value: patient?.catchmentCommunityTeam ?? "Not recorded",
+          sub: "Recorded catchment",
+        },
+      ],
     };
   }
 
