@@ -961,6 +961,7 @@ function WardFlowWorld({
   }, [initialNow, mountedAtAbsolute, dayZero, shared.enabled]);
 
   const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
+  const pendingDemoWrite = useRef<(() => boolean) | null>(null);
 
   useEffect(() => {
     if (shared.enabled) return;
@@ -978,9 +979,11 @@ function WardFlowWorld({
       return;
     }
     if (storageUnavailable) return;
+    const write = () => tryWriteDemoState(state, dayZero, now, mountedAtAbsolute + Math.max(0, elapsed));
+    pendingDemoWrite.current = write;
     const timer = setTimeout(() => {
-      if (!tryWriteDemoState(state, dayZero, now, mountedAtAbsolute + Math.max(0, elapsed)))
-        setStorageUnavailable(true);
+      if (pendingDemoWrite.current === write) pendingDemoWrite.current = null;
+      if (!write()) setStorageUnavailable(true);
     }, 300);
     return () => {
       clearTimeout(timer);
@@ -997,6 +1000,26 @@ function WardFlowWorld({
     storageUnavailable,
     shared.enabled,
   ]);
+
+  useEffect(() => {
+    const flush = () => {
+      const write = pendingDemoWrite.current;
+      if (write) {
+        pendingDemoWrite.current = null;
+        write();
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      flush();
+    };
+  }, []);
 
   // Audit finding ISSUE-P1-83, defect 3e: `useCallback`, not a fresh function every render — this
   // sits in the `value` useMemo's own dependency array below, so an unstable reference defeated that
