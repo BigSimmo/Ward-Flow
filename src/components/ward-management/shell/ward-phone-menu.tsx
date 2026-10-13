@@ -33,7 +33,6 @@ import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-orde
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
-import { useDebouncedValue } from "../search/use-debounced-value";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
@@ -845,7 +844,7 @@ export function WardPhoneMenu({
   const flow = useWardFlow();
   const actNowCount = useMemo(
     () => (wardTasksAreActionableForRole(shellRole) ? activeActNowItems(flow, flow.now).length : 0),
-    [shellRole, flow, flow.now],
+    [shellRole, flow],
   );
   const needs = [...actNowNeed(actNowCount), ...overdueNeeds];
 

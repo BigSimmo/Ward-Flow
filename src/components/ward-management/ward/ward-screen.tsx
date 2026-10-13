@@ -951,9 +951,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // acceptance through transport. `isOpen` excludes `arrived` — once a patient arrives the record
   // closes and the bed shows as occupied in the grid above, not as a card here. Also includes
   // stopped transport movements awaiting release so the held bed remains visible to the ward.
-  const accepted = movements.filter(
-    (movement) => isOpen(movement) && movement.acceptedUnitId === unit.id,
-  );
+  const accepted = movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id);
   const heldAfterStop = movements.filter(
     (movement) => isStoppedTransportAwaitingRelease(movement) && movement.acceptedUnitId === unit.id,
   );

@@ -105,7 +105,13 @@ export function WardChromeSearch({
   const trimmed = query.trim();
   const debouncedTrimmed = debouncedQuery.trim();
   const searchPending = debouncedTrimmed !== trimmed;
-  useEffect(() => setActiveIndex(-1), [trimmed]);
+  // Reset the highlighted option when the query changes, during render rather than in an
+  // effect (react.dev: "Adjusting some state when a prop changes").
+  const [prevTrimmed, setPrevTrimmed] = useState(trimmed);
+  if (prevTrimmed !== trimmed) {
+    setPrevTrimmed(trimmed);
+    setActiveIndex(-1);
+  }
 
   const smartResults = useMemo(
     () =>
@@ -511,7 +517,13 @@ export function WardChromeSearch({
       </span>
 
       <p className="sr-only" role="status" aria-live="polite">
-        {trimmed.length === 0 ? "" : searchPending ? "Searching…" : options.length === 0 ? "No matches." : `${options.length} invented results found.`}
+        {trimmed.length === 0
+          ? ""
+          : searchPending
+            ? "Searching…"
+            : options.length === 0
+              ? "No matches."
+              : `${options.length} invented results found.`}
       </p>
 
       {showPopup ? (

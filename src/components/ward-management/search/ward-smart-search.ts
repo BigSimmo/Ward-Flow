@@ -651,12 +651,12 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
 
   const tasksInbox =
     input.precomputedTasks ??
-      buildActionInbox(
-        input.movements.filter(isOpen),
-        input.now ?? 0,
-        input.units,
-        input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
-      );
+    buildActionInbox(
+      input.movements.filter(isOpen),
+      input.now ?? 0,
+      input.units,
+      input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
+    );
   const tasks = rankAndLimit(
     searchTasks(typed, tasksInbox),
     typed,
