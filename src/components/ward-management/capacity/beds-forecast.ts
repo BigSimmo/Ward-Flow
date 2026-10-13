@@ -99,7 +99,9 @@ export function bedsForecast(
   now: Instant,
   plannedAdmissions: readonly PlannedAdmission[] = [],
 ): BedsForecast {
-  const openUnits = units.filter((unit) => !unit.isClosed);
+  // The same closure rule as `boundedBedAvailability`: a closed or zero-bed ward supplies nothing,
+  // now or projected (qodo, 13 Oct).
+  const openUnits = units.filter((unit) => !unit.isClosed && unit.beds > 0);
   const readyNow = openUnits.reduce((sum, unit) => sum + boundedBedAvailability(unit).available, 0);
   const openUnitIds = new Set(openUnits.map((unit) => unit.id));
   const unitIds = new Set(units.map((unit) => unit.id));

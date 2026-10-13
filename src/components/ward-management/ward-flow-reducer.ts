@@ -4406,12 +4406,26 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const caller = event as { role: WardFlowRole; placeId?: string; actingPlaceId?: string };
       const callerPlaceId = caller.placeId ?? caller.actingPlaceId;
       const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
-      const wardTransfer = movement.sourceAdmissionId !== undefined || referral?.source === "psychiatric_ward";
-      const senderPlaceId = wardTransfer ? movementSourceAdmission(state, movement)?.unitId : movement.originEdId;
-      const senderRole = wardTransfer ? "ward" : "ed";
+      // Verified senders: a transfer from a recorded stay is the sending ward's alone. Otherwise the
+      // ED that raised the journey (`originEdId`) owns it, and for a ward-sent referral the sending
+      // ward (`referral.originUnitId`) may also withdraw — an ED-raised journey on a ward referral
+      // must not lock out the ED that owns it (qodo, 13 Oct).
+      const senders: { role: WardFlowRole; placeId: string | undefined }[] =
+        movement.sourceAdmissionId !== undefined
+          ? [{ role: "ward", placeId: movementSourceAdmission(state, movement)?.unitId }]
+          : [
+              { role: "ed", placeId: movement.originEdId },
+              ...(referral?.source === "psychiatric_ward"
+                ? [{ role: "ward" as WardFlowRole, placeId: referral.originUnitId }]
+                : []),
+            ];
+      const senderPlaceId = senders.find((sender) => sender.role === event.role)?.placeId;
       if (
         event.role !== "coordinator" &&
-        (!callerPlaceId || event.role !== senderRole || callerPlaceId !== senderPlaceId)
+        (!callerPlaceId ||
+          !senders.some(
+            (sender) => sender.role === event.role && sender.placeId !== undefined && sender.placeId === callerPlaceId,
+          ))
       ) {
         return reject(
           state,

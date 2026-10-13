@@ -82,16 +82,22 @@ function bedKindOfMovement(cohort: Cohort, security: Security): BedKindId {
  */
 function bedsOfKindAtUnit(unit: Unit, kind: BedKindId): number {
   // A closed or zero-bed ward supplies no bed of any kind (R-B-09, owner ruling 13 Oct 2026).
-  if (boundedBedAvailability(unit).available === 0) return 0;
+  // Kind supply never exceeds the ward's bounded Ready (qodo, 13 Oct): a feed reporting more
+  // allocatable beds than are empty or physically present cannot show more fitting beds than Ready.
+  const available = boundedBedAvailability(unit).available;
+  if (available === 0) return 0;
   switch (kind) {
     case "locked_adult":
-      return unit.cohort === "Adult" ? lockedBedsFree(unit) : 0;
+      return unit.cohort === "Adult" ? Math.min(lockedBedsFree(unit), available) : 0;
     case "open_adult":
-      return unit.cohort === "Adult" ? openBedsFree(unit) : 0;
+      // Locked beds take their share of Ready first, so locked + open never exceed it.
+      return unit.cohort === "Adult"
+        ? Math.min(openBedsFree(unit), available - Math.min(lockedBedsFree(unit), available))
+        : 0;
     case "older_adult":
-      return unit.cohort === "Older adult" ? lockedBedsFree(unit) + openBedsFree(unit) : 0;
+      return unit.cohort === "Older adult" ? Math.min(lockedBedsFree(unit) + openBedsFree(unit), available) : 0;
     case "youth":
-      return unit.cohort === "Youth" ? lockedBedsFree(unit) + openBedsFree(unit) : 0;
+      return unit.cohort === "Youth" ? Math.min(lockedBedsFree(unit) + openBedsFree(unit), available) : 0;
   }
 }
 
