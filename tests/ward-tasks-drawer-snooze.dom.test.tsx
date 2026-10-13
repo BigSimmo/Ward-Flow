@@ -253,6 +253,7 @@ describe("phone tasks: act now, then oldest, and a Seen marker (remaining-pages 
     );
     try {
       const review = (id: string, since?: number): InboxItem => ({
+        ...red,
         id: `review-${id}`,
         kind: "fact",
         tone: "warning",
@@ -260,6 +261,7 @@ describe("phone tasks: act now, then oldest, and a Seen marker (remaining-pages 
         title: `Row ${id}`,
         detail: "Synthetic row",
         since,
+        dueAt: undefined,
       });
       const recent = review("recent", NOW_ANCHOR - 15);
       const oldest = review("oldest", NOW_ANCHOR - 72);
