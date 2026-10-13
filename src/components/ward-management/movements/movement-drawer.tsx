@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BedSingle, ChevronRight, Flag, Lock, PhoneCall, ShieldCheck, Truck, X } from "lucide-react";
+import { BedSingle, ChevronRight, FileText, Flag, Lock, PhoneCall, Truck, X } from "lucide-react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Sheet } from "@/components/ui/sheet";
@@ -251,7 +251,9 @@ export function MovementDrawer({
           : undefined;
   const legalTitle = movement.legalForm
     ? legalFormName(movement.legalForm)
-    : (movement.legalStatus ?? "No legal form recorded");
+    : movement.legalStatus
+      ? `${movement.legalStatus} · No legal form recorded`
+      : "No legal form recorded";
   const legalWhen =
     dueAt === undefined
       ? movement.legalForm
@@ -460,7 +462,7 @@ export function MovementDrawer({
 
       <div className={d.facts}>
         <p className={d.legal} data-tone={legalTone}>
-          {legalTone ? <StatusGlyph tone={legalTone} size={9} /> : <ShieldCheck size={14} aria-hidden="true" />}
+          {legalTone ? <StatusGlyph tone={legalTone} size={9} /> : <FileText size={14} aria-hidden="true" />}
           <span className={d.trunc}>
             <strong>{legalTitle}</strong>
             {legalWhen ? ` · ${legalWhen}` : ""}
