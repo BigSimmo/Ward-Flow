@@ -14,7 +14,7 @@ import {
   minuteOfDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { transportLeg, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { isStoppedTransportAwaitingRelease, transportLeg, unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type {
@@ -215,9 +215,13 @@ export function toHandoverRow(
     })),
     pullExpiresAt: movement.pullExpiresAt,
     transport:
-      movement.transport === undefined || leg === "Cancelled"
+      movement.transport === undefined
         ? undefined
-        : { provider: movement.transport.provider, escort: movement.transport.escortRequired, leg },
+        : {
+            provider: movement.transport.provider,
+            escort: movement.transport.escortRequired,
+            leg: movement.transport.cancelledAt !== undefined ? "Stopped" : leg,
+          },
     escalated: movement.escalation !== undefined,
     urgent: movement.flaggedUrgent,
     eta: movement.arrivalDetails?.estimatedArrivalAt ?? movement.transport?.estimatedAt,
@@ -229,12 +233,6 @@ export function toHandoverRow(
 export type HandoverGroupId = "act" | "due" | "bed" | "acc" | "mov";
 export type HandoverTone = "act" | "due" | "calm";
 
-/**
- * Act now on the sheet. L1 (site review, 12 Oct 2026): Handover read "Act now 3" while Alerts read
- * 2, because the sheet kept its own list. With `actNow` set the sheet reads the shared act-now list
- * (`activeActNowItems`), so a snoozed alert leaves both together. A journey flagged urgent by a
- * person is always act now as well: that flag is a human safety call the sheet must not drop.
- */
 export function isCollected(row: HandoverRow): boolean {
   // A stopped (or cancelled) journey is no longer in transit: its held bed must still be able to lapse.
   const transport = row.movement?.transport;
@@ -246,7 +244,13 @@ export function pullHasLapsed(row: HandoverRow, now: Instant): boolean {
   return !isCollected(row) && bedHoldLapsed(row.pullExpiresAt, now);
 }
 
+/** Act-now rows include stopped transports so staff release their held bed. */
+function isStoppedAwaitingRelease(row: HandoverRow): boolean {
+  return isStoppedTransportAwaitingRelease(row.movement);
+}
+
 export function isActNow(row: HandoverRow, now: Instant): boolean {
+  if (isStoppedAwaitingRelease(row)) return true;
   if (row.actNow !== undefined) return row.actNow || row.urgent;
   return row.urgent || pullHasLapsed(row, now) || (row.formDueAt !== undefined && row.formDueAt <= now);
 }
@@ -374,7 +378,9 @@ export function nextStep(
   const tone: HandoverTone = isActNow(row, now) ? "act" : isDueBy(row, now, cutoff) ? "due" : "calm";
   let text: string;
   const hold = bedHold(row.pullExpiresAt, now);
-  if (row.stage === "pulled") {
+  if (isStoppedAwaitingRelease(row)) {
+    text = `Transport stopped. Release the held bed at ${row.to?.name ?? "the ward"}`;
+  } else if (row.stage === "pulled") {
     text =
       hold?.state === "lapsed"
         ? `${hold.label}. ${hold.nextStep}`
@@ -425,6 +431,7 @@ function backgroundLine(row: HandoverRow, now: Instant): string {
  */
 export function situationState(row: HandoverRow, now: Instant): string {
   const to = row.to?.name ?? "the ward";
+  if (isStoppedAwaitingRelease(row)) return `Transport stopped; release the held bed at ${to}`;
   if (row.stage === "pulled") {
     if (row.pullExpiresAt === undefined) return `Bed pulled at ${to}`;
     return row.pullExpiresAt <= now
