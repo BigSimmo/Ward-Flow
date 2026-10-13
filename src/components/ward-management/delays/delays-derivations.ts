@@ -12,6 +12,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import {
   destinationNoLongerLawful,
+  examinationRevokedWhileBedHeld,
   isOpen,
   referralForMovement,
   shortlistCandidates,
@@ -251,7 +252,7 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayC
   // capitals — so its length is zero only when the network holds no wards at all. This group
   // would have been permanently empty, and an empty group is dropped, so the two people with
   // nowhere to go would simply not have appeared on the screen built to find them.
-  if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
+  if (movement.acceptedUnitId === undefined) {
     const candidates = shortlistCandidates(movement, units, now);
     if (!candidates.some((candidate) => candidate.availability === "eligible")) return "no_eligible_bed";
   }
@@ -269,6 +270,7 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayC
   }
   if (
     movement.examination?.outcome === "revoked" ||
+    examinationRevokedWhileBedHeld(movement) ||
     movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease
   ) {
     return "awaiting_coordinator";
@@ -629,13 +631,14 @@ export function answerSilenceReminder(movement: Movement, referrals: Referral[],
     return silentCommunityReminder(referral.raisedAt, now);
   }
   if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
-    // Only destinations still awaiting an answer count, and the OLDEST silent one drives the
-    // reminder, so an answered, withdrawn or newer arm can never reset an older silence.
-    const silentWardTimes = (referral?.destinations ?? [])
-      .filter((d) => d.destination.kind === "psychiatric_ward" && d.referredAt !== undefined && isAwaitingAnswer(d))
-      .map((d) => d.referredAt!);
-    const referredAt = silentWardTimes.length > 0 ? Math.min(...silentWardTimes) : movement.referredAt;
-    return silentWardReminder(referredAt, now);
+    const hasAwaitingWard =
+      referral === undefined ||
+      referral.destinations.some(
+        (d) => d.destination.kind === "psychiatric_ward" && isAwaitingAnswer(d) && d.waitlistedAt === undefined,
+      );
+    if (hasAwaitingWard) {
+      return silentWardReminder(movement.referredAt, now);
+    }
   }
   return undefined;
 }

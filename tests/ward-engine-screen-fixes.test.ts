@@ -187,6 +187,8 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
       const state = seedWardFlowState();
       const mov: Movement = {
         ...state.movements[0],
+        stage: "placement_requested",
+        closure: undefined,
         examination: { outcome: "revoked", at: NOW - 100 },
         transport: {
           id: "TJ-1",
@@ -197,6 +199,14 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
 
       const cause = causeOf(mov, state.units, NOW);
       expect(cause).toBe("awaiting_coordinator");
+
+      // Also routes community_order outcome when bed is held
+      const communityOrderMov: Movement = {
+        ...mov,
+        admissionId: "ADM-REVOKED-1",
+        examination: { outcome: "community_order", at: NOW - 100 },
+      };
+      expect(causeOf(communityOrderMov, state.units, NOW)).toBe("awaiting_coordinator");
     });
   });
 
