@@ -730,10 +730,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     leaveBeds,
   ]);
   // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
-  const tasksActiveCount = useMemo(
-    () => partitionSnoozed(tasksItems, inboxSnoozes, now).active.length,
+  const tasksActiveItems = useMemo(
+    () => partitionSnoozed(tasksItems, inboxSnoozes, now).active,
     [tasksItems, inboxSnoozes, now],
   );
+  const tasksActiveCount = tasksActiveItems.length;
   /**
    * The Service selector's own "{n} waiting" counts. L1 (site review, 12 Oct 2026): this used to
    * count every open movement that touched a service (origin ED or any ward asked), so a person
@@ -1384,7 +1385,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             patients={patients}
             referrals={referrals}
             units={units}
-            tasks={tasksItems}
+            // shell-4: the same active list the Tasks badge counts, so "3 of N" agrees with it.
+            tasks={tasksActiveItems}
+            onSeeAllTasks={() => openPopover("tasks")}
             plannedAdmissions={plannedAdmissions}
             now={now}
             placeholder="Search"
