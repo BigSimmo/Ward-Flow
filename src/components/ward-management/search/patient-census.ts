@@ -38,6 +38,7 @@ import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational
 import { durMinutes } from "@/components/wf";
 
 import { movementOriginService, movementSearchState, referralOriginService } from "./search-operational-state";
+import { isCommunityReferral } from "./community-referral";
 
 export type CensusGroup = "wait" | "found" | "move" | "ward" | "off";
 
@@ -177,14 +178,6 @@ function plural(n: number, word: string): string {
 
 function daysText(minutes: number): string {
   return `${Math.max(1, Math.floor(minutes / MINUTES_PER_DAY))}d`;
-}
-
-function isCommunityReferral(referral: Referral): boolean {
-  return (
-    referral.originSiteCode.includes("CMHT") ||
-    referral.originSiteCode.includes("Clinic") ||
-    (referral.homeRegion as unknown as string) === "Community"
-  );
 }
 
 export function buildCensus(state: {

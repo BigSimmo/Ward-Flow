@@ -106,6 +106,7 @@ import {
 
 import styles from "./search.module.css";
 import cs from "./census.module.css";
+import { isCommunityReferral } from "./community-referral";
 
 const ACCESS_RECORD_EMPTY = "No searches submitted this session. Press Enter in the search field to record a search.";
 
@@ -333,10 +334,7 @@ export function PatientSearchPage() {
       if (activeKpiFacet === "live") {
         if (result.kind === "movement" && !isOpen(result.movement)) return false;
         if (result.kind === "referral") {
-          const isComm =
-            result.referral.originSiteCode.includes("CMHT") ||
-            result.referral.originSiteCode.includes("Clinic") ||
-            (result.referral.homeRegion as unknown as string) === "Community";
+          const isComm = isCommunityReferral(result.referral);
           if (isComm) return false;
         }
       }
@@ -347,10 +345,7 @@ export function PatientSearchPage() {
       if (activeKpiFacet === "notin") {
         if (result.kind === "movement") return false;
         if (result.kind === "referral") {
-          const isComm =
-            result.referral.originSiteCode.includes("CMHT") ||
-            result.referral.originSiteCode.includes("Clinic") ||
-            (result.referral.homeRegion as unknown as string) === "Community";
+          const isComm = isCommunityReferral(result.referral);
           if (!isComm) return false;
         }
       }
@@ -475,10 +470,7 @@ export function PatientSearchPage() {
       } else if (r.kind === "referral") {
         const ref = r.referral;
         const info = resolveSubjectPatient(ref, { patients, referrals, movements });
-        const isComm =
-          ref.originSiteCode.includes("CMHT") ||
-          ref.originSiteCode.includes("Clinic") ||
-          (ref.homeRegion as unknown as string) === "Community";
+        const isComm = isCommunityReferral(ref);
         const acceptedDest = ref.destinations.find((d) => d.acceptedUnitId);
         const destUnit = acceptedDest ? units.find((u) => u.id === acceptedDest.acceptedUnitId) : null;
         const waitH = Math.max(0, (now - ref.raisedAt) / 60);
@@ -1634,10 +1626,7 @@ export function ResultsSection({
         <ul className={styles.referralList} data-testid="ward-patient-search-referrals">
           {referralResults.map(({ referral }) => {
             const summary = buildReferralSummary(referral);
-            const isComm =
-              referral.originSiteCode.includes("CMHT") ||
-              referral.originSiteCode.includes("Clinic") ||
-              (referral.homeRegion as unknown as string) === "Community";
+            const isComm = isCommunityReferral(referral);
             const presenceKey = isComm ? "community" : "live";
             const presenceLabel = isComm ? "○ Not in Hosp" : "● In hospital";
             const isSelected = selectedReferralId === referral.id;

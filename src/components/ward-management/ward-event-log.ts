@@ -52,10 +52,10 @@ export function eventLogEntryFor(event: WardFlowEvent, accepted: boolean): Event
 }
 
 /**
- * The ACCEPTED entries, shaped as the events they record, for the history selectors. A refused
+ * The ACCEPTED entries, as the log records them (ids only, no typed payload), for the history selectors. A refused
  * event changed nothing, so it is not history. Reasons read as "Not recorded", because no free text
  * is kept.
  */
-export function acceptedEventsForHistory(log: readonly EventLogEntry[]): WardFlowEvent[] {
-  return log.filter((entry) => entry.accepted).map((entry) => entry as unknown as WardFlowEvent);
+export function acceptedEventsForHistory(log: readonly EventLogEntry[]): EventLogEntry[] {
+  return log.filter((entry) => entry.accepted);
 }

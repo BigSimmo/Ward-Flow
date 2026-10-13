@@ -5,6 +5,7 @@ import { wardSites } from "@/components/ward-management/ward-sites";
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { movementSearchState } from "./search-operational-state";
+import { isCommunityReferral } from "./community-referral";
 
 export type ServiceFilter = "all" | "East Metro" | "North Metro" | "South Metro" | "WACHS";
 export type SettingFilter = "all" | "ed" | "inpatient" | "transit" | "community" | "scheduled" | "discharged";
@@ -120,11 +121,7 @@ export function matchesSetting(
       return !result.referral.originSiteCode.includes("CMHT") && !result.referral.originSiteCode.includes("Clinic");
     }
     if (setting === "community") {
-      return (
-        result.referral.originSiteCode.includes("CMHT") ||
-        result.referral.originSiteCode.includes("Clinic") ||
-        (result.referral.homeRegion as unknown as string) === "Community"
-      );
+      return isCommunityReferral(result.referral);
     }
     if (setting === "transit" || setting === "inpatient" || setting === "scheduled" || setting === "discharged") {
       return false;
@@ -147,11 +144,7 @@ export function matchesPresence(result: PatientSearchResult, presence: string): 
 
   if (presence === "community") {
     if (result.kind === "referral") {
-      return (
-        result.referral.originSiteCode.includes("CMHT") ||
-        result.referral.originSiteCode.includes("Clinic") ||
-        (result.referral.homeRegion as unknown as string) === "Community"
-      );
+      return isCommunityReferral(result.referral);
     }
     return false;
   }
@@ -205,21 +198,13 @@ export function matchesQuickChip(result: PatientSearchResult, chipQuery: string,
   if (chipQuery === "● In hospital") {
     if (result.kind === "movement") return result.movement.closure === undefined && result.movement.stage !== "arrived";
     if (result.kind === "referral") {
-      return (
-        !result.referral.originSiteCode.includes("CMHT") &&
-        !result.referral.originSiteCode.includes("Clinic") &&
-        (result.referral.homeRegion as unknown as string) !== "Community"
-      );
+      return !isCommunityReferral(result.referral);
     }
     return false;
   }
   if (chipQuery === "○ Not in Hospital") {
     if (result.kind === "referral") {
-      return (
-        result.referral.originSiteCode.includes("CMHT") ||
-        result.referral.originSiteCode.includes("Clinic") ||
-        (result.referral.homeRegion as unknown as string) === "Community"
-      );
+      return isCommunityReferral(result.referral);
     }
     return false;
   }
