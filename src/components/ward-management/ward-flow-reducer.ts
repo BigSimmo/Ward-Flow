@@ -4534,16 +4534,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
       };
       const next = replaceMovement(state, movement.id, updated);
-      if (event.role !== "coordinator") {
+      {
         let noticeCount = state.notices.length;
         const wardNotices = movement.referredUnitIds.map((unitId) =>
           makeNotice(
             event.now,
             noticeCount++,
-            "referral_revoked_ward",
+            "ward_request_withdrawn",
             { role: "ward", placeId: unitId },
             { movementId: movement.id, unitId },
-            `The referral for ${movement.id} was withdrawn by the referrer.`,
+            `The referral for ${movement.id} was withdrawn by the ${event.role === "coordinator" ? "coordinator" : "referrer"}.`,
           ),
         );
         if (hadLiveTransport) {
@@ -4554,7 +4554,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
               "transport_cancelled_officer",
               { role: "officer" },
               { movementId: movement.id },
-              `Transport for ${movement.id} was cancelled: referral was withdrawn.`,
+              `Transport for ${movement.id} was cancelled: referral was withdrawn by the ${event.role === "coordinator" ? "coordinator" : "referrer"}.`,
             ),
           );
         }
@@ -8248,7 +8248,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             makeNotice(
               event.now,
               cascadeNoticeCount++,
-              "referral_revoked_ward",
+              "ward_request_withdrawn",
               { role: "ward", placeId: unitId },
               { movementId: m.id, unitId },
               `The referral for ${m.id} was withdrawn by its referrer.`,
