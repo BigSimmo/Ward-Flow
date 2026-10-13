@@ -27,6 +27,7 @@ import {
   SILENT_WARD_SECOND_REMINDER_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 
 export type DelayCause =
   // ⚠️ AUDIT GAP 3 CLOSED. This used to be one cause, `legal_expiring`, covering both
@@ -234,7 +235,8 @@ export function delayGroups(movements: Movement[], units: Unit[], now: Instant):
     // is actually breached or critical (the four `dueAt` values in ward-movements.ts are all
     // "due" or "clear" against NOW_ANCHOR) — both branches are real and reachable, but neither
     // is exercised by today's data. See the test file for how that is proved rather than assumed.
-    const legal = movement.legalForm?.dueAt;
+    // Audit S-6: a form ended by an inpatient order or arrival is history, never an overdue cause.
+    const legal = currentLegalDueAt(movement);
     if (legal !== undefined) {
       const state = clockState(legal, now);
       if (state === "breached") return "legal_breached";
@@ -297,7 +299,7 @@ export function delayGroups(movements: Movement[], units: Unit[], now: Instant):
  * screen, per this task's instruction — this function hands over the fact, not its rendering.
  */
 export function legalDeadlineMinutes(movement: Movement, now: Instant): number | undefined {
-  const dueAt = movement.legalForm?.dueAt;
+  const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) return undefined;
   return minutesUntil(dueAt, now);
 }

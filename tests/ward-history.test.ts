@@ -25,7 +25,9 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Stream D planned admissions (book, change, cancel, convert).
       // Global alerts (10 Oct 2026) add RAISE_PULL_NOW and REPLY_BROADCAST_ALERT.
       // v10 pass 3 (10 Oct 2026) adds eight step undos (UNDO_REFER_TO_UNITS … UNDO_TRANSPORT_STEP).
-      expect(allEventTypes.length).toBe(125);
+      // Audit A1-12 (13 Oct 2026) adds UNDO_DEPARTURE ("Has left" from its toast).
+      // Audit A3-10 (13 Oct 2026) adds UNDO_ABSENT_WITHOUT_LEAVE.
+      expect(allEventTypes.length).toBe(127);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
