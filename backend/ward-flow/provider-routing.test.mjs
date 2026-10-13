@@ -6,15 +6,13 @@ import { createBackend } from "./providers.mjs";
 import { createHandler } from "./server.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import { VerifierUnavailableError } from "./auth.mjs";
+import { syntheticDatabaseUrl } from "./synthetic-database-url.test-support.mjs";
 
 function environment(databaseProvider, authProvider) {
-  const url = new URL(
+  const databaseUrl =
     databaseProvider === "supabase"
-      ? `postgresql://db.${APPROVED_SUPABASE_PROJECT}.supabase.co:5432/postgres`
-      : "postgresql://127.0.0.1:5432/synthetic",
-  );
-  url.username = "wardflow_backend";
-  url.password = `offline-${randomUUID()}`;
+      ? syntheticDatabaseUrl({ host: `db.${APPROVED_SUPABASE_PROJECT}.supabase.co`, database: "postgres" })
+      : syntheticDatabaseUrl();
   return {
     WARD_DATABASE_PROVIDER: databaseProvider,
     WARD_AUTH_PROVIDER: authProvider,
@@ -34,8 +32,8 @@ function environment(databaseProvider, authProvider) {
     WARD_SUPABASE_PROJECT_REF: APPROVED_SUPABASE_PROJECT,
     WARD_SUPABASE_URL: APPROVED_SUPABASE_URL,
     WARD_SUPABASE_PUBLISHABLE_KEY: ["sb", "publishable", "synthetic_offline_fixture"].join("_"),
-    WARD_SUPABASE_DATABASE_URL: url.href,
-    WARD_POSTGRES_DATABASE_URL: url.href,
+    WARD_SUPABASE_DATABASE_URL: databaseUrl,
+    WARD_POSTGRES_DATABASE_URL: databaseUrl,
     WARD_ALLOWED_ORIGIN: "http://127.0.0.1:8799",
   };
 }

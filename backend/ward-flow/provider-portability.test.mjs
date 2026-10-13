@@ -21,13 +21,11 @@ import {
 import { createSupabaseAuthenticator } from "./supabase-auth.mjs";
 import { VerifierUnavailableError } from "./auth.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
+import { syntheticDatabaseUrl } from "./synthetic-database-url.test-support.mjs";
 
 // Generated offline-only values. No fixture is a copied credential or opens a socket.
 function databaseUrl(role = "wardflow_backend", host = "127.0.0.1", database = "synthetic") {
-  const url = new URL(`postgresql://${host}:5432/${database}`);
-  url.username = role;
-  url.password = `offline-${randomUUID()}`;
-  return url.href;
+  return syntheticDatabaseUrl({ role, host, database });
 }
 class RecordingPool {
   constructor(options) {
