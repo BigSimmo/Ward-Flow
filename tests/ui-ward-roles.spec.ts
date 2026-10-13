@@ -447,7 +447,8 @@ test.describe("@mockup Movements — transport panel", () => {
    * The leg words are `LEG_STATE_LABEL` (movements-screen.tsx), not the old tracker's: MERGE 03
    * renamed "Accepted" to "Booked" on screen and dropped "Requested" from the state union
    * entirely (`MovementLegState` excludes it). Asserting the retired words would pin a vocabulary
-   * the product no longer speaks.
+   * the product no longer speaks. Audit round 2 (A4-18, 13 Oct 2026) renamed "Booked" back to
+   * "Accepted", so the leg reads the same word here as on the officer page.
    */
   test("tracks every vehicle by leg and by how long since the last stamp", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
@@ -466,12 +467,12 @@ test.describe("@mockup Movements — transport panel", () => {
     expect(await rows.count()).toBeGreaterThan(0);
 
     // Every row names its leg and its age. The leg is read from the row's accessible name
-    // ("…, <leg> via <provider>"), NOT its text: every card's footer reads "Booked … ago", so a
-    // text match on /Booked|…/ would pass for every row whatever its leg. The age must be a real,
-    // non-negative duration (the footer no longer clamps at zero the way "since booked" did).
+    // ("…, <leg> via <provider>"), NOT its text: every card's footer reads "Accepted … ago" (audit
+    // round 2, A4-18 renamed "Booked" to "Accepted"), so a text match on /Accepted|…/ would pass
+    // for every row whatever its leg. The age must be a real, non-negative duration (the footer no longer clamps at zero the way "since booked" did).
     for (const row of await rows.all()) {
-      await expect(row).toHaveAccessibleName(/, (Booked|En route|Collected|Arrived|Cancelled) via /);
-      await expect(row).toContainText(/Booked \d+(d|h|m)( \d+(h|m))? ago/);
+      await expect(row).toHaveAccessibleName(/, (Accepted|En route|Collected|Arrived|Cancelled) via /);
+      await expect(row).toContainText(/Accepted \d+(d|h|m)( \d+(h|m))? ago/);
     }
   });
 
@@ -510,7 +511,10 @@ test.describe("@mockup Movements — transport panel", () => {
     const dayMetric = (label: RegExp) =>
       page.getByTestId("movements-day-metric").filter({ hasText: label }).locator("strong");
     await expect(dayMetric(/^Transport legs/)).toHaveText("13");
-    await expect(dayMetric(/^No transport leg/)).toHaveText("57");
+    // Audit round 2, A4-18 (13 Oct 2026): "No transport leg" now counts only movements that need a
+    // vehicle (pulled, handover ready or moving) and have none, so 57 became 8. Re-derived from the
+    // seed with the screen's own `withoutTransport` filter, not adjusted by guesswork.
+    await expect(dayMetric(/^No transport leg/)).toHaveText("8");
     await expect(dayMetric(/^Open/)).toHaveText("70");
   });
 });
@@ -824,18 +828,16 @@ test.describe("@mockup Emergency department screen", () => {
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByTestId("ward-ed-governance")).toBeVisible();
-    if ((await page.getByTestId("ward-ed-raise-referral-toggle").getAttribute("aria-expanded")) !== "true") {
-      await page.getByTestId("ward-ed-raise-referral-toggle").click();
-    }
-    await expect(page.getByRole("region", { name: "New referral" })).toBeVisible();
+    // Audit round 2 (option B, 13 Oct 2026): Raise referral opens the one shared referral slide-out
+    // rather than an inline ED form, so raising a referral is that slide-out here.
+    await page.getByTestId("ward-ed-raise-referral-toggle").click();
+    const referralSheet = page.getByTestId("ward-bar-referral-sheet");
+    await expect(referralSheet).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
 
     await page.emulateMedia({ forcedColors: "active" });
     await expect(page.getByTestId("ward-ed-governance")).toBeVisible();
-    if ((await page.getByTestId("ward-ed-raise-referral-toggle").getAttribute("aria-expanded")) !== "true") {
-      await page.getByTestId("ward-ed-raise-referral-toggle").click();
-    }
-    await expect(page.getByRole("region", { name: "New referral" })).toBeVisible();
+    await expect(referralSheet).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
 
     await page.emulateMedia({ colorScheme: "light", forcedColors: "none", media: "print" });
@@ -1145,7 +1147,14 @@ test.describe("@mockup Role switcher — the loop", () => {
     // referable in parallel — is unchanged; only which third unit qualifies moved.
     await shortlist.getByTestId("ward-shortlist-candidate-bty-adult-secure").click();
     await shortlist.getByTestId("ward-shortlist-candidate-rgh-adult-secure").click();
-    await shortlist.getByTestId("ward-shortlist-refer").click();
+    // Option B (Josh, 13 Oct 2026; D-30): Home's Refer now opens the referral slide-out (a referral
+    // for the coordinator queue) rather than offering the wards at once. Override still offers the
+    // chosen wards directly, with a reason and a second sign-off, so the loop offers through it.
+    await shortlist.getByTestId("ward-shortlist-override-toggle").click();
+    await shortlist.getByLabel(/Reason for overriding/).selectOption("Clinical urgency outweighs the mismatch");
+    await shortlist.getByTestId("ward-shortlist-override-second-sign-off").check();
+    await shortlist.getByTestId("ward-shortlist-override-sign-off-name").fill("JS");
+    await shortlist.getByRole("button", { name: "Record override" }).click();
     // Three live referrals — exactly why the ward hop below cannot be inferred and must use the
     // picker (addendum R52). Whole-branch review M3: the old regex-based `toContainText` assertion
     // was satisfied by a single "Parallel referral" badge, so it never actually checked the claim
@@ -1252,6 +1261,16 @@ test.describe("@mockup Role switcher — the loop", () => {
     for (const label of ["Accepted", "En route", "Collected", "Delivered"]) {
       await panel.getByRole("button", { name: label }).click();
     }
+
+    // --- Step 10b: Ward — confirm arrival. Audit round 2 (A4-16, Josh 13 Oct 2026): the officer's
+    // Delivered ends the transport leg only and leaves the movement open; the receiving ward closes
+    // it by confirming arrival. ---
+    await switchTo("Dabakarn");
+    await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
+    await page.waitForLoadState("networkidle");
+    await openAllArrivals(page);
+    await page.getByTestId("ward-confirm-arrival-WF-315").click();
+    await expect(page.getByTestId("ward-accepted-WF-315")).toHaveCount(0);
 
     // --- Step 11: Coordinator — the patient has left the system. ---
     await switchTo("Flow coordinator");
