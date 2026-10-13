@@ -553,6 +553,7 @@ try {
     NEXT_TSCONFIG_PATH: relativeTsConfigPath,
     NODE_ENV: "production",
     PLAYWRIGHT_OFFLINE_MODE: "true",
+    NEXT_PUBLIC_WARD_SHARED_ENABLED: "false",
     NEXT_PUBLIC_MOCKUPS_ENABLED: mockupProjectRequested ? "true" : "false",
   });
   // WARD_BUILD_CACHE_DIR (Ward Flow gate, Josh 25 September R26): reuse Next's working cache between
