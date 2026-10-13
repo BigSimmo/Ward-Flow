@@ -2751,7 +2751,8 @@ button.gLaneL:hover {
      the 32px chips' 48px hit areas to 32px. The band is back, taken back again by negative margins,
      so the row does not move. */
   .tableCard > .chead.fRow {
-    margin-top: calc(-1 * var(--wf-phone-pill-hit));
+    /* 6px clear of the pinned order switch's hit area (13 Oct 2026), so each chip keeps a 44px tap. */
+    margin-top: calc(6px - var(--wf-phone-pill-hit));
     margin-bottom: calc(var(--wf-s-1) - var(--wf-phone-pill-hit));
     padding-block: var(--wf-phone-pill-hit);
   }
