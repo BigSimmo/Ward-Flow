@@ -321,13 +321,6 @@
   flex: none;
 }
 
-.ringRow {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
 .dotName {
   display: inline-flex;
   align-items: center;

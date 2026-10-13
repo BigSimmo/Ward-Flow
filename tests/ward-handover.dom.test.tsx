@@ -167,7 +167,7 @@ describe("Handover page", () => {
       .getAllByRole("row")
       .filter((row) => row.hasAttribute("data-row-id")).length;
     await user.click(
-      within(screen.getByTestId("ward-handover-kpi-strip")).getByRole("button", { name: /Waiting for a bed/ }),
+      within(screen.getByTestId("ward-handover-kpi-strip")).getByRole("button", { name: /Finding a ward/ }),
     );
     const after = within(screen.getByTestId("ward-handover-sheet"))
       .getAllByRole("row")
@@ -253,11 +253,11 @@ describe("Handover sign-off belongs to one handover", () => {
 });
 
 describe("Handover counts agree (device audit 11 Oct 2026)", () => {
-  it("counts Waiting for a bed and Moving the way the meeting groups do", () => {
+  it("counts Finding a ward and Moving the way the meeting groups do", () => {
     renderHandover();
     const strip = screen.getByTestId("ward-handover-kpi-strip");
     for (const [id, label] of [
-      ["bed", /Waiting for a bed/],
+      ["bed", /Finding a ward/],
       ["mov", /Moving/],
     ] as const) {
       const pill = within(strip)

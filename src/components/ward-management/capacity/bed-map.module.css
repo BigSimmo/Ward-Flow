@@ -584,8 +584,7 @@
 .pillow,
 .bedIcon,
 .bedGlyph,
-.occupiedDot,
-.statusDotReady {
+.occupiedDot {
   display: none;
 }
 

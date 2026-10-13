@@ -244,14 +244,6 @@
   border-radius: var(--wf-r-pill);
 }
 
-.ageSeg {
-  min-width: 6px;
-}
-
-.ageSegOn {
-  box-shadow: inset 0 0 0 2px var(--wf-hero-ink);
-}
-
 .age_under7 {
   background: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
 }
@@ -1245,47 +1237,6 @@ fieldset.formRow {
   border-radius: var(--wf-r-xl);
   background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
   color: var(--wf-hero-ink);
-}
-
-.phoneTile {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-width: 0;
-  min-height: var(--ward-tap, 3rem);
-  padding: 10px 10px 10px var(--wf-s-3);
-  border: 1px solid transparent;
-  border-radius: var(--wf-r-lg);
-  background: transparent;
-  color: var(--wf-hero-ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.phoneTile[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
-  background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
-}
-
-.phoneTile:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: -2px;
-}
-
-.phoneTileValue {
-  font: 600 var(--wf-fs-28) / 34px var(--wf-mono);
-  letter-spacing: -0.03em;
-}
-
-.phoneTileLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--wf-hero-ink-2);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
 }
 
 .phoneTabs {

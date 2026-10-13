@@ -4,7 +4,7 @@ import { wardAddressing } from "@/components/ward-management/ward-eligibility";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ClipboardCopy, Copy, FileText, ListOrdered, Phone, TriangleAlert } from "lucide-react";
 
@@ -139,6 +139,30 @@ function hoursLabel(minutes: number): string {
   return `${Math.round(minutes / 60)}h`;
 }
 
+/** Centre-to-centre room two markers need on one lane, in px: a "T2" pill is about 23px wide, plus
+ *  the 3px highlight ring on each side, so neighbours never touch. */
+export const RUNWAY_MARKER_GAP_PX = 28;
+
+/** The lane gap as a share of the track. A fixed percentage overlapped on narrow tracks (4% of a
+ *  270px tablet track is 11px, under half a marker), so the gap follows the measured width. Before
+ *  the track is measured it keeps the old percentage, which matches a standard desktop track. */
+export function runwayGapPercent(trackPx: number | undefined, compact: boolean): number {
+  if (trackPx === undefined || trackPx <= 0) return compact ? 8 : 4;
+  return (RUNWAY_MARKER_GAP_PX / trackPx) * 100;
+}
+
+/** Lane per marker, for positions already sorted shortest wait first: each marker takes the
+ *  lowest lane whose last marker is at least `gapPercent` to its left. Positions never move. */
+export function runwayLanes(positions: readonly number[], gapPercent: number): number[] {
+  const laneEnds: number[] = [];
+  return positions.map((x) => {
+    let lane = 0;
+    while (laneEnds[lane] !== undefined && x - laneEnds[lane]! < gapPercent) lane += 1;
+    laneEnds[lane] = x;
+    return lane;
+  });
+}
+
 export function WaitRunway({
   queued,
   now,
@@ -156,19 +180,36 @@ export function WaitRunway({
   onSelect: (referralId: string) => void;
   compact?: boolean;
 }) {
+  // Markers are kept apart in real pixels, so measure the track rather than assume its width.
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [trackPx, setTrackPx] = useState<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (track === null) return;
+    const measure = () => {
+      if (track.clientWidth > 0) setTrackPx(track.clientWidth);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(track);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
   // Shortest wait first, so the lanes stack upward from the left the way the eye reads them.
-  const placed: { referral: Referral; x: number; lane: number; minutes: number }[] = [];
-  const laneEnds: number[] = [];
-  const gap = compact ? 8 : 4;
-  for (const referral of [...queued].sort((a, b) => b.raisedAt - a.raisedAt)) {
-    const minutes = referralClocks(referral, now).sinceReferral;
-    const x = runwayPercent(minutes);
-    let lane = 0;
-    while (laneEnds[lane] !== undefined && x - laneEnds[lane]! < gap) lane += 1;
-    laneEnds[lane] = x;
-    placed.push({ referral, x, lane, minutes });
-  }
-  const lanes = Math.max(1, laneEnds.length);
+  const sorted = [...queued]
+    .sort((a, b) => b.raisedAt - a.raisedAt)
+    .map((referral) => {
+      const minutes = referralClocks(referral, now).sinceReferral;
+      return { referral, minutes, x: runwayPercent(minutes) };
+    });
+  const laneOf = runwayLanes(
+    sorted.map((entry) => entry.x),
+    runwayGapPercent(trackPx, compact),
+  );
+  const placed = sorted.map((entry, index) => ({ ...entry, lane: laneOf[index] ?? 0 }));
+  const lanes = Math.max(1, ...placed.map((entry) => entry.lane + 1));
   const ticks = [
     { at: 0, label: "0", tier: "" },
     { at: OVERDUE_AFTER_MINUTES_BY_TIER[1], label: hoursLabel(OVERDUE_AFTER_MINUTES_BY_TIER[1]), tier: "T1" },
@@ -186,6 +227,7 @@ export function WaitRunway({
         </span>
       </div>
       <div
+        ref={trackRef}
         className={styles.runwayTrack}
         style={{ height: `calc(${lanes} * 1.625rem + 0.5rem)` }}
         role="group"

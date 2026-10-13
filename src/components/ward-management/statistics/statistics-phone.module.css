@@ -292,13 +292,6 @@
   justify-content: center;
 }
 
-.pauseButton {
-  flex: none;
-  width: var(--spacing-tap, 3rem);
-  min-height: var(--spacing-tap, 3rem);
-  border-radius: var(--wf-r-pill);
-}
-
 /* v10: Hospitals and Wards stay pinned under the bar while their list scrolls, with an 8px canvas
    collar so no row shows round the switch, and let go after the list. The shared bar keeps the same height
    throughout the scroll; the canvas collar fills the join beneath it. */

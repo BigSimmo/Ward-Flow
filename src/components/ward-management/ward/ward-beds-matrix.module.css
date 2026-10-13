@@ -33,57 +33,6 @@
   margin: 0;
 }
 
-.matrixControls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.podFilters {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.podFilterBtn {
-  position: relative;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: var(--pill, 999px);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.podFilterBtn::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 44px;
-  min-height: 44px;
-  width: 100%;
-  height: 100%;
-}
-
-.podFilterBtn:hover {
-  background: var(--surface);
-  color: var(--ink);
-}
-
-.podFilterBtn[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--surface);
-  border-color: var(--accent);
-}
-
 .positionCaption {
   position: absolute;
   width: 1px;
@@ -143,50 +92,6 @@
 .shiftSubtitle {
   font-size: 12px;
   color: var(--muted);
-}
-
-.shiftToggleGroup {
-  display: flex;
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--pill, 999px);
-  padding: 2px;
-  gap: 2px;
-}
-
-.shiftToggleBtn {
-  position: relative;
-  padding: 3px 10px;
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  border-radius: var(--pill, 999px);
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  transition: all 0.15s ease;
-}
-
-.shiftToggleBtn::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 44px;
-  min-height: 44px;
-  width: 100%;
-  height: 100%;
-}
-
-.shiftToggleBtn.active {
-  background: var(--surface-2);
-  color: var(--ink);
-  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.06);
 }
 
 .shiftDenseGrid {
@@ -350,18 +255,6 @@
   border-color: var(--ink);
 }
 
-.btnShiftPrimary {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: var(--accent);
-  font-weight: 600;
-}
-
-.btnShiftPrimary:hover {
-  background: var(--accent);
-  color: var(--text-inverse);
-}
-
 .shiftEmptyNotice {
   padding: 10px 14px;
   font-size: 12px;
@@ -376,71 +269,6 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-}
-
-.filterPillsGroup {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.filterPillBtn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
-  font-size: 12px;
-  font-weight: 500;
-  border-radius: var(--pill, 999px);
-  border: 1px solid var(--line-strong, var(--line));
-  background: var(--surface);
-  color: var(--ink-soft);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.filterPillBtn::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 44px;
-  min-height: 44px;
-  width: 100%;
-  height: 100%;
-}
-
-.filterPillBtn:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-}
-
-.filterPillBtn.active {
-  background: var(--ink);
-  color: var(--surface);
-  border-color: var(--ink);
-  font-weight: 600;
-}
-
-.filterPillCount {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1px 6px;
-  border-radius: var(--pill, 999px);
-  background: var(--surface-2);
-  color: var(--ink);
-  font-size: var(--wf-fs-12);
-  font-family: var(--mono);
-  font-weight: 600;
-}
-
-.filterPillBtn.active .filterPillCount {
-  background: var(--surface-2);
-  color: var(--ink);
 }
 
 .orderSelectLabel {
@@ -808,58 +636,6 @@
   font-weight: 700;
 }
 
-.badgeSelected {
-  display: inline-flex;
-  align-items: center;
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: var(--pill, 999px);
-  padding: 1px 6px;
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.badgePulled {
-  display: inline-flex;
-  align-items: center;
-  background: var(--surface-2);
-  color: var(--ink);
-  border: 1px solid var(--line-strong, var(--line));
-  border-radius: var(--pill, 999px);
-  padding: 1px 6px;
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.badgeClosed {
-  display: inline-flex;
-  align-items: center;
-  background: var(--warn-soft);
-  color: var(--warn);
-  border: 1px solid var(--warn-border);
-  border-radius: var(--pill, 999px);
-  padding: 1px 6px;
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.badgeReady {
-  display: inline-flex;
-  align-items: center;
-  background: var(--good-soft);
-  color: var(--good);
-  border: 1px solid var(--good-border);
-  border-radius: var(--pill, 999px);
-  padding: 1px 6px;
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
 /* ─────────────────────────────────────────────────────────────
    FOOTER NOTES & LEGEND
    ───────────────────────────────────────────────────────────── */
@@ -867,18 +643,6 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.censusSummaryText {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.tentativeDisclaimer {
-  font-size: 12px;
-  color: var(--muted);
-  font-style: italic;
 }
 
 .bedKeyLegend {
@@ -985,28 +749,6 @@
   border-top: 1px dashed var(--line);
 }
 
-/* Inspection Drawer */
-.drawerOverlay {
-  position: fixed;
-  inset: 0;
-  background: var(--scrim, var(--surface));
-  backdrop-filter: blur(2px);
-  display: flex;
-  justify-content: flex-end;
-  z-index: 1000;
-}
-
-.drawerContent {
-  width: 420px;
-  max-width: 90vw;
-  background: var(--surface);
-  height: 100%;
-  box-shadow: var(--float);
-  display: flex;
-  flex-direction: column;
-  animation: slideLeft 0.2s ease;
-}
-
 @keyframes slideLeft {
   from {
     transform: translateX(100%);
@@ -1049,24 +791,9 @@
   gap: 10px;
 }
 
-.btnClose {
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: var(--r1);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  cursor: pointer;
-  min-height: 36px;
-}
-
 @media (max-width: 600px) {
   .bedCard {
     min-height: 110px;
-  }
-  .btnClose {
-    min-height: 44px;
   }
 }
 

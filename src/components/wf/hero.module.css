@@ -656,16 +656,18 @@
 
 /*
  * The server-rendered band (site review B6, 12 Oct 2026). Until `useWfBandBleed` has measured, a
- * band hero in the work column has no `data-band`. It paints as the band with the usual 16px page
- * insets, so the first paint is already the band and nothing jumps when the measure lands. The
+ * band hero in the work column has no `data-band`. It paints as the band with the page's insets
+ * (16px, or `--wf-band-page-top`/`--wf-band-page-x` where a page container pads differently, as
+ * the mode workspace does), so the first paint is already the band and nothing jumps when the
+ * measure lands. The
  * measure then sets `data-band="on"` with the real insets, or `"off"` when the page does not open
  * on the hero. Desktop and tablet only: phone keeps its own measured band below.
  */
 @media (min-width: 48.0625rem) {
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) {
-    --wf-band-top: var(--wf-s-4);
-    --wf-band-left: var(--wf-s-4);
-    --wf-band-right: var(--wf-s-4);
+    --wf-band-top: var(--wf-band-page-top, var(--wf-s-4));
+    --wf-band-left: var(--wf-band-page-x, var(--wf-s-4));
+    --wf-band-right: var(--wf-band-page-x, var(--wf-s-4));
     position: relative;
     margin-top: calc(-1 * var(--wf-band-top));
     margin-left: calc(-1 * var(--wf-band-left));

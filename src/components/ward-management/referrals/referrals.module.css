@@ -134,20 +134,6 @@
   gap: 0.5rem;
 }
 
-.liveBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--accent);
-  line-height: 1.2;
-}
-
 .liveDot {
   width: 0.45rem;
   height: 0.45rem;
@@ -306,23 +292,6 @@
   outline-offset: 0.125rem;
 }
 
-/* Why Send is unavailable, named field by field. Never colour alone and never a tooltip: it is
-   readable text in the same block as the control it explains.
-   ⚠️ `border-left-width` IS THE ONLY ASYMMETRY. Colour is unchanged; this is
-   a second, colour-independent cue that the reason is a blocker, not a note. */
-.unavailableReason {
-  margin: 0;
-  border: 0.0625rem solid var(--warning-border);
-  border-left-width: 0.1875rem;
-  border-radius: var(--radius-lg);
-  background: var(--ward-warning-soft);
-  padding: var(--ward-space-12) var(--ward-space-14);
-  color: var(--ward-warning);
-  font-size: var(--t-0);
-  font-weight: 600;
-  line-height: var(--ward-leading-body);
-}
-
 .rejection {
   margin: 0;
   border: 0.0625rem solid var(--danger-border);
@@ -377,8 +346,7 @@
 
 @media (min-width: 40rem) {
   .rejection,
-  .submit,
-  .unavailableReason {
+  .submit {
     grid-column: 1 / -1;
   }
 }
@@ -563,10 +531,6 @@
   --ward-table-min-width: 56rem;
 }
 
-.queuedTable td:first-child {
-  min-width: 11rem;
-}
-
 .selectedRow {
   background: var(--clinical-accent-soft);
 }
@@ -632,13 +596,6 @@
 .table td.tierCell {
   color: var(--ink);
   font-weight: 700;
-}
-
-.tierCellContent {
-  display: flex;
-  align-items: center;
-  gap: var(--ward-space-8);
-  flex-wrap: wrap;
 }
 
 .cardTierGroup {
@@ -766,12 +723,6 @@
   border-radius: var(--radius-sm);
   padding: var(--ward-space-2) var(--ward-space-6);
   line-height: var(--ward-leading-none);
-}
-
-.hospitalCell {
-  font-size: var(--t-1);
-  color: var(--ink);
-  white-space: nowrap;
 }
 
 .bedCell {
@@ -1057,30 +1008,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ward-space-8);
-}
-
-.acceptingCountBannerPositive {
-  margin: 0;
-  padding: var(--ward-space-8) var(--ward-space-12);
-  border-radius: var(--radius-md);
-  border: 0.0625rem solid var(--success-border);
-  background: var(--ward-success-soft);
-  color: var(--ward-success);
-  font-size: var(--t-0);
-  font-weight: 700;
-  line-height: var(--ward-leading-tight);
-}
-
-.acceptingCountBannerZero {
-  margin: 0;
-  padding: var(--ward-space-8) var(--ward-space-12);
-  border-radius: var(--radius-md);
-  border: 0.0625rem solid var(--ward-border);
-  background: var(--surface-subtle);
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 600;
-  line-height: var(--ward-leading-tight);
 }
 
 /*
@@ -1659,76 +1586,6 @@
 /* Sticky only where there is a second column to be sticky beside. On a phone it is an ordinary
    block below the form; a sticky panel in a single column would cover the fields. */
 
-/* Panel anatomy copied from `WardPanel` — border, small radius, subtle header on canvas fill —
-   so the rail reads as the same furniture as every other ward surface rather than as a second
-   design. */
-.asideCard {
-  border: var(--ward-radius-pixel) solid var(--ward-border);
-  border-radius: var(--radius-md);
-  background: var(--ward-canvas);
-  overflow: hidden;
-}
-
-/* The Progress card is the one figure a referrer glances back at repeatedly while filling the
-   form in, so it carries a coloured top edge marking it as the primary stat — never a second
-   `.asideCard` variant, just this one accent on the same panel shape. The extra weight of the
-   line (3px against the panel's own 1px edge) is what survives greyscale and forced-colours;
-   the colour is a bonus, not the mechanism. */
-.asideCardAccent {
-  border-top-width: 0.1875rem;
-  border-top-color: var(--ward-blue);
-}
-
-.asideCardTitle {
-  margin: 0;
-  padding: var(--ward-space-10) var(--ward-space-14);
-  background: var(--ward-subtle);
-  border-bottom: var(--ward-radius-pixel) solid var(--ward-border);
-  color: var(--ward-muted);
-  font-size: var(--t-0);
-  font-weight: 600;
-  line-height: var(--ward-leading-tight);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
-}
-
-.asideCardBody {
-  padding: var(--ward-space-12) var(--ward-space-14);
-}
-
-/* The progress figure. Tabular numerals so the count does not jitter sideways as it climbs —
-   the same reason every other figure in this product uses them. */
-.progressValue {
-  display: block;
-  color: var(--ward-heading);
-  font-size: var(--t-6);
-  font-weight: 700;
-  line-height: var(--ward-leading-none);
-  font-variant-numeric: tabular-nums;
-}
-
-.progressLabel {
-  display: block;
-  margin-top: var(--ward-space-6);
-  color: var(--ward-muted);
-  font-size: var(--t-1);
-  line-height: var(--ward-leading-body);
-}
-
-.summaryRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--ward-space-2);
-}
-
-.summaryTerm {
-  color: var(--ward-muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-tight);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
-}
-
 /* `overflow-wrap: anywhere` because these are recorded values, not prose: a site code or a team
    name with no spaces must wrap inside the rail rather than widen it. */
 .summaryValue {
@@ -1747,13 +1604,6 @@
   font-style: italic;
 }
 
-.asideNote {
-  margin: 0;
-  color: var(--ward-muted);
-  font-size: var(--t-1);
-  line-height: var(--ward-leading-copy);
-}
-
 /* ── DARK THEME HIGH-CONTRAST BORDERS & CONTRAST ELEVATION ── */
 :global([data-theme="dark"]) .matchPanel,
 :global(.dark) .matchPanel,
@@ -1769,8 +1619,6 @@
 :global(.dark) .kpiCard,
 :global([data-theme="dark"]) .criteriaChecklist,
 :global(.dark) .criteriaChecklist,
-:global([data-theme="dark"]) .suitabilityBadge,
-:global(.dark) .suitabilityBadge,
 :global([data-theme="dark"]) .priorityBadge,
 :global(.dark) .priorityBadge,
 :global([data-theme="dark"]) .waitBadge,
@@ -1788,12 +1636,6 @@
 :global(.dark) .priorityBadge[data-priority="urgent"] {
   border-color: var(--ward-warning);
   color: var(--ward-warning);
-}
-
-:global([data-theme="dark"]) .suitabilityBadge[data-score="100"],
-:global(.dark) .suitabilityBadge[data-score="100"] {
-  border-color: var(--ward-success);
-  color: var(--ward-success);
 }
 
 @media print {
@@ -2055,37 +1897,6 @@
   }
 }
 
-/* The rail's report of the history — a count and a length, never the text. See
-   `referralSummaryRows` for why a preview is the one thing this block must not become. */
-.historySummary {
-  display: grid;
-  gap: var(--ward-space-4);
-  margin-top: var(--ward-space-12);
-  border: 0.0625rem solid var(--ward-warning);
-  border-radius: var(--radius-md);
-  background: var(--ward-warning-soft);
-  padding: var(--ward-space-10);
-}
-
-.historySummaryTerm {
-  color: var(--ward-heading);
-  font-size: var(--t-0);
-  font-weight: 600;
-}
-
-.historySummaryValue {
-  color: var(--ward-text);
-  font-size: var(--t-0);
-  font-weight: 500;
-}
-
-.historySummaryNote {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 400;
-  line-height: var(--ward-leading-body);
-}
-
 /* ⚠️ NO PER-FILE PRINT BLOCK HERE, AND ITS ABSENCE IS THE DECISION.
 
    The first version of this section carried one, forcing #000 on #fff so the amber washes above
@@ -2152,32 +1963,11 @@
 
 .screen[data-referral-view] .section,
 .screen[data-referral-view] .matchPanel,
-.screen[data-referral-view] .asideCard,
 .screen[data-referral-view] .registerEmpty {
   border-color: var(--line);
   border-bottom-color: var(--line-strong);
   border-radius: var(--r1);
   background: var(--surface);
-}
-
-.screen[data-referral-view] .asideCard {
-  overflow: hidden;
-  box-shadow: var(--lift);
-}
-
-.screen[data-referral-view] .asideCardAccent {
-  border-top-width: 1px;
-  border-top-color: var(--line);
-}
-
-.screen[data-referral-view] .asideCardTitle {
-  border-color: var(--line);
-  background: var(--surface-2);
-  color: var(--accent-ink);
-  font-family: var(--display);
-  font-size: var(--t-2);
-  text-transform: none;
-  letter-spacing: -0.01em;
 }
 
 .registerLayout,
@@ -2191,30 +1981,6 @@
 
 .detailBackdrop {
   display: none;
-}
-
-.hudWrapper {
-  order: 1;
-  margin-bottom: var(--ward-space-12, 0.75rem);
-}
-
-.kpiGrid {
-  order: 1;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-@media (max-width: 68.75rem) {
-  .kpiGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 43.75rem) {
-  .kpiGrid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .kpiCard {
@@ -2271,19 +2037,6 @@
   outline-offset: 2px;
 }
 
-.kpiCardActive {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1.5px var(--accent);
-}
-
-.kpiHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.375rem;
-}
-
 .kpiLabel {
   color: var(--muted);
   font-size: var(--t-0);
@@ -2299,22 +2052,6 @@
   flex-shrink: 0;
 }
 
-.kpiDotAccent {
-  background: var(--accent);
-}
-.kpiDotDanger {
-  background: var(--danger);
-}
-.kpiDotWarn {
-  background: var(--warn);
-}
-.kpiDotCoord {
-  background: var(--svc-north);
-}
-.kpiDotGood {
-  background: var(--good);
-}
-
 .kpiValue {
   color: var(--ink);
   font-family: var(--mono);
@@ -2325,18 +2062,6 @@
   margin: 0.125rem 0;
 }
 
-.kpiValueDanger {
-  color: var(--danger);
-}
-
-.kpiValueGood {
-  color: var(--good);
-}
-
-.kpiValueWarn {
-  color: var(--warn);
-}
-
 .kpiSub {
   color: var(--muted);
   font-size: var(--t-0);
@@ -2345,89 +2070,6 @@
 
 .screen[data-referral-view="register"] .registerLayout {
   order: 3;
-}
-
-.registerToolbar,
-.registerControlBar {
-  order: 2;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  gap: 0.75rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  box-shadow: var(--lift);
-  padding: 0.875rem 1.125rem;
-  margin-bottom: var(--ward-space-12, 0.75rem);
-}
-
-.toolbarTopRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-  width: 100%;
-}
-
-.toolbarSubRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-  width: 100%;
-  padding-top: 0.375rem;
-}
-
-.toolbarSubLeft {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  flex: 1 1 auto;
-}
-
-.toolbarSubRight {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.toolbarCohortStatus {
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 600;
-  color: var(--muted);
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  padding: 0.2rem 0.5rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  white-space: nowrap;
-}
-
-.toolbarResetBtn {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--r2, 6px);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--accent);
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.toolbarResetBtn:hover {
-  background: var(--accent-soft);
-  border-color: var(--accent);
 }
 
 .searchWrap {
@@ -2470,37 +2112,6 @@
   }
 }
 
-.searchClearBtn {
-  position: absolute;
-  right: 0.375rem;
-  background: none;
-  border: none;
-  font-size: 1.125rem;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 0.25rem;
-  line-height: 1;
-  min-height: 1.75rem;
-  min-width: 1.75rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-pill, 9999px);
-  transition: all 0.12s ease;
-}
-
-.searchClearBtn:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-}
-
-.chipGroup {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
-
 .chipLabel {
   font-size: var(--t-0);
   font-weight: 600;
@@ -2510,8 +2121,7 @@
   margin-right: 0.25rem;
 }
 
-.filterChip,
-.filterChipActive {
+.filterChip {
   display: inline-flex;
   align-items: center;
   min-height: 1.875rem;
@@ -2532,60 +2142,10 @@
   background: var(--surface-2);
 }
 
-.filterChipActive {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  font-weight: 600;
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
 @media (max-width: 51.25rem), (pointer: coarse) {
-  .filterChip,
-  .filterChipActive {
+  .filterChip {
     min-height: var(--ward-tap, 3rem);
   }
-}
-
-.clinicalCard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  margin: 0;
-  padding: 0.875rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg, 8px);
-  background: var(--surface-2);
-  box-shadow: var(--lift-sm);
-}
-
-.clinicalCardHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.clinicalTitle {
-  margin: 0;
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 700;
-  color: var(--ink);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.clinicalOriginBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-pill, 9999px);
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 600;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
 }
 
 .synopsisBox {
@@ -2594,35 +2154,6 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
-}
-
-.synopsisText {
-  margin: 0;
-  font-size: 0.8125rem;
-  line-height: 1.45;
-  color: var(--ink);
-}
-
-.clinicalMetaGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem 0.875rem;
-  padding: 0.625rem 0.75rem;
-  background: var(--surface);
-  border-radius: var(--radius-sm, 4px);
-  border: 1px solid var(--line);
-}
-
-@media (min-width: 52rem) {
-  .clinicalMetaGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-.clinicalMetaItem {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
 }
 
 .metaLabel {
@@ -2639,13 +2170,6 @@
   color: var(--ink);
 }
 
-.clinicalBadges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  align-items: center;
-}
-
 .acuityBadge {
   display: inline-flex;
   align-items: center;
@@ -2656,30 +2180,6 @@
   background: var(--danger-soft);
   color: var(--danger-ink);
   border: 1px solid var(--danger);
-}
-
-.legalBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 600;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border: 1px solid var(--accent);
-}
-
-.secureBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 600;
-  background: var(--warn-soft);
-  color: var(--warn);
-  border: 1px solid var(--warn);
 }
 
 .transportBadge {
@@ -2694,28 +2194,6 @@
   border: 1px solid var(--good);
 }
 
-.statutoryCompact {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: var(--radius-sm, 4px);
-  background: var(--surface-2);
-  border: 1px dashed var(--line);
-  font-size: 0.75rem;
-}
-
-.statutoryCompactLabel {
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.statutoryCompactValue {
-  color: var(--ink-soft);
-}
-
 .statutoryCard {
   display: flex;
   flex-direction: column;
@@ -2726,63 +2204,6 @@
   background: var(--accent-soft);
 }
 
-.statutoryHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 700;
-  color: var(--accent-ink);
-}
-
-.statutoryIcon {
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.statutoryText {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--ink);
-  line-height: 1.4;
-}
-
-.searchEmptyBox {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 2.5rem 1rem;
-  text-align: center;
-}
-
-.resetFilterBtn {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--ward-tap, 3rem);
-  padding: 0 1.125rem;
-  border-radius: var(--radius-pill, 9999px);
-  border: 1px solid var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  font-size: var(--t-0);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.emptyIconWrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 50%;
-  background: var(--surface-2);
-  color: var(--muted);
-  margin-bottom: 0.75rem;
-}
-
 .filterGroup {
   display: flex;
   flex-wrap: wrap;
@@ -2790,74 +2211,7 @@
   gap: 0.5rem;
 }
 
-.filterPill,
-.filterPillActive {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 2.125rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--surface);
-  padding: 0 0.875rem;
-  color: var(--ink-soft);
-  font-size: var(--t-1);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-@media (max-width: 51.25rem), (pointer: coarse) {
-  .filterPill,
-  .filterPillActive {
-    min-height: var(--ward-tap, 3rem);
-  }
-}
-
-.filterPill:hover {
-  background: var(--surface-2);
-  border-color: var(--line-strong);
-  color: var(--ink);
-}
-
-.filterPillActive {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
-  font-weight: 600;
-}
-
-.filterPillCount {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--sunk);
-  padding: 0 0.375rem;
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  transition: all 0.15s ease;
-}
-
-.filterPillActive .filterPillCount {
-  background: color-mix(in srgb, var(--surface) 25%, transparent);
-  color: var(--surface);
-}
-
-.toolbarActions {
-  display: flex;
-  align-items: center;
-  gap: var(--ward-space-8);
-  margin-left: auto;
-}
-
-.denseToggle,
-.denseToggleActive {
+.denseToggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2875,8 +2229,7 @@
 }
 
 @media (max-width: 51.25rem), (pointer: coarse) {
-  .denseToggle,
-  .denseToggleActive {
+  .denseToggle {
     min-height: var(--ward-tap, 3rem);
   }
 }
@@ -2885,17 +2238,6 @@
   background: var(--surface-2);
   border-color: var(--line-strong);
   color: var(--ink);
-}
-
-.denseToggleActive {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  font-weight: 600;
-}
-
-.denseToggleIcon {
-  flex-shrink: 0;
 }
 
 .patientTableMeta {
@@ -2955,153 +2297,6 @@
   align-items: center;
   gap: 0.625rem;
   flex-wrap: wrap;
-}
-
-.inspectorId {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.55rem;
-  border-radius: var(--radius-sm, 4px);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
-  font-family: var(--mono);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-.inspectorPatientName {
-  font-weight: 700;
-  font-size: 1.125rem;
-  color: var(--ink);
-  line-height: 1.25;
-}
-
-.inspectorUmrn {
-  font-size: var(--t-0, 0.75rem);
-  color: var(--muted);
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-}
-
-.inspectorUrgencyGroup {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-left: 0;
-}
-
-.inspectorTier {
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm, 0.25rem);
-  background: var(--surface-2);
-  padding: 0.15rem 0.45rem;
-  color: var(--accent-ink);
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.inspectorHeaderActions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 0 0 auto;
-}
-
-.inspectorPinButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-height: var(--ward-tap, 3rem);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  background: var(--surface);
-  padding: 0 0.75rem;
-  color: var(--ink-soft);
-  font-size: var(--t-0);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.inspectorPinButton:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-}
-
-.jumpToWardBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-height: var(--ward-tap, 3rem);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  background: var(--surface);
-  padding: 0 0.75rem;
-  color: var(--ink-soft);
-  font-size: var(--t-0);
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.jumpToWardBtn:hover {
-  background: var(--surface-2);
-  border-color: var(--line-strong, var(--line));
-  color: var(--ink);
-}
-
-.inspectorCloseButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  min-width: 2.25rem;
-  min-height: 2.25rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-}
-
-.inspectorCloseButton:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-  border-color: var(--line-strong, var(--line));
-}
-
-.inspectorCloseButton:focus-visible {
-  outline: 0.125rem solid var(--accent);
-  outline-offset: 0.125rem;
-}
-
-.jumpIcon {
-  display: inline-block;
-  vertical-align: middle;
-  flex-shrink: 0;
-  stroke: currentColor;
-}
-
-.inspectorIcon {
-  display: inline-block;
-  vertical-align: middle;
-  flex-shrink: 0;
 }
 
 .timelineCard {
@@ -3230,13 +2425,6 @@
   color: var(--muted);
   font-size: var(--t-0);
   line-height: 1.4;
-}
-
-.registerEmptyCount {
-  margin: 0;
-  color: var(--ink-soft);
-  font-family: var(--mono);
-  font-size: var(--t-1);
 }
 
 .screen[data-referral-view="register"] .section,
@@ -3501,30 +2689,6 @@
   box-sizing: border-box;
 }
 
-.decidedOutcomeBadge {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding: 0.15rem 0.45rem;
-  border-radius: var(--radius-pill, 9999px);
-  line-height: 1.2;
-}
-
-.decidedOutcomeBadge[data-outcome="admitted"] {
-  background: var(--good-soft);
-  color: var(--good);
-  border: 1px solid var(--good);
-}
-
-.decidedOutcomeBadge[data-outcome="declined"] {
-  background: var(--danger-soft);
-  color: var(--danger);
-  border: 1px solid var(--danger);
-}
-
 .screen[data-referral-view="register"] .cardTop {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -3759,14 +2923,6 @@
     box-sizing: border-box;
   }
 
-  .registerDetailHeaderWrap {
-    flex-shrink: 0;
-    border-top-left-radius: inherit;
-    border-top-right-radius: inherit;
-    background: var(--surface);
-    z-index: 2;
-  }
-
   .registerDetailBody {
     flex: 1 1 auto;
     min-height: 0;
@@ -3792,10 +2948,6 @@
 
   .registerDetailBody::-webkit-scrollbar-thumb:hover {
     background-color: var(--muted);
-  }
-
-  .screen[data-referral-view="register"] .registerDetail > .registerDetailHeaderWrap {
-    flex-shrink: 0;
   }
 
   .screen[data-referral-view="register"] .registerDetail > .registerDetailBody {
@@ -3942,34 +3094,6 @@
   margin-bottom: 0.25rem;
 }
 
-.screen[data-referral-view="register"] .registerDetail .acceptingCountBannerPositive {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 0.875rem;
-  border-radius: var(--radius-md, 6px);
-  border: 1px solid var(--good);
-  background: var(--good-soft);
-  color: var(--good);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.screen[data-referral-view="register"] .registerDetail .acceptingCountBannerZero {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 0.875rem;
-  border-radius: var(--radius-md, 6px);
-  border: 1px solid var(--line);
-  background: var(--surface-subtle);
-  color: var(--ink-soft);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  margin: 0;
-}
-
 .screen[data-referral-view="register"] .registerDetail .syntheticNotice {
   font-size: 0.75rem;
   color: var(--muted);
@@ -4007,11 +3131,6 @@
 }
 
 @media (max-width: 40rem) {
-  .registerToolbar {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
   .screen[data-referral-view="register"] .registerDetail[data-has-selection="true"] {
     left: 0;
     width: auto;
@@ -4021,20 +3140,6 @@
 
   .screen[data-referral-view="register"] .inspectorHeader {
     align-items: flex-start;
-  }
-
-  .screen[data-referral-view="register"] .clinicalCardHeader {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .screen[data-referral-view="register"] .clinicalMetaGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .screen[data-referral-view="register"] .clinicalBadges > * {
-    max-width: 100%;
-    white-space: normal;
   }
 }
 
@@ -4084,63 +3189,11 @@
 
 /* Quick Add Patient Modal */
 
-.modalSelect {
-  padding: 8px 12px;
-  border-radius: var(--r1);
-  border: 1px solid var(--line);
-  background: var(--ground);
-  color: var(--ink);
-  font-size: var(--t-1);
-  min-height: 38px;
-}
-
-.modalSelect:focus {
-  outline: none;
-  border-color: var(--accent);
-  background: var(--surface);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
 /* Responsive adjustments */
-
-@media (max-width: 900px) {
-  .modalSelect {
-    min-height: 44px;
-  }
-}
-
-.suburbFilterWrap {
-  margin-bottom: var(--ward-space-8);
-}
 
 /* ==========================================================================
    Alternative 2: 3-Tier Clinical Status Matrix & Elevated Side Inspector
    ========================================================================== */
-
-.alt2Banner {
-  margin: 0 18px 10px;
-  padding: 10px 14px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  font-size: var(--t-1, 13px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.alt2BannerTitle {
-  color: var(--accent-ink);
-  font-weight: 700;
-  display: block;
-}
-
-.alt2BannerSubtitle {
-  color: var(--muted);
-  font-size: var(--t-0, 12px);
-  margin-top: 1px;
-}
 
 .patientBanner {
   padding: 14px 18px;
@@ -4151,73 +3204,6 @@
   border-bottom: 1px solid var(--line);
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
-}
-
-.masterTopRow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.identityCluster {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.identityHeaderRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.identityBadgeRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.masterActionCluster {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.elapsedWaitChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--mono);
-  font-size: var(--t-1, 13px);
-  font-weight: 700;
-  color: var(--warn);
-  background: var(--warn-soft);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 4px 10px;
-}
-
-.clinicalMetaGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 10px 14px;
-  margin-top: 4px;
-}
-
-@media (min-width: 52rem) {
-  .clinicalMetaGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-  }
 }
 
 .metaCell {
@@ -4244,67 +3230,8 @@
   text-overflow: ellipsis;
 }
 
-.bannerIdentityRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.nameGroup {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.ptUmrn {
-  font-family: var(--mono);
-  font-size: var(--t-2, 13.5px);
-  font-weight: 700;
-  color: var(--accent-ink);
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  padding: 3px 8px;
-  border-radius: var(--r2, 6px);
-  letter-spacing: 0.05em;
-}
-
-.ptName {
-  margin: 0;
-  font-family: var(--display);
-  font-size: var(--t-4, 16px);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-}
-
-.demographicRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--t-1, 13px);
-  color: var(--ink-soft);
-}
-
-.demoItem strong {
-  color: var(--ink);
-  font-weight: 600;
-}
-
 .demoDot {
   color: var(--line-strong);
-}
-
-.tabNav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border-bottom: 1px solid var(--line);
-  padding: 6px 16px;
-  background: var(--surface-2);
 }
 
 .tabBtn {
@@ -4328,7 +3255,6 @@
   background: var(--surface);
 }
 
-.tabBtnActive,
 .tabBtn[aria-selected="true"] {
   color: var(--accent);
   background: var(--accent-soft);
@@ -4349,7 +3275,6 @@
   transition: all 0.15s ease;
 }
 
-.tabBtnActive .tabBadge,
 .tabBtn[aria-selected="true"] .tabBadge {
   background: var(--accent);
   color: var(--ward-fixed-white);
@@ -4454,36 +3379,6 @@
   color: var(--muted);
 }
 
-.secHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 14px 18px 8px;
-  font-size: var(--t-0, 12px);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-}
-
-.secHeaderGood {
-  color: var(--good);
-  border-bottom: 2px solid var(--good);
-  padding-bottom: 4px;
-}
-
-.secHeaderWarn {
-  color: var(--warn);
-  border-bottom: 2px solid var(--warn);
-  padding-bottom: 4px;
-}
-
-.secHeaderDanger {
-  color: var(--danger);
-  border-bottom: 2px solid var(--danger);
-  padding-bottom: 4px;
-}
-
 .pulseDot {
   width: 8px;
   height: 8px;
@@ -4491,53 +3386,6 @@
   background: var(--warn);
   display: inline-block;
   flex-shrink: 0;
-}
-
-.pulseDotGood {
-  background: var(--good);
-}
-
-.pulseDotWarn {
-  background: var(--warn);
-}
-
-.pulseDotDanger {
-  background: var(--danger);
-}
-
-.secHeaderToggle {
-  width: calc(100% - 36px);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 6px 4px;
-  text-align: left;
-  border-radius: 4px;
-  transition:
-    opacity 0.15s ease,
-    background 0.15s ease;
-}
-
-.secHeaderToggle:hover {
-  background: var(--surface-2);
-  opacity: 0.95;
-}
-
-.secHeaderToggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.accordionChevron {
-  font-size: 12px;
-  font-family: var(--mono);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  opacity: 0.8;
-  transition: transform 0.15s ease;
 }
 
 .tierCountBadge {
@@ -4737,10 +3585,6 @@
   margin: 0;
 }
 
-.tierSection {
-  transition: margin-bottom 0.2s ease;
-}
-
 .tierBody {
   animation: tierBodyFade 0.15s ease-out;
 }
@@ -4770,83 +3614,6 @@
   max-width: 18rem;
   text-align: right;
   line-height: 1.3;
-}
-
-/* Presentation Action Center (Non-ward ED & Community Referrals) */
-.presentationNoticeCard {
-  margin: 14px 18px 12px;
-  padding: 14px 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
-  border-radius: var(--r2, 6px);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.presentationNoticeHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.presentationBadge {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: var(--accent-soft);
-  color: var(--accent);
-  padding: 2px 8px;
-  border-radius: var(--radius-pill, 9999px);
-}
-
-.presentationMeta {
-  font-size: 12px;
-  color: var(--muted);
-  font-family: var(--mono);
-}
-
-.presentationNoticeText {
-  margin: 0;
-  font-size: var(--t-1, 13px);
-  color: var(--ink-soft);
-  line-height: 1.45;
-}
-
-.presentationActionCard {
-  margin: 0 18px 14px;
-  padding: 16px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.presentationActionHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.presentationActionTitle {
-  margin: 0;
-  font-size: var(--t-2, 14px);
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.presentationActionSubtitle {
-  margin: 2px 0 0;
-  font-size: var(--t-0, 12px);
-  color: var(--muted);
 }
 
 .acceptPresentationBtn {
@@ -4918,28 +3685,6 @@
 .declineActionButton:hover {
   background: var(--danger);
   color: var(--text-inverse);
-}
-
-.withdrawActionButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.25rem;
-  padding: 0 14px;
-  background: var(--surface-2);
-  color: var(--ink-soft);
-  border: 1px solid var(--line-strong, var(--line));
-  border-radius: var(--r2, 6px);
-  font-size: var(--t-1, 13px);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.withdrawActionButton:hover {
-  background: var(--line);
-  color: var(--ink);
 }
 
 .cancelBtn {
@@ -5146,17 +3891,6 @@
   font-weight: 500;
 }
 
-.inspectorFoot {
-  padding: 12px 18px;
-  background: var(--surface-2);
-  border-top: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-radius: 0 0 var(--r1, 10px) var(--r1, 10px);
-}
-
 .btnGood {
   display: inline-flex;
   align-items: center;
@@ -5198,27 +3932,6 @@
 .btnSubtle:hover {
   background: var(--sunk);
   color: var(--ink);
-}
-
-.btnDangerAction {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: var(--r2, 6px);
-  font-size: var(--t-1, 13px);
-  font-weight: 600;
-  background: var(--danger-soft);
-  color: var(--danger-ink);
-  border: 1px solid var(--danger);
-  cursor: pointer;
-  transition: all 0.12s ease;
-  white-space: nowrap;
-}
-
-.btnDangerAction:hover {
-  background: var(--ward-fixed-danger-border);
 }
 
 .historyCorrectionsSection {
@@ -5373,57 +4086,6 @@
   min-width: 0;
 }
 
-.v6Tracks {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-width: 0;
-}
-
-.v6OrderNote {
-  color: var(--wf-hero-ink-2);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
-
-/* Filter bar. The wf card is a column; the bar is one row. */
-.v6FilterBar.v6FilterBar {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-2) var(--wf-s-3);
-}
-
-.v6Search {
-  flex: 0 1 15rem;
-  min-width: 10rem;
-  min-height: var(--wf-h-sm);
-}
-
-.v6Cohorts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.v6CohortLabel {
-  color: var(--wf-ink-3);
-  white-space: nowrap;
-}
-
-.v6FilterActions {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin-left: auto;
-}
-
 /* The two columns: the queue card and the selected referral card. The register's older wide rules
  * paint each column as a card; here the wf cards inside carry that paint instead. */
 .screen[data-referral-view="register"][data-ward-design="v6"] .registerQueue,
@@ -5451,12 +4113,6 @@
 
 .v6Decided {
   border-top: 1px solid var(--wf-line);
-}
-
-.v6HeadNote {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  font-weight: 400;
 }
 
 .v6Note {
@@ -5541,41 +4197,6 @@
   text-overflow: ellipsis;
 }
 
-.v6RowName {
-  font-weight: 600;
-}
-
-.v6RowId {
-  margin-left: var(--wf-s-2);
-  color: var(--wf-ink-3);
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  font-weight: 400;
-}
-
-.v6RowRoute {
-  color: var(--wf-ink-2);
-}
-
-.v6RowFacts {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.v6RowClock {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.v6RowWait {
-  font-family: var(--wf-mono);
-  font-weight: 600;
-}
-
 .v6Due {
   display: inline-flex;
   align-items: center;
@@ -5583,18 +4204,6 @@
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   white-space: nowrap;
-}
-
-.v6RowNote {
-  display: block;
-  padding: 0 var(--wf-s-3) var(--wf-s-2) calc(var(--wf-s-3) * 2 + 1.75rem);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
-/* Dense: the same rows, one line shorter. The register tables stay print-only, as in comfort. */
-.screen[data-ward-design="v6"][data-dense-view="true"] .v6RowFacts {
-  display: none;
 }
 
 .screen[data-ward-design="v6"][data-dense-view="true"] .v6Row {
@@ -5651,111 +4260,6 @@
   text-transform: uppercase;
 }
 
-/* Selected referral. */
-.v6DetailHead {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4);
-}
-
-.v6DetailWho {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.v6DetailName {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin: 0;
-  overflow: hidden;
-  font-size: var(--wf-fs-16);
-  font-weight: 600;
-  line-height: var(--wf-lh-16);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.v6DetailMeta {
-  margin: 0;
-  overflow: hidden;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.v6DetailTier {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.v6DetailWait {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  padding-left: var(--wf-s-3);
-  border-left: 1px solid var(--wf-line);
-  white-space: nowrap;
-}
-
-.v6WaitFigure {
-  font-family: var(--wf-mono);
-  font-weight: 600;
-}
-
-.v6Facts {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 0;
-  border-top: 1px solid var(--wf-line);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.v6Facts > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: var(--wf-s-2) var(--wf-s-4);
-}
-
-.v6Facts > div + div {
-  border-left: 1px solid var(--wf-line);
-}
-
-.v6Facts dt,
-.v6Grid dt {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.v6Facts dd,
-.v6Grid dd {
-  margin: 0;
-  overflow: hidden;
-  font-weight: 600;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.v6Facts dd.v6FactSub {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  font-weight: 400;
-}
-
 .v6Tabs {
   padding: 0 var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
@@ -5766,115 +4270,6 @@
   flex-direction: column;
   gap: var(--wf-s-4);
   padding: var(--wf-s-4);
-}
-
-.v6SectionHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  margin-bottom: var(--wf-s-2);
-}
-
-.v6SectionHead h3 {
-  margin: 0;
-  font-size: var(--wf-fs-14);
-  font-weight: 600;
-  line-height: var(--wf-lh-14);
-  white-space: nowrap;
-}
-
-.v6SectionHead > span {
-  overflow: hidden;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.v6Grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin: 0;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-}
-
-.v6Grid > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.v6Grid > div:nth-child(odd) {
-  border-right: 1px solid var(--wf-line);
-}
-
-.v6Grid > .v6GridWide {
-  grid-column: 1 / -1;
-  border-right: 0;
-  border-bottom: 0;
-}
-
-.v6Grid > .v6GridWide dd {
-  font-weight: 400;
-  white-space: normal;
-}
-
-.v6Badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.v6Lead {
-  margin: 0 0 var(--wf-s-2);
-  color: var(--wf-ink-2);
-}
-
-.v6Checks {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.v6Checks > li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: var(--wf-s-3);
-  align-items: center;
-  padding: var(--wf-s-2) 0;
-  border-top: 1px solid var(--wf-line);
-}
-
-.v6CheckText {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.v6CheckText > strong {
-  font-weight: 600;
-}
-
-.v6CheckText > span {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.v6CheckState {
-  color: var(--wf-ink-2);
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
 }
 
 @media (min-width: 64rem) {
@@ -5909,37 +4304,12 @@
     padding: var(--wf-s-3);
   }
 
-  .v6Facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .v6Facts > div:nth-child(3) {
-    border-left: 0;
-  }
-
-  .v6Grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .v6Grid > div:nth-child(odd) {
-    border-right: 0;
-  }
-
-  .v6DetailHead {
-    flex-wrap: wrap;
-  }
-
-  .screen[data-ward-design="v6"] .v6Row,
-  .screen[data-ward-design="v6"] .v6FilterBar button,
-  .screen[data-ward-design="v6"] .v6FilterBar a[href],
-  .screen[data-ward-design="v6"] .v6DetailHead button,
-  .screen[data-ward-design="v6"] .v6DetailHead a[href] {
+  .screen[data-ward-design="v6"] .v6Row {
     min-height: 3rem;
   }
 }
 
 @media print {
-  .v6FilterBar,
   .v6Chart {
     display: none;
   }
@@ -5957,32 +4327,8 @@
 
 /* ═══ v6 (NewReferral--add-patient.webp): the Register new patient dialog ═══ */
 
-.screen[data-ward-design="v6"] .modalSelect {
-  min-height: var(--wf-h-md);
-  padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.screen[data-ward-design="v6"] .modalSelect:focus {
-  border-color: var(--wf-accent);
-  background: var(--wf-surface);
-  box-shadow: none;
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
 /* The one primary: deep slate with white ink, never the pale accent ink on accent that read as
    disabled. A genuinely disabled state reads as a dashed outline with muted ink. */
-
-@media (max-width: 48rem) {
-  .screen[data-ward-design="v6"] .modalSelect {
-    min-height: 3rem;
-  }
-}
 
 /* Bed placement: a unit's state badge, the glyphs that carry its colour, and the gate toggle's
  * hint. These were inline styles; as classes they can follow the page's design. */
@@ -6741,49 +5087,6 @@
     flex: none;
   }
 
-  .screen[data-ward-design="v6"] .v6Tracks {
-    flex: 1 1 100%;
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--wf-s-2);
-  }
-
-  .screen[data-ward-design="v6"] .v6Tracks > * {
-    width: 100%;
-  }
-
-  .screen[data-ward-design="v6"] .v6FilterBar.v6FilterBar {
-    gap: var(--wf-s-2);
-  }
-
-  .screen[data-ward-design="v6"] .v6Search {
-    flex: 1 1 100%;
-    min-width: 0;
-  }
-
-  .screen[data-ward-design="v6"] .v6Cohorts {
-    flex: 1 1 100%;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    margin-inline: calc(-1 * var(--wf-s-3));
-    padding-inline: var(--wf-s-3);
-  }
-
-  .screen[data-ward-design="v6"] .v6Cohorts::-webkit-scrollbar {
-    display: none;
-  }
-
-  .screen[data-ward-design="v6"] .v6Cohorts > * {
-    flex: none;
-  }
-
-  .screen[data-ward-design="v6"] .v6FilterActions {
-    flex: 1 1 100%;
-    justify-content: flex-end;
-  }
-
   .screen[data-ward-design="v6"] .v6RowLine {
     display: block;
   }
@@ -6825,33 +5128,6 @@
     display: none;
   }
 
-  .screen[data-ward-design="v6"] .v6Tracks > * {
-    scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
-    mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
-  }
-
-  .screen[data-ward-design="v6"] .v6Search {
-    flex: 1 1 0;
-  }
-
-  .screen[data-ward-design="v6"] .v6FilterActions {
-    flex: none;
-    order: 1;
-  }
-
-  .screen[data-ward-design="v6"] .v6FilterActions:has(> :nth-child(3)) {
-    flex: 1 1 100%;
-  }
-
-  .screen[data-ward-design="v6"] .v6FilterActions > [data-testid="ward-referral-dense-toggle"] {
-    display: none;
-  }
-
-  .screen[data-ward-design="v6"] .v6Cohorts {
-    order: 2;
-  }
-
   .screen[data-ward-design="v6"] .v6Chart {
     display: none;
   }
@@ -6868,80 +5144,8 @@
     border-top: 0;
   }
 
-  /* A direct-presentation referral's Bed placement tab: the notice and the action card take the
-     same 16px inset as the history cards below, with a plain hairline edge (no accent stripe);
-     the badge stays on one line; Accept keeps the 48px tap floor like Decline beside it. */
-  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationNoticeCard,
-  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationActionCard {
-    margin: 0;
-    padding: var(--wf-s-3);
-    border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-md);
-    box-shadow: none;
-  }
-
-  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationNoticeHeader {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: var(--wf-s-1) var(--wf-s-2);
-  }
-
-  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationBadge,
-  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationMeta {
-    font-size: var(--wf-fs-12);
-    white-space: nowrap;
-  }
-
   .screen[data-ward-design="v6"][data-referral-view="register"] .acceptPresentationBtn {
     min-height: var(--spacing-tap, 3rem);
-  }
-
-  /* Selected referral head: name and close on the first line, tier and wait on the second; the
-     decorative avatar stays on desktop. */
-  .screen[data-ward-design="v6"] .v6DetailHead {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--wf-s-2) var(--wf-s-3);
-  }
-
-  .screen[data-ward-design="v6"] .v6DetailHead > :first-child {
-    display: none;
-  }
-
-  .screen[data-ward-design="v6"] .v6DetailWho {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .screen[data-ward-design="v6"] .v6DetailHead > button:last-child {
-    grid-column: 2;
-    grid-row: 1;
-    margin-right: calc(-1 * var(--wf-s-3));
-  }
-
-  .screen[data-ward-design="v6"] .v6DetailTier {
-    grid-column: 1;
-    grid-row: 2;
-    justify-self: start;
-  }
-
-  .screen[data-ward-design="v6"] .v6DetailWait {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-self: end;
-    padding-left: 0;
-    border-left: 0;
-  }
-
-  .screen[data-ward-design="v6"] .v6DetailHead > a {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    justify-self: start;
-  }
-
-  .screen[data-ward-design="v6"] .v6Facts dt {
-    font-size: var(--wf-fs-12);
   }
 
   .screen[data-ward-design="v6"] .tierTitleGroup {
@@ -7035,21 +5239,6 @@
 
   .screen[data-ward-design="v6"][data-referral-view="register"] .bandGroup {
     min-width: 0;
-  }
-
-  /* Legal forms: each check's state reads under its name rather than squeezing it. */
-  .screen[data-ward-design="v6"] .v6Checks > li {
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-    row-gap: 2px;
-  }
-
-  .screen[data-ward-design="v6"] .v6Checks > li > svg {
-    margin-top: var(--wf-s-1);
-  }
-
-  .screen[data-ward-design="v6"] .v6CheckState {
-    grid-column: 2;
   }
 
   /* New referral, the person bar: the link switch spans the bar in two equal halves, and the

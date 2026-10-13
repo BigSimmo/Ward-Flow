@@ -47,8 +47,8 @@ export type HandoverBedsProps = {
   held: HeldDischarge[];
   now: Instant;
   /**
-   * The hero's "Waiting for a bed" figure (the meeting group), so this tile and the hero's
-   * "beds ready for N waiting for a bed" read one number. Falls back to every row waiting for a bed.
+   * The hero's "Finding a ward" figure (the meeting group), so this tile and the hero's
+   * "beds ready for N finding a ward" read one number. Falls back to every row still finding a ward.
    */
   waitingForBed?: number;
   /** Switches to the Patients tab and selects the row. */
@@ -129,7 +129,7 @@ function BedTiles({ rows, wards, held, now, waitingForBed }: Omit<HandoverBedsPr
         <b className={cx(styles.tileValue, styles.inkSuccess)}>{ready}</b>
         <span className={styles.tileLabel}>Beds ready</span>
         <span className={styles.tileSub}>
-          for <b>{waiting}</b> waiting for a bed{preparing > 0 ? `, ${preparing} being made ready` : ""}
+          for <b>{waiting}</b> finding a ward{preparing > 0 ? `, ${preparing} being made ready` : ""}
         </span>
       </div>
       <div className={styles.tile}>

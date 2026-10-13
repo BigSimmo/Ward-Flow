@@ -103,8 +103,12 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
     if (!enabled || !hero || typeof window === "undefined" || typeof window.matchMedia !== "function") return;
     // Leave the server-rendered band so the first measure reads where the hero would sit. This
     // runs before the browser paints again, so the band never shows as a card in between.
-    if (hero.dataset.band === undefined) hero.dataset.band = "off";
+    // "measuring" styles the hero like "off", but the header's pre-hydration ink rule
+    // (ward-bar.module.css) only lets go on a final "off". With "off" here, the forced layout in
+    // the first measure restyled the header as light glass, and its band transition then faded it
+    // back to ink: a light flash on every load (13 Oct 2026).
     const scroller = scrollAreaOf(hero);
+    if (hero.dataset.band === undefined) hero.dataset.band = scroller ? "measuring" : "off";
     if (!scroller) return;
     const query = window.matchMedia(WF_BAND_QUERY);
 
