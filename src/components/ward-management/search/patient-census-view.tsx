@@ -99,7 +99,9 @@ function ageSex(row: CensusRow): string {
 }
 
 function initials(name: string): string {
-  return name
+  // shell-8: rows read "Family, Given", so the given name's initial leads.
+  const [family, given] = name.includes(",") ? name.split(",", 2) : [undefined, name];
+  return `${given} ${family ?? ""}`
     .split(/\s+/)
     .filter(Boolean)
     .map((word) => word[0])

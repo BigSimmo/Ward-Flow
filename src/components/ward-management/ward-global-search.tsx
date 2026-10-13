@@ -40,7 +40,7 @@ import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-ma
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
-import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
+import { formatDateOfBirth, patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import {
   resolveSubjectPatient,
   withUmrnInPlaceOfMovementIds,
@@ -434,8 +434,9 @@ export function smartSearchGroups(
         kind: "person",
         kindLabel: "Person",
         id: p.id,
-        title: patientDisplayName(p),
-        meta: `${p.umrn} · born ${p.dateOfBirth}`,
+        // shell-8: Family, Given and DD/MM/YYYY, as every other list shows a person.
+        title: patientListName(p),
+        meta: `${p.umrn} · born ${formatDateOfBirth(p.dateOfBirth)}`,
         umrn: p.umrn,
         dateOfBirth: p.dateOfBirth,
         href: patientHref(p.id),
@@ -455,7 +456,7 @@ export function smartSearchGroups(
           kind: "movement",
           kindLabel: "Movement",
           id: m.id,
-          title: subject.displayName,
+          title: subject.formalName,
           subjectUmrn: subject.umrn,
           meta: `${subject.umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
           href: movementHref(m.id),
@@ -1149,7 +1150,7 @@ export function WardGlobalSearch({
                                 {item.umrn ? (
                                   <>
                                     <span className={styles.umrn}>{item.umrn}</span>
-                                    {item.dateOfBirth ? <span>born {item.dateOfBirth}</span> : null}
+                                    {item.dateOfBirth ? <span>born {formatDateOfBirth(item.dateOfBirth)}</span> : null}
                                   </>
                                 ) : item.readyBeds !== undefined ? (
                                   <span>

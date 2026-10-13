@@ -314,9 +314,9 @@ describe("search finds PEOPLE, including ones the movement search structurally c
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "hallow" } });
 
     const people = screen.getByTestId("ward-patient-search-people-list");
-    expect(within(people).getByText(/Talia Halloway/)).toBeInTheDocument();
+    expect(within(people).getByText(/Halloway, Talia/)).toBeInTheDocument();
     expect(
-      within(people).getByText(/Marcus Hallowin/),
+      within(people).getByText(/Hallowin, Marcus/),
       "the near-miss pair is seeded for exactly this. A search that returned only the exact spelling " +
         "would look correct on this fixture and hide the person a clinician was actually looking for.",
     ).toBeInTheDocument();
@@ -328,7 +328,7 @@ describe("search finds PEOPLE, including ones the movement search structurally c
     const seed = seedWardFlowState();
     const movement = seed.movements.find((m) => isOpen(m) && m.patientId === "PT-006");
     if (!movement) throw new Error("fixture WF-308 / PT-006 is required by this test and is missing");
-    const { displayName } = resolveSubjectPatient(movement, seed);
+    const { formalName: displayName } = resolveSubjectPatient(movement, seed);
     expect(displayName).toMatch(/Oquinn/i);
 
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "oquinn" } });

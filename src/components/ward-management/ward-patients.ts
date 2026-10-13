@@ -259,6 +259,22 @@ export function patientCohort(
 /** A UMRN as people type or paste it into an address: two letters then digits (shell-6). */
 export const UMRN_IN_ADDRESS = /^[A-Za-z]{2}\d+$/u;
 
+/**
+ * `Family, Given`: the one way a list or identity line names a patient (shell-8, 13 Oct 2026), the
+ * same order Home, referrals and Recently added already use. `patientDisplayName` stays for speech
+ * and boards.
+ */
+export function patientListName(patient: Pick<Patient, "givenName" | "familyName">): string {
+  return `${patient.familyName}, ${patient.givenName}`;
+}
+
+/** A date of birth as DD/MM/YYYY, the one format every list shows (shell-8). */
+export function formatDateOfBirth(iso: string | null | undefined): string {
+  if (!iso) return "DOB not recorded";
+  const [y, m, d] = iso.slice(0, 10).split("-");
+  return y && m && d ? `${d}/${m}/${y}` : iso;
+}
+
 /** `Given Family`, the order a name is spoken and written on a board. */
 export function patientDisplayName(patient: Patient): string {
   return `${patient.givenName} ${patient.familyName}`;

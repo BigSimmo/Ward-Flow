@@ -44,7 +44,12 @@ import { buildActionInbox, isOpen } from "@/components/ward-management/ward-deri
 import { refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchMovements } from "@/components/ward-management/ward-derivations";
 import { wardMovements } from "@/components/ward-management/ward-movements";
-import { findPatients, patientDisplayName } from "@/components/ward-management/ward-patients";
+import {
+  findPatients,
+  formatDateOfBirth,
+  patientDisplayName,
+  patientListName,
+} from "@/components/ward-management/ward-patients";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { allUnits } from "@/components/ward-management/ward-sites";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -141,9 +146,9 @@ describe("WardGlobalSearch", () => {
     const row = screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`);
     expect(row.tagName).toBe("A");
     expect(row).toHaveAttribute("href", `/mockups/ward-flow/people/${targetPatient.id}`);
-    expect(row).toHaveTextContent(patientDisplayName(targetPatient));
+    expect(row).toHaveTextContent(patientListName(targetPatient));
     expect(row).toHaveTextContent(targetPatient.umrn);
-    expect(row).toHaveTextContent(targetPatient.dateOfBirth);
+    expect(row).toHaveTextContent(formatDateOfBirth(targetPatient.dateOfBirth));
     expect(row).toHaveTextContent("Person");
     expect(screen.getByTestId("ward-global-search-intent")).toHaveTextContent("People");
   });
@@ -545,7 +550,7 @@ describe("WardGlobalSearch palette (option B)", () => {
     fireEvent.change(input, { target: { value: personQuery } });
 
     const preview = screen.getByTestId("ward-global-search-preview");
-    expect(preview).toHaveTextContent(patientDisplayName(targetPatient));
+    expect(preview).toHaveTextContent(patientListName(targetPatient));
     expect(preview).toHaveTextContent(targetPatient.umrn);
     expect(within(preview).getByTestId("ward-global-search-preview-open")).toHaveAttribute(
       "href",

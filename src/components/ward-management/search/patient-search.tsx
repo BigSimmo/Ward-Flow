@@ -36,7 +36,8 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import {
   findPatients,
   foldPatientSearchText,
-  patientDisplayName,
+  formatDateOfBirth,
+  patientListName,
   patientAgeYears,
   UMRN_IN_ADDRESS,
   type Patient,
@@ -448,7 +449,7 @@ export function PatientSearchPage() {
         list.push({
           id: m.id,
           urm: info.umrn,
-          name: info.displayName,
+          name: info.formalName,
           age: patientAge,
           sex: info.patient?.sex ?? info.patient?.gender ?? null,
           communityTeam: info.patient?.catchmentCommunityTeam ?? null,
@@ -497,7 +498,7 @@ export function PatientSearchPage() {
         list.push({
           id: ref.id,
           urm: info.umrn,
-          name: info.displayName,
+          name: info.formalName,
           age: patientAge,
           sex: info.patient?.sex ?? info.patient?.gender ?? null,
           communityTeam: info.patient?.catchmentCommunityTeam ?? null,
@@ -1541,8 +1542,8 @@ export function PeopleSection({
                         : "◌ Past"}
                   </span>
                   <span className={styles.personUmrn}>{patient.umrn}</span>
-                  <span className={styles.personName}>{patientDisplayName(patient)}</span>
-                  <span className={styles.personDob}>DOB {patient.dateOfBirth}</span>
+                  <span className={styles.personName}>{patientListName(patient)}</span>
+                  <span className={styles.personDob}>DOB {formatDateOfBirth(patient.dateOfBirth)}</span>
                   {(patient as { confidential?: boolean }).confidential && (
                     <span className={styles.confidentialBadge} data-testid={`ward-patient-confidential-${patient.id}`}>
                       🔒 Restricted
