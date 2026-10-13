@@ -478,10 +478,17 @@
 /* The pinned primary action at the foot of the phone screen. */
 .pinned {
   position: sticky;
-  bottom: 0;
+  /* Flush on the phone dock, as Handover and Patient (audit stats-6, 13 Oct 2026): the sticky bar
+     stops above the scroller's dock padding, so it steps back down to the dock's flat edge. */
+  bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px));
   z-index: 3;
   margin: 0 calc(-1 * var(--wf-s-3));
-  padding: var(--wf-s-2) var(--wf-s-3) calc(var(--wf-s-2) + env(safe-area-inset-bottom, 0px));
+  /* Without a dock it clears the home bar; with one it clears the + hump instead. */
+  padding: var(--wf-s-2) var(--wf-s-3)
+    max(
+      calc(var(--wf-s-2) + env(safe-area-inset-bottom, 0px) - var(--wf-dock-top, 0px)),
+      calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px))
+    );
   border-top: 1px solid var(--wf-line);
   background: var(--wf-canvas);
 }
@@ -499,6 +506,69 @@
   .pinned {
     display: none;
   }
+}
+
+/* Compare two wards on a phone (audit stats-7): two pickers, then one measure per line with its full
+   label and three values side by side (ward A, ward B, network mean of wards). */
+.pair {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.pairPickers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.pairField {
+  min-width: 0;
+}
+
+.pairHead,
+.pairValues {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.pairHead {
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.pairList {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  list-style: none;
+}
+
+.pairRow {
+  display: grid;
+  gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.pairRow + .pairRow {
+  border-top: 1px solid var(--wf-line);
+}
+
+.pairLabel {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.pairValues {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / 1.25 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 /* A row outside the chosen highlight stays in the list, in quieter ink (dim by colour, never hidden). */

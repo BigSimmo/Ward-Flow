@@ -148,7 +148,7 @@ describe("weeklyOperationsReport", () => {
     });
     const report = weeklyOperationsReport(inputOf(f, { admissions: [far, near] }), week);
     expect(report.outOfArea).toEqual({ bedDays: 7, people: 1 });
-    expect(report.delayedDischarge).toEqual({ bedDays: 1.5, people: 1 });
+    expect(report.delayedDischarge).toEqual({ bedDays: 1.5, people: 1, recordedFrom: null });
     expect(report.occupancy.occupiedBedDays).toBe(7 + 3.5);
     expect(report.occupancy.averagePercent).toBe(Math.round(((7 + 3.5) / (f.unit.beds * 7)) * 100));
     expect(report.occupancy.now).toEqual(occupiedBeds([f.unit], [far, near], [], []));
@@ -203,17 +203,26 @@ describe("weeklyOperationsReport", () => {
       expectedDischargeAt: week.start - DAY,
       dischargeDateSetAt: week.start + 5 * DAY,
     });
-    // Set on day five of the week, against a date already past: only the last two days count.
+    // Set on day five of the week, against a date already past: only the last two days count, and
+    // the report says the week is only counted from then (audit stats-11), rather than a bare figure.
     expect(weeklyOperationsReport(inputOf(f, { admissions: [stay] }), week).delayedDischarge).toEqual({
       bedDays: 2,
       people: 1,
+      recordedFrom: week.start + 5 * DAY,
     });
-    // Set after the week ended: that week is not measured against it at all.
+    // Set after the week ended: that week is not measured against it at all, and says so rather
+    // than reading as a real nought.
     const later = { ...stay, dischargeDateSetAt: week.end + DAY };
     expect(weeklyOperationsReport(inputOf(f, { admissions: [later] }), week).delayedDischarge).toEqual({
       bedDays: 0,
       people: 0,
+      recordedFrom: week.end + DAY,
     });
+    // Set before the week began: the week is fully measured.
+    const earlier = { ...stay, dischargeDateSetAt: week.start - DAY };
+    expect(weeklyOperationsReport(inputOf(f, { admissions: [earlier] }), week).delayedDischarge.recordedFrom).toBe(
+      null,
+    );
   });
 
   it("counts an over-target wait only in the week its target crossing falls in", () => {

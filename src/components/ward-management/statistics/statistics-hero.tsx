@@ -1,9 +1,9 @@
 "use client";
 
 import { useId, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
-import { CalendarRange, Download, type LucideIcon } from "lucide-react";
+import { Download, type LucideIcon } from "lucide-react";
 
-import { Button, Card, CardHead, Hero, LiveChip, PhoneSheet, SrOnly, cx, useIsPhone } from "@/components/wf";
+import { Button, Card, CardHead, Hero, LiveChip, SrOnly, cx, useIsPhone } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -12,7 +12,6 @@ import type { StatisticsSection } from "./statistics-sections";
 import { StatisticsNav, StatisticsSamplesSwitch, type StatisticsNavSection } from "./statistics-nav";
 import { StatisticsRange } from "./statistics-hero-tools";
 import { downloadCsv, statisticsExportLines, type StatisticsExport } from "./statistics-csv";
-import { RangeChoices } from "./statistics-summary-phone";
 import styles from "./statistics-hero.module.css";
 import phoneStyles from "./statistics-phone.module.css";
 
@@ -23,40 +22,15 @@ const PHONE_SECTION_WORD: Partial<Record<StatisticsNavSection, string>> = {
 };
 
 /**
- * The phone hero's action row (v10 phone): the time range as one pill that opens its sheet, or the
- * page's own control (Change ward), then the round pause button.
+ * The phone hero's action row (v10 phone): the page's own control (Change ward), if any. The time
+ * range pill is gone on phone (audit stats-5, 13 Oct 2026): only Now was live, and the Live pill on
+ * the eyebrow line already says the figures are current. It returns when history exists.
  */
 function PhoneHeroActions({ titleAction }: { titleAction?: ReactNode }) {
-  const [rangeOpen, setRangeOpen] = useState(false);
+  if (!titleAction) return null;
   return (
     <span className={phoneStyles.heroActions}>
-      {titleAction ? (
-        <span className={styles.phoneTitleAction}>{titleAction}</span>
-      ) : (
-        <button
-          type="button"
-          className={phoneStyles.rangeButton}
-          aria-haspopup="dialog"
-          onClick={() => setRangeOpen(true)}
-          data-testid="ward-statistics-range"
-        >
-          <CalendarRange size={16} aria-hidden="true" />
-          <SrOnly>Time range: </SrOnly>
-          <b>Now</b>
-          <span className={phoneStyles.rangeMore}>· Shift, 7 and 30 days Preview</span>
-        </button>
-      )}
-      {/* Device audit (11 Oct 2026): the pause lives in the Live pill on the eyebrow line. */}
-      <PhoneSheet
-        open={rangeOpen}
-        onClose={() => setRangeOpen(false)}
-        title="Time range"
-        description="Figures are current on the demo clock. History needs the metrics store."
-      >
-        <div className={phoneStyles.sheetBody}>
-          <RangeChoices onNow={() => setRangeOpen(false)} />
-        </div>
-      </PhoneSheet>
+      <span className={styles.phoneTitleAction}>{titleAction}</span>
     </span>
   );
 }
@@ -171,7 +145,7 @@ export function StatisticsHero({
               onTogglePause={onTogglePause}
             />
           }
-          bar={<PhoneHeroActions titleAction={titleAction} />}
+          bar={titleAction ? <PhoneHeroActions titleAction={titleAction} /> : undefined}
         />
         <div className={styles.phoneNav} data-testid={navTestId}>
           <StatisticsNav
