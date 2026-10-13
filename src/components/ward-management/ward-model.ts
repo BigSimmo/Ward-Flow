@@ -3289,3 +3289,9 @@ export type Notice = {
    *  nothing else. */
   readBy?: WardFlowRole;
 };
+
+/** A patient is voluntary only when neither the live movement nor the patient record is involuntary. */
+export function patientIsVoluntary(movementLegalStatus?: string, patientLegalStatus?: string): boolean {
+  if (patientLegalStatus && /^involuntary\b/i.test(patientLegalStatus.trim())) return false;
+  return /^voluntary\b/i.test((movementLegalStatus ?? patientLegalStatus ?? "").trim());
+}

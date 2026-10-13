@@ -11,6 +11,7 @@ import {
   type AbsenceStep,
   type LeaveBed,
   type Movement,
+  patientIsVoluntary,
 } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
@@ -636,7 +637,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
     const absence = ctx.leaveBed.absentWithoutLeave;
     // A3-13: a voluntary patient is not on an order, so no return order is asked for (A3-2's step
     // is for a person on one); the other missing person steps are the same.
-    const voluntary = /^voluntary\b/i.test(legalValue(movement, patient).trim());
+    const voluntary = patientIsVoluntary(movement?.legalStatus, patient?.legalStatus);
     const steps = absenceStepsFor(voluntary);
     const rows: StatusRow[] = steps.map((step) => {
       const at = absence.steps.find((done) => done.step === step)?.at;

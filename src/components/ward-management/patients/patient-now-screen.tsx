@@ -40,6 +40,7 @@ import {
   ABSENCE_STEP_LABELS,
   TRANSPORT_PROVIDERS,
   ARRIVAL_MODE_LABELS,
+  patientIsVoluntary,
 } from "@/components/ward-management/ward-model";
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
@@ -393,7 +394,7 @@ export function PatientNowScreen({
   });
   /* A3-13: absent without leave is the involuntary term under the Act. A voluntary patient who is
    * not back reads "Not back from leave"; the missing person steps stay the same. */
-  const voluntaryNow = /^voluntary\b/i.test((liveMovement?.legalStatus ?? livePatient?.legalStatus ?? "").trim());
+  const voluntaryNow = patientIsVoluntary(liveMovement?.legalStatus, livePatient?.legalStatus);
   const modeMeta =
     mode === "awol" && voluntaryNow
       ? { ...PATIENT_MODES.awol, label: "Not back from leave", pill: "Not back from leave" }
