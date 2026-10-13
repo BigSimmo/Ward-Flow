@@ -106,4 +106,20 @@ describe("patient census locations and next steps", () => {
     };
     expect(census(state).rows.some((row) => row.key === queued.id)).toBe(false);
   });
+
+  it("populates unitId and bedIndex on admission rows for direct jump link (WF-FIX-05)", () => {
+    const seed = seedWardFlowState();
+    const targetAdmission = seed.admissions.find((adm) => adm.state === "occupied")!;
+    const stateWithBedNumber = {
+      ...seed,
+      admissions: seed.admissions.map((adm) => (adm.id === targetAdmission.id ? { ...adm, bedNumber: 4 } : adm)),
+    };
+
+    const rows = census(stateWithBedNumber).rows;
+    const admissionRow = rows.find((row) => row.key === `adm:${targetAdmission.id}`);
+    expect(admissionRow).toBeDefined();
+    expect(admissionRow?.kind).toBe("admission");
+    expect(admissionRow?.unitId).toBe(targetAdmission.unitId);
+    expect(admissionRow?.bedIndex).toBe(4);
+  });
 });

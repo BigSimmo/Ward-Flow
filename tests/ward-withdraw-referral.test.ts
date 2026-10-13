@@ -447,4 +447,59 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
     expect(after.referredUnitIds).toHaveLength(0);
     expect(after.closure?.reason).toBe("The referrer withdrew the referral");
   });
+
+  describe("enforcing referring-site ownership on referral cancellation (WF-A1-02)", () => {
+    it("refuses withdrawal when caller.placeId does not match referral origin site and role is not coordinator", () => {
+      const state = seedWardFlowState();
+      const open = anOpenReferral(state);
+      const referral = state.referrals.find((r) => r.id === open.referralId);
+      const origin = referral?.originSiteId ?? referral?.originSiteCode ?? open.originEdId ?? "RPH";
+
+      const refused = wardFlowReducer(state, {
+        type: "WITHDRAW_REFERRAL",
+        role: "ed",
+        placeId: "mismatched-site-id",
+        now: NOW,
+        movementId: open.id,
+      } as never);
+
+      expect(refused.rejections).toHaveLength(1);
+      expect(refused.rejections[0]?.reason).toMatch(/is not the referral origin site.*or coordinator/i);
+      expect(movement(refused, open.id).closure).toBeUndefined();
+    });
+
+    it("permits withdrawal when caller.placeId matches referral origin site", () => {
+      const state = seedWardFlowState();
+      const open = anOpenReferral(state);
+      const referral = state.referrals.find((r) => r.id === open.referralId);
+      const origin = referral?.originSiteId ?? referral?.originSiteCode ?? open.originEdId ?? "RPH";
+
+      const accepted = wardFlowReducer(state, {
+        type: "WITHDRAW_REFERRAL",
+        role: "ed",
+        placeId: origin,
+        now: NOW,
+        movementId: open.id,
+      } as never);
+
+      expect(accepted.rejections).toHaveLength(0);
+      expect(movement(accepted, open.id).closure?.outcome).toBe("did_not_proceed");
+    });
+
+    it("permits withdrawal when caller is coordinator even if placeId does not match", () => {
+      const state = seedWardFlowState();
+      const open = anOpenReferral(state);
+
+      const accepted = wardFlowReducer(state, {
+        type: "WITHDRAW_REFERRAL",
+        role: "coordinator",
+        placeId: "different-site",
+        now: NOW,
+        movementId: open.id,
+      } as never);
+
+      expect(accepted.rejections).toHaveLength(0);
+      expect(movement(accepted, open.id).closure?.outcome).toBe("did_not_proceed");
+    });
+  });
 });

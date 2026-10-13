@@ -107,6 +107,9 @@ export function bedsForecast(
     (movement) => isOpen(movement) && STAGES_STILL_NEEDING_A_BED.includes(movement.stage),
   );
   const waitingForBed = waitingMovements.length;
+  const alreadyPulled = waitingMovements.filter(
+    (movement) => movement.admissionId !== undefined || movement.allocatedBed !== undefined,
+  ).length;
 
   const horizons = BEDS_FORECAST_HORIZON_DAYS.map((days): BedsForecastHorizon => {
     const until = now + days * MINUTES_PER_DAY;
@@ -127,7 +130,7 @@ export function bedsForecast(
         !flaggedAdmissionIds.has(admission.id),
     ).length;
     const planned = plannedAdmissionsStillNeedingABed(plannedAdmissions, unitIds, until, waitingMovements).length;
-    const bedsNeeded = waitingForBed + planned;
+    const bedsNeeded = Math.max(0, waitingForBed + planned - alreadyPulled);
     const low = readyNow + confirmed - bedsNeeded;
     const likely = low + expected;
     const high = likely + heldUp + overdue + plannedNotFlagged;

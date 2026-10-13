@@ -73,13 +73,14 @@ export function redactCaptionIdentifiers(value: string): string {
   const clinicalRangePattern = /^\d+(?:\.\d+)?\s*-\s*\d+(?:\.\d+)?(?:\s*[A-Za-zµ/%][\w/%.-]*)?$/i;
   return value
     .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, "[email]")
-    .replace(/\b(?:mrn|nhs)\s*[:#-]?\s*([0-9]+(?:[ \-][0-9]+)+|[A-Za-z0-9-]{4,})\b/gi, (match, idPart: string) => {
+    .replace(/\b(?:mrn|nhs|umrn)\s*[:#-]?\s*([0-9]+(?:[ \-][0-9]+)+|[A-Za-z0-9-]{4,})\b/gi, (match, idPart: string) => {
       const trimmed = idPart.replace(/\s+/g, " ").trim();
       // Count digits only; require at least 4 digits to consider it an identifier (avoids short numeric ranges).
       const digitCount = trimmed.replace(/\D/g, "").length;
       if (digitCount > 0 && digitCount < 4) return match;
       return "[id]";
     })
+    .replace(/\bUMRN[-:]?\d{6,9}\b/gi, "[id]")
     .replace(/\b(?:\+?\d[\d\s().-]{6,}\d)\b/g, (match) => {
       const digits = match.replace(/\D/g, "");
       return digits.length >= 8 && !clinicalRangePattern.test(match.trim()) ? "[phone]" : match;

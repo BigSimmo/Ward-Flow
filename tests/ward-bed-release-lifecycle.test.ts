@@ -4,6 +4,7 @@ import { capacityBreakdown, releaseBand } from "../src/components/ward-managemen
 import { BED_PREPARATION_NOTES, BED_RELEASE_BLOCKERS } from "../src/components/ward-management/ward-change-reasons";
 import { unitCapacity } from "../src/components/ward-management/ward-derivations";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
+import type { Movement } from "../src/components/ward-management/ward-model";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -1040,6 +1041,48 @@ describe("ward bed release lifecycle", () => {
     // The point of this second half: RELEASE_BED moved the release's own STATE but wrote no bed
     // figure at all — the unit's empty/allocatable values are exactly what they were on the
     // hand-constructed (not-yet-incremented) state above.
+    expect(afterUnit.empty.value).toBe(beforeUnit.empty.value);
+    expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value);
+  });
+
+  it("14. RELEASE_BED returns state unchanged if linked movement has not been allocated a bed (WF-S2-07)", () => {
+    const state = seeded();
+    const target = expectedUnblockedRelease(state);
+    const beforeAdmission = admission(state, target.admissionId);
+    const departedWithPreAllocMovement = {
+      ...state,
+      movements: [
+        ...state.movements,
+        {
+          ...state.movements[0],
+          id: "MV-PRE-ALLOC" as Movement["id"],
+          allocatedBed: undefined,
+        },
+      ],
+      admissions: state.admissions.map((candidate) =>
+        candidate.id === beforeAdmission.id
+          ? {
+              ...candidate,
+              movementId: "MV-PRE-ALLOC" as Movement["id"],
+              state: "departed" as const,
+              leftAt: NOW,
+              leavingDestination: "moved-to-residential-care" as const,
+            }
+          : candidate,
+      ),
+    };
+
+    const beforeUnit = unit(departedWithPreAllocMovement, target.unitId);
+    const next = wardFlowReducer(departedWithPreAllocMovement, {
+      type: "RELEASE_BED",
+      role: "ward",
+      now: NOW,
+      releaseId: target.id,
+      actingUnitId: target.unitId,
+    });
+    // Returns state unchanged without modifying release state or unit capacity
+    expect(release(next, target.id)).toEqual(target);
+    const afterUnit = unit(next, target.unitId);
     expect(afterUnit.empty.value).toBe(beforeUnit.empty.value);
     expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value);
   });

@@ -579,8 +579,8 @@ export function transportLeg(transport: TransportJob | undefined): TransportLeg 
  * at all (`tests/ward-capacity-reconciliation.test.ts`, `tests/ward-model.test.ts`).
  */
 export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
-  const available = Math.min(unit.allocatable.value, unit.empty.value);
-  const held = Math.max(unit.empty.value - available, 0);
+  const rawAvailable = Math.min(unit.allocatable.value, unit.empty.value);
+  const held = Math.max(unit.empty.value - rawAvailable, 0);
   const notEmpty = Math.max(unit.beds - unit.empty.value, 0);
   // Owner ruling 2026-09-25: out-of-service beds are not recorded anywhere in the model
   // (`Unit.blocked` is a typed count, not a record), so none is ever subtracted here and screens
@@ -591,6 +591,11 @@ export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
   // Physical overflow beds are not recorded. A gender-count disagreement cannot prove surge.
   // Actual arrivals with a conflicting empty observation are separately disclosed below.
   const surge = Math.max(0, occupied - unit.beds);
+
+  let available = Math.min(rawAvailable, Math.max(0, unit.beds - occupied - held));
+  if (unit.isClosed || unit.beds === 0) {
+    available = 0;
+  }
 
   return {
     available,

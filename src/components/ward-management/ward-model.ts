@@ -737,6 +737,8 @@ export type Unit = {
    */
   intakeConstraints?: readonly WardIntakeConstraint[];
   homeRegion?: HomeRegion;
+  /** Closed ward flag for bed capacity derivation clamping. */
+  isClosed?: boolean;
 };
 
 export type Site = {
@@ -1748,6 +1750,10 @@ export type Movement = {
     clearedAt?: Instant;
     clearedBy?: WardFlowRole;
   };
+  /** Bed allocated to this movement, if any. */
+  allocatedBed?: string | number;
+  /** Statutory examination revoked flag, protected from generic clear. */
+  examRevoked?: boolean;
 };
 
 /** A transition the reducer refused, surfaced on the coordinator screen rather than swallowed. */
@@ -2804,6 +2810,8 @@ export type Referral = {
   atsCategory?: AtsCategory;
   /** A synthetic site code (see `wardSites`), never an address. */
   originSiteCode: string;
+  /** Explicit origin site ID if provided by caller or referral context. */
+  originSiteId?: string;
   transportNeeded: boolean;
   /**
    * ⚠️ THE WRITTEN HISTORY — THE ONLY FREE TEXT ON A REFERRAL, AND THE ONLY FIELD HERE THAT

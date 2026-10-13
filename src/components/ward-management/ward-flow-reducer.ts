@@ -3872,6 +3872,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           examination: { at: event.now, outcome: event.outcome },
           supersededExaminations,
           blocker: STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease,
+          examRevoked: event.outcome === "revoked" ? true : movement.examRevoked,
         };
         const next = replaceMovement(state, movement.id, flagged);
         // Item 48, Q3 (owner, 2026-09-17): the accepting ward is told, but only for a `"revoked"`
@@ -3919,6 +3920,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ...movement,
         examination: { at: event.now, outcome: event.outcome },
         supersededExaminations,
+        examRevoked: event.outcome === "revoked" ? true : movement.examRevoked,
         transport:
           movement.transport && movement.transport.cancelledAt === undefined
             ? { ...movement.transport, cancelledAt: event.now }
@@ -4354,6 +4356,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `movement ${movement.id} has already closed and cannot be withdrawn`);
       }
+      const caller = event as { role: WardFlowRole; placeId?: string; actingPlaceId?: string };
+      const callerPlaceId = caller.placeId ?? caller.actingPlaceId;
+      const referral = movement.referralId ? state.referrals.find((r) => r.id === movement.referralId) : undefined;
+      const originSiteId = referral?.originSiteId ?? referral?.originSiteCode ?? movement.originEdId;
+      if (callerPlaceId !== undefined && caller.role !== "coordinator" && callerPlaceId !== originSiteId) {
+        return reject(
+          state,
+          event,
+          `caller ${callerPlaceId} is not the referral origin site (${originSiteId}) or coordinator`,
+        );
+      }
 
       /*
        * 🔴 WLQ-38 (owner, 2026-09-15), verbatim: *"This should also be the referring doctors
@@ -4634,6 +4647,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           overrides: pullOverrides(movement, restoreUnit, admissionsExcludingOwn, event, false),
           stage: "pulled",
           waitlistedUnitIds: undefined,
+          pullExpiresAt: event.now + state.configuration.pullHoldMinutes,
+          allocatedBed: movement.allocatedBed ?? held.id,
           stageChanges: [
             ...movement.stageChanges,
             { at: event.now, from: movement.stage, to: "pulled", by: event.role },
@@ -5020,6 +5035,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         stage: "pulled",
         waitlistedUnitIds: undefined,
         pullExpiresAt: event.now + state.configuration.pullHoldMinutes,
+        allocatedBed: admission.id,
         // The join `RELEASE_PULL` needs to undo exactly this record, and `PATIENT_ARRIVED` needs to
         // mark exactly this one as having arrived. See `Movement.admissionId`.
         admissionId: admission.id,
@@ -5995,6 +6011,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot clear the blocker on a closed movement (${movement.closure.reason})`);
       }
+      if (movement.examRevoked || movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease) {
+        return reject(state, event, "cannot clear statutory examination revoked blocker");
+      }
       // Refused rather than accepted as a no-op, the same discipline as the flag pair above: a
       // control that reports success for an act that changed nothing is the untruth this prototype
       // names as mattering most. `"None — cleared"` and the other sentinels are all already
@@ -6002,7 +6021,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === movement.blocker.trim())) {
         return reject(state, event, `movement ${movement.id} already records that nothing is holding it up`);
       }
-      return replaceMovement(state, movement.id, { ...movement, blocker: "None — cleared" });
+      return replaceMovement(state, movement.id, {
+        ...movement,
+        blocker: "None — cleared",
+        examRevoked: movement.examRevoked,
+      });
     }
 
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT": {
@@ -6534,6 +6557,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `release ${release.id} completes when admission ${releasedAdmission.id} is recorded as having left (RECORD_LEAVING); they are still ${releasedAdmission.state}`,
         );
       }
+      const movement = (event as { movementId?: MovementId }).movementId
+        ? findMovement(state, (event as { movementId?: MovementId }).movementId!)
+        : releasedAdmission.movementId
+          ? findMovement(state, releasedAdmission.movementId)
+          : undefined;
+      if (movement && movement.allocatedBed === undefined) return state;
       // Fix round 2 (P2, spec D7): same freshness restatement as CONFIRM_BED_RELEASE's own case
       // (see its comment in full) — `confirmedAt` moves to `event.now` on this transition too,
       // and `confirmedBy` stays untouched for the same reason.
@@ -8355,6 +8384,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // sentence is only ever about the latter.
         blocker: STAGE_TRANSITION_BLOCKERS.accepted,
         pullExpiresAt: undefined,
+        allocatedBed: undefined,
         // The record the pull created was deleted above (by the shared helper), so the join to it
         // goes with it. A surviving id pointing at a deleted admission is the dangling reference
         // this whole fix is about.

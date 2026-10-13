@@ -800,4 +800,32 @@ describe("the transport legs restate what is holding a movement up", () => {
       expect(sentence.startsWith("None"), sentence).toBe(false);
     }
   });
+
+  describe("protecting revoked examination holds (WF-S2-2)", () => {
+    it("CLEAR_MOVEMENT_BLOCKER refuses to clear statutory examination revoked blocker", () => {
+      const { state: enRouteState, movementId } = throughToEnRoute();
+      const withRevoked = wardFlowReducer(enRouteState, {
+        type: "RECORD_EXAMINATION",
+        role: "ed",
+        now: NOW + 70,
+        movementId,
+        outcome: "revoked",
+      });
+      expect(withRevoked.rejections).toHaveLength(0);
+      const revMovement = movement(withRevoked, movementId);
+      expect(revMovement.examRevoked).toBe(true);
+      expect(revMovement.blocker).toBe(STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease);
+
+      const cleared = wardFlowReducer(withRevoked, {
+        type: "CLEAR_MOVEMENT_BLOCKER",
+        role: "coordinator",
+        now: NOW + 75,
+        movementId,
+      });
+      expect(cleared.rejections).toHaveLength(1);
+      expect(cleared.rejections[0]?.reason).toMatch(/cannot clear statutory examination revoked blocker/i);
+      expect(movement(cleared, movementId).examRevoked).toBe(true);
+      expect(movement(cleared, movementId).blocker).toBe(STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease);
+    });
+  });
 });

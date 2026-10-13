@@ -88,6 +88,19 @@ describe("bedsForecast", () => {
     expect(twoDays.likely).toBe(READY + 1 + 2 - 2);
   });
 
+  it("deduplicates beds needed in forecast when a waiting movement already has an allocated bed (WF-A3-01)", () => {
+    const releases = [release({ state: "confirmed", expectedAt: NOW + 60 })];
+    const movements = [
+      movement({ id: "MV-FC-1" as Movement["id"], stage: "accepted_awaiting_bed", allocatedBed: "BED-01" }),
+      movement({ id: "MV-FC-2" as Movement["id"], stage: "placement_requested" }),
+    ];
+    const forecast = bedsForecast([unit], releases, [], movements, NOW);
+    const day = horizon(forecast, 24);
+    // waitingForBed is 2, but 1 is already pulled/allocated, so bedsNeeded is 2 - 1 = 1
+    expect(day.bedsNeeded).toBe(1);
+    expect(day.low).toBe(READY + 1 - 1);
+  });
+
   it("keeps held-up, overdue and unflagged planned discharges out of the likely figure but in the high end", () => {
     const flagged = release({ state: "expected", expectedAt: NOW + 60, admissionId: "AD-FLAGGED" });
     const releases = [

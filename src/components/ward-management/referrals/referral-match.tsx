@@ -1392,6 +1392,108 @@ export function ReferralMatchView({
       </>
     ) : null;
 
+  const edControls =
+    edAddressing && edAddressing.state === "queued" && edAddressing.withdrawnAt === undefined ? (
+      <>
+        <div
+          className={styles.matchRowTop}
+          data-confirming={edAcceptConfirmOpen ? "true" : undefined}
+          data-testid="ward-referral-match-accept-controls-emergency_department"
+        >
+          {!edAcceptConfirmOpen ? (
+            <button
+              type="button"
+              className={styles.acceptPresentationBtn}
+              data-testid="ward-referral-match-accept-emergency_department"
+              onClick={() => setEdAcceptConfirmOpen(true)}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Accept presentation</span>
+            </button>
+          ) : (
+            <div className={styles.confirmGroup}>
+              <button
+                type="button"
+                className={styles.confirmAcceptBtn}
+                data-testid="ward-referral-match-confirm-accept-emergency_department"
+                onClick={handleEdAccept}
+              >
+                Confirm acceptance
+              </button>
+              <button
+                type="button"
+                className={styles.cancelBtn}
+                data-testid="ward-referral-match-cancel-accept-emergency_department"
+                onClick={() => setEdAcceptConfirmOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+        <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls-emergency_department">
+          <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-emergency_department">
+            Decline reason (emergency department)
+          </label>
+          <div className={styles.selectWithActionRow}>
+            <select
+              id="ward-referral-match-decline-reason-emergency_department"
+              data-testid="ward-referral-match-decline-reason-emergency_department"
+              className={styles.select}
+              value={declineReason ?? ""}
+              onChange={(event) => {
+                const chosen = event.target.value;
+                setDeclineReason(
+                  ED_DECLINE_REASONS.includes(chosen as ReferralDeclineReason)
+                    ? (chosen as ReferralDeclineReason)
+                    : undefined,
+                );
+              }}
+            >
+              <option value="">Choose a reason…</option>
+              {ED_DECLINE_REASONS.map((reason) => (
+                <option key={reason} value={reason}>
+                  {DECLINE_REASON_LABELS[reason] ?? reason}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className={styles.declineButton}
+              data-testid="ward-referral-match-decline-emergency_department"
+              aria-disabled={declineReason === undefined ? "true" : undefined}
+              aria-describedby={
+                declineReason === undefined ? "ward-referral-match-decline-blocked-emergency_department" : undefined
+              }
+              title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
+              onClick={
+                declineReason === undefined ? ignoreUnavailableActivation : () => handleDecline("emergency_department")
+              }
+            >
+              Decline referral
+            </button>
+          </div>
+          {declineReason === undefined ? (
+            <span id="ward-referral-match-decline-blocked-emergency_department" className="sr-only">
+              {DECLINE_REASON_UNCHOSEN_ED}
+            </span>
+          ) : null}
+        </div>
+      </>
+    ) : null;
+
   /*
    * v10 phone: the decision reads as ONE scrolling sheet — three candidate lists, the board's own
    * extras under them, and Decline and Accept pinned at the bottom. Every dispatch below is one of
@@ -1565,6 +1667,7 @@ export function ReferralMatchView({
               </button>
             )}
             {communityControls}
+            {edControls}
             {wholeWithdrawControl}
           </>
         )}
@@ -2268,6 +2371,7 @@ export function ReferralMatchView({
       </div>
 
       {communityControls}
+      {edControls}
 
       {wholeWithdrawControl}
 

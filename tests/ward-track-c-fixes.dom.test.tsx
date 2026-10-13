@@ -78,6 +78,39 @@ const DUAL_DESTINATION_REFERRAL: Referral = {
   ...FIXTURE_HISTORY,
 };
 
+const DUAL_DESTINATION_ED_REFERRAL: Referral = {
+  id: "RF-DUAL-DEST-ED",
+  ageBand: "Adult",
+  homeRegion: "Perth Metropolitan",
+  suburb: { kind: "named", name: "Armadale" },
+  source: "community",
+  raisedAt: NOW_ANCHOR - 20,
+  urgency: 1,
+  originSiteCode: "RPH",
+  transportNeeded: false,
+  destinations: [
+    {
+      destination: {
+        kind: "psychiatric_ward",
+        sex: "Female",
+        secureBedNeeded: false,
+        involuntaryBedNeeded: false,
+        highAcuityNursingNeeded: false,
+      },
+      state: "queued",
+    },
+    {
+      destination: {
+        kind: "emergency_department",
+        edId: "rph-ed",
+        purpose: "psychiatric_review",
+      },
+      state: "queued",
+    },
+  ],
+  ...FIXTURE_HISTORY,
+};
+
 describe("Track C Referral Matching fixes", () => {
   it("ED destination decline reasons offer ED_DECLINE_REASONS and exclude bed-shaped reasons", () => {
     render(
@@ -138,6 +171,22 @@ describe("Track C Referral Matching fixes", () => {
     // Community triage controls also render alongside bed candidates
     expect(screen.getByTestId("ward-referral-match-accept-controls-community_team")).toBeInTheDocument();
     expect(screen.getByTestId("ward-referral-match-decline-controls-community_team")).toBeInTheDocument();
+  });
+
+  it("Dual-destination referral renders ED triage controls alongside psychiatric bed candidate matching", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <MatchHarness referral={DUAL_DESTINATION_ED_REFERRAL} units={allUnits()} />
+      </WardFlowProvider>,
+    );
+
+    // Psychiatric ward bed candidates render
+    expect(screen.getByTestId("ward-referral-match-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-referral-match-decline-controls")).toBeInTheDocument();
+
+    // ED triage controls also render alongside bed candidates
+    expect(screen.getByTestId("ward-referral-match-accept-controls-emergency_department")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-referral-match-decline-controls-emergency_department")).toBeInTheDocument();
   });
 });
 

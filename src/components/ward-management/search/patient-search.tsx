@@ -1362,7 +1362,16 @@ export function PatientSearchPage() {
               empty={refusal ? null : empty}
               notice={refusalNotice}
             />
-            <Card className={cs.side} role="region" aria-label="Patient details" data-preview-card data-wf-rail="1201">
+            <Card
+              className={cs.side}
+              role="region"
+              aria-labelledby="ward-patient-search-side-title"
+              data-preview-card
+              data-wf-rail="1201"
+            >
+              <span id="ward-patient-search-side-title" className="sr-only">
+                Patient details
+              </span>
               {detailOrSummary(true)}
             </Card>
           </div>

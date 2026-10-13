@@ -266,11 +266,100 @@ function readTabFromHash(): SettingsTab | null {
   return SETTINGS_TABS.some((tab) => tab.id === hash) ? (hash as SettingsTab) : null;
 }
 
+export function maskDiagnosticPatient<
+  T extends {
+    id?: string;
+    umrn?: string;
+    mrn?: string;
+    givenName?: string;
+    familyName?: string;
+    preferredName?: string;
+    displayName?: string;
+    name?: string;
+  },
+>(patient: T): T {
+  return {
+    ...patient,
+    givenName: patient.givenName ? "[MASKED]" : patient.givenName,
+    familyName: patient.familyName ? "[MASKED]" : patient.familyName,
+    preferredName: patient.preferredName ? "[MASKED]" : undefined,
+    displayName: patient.displayName ? "[MASKED]" : patient.displayName,
+    name: patient.name ? "[MASKED]" : patient.name,
+    umrn: patient.umrn ? String(patient.umrn).replace(/\d/g, "*") : patient.umrn,
+    mrn: patient.mrn ? String(patient.mrn).replace(/\d/g, "*") : patient.mrn,
+  } as T;
+}
+
+export function maskDiagnosticMovement<
+  T extends {
+    id: string;
+    patientName?: string;
+    patientUmrn?: string;
+    patientMrn?: string;
+    mrn?: string;
+  },
+>(movement: T): T {
+  return {
+    ...movement,
+    ...(movement.patientName !== undefined ? { patientName: "[MASKED]" } : {}),
+    ...(movement.patientUmrn !== undefined ? { patientUmrn: String(movement.patientUmrn).replace(/\d/g, "*") } : {}),
+    ...(movement.patientMrn !== undefined ? { patientMrn: String(movement.patientMrn).replace(/\d/g, "*") } : {}),
+    ...(movement.mrn !== undefined ? { mrn: String(movement.mrn).replace(/\d/g, "*") } : {}),
+  } as T;
+}
+
+export type DiagnosticPatientInput = {
+  id?: string;
+  umrn?: string;
+  mrn?: string;
+  givenName?: string;
+  familyName?: string;
+  preferredName?: string;
+  displayName?: string;
+  name?: string;
+  [key: string]: unknown;
+};
+
+export type DiagnosticMovementInput = {
+  id: string;
+  patientName?: string;
+  patientUmrn?: string;
+  patientMrn?: string;
+  mrn?: string;
+  [key: string]: unknown;
+};
+
+export async function copySettingsDiagnostics(state: {
+  configuration: WardConfiguration;
+  movements?: readonly DiagnosticMovementInput[];
+  patients?: readonly DiagnosticPatientInput[];
+}): Promise<string> {
+  const maskedPatients = (state.patients ?? []).map(maskDiagnosticPatient);
+  const maskedMovements = (state.movements ?? []).map(maskDiagnosticMovement);
+
+  const payload = {
+    product: "Ward Flow Statewide Bed Coordination",
+    version: 6,
+    exportedAt: new Date().toISOString(),
+    configuration: state.configuration,
+    movementCount: (state.movements ?? []).length,
+    patientCount: (state.patients ?? []).length,
+    movements: maskedMovements,
+    patients: maskedPatients,
+  };
+
+  const text = JSON.stringify(payload, null, 2);
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+  }
+  return text;
+}
+
 export function SettingsScreen() {
   const appearance = useAppearanceStore();
   const glare = useGlareStore();
   const railOpen = useRailOpenStore();
-  const { movements, dispatch, rejections, configuration, eventLog = [], readAuditEvents } = useWardFlow();
+  const { movements, dispatch, rejections, configuration, eventLog = [], readAuditEvents, patients } = useWardFlow();
   const now = useWardFlowClock();
   const thresholds = publishedThresholds(movements, now, configuration);
 
@@ -466,6 +555,19 @@ export function SettingsScreen() {
       showToast("Rules exported.");
     } catch {
       showToast("Rules could not be exported.");
+    }
+  };
+
+  const handleCopyDiagnostics = async () => {
+    try {
+      await copySettingsDiagnostics({
+        configuration: draft,
+        movements,
+        patients,
+      });
+      showToast("Diagnostics copied to clipboard (records masked).");
+    } catch {
+      showToast("Diagnostics could not be copied.");
     }
   };
 
@@ -1137,6 +1239,7 @@ export function SettingsScreen() {
         eventCount={eventLog.length}
         thresholds={thresholds}
         onExport={handleExport}
+        onCopyDiagnostics={handleCopyDiagnostics}
         onImport={handleImport}
         onClearSession={handleClearSession}
         onRestore={() => {
