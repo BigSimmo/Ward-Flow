@@ -1218,6 +1218,30 @@ describe("census counts agree (device audit 11 Oct 2026)", () => {
   });
 });
 
+describe("the highlight chips follow the search (shell-16)", () => {
+  it("counts only what a UMRN search leaves, and drops the History count while searching", () => {
+    renderSearch();
+    const chipCount = (label: string): number => {
+      const chip = within(screen.getByRole("group", { name: "Highlight" })).getByRole("button", {
+        name: new RegExp(`^${label}`),
+      });
+      return Number((chip.textContent ?? "").replace(label, "").replace(/\D/gu, "") || "0");
+    };
+    const tierOneBefore = chipCount("Tier 1");
+    expect(tierOneBefore, "fixture drifted: no Tier 1 row to narrow from").toBeGreaterThan(1);
+
+    const seed = seedWardFlowState();
+    const movement = seed.movements.find((m) => isOpen(m) && m.patientId === "PT-006");
+    if (!movement) throw new Error("fixture WF-308 / PT-006 is required by this test and is missing");
+    const { umrn } = resolveSubjectPatient(movement, seed);
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: umrn } });
+
+    expect(chipCount("Tier 1")).toBeLessThanOrEqual(1);
+    expect(chipCount("Over 24 hours")).toBeLessThanOrEqual(1);
+    expect(screen.getByRole("tab", { name: /^History/u }).textContent).toBe("History");
+  });
+});
+
 describe("a UMRN handed over from Person not found (shell-6)", () => {
   it("opens the search with that UMRN typed in, read once from memory", () => {
     handOffPatientSearchText("UM999999");

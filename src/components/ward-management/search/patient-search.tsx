@@ -701,8 +701,11 @@ export function PatientSearchPage() {
   const groupTotals = countGroups(census.rows);
   const groupMatches = countGroups(visibleRows);
   const liveCount = census.rows.length - groupTotals.off;
+  // shell-16: the highlight chips count what the search and filters leave, as the tiles do.
+  const countedRows =
+    searching || legacyNarrowing || settingFilter !== "all" || presenceFilter !== "all" ? visibleRows : census.rows;
   const highlightCounts = Object.fromEntries(
-    CENSUS_HIGHLIGHTS.map((chip) => [chip.id, census.rows.filter(chip.test).length]),
+    CENSUS_HIGHLIGHTS.map((chip) => [chip.id, countedRows.filter(chip.test).length]),
   ) as Record<CensusHighlight, number>;
 
   // A search that finds exactly one person opens them; otherwise the panel shows this shift until a
@@ -827,7 +830,9 @@ export function PatientSearchPage() {
     const stopped = closed.filter((row) => row.outcome === "Did not proceed").length;
     return `Today ${arrived} arrived · ${left} left · ${stopped} did not proceed`;
   })();
-  const historyCount = census.closedToday.length + accessRecord.length;
+  // shell-16: History lists every closure and search whatever is typed, so it shows no count while
+  // a search is on rather than a figure that disagrees with the result.
+  const historyCount = searching ? undefined : census.closedToday.length + accessRecord.length;
   const addPatientClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
     if (isNewTabClick(event)) {
       handOffTypedPatientQuery("", "carried");
