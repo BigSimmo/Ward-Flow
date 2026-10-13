@@ -297,7 +297,7 @@
   min-height: 44px;
   min-width: 44px;
 }
-.deck button:disabled {
+.deck button:is(:disabled, [aria-disabled="true"]) {
   border: 1px dashed var(--wf-line-3);
   background: var(--wf-surface-2);
   color: var(--wf-ink-3);

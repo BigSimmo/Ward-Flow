@@ -645,10 +645,10 @@
   color: var(--wf-accent-ink);
 }
 
-.btn:disabled,
-.patientChipBtn:disabled,
-.btnCancelReferral:disabled,
-.btnSendReferral:disabled {
+.btn:is(:disabled, [aria-disabled="true"]),
+.patientChipBtn:is(:disabled, [aria-disabled="true"]),
+.btnCancelReferral:is(:disabled, [aria-disabled="true"]),
+.btnSendReferral:is(:disabled, [aria-disabled="true"]) {
   border: 1px dashed var(--wf-line-3);
   background: var(--wf-surface-2);
   box-shadow: none;
