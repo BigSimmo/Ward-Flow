@@ -5,9 +5,13 @@ import {
   wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
-import type { Movement } from "../src/components/ward-management/ward-model";
+import type { Movement, Referral } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
-import { causeOf, lastRecordedActivity } from "../src/components/ward-management/delays/delays-derivations";
+import {
+  answerSilenceReminder,
+  causeOf,
+  lastRecordedActivity,
+} from "../src/components/ward-management/delays/delays-derivations";
 import { allDeclines } from "../src/components/ward-management/ward-derivations";
 import { isMovementWithdrawable } from "../src/components/ward-management/ward-referrals";
 import { EVENT_ROLE } from "../src/components/ward-management/ward-flow-events";
@@ -207,6 +211,79 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
         examination: { outcome: "community_order", at: NOW - 100 },
       };
       expect(causeOf(communityOrderMov, state.units, NOW)).toBe("awaiting_coordinator");
+
+      // A held bed stepped back to stage "pulled" with revoked examination routes to coordinator, not awaiting_bed_ready
+      const pulledRevokedMov: Movement = {
+        ...mov,
+        stage: "pulled",
+        admissionId: "ADM-REVOKED-1",
+        examination: { outcome: "revoked", at: NOW - 100 },
+      };
+      expect(causeOf(pulledRevokedMov, state.units, NOW)).toBe("awaiting_coordinator");
+    });
+
+    it("A3-13: answerSilenceReminder respects movement.referredUnitIds for wards added later or ED/community referrals", () => {
+      const state = seedWardFlowState();
+      const mov: Movement = {
+        ...state.movements[0],
+        stage: "placement_requested",
+        closure: undefined,
+        acceptedUnitId: undefined,
+        referredUnitIds: ["U1"],
+        referredAt: NOW - 180, // 3 hours ago
+      };
+
+      const baseReferral = state.referrals[0];
+
+      // Case 1: ED-only referral with no psychiatric ward addressing, but movement referred to units
+      const edOnlyReferral: Referral = {
+        ...baseReferral,
+        id: "REF-ED-1",
+        patientId: mov.patientId,
+        raisedAt: NOW - 200,
+        destinations: [
+          {
+            destination: { kind: "emergency_department", edId: "ed-1", purpose: "bed" },
+            state: "accepted",
+          },
+        ],
+      };
+      const linkedMov: Movement = {
+        ...mov,
+        referralId: "REF-ED-1",
+      };
+      const reminder = answerSilenceReminder(linkedMov, [edOnlyReferral], NOW);
+      expect(reminder).toBeDefined();
+      expect(reminder).toContain("Ward silent 2 hours");
+
+      // Case 2: Psychiatric ward addressing answered/waitlisted, but movement still has silent referredUnitIds
+      const answeredReferral: Referral = {
+        ...baseReferral,
+        id: "REF-WARD-1",
+        patientId: mov.patientId,
+        raisedAt: NOW - 200,
+        destinations: [
+          {
+            destination: {
+              kind: "psychiatric_ward",
+              unitId: "U2",
+              sex: "Female",
+              secureBedNeeded: false,
+              involuntaryBedNeeded: false,
+              highAcuityNursingNeeded: false,
+            },
+            state: "queued",
+            waitlistedAt: NOW - 190,
+          },
+        ],
+      };
+      const linkedAnsweredMov: Movement = {
+        ...mov,
+        referralId: "REF-WARD-1",
+      };
+      const reminder2 = answerSilenceReminder(linkedAnsweredMov, [answeredReferral], NOW);
+      expect(reminder2).toBeDefined();
+      expect(reminder2).toContain("Ward silent 2 hours");
     });
   });
 

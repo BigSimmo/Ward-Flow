@@ -260,6 +260,13 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayC
   if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
     return "awaiting_ward_answer";
   }
+  if (
+    movement.examination?.outcome === "revoked" ||
+    examinationRevokedWhileBedHeld(movement) ||
+    movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease
+  ) {
+    return "awaiting_coordinator";
+  }
   if (movement.stage === "pulled") {
     // ⚠️ AUDIT GAP 1: condition mirrored exactly from `buildActionInbox`'s `expiredBedPulls`
     // filter (ward-derivations.ts) — `stage === "pulled" && pullExpiresAt !== undefined &&
@@ -267,13 +274,6 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayC
     // must agree on which holds count as expired.
     if (movement.pullExpiresAt !== undefined && movement.pullExpiresAt < now) return "bed_pull_expired";
     return "awaiting_bed_ready";
-  }
-  if (
-    movement.examination?.outcome === "revoked" ||
-    examinationRevokedWhileBedHeld(movement) ||
-    movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease
-  ) {
-    return "awaiting_coordinator";
   }
   if (movement.transport !== undefined) return "awaiting_transport";
   // ⚠️ CORRECTION 3. The plan wrote `movement.urgentFlag`. The field is `flaggedUrgent`
@@ -631,14 +631,19 @@ export function answerSilenceReminder(movement: Movement, referrals: Referral[],
     return silentCommunityReminder(referral.raisedAt, now);
   }
   if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
-    const hasAwaitingWard =
-      referral === undefined ||
-      referral.destinations.some(
-        (d) => d.destination.kind === "psychiatric_ward" && isAwaitingAnswer(d) && d.waitlistedAt === undefined,
-      );
-    if (hasAwaitingWard) {
-      return silentWardReminder(movement.referredAt, now);
-    }
+    // Only destinations still awaiting an answer (and not waitlisted) count, and the OLDEST silent one drives the
+    // reminder, so an answered, withdrawn or newer arm can never reset an older silence.
+    const silentWardTimes = (referral?.destinations ?? [])
+      .filter(
+        (d) =>
+          d.destination.kind === "psychiatric_ward" &&
+          isAwaitingAnswer(d) &&
+          d.waitlistedAt === undefined &&
+          d.referredAt !== undefined,
+      )
+      .map((d) => d.referredAt!);
+    const referredAt = silentWardTimes.length > 0 ? Math.min(...silentWardTimes) : movement.referredAt;
+    return silentWardReminder(referredAt, now);
   }
   return undefined;
 }
