@@ -2487,8 +2487,11 @@ export function EdScreen({ edId }: EdScreenProps) {
     // advertises. Without this guard that keystroke would file the same fabricated cohort,
     // security level, sex, legal status or urgency tier the whole fix exists to stop — and, since
     // T3, the same half-typed expiry `referralDraftBlockedReason`'s last check refuses.
+    // The patient check (A2-1) has no field to narrow, so it is read from
+    // `referralDraftBlockedReason` itself: Enter must not raise a referral for nobody.
     const { cohort, security, sex, gender, legalStatus, urgency } = draft;
     if (
+      referralDraftBlockedReason(draft) !== undefined ||
       cohort === undefined ||
       security === undefined ||
       sex === undefined ||

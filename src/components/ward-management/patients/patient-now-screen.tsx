@@ -812,7 +812,7 @@ export function PatientNowScreen({
     wardRejection?.attempted === "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT" ? wardRejection.reason : undefined;
   const wardRefusal = edReturnRefusal ? undefined : wardRejection?.reason;
 
-  const acceptedWardFor = acceptedWardReferralFor(livePatient?.id, referrals, units);
+  const acceptedWardFor = acceptedWardReferralFor(livePatient?.id, referrals, units, { movements, admissions });
   const statusContext: PatientStatusContext = {
     movement: liveMovement,
     admission: resolved.liveAdmission,
