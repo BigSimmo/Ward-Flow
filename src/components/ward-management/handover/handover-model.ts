@@ -543,6 +543,9 @@ export function toHandoverWard(
 ): HandoverWard {
   const here = admissions.filter((admission) => admission.unitId === unit.id && bedIsOccupied(admission));
   const dayEnd = now - minuteOfDay(now) + MINUTES_PER_DAY;
+  const isClosed = Boolean((unit as { isClosed?: boolean }).isClosed) || unit.beds === 0;
+  const effectiveEmpty = isClosed ? 0 : Math.min(Math.max(0, unit.empty.value), unit.beds);
+  const effectiveReady = isClosed ? 0 : Math.max(0, Math.min(unit.allocatable.value, effectiveEmpty));
   return {
     unit,
     id: unit.id,
@@ -550,8 +553,8 @@ export function toHandoverWard(
     service: unitHealthService(unit) ?? "Not recorded",
     beds: unit.beds,
     occupied: here.length,
-    empty: unit.empty.value,
-    ready: Math.min(unit.allocatable.value, unit.empty.value),
+    empty: effectiveEmpty,
+    ready: effectiveReady,
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     confirmedAt: unit.empty.confirmedAt,
     staleAfter: unit.empty.staleAfterMinutes,
