@@ -396,12 +396,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const next = selectedBed !== null ? String(selectedBed) : null;
     if (current === next) return;
 
+    const state = window.history.state;
     if (next !== null) {
       url.searchParams.set("bed", next);
-      window.history.pushState(null, "", url.toString());
+      // Only opening a drawer creates a navigation point. Normalisation and bed-to-bed
+      // movement replace the current URL so Back never reopens a closed/visited bed.
+      if (current === null) window.history.pushState(state, "", url.toString());
+      else window.history.replaceState(state, "", url.toString());
     } else {
       url.searchParams.delete("bed");
-      window.history.pushState(null, "", url.toString());
+      window.history.replaceState(state, "", url.toString());
     }
   }, [selectedBed]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -550,6 +554,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   const closeBedDrawer = useCallback(() => {
     if (selectedBed !== null) {
+      if (typeof window !== "undefined" && window.sessionStorage.getItem("wardflow:census-bed-opener")) {
+        window.sessionStorage.removeItem("wardflow:census-bed-opener");
+        router?.back();
+        return;
+      }
       const bedNum = selectedBed;
       setSelectedBed(null);
       // The drawer hands focus back to whatever opened it (a tile, a list row, a Ward flow row).
@@ -561,7 +570,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         if (tile?.isConnected) tile.focus();
       }, 0);
     }
-  }, [selectedBed]);
+  }, [selectedBed, router]);
 
   // Focus goes back to whichever control opened the modal (the header button or the home tab's),
   // and falls back to the header button only when that control is gone.

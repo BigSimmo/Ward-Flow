@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  useEffect,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -777,6 +778,17 @@ export type CensusDetailProps = {
 /** The selected person. Every fact is the record's own; a missing one says so. */
 export function CensusDetail({ row, now, onClose, onCopy, copyNote }: CensusDetailProps) {
   const [previewNote, setPreviewNote] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.sessionStorage.getItem("wardflow:census-bed-opener") !== row.key) return;
+    const link = Array.from(document.querySelectorAll<HTMLElement>("[data-census-bed-link]")).find(
+      (element) => element.dataset.censusBedLink === row.key,
+    );
+    if (link) {
+      link.focus({ preventScroll: true });
+      window.sessionStorage.removeItem("wardflow:census-bed-opener");
+    }
+  }, [row.key]);
   const quiet = row.group === "off";
   const facts: [string, string, string][] =
     row.kind === "admission" && row.group === "ward"
@@ -814,10 +826,12 @@ export function CensusDetail({ row, now, onClose, onCopy, copyNote }: CensusDeta
       <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals">
         Referral
       </Link>
-    ) : row.kind === "admission" && row.unitId ? (
+    ) : row.kind === "admission" && row.unitId && row.bedNumber !== undefined ? (
       <Link
         className={buttonClass({ size: "sm" })}
-        href={`/mockups/ward-flow/ward/${encodeURIComponent(row.unitId)}${row.bedNumber !== undefined ? `?bed=${row.bedNumber}` : ""}`}
+        data-census-bed-link={row.key}
+        href={`/mockups/ward-flow/ward/${encodeURIComponent(row.unitId)}?bed=${row.bedNumber}`}
+        onClick={() => window.sessionStorage.setItem("wardflow:census-bed-opener", row.key)}
       >
         Ward bed
       </Link>
