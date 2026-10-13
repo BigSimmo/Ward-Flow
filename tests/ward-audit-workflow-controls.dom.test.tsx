@@ -48,10 +48,8 @@ describe("discharge actions stay usable and accessible across filters", () => {
   it("does not offer release shortcuts in incompatible status or record views", () => {
     wrap(<DischargeBoard />);
     expect(shortcut()).not.toBeNull();
-    // v10: the hero chips highlight; the status tabs over the table are what narrow the list.
-    fireEvent.click(
-      within(screen.getByLabelText("Filter by discharge status")).getByRole("button", { name: /^Confirmed/ }),
-    );
+    // v10: the hero chips highlight; the Status dropdown is what narrows the list (decision 5).
+    fireEvent.change(screen.getByRole("combobox", { name: "Status" }), { target: { value: "confirmed" } });
     expect(shortcut()).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /^History/ }));
     expect(shortcut()).toBeNull();
@@ -295,7 +293,7 @@ describe("referral evidence is visible and honestly qualified", () => {
 
 describe("optional clinician-recorded ATS remains distinct from Ward Flow urgency", () => {
   it("offers ATS on the referral slide-out without changing the selected urgency", () => {
-    wrap(<WardReferralDrawer onClose={() => {}} />);
+    wrap(<WardReferralDrawer onClose={() => {}} initialPatientId="PT-023" />);
     fireEvent.click(
       within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Referral" }),
     );

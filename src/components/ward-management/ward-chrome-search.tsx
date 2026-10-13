@@ -1,5 +1,6 @@
 "use client";
 
+import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -18,7 +19,7 @@ import {
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 import { destinationUnit, stageCopy } from "@/components/ward-management/ward-derivations";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
-import type { Movement, Unit } from "@/components/ward-management/ward-model";
+import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { CHROME_ROLE_LABELS, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
@@ -27,6 +28,7 @@ export type WardChromeSearchProps = {
   movements?: Movement[];
   patients?: readonly Patient[];
   units?: Unit[];
+  referrals?: readonly Referral[];
   scope?: ReactNode;
   onNavigate?: (href: string) => void;
   label?: string;
@@ -68,6 +70,7 @@ export function WardChromeSearch({
   movements: propsMovements,
   patients: propsPatients,
   units: propsUnits,
+  referrals: propsReferrals,
   scope: propsScope,
   onNavigate,
   label = "Search",
@@ -82,6 +85,7 @@ export function WardChromeSearch({
   const movements = useMemo(() => propsMovements ?? context?.movements ?? [], [propsMovements, context?.movements]);
   const patients = useMemo(() => propsPatients ?? context?.patients ?? [], [propsPatients, context?.patients]);
   const units = useMemo(() => propsUnits ?? context?.units ?? [], [propsUnits, context?.units]);
+  const referrals = useMemo(() => propsReferrals ?? context?.referrals ?? [], [propsReferrals, context?.referrals]);
 
   const role = wardChromeRole(pathname);
   const scope = propsScope ?? CHROME_ROLE_LABELS[role];
@@ -107,10 +111,11 @@ export function WardChromeSearch({
             patients,
             movements,
             units,
+            referrals,
             limitPerGroup: MAX_RESULTS_PER_GROUP,
             plannedAdmissions: context?.plannedAdmissions,
           }),
-    [trimmed, patients, movements, units, context?.plannedAdmissions],
+    [trimmed, patients, movements, units, referrals, context?.plannedAdmissions],
   );
 
   const groups = useMemo(() => {
@@ -258,7 +263,7 @@ export function WardChromeSearch({
 
   useEffect(() => {
     if (!showPopup || activeIndex < 0) return;
-    document.getElementById(`${id}-opt-${activeIndex}`)?.scrollIntoView?.({ block: "nearest" });
+    revealWardOption(document.getElementById(`${id}-opt-${activeIndex}`));
   }, [activeIndex, showPopup, id]);
 
   useEffect(() => {
@@ -540,7 +545,7 @@ export function WardChromeSearch({
                 lineHeight: 1.4,
               }}
             >
-              No matches for “{trimmed}”. Nothing here says whether the person or record exists — only that this search
+              No matches for “{trimmed}”. This does not say whether the person or record exists, only that this search
               did not find one.
             </p>
           ) : (

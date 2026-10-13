@@ -7,6 +7,7 @@
  * file never computes a legal time limit.
  */
 import { durMinutes } from "@/components/wf";
+import { bedHold, bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import {
   formatInstantWithDay,
   MINUTES_PER_DAY,
@@ -136,6 +137,13 @@ export type HandoverRow = {
   formCode?: string;
   formDueAt?: Instant;
   obs: HandoverObs;
+  /**
+   * Audit r1 item 3: the risk flags recorded on this journey's referral intake, read as recorded.
+   * `undefined` when no referral intake is linked, so the Assessment says "not recorded".
+   */
+  riskFlags?: readonly string[];
+  /** The referring clinician's high-acuity nursing mark, carried on the movement. */
+  highAcuity?: boolean;
   to?: { unitId: string; name: string };
   asked: { unitId: string; name: string }[];
   declines: { unitId: string; name: string; reason: string; at: Instant }[];
@@ -144,6 +152,12 @@ export type HandoverRow = {
   escalated: boolean;
   urgent: boolean;
   eta?: Instant;
+  /**
+   * Whether the shared act-now list (`activeActNowItems`, `ward-act-now-items.ts`, the one the
+   * Alerts page and Tasks lead with) holds a row for this journey. Set by the page from the live
+   * state; a row built without it falls back to its own recorded times (`isActNow`).
+   */
+  actNow?: boolean;
 };
 
 function unitName(units: Unit[], id: string): string {
@@ -185,6 +199,11 @@ export function toHandoverRow(
     formCode: movement.legalForm?.code,
     formDueAt: movement.legalForm?.dueAt,
     obs: movement.flaggedUrgent ? "Urgent" : movement.specialling ? "1:1 specialling" : "Standard",
+    riskFlags:
+      movement.referralId === undefined
+        ? undefined
+        : referrals.find((referral) => referral.id === movement.referralId)?.intake?.riskFlags,
+    highAcuity: movement.highAcuity,
     to: accepted === undefined ? undefined : { unitId: accepted, name: unitName(units, accepted) },
     asked:
       accepted === undefined ? movement.referredUnitIds.map((id) => ({ unitId: id, name: unitName(units, id) })) : [],
@@ -210,12 +229,15 @@ export function toHandoverRow(
 export type HandoverGroupId = "act" | "due" | "bed" | "acc" | "mov";
 export type HandoverTone = "act" | "due" | "calm";
 
+/**
+ * Act now on the sheet. L1 (site review, 12 Oct 2026): Handover read "Act now 3" while Alerts read
+ * 2, because the sheet kept its own list. With `actNow` set the sheet reads the shared act-now list
+ * (`activeActNowItems`), so a snoozed alert leaves both together. A journey flagged urgent by a
+ * person is always act now as well: that flag is a human safety call the sheet must not drop.
+ */
 export function isActNow(row: HandoverRow, now: Instant): boolean {
-  return (
-    row.urgent ||
-    (row.pullExpiresAt !== undefined && row.pullExpiresAt <= now) ||
-    (row.formDueAt !== undefined && row.formDueAt <= now)
-  );
+  if (row.actNow !== undefined) return row.actNow || row.urgent;
+  return row.urgent || bedHoldLapsed(row.pullExpiresAt, now) || (row.formDueAt !== undefined && row.formDueAt <= now);
 }
 
 export function isDueBy(row: HandoverRow, now: Instant, cutoff: Instant): boolean {
@@ -240,13 +262,13 @@ export function groupOf(row: HandoverRow, now: Instant, cutoff: Instant): Handov
 
 export function handoverGroups(cutoff: Instant, now: Instant) {
   return [
-    { id: "act", title: "Act now", why: "Flagged urgent, typed form time passed or bed pull expired" },
+    { id: "act", title: "Act now", why: "On the act-now alerts, or flagged urgent" },
     {
       id: "due",
       title: `Due by ${formatInstantWithDay(cutoff, now)}`,
       why: "Bed pulls and typed form times before then",
     },
-    { id: "bed", title: "Waiting for a bed", why: "Placement requested or a ward is reviewing" },
+    { id: "bed", title: "Finding a ward", why: "Placement requested or a ward is reviewing" },
     { id: "acc", title: "Accepted, bed not ready", why: "Ward accepted, bed not yet free" },
     { id: "mov", title: "Moving", why: "Transport accepted or collected" },
   ] as const satisfies readonly { id: HandoverGroupId; title: string; why: string }[];
@@ -279,24 +301,41 @@ export function destinationText(row: HandoverRow): string {
 /** Short due text for the table: whichever comes first of a bed hold and a typed form time. */
 export function dueShort(row: HandoverRow, now: Instant): string | null {
   if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
-    const left = row.pullExpiresAt - now;
-    return left <= 0
-      ? `Pull over by ${durMinutes(-left)}`
-      : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
+    const hold = bedHold(row.pullExpiresAt, now)!;
+    return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
   if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
+  return null;
+}
+
+/**
+ * The Due cell in two parts: the time or length on its own line, which is never cut, and what it is
+ * ("Pull over by", "Pull ends", "1A due"), which may truncate (device audit 11 Oct 2026).
+ */
+export function dueParts(row: HandoverRow, now: Instant): { when: string; what: string; atRisk?: boolean } | null {
+  if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
+    // Audit A4-3: the one bed-hold rule. Under an hour left carries the amber at-risk dot (not Act now).
+    const hold = bedHold(row.pullExpiresAt, now)!;
+    return hold.state === "lapsed"
+      ? { when: durMinutes(hold.minutes), what: "Pull expired" }
+      : {
+          when: formatInstantWithDay(row.pullExpiresAt, now),
+          what: "Pull ends",
+          ...(hold.state === "at-risk" ? { atRisk: true } : {}),
+        };
+  }
+  if (row.formDueAt !== undefined)
+    return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };
   return null;
 }
 
 /** Long due text for the panel: the bed hold and the typed form time, both when both are held. */
 export function dueLong(row: HandoverRow, now: Instant): string | null {
   const parts: string[] = [];
-  if (row.pullExpiresAt !== undefined) {
-    const left = row.pullExpiresAt - now;
+  const hold = bedHold(row.pullExpiresAt, now);
+  if (hold) {
     parts.push(
-      left <= 0
-        ? `Pull expired ${durMinutes(-left)} ago`
-        : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}, ${durMinutes(left)} left`,
+      hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(hold.expiresAt, now)}, ${hold.short}`,
     );
   }
   if (row.formDueAt !== undefined) {
@@ -318,13 +357,13 @@ export function nextStep(
 ): { text: string; tone: HandoverTone } {
   const tone: HandoverTone = isActNow(row, now) ? "act" : isDueBy(row, now, cutoff) ? "due" : "calm";
   let text: string;
-  const hold = row.pullExpiresAt === undefined ? null : row.pullExpiresAt - now;
+  const hold = bedHold(row.pullExpiresAt, now);
   if (row.stage === "pulled") {
     text =
-      hold !== null && hold <= 0
-        ? `Pull expired ${durMinutes(-hold)} ago. Move or release`
-        : row.pullExpiresAt !== undefined
-          ? `Move by ${formatInstantWithDay(row.pullExpiresAt, now)}`
+      hold?.state === "lapsed"
+        ? `${hold.label}. ${hold.nextStep}`
+        : hold
+          ? `Move by ${formatInstantWithDay(hold.expiresAt, now)}, ${hold.short}`
           : "Move to the pulled bed";
   } else if (row.stage === "moving") {
     text =
@@ -364,21 +403,49 @@ function backgroundLine(row: HandoverRow, now: Instant): string {
   return row.escalated ? "Escalated to state desk" : "No ward asked yet";
 }
 
-function recommendationLine(row: HandoverRow, now: Instant): string {
-  const due = dueLong(row, now);
-  if (row.stage === "moving") {
-    return `${row.ownerShort} receives, ${row.transport?.leg === "Collected" ? "collected" : "transport accepted"}${
-      row.transport ? ` by ${row.transport.provider}` : ""
-    }`;
+/**
+ * Audit A4-26: the Situation from the journey's latest state, never the bare stage label, which
+ * went stale ("Ward reviewing" with every ward declined, "Bed pulled" after the pull expired).
+ */
+export function situationState(row: HandoverRow, now: Instant): string {
+  const to = row.to?.name ?? "the ward";
+  if (row.stage === "pulled") {
+    if (row.pullExpiresAt === undefined) return `Bed pulled at ${to}`;
+    return row.pullExpiresAt <= now
+      ? `Bed pull at ${to} expired ${durMinutes(now - row.pullExpiresAt)} ago`
+      : `Bed held at ${to} until ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
-  if (row.stage === "handover_ready")
-    return `${row.ownerShort} hands over on arrival${due ? `, ${due.toLowerCase()}` : ""}`;
-  return `${row.ownerShort}, ${STAGE_LABEL[row.stage].toLowerCase()}${due ? `, ${due.charAt(0).toLowerCase()}${due.slice(1)}` : ""}`;
+  if (row.stage === "placement_requested" || row.stage === "destination_review") return destinationText(row);
+  if (row.stage === "accepted_awaiting_bed") return `Accepted by ${to}, awaiting a bed`;
+  if (row.stage === "moving")
+    return row.transport?.leg === "Collected" ? `Collected, on the way to ${to}` : `Awaiting collection for ${to}`;
+  if (row.stage === "handover_ready") return `Ready to hand over to ${to}`;
+  return STAGE_LABEL[row.stage];
+}
+
+/**
+ * Audit r1 item 3 (wording for Josh's sign-off): the Assessment names the recorded risk flags and
+ * high-acuity mark in neutral words, never a derived score.
+ */
+export function riskWords(row: HandoverRow): string {
+  const acuity = row.highAcuity ? ", high acuity nursing" : "";
+  if (row.riskFlags === undefined) return `${acuity}, risk flags not recorded`;
+  if (row.riskFlags.length === 0) return `${acuity}, no risk flags recorded`;
+  return `${acuity}, risk flags ${row.riskFlags.join(", ")}`;
+}
+
+/** Audit A4-26: the Recommendation is the owner and the one next step, from the same rule as the sheet. */
+function recommendationLine(row: HandoverRow, now: Instant, readyBeds: (unitId: string) => number): string {
+  return `${row.ownerShort}: ${nextStep(row, now, now, readyBeds).text}`;
 }
 
 export type IsbarLine = { key: "I" | "S" | "B" | "A" | "R"; label: string; text: string };
 
-export function isbarLines(row: HandoverRow, now: Instant): IsbarLine[] {
+export function isbarLines(
+  row: HandoverRow,
+  now: Instant,
+  readyBeds: (unitId: string) => number = () => 0,
+): IsbarLine[] {
   const form =
     row.formCode && row.formDueAt !== undefined
       ? `, Form ${row.formCode} due ${formatInstantWithDay(row.formDueAt, now)} as typed`
@@ -390,16 +457,19 @@ export function isbarLines(row: HandoverRow, now: Instant): IsbarLine[] {
     {
       key: "S",
       label: "Situation",
-      text: `${row.edShort} since ${formatInstantWithDay(row.openedAt, now)}, ${STAGE_LABEL[row.stage]}`,
+      text: `${row.edShort} since ${formatInstantWithDay(row.openedAt, now)}, ${situationState(row, now)}`,
     },
     { key: "B", label: "Background", text: backgroundLine(row, now) },
-    { key: "A", label: "Assessment", text: `${obsLong(row)}${form}` },
-    { key: "R", label: "Recommendation", text: recommendationLine(row, now) },
+    { key: "A", label: "Assessment", text: `${obsLong(row)}${riskWords(row)}${form}` },
+    { key: "R", label: "Recommendation", text: recommendationLine(row, now, readyBeds) },
   ];
 }
 
-export function isbarText(row: HandoverRow, now: Instant): string {
-  return [`${row.name} ${row.umrn}`, ...isbarLines(row, now).map((line) => `${line.label}: ${line.text}`)].join("\n");
+export function isbarText(row: HandoverRow, now: Instant, readyBeds: (unitId: string) => number = () => 0): string {
+  return [
+    `${row.name} ${row.umrn}`,
+    ...isbarLines(row, now, readyBeds).map((line) => `${line.label}: ${line.text}`),
+  ].join("\n");
 }
 
 /* ------------------------------------------------------------------ highlight, sort, group */
@@ -423,10 +493,12 @@ export function pillTest(pill: HandoverPill, row: HandoverRow, now: Instant, cut
       return groupOf(row, now, cutoff) === "act";
     case "due":
       return groupOf(row, now, cutoff) === "due";
+    // Waiting and Moving name their meeting group, so a highlight, its count and the group heading
+    // agree (device audit 11 Oct 2026: hero 40 and 13 against groups 39 and 9).
     case "bed":
-      return isWaitingForBed(row);
+      return groupOf(row, now, cutoff) === "bed";
     case "mov":
-      return isMoving(row);
+      return groupOf(row, now, cutoff) === "mov";
     case "new":
       return row.openedAt >= newSince;
   }

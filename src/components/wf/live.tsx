@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pause, Play } from "lucide-react";
-import { Button } from "./button";
 import { cx } from "./cx";
 import { clk, dur } from "./format";
 import { SrOnly } from "./primitives";
 import { StatusGlyph } from "./status-glyph";
+import { useIsPhone } from "./use-is-phone";
 import { useMinuteNow } from "./use-minute-now";
 import styles from "./live.module.css";
 
@@ -14,7 +14,11 @@ export type LiveState = "live" | "paused" | "syncing" | "stale" | "offline";
 
 export type LiveChipProps = {
   state: LiveState;
-  /** Live: age of the last sync, shown small after the word ("1s", "synced 1s ago"). */
+  /**
+   * Live: age of the last sync, shown small after the word ("1s", "synced 1s ago"). On a phone the
+   * chip shows the shared clock instead ("Live 10:42", v10 phone hero) when the shell publishes one;
+   * pass `null` to show the word alone.
+   */
   age?: ReactNode;
   /** Stale: the last good sync. Shown as "as at HH:MM". */
   asAt?: Date | number;
@@ -24,8 +28,37 @@ export type LiveChipProps = {
   className?: string;
 };
 
+/*
+ * The clock the phone Live chip shows ("Live HH:MM"). The app shell publishes its own clock here
+ * (`publishLiveClock`), so every page's chip reads the same time without wiring it through. Nothing
+ * is published outside the shell, and the chip then keeps its `age`.
+ */
+let liveClock: string | undefined;
+const liveClockListeners = new Set<() => void>();
+
+export function publishLiveClock(value: string | undefined) {
+  if (value === liveClock) return;
+  liveClock = value;
+  for (const listener of liveClockListeners) listener();
+}
+
+function subscribeLiveClock(listener: () => void) {
+  liveClockListeners.add(listener);
+  return () => {
+    liveClockListeners.delete(listener);
+  };
+}
+
+function useLiveClock(): string | undefined {
+  return useSyncExternalStore(
+    subscribeLiveClock,
+    () => liveClock,
+    () => undefined,
+  );
+}
+
 const WORD: Record<LiveState, string> = {
-  live: "Live",
+  live: "Demo",
   paused: "Paused",
   syncing: "Syncing",
   stale: "Stale",
@@ -35,38 +68,78 @@ const WORD: Record<LiveState, string> = {
 /**
  * Live chip (rule 9: live and honest). Live pulses once as it turns live (none under reduced motion),
  * Paused shows a ring, Syncing a small spinner, Stale an amber circle with "as at HH:MM", and
- * Offline a triangle. A `role="status"` line announces state changes only, never the ticking age.
+ * Offline a grey dot (a live chip turns Offline by itself while the browser has no connection). A `role="status"` line announces state changes only, never the ticking age.
  */
-export function LiveChip({ state, age, asAt, onHero = false, onTogglePause, className }: LiveChipProps) {
+function subscribeOnline(onChange: () => void) {
+  window.addEventListener("online", onChange);
+  window.addEventListener("offline", onChange);
+  return () => {
+    window.removeEventListener("online", onChange);
+    window.removeEventListener("offline", onChange);
+  };
+}
+
+/** The browser's own connection flag; online on the server and at hydration. */
+function useBrowserOnline(): boolean {
+  return useSyncExternalStore(
+    subscribeOnline,
+    () => navigator.onLine !== false,
+    () => true,
+  );
+}
+
+export function LiveChip({ state: requested, age, asAt, onHero = false, onTogglePause, className }: LiveChipProps) {
+  // A1-18 (audit 13 Oct 2026): a chip asked to read live says Offline while the browser has no
+  // connection, so no page shows a live dot over a session that is not updating.
+  const online = useBrowserOnline();
+  const state: LiveState = requested === "live" && !online ? "offline" : requested;
   const word = WORD[state];
   const asAtText = state === "stale" && asAt != null ? `as at ${clk(asAt)}` : null;
   const paused = state === "paused";
-  return (
-    <span className={cx(styles.group, className)}>
-      <span className={cx(styles.lv, onHero && styles.onHero)} aria-hidden="true">
-        {state === "live" ? <span className={styles.pulse} /> : null}
-        {state === "paused" ? <span className={styles.ring} /> : null}
-        {state === "syncing" ? <span className={styles.spin} /> : null}
-        {state === "stale" ? <StatusGlyph tone="warning" size={9} /> : null}
-        {state === "offline" ? <StatusGlyph tone="danger" size={9} /> : null}
-        {word}
-        {state === "live" && age != null ? <span className={styles.u}>{age}</span> : null}
-        {asAtText ? <span className={styles.u}>{asAtText}</span> : null}
-      </span>
-      <SrOnly role="status">{asAtText ? `${word}, ${asAtText}` : word}</SrOnly>
-      {onTogglePause ? (
-        <Button
-          variant={onHero ? "onHero" : "sec"}
-          size="sm"
-          iconOnly
-          icon={paused ? Play : Pause}
-          // One name with aria-pressed: swapping the name too reads as "Resume, pressed".
-          aria-label="Pause live updates"
-          aria-pressed={paused}
-          className={styles.pause}
-          onClick={onTogglePause}
-        />
+  const isPhone = useIsPhone();
+  const clock = useLiveClock();
+  // Phone (v10): the chip reads "Live HH:MM" from the shared clock; desktop keeps its own age.
+  const phoneClock = isPhone && age !== null && clock ? clock : undefined;
+  const shownAge = phoneClock ?? age;
+  const chip = (
+    <span className={cx(styles.lv, onHero && styles.onHero)} aria-hidden="true">
+      {state === "live" ? <span className={styles.pulse} /> : null}
+      {state === "paused" ? <span className={styles.ring} /> : null}
+      {state === "syncing" ? <span className={styles.spin} /> : null}
+      {state === "stale" ? <StatusGlyph tone="warning" size={9} /> : null}
+      {/* A1-18: offline is not an act-now state, so its dot is neutral grey, not red. */}
+      {state === "offline" ? <StatusGlyph tone="neutral" size={9} /> : null}
+      {word}
+      {state === "live" && shownAge != null ? (
+        <span className={cx(styles.u, phoneClock && styles.clk)}>{shownAge}</span>
       ) : null}
+      {asAtText ? <span className={styles.u}>{asAtText}</span> : null}
+      {onTogglePause ? (
+        <span className={styles.toggleGlyph}>
+          {paused ? <Play strokeWidth={2} aria-hidden="true" /> : <Pause strokeWidth={2} aria-hidden="true" />}
+        </span>
+      ) : null}
+    </span>
+  );
+  return (
+    <span className={cx(styles.group, className)} data-wf-live="">
+      {/* Device audit (11 Oct 2026): the pause is folded into the Live pill — one control, not a pill
+          and a separate 32 x 48 tile. The whole pill is the button; its glyph shows pause or play. */}
+      {onTogglePause ? (
+        <button
+          type="button"
+          className={styles.toggle}
+          // One name with aria-pressed: swapping the name too reads as "Resume, pressed".
+          aria-label="Pause demo updates"
+          aria-pressed={paused}
+          onClick={onTogglePause}
+        >
+          {chip}
+        </button>
+      ) : (
+        chip
+      )}
+      <SrOnly role="status">{asAtText ? `${word}, ${asAtText}` : word}</SrOnly>
     </span>
   );
 }

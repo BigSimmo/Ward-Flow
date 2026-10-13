@@ -140,6 +140,10 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/shell/ward-dynamic-island.tsx",
+    why: "its one route use was the ED page's 24 hour timeline, which left the page on 11 Oct 2026 (device audit, owner pick A2) as a link to Governance",
+  },
+  {
     module: "src/components/ward-management/escalation/escalation-board.tsx",
     why: "/escalation redirects to /delays",
   },

@@ -32,57 +32,6 @@
   margin: 0;
 }
 
-/* Barrier Escalation Alert Card */
-.barrierAlertCard {
-  background: var(--surface);
-  border: 1px solid var(--danger-soft);
-  border-left: 4px solid var(--danger);
-  border-radius: var(--r2);
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  box-shadow: var(--lift-sm);
-}
-
-@media (max-width: 768px) {
-  .barrierAlertCard {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-.barrierInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.barrierBadge {
-  font-size: 12px; /* 12px floor */
-  font-family: var(--mono);
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: var(--pill, 999px);
-  background: var(--danger-soft);
-  color: var(--danger-ink, var(--danger));
-  border: 1px solid var(--danger-soft);
-  text-transform: uppercase;
-}
-
-.barrierTitle {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.barrierDesc {
-  font-size: 12px;
-  color: var(--ink-soft);
-  line-height: 1.4;
-}
-
 /* Sub-Tab Navigation */
 .streamTabs {
   display: inline-flex;

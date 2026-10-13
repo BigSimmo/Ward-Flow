@@ -88,3 +88,25 @@ export function legalFormNameLabelFirst(form: LegalForm): string {
   const name = title === null ? `Form ${form.code}` : `${title} (${form.code})`;
   return name + continuationSuffix(form);
 }
+
+/**
+ * U1 (review 12 Oct 2026): legal status as a short chip that never needs truncating — "Form 3B"
+ * when a form is recorded (the same style the New referral picker uses), else the recorded status
+ * in its shortest plain words. The full wording (`legalStatusFull`) goes in the chip's title.
+ */
+const LEGAL_STATUS_SHORT: Record<Movement["legalStatus"], string> = {
+  Voluntary: "Voluntary",
+  "Referred for psychiatric examination": "Referred for exam",
+  "Detained awaiting examination": "Awaiting exam",
+  "Involuntary inpatient": "Involuntary",
+};
+
+export function legalStatusShort(movement: Pick<Movement, "legalForm" | "legalStatus">): string {
+  if (movement.legalForm) return `Form ${movement.legalForm.code}`;
+  return LEGAL_STATUS_SHORT[movement.legalStatus] ?? movement.legalStatus;
+}
+
+/** The same status in full: the register's form name, or the recorded status as written. */
+export function legalStatusFull(movement: Pick<Movement, "legalForm" | "legalStatus">): string {
+  return movement.legalForm ? legalFormName(movement.legalForm) : movement.legalStatus;
+}

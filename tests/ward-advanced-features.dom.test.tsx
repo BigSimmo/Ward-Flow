@@ -39,6 +39,8 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
         </WardFlowProvider>,
       );
 
+      // Device audit 11 Oct 2026: the arrival plan sits in the Transport sheet, opened from its row.
+      fireEvent.click(screen.getByTestId("ward-patient-transport-row"));
       // Verify the Executive Pulled Bed Banner exists
       expect(screen.getByText(/Bed Pulled & Reserved/i)).toBeDefined();
       expect(screen.getByTestId("ward-patient-update-arrival-btn")).toBeDefined();
@@ -52,6 +54,8 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
         </WardFlowProvider>,
       );
 
+      // Device audit 11 Oct 2026: the arrival plan sits in the Transport sheet, opened from its row.
+      fireEvent.click(screen.getByTestId("ward-patient-transport-row"));
       const updateBtn = screen.getByTestId("ward-patient-update-arrival-btn");
       fireEvent.click(updateBtn);
 
@@ -81,6 +85,8 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
         </WardFlowProvider>,
       );
 
+      // Device audit 11 Oct 2026: the arrival plan sits in the Transport sheet, opened from its row.
+      fireEvent.click(screen.getByTestId("ward-patient-transport-row"));
       const uploadBtn = screen.getByTestId("ward-patient-upload-forms-btn");
       fireEvent.click(uploadBtn);
 

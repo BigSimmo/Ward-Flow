@@ -1,18 +1,42 @@
 "use client";
 
+import { isTierOverdue } from "../ward-shared-figures";
+import { scrollWardPageToTop, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import Link from "next/link";
-import { AlertCircle, BedDouble, Check, Clock, Copy, FileText, FileUp, Scale } from "lucide-react";
+import {
+  AlertCircle,
+  BedDouble,
+  Check,
+  ChevronLeft,
+  Clock,
+  Copy,
+  FileText,
+  FileUp,
+  RotateCcw,
+  Scale,
+  Truck,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
 import { PatientRecordOverview } from "./patient-record-overview";
-import { PatientFlightHeader } from "./patient-flight-header";
+import { PatientFlightHeader, PatientRecordTabsRow } from "./patient-flight-header";
+import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
+import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
+import { callRows, type CallTarget } from "./patient-call-list";
+import { PatientNowLayout, PatientSheetRow, PatientSheetRows } from "./patient-now-layouts";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import type { Movement, TransportProvider, TransportLegalStatus } from "@/components/ward-management/ward-model";
+import type {
+  Movement,
+  TransportExceptionReason,
+  TransportProvider,
+  TransportLegalStatus,
+} from "@/components/ward-management/ward-model";
 import {
-  ABSENCE_STEPS,
+  absenceStepsFor,
   ABSENCE_STEP_LABELS,
   TRANSPORT_PROVIDERS,
   ARRIVAL_MODE_LABELS,
@@ -20,22 +44,38 @@ import {
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
 import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
-import type { Patient, PatientId } from "@/components/ward-management/ward-patients";
+import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
+import {
+  activeCommunityTreatmentOrder,
+  type Patient,
+  type PatientId,
+} from "@/components/ward-management/ward-patients";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 import { PersonScreen } from "./person-screen";
 import { PatientTransitOperations } from "./patient-transit-operations";
+import { useUndoableStep } from "../use-undoable-step";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
-import { PATIENT_MODES, patientMode } from "./patient-mode";
-import { PatientStatusCard, dayLabel, type PatientStatusContext } from "./patient-status-card";
+import { PATIENT_MODES, patientMode, type PatientMode } from "./patient-mode";
+import { buildPatientStatus, dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
-  PatientContactsCard,
+  TRANSPORT_EXCEPTION_REASON_LABELS,
+  holdEndsBeforeEta,
+  legalNowText,
+  legalNowTransportStatus,
+  transportExceptionText,
+  transportStatusClashes,
+} from "@/components/ward-management/ward-transport-checks";
+import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { usePathname } from "next/navigation";
+import {
   PatientLastSeenCard,
   PatientLeaveCard,
   PatientLegalNowCard,
@@ -53,11 +93,15 @@ import {
   CardHead,
   JourneyStrip,
   LiveChip,
+  type JourneyStage,
+  PhoneSheet,
   StatusGlyph,
   buttonClass,
   useIsPhone,
 } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
+import { isOnOrder } from "../ward-stay-legal";
+import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -156,6 +200,29 @@ interface PatientNowScreenProps {
 
 type TabKey = "now" | "history" | "community" | "details" | "documents";
 
+/**
+ * v10 phone movement hero: how many of the "Cannot move" cells are clear. Its own component, so the
+ * status context (whose clearance handler remembers its trigger in a ref) is read as a prop rather
+ * than during the screen's render.
+ */
+function PhoneClearFact({ mode, context }: { mode: PatientMode; context: PatientStatusContext }) {
+  const status = buildPatientStatus(mode, context);
+  const clear = status.cells.filter((cell) => cell.clear).length;
+  return (
+    <span className={styles.v6HeroFact}>
+      <strong className={styles.v6HeroWait}>
+        {clear} of {status.cells.length}
+      </strong>
+      <span className={styles.phFigLabel}>
+        {clear < status.cells.length ? (
+          <StatusGlyph tone={status.tone === "danger" ? "danger" : "warning"} size={9} />
+        ) : null}
+        Clear
+      </span>
+    </span>
+  );
+}
+
 export function PatientNowScreen({
   patientId,
   movementId,
@@ -168,12 +235,18 @@ export function PatientNowScreen({
   const gate = useRoleGate();
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
   const routeRole = useRouteRole();
+  const pathname = usePathname() ?? "";
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
+  // Audit A3-10 (13 Oct 2026): Mark absent offers the standard toast with Undo, as other moves do.
+  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
   // timestamp, so the calendar date used to derive a patient's age must be rebuilt from `dayZero`.
   // `new Date(now)` would anchor to the 1970 epoch and render a negative age.
-  const displayToday = new Date(dayZero.getTime() + now * 60_000);
+  const displayInstant = new Date(dayZero.getTime() + now * 60_000);
+  const displayPerth = new Date(displayInstant.getTime() + 8 * 60 * 60_000);
+  // Build a local-date value from Perth's calendar fields so age calculations do not depend on the browser zone.
+  const displayToday = new Date(displayPerth.getUTCFullYear(), displayPerth.getUTCMonth(), displayPerth.getUTCDate());
 
   // Selected scenario / record ID, seeded from the route and re-synced on client-side navigation:
   // the WF-009/WF-004 toggle buttons also call setSelectedId but without changing `routeId`, so the
@@ -196,27 +269,23 @@ export function PatientNowScreen({
   // Where the rejection list stood at the last change, and for which stay, so a refusal never
   // follows the user to another patient.
   const [wardAttemptFor, setWardAttemptFor] = useState<{ admissionId: string; start: number }>();
-  const operationsRef = useRef<HTMLDivElement | null>(null);
-  // The placement work sits on Now in every placement mode, so opening it only moves focus there.
+  // The placement work opens as the Destination sheet; a task's Refer action lands there.
+  const [nowSheet, setNowSheet] = useState<"destination" | "transport" | null>(
+    initialTaskAction === "refer" ? "destination" : null,
+  );
   function openOperations() {
     setActiveTab("now");
-    requestAnimationFrame(() => {
-      operationsRef.current?.focus();
-      operationsRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
-    });
+    setNowSheet("destination");
   }
-  // A task's Refer action lands on the placement work, as it did when Now had a separate view.
-  useEffect(() => {
-    if (initialTaskAction !== "refer") return;
-    requestAnimationFrame(() => operationsRef.current?.scrollIntoView({ block: "start" }));
-  }, [initialTaskAction]);
   const [copied, setCopied] = useState(false);
+  // Now mockups: destination and transport open as sheets from their cells.
 
   // Transport booking state & overrides
   const [showTransportForm, setShowTransportForm] = useState(false);
   const [showArrivalTimeModal, setShowArrivalTimeModal] = useState(false);
   const [showUploadFormsModal, setShowUploadFormsModal] = useState(false);
   const [showClearanceModal, setShowClearanceModal] = useState(false);
+  useWardPageScrollLock(showClearanceModal);
   const clearanceTriggerRef = useRef<HTMLButtonElement | null>(null);
   const clearanceModalRef = useRef<HTMLDivElement | null>(null);
   const [clearanceDraft, setClearanceDraft] = useState<"" | "cleared" | "not-cleared">("");
@@ -224,7 +293,14 @@ export function PatientNowScreen({
   const [transportCadDraft, setTransportCadDraft] = useState("");
   const [transportEtaDraft, setTransportEtaDraft] = useState("");
   const [transportProviderDraft, setTransportProviderDraft] = useState<TransportProvider>("Ambulance service");
-  const [transportLegalDraft, setTransportLegalDraft] = useState<TransportLegalStatus>("involuntary");
+  // Audit A4-7: the transport status starts from Legal now (the form in force), never a fixed
+  // default. Undefined means "as Legal now"; Change opens the choice, and a status that differs from
+  // Legal now asks for a recorded reason.
+  const [transportLegalDraft, setTransportLegalDraft] = useState<TransportLegalStatus | undefined>(undefined);
+  const [transportLegalChanging, setTransportLegalChanging] = useState(false);
+  const [transportLegalReason, setTransportLegalReason] = useState<TransportExceptionReason | "">("");
+  // Audit A4-6: a Save that cannot go through says why beside the field, never silently.
+  const [transportFormErrors, setTransportFormErrors] = useState<{ cad?: string; eta?: string; legal?: string }>({});
   const [transportEscortDraft, setTransportEscortDraft] = useState(false);
   const [bookingRejectionStart, setBookingRejectionStart] = useState<number>();
 
@@ -316,7 +392,16 @@ export function PatientNowScreen({
     leaveBed: stayLeaveBed,
     patient: livePatient,
   });
-  const modeMeta = PATIENT_MODES[mode];
+  /* A3-13: absent without leave is the involuntary term under the Act. A voluntary patient who is
+   * not back reads "Not back from leave"; the missing person steps stay the same. Either source
+   * reading involuntary wins, as in the reducer's guards, so the return-order step is kept. */
+  const voluntaryNow =
+    /^voluntary\b/i.test((liveMovement?.legalStatus ?? livePatient?.legalStatus ?? "").trim()) &&
+    !legalStatusTextIsInvoluntary(livePatient?.legalStatus);
+  const modeMeta =
+    mode === "awol" && voluntaryNow
+      ? { ...PATIENT_MODES.awol, label: "Not back from leave", pill: "Not back from leave" }
+      : PATIENT_MODES[mode];
   const isLiveBedflow = modeMeta.placing;
   // A movement's forms are the authority in force only while it is open or its stay is current.
   const stayCurrent = mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed";
@@ -354,13 +439,13 @@ export function PatientNowScreen({
     const absence = mode === "awol" ? stayLeaveBed?.absentWithoutLeave : undefined;
     if (absence) {
       // The missing person summary is the absence record only: when, where the bed is held, the steps.
-      const steps = ABSENCE_STEPS.map((step) => {
+      const steps = absenceStepsFor(voluntaryNow).map((step) => {
         const at = absence.steps.find((done) => done.step === step)?.at;
         return `${ABSENCE_STEP_LABELS[step]}: ${at === undefined ? "not recorded" : `done ${clock(at)}`}`;
       });
       const text = [
         `Ward Flow missing person summary — ${displayName}`,
-        `Absent without leave, recorded ${clock(absence.since)}`,
+        `${voluntaryNow ? "Not back from leave" : "Absent without leave"}, recorded ${clock(absence.since)}`,
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
         ...steps,
       ].join("\n");
@@ -380,8 +465,12 @@ export function PatientNowScreen({
   }
 
   // Keyboard navigation for tablist
+  // Phone: a "contact" task opens on Community, so that tab stays on the phone's shorter list.
+  const phoneKeepsCommunity = initialTaskAction === "contact";
   const TAB_KEYS: TabKey[] = isPhone
-    ? ["now", "history", "documents"]
+    ? isLiveBedflow && liveMovement
+      ? ["now", "history", ...(phoneKeepsCommunity ? (["community"] as const) : []), "details", "documents"]
+      : ["now", "history", ...(phoneKeepsCommunity ? (["community"] as const) : []), "documents"]
     : ["now", "history", "community", "details", "documents"];
   function handleTabKeyDown(e: ReactKeyboardEvent) {
     const currentIndex = TAB_KEYS.indexOf(activeTab);
@@ -419,26 +508,57 @@ export function PatientNowScreen({
           .find((rejection) => rejection.attempted === "BOOK_TRANSPORT" && rejection.movementId === selectedId)
       : undefined;
 
+  const legalNowStatus = liveMovement ? legalNowTransportStatus(liveMovement) : undefined;
+  const transportLegalChoice = transportLegalDraft ?? legalNowStatus;
+  const transportLegalClash = liveMovement !== undefined && transportStatusClashes(liveMovement, transportLegalChoice);
+  const draftEtaAt = parseEtaToInstant(transportEtaDraft.trim(), now);
+  // Audit A4-2: a quoted ETA after the bed hold ends is warned at once (never blocked).
+  const draftHoldEnd = liveMovement ? holdEndsBeforeEta(liveMovement, draftEtaAt) : undefined;
+
+  function openTransportForm() {
+    setTransportCadDraft(displayCadNumber ?? "");
+    setTransportEtaDraft(
+      liveMovement?.transport?.estimatedAt !== undefined ? clock(liveMovement.transport.estimatedAt) : "",
+    );
+    setTransportLegalDraft(liveMovement?.transport?.transportLegalStatus);
+    setTransportLegalChanging(false);
+    setTransportLegalReason("");
+    setTransportFormErrors({});
+    setShowTransportForm(true);
+  }
+
   function handleSaveTransportBooking(e: React.FormEvent) {
     e.preventDefault();
     const cleanCad = transportCadDraft.trim();
     const cleanEta = transportEtaDraft.trim();
     const estimatedAt = parseEtaToInstant(cleanEta, now);
-    if (!cleanCad || estimatedAt === undefined) return;
+    const errors: { cad?: string; eta?: string; legal?: string } = {};
+    if (!cleanCad) errors.cad = "Enter the CAD number from the call";
+    if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
+    else if (estimatedAt === undefined) errors.eta = "Enter the ETA as HH:MM or minutes, for example 11:15 or 45m";
+    if (transportLegalChoice === undefined) errors.legal = "Choose voluntary or involuntary";
+    else if (transportLegalClash && transportLegalReason === "") errors.legal = "Choose why it differs from Legal now";
+    setTransportFormErrors(errors);
+    if (errors.cad || errors.eta || errors.legal || estimatedAt === undefined || transportLegalChoice === undefined)
+      return;
 
     if (!liveMovement || !gate("BOOK_TRANSPORT").allowed) return;
     setBookingRejectionStart(rejections.length);
     {
       dispatch({
         type: "BOOK_TRANSPORT",
-        role: "ed",
+        role: routeRole,
         now,
         movementId: liveMovement.id,
+        ...(routeRole === "ward" && liveMovement.acceptedUnitId ? { actingUnitId: liveMovement.acceptedUnitId } : {}),
         provider: transportProviderDraft,
         escortRequired: transportEscortDraft,
         cadNumber: cleanCad,
-        transportLegalStatus: transportLegalDraft,
+        transportLegalStatus: transportLegalChoice,
         estimatedAt,
+        ...(transportLegalClash && transportLegalReason !== ""
+          ? { exception: { gaps: ["legal_status_differs" as const], reason: transportLegalReason } }
+          : {}),
       });
     }
 
@@ -488,15 +608,103 @@ export function PatientNowScreen({
     stayArrivedAt !== undefined && stayArrivedAt !== null
       ? Math.floor(Math.max(0, now - stayArrivedAt) / 1440) + 1
       : undefined;
-
-  function openTransportForm() {
-    setTransportCadDraft(displayCadNumber ?? "");
-    setTransportEtaDraft(displayEta ?? "");
-    setShowTransportForm(true);
-    requestAnimationFrame(() =>
-      document.getElementById("pnTransportHeading")?.scrollIntoView({ block: "center", behavior: "smooth" }),
-    );
-  }
+  /* v10 Patient, phone: the stay the hero describes. On the ward it is the open stay; on a record
+   * with nothing open it is the last stay that ended. Its own movement (the one that brought them)
+   * gives the strip's first stages and the arrival line. Read only from recorded times. */
+  const lastStay =
+    mode === "idle" || mode === "cto"
+      ? (resolved.stays ?? [])
+          .filter((stay) => stay.leftAt !== null && stay.arrivedAt !== null)
+          .sort((a, b) => (b.leftAt ?? 0) - (a.leftAt ?? 0))[0]
+      : undefined;
+  const heroStay = stayCurrent ? resolved.liveAdmission : lastStay;
+  const heroStayMovement = heroStay?.movementId ? movements.find((m) => m.id === heroStay.movementId) : undefined;
+  const heroStayUnitName = heroStay ? (units.find((u) => u.id === heroStay.unitId)?.name ?? "the ward") : undefined;
+  const awaySince =
+    mode === "leave"
+      ? stayLeaveBed?.confirmedAt
+      : mode === "awol"
+        ? stayLeaveBed?.absentWithoutLeave?.since
+        : mode === "ed"
+          ? (resolved.liveAdmission?.awayAtEmergencyDepartmentSince ?? undefined)
+          : undefined;
+  const phoneStayStages: JourneyStage[] | undefined = (() => {
+    if (!isPhone || isLiveBedflow || !heroStay || heroStay.arrivedAt === null) return undefined;
+    // Audit A3-12: a missing person is not "On ward"; the absence card and figures carry the story.
+    if (mode === "awol") return undefined;
+    const arrivedAt = heroStay.arrivedAt;
+    const before = heroStayMovement
+      ? patientJourneyStages(heroStayMovement, arrivedAt).map((stage) => ({ ...stage, now: undefined }))
+      : [];
+    const stayEnd = heroStay.leftAt ?? awaySince ?? now;
+    const stages: JourneyStage[] = [
+      ...before,
+      {
+        id: "stay",
+        label: `On ward, ${heroStayUnitName}`,
+        minutes: Math.max(0, stayEnd - arrivedAt),
+        now: heroStay.leftAt === null && awaySince === undefined ? true : undefined,
+      },
+    ];
+    if (heroStay.leftAt === null && awaySince !== undefined)
+      stages.push({
+        id: "away",
+        label: mode === "leave" ? "On leave" : "At ED",
+        minutes: Math.max(0, now - awaySince),
+        now: true,
+      });
+    return stages;
+  })();
+  const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
+  const ctoInForce = activeCommunityTreatmentOrder(livePatient);
+  // Audit A3-3: one time left for a typed expiry, the same the Forms and Delays pages show.
+  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now);
+  const movementTimeLeft =
+    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now) : undefined;
+  // Audit S-6: an ended form with Form 6A still to record says so, never "In force".
+  const formMovementNext = formProgression(formMovement);
+  const phoneLegal = ctoInForce
+    ? { value: ctoInForce.form, label: "In force" }
+    : formMovementNext
+      ? { value: formMovementNext.nextCode, label: "To record", tone: "warning" as const }
+      : formMovement?.legalForm
+        ? {
+            value: formMovement.legalForm.code,
+            label: formMovementLeft ? formMovementLeft.text : "In force",
+            ...(formMovementLeft && formMovementLeft.standing !== "later"
+              ? { tone: formMovementLeft.actNow ? ("danger" as const) : ("warning" as const) }
+              : {}),
+          }
+        : {
+            // A figure, so the status's first word ("Voluntary"); the full words are on Legal now.
+            value:
+              (
+                (mode === "idle"
+                  ? livePatient?.legalStatus
+                  : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ?? "Not recorded"
+              ).split(" ")[0] ?? "Not recorded",
+            label: "Legal status",
+          };
+  // Audit S-32: the leave sheet names the form in force and says when the person is on an order.
+  const stayLegalStatusNow = liveMovement?.legalStatus ?? livePatient?.legalStatus;
+  const leaveLegal = {
+    form: [
+      ctoInForce
+        ? `Form ${ctoInForce.form}`
+        : formMovement?.legalForm
+          ? `Form ${formMovement.legalForm.code}`
+          : "No form recorded",
+      stayLegalStatusNow ?? "legal status not recorded",
+    ].join(" · "),
+    onOrder: isOnOrder(stayLegalStatusNow),
+  };
+  const heroStayOrigin = heroStayMovement ? edById(heroStayMovement.originEdId)?.name : undefined;
+  const phoneStatusFoot =
+    mode === "ward" && heroStay?.arrivedAt != null
+      ? `Arrived ${dayLabel(heroStay.arrivedAt, dayZero).replace(",", "")}${heroStay.arrivedAt >= 0 ? ` ${clock(heroStay.arrivedAt)}` : ""}${heroStayOrigin ? ` from ${heroStayOrigin}` : ""}`
+      : (mode === "idle" || mode === "cto") && lastStay?.leftAt != null
+        ? `No open placement or stay · discharged ${dayLabel(lastStay.leftAt, dayZero)}`
+        : undefined;
 
   // D-38 ward actions on the stay, raised under the viewer's own role (the coordinator may take every
   // action, Josh 10 Oct 2026) and scoped to the ward the stay is on.
@@ -513,13 +721,26 @@ export function PatientNowScreen({
   function markAbsent() {
     const stay = resolved?.liveAdmission;
     if (stay && gate("RECORD_ABSENT_WITHOUT_LEAVE").allowed)
-      dispatch({
-        type: "RECORD_ABSENT_WITHOUT_LEAVE",
-        role: routeRole,
-        now,
-        admissionId: stay.id,
-        actingUnitId: stay.unitId,
-      });
+      runStep(
+        {
+          type: "RECORD_ABSENT_WITHOUT_LEAVE",
+          role: routeRole,
+          now,
+          admissionId: stay.id,
+          actingUnitId: stay.unitId,
+        },
+        {
+          success: "Marked absent without leave",
+          undo: (at) => ({
+            type: "UNDO_ABSENT_WITHOUT_LEAVE",
+            role: routeRole,
+            now: at,
+            admissionId: stay.id,
+            ...(routeRole === "ward" ? { actingUnitId: stay.unitId } : {}),
+          }),
+          undone: "Undone. Back on leave.",
+        },
+      );
   }
   const wardForm: WardChangeForm = wardFormFor.admissionId === resolved?.liveAdmission?.id ? wardFormFor.form : "none";
   function setWardForm(form: WardChangeForm) {
@@ -601,22 +822,42 @@ export function PatientNowScreen({
     wardRejection?.attempted === "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT" ? wardRejection.reason : undefined;
   const wardRefusal = edReturnRefusal ? undefined : wardRejection?.reason;
 
+  const acceptedWardFor = acceptedWardReferralFor(livePatient?.id, referrals, units, { movements, admissions });
   const statusContext: PatientStatusContext = {
     movement: liveMovement,
     admission: resolved.liveAdmission,
     patient: livePatient,
     acceptedUnitName: acceptingUnit?.name ?? stayUnit?.name,
+    // Decision 2 (site review, 12 Oct 2026): the Bed value opens the ward, the Transport value the
+    // movement's own page with its transport job (not linked when that is this page already).
+    bedHref:
+      (acceptingUnit ?? stayUnit) !== undefined
+        ? `/mockups/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
+        : undefined,
+    acceptedReferral: acceptedWardFor
+      ? {
+          unitName: acceptedWardFor.unitName,
+          boardHref: `/mockups/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}`,
+        }
+      : undefined,
+    transportHref:
+      liveMovement && !pathname.includes(`/movements/${encodeURIComponent(liveMovement.id)}`)
+        ? `/mockups/ward-flow/movements/${encodeURIComponent(liveMovement.id)}`
+        : undefined,
     hasBedHold: liveMovement ? movementHasBedHold(liveMovement, admissions) : false,
     now,
     dayZero,
-    onOpenPlacement: openOperations,
+    onOpenPlacement: () => setNowSheet("destination"),
     onClearance: (event) => {
       clearanceTriggerRef.current = event.currentTarget;
       setClearanceDraft("");
       setClearanceAttested(false);
       setShowClearanceModal(true);
     },
-    onBookTransport: openTransportForm,
+    onBookTransport: () => {
+      openTransportForm();
+      setNowSheet("transport");
+    },
     onArrivalTime: () => {
       setShowArrivalTimeModal(true);
     },
@@ -627,7 +868,7 @@ export function PatientNowScreen({
     onDischargeDate: () => {
       setWardForm("discharge");
       requestAnimationFrame(() =>
-        document.getElementById("pn-ward-change")?.scrollIntoView({ block: "center", behavior: "smooth" }),
+        document.getElementById("pn-ward-change")?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() }),
       );
     },
     onReturnFromEd: returnFromEd,
@@ -655,6 +896,18 @@ export function PatientNowScreen({
     roleLimit: (eventType) => gate(eventType).reason,
     handoverRefusal:
       mode === "held" && liveMovement ? (heldUnitGenderRefusal({ units }, liveMovement, now) ?? undefined) : undefined,
+    // Audit A4-9: once every gate is clear the next step is pinned (phone), with Undo on its toast.
+    onHandoverReady: () => {
+      if (!liveMovement || !gate("HANDOVER_READY").allowed) return;
+      runStep(
+        { type: "HANDOVER_READY", role: routeRole, now, movementId: liveMovement.id },
+        {
+          success: "Handover ready. The transport officer can now accept the job.",
+          undo: (at) => ({ type: "UNDO_ED_STEP", role: routeRole, now: at, movementId: liveMovement.id }),
+          undone: "Undone. Back as it was.",
+        },
+      );
+    },
   };
 
   // Who to call now, from the record only. Phone numbers are not held in this prototype.
@@ -681,6 +934,18 @@ export function PatientNowScreen({
   if (livePatient?.generalPractitioner && !isLiveBedflow)
     contacts.push({ name: livePatient.generalPractitioner, role: "GP" });
 
+  /* Who to call: the same people, each looked up in the On-call directory for a mock number. */
+  const originEd = liveMovement ? edById(liveMovement.originEdId) : undefined;
+  const callTargets: CallTarget[] = contacts.map((row) => {
+    if (originEd && row.name === originName)
+      return { kind: "ed", name: row.name, role: row.role, siteCode: originEd.siteCode, line: "liaison" };
+    const wardUnit = units.find((unit) => unit.name === row.name);
+    if (wardUnit) return { kind: "ward", name: row.name, role: row.role, unitId: wardUnit.id };
+    if (row.name === livePatient?.catchmentCommunityTeam) return { kind: "team", name: row.name, role: row.role };
+    if (isTransportBooked && row.name === liveMovement?.transport?.provider)
+      return { kind: "transport", name: row.name, role: row.role };
+    return { kind: "plain", name: row.name, role: row.role };
+  });
   const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
     { key: "now", label: modeMeta.quiet ? "Overview" : "Now" },
     { key: "history", label: "History", count: record.presentations.length },
@@ -689,9 +954,709 @@ export function PatientNowScreen({
     { key: "documents", label: "Documents", count: documentCount },
   ];
   /* v10 Patient, Phone: "Segmented control: Now, History, Forms." */
-  const phoneTabs = tabs
-    .filter((tab) => tab.key === "now" || tab.key === "history" || tab.key === "documents")
-    .map((tab) => (tab.key === "documents" ? { ...tab, label: "Forms" } : tab));
+  /* v10 Movement, Phone: "Now, History, Details, Docs" while a movement is live. */
+  const phoneMovement = isPhone && isLiveBedflow && liveMovement !== undefined;
+  const phoneTabs = phoneMovement
+    ? tabs
+        .filter((tab) => tab.key !== "community" || phoneKeepsCommunity)
+        .map((tab) =>
+          tab.key === "documents" ? { ...tab, label: "Docs", count: undefined } : { ...tab, count: undefined },
+        )
+    : tabs
+        .filter(
+          (tab) =>
+            tab.key === "now" ||
+            tab.key === "history" ||
+            tab.key === "documents" ||
+            (tab.key === "community" && phoneKeepsCommunity),
+        )
+        .map((tab) => (tab.key === "documents" ? { ...tab, label: "Forms" } : tab));
+  const canWithdraw =
+    liveMovement !== undefined &&
+    !liveMovement.closure &&
+    ["placement_requested", "destination_review"].includes(liveMovement.stage) &&
+    !liveMovement.acceptedUnitId;
+
+  /* Transport dispatch and the arrival plan, in the Transport sheet opened from the Transport cell
+     (device audit 11 Oct 2026: the dispatch block is off Now). */
+  const transportSection =
+    (mode === "held" || mode === "transit") && liveMovement ? (
+      <section
+        className={`${styles.sec} ${styles.transportSec}`}
+        aria-labelledby="pnTransportHeading"
+        data-testid="ward-patient-transport-section"
+      >
+        <div className={styles.transportHeader}>
+          <div className={styles.transportTitleCluster}>
+            <span className={styles.transportIcon} aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="1" y="3" width="15" height="13" />
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                <circle cx="5.5" cy="18.5" r="2.5" />
+                <circle cx="18.5" cy="18.5" r="2.5" />
+              </svg>
+            </span>
+            <h3 id="pnTransportHeading" className={styles.secH} style={{ margin: 0 }}>
+              {liveMovement ? "Transport dispatch" : "Transport"}
+            </h3>
+          </div>
+          {liveMovement && (
+            <div className={styles.transportStatusCluster}>
+              <span
+                className={styles.transportBadge}
+                data-booked={isTransportBooked ? "true" : "false"}
+                data-testid="ward-patient-transport-badge"
+              >
+                {isTransportBooked ? "✓ Transport Booked" : "Awaiting Transport Booking"}
+              </span>
+              {!showTransportForm && (
+                <button
+                  type="button"
+                  className={isTransportBooked ? styles.transportActionBtnSecondary : styles.transportActionBtn}
+                  onClick={openTransportForm}
+                  data-testid="ward-patient-book-transport-btn"
+                >
+                  {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {liveMovement && bookingRejection && <p role="alert">Booking was not recorded: {bookingRejection.reason}</p>}
+        {/* Form for logging/updating transport */}
+        {liveMovement && showTransportForm && (
+          <form
+            className={styles.transportForm}
+            onSubmit={handleSaveTransportBooking}
+            data-testid="ward-patient-transport-form"
+          >
+            <div className={styles.transportFormGrid}>
+              <div className={styles.transportFormField}>
+                <label htmlFor="transport-cad" className={styles.transportFormLabel}>
+                  CAD (dispatch) number <span aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="transport-cad"
+                  type="text"
+                  className={styles.transportInput}
+                  placeholder="e.g. CAD-84920"
+                  value={transportCadDraft}
+                  onChange={(e) => {
+                    setTransportCadDraft(e.target.value);
+                    setTransportFormErrors((errors) => ({ ...errors, cad: undefined }));
+                  }}
+                  aria-required="true"
+                  aria-invalid={transportFormErrors.cad ? "true" : undefined}
+                  aria-describedby={transportFormErrors.cad ? "transport-cad-error" : undefined}
+                  data-testid="ward-patient-input-cad"
+                />
+                {transportFormErrors.cad ? (
+                  <span id="transport-cad-error" className={styles.transportFieldNote}>
+                    <StatusGlyph tone="danger" size={9} />
+                    {transportFormErrors.cad}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className={styles.transportFormField}>
+                <label htmlFor="transport-eta" className={styles.transportFormLabel}>
+                  Quoted ETA by Transport Company <span aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="transport-eta"
+                  type="text"
+                  className={styles.transportInput}
+                  placeholder="e.g. 11:15 or ~45m"
+                  value={transportEtaDraft}
+                  onChange={(e) => {
+                    setTransportEtaDraft(e.target.value);
+                    setTransportFormErrors((errors) => ({ ...errors, eta: undefined }));
+                  }}
+                  aria-required="true"
+                  aria-invalid={transportFormErrors.eta ? "true" : undefined}
+                  aria-describedby={
+                    transportFormErrors.eta
+                      ? "transport-eta-error"
+                      : draftHoldEnd !== undefined
+                        ? "transport-eta-hold"
+                        : undefined
+                  }
+                  data-testid="ward-patient-input-eta"
+                />
+                {transportFormErrors.eta ? (
+                  <span id="transport-eta-error" className={styles.transportFieldNote}>
+                    <StatusGlyph tone="danger" size={9} />
+                    {transportFormErrors.eta}
+                  </span>
+                ) : draftHoldEnd !== undefined ? (
+                  <span
+                    id="transport-eta-hold"
+                    className={styles.transportFieldNote}
+                    data-testid="ward-patient-eta-after-hold"
+                  >
+                    <StatusGlyph tone="warning" size={9} />
+                    Arrives after the hold ends at {clock(draftHoldEnd)}. Extend the hold or rebook.
+                  </span>
+                ) : null}
+              </div>
+
+              <div className={styles.transportFormField}>
+                <label htmlFor="transport-provider" className={styles.transportFormLabel}>
+                  Transport Provider
+                </label>
+                <select
+                  id="transport-provider"
+                  className={styles.transportSelect}
+                  value={transportProviderDraft}
+                  onChange={(e) => setTransportProviderDraft(e.target.value as TransportProvider)}
+                  data-testid="ward-patient-select-provider"
+                >
+                  {TRANSPORT_PROVIDERS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.transportFormField} data-testid="ward-patient-transport-legal">
+                {transportLegalChanging || legalNowStatus === undefined ? (
+                  <>
+                    <label htmlFor="transport-legal" className={styles.transportFormLabel}>
+                      Transport legal status
+                    </label>
+                    <select
+                      id="transport-legal"
+                      className={styles.transportSelect}
+                      value={transportLegalChoice ?? ""}
+                      onChange={(e) => setTransportLegalDraft((e.target.value || undefined) as TransportLegalStatus)}
+                      aria-invalid={transportFormErrors.legal ? "true" : undefined}
+                      data-testid="ward-patient-select-legal"
+                    >
+                      {transportLegalChoice === undefined ? <option value="">Choose</option> : null}
+                      <option value="involuntary">Involuntary</option>
+                      <option value="voluntary">Voluntary</option>
+                    </select>
+                  </>
+                ) : (
+                  <>
+                    <span className={styles.transportFormLabel}>Transport legal status</span>
+                    <span className={styles.transportLegalRead} data-testid="ward-patient-legal-from-form">
+                      <span>{formatTransportLegalStatus(transportLegalChoice)}, from Legal now</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setTransportLegalChanging(true)}
+                        data-testid="ward-patient-change-legal"
+                      >
+                        Change
+                      </Button>
+                    </span>
+                  </>
+                )}
+                <span className={styles.transportFieldNote}>Legal now: {legalNowText(liveMovement)}</span>
+              </div>
+            </div>
+
+            {transportLegalClash ? (
+              <div className={styles.transportFormField} data-testid="ward-patient-legal-clash">
+                <span className={styles.transportFieldNote}>
+                  <StatusGlyph tone="warning" size={9} />
+                  Differs from Legal now ({legalNowText(liveMovement)}). Record why.
+                </span>
+                <label htmlFor="transport-legal-reason" className={styles.transportFormLabel}>
+                  Reason
+                </label>
+                <select
+                  id="transport-legal-reason"
+                  className={styles.transportSelect}
+                  value={transportLegalReason}
+                  onChange={(e) => setTransportLegalReason(e.target.value as TransportExceptionReason | "")}
+                  aria-invalid={transportFormErrors.legal ? "true" : undefined}
+                  data-testid="ward-patient-legal-reason"
+                >
+                  <option value="">Choose a reason</option>
+                  {(Object.keys(TRANSPORT_EXCEPTION_REASON_LABELS) as TransportExceptionReason[]).map((value) => (
+                    <option key={value} value={value}>
+                      {TRANSPORT_EXCEPTION_REASON_LABELS[value]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {transportFormErrors.legal ? (
+              <span className={styles.transportFieldNote} data-testid="ward-patient-legal-error">
+                <StatusGlyph tone="danger" size={9} />
+                {transportFormErrors.legal}
+              </span>
+            ) : null}
+
+            <div className={styles.transportCheckboxRow}>
+              <input
+                id="transport-escort"
+                type="checkbox"
+                checked={transportEscortDraft}
+                onChange={(e) => setTransportEscortDraft(e.target.checked)}
+                data-testid="ward-patient-checkbox-escort"
+              />
+              <label htmlFor="transport-escort">Clinical escort required for transfer</label>
+            </div>
+
+            <div className={styles.transportFormActions}>
+              {/* Audit A4-5: the shared Button carries its own colours, so Save is visible in the
+                  sheet, which renders outside this page's token scope. */}
+              <Button type="button" variant="sec" size="sm" onClick={() => setShowTransportForm(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="pri"
+                size="sm"
+                data-testid="ward-patient-confirm-transport-btn"
+                {...gate("BOOK_TRANSPORT").buttonProps}
+              >
+                Save transport booking
+              </Button>
+              {gate("BOOK_TRANSPORT").note}
+            </div>
+          </form>
+        )}
+
+        {/* Display booked facts */}
+        {isTransportBooked && !showTransportForm && (
+          <div className={styles.transportGrid} data-testid="ward-patient-transport-details">
+            <div className={styles.transportFact}>
+              <span className={styles.transportFactLabel}>CAD (dispatch) number</span>
+              <span className={styles.transportFactValue} data-testid="ward-patient-cad-number">
+                {displayCadNumber || "Not recorded"}
+              </span>
+            </div>
+            <div className={styles.transportFact}>
+              <span className={styles.transportFactLabel}>Quoted ETA</span>
+              <span className={styles.transportFactValue} data-testid="ward-patient-transport-eta">
+                {displayEta || "Not recorded"}
+              </span>
+            </div>
+            <div className={styles.transportFact}>
+              <span className={styles.transportFactLabel}>Transport Provider</span>
+              <span className={styles.transportFactValue} data-testid="ward-patient-transport-provider">
+                {displayProvider}
+              </span>
+            </div>
+            <div className={styles.transportFact}>
+              <span className={styles.transportFactLabel}>Authority / Escort</span>
+              <span className={styles.transportFactValue} data-testid="ward-patient-transport-authority">
+                {displayLegalStatus}{" "}
+                {displayEscort === undefined
+                  ? "· Escort not recorded"
+                  : displayEscort
+                    ? "· Escort req."
+                    : "· No escort"}
+              </span>
+            </div>
+            {liveMovement.transport &&
+            transportStatusClashes(liveMovement, liveMovement.transport.transportLegalStatus) ? (
+              <div className={styles.transportFact} data-testid="ward-patient-transport-legal-clash">
+                <span className={styles.transportFactLabel}>Legal now</span>
+                <span className={styles.transportFieldNote}>
+                  <StatusGlyph tone="warning" size={9} />
+                  {legalNowText(liveMovement)}, differs from the booking
+                </span>
+              </div>
+            ) : null}
+            {holdEndsBeforeEta(liveMovement, liveMovement.transport?.estimatedAt) !== undefined ? (
+              <div className={styles.transportFact} data-testid="ward-patient-transport-hold-before-eta">
+                <span className={styles.transportFactLabel}>Bed hold</span>
+                <span className={styles.transportFieldNote}>
+                  <StatusGlyph tone="warning" size={9} />
+                  Ends {clock(liveMovement.pullExpiresAt!)}, before the ETA. Extend the hold or rebook.
+                </span>
+              </div>
+            ) : null}
+            {(liveMovement.transport?.exceptions ?? []).map((exception) => (
+              <div
+                key={`${exception.step}-${exception.at}`}
+                className={styles.transportFact}
+                data-testid="ward-patient-transport-exception"
+              >
+                <span className={styles.transportFactLabel}>
+                  {exception.step === "collected" ? "Collected" : "Booked"} {clock(exception.at)} with
+                </span>
+                <span className={styles.transportFieldNote}>{transportExceptionText(exception)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state when not booked */}
+        {!liveMovement || (!isTransportBooked && !showTransportForm) ? (
+          <div className={styles.transportEmptyState}>
+            <p className={styles.transportEmptyText}>
+              {liveMovement ? (
+                <>
+                  No transport vehicle has been logged for this patient yet. Once arranged by phone with the transport
+                  provider, click <strong>Mark as Booked</strong> to record the CAD (dispatch) number and quoted ETA.
+                </>
+              ) : (
+                "No linked transport record displayed."
+              )}
+            </p>
+          </div>
+        ) : null}
+      </section>
+    ) : null;
+  const arrivalSection =
+    (mode === "held" || mode === "transit") && liveMovement ? (
+      <>
+        {(isPulled || hasArrivalPlan) && (
+          <details className={styles.arrivalDisclosure}>
+            <summary>Arrival plan & transport documents</summary>
+            <div className={styles.pulledBanner} data-testid="ward-patient-pulled-banner">
+              <div className={styles.pulledBannerHeader}>
+                <div className={styles.pulledBadgeCluster}>
+                  <span className={styles.pulledStatusBadge}>Bed Pulled &amp; Reserved</span>
+                  <span className={styles.pulledWardTarget}>
+                    Accepting Ward: <strong>{acceptingWardName}</strong>
+                  </span>
+                </div>
+                {hasArrivalPlan ? (
+                  <span className={styles.pulledClockBadge}>
+                    <Clock size={14} aria-hidden="true" />
+                    <span>ETA: {clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120)} AWST</span>
+                  </span>
+                ) : pullExpiresAt !== undefined ? (
+                  <span
+                    className={styles.pulledClockBadge}
+                    data-tone={isHoldExpired ? "danger" : "normal"}
+                    data-testid="ward-patient-pull-hold-remaining"
+                  >
+                    <Clock size={14} aria-hidden="true" />
+                    <span>Bed pull {pullHoldRemainingLabel(pullExpiresAt, now)}</span>
+                  </span>
+                ) : null}
+              </div>
+
+              {isOverdue && (
+                <div
+                  className={styles.pulledOverdueAlert}
+                  role="alert"
+                  data-testid="ward-patient-overdue-alert"
+                  title={OPERATIONAL_DEFAULT_LABEL}
+                >
+                  <AlertCircle
+                    size={18}
+                    style={{ flexShrink: 0, marginTop: 2, color: "var(--wf-danger)" }}
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
+                    estimated arrival time ({clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now)} AWST).
+                    Notification is not recorded here.
+                  </div>
+                </div>
+              )}
+
+              <div className={styles.pulledDetailsGrid}>
+                <div className={styles.pulledDetailItem}>
+                  <span className={styles.pulledDetailLabel}>Arrival Mode</span>
+                  <span className={styles.pulledDetailValue}>
+                    {hasArrivalPlan && liveMovement?.arrivalDetails?.mode
+                      ? ARRIVAL_MODE_LABELS[liveMovement.arrivalDetails.mode]
+                      : "Default / Pending Confirmation"}
+                  </span>
+                </div>
+                <div className={styles.pulledDetailItem}>
+                  <span className={styles.pulledDetailLabel}>Tracking / CAD (dispatch) number</span>
+                  <span className={styles.pulledDetailValue}>
+                    {liveMovement?.arrivalDetails?.trackingNumber || displayCadNumber || "Not recorded"}
+                  </span>
+                </div>
+                <div className={styles.pulledDetailItem}>
+                  <span className={styles.pulledDetailLabel}>Hold Status</span>
+                  <span className={styles.pulledDetailValue}>
+                    {hasArrivalPlan
+                      ? "Hold clock cleared (Arrival time scheduled)"
+                      : isHoldExpired
+                        ? "4h window passed — review the hold"
+                        : "4h standard countdown active"}
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.pulledActionRow}>
+                <div className={styles.pulledActionBtns}>
+                  <button
+                    type="button"
+                    className={`${styles.pulledActionBtn} ${styles.pulledActionBtnPrimary}`}
+                    onClick={() => setShowArrivalTimeModal(true)}
+                    data-testid="ward-patient-update-arrival-btn"
+                  >
+                    <Clock size={15} aria-hidden="true" />
+                    <span>{hasArrivalPlan ? "Edit Arrival Time" : "Update Arrival Time"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.pulledActionBtn}
+                    onClick={() => setShowUploadFormsModal(true)}
+                    data-testid="ward-patient-upload-forms-btn"
+                  >
+                    <FileUp size={15} aria-hidden="true" />
+                    <span>Record transport document details</span>
+                  </button>
+                </div>
+
+                {hasArrivalPlan && liveMovement?.arrivalDetails && (
+                  <span style={{ fontSize: "var(--t-0, 0.75rem)", color: "var(--muted)" }}>
+                    Updated by {liveMovement.arrivalDetails.recordedBy} at{" "}
+                    {clock(liveMovement.arrivalDetails.recordedAt)}
+                  </span>
+                )}
+              </div>
+
+              {uploadedForms.length > 0 && (
+                <div className={styles.pulledFormsList} data-testid="ward-patient-uploaded-forms">
+                  <div className={styles.pulledFormsHeader}>
+                    <FileText size={14} aria-hidden="true" />
+                    <span>Transport document details ({uploadedForms.length}) — file contents not stored</span>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {uploadedForms.map((form) => (
+                      <div key={form.id} className={styles.pulledFormChip}>
+                        <span style={{ fontWeight: 600 }}>{form.formName}</span>
+                        <span className={styles.pulledFormChipMeta}>
+                          {form.fileName} · {clock(form.uploadedAt)} ({form.uploadedBy})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </details>
+        )}
+      </>
+    ) : null;
+
+  /* Now tab: one next step; destination and transport open as sheets. */
+  const openTab = (tab: TabKey) => {
+    setActiveTab(tab);
+    requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
+  };
+  const nowPanel = (
+    <PatientNowLayout
+      mode={mode}
+      context={statusContext}
+      statusCardProps={{
+        barLead:
+          isPhone && !phoneMovement ? (
+            <Button
+              iconOnly
+              icon={Copy}
+              aria-label={copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary"}
+              onClick={handleCopySummary}
+            />
+          ) : undefined,
+        // Phone keeps the patient's own New referral (preselected) when there is no stay to act on.
+        barMain:
+          isPhone && (mode === "idle" || mode === "cto") ? (
+            <Link
+              href={
+                livePatient
+                  ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
+                  : "/mockups/ward-flow/referrals/new"
+              }
+              className={buttonClass({ variant: "pri" })}
+              data-testid="ward-person-refer-outpatient"
+            >
+              <FileText size={16} aria-hidden="true" />
+              New referral
+            </Link>
+          ) : undefined,
+        phoneFoot: phoneStatusFoot,
+      }}
+      legal={
+        mode !== "idle" || isPhone ? (
+          <PatientLegalNowCard
+            movement={movementInForce ? liveMovement : undefined}
+            patient={livePatient}
+            onAllForms={() => openTab("documents")}
+            now={now}
+            absent={mode === "awol"}
+          />
+        ) : null
+      }
+      why={
+        isLiveBedflow && liveMovement ? (
+          <PatientWhyCard
+            title="Why they're here"
+            chip={`Opened ${clock(liveMovement.openedAt)}`}
+            history={resolved.liveReferral?.history}
+            fallback={record.reason}
+            movement={liveMovement}
+            patient={livePatient}
+          />
+        ) : mode === "ward" || mode === "ed" ? (
+          <PatientWhyCard
+            title="Why admitted"
+            chip={stayUnit ? stayUnit.name : undefined}
+            history={resolved.liveReferral?.history}
+            fallback={record.reason}
+            patient={livePatient}
+          />
+        ) : null
+      }
+      change={
+        <>
+          {mode === "ward" ? (
+            <PatientWardChangeCard
+              key={resolved.liveAdmission?.id}
+              now={now}
+              dayZero={dayZero}
+              form={wardForm}
+              onFormChange={setWardForm}
+              onRecordLeave={recordLeave}
+              onGoneToEd={goneToEd}
+              onSaveDischarge={saveDischarge}
+              dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
+              refusal={wardRefusal}
+              roleLimit={(eventType) => gate(eventType).reason}
+              leaveLegal={leaveLegal}
+            />
+          ) : null}
+          {mode === "leave" && stayLeaveBed ? (
+            <PatientLeaveCard
+              dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
+              voluntary={voluntaryNow}
+              onMarkAbsent={markAbsent}
+            />
+          ) : null}
+          {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
+            <PatientLastSeenCard
+              wardName={stayUnit?.name}
+              voluntary={voluntaryNow}
+              since={clock(stayLeaveBed.absentWithoutLeave.since)}
+              onRecordReturn={recordReturn}
+            />
+          ) : null}
+          {(mode === "idle" || mode === "cto") && !isPhone ? (
+            <PatientRecordOverview patient={livePatient} record={record} onOpen={openTab} />
+          ) : null}
+          {/* Device audit (11 Oct 2026): the journey ribbon sits below the body, not in the hero, so
+              the hero holds the status and the steps only. The phone keeps its own card above. */}
+          {isLiveBedflow && liveMovement && !phoneMovement ? (
+            <section className={styles.sec} aria-labelledby="pn-journey-head">
+              <h3 id="pn-journey-head" className={styles.secH}>
+                Journey so far
+              </h3>
+              <JourneyStrip
+                label="Journey since this movement opened"
+                stages={patientJourneyStages(liveMovement, now)}
+                formatDuration={dur}
+                note={false}
+              />
+            </section>
+          ) : null}
+        </>
+      }
+      calls={callRows(callTargets, now)}
+      sheetRows={
+        isLiveBedflow && liveMovement ? (
+          <PatientSheetRows>
+            <PatientSheetRow
+              icon={<BedDouble size={16} aria-hidden="true" />}
+              title="Destination"
+              sub={
+                acceptingUnit
+                  ? `${acceptingUnit.name} accepted · bed hold and placement`
+                  : liveMovement.referredUnitIds.length > 0
+                    ? `${liveMovement.referredUnitIds.length} wards asked · shortlist`
+                    : "Shortlist eligible wards · none asked"
+              }
+              onOpen={() => setNowSheet("destination")}
+              testId="ward-patient-destination-row"
+            />
+            {mode === "held" || mode === "transit" ? (
+              <PatientSheetRow
+                icon={<Truck size={16} aria-hidden="true" />}
+                title="Transport"
+                sub={
+                  isTransportBooked
+                    ? `${displayProvider}${displayCadNumber ? ` · CAD ${displayCadNumber}` : ""}`
+                    : "Not booked · booking, arrival plan, documents"
+                }
+                onOpen={() => setNowSheet("transport")}
+                testId="ward-patient-transport-row"
+              />
+            ) : null}
+            <PatientSheetRow
+              icon={<RotateCcw size={16} aria-hidden="true" />}
+              title={canWithdraw ? "Withdraw referral" : "Review and corrections"}
+              sub={canWithdraw ? "Closes the movement and frees any held bed" : "Step back with a recorded reason"}
+              onOpen={() => setNowSheet("destination")}
+            />
+          </PatientSheetRows>
+        ) : null
+      }
+      phoneMore={
+        isPhone ? (
+          <PatientSheetRows>
+            {tabs
+              .filter((tab) => tab.key === "community" || tab.key === "details")
+              .map((tab) => (
+                <PatientSheetRow
+                  key={tab.key}
+                  icon={<FileText size={16} aria-hidden="true" />}
+                  title={tab.label}
+                  sub={
+                    tab.key === "community"
+                      ? record.community.teams.length > 0
+                        ? `${record.community.teams.length} ${record.community.teams.length === 1 ? "team" : "teams"} on record`
+                        : // A4-20, S-27: Who to call lists the catchment team from the patient record, so
+                          // this row reads the same field rather than denying a team that list shows.
+                          livePatient?.catchmentCommunityTeam
+                          ? "Catchment team, care not confirmed"
+                          : "No community team on record"
+                      : "UMRN, date of birth, where they live"
+                  }
+                  onOpen={() => {
+                    setActiveTab(tab.key);
+                    requestAnimationFrame(scrollWardPageToTop);
+                  }}
+                />
+              ))}
+          </PatientSheetRows>
+        ) : null
+      }
+    />
+  );
+
+  /* The record tabs. On a phone they render beside the record (below), pinned under the header. */
+  const recordTabs = (
+    <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
+      {(isPhone ? phoneTabs : tabs).map((tab) => (
+        <button
+          key={tab.key}
+          className={styles.v6Tab}
+          type="button"
+          role="tab"
+          id={`pntab-${tab.key}`}
+          aria-controls={`pnpane-${tab.key}`}
+          aria-selected={activeTab === tab.key}
+          tabIndex={activeTab === tab.key ? 0 : -1}
+          onClick={() => setActiveTab(tab.key)}
+        >
+          {tab.label}
+          {tab.count !== undefined ? (
+            <span className={styles.v6TabCount} id={`pncount-${tab.key}`}>
+              {tab.count}
+            </span>
+          ) : null}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <main
@@ -720,12 +1685,41 @@ export function PatientNowScreen({
             patient={livePatient}
             displayToday={displayToday}
             isLiveBedflow={isLiveBedflow}
-            quiet={modeMeta.quiet}
+            quiet={modeMeta.quiet && !isPhone}
             statePill={
               <span className={styles.gbPill} data-testid="ward-patient-mode-pill">
                 <StatusGlyph tone={modeMeta.tone} size={10} />
                 {modeMeta.pill}
               </span>
+            }
+            phoneEyebrow={
+              phoneMovement ? (
+                // A3-20: the phone hero keeps the desktop's tier, bed type and specialling on one line.
+                `Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}${liveMovement?.specialling ? " · 1:1 specialling" : ""}`
+              ) : (
+                <span className={styles.phEyebrow}>
+                  <StatusGlyph tone={modeMeta.tone} size={10} />
+                  {modeMeta.pill}
+                </span>
+              )
+            }
+            phoneFootKind="actions"
+            phoneFoot={
+              phoneMovement ? (
+                <div className={styles.phHeroActions}>
+                  <ContextualBackLink
+                    fallbackHref="/mockups/ward-flow/movements"
+                    className={buttonClass({ variant: "onHero" })}
+                    data-testid="ward-patient-phone-movements-back"
+                  >
+                    <ChevronLeft size={16} aria-hidden="true" />
+                    Movements
+                  </ContextualBackLink>
+                  <Button variant="onHero" icon={Copy} onClick={handleCopySummary}>
+                    {copied ? "Copied" : "Copy handover"}
+                  </Button>
+                </div>
+              ) : undefined
             }
             location={where}
             statusDetail={
@@ -738,12 +1732,142 @@ export function PatientNowScreen({
                     : modeMeta.label
             }
             facts={
-              isLiveBedflow && liveMovement ? (
+              phoneMovement ? (
+                <span className={styles.v6HeroFacts} data-testid="ward-patient-phone-figures">
+                  <span className={styles.v6HeroFact}>
+                    <strong className={styles.v6HeroWait}>{waitedStr}</strong>
+                    <span>Since opened</span>
+                  </span>
+                  <span className={styles.v6HeroFact}>
+                    <strong className={styles.v6HeroWait}>
+                      {currentStageIndex + 1} of {STAGES.length}
+                    </strong>
+                    <span>Stage</span>
+                  </span>
+                  <PhoneClearFact mode={mode} context={statusContext} />
+                  {movementTimeLeft ? (
+                    <span className={styles.v6HeroFact} data-testid="ward-patient-hero-form-left">
+                      <strong className={styles.v6HeroWait}>{movementTimeLeft.text}</strong>
+                      <span className={styles.phFigLabel}>
+                        {movementTimeLeft.standing !== "later" ? (
+                          <StatusGlyph tone={movementTimeLeft.tone} size={9} />
+                        ) : null}
+                        {movementTimeLeft.code}
+                      </span>
+                    </span>
+                  ) : null}
+                </span>
+              ) : isPhone && !isLiveBedflow ? (
+                /* v10 Patient, phone: three figures, the value over its label, from the record. */
+                <span className={styles.v6HeroFacts} data-testid="ward-patient-phone-figures">
+                  {(mode === "idle" || mode === "cto"
+                    ? [
+                        {
+                          key: "discharged",
+                          value:
+                            lastStay?.leftAt != null
+                              ? now - lastStay.leftAt < 6 * 1440
+                                ? dayLabel(lastStay.leftAt, dayZero).replace(",", "").split(" ")[0]
+                                : dayLabel(lastStay.leftAt, dayZero).replace(",", "").split(" ").slice(1).join(" ")
+                              : "None",
+                          label: "Discharged",
+                        },
+                        { key: "orders", value: ctoInForce ? "1" : "0", label: "Orders" },
+                        { key: "presentations", value: String(record.presentations.length), label: "Presentations" },
+                      ]
+                    : mode === "leave" && stayLeaveBed
+                      ? [
+                          {
+                            key: "due",
+                            value: clock(stayLeaveBed.expectedReturn),
+                            label: "Due back",
+                            tone: "neutral" as const,
+                          },
+                          now > stayLeaveBed.expectedReturn
+                            ? { key: "from", value: dur(now - stayLeaveBed.expectedReturn), label: "Overdue" }
+                            : { key: "from", value: dur(stayLeaveBed.expectedReturn - now), label: "From now" },
+                          { key: "legal", ...phoneLegal },
+                        ]
+                      : mode === "awol" && stayLeaveBed?.absentWithoutLeave
+                        ? [
+                            {
+                              key: "absent",
+                              value: dur(Math.max(0, now - stayLeaveBed.absentWithoutLeave.since)),
+                              label: "Absent",
+                              tone: "danger" as const,
+                            },
+                            {
+                              key: "steps",
+                              // A3-13: the same step list the status card counts.
+                              value: `${absenceStepsFor(voluntaryNow).filter((step) => stayLeaveBed.absentWithoutLeave!.steps.some((done) => done.step === step)).length}/${absenceStepsFor(voluntaryNow).length}`,
+                              label: "Steps done",
+                            },
+                            { key: "legal", ...phoneLegal },
+                          ]
+                        : mode === "ed" && awaySince !== undefined
+                          ? [
+                              {
+                                key: "away",
+                                value: dur(Math.max(0, now - awaySince)),
+                                label: "At ED",
+                                tone: "warning" as const,
+                              },
+                              {
+                                key: "bed",
+                                value:
+                                  resolved.liveAdmission?.bedNumber !== undefined
+                                    ? `Bed ${String(resolved.liveAdmission.bedNumber).padStart(2, "0")}`
+                                    : "Bed",
+                                label: "Held",
+                              },
+                              { key: "legal", ...phoneLegal },
+                            ]
+                          : [
+                              {
+                                key: "day",
+                                value: stayDay !== undefined ? `Day ${stayDay}` : "Day not recorded",
+                                label: "On ward",
+                                tone: "success" as const,
+                              },
+                              { key: "legal", ...phoneLegal },
+                              {
+                                key: "out",
+                                value:
+                                  typeof resolved.liveAdmission?.expectedDischargeAt === "number"
+                                    ? dayLabel(resolved.liveAdmission.expectedDischargeAt, dayZero).replace(",", "")
+                                    : "None",
+                                label: "Expected out",
+                              },
+                            ]
+                  ).map(
+                    (fig: {
+                      key: string;
+                      value: string;
+                      label: string;
+                      tone?: "success" | "warning" | "danger" | "neutral";
+                    }) => (
+                      <span key={fig.key} className={styles.v6HeroFact}>
+                        <strong className={styles.v6HeroWait}>{fig.value}</strong>
+                        <span className={styles.phFigLabel}>
+                          {fig.tone ? <StatusGlyph tone={fig.tone} size={9} /> : null}
+                          {fig.label}
+                        </span>
+                      </span>
+                    ),
+                  )}
+                </span>
+              ) : isLiveBedflow && liveMovement ? (
                 <span className={styles.v6HeroFacts}>
                   <span className={styles.v6HeroFact}>
                     <StatusGlyph tone={tierTone} size={9} />
                     Tier {urgencyTier ?? "not recorded"} · {(liveMovement.security ?? "not recorded").toLowerCase()}
                   </span>
+                  {isTierOverdue(urgencyTier, now - liveMovement.openedAt) ? (
+                    <span className={styles.v6HeroFact}>
+                      <StatusGlyph tone="danger" size={9} />
+                      Overdue wait · {waitedStr}
+                    </span>
+                  ) : null}
                   {liveMovement.specialling ? (
                     <span className={styles.v6HeroFact}>
                       <StatusGlyph tone="warning" size={9} />
@@ -755,6 +1879,16 @@ export function PatientNowScreen({
                     <strong className={styles.v6HeroWait}>{waitedStr}</strong>
                     since opened
                   </span>
+                  {movementTimeLeft ? (
+                    <span className={styles.v6HeroFact} data-testid="ward-patient-hero-form-left">
+                      {movementTimeLeft.standing !== "later" ? (
+                        <StatusGlyph tone={movementTimeLeft.tone} size={9} />
+                      ) : (
+                        <Scale size={14} aria-hidden="true" />
+                      )}
+                      {movementTimeLeft.code} · <strong className={styles.v6HeroWait}>{movementTimeLeft.text}</strong>
+                    </span>
+                  ) : null}
                 </span>
               ) : (
                 <span className={styles.v6HeroFacts}>
@@ -809,19 +1943,41 @@ export function PatientNowScreen({
               )
             }
             journey={
-              isLiveBedflow && liveMovement ? (
+              phoneStayStages ? (
                 <JourneyStrip
                   surface="hero"
-                  label="Journey since this movement opened"
-                  stages={patientJourneyStages(liveMovement, now)}
-                  formatDuration={dur}
+                  label="This record's last stay"
+                  stages={phoneStayStages}
+                  formatDuration={(minutes) =>
+                    minutes >= 1440
+                      ? `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h`
+                      : dur(minutes)
+                  }
                   note={false}
-                  className={styles.v6Journey}
+                  className={`${styles.v6Journey} ${styles.phStayStrip}`}
                 />
               ) : undefined
             }
             steps={
-              isLiveBedflow ? (
+              phoneMovement ? (
+                <div className={styles.phDots}>
+                  <span className={styles.phDotRow} aria-hidden="true">
+                    {STAGES.map((stage, i) => (
+                      <span
+                        key={stage.id}
+                        className={styles.phDot}
+                        data-s={i < currentStageIndex ? "done" : i === currentStageIndex ? "now" : "next"}
+                      />
+                    ))}
+                  </span>
+                  <span>
+                    <span className="sr-only">
+                      Stage {currentStageIndex + 1} of {STAGES.length}:{" "}
+                    </span>
+                    {STAGES[currentStageIndex].label}
+                  </span>
+                </div>
+              ) : isLiveBedflow ? (
                 <ol
                   className={styles.v6Steps}
                   aria-label={`The seven stages. Stage ${currentStageIndex + 1} of ${STAGES.length}, ${STAGES[currentStageIndex].label}, is current`}
@@ -892,65 +2048,25 @@ export function PatientNowScreen({
                 </ol>
               ) : null
             }
-            tabs={
-              <>
-                <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
-                  {(isPhone ? phoneTabs : tabs).map((tab) => (
-                    <button
-                      key={tab.key}
-                      className={styles.v6Tab}
-                      type="button"
-                      role="tab"
-                      id={`pntab-${tab.key}`}
-                      aria-controls={`pnpane-${tab.key}`}
-                      aria-selected={activeTab === tab.key}
-                      tabIndex={activeTab === tab.key ? 0 : -1}
-                      onClick={() => setActiveTab(tab.key)}
-                    >
-                      {tab.label}
-                      {tab.count !== undefined ? (
-                        <span className={styles.v6TabCount} id={`pncount-${tab.key}`}>
-                          {tab.count}
-                        </span>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
-                {isPhone ? (
-                  /* v10 phone: Community and Details sit one tap away beside the segmented control. */
-                  <div className={styles.v6PhoneMore} data-testid="ward-patient-phone-more-tabs">
-                    {tabs
-                      .filter((tab) => tab.key === "community" || tab.key === "details")
-                      .map((tab) => (
-                        <Button
-                          key={tab.key}
-                          variant="ghost"
-                          size="sm"
-                          aria-pressed={activeTab === tab.key}
-                          aria-controls={`pnpane-${tab.key}`}
-                          onClick={() => setActiveTab(tab.key)}
-                        >
-                          {tab.label}
-                          {tab.count !== undefined ? ` ${tab.count}` : ""}
-                        </Button>
-                      ))}
-                  </div>
-                ) : null}
-              </>
-            }
+            tabs={recordTabs}
             actions={
               <>
-                {modeMeta.quiet ? null : <LiveChip state="live" onHero />}
-                <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
-                  {copied
-                    ? "Copied"
-                    : isLiveBedflow
-                      ? "Copy handover"
-                      : mode === "awol"
-                        ? "Copy missing person summary"
-                        : "Copy summary"}
-                </Button>
-                {mode === "idle" || mode === "cto" ? (
+                {modeMeta.quiet ? null : (
+                  // v10 phone: the movement page reads "Live HH:MM", the patient page a plain "Live".
+                  <LiveChip state="live" age={phoneMovement ? undefined : null} onHero />
+                )}
+                {isPhone ? null : (
+                  <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
+                    {copied
+                      ? "Copied"
+                      : isLiveBedflow
+                        ? "Copy handover"
+                        : mode === "awol"
+                          ? "Copy missing person summary"
+                          : "Copy summary"}
+                  </Button>
+                )}
+                {(mode === "idle" || mode === "cto") && !isPhone ? (
                   <Link
                     href={
                       livePatient
@@ -1006,6 +2122,10 @@ export function PatientNowScreen({
           ) : null}
         </section>
 
+        {/* Phone (Josh, 12 Oct 2026): the record tabs pin under the phone header, as Home's queue
+            switch does. They sit in the page column beside the record they pin over. */}
+        {isPhone ? <PatientRecordTabsRow tabs={recordTabs} className={pinnedStyles.pinnedSwitch} /> : null}
+
         <section className={styles.v6Main} id="pnTabs" aria-label="The record">
           <div className={styles.v6TabBody} id="pnBody" tabIndex={0}>
             {/* Tab 1: NOW. Only what is true at this moment: the status card, the work for this mode,
@@ -1017,446 +2137,7 @@ export function PatientNowScreen({
               aria-labelledby="pntab-now"
               hidden={activeTab !== "now"}
             >
-              <PatientStatusCard mode={mode} context={statusContext} />
-              <div className={styles.gbCols}>
-                <div className={styles.gbCol}>
-                  {isLiveBedflow && liveMovement ? (
-                    <div
-                      id="patient-operations"
-                      ref={operationsRef}
-                      tabIndex={-1}
-                      aria-label="Transit operations workspace"
-                    >
-                      <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} />
-                    </div>
-                  ) : null}
-                  {(mode === "held" || mode === "transit") && liveMovement ? (
-                    <section
-                      className={`${styles.sec} ${styles.transportSec}`}
-                      aria-labelledby="pnTransportHeading"
-                      data-testid="ward-patient-transport-section"
-                    >
-                      <div className={styles.transportHeader}>
-                        <div className={styles.transportTitleCluster}>
-                          <span className={styles.transportIcon} aria-hidden="true">
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <rect x="1" y="3" width="15" height="13" />
-                              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-                              <circle cx="5.5" cy="18.5" r="2.5" />
-                              <circle cx="18.5" cy="18.5" r="2.5" />
-                            </svg>
-                          </span>
-                          <h3 id="pnTransportHeading" className={styles.secH} style={{ margin: 0 }}>
-                            {liveMovement ? "Transport dispatch" : "Transport"}
-                          </h3>
-                        </div>
-                        {liveMovement && (
-                          <div className={styles.transportStatusCluster}>
-                            <span
-                              className={styles.transportBadge}
-                              data-booked={isTransportBooked ? "true" : "false"}
-                              data-testid="ward-patient-transport-badge"
-                            >
-                              {isTransportBooked ? "✓ Transport Booked" : "Awaiting Transport Booking"}
-                            </span>
-                            {!showTransportForm && (
-                              <button
-                                type="button"
-                                className={
-                                  isTransportBooked ? styles.transportActionBtnSecondary : styles.transportActionBtn
-                                }
-                                onClick={() => {
-                                  setTransportCadDraft(displayCadNumber ?? "");
-                                  setTransportEtaDraft(displayEta ?? "");
-                                  setShowTransportForm(true);
-                                }}
-                                data-testid="ward-patient-book-transport-btn"
-                              >
-                                {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {liveMovement && bookingRejection && (
-                        <p role="alert">Booking was not recorded: {bookingRejection.reason}</p>
-                      )}
-                      {/* Form for logging/updating transport */}
-                      {liveMovement && showTransportForm && (
-                        <form
-                          className={styles.transportForm}
-                          onSubmit={handleSaveTransportBooking}
-                          data-testid="ward-patient-transport-form"
-                        >
-                          <div className={styles.transportFormGrid}>
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-cad" className={styles.transportFormLabel}>
-                                CAD (dispatch) number <span style={{ color: "var(--danger)" }}>*</span>
-                              </label>
-                              <input
-                                id="transport-cad"
-                                type="text"
-                                className={styles.transportInput}
-                                placeholder="e.g. CAD-84920"
-                                value={transportCadDraft}
-                                onChange={(e) => setTransportCadDraft(e.target.value)}
-                                required
-                                data-testid="ward-patient-input-cad"
-                              />
-                            </div>
-
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-eta" className={styles.transportFormLabel}>
-                                Quoted ETA by Transport Company
-                              </label>
-                              <input
-                                id="transport-eta"
-                                type="text"
-                                className={styles.transportInput}
-                                placeholder="e.g. 11:15 or ~45m"
-                                value={transportEtaDraft}
-                                onChange={(e) => setTransportEtaDraft(e.target.value)}
-                                data-testid="ward-patient-input-eta"
-                              />
-                            </div>
-
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-provider" className={styles.transportFormLabel}>
-                                Transport Provider
-                              </label>
-                              <select
-                                id="transport-provider"
-                                className={styles.transportSelect}
-                                value={transportProviderDraft}
-                                onChange={(e) => setTransportProviderDraft(e.target.value as TransportProvider)}
-                                data-testid="ward-patient-select-provider"
-                              >
-                                {TRANSPORT_PROVIDERS.map((p) => (
-                                  <option key={p} value={p}>
-                                    {p}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-legal" className={styles.transportFormLabel}>
-                                Transport Legal Status
-                              </label>
-                              <select
-                                id="transport-legal"
-                                className={styles.transportSelect}
-                                value={transportLegalDraft}
-                                onChange={(e) => setTransportLegalDraft(e.target.value as TransportLegalStatus)}
-                                data-testid="ward-patient-select-legal"
-                              >
-                                <option value="involuntary">Involuntary</option>
-                                <option value="voluntary">Voluntary</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          <div className={styles.transportCheckboxRow}>
-                            <input
-                              id="transport-escort"
-                              type="checkbox"
-                              checked={transportEscortDraft}
-                              onChange={(e) => setTransportEscortDraft(e.target.checked)}
-                              data-testid="ward-patient-checkbox-escort"
-                            />
-                            <label htmlFor="transport-escort">Clinical escort required for transfer</label>
-                          </div>
-
-                          <div className={styles.transportFormActions}>
-                            <button
-                              type="button"
-                              className={styles.transportActionBtnSecondary}
-                              onClick={() => setShowTransportForm(false)}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              className={styles.transportActionBtn}
-                              data-testid="ward-patient-confirm-transport-btn"
-                              {...gate("BOOK_TRANSPORT").buttonProps}
-                            >
-                              Save Transport Booking
-                            </button>
-                            {gate("BOOK_TRANSPORT").note}
-                          </div>
-                        </form>
-                      )}
-
-                      {/* Display booked facts */}
-                      {isTransportBooked && !showTransportForm && (
-                        <div className={styles.transportGrid} data-testid="ward-patient-transport-details">
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>CAD (dispatch) number</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-cad-number">
-                              {displayCadNumber || "Not recorded"}
-                            </span>
-                          </div>
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>Quoted ETA</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-transport-eta">
-                              {displayEta || "Not recorded"}
-                            </span>
-                          </div>
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>Transport Provider</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-transport-provider">
-                              {displayProvider}
-                            </span>
-                          </div>
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>Authority / Escort</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-transport-authority">
-                              {displayLegalStatus}{" "}
-                              {displayEscort === undefined
-                                ? "· Escort not recorded"
-                                : displayEscort
-                                  ? "· Escort req."
-                                  : "· No escort"}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Empty state when not booked */}
-                      {!liveMovement || (!isTransportBooked && !showTransportForm) ? (
-                        <div className={styles.transportEmptyState}>
-                          <p className={styles.transportEmptyText}>
-                            {liveMovement ? (
-                              <>
-                                No transport vehicle has been logged for this patient yet. Once arranged by phone with
-                                the transport provider, click <strong>Mark as Booked</strong> to record the CAD
-                                (dispatch) number and quoted ETA.
-                              </>
-                            ) : (
-                              "No linked transport record displayed."
-                            )}
-                          </p>
-                        </div>
-                      ) : null}
-                    </section>
-                  ) : null}
-                  {(mode === "held" || mode === "transit") && liveMovement ? (
-                    <>
-                      {(isPulled || hasArrivalPlan) && (
-                        <details className={styles.arrivalDisclosure}>
-                          <summary>Arrival plan & transport documents</summary>
-                          <div className={styles.pulledBanner} data-testid="ward-patient-pulled-banner">
-                            <div className={styles.pulledBannerHeader}>
-                              <div className={styles.pulledBadgeCluster}>
-                                <span className={styles.pulledStatusBadge}>Bed Pulled &amp; Reserved</span>
-                                <span className={styles.pulledWardTarget}>
-                                  Accepting Ward: <strong>{acceptingWardName}</strong>
-                                </span>
-                              </div>
-                              {hasArrivalPlan ? (
-                                <span className={styles.pulledClockBadge}>
-                                  <Clock size={14} aria-hidden="true" />
-                                  <span>
-                                    ETA: {clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120)} AWST
-                                  </span>
-                                </span>
-                              ) : pullExpiresAt !== undefined ? (
-                                <span
-                                  className={styles.pulledClockBadge}
-                                  data-tone={isHoldExpired ? "danger" : "normal"}
-                                  data-testid="ward-patient-pull-hold-remaining"
-                                >
-                                  <Clock size={14} aria-hidden="true" />
-                                  <span>Bed pull {pullHoldRemainingLabel(pullExpiresAt, now)}</span>
-                                </span>
-                              ) : null}
-                            </div>
-
-                            {isOverdue && (
-                              <div
-                                className={styles.pulledOverdueAlert}
-                                role="alert"
-                                data-testid="ward-patient-overdue-alert"
-                                title={OPERATIONAL_DEFAULT_LABEL}
-                              >
-                                <AlertCircle
-                                  size={18}
-                                  style={{ flexShrink: 0, marginTop: 2, color: "var(--wf-danger)" }}
-                                  aria-hidden="true"
-                                />
-                                <div>
-                                  <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES}{" "}
-                                  minutes past estimated arrival time (
-                                  {clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now)} AWST). Notification
-                                  is not recorded here.
-                                </div>
-                              </div>
-                            )}
-
-                            <div className={styles.pulledDetailsGrid}>
-                              <div className={styles.pulledDetailItem}>
-                                <span className={styles.pulledDetailLabel}>Arrival Mode</span>
-                                <span className={styles.pulledDetailValue}>
-                                  {hasArrivalPlan && liveMovement?.arrivalDetails?.mode
-                                    ? ARRIVAL_MODE_LABELS[liveMovement.arrivalDetails.mode]
-                                    : "Default / Pending Confirmation"}
-                                </span>
-                              </div>
-                              <div className={styles.pulledDetailItem}>
-                                <span className={styles.pulledDetailLabel}>Tracking / CAD (dispatch) number</span>
-                                <span className={styles.pulledDetailValue}>
-                                  {liveMovement?.arrivalDetails?.trackingNumber || displayCadNumber || "Not recorded"}
-                                </span>
-                              </div>
-                              <div className={styles.pulledDetailItem}>
-                                <span className={styles.pulledDetailLabel}>Hold Status</span>
-                                <span className={styles.pulledDetailValue}>
-                                  {hasArrivalPlan
-                                    ? "Hold clock cleared (Arrival time scheduled)"
-                                    : isHoldExpired
-                                      ? "4h window passed — review the hold"
-                                      : "4h standard countdown active"}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className={styles.pulledActionRow}>
-                              <div className={styles.pulledActionBtns}>
-                                <button
-                                  type="button"
-                                  className={`${styles.pulledActionBtn} ${styles.pulledActionBtnPrimary}`}
-                                  onClick={() => setShowArrivalTimeModal(true)}
-                                  data-testid="ward-patient-update-arrival-btn"
-                                >
-                                  <Clock size={15} aria-hidden="true" />
-                                  <span>{hasArrivalPlan ? "Edit Arrival Time" : "Update Arrival Time"}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className={styles.pulledActionBtn}
-                                  onClick={() => setShowUploadFormsModal(true)}
-                                  data-testid="ward-patient-upload-forms-btn"
-                                >
-                                  <FileUp size={15} aria-hidden="true" />
-                                  <span>Record transport document details</span>
-                                </button>
-                              </div>
-
-                              {hasArrivalPlan && liveMovement?.arrivalDetails && (
-                                <span style={{ fontSize: "var(--t-0, 0.75rem)", color: "var(--muted)" }}>
-                                  Updated by {liveMovement.arrivalDetails.recordedBy} at{" "}
-                                  {clock(liveMovement.arrivalDetails.recordedAt)}
-                                </span>
-                              )}
-                            </div>
-
-                            {uploadedForms.length > 0 && (
-                              <div className={styles.pulledFormsList} data-testid="ward-patient-uploaded-forms">
-                                <div className={styles.pulledFormsHeader}>
-                                  <FileText size={14} aria-hidden="true" />
-                                  <span>
-                                    Transport document details ({uploadedForms.length}) — file contents not stored
-                                  </span>
-                                </div>
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                                  {uploadedForms.map((form) => (
-                                    <div key={form.id} className={styles.pulledFormChip}>
-                                      <span style={{ fontWeight: 600 }}>{form.formName}</span>
-                                      <span className={styles.pulledFormChipMeta}>
-                                        {form.fileName} · {clock(form.uploadedAt)} ({form.uploadedBy})
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </details>
-                      )}
-                    </>
-                  ) : null}
-                  {mode === "ward" ? (
-                    <PatientWardChangeCard
-                      key={resolved.liveAdmission?.id}
-                      now={now}
-                      dayZero={dayZero}
-                      form={wardForm}
-                      onFormChange={setWardForm}
-                      onRecordLeave={recordLeave}
-                      onGoneToEd={goneToEd}
-                      onSaveDischarge={saveDischarge}
-                      refusal={wardRefusal}
-                      roleLimit={(eventType) => gate(eventType).reason}
-                    />
-                  ) : null}
-                  {mode === "ward" || mode === "ed" ? (
-                    <PatientWhyCard
-                      title="Why admitted"
-                      chip={stayUnit ? stayUnit.name : undefined}
-                      history={resolved.liveReferral?.history}
-                      fallback={record.reason}
-                      patient={livePatient}
-                    />
-                  ) : null}
-                  {mode === "leave" && stayLeaveBed ? (
-                    <PatientLeaveCard
-                      dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
-                      onMarkAbsent={markAbsent}
-                    />
-                  ) : null}
-                  {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
-                    <PatientLastSeenCard
-                      wardName={stayUnit?.name}
-                      since={clock(stayLeaveBed.absentWithoutLeave.since)}
-                      onRecordReturn={recordReturn}
-                    />
-                  ) : null}
-                  {mode === "idle" || mode === "cto" ? (
-                    <PatientRecordOverview
-                      patient={livePatient}
-                      record={record}
-                      onOpen={(tab) => {
-                        setActiveTab(tab);
-                        requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
-                      }}
-                    />
-                  ) : null}
-                </div>
-                {/* The shorter side column pins under the top bar once the columns sit side by side
-                    (they stack at 1120px and below). */}
-                <div className={styles.gbCol} data-wf-rail="1121">
-                  {isLiveBedflow && liveMovement ? (
-                    <PatientWhyCard
-                      title="Why they're here"
-                      chip={`Opened ${clock(liveMovement.openedAt)}`}
-                      history={resolved.liveReferral?.history}
-                      fallback={record.reason}
-                      movement={liveMovement}
-                      patient={livePatient}
-                    />
-                  ) : null}
-                  {mode !== "idle" ? (
-                    <PatientLegalNowCard
-                      movement={movementInForce ? liveMovement : undefined}
-                      patient={livePatient}
-                      onAllForms={() => {
-                        setActiveTab("documents");
-                        requestAnimationFrame(() => document.getElementById("pntab-documents")?.focus());
-                      }}
-                    />
-                  ) : null}
-                  <PatientContactsCard rows={contacts} />
-                </div>
-              </div>
+              {nowPanel}
             </div>
 
             {/* Tab 2: HISTORY */}
@@ -1473,6 +2154,8 @@ export function PatientNowScreen({
                 dayZero={dayZero}
                 unitName={(id) => units.find((u) => u.id === id)?.name}
                 stays={resolved.stays}
+                absence={stayLeaveBed?.absentWithoutLeave}
+                absenceVoluntary={voluntaryNow}
                 open={!modeMeta.quiet}
                 onBackToNow={() => {
                   setActiveTab("now");
@@ -1606,6 +2289,12 @@ export function PatientNowScreen({
               <p>No notification is sent. This records the stated outcome in the shared synthetic journey.</p>
             </div>
             <div className={styles.clearanceModalFoot}>
+              {/* A4-32: say why Save is not yet available, beside it. */}
+              {clearanceGate.allowed && (!clearanceDraft || !clearanceAttested) ? (
+                <p id="clearanceSaveReason" className={styles.clearanceReason}>
+                  {!clearanceDraft ? "Choose the outcome to save" : "Tick the statement to save"}
+                </p>
+              ) : null}
               <button type="button" className={styles.ctl} onClick={closeClearanceModal}>
                 Close
               </button>
@@ -1613,12 +2302,16 @@ export function PatientNowScreen({
                 type="button"
                 className={`${styles.ctl} ${styles.ctlPrimary}`}
                 disabled={!clearanceDraft || !clearanceAttested || !liveMovement || !clearanceGate.allowed}
-                aria-describedby={clearanceGate.buttonProps["aria-describedby"]}
+                aria-describedby={
+                  clearanceGate.allowed && (!clearanceDraft || !clearanceAttested)
+                    ? "clearanceSaveReason"
+                    : clearanceGate.buttonProps["aria-describedby"]
+                }
                 onClick={() => {
                   if (!liveMovement || !clearanceDraft || !clearanceAttested || !clearanceGate.allowed) return;
                   dispatch({
                     type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
-                    role: "ed",
+                    role: routeRole,
                     now,
                     movementId: liveMovement.id,
                     cleared: clearanceDraft === "cleared",
@@ -1648,6 +2341,36 @@ export function PatientNowScreen({
           />
         </>
       )}
+      {liveMovement ? (
+        <>
+          <PhoneSheet
+            open={nowSheet === "destination"}
+            onClose={() => setNowSheet(null)}
+            title="Destination and placement"
+            description={acceptingUnit ? `${acceptingUnit.name} accepted` : "No ward has accepted yet"}
+            height="tall"
+            placement={isPhone ? "bottom" : "right"}
+          >
+            {/* B5 (site review, 12 Oct 2026): the sheet renders outside this page's `main`, so it
+                carries the page's design attribute itself; without it the deck lost its card and
+                button styles ("Hold the bed" read as plain text). */}
+            <div data-ward-design="v6">
+              <PatientTransitOperations key={liveMovement.id} movement={liveMovement} showMetrics={false} bare />
+            </div>
+          </PhoneSheet>
+          <PhoneSheet
+            open={nowSheet === "transport"}
+            onClose={() => setNowSheet(null)}
+            title="Transport"
+            description={isTransportBooked ? `${displayProvider} booked` : "Not booked yet"}
+            height="tall"
+            placement={isPhone ? "bottom" : "right"}
+          >
+            {transportSection}
+            {arrivalSection}
+          </PhoneSheet>
+        </>
+      ) : null}
       <WardPrototypeFooter testId="ward-patient-now-governance" />
     </main>
   );

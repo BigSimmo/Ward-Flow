@@ -1,5 +1,7 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Printer, Route, Search, X } from "lucide-react";
@@ -69,6 +71,7 @@ import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
 import styles from "./out-of-area-board.module.css";
+import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -95,14 +98,12 @@ import styles from "./out-of-area-board.module.css";
  * unsaved draft. Drafts live in React state only and are never written to browser storage.
  */
 
+/**
+ * Only a resolved person gets a link. A UMRN is never put in a URL (it can be typed text, and the
+ * search page reads no query anyway), so a row with no person id shows its UMRN unlinked.
+ */
 function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
-  if (info.patient?.id) {
-    return `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}`;
-  }
-  if (info.umrn && info.umrn !== "UMRN not recorded") {
-    return `/mockups/ward-flow/search?q=${encodeURIComponent(info.umrn)}`;
-  }
-  return null;
+  return info.patient?.id ? `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}` : null;
 }
 
 type SortOrder = "ledger" | "days" | "patient";
@@ -178,6 +179,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const offsetOf = (entry: OutOfAreaEntry) => dischargeOffsetDays(entry, now);
   const returnMovementOf = (id: string) => movements.find((movement) => movement.sourceAdmissionId === id)?.id;
 
+  // Device audit 11 Oct 2026: a Return column where every row reads the same says nothing the
+  // Checking line has not; it shows only when the plan state differs between people.
+  const planVaries = new Set(entries.map(statusOf)).size > 1;
   const sorted = [...entries];
   if (sortOrder === "days") sorted.sort((a, b) => daysAway(b, now) - daysAway(a, now));
   if (sortOrder === "patient") {
@@ -261,9 +265,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   useEffect(() => {
     if (selectedId === null || isPhone || isTabletPortrait) return;
     if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1000px)").matches) return;
-    window.requestAnimationFrame(() => {
-      detailColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const frame = window.requestAnimationFrame(() => {
+      detailColumnRef.current?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
     });
+    return () => window.cancelAnimationFrame(frame);
   }, [selectedId, isPhone, isTabletPortrait]);
 
   useEffect(() => {
@@ -353,9 +358,19 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     setRepatNotice(`${recorded}${movementFeedback}`);
   }
 
+  // Audit A3-18 (13 Oct 2026): every card and the return sheet carry the legal status or form.
+  const legalOf = (entry: OutOfAreaEntry): string | undefined =>
+    stayLegalShort(entry.admission, { movements, patients, referrals });
+
   const planPatient = (entry: OutOfAreaEntry): PlanPatient => {
     const info = patientOf(entry);
-    return { displayName: info.displayName, umrn: info.umrn, profileHref: getPatientProfileHref(info) };
+    return {
+      displayName: info.displayName,
+      umrn: info.umrn,
+      profileHref: getPatientProfileHref(info),
+      legal: legalOf(entry),
+      onOrder: isOnOrder(stayLegalStatus(entry.admission, { movements, patients, referrals })),
+    };
   };
 
   const renderPlan = (entry: OutOfAreaEntry, header: ReactNode | undefined, idPrefix: string) => (
@@ -493,6 +508,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         name: info.displayName,
         umrn: info.umrn,
         profileHref: getPatientProfileHref(info),
+        legal: legalOf(entry),
         daysLabel: sinceArrivalLabel(entry, now),
         offset: offsetOf(entry),
         status: statusOf(entry),
@@ -693,16 +709,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 title="Export list as CSV"
                 onClick={exportList}
               />
-              <Button
-                variant="onHero"
-                size="sm"
-                iconOnly
-                icon={Printer}
-                aria-label="Print handover list"
-                className={styles.previewIcon}
-                disabledReason="Not wired in this prototype."
-                reasonDisplay="tooltip"
-              />
+              <NotWiredButton variant="onHero" size="sm" iconOnly icon={Printer} label="Print handover list" />
             </span>
           }
           foot={
@@ -802,7 +809,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       Clear
                     </Button>
                   ) : null}
-                  <span className={styles.keys} aria-hidden="true">
+                  <span className={styles.keys} aria-hidden="true" data-kbd-hint="">
                     Press <kbd>/</kbd> to search, <kbd>J</kbd> <kbd>K</kbd> to move
                   </span>
                 </div>
@@ -822,7 +829,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       <col className={styles.colRegion} />
                       <col className={styles.colPlace} />
                       <col className={styles.colDischarge} />
-                      <col className={styles.colReturn} />
+                      {planVaries ? <col className={styles.colReturn} /> : null}
                       <col className={styles.colDays} />
                     </colgroup>
                     <thead>
@@ -831,7 +838,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                         <th scope="col">Home region</th>
                         <th scope="col">Placement</th>
                         <th scope="col">Discharge</th>
-                        <th scope="col">Return</th>
+                        {planVaries ? <th scope="col">Return</th> : null}
                         <th scope="col" className={tableClasses.num}>
                           Days away
                         </th>
@@ -871,18 +878,21 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                             <td>
                               <span className={styles.two}>
                                 <b title={info.displayName}>{info.displayName}</b>
-                                {href ? (
-                                  <Link
-                                    href={href}
-                                    className={styles.umrnLink}
-                                    onClick={(event) => event.stopPropagation()}
-                                    title={`Open profile for ${info.displayName} (${info.umrn})`}
-                                  >
-                                    {info.umrn}
-                                  </Link>
-                                ) : (
-                                  <span className={styles.mono}>{info.umrn}</span>
-                                )}
+                                <span className={styles.legalUmrn}>
+                                  {legalOf(entry) ? <span>{legalOf(entry)} · </span> : null}
+                                  {href ? (
+                                    <Link
+                                      href={href}
+                                      className={styles.umrnLink}
+                                      onClick={(event) => event.stopPropagation()}
+                                      title={`Open profile for ${info.displayName} (${info.umrn})`}
+                                    >
+                                      {info.umrn}
+                                    </Link>
+                                  ) : (
+                                    <span className={styles.mono}>{info.umrn}</span>
+                                  )}
+                                </span>
                               </span>
                             </td>
                             <td>
@@ -921,13 +931,15 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 </span>
                               </span>
                             </td>
-                            <td>
-                              <ReturnCell
-                                status={status}
-                                record={record}
-                                left={missingAnswers(draftFor(entry.admission.id), now).length}
-                              />
-                            </td>
+                            {planVaries ? (
+                              <td>
+                                <ReturnCell
+                                  status={status}
+                                  record={record}
+                                  left={missingAnswers(draftFor(entry.admission.id), now).length}
+                                />
+                              </td>
+                            ) : null}
                             <td className={cx(tableClasses.num, styles.away)}>{sinceArrivalLabel(entry, now)}</td>
                           </tr>
                         );
@@ -940,8 +952,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     <span className={styles.footNote}>
                       <StatusGlyph tone="closed" size={9} />
                       <span>
-                        <b>{bedDays}</b> bed days across {entries.length} people · <b>{notBanded}</b> records lack a
-                        home area or travel time
+                        <b>{bedDays}</b> bed days across {entries.length} people
                       </span>
                     </span>
                   }
@@ -969,21 +980,18 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   dueSoon={dueSoon}
                   onPick={(id) => selectPlacement(id)}
                 />
-                <HomeBedsCard
-                  idPrefix="ward-out-of-area"
-                  rows={regionRows}
-                  region={region}
-                  onRegion={toggleRegion}
-                  notBanded={notBanded}
-                />
-                <ReadyCard
-                  idPrefix="ward-out-of-area"
-                  testId="ward-out-of-area-subject"
-                  bodyTestId="ward-out-of-area-subject-empty"
-                  rows={readyRows}
-                  started={startedRows}
-                  onPick={(id) => selectPlacement(id)}
-                />
+                <HomeBedsCard idPrefix="ward-out-of-area" rows={regionRows} region={region} onRegion={toggleRegion} />
+                {/* Pressing Date passed lights the same people in the register, so the list steps aside. */}
+                {highlight === "due" ? null : (
+                  <ReadyCard
+                    idPrefix="ward-out-of-area"
+                    testId="ward-out-of-area-subject"
+                    bodyTestId="ward-out-of-area-subject-empty"
+                    rows={readyRows}
+                    started={startedRows}
+                    onPick={(id) => selectPlacement(id)}
+                  />
+                )}
               </>
             )}
           </div>
@@ -1067,17 +1075,6 @@ function DaysAwayStrip({
   return (
     <div className={styles.ageStrip} role="group" aria-label="Days away, highlights rows">
       <span className={styles.ageEyebrow}>Days away</span>
-      <span className={styles.ageBar} aria-hidden="true">
-        {groups.map((group) =>
-          group.n ? (
-            <span
-              key={group.id}
-              className={cx(styles.ageSeg, styles[`age_${group.id}`], highlight === group.key && styles.ageSegOn)}
-              style={{ flexGrow: group.n }}
-            />
-          ) : null,
-        )}
-      </span>
       <span className={styles.ageLabels}>
         {groups.map((group) => (
           <button

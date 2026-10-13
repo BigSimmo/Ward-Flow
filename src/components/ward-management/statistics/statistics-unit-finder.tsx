@@ -173,9 +173,17 @@ export function StatisticsUnitFinder({ lists }: { lists: Record<FinderKind, Find
       )}
       <CardFoot
         meta={
-          <>
-            Showing {shown.length} of {entries.length}
-          </>
+          // Device audit 11 Oct 2026: "Showing 22 of 22" beside five visible rows read as wrong. The
+          // list scrolls, so the line names the noun and says so.
+          query.trim() ? (
+            <>
+              {shown.length} of {entries.length} {NOUNS[kind]} match
+            </>
+          ) : (
+            <>
+              {entries.length} {NOUNS[kind]}, scroll the list
+            </>
+          )
         }
       >
         <Link href={INDEX[kind].href} className={styles.footLink} data-testid="ward-statistics-unit-finder-index">

@@ -357,25 +357,6 @@
   overflow: hidden;
 }
 
-.worklistToolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  padding: 0 var(--wf-s-4) var(--wf-s-3);
-}
-
-.wlSearch {
-  flex: 0 1 15rem;
-  min-width: 11rem;
-}
-
-/* The box has its own clear button; hide the browser's second one. */
-.wlSearch input::-webkit-search-cancel-button {
-  appearance: none;
-}
-
 .boardTabs,
 .orderBar {
   display: inline-flex;
@@ -451,29 +432,6 @@
   text-align: center;
 }
 
-.wlColumns {
-  display: grid;
-  grid-template-columns: var(--wl-cols);
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-2) calc(var(--wf-s-4) + var(--wf-s-3));
-  border-top: 1px solid var(--wf-line);
-  border-bottom: 1px solid var(--wf-line);
-  color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.wlColumns > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.wlColumnEnd {
-  text-align: right;
-}
-
 /* A group's "17 more" note sits at the far end of its heading. */
 .movementListBody [data-ward-primitive="group-heading"] > span:nth-child(3) {
   margin-left: auto;
@@ -525,63 +483,13 @@
   flex-wrap: wrap;
 }
 
-.transportFilterBar {
-  padding: 0 var(--wf-s-4) var(--wf-s-3);
-  flex-wrap: wrap;
-}
-
 .transportRunsFeed {
   display: flex;
   flex-direction: column;
   border-top: 1px solid var(--wf-line);
 }
 
-.transportRunsEmpty {
-  margin: 0;
-  padding: var(--wf-s-4);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-13);
-}
-
-.transportRunCard {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-height: var(--spacing-tap, 3rem);
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border: 0;
-  border-bottom: 1px solid var(--wf-line);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  text-align: left;
-  cursor: pointer;
-}
-
-.transportRunCard:hover {
-  background: var(--wf-hover);
-}
-
-/* The leg whose record is open is the selected row: the one stripe allowed. */
-.transportRunCard[data-selected="true"] {
-  background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-pri-1);
-}
-
-.transportRunCard:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
-.trCell {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
 .trName,
-.trSub,
 .trState {
   overflow: hidden;
   white-space: nowrap;
@@ -599,12 +507,6 @@
   font-weight: 500;
 }
 
-.trSub {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
 .trWhen {
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
@@ -613,14 +515,6 @@
 }
 
 @media (max-width: 48rem) {
-  .wlColumns {
-    display: none;
-  }
-
-  .wlSearch {
-    flex: 1 1 100%;
-  }
-
   /* Phone widths: segmented items keep a 48px tap target. */
   .boardTab,
   .orderBtn,
@@ -645,74 +539,11 @@
   color: var(--ward-heading);
 }
 
-.drawerLine {
-  margin: 0;
-  font-size: 0.8125rem;
-  line-height: var(--ward-leading-relaxed);
-  color: var(--ward-text);
-}
-
-.drawerList {
-  margin: 0;
-  padding-left: var(--ward-space-16);
-  font-size: 0.8125rem;
-  line-height: var(--ward-leading-relaxed);
-  color: var(--ward-text);
-}
-
-.drawerAbsent {
-  margin: var(--ward-space-6) 0 0;
-  font-size: 0.75rem;
-  line-height: var(--ward-leading-relaxed);
-  color: var(--ward-muted);
-}
-
 .drawerFoot {
   margin: var(--ward-space-12) 0 0;
   font-size: 0.75rem;
   line-height: var(--ward-leading-relaxed);
   color: var(--ward-muted);
-}
-
-/*
- * Item 37 (2026-09-17): the urgent-flag reason picker — a label, a select and the existing
- * `.action` button, laid out as one row. Same "select, then act" shape as the console's own
- * `.stepBackRow`/`.stepBackSelect` pair (ward-management.module.css); this drawer keeps its own
- * copy rather than importing across style modules, matching every other class in this file.
- */
-.drawerReasonRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ward-space-6);
-  margin-top: var(--ward-space-6);
-}
-
-.drawerReasonLabel {
-  font-size: 0.75rem;
-  color: var(--ward-text);
-}
-
-.drawerReasonSelect {
-  font: inherit;
-  min-height: var(--ward-tap);
-  padding: var(--ward-space-5) var(--ward-space-8);
-  color: var(--ward-text);
-  background: var(--ward-canvas);
-  border: 1px solid var(--ward-border);
-  border-radius: var(--ward-radius-pixel);
-}
-
-.detailBtn {
-  min-height: 2.25rem;
-  padding: var(--ward-space-4) var(--ward-space-10);
-  border: 1px solid var(--ward-border);
-  border-radius: var(--ward-radius-pixel);
-  background: var(--ward-canvas);
-  color: var(--ward-text);
-  font: inherit;
-  font-size: 0.75rem;
-  cursor: pointer;
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
@@ -733,255 +564,11 @@
   --border-strong: var(--line-strong);
 }
 
-.drawerSheetBody {
-  padding: 0.625rem 1rem 0.875rem !important;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Header Avatar Monogram and Sublines */
-.drawerAvatarMonogram {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--r1);
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-ink) 100%);
-  color: var(--on-accent);
-  font-weight: 800;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: var(--lift);
-}
-
-.drawerSubline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin-top: 1px;
-}
-
-.drawerUmrnBadge {
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
-}
-
-.drawerLegalTag {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-border);
-  color: var(--accent-ink);
-}
-
-.drawerHeaderStatusWrap {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  margin-right: 0.5rem;
-}
-
-.drawerUrgencyText {
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-
-/* 🚀 Hero: Current Movement Card */
-.corridorCard {
-  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 100%);
-  border: 1px solid var(--accent-border);
-  border-radius: var(--r1);
-  padding: 0.625rem 0.75rem;
-  margin: 0 0 0.5rem;
-  box-shadow: var(--lift);
-}
-
-.corridorTitleRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.45rem;
-}
-
-.corridorSectionTitle {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--accent-ink);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.corridorStatusTag {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill, 9999px);
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.tagBlue {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border: 1px solid var(--accent-border);
-}
-
-.tagAmber {
-  background: var(--warn-soft);
-  color: var(--ink);
-  border: 1px solid var(--warn-border);
-}
-
-.tagRed {
-  background: var(--danger-soft);
-  color: var(--ink);
-  border: 1px solid var(--danger-border);
-}
-
-.tagGreen {
-  background: var(--good-soft);
-  color: var(--ink);
-  border: 1px solid var(--good-border);
-}
-
-.statusDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-/* 2-Hub Physical Highway Grid */
-.corridorGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 170px minmax(0, 1fr);
-  gap: 0.625rem;
-  align-items: stretch;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  padding: 0.5rem 0.75rem;
-}
-
-@media (max-width: 640px) {
-  .corridorGrid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-}
-
-.corridorHub {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 0.45rem 0.625rem;
-  min-width: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--lift);
-}
-
-.corridorHubAccepted {
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-border);
-  border-radius: var(--r2);
-  padding: 0.45rem 0.625rem;
-  min-width: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--lift);
-}
-
-.hubRole {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--muted);
-  margin-bottom: 1px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.corridorHubAccepted .hubRole {
-  color: var(--accent-ink);
-}
-
-.hubName {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1.2;
-  margin-top: 1px;
-}
-
 .hubMeta {
   font-size: 0.75rem;
   color: var(--muted);
   margin-top: 1px;
   line-height: 1.25;
-}
-
-.hubFoot {
-  margin-top: auto;
-  padding-top: 4px;
-  border-top: 1px solid var(--line);
-  font-size: 0.75rem;
-  color: var(--muted);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.corridorHubAccepted .hubFoot {
-  border-top-color: var(--accent-border);
-  color: var(--accent-ink);
-}
-
-.corridorWardLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--accent-ink);
-  font-weight: 700;
-  font-size: 0.75rem;
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
-
-.corridorWardLink:hover {
-  text-decoration: underline;
-}
-
-/* Highway Vector (Center Column) */
-.corridorHighway {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 0 4px;
-  min-width: 130px;
 }
 
 .transitBadge {
@@ -1000,185 +587,12 @@
   gap: 0.25rem;
 }
 
-.transitTrack {
-  width: 100%;
-  height: 6px;
-  background: var(--surface-sunk);
-  border-radius: var(--radius-pill, 9999px);
-  position: relative;
-  overflow: hidden;
-  margin: 3px 0;
-}
-
-.transitFill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-ink) 100%);
-  border-radius: var(--radius-pill, 9999px);
-  transition: width 0.4s ease;
-}
-
-.transitVehicle {
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--ink);
-  margin-top: 3px;
-}
-
-.transitEta {
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-
-/* Live Whereabouts Beacon Card */
-.whereaboutsBanner {
-  background: var(--surface);
-  border: 1px solid var(--accent-border);
-  border-radius: var(--r1);
-  padding: 0.45rem 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  margin-top: 0.45rem;
-  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
-}
-
-.whereaboutsIconBox {
-  width: 1.875rem;
-  height: 1.875rem;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: 1px solid var(--accent-border);
-}
-
-.whereaboutsContent {
-  flex: 1;
-  min-width: 0;
-}
-
 .whereaboutsHeading {
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--accent-ink);
   margin-bottom: 1px;
-}
-
-.whereaboutsText {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--ink);
-  line-height: 1.35;
-  margin: 0;
-}
-
-/* Telemetry Deck */
-.telemetryDeck {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-@media (max-width: 640px) {
-  .telemetryDeck {
-    grid-template-columns: 1fr;
-  }
-}
-
-.telemetryBox {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  padding: 0.5rem 0.75rem;
-}
-
-.telemetryTitle {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  margin-bottom: 0.25rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.telemetryItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-  padding: 0.15rem 0;
-  border-bottom: 1px dashed var(--line);
-}
-
-.telemetryItem:last-child {
-  border-bottom: none;
-}
-
-.telemetryLabel {
-  color: var(--muted);
-}
-
-.telemetryMono {
-  font-family: var(--mono);
-}
-
-.textDanger {
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.textGood {
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.textAccent {
-  color: var(--accent-ink);
-  font-weight: 700;
-}
-
-/* Flow Check Banner */
-.flowCheckBanner {
-  border-radius: var(--r1);
-  padding: 0.45rem 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  font-size: 0.75rem;
-  line-height: 1.35;
-  margin-top: 0.5rem;
-}
-
-.flowCheckGood {
-  background: var(--good-soft);
-  border: 1px solid var(--good-border);
-  color: var(--ink);
-}
-
-.flowCheckBlocked {
-  background: var(--warn-soft);
-  border: 1px solid var(--warn-border);
-  color: var(--ink);
-}
-
-/* Action Bar */
-.drawerActionBar {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--line);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
 }
 
 .actionGroupLeft {
@@ -1289,75 +703,6 @@
   color: var(--on-accent);
 }
 
-/* Statutory Accordion */
-.auditAccordion {
-  margin-top: 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  background: var(--surface-2);
-  overflow: hidden;
-}
-
-.auditSummary {
-  padding: 0.4rem 0.75rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-  user-select: none;
-  transition: background 0.15s ease;
-}
-
-.auditSummary:hover {
-  background: var(--surface-sunk);
-  color: var(--ink);
-}
-
-.auditSummaryLabel {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.auditSummaryBadge {
-  font-size: 0.75rem;
-  font-family: var(--mono);
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--line);
-  color: var(--muted);
-}
-
-.auditSummaryChevron {
-  width: 1rem;
-  height: 1rem;
-  color: var(--muted);
-  transition: transform 0.2s ease;
-}
-
-.auditAccordion[open] .auditSummaryChevron {
-  transform: rotate(180deg);
-}
-
-.auditBody {
-  padding: 1rem;
-  border-top: 1px solid var(--line);
-  background: var(--surface);
-}
-
-.syntheticFootnote {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--line);
-  font-size: 0.75rem;
-  color: var(--muted);
-  text-align: center;
-}
-
 /*
  * ⚠️ **THE M6 DRAWER PORTALS, SO THE SHELL'S PRINT RESET CANNOT REACH IT.**
  *
@@ -1429,8 +774,7 @@
 }
 
 .dayPanel,
-.trafficPanel,
-.reconciliationPanel {
+.trafficPanel {
   min-width: 0;
 }
 
@@ -1489,17 +833,6 @@
   color: var(--ink);
 }
 
-.attentionBand {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 0.875rem;
-  padding: 0.625rem 0 0.75rem;
-  border-top: 1px solid var(--line);
-  background: var(--surface);
-}
-
 .attentionHeading {
   display: flex;
   align-items: baseline;
@@ -1511,16 +844,6 @@
   font-size: var(--t-0);
 }
 
-.attentionTitle {
-  margin: 0;
-  color: var(--accent-ink);
-  font-family: var(--display);
-  font-size: var(--t-0);
-  text-transform: uppercase;
-  letter-spacing: 0.085em;
-  font-weight: 600;
-}
-
 .attentionList {
   display: flex;
   min-width: 0;
@@ -1528,56 +851,11 @@
   gap: 0.5rem;
 }
 
-.attentionPill {
-  display: flex;
-  min-width: 0;
-  min-height: 2.25rem;
-  flex: 1 1 18rem;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.625rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  color: var(--ink);
-  background: var(--surface-2);
-  font: inherit;
-  font-size: var(--t-0);
-  cursor: pointer;
-  text-align: left;
-}
-
-.attentionPill strong {
-  font-family: var(--mono);
-  font-size: var(--t-1);
-  font-variant-numeric: tabular-nums;
-}
-
-.attentionPill span:nth-child(2) {
-  flex: 1;
-  color: var(--ink-soft);
-  font-weight: 500;
-  overflow-wrap: anywhere;
-}
-
-.attentionPill span:last-child {
-  font-variant-numeric: tabular-nums;
-  font-family: var(--mono);
-  white-space: nowrap;
-}
-
-.attentionPill span:last-child,
 .attentionEmpty {
   color: var(--muted);
 }
 
-.attentionPill:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.attentionPill:focus-visible,
-.action:focus-visible,
-.detailBtn:focus-visible {
+.action:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
@@ -1593,82 +871,10 @@
   min-height: 19rem;
 }
 
-.trafficMap {
-  display: grid;
-  align-content: center;
-  gap: 0.65rem;
-  min-width: 0;
-  padding: clamp(1rem, 2.4vw, 2rem);
-  background:
-    linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px),
-    var(--sunk);
-  background-size: 2.5rem 2.5rem;
-}
-
-.corridorPath {
-  display: grid;
-  grid-template-columns: minmax(8rem, 1fr) minmax(2rem, 0.3fr) minmax(8rem, 1fr) minmax(7rem, auto);
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.corridorNode {
-  display: flex;
-  min-width: 0;
-  min-height: 4rem;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.15rem;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r1);
-  background: var(--surface);
-  box-shadow: var(--lift);
-}
-
-.corridorNode strong {
-  overflow-wrap: anywhere;
-  font-size: var(--t-1);
-  line-height: 1.3;
-}
-
-.corridorEyebrow {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-
-.corridorLine {
-  height: 2px;
-  background: var(--accent);
-}
-
-.corridorStage {
-  padding: 0.35rem 0.55rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  color: var(--accent-ink);
-  background: var(--surface-2);
-  font-size: var(--t-0);
-  font-weight: 650;
-  line-height: 1.25;
-  text-align: center;
-}
-
 .corridorRail {
   min-width: 0;
   border-left: 1px solid var(--line);
   background: var(--surface);
-}
-
-.corridorRailTitle {
-  margin: 0;
-  padding: 0.85rem 1rem 0.5rem;
-  color: var(--accent-ink);
-  font-family: var(--display);
-  font-size: var(--t-2);
 }
 
 .corridorRanks {
@@ -1727,44 +933,6 @@
   padding-right: 0;
 }
 
-.movementRecord {
-  padding: 0.5rem 0.7rem;
-  margin-bottom: 0.375rem;
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--line-strong);
-  border-radius: var(--r2);
-  color: var(--ink);
-  background: var(--surface);
-  box-shadow: none;
-  scroll-margin-block: 0.5rem;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.movementRecord:last-child {
-  margin-bottom: 0;
-}
-
-.movementRecord[data-tone="danger"] {
-  border-left-color: var(--danger);
-}
-
-.movementRecord[data-revealed="true"] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-}
-
-.movementRecord:hover {
-  border-color: var(--line-strong);
-  box-shadow: var(--lift-sm);
-}
-
-.movementRecord:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-
 .recordHeading {
   display: flex;
   align-items: baseline;
@@ -1778,164 +946,6 @@
   letter-spacing: -0.01em;
 }
 
-.recordPerson {
-  font-size: 0.8125rem;
-  color: var(--ward-text);
-  font-weight: 500;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recordClockWrap {
-  display: flex;
-  align-items: center;
-  margin-inline-start: auto;
-  gap: 0.35rem;
-}
-
-.recordClock {
-  display: flex;
-  align-items: baseline;
-  gap: 0.25rem;
-}
-
-.recordClock strong {
-  font: 600 0.8125rem/1.3 var(--mono, monospace);
-  color: var(--ward-heading);
-}
-
-.recordClock small {
-  color: var(--muted);
-  font-size: var(--t-0, 0.75rem);
-  font-variant-numeric: tabular-nums;
-}
-
-.rowWaitMeter {
-  display: inline-block;
-  width: 3.5rem;
-  height: 0.3125rem;
-  background: var(--ward-divider);
-  border-radius: var(--radius-pill, 9999px);
-  overflow: hidden;
-}
-
-.rowWaitMeter i {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-  border-radius: var(--radius-pill, 9999px);
-}
-
-.recordRoute {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.15rem 0.3rem;
-  margin: 0.15rem 0 0;
-  font-size: 0.75rem;
-  line-height: 1.3;
-}
-
-.recordRoute > span {
-  color: var(--muted);
-}
-
-.recordRoute strong {
-  font-weight: 600;
-  color: var(--ward-heading);
-}
-
-.routeArrow {
-  color: var(--ward-muted);
-  font-size: var(--t-0, 0.75rem);
-  padding: 0 1px;
-}
-
-.recordRouteStatus {
-  color: var(--ward-muted);
-}
-
-.recordTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-  margin-top: 0.25rem;
-}
-
-.recordTag {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 0.4rem;
-  font-size: var(--t-0, 0.75rem);
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--sunk, var(--ward-canvas));
-  border: 1px solid var(--ward-divider);
-  color: var(--ward-text);
-  line-height: 1.45;
-}
-
-.recordTag[data-tone="warn"] {
-  background: var(--ward-warning-soft);
-  border-color: var(--ward-warning);
-  color: var(--ward-warning);
-  font-weight: 500;
-}
-
-.recordTag[data-tone="danger"] {
-  background: var(--ward-danger-soft);
-  border-color: var(--ward-danger);
-  color: var(--ward-danger);
-  font-weight: 600;
-}
-
-.recordTag[data-tone="good"] {
-  background: var(--ward-success-soft);
-  border-color: var(--ward-success);
-  color: var(--ward-success);
-  font-weight: 500;
-}
-
-.recordReason {
-  margin: 0.25rem 0 0;
-  color: var(--ink-soft);
-  font-size: 0.75rem;
-  line-height: 1.3;
-  padding: 0.15rem 0.45rem;
-  background: transparent;
-  border-radius: 0;
-  border-left: 2px solid var(--ward-warning);
-}
-
-.recordReasonLabel {
-  font-weight: 600;
-  color: var(--ward-heading);
-}
-
-.recordFooter {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.3rem 0.5rem;
-  margin-top: 0.3rem;
-  padding-top: 0.3rem;
-  border-top: 1px solid var(--ward-divider);
-}
-
-.recordOwner {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0, 0.75rem);
-  line-height: 1.35;
-}
-
-.recordOwner span {
-  color: var(--ink-soft);
-}
-
 .recordActions {
   display: flex;
   align-items: center;
@@ -1943,8 +953,7 @@
   gap: 0.375rem;
 }
 
-.recordActions .action,
-.recordActions .detailBtn {
+.recordActions .action {
   min-height: 1.875rem;
   padding: 0.2rem 0.625rem;
   font-size: var(--t-0, 0.75rem);
@@ -1966,18 +975,6 @@
   border-color: var(--accent);
   background: var(--accent);
   color: var(--ward-canvas);
-}
-
-.recordActions .detailBtn {
-  color: var(--ward-text);
-  border: 1px solid var(--ward-divider);
-  background: var(--surface);
-  cursor: pointer;
-}
-
-.recordActions .detailBtn:hover {
-  border-color: var(--ward-border-strong);
-  background: var(--ward-subtle);
 }
 
 .stageSummary {
@@ -2079,65 +1076,6 @@
 .stageFollowUp button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-}
-
-/*
- * "Who is being carried" — a summary list, deliberately NOT `WardRecordRow`/`record-row`. It
- * states the same transport-leg facts `TransportRow` does, in one line, and jumps to the
- * movement's existing row (`jumpToMovement`) rather than mounting a second copy of it — see this
- * panel's own comment at its call site in `movements-screen.tsx`.
- */
-.carryingSummary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.carryingSummaryRow {
-  display: grid;
-  width: 100%;
-  grid-template-columns: minmax(0, 5rem) minmax(0, 6rem) minmax(0, 1fr);
-  align-items: center;
-  gap: 0.25rem 0.75rem;
-  min-height: var(--ward-tap);
-  padding: 0.5rem 0.625rem;
-  border: 0;
-  border-radius: var(--r2);
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  font-size: var(--t-1);
-  text-align: left;
-  cursor: pointer;
-}
-.carryingSummaryRow:hover {
-  background: var(--accent-soft);
-}
-.carryingSummaryRow:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.carryingSummaryId {
-  font-family: var(--mono);
-  font-weight: 600;
-}
-.carryingSummaryState {
-  color: var(--muted);
-}
-.carryingSummaryState[data-tone="good"] {
-  color: var(--ink);
-}
-.carryingSummaryState[data-tone="danger"] {
-  color: var(--ink);
-}
-.carryingSummaryMeta {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: var(--t-0);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .foot,
@@ -2386,10 +1324,6 @@
   background: var(--accent-ink);
 }
 
-.detailBtn {
-  border-radius: var(--r2);
-}
-
 .reconciliation {
   margin: 0;
   padding: 1rem;
@@ -2497,47 +1431,15 @@
     border-top: 1px solid var(--line);
   }
 
-  .attentionBand {
-    grid-template-columns: 1fr;
-  }
-
   .attentionList {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
   }
-
-  .attentionPill {
-    justify-content: flex-start;
-    min-height: var(--ward-tap);
-    flex-wrap: wrap;
-  }
-  .attentionPill span:last-child {
-    margin-inline-start: auto;
-  }
-  .recordClock {
-    flex-basis: 100%;
-    margin-inline-start: 0;
-  }
   .recordActions .action,
-  .recordActions .detailBtn,
   .stageSummaryLink,
   .stageFollowUp button,
   .sideViewToggle button {
     min-height: var(--ward-tap);
-  }
-
-  .corridorPath {
-    grid-template-columns: minmax(0, 1fr) 1.5rem minmax(0, 1fr);
-  }
-
-  .corridorStage {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
-
-  .trafficMap {
-    padding: 0.85rem;
-    overflow: visible;
   }
 
   .secondary {
@@ -2600,8 +1502,8 @@
   }
 }
 
-/* The worklist and the combined transport / shape panel share one bottom edge. */
-@media screen and (min-width: 1101px) {
+/* Match movement-flow's two-column boundary. A stacked transport card stays in normal flow. */
+@media screen and (width > 85rem) {
   .columns {
     min-height: 54rem;
     height: var(--ward-workspace-height, clamp(54rem, calc(100dvh - 5rem), 68rem));
@@ -2618,11 +1520,12 @@
     display: grid;
     grid-template-rows: minmax(0, 1fr);
     position: sticky;
-    top: 1rem;
+    top: var(--ward-sticky-top);
     align-self: start;
-    height: 100%;
+    /* The footer also has its own 12px margin inside this page's flex gap. */
+    height: min(100%, calc(var(--ward-rail-height) - var(--wf-s-3)));
     min-height: 0;
-    max-height: none;
+    max-height: calc(var(--ward-rail-height) - var(--wf-s-3));
     overflow: hidden;
   }
 
@@ -2642,6 +1545,7 @@
   }
 
   .movementListBody,
+  .transportRunsFeed,
   .shapeBody {
     flex: 1 1 0;
     min-height: 0;
@@ -2650,13 +1554,15 @@
     overscroll-behavior: contain;
   }
 
+  .transportRunsFeed > * {
+    flex-shrink: 0;
+  }
+
   .boardTabs,
   .orderBar,
-  .mvSeg,
   .shapeTabs,
   .sideViewToggle,
   .transportBarWrap,
-  .transportFilterBar,
   .secondary > [data-ward-primitive="panel"] > [data-ward-primitive="panel-header"] {
     flex-shrink: 0;
   }
@@ -2672,59 +1578,6 @@
   line-height: 1.45;
   color: var(--accent-ink);
   margin: 0;
-}
-
-.mvSeg {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
-}
-
-.mvSegBtn,
-.mvSegActive {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-height: 2.25rem;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  color: var(--ink-soft);
-  background: var(--surface);
-  font: inherit;
-  font-size: var(--t-0);
-  cursor: pointer;
-  transition:
-    background 0.12s,
-    border-color 0.12s,
-    color 0.12s;
-}
-
-.mvSegBtn:hover {
-  background: var(--sunk);
-  color: var(--ink);
-}
-
-.mvSegActive {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 600;
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
-
-.mvSegCount {
-  font-family: var(--mono);
-  font-size: var(--t-0, 0.75rem);
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-
-.mvSegActive .mvSegCount {
-  color: var(--accent-ink);
 }
 
 /* Group headings for Cause mode */
@@ -2783,97 +1636,6 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--ink-soft);
-}
-
-/* Rich Record Cards */
-.recordPerson {
-  font-size: var(--t-1);
-  color: var(--ink-soft);
-  font-weight: 500;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recordRouteStatus {
-  color: var(--muted);
-  font-style: normal;
-}
-
-.recordTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-  margin: 0.2rem 0 0;
-}
-
-.recordTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0 0.4rem;
-  border-radius: var(--radius-pill, 9999px);
-  font-family: var(--mono);
-  font-size: var(--t-0, 0.75rem);
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  line-height: 1.45;
-  color: var(--muted);
-  background: var(--sunk);
-  box-shadow: inset 0 0 0 1px var(--line);
-  white-space: nowrap;
-}
-
-.recordTag[data-tone="danger"] {
-  color: var(--ink);
-  background: var(--danger-soft);
-  box-shadow: inset 0 0 0 1px var(--danger);
-  font-weight: 600;
-}
-
-.recordTag[data-tone="warn"] {
-  color: var(--ink);
-  background: var(--warn-soft);
-  box-shadow: inset 0 0 0 1px var(--warn);
-  font-weight: 600;
-}
-
-.recordTag[data-tone="good"] {
-  color: var(--ink);
-  background: var(--good-soft);
-  box-shadow: inset 0 0 0 1px var(--good);
-}
-
-.recordEscalation {
-  margin: 0.15rem 0 0;
-  font-size: var(--t-0);
-  color: var(--ink-soft);
-  line-height: 1.3;
-}
-
-.recordEscalation strong {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.rowWaitMeter {
-  display: block;
-  width: 2.75rem;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--ward-divider, var(--line));
-  overflow: hidden;
-  margin: 0;
-}
-
-.rowWaitMeter i {
-  display: block;
-  height: 100%;
-  border-radius: 2px;
-  background: var(--accent);
-  transition: width 0.2s ease;
 }
 
 /* ═══════════════════════════════════════════════════════ SHAPE PANEL DIVIDER & LEFT THE PATHWAY */
@@ -2945,6 +1707,7 @@
 }
 
 .movementListBody:focus-visible,
+.transportRunsFeed:focus-visible,
 .shapeBody:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -3px;
@@ -2974,67 +1737,6 @@
   padding: var(--ward-space-16) var(--ward-space-16) var(--ward-space-24);
   margin-top: var(--ward-space-16);
   border-top: 1px solid var(--ward-divider);
-}
-
-.jumpToWardBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-left: 0.35rem;
-  padding: 0.125rem 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  background: var(--surface-2);
-  color: var(--ink);
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1.3;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.jumpToWardBtn:hover {
-  background: color-mix(in srgb, var(--surface-2) 80%, var(--ink) 20%);
-  border-color: var(--line-strong, var(--line));
-  color: var(--ink);
-}
-
-.jumpIcon {
-  display: inline-block;
-  vertical-align: middle;
-  flex-shrink: 0;
-  stroke: currentColor;
-}
-
-.jumpToWardLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-left: 0.375rem;
-  padding: 0.125rem 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  background: var(--surface-2);
-  color: var(--ink);
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1.3;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.jumpToWardLink:hover {
-  background: color-mix(in srgb, var(--surface-2) 80%, var(--ink) 20%);
-  border-color: var(--line-strong, var(--line));
-  color: var(--ink);
 }
 
 .ph,
@@ -3261,180 +1963,6 @@
 
 /* ---------- v6 Movements: worklist rows ---------- */
 
-.wlRow {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-1);
-  min-width: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  list-style: none;
-}
-
-.wlRow:hover {
-  background: var(--wf-hover);
-}
-
-/* A revealed row is the selected row: the one stripe allowed. */
-.wlRow[data-revealed="true"],
-.wlRow:focus-visible {
-  background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-pri-1);
-  outline: none;
-}
-
-.wlLine {
-  display: grid;
-  grid-template-columns: var(--wl-cols, auto minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.4fr) auto);
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-width: 0;
-}
-
-.wlCell {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.wlName,
-.wlStrong {
-  overflow: hidden;
-  font-weight: 600;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.wlStrong {
-  font-weight: 500;
-}
-
-.wlSub {
-  overflow: hidden;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.wlBarrier {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  min-width: 0;
-  font-weight: 500;
-}
-
-.wlEllipsis {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.wlWait {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  min-width: 5.5rem;
-  white-space: nowrap;
-}
-
-.wlWord {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.wlMeter {
-  display: block;
-  width: 4rem;
-  height: 3px;
-  overflow: hidden;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-track);
-}
-
-.wlMeter > i {
-  display: block;
-  height: 100%;
-  background: var(--wf-data-2);
-}
-
-.wlMeta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  min-width: 0;
-  padding-left: calc(var(--wf-h-chip) + var(--wf-s-3));
-}
-
-.wlTags {
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.wlTag {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  white-space: nowrap;
-}
-
-.wlTagText {
-  overflow: hidden;
-  color: var(--wf-ink-3);
-  text-overflow: ellipsis;
-}
-
-.wlActions {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--wf-s-2);
-}
-
-.wlLink {
-  color: var(--wf-accent-ink);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.wlLink:hover {
-  text-decoration: underline;
-}
-
-@media (max-width: 48rem) {
-  .wlLine {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-
-  .wlLine > .wlCell:nth-of-type(n + 2) {
-    grid-column: 2 / -1;
-  }
-
-  .wlMeta {
-    flex-direction: column;
-    align-items: flex-start;
-    padding-left: 0;
-  }
-}
-
 /* Phone (8 Oct 2026): a simplified Movements screen. The day band keeps three figures, then Needs
  * you and the open moves list. The 48 hour timeline (scrubber, Compact and Roomy view, corridors)
  * the transport side panel and each row's Bed Board link stay on the larger screen. Each worklist row becomes a compact
@@ -3505,120 +2033,10 @@
     flex: 0 0 auto;
     min-height: 44px;
   }
-
-  .wlRow {
-    gap: var(--wf-s-2);
-    padding: var(--wf-s-3) var(--wf-s-3);
-  }
-
-  .wlLine {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    column-gap: var(--wf-s-3);
-    row-gap: 2px;
-    align-items: start;
-  }
-
-  .wlLine > :first-child {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .wlLine > :nth-child(2) {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .wlLine > :nth-child(3),
-  .wlLine > :nth-child(4) {
-    grid-column: 2 / -1;
-  }
-
-  .wlLine > :nth-child(3) {
-    flex-direction: row;
-    align-items: baseline;
-    gap: var(--wf-s-2);
-  }
-
-  .wlLine > :nth-child(3) {
-    grid-row: 2;
-  }
-
-  .wlLine > :nth-child(4) {
-    grid-row: 3;
-  }
-
-  .wlLine > :nth-child(3) > * {
-    flex: 0 1 auto;
-    min-width: 0;
-  }
-
-  .wlLine > :nth-child(3) > :first-child {
-    flex: 0 0 auto;
-    max-width: 60%;
-  }
-
-  .wlWait {
-    grid-column: 3;
-    grid-row: 1;
-    min-width: 0;
-  }
-
-  .wlMeter {
-    display: none;
-  }
-
-  .wlMeta {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--wf-s-2);
-    padding-left: 0;
-  }
-
-  .wlTags {
-    flex-wrap: wrap;
-    row-gap: 2px;
-    padding-left: calc(var(--wf-h-chip) + var(--wf-s-3));
-  }
-
-  .wlTag,
-  .wlTagText {
-    max-width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  /* The two record actions share one row; the Bed Board link stays on the larger screen. */
-  .wlActions {
-    justify-content: flex-end;
-    gap: var(--wf-s-2);
-  }
-
-  .wlActions > * {
-    flex: 0 0 auto;
-    min-height: 44px;
-  }
-
-  .wlActions > .wlLink {
-    display: none;
-  }
 }
 
 /* Phone: the drawer head keeps the name and identity readable. Its stage tag repeats the Current
  * movement card's tag just below, so on phone only the urgency line stays beside the close button. */
-@media (max-width: 48rem) {
-  .drawerHeaderStatusWrap > .corridorStatusTag {
-    display: none;
-  }
-
-  .drawerHeaderStatusWrap {
-    margin-right: 0;
-  }
-
-  .drawerUrgencyText {
-    white-space: nowrap;
-  }
-}
 
 /* Phone polish (8 Oct 2026, second pass): 12px side gutters, the Live chip in the hero's top
  * corner, round tier markers, the Arrange options as one segmented row, and worklist rows trimmed
@@ -3635,8 +2053,7 @@
     line-height: var(--wf-lh-13);
   }
 
-  .needsYouItem > :first-child,
-  .wlLine > :first-child > * {
+  .needsYouItem > :first-child {
     border-radius: var(--wf-r-pill);
   }
 
@@ -3665,30 +2082,171 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+}
 
-  .wlSearch {
-    flex: 1 1 100%;
+/* Phone (v10 mockup, 11 Oct 2026): the worklist loses its outer card. The Open / Resolved tabs and
+ * the Arrange options become full-width pill segments, search is a pill, and each stage group is its
+ * own card with an uppercase head. Desktop and tablet are unchanged: everything sits under 48rem. */
+@media (max-width: 48rem) {
+  .wlCard.wlCard {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
-  .wlRow {
-    gap: var(--wf-s-1);
+  .wlCard > :first-child {
+    padding: 0;
+    border: 0;
   }
 
-  .wlTags {
-    flex-wrap: nowrap;
-    overflow: hidden;
-  }
-
-  .wlTag {
-    flex: 0 1 auto;
-    min-width: 0;
-  }
-
-  .wlTagText {
+  .wlCard > :first-child > :not(:last-child) {
     display: none;
   }
 
-  .wlMeta {
-    gap: var(--wf-s-1);
+  .wlCard > :first-child > :last-child {
+    flex: 1 1 100%;
+    margin: 0;
+  }
+
+  .boardTabs.boardTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    padding: var(--wf-s-1);
+    border-radius: var(--wf-r-pill);
+  }
+
+  .boardTabs > .boardTab,
+  .orderBar > .orderBtn {
+    justify-content: center;
+    height: auto;
+    min-height: 2.5rem;
+    border-radius: var(--wf-r-pill);
+    font-size: var(--wf-fs-13);
+  }
+
+  .orderBar.orderBar {
+    width: 100%;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .movementListBody.movementListBody {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .stageBlock.stageBlock {
+    margin: 0 0 var(--wf-s-3);
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .movementListBody .stageBlock > [data-ward-primitive="group-heading"] {
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+    background: var(--wf-surface-2);
+    text-transform: uppercase;
+  }
+
+  .wlFoot.wlFoot {
+    justify-content: center;
+    border-top: 0;
+  }
+}
+
+@media (max-width: 48rem) {
+  /* Needs you head on one line: the uppercase label left, "3 of 18 Tier 1" right. */
+  .needsYouHead.needsYouHead {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-2) var(--wf-s-4);
+    background: var(--wf-surface-2);
+  }
+
+  .needsYouTitle.needsYouTitle {
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .needsYouMeta {
+    white-space: nowrap;
+  }
+}
+
+/* v10 phone: the "Arrange" label sits left of the order track, outside it. */
+@media (max-width: 48rem) {
+  .orderBar.orderBar {
+    position: relative;
+    width: auto;
+    margin-left: 4.75rem;
+  }
+
+  .orderBar.orderBar > .orderBtn {
+    padding: 0 4px;
+    font-size: var(--wf-fs-12);
+  }
+
+  .orderBar > .orderLegend {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: -4.75rem;
+    transform: translateY(-50%);
+  }
+}
+
+/* Phone compact controls (Josh, 12 Oct 2026). The Open / Resolved tabs and the Arrange options take
+ * the one shared phone size (`--wf-phone-*` in the v6 tokens): a 34px track with 28px options, 13px
+ * 600 labels and 12px mono counts. Each option's transparent hit area reaches the 48px tap floor.
+ * The Open / Resolved switch pins under the phone header while the list scrolls, through the shared
+ * pinned switch class, as Home's queue switch does. Desktop and tablet are unchanged: everything here sits under 48rem. */
+@media (max-width: 48rem) {
+  /* The head pins through the shared `pinnedSwitch` (ward-pinned-switch.module.css); this sets its band. */
+  .wlCard > :first-child {
+    padding: var(--wf-s-2) 0;
+  }
+
+  .boardTabs.boardTabs,
+  .orderBar.orderBar {
+    padding: 2px;
+  }
+
+  .boardTabs.boardTabs > .boardTab,
+  .orderBar.orderBar > .orderBtn {
+    position: relative;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .boardTabs.boardTabs > .boardTab {
+    padding: 0 var(--wf-phone-pill-px);
+  }
+
+  /* Three options share the track beside the Arrange label, so they keep the 4px side padding; the
+   * label inside still ellipsises. The button itself must not clip, or it clips its hit area. */
+  .orderBar.orderBar > .orderBtn {
+    overflow: visible;
+  }
+
+  .boardTabs.boardTabs > .boardTab::after,
+  .orderBar.orderBar > .orderBtn::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
+  }
+
+  .boardTabCount {
+    font-size: var(--wf-phone-pill-count-fs);
   }
 }

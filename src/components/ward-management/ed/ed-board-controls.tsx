@@ -14,7 +14,7 @@ import {
   type ButtonHTMLAttributes,
   type RefObject,
 } from "react";
-import { ChevronDown, Pencil, X } from "lucide-react";
+import { ChevronDown, Pencil, X, MoreHorizontal } from "lucide-react";
 import styles from "./ed-board-controls.module.css";
 
 type AnchorProps = {
@@ -63,14 +63,24 @@ export function EdPopover({
     element
       .querySelector<HTMLElement>(listbox ? '[aria-selected="true"], button' : menu ? "button" : "input, button")
       ?.focus({ preventScroll: true });
-    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(position);
+    let frame = 0;
+    const schedule = () => {
+      if (!frame) {
+        frame = window.requestAnimationFrame(() => {
+          frame = 0;
+          position();
+        });
+      }
+    };
+    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(schedule);
     observer?.observe(element);
-    window.addEventListener("resize", position);
-    window.addEventListener("scroll", position, true);
+    window.addEventListener("resize", schedule);
+    window.addEventListener("scroll", schedule, { passive: true, capture: true });
     return () => {
       observer?.disconnect();
-      window.removeEventListener("resize", position);
-      window.removeEventListener("scroll", position, true);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("scroll", schedule, true);
+      if (frame) window.cancelAnimationFrame(frame);
       if (typeof element.hidePopover === "function") element.hidePopover();
       else element.style.display = "none";
     };
@@ -447,6 +457,7 @@ export function EdActionsMenu({
   onViewRecord,
   onEditPresentation,
   onEditPlan,
+  compact = false,
 }: {
   patientName: string;
   children: ReactNode;
@@ -455,6 +466,8 @@ export function EdActionsMenu({
   onViewRecord: () => void;
   onEditPresentation: () => void;
   onEditPlan: () => void;
+  /** A small icon trigger beside a board row's one Next button. */
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>();
@@ -490,13 +503,21 @@ export function EdActionsMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={`Actions for ${patientName}`}
+        data-compact={compact ? "true" : undefined}
+        title={compact ? "More actions" : undefined}
         onClick={() => {
           if (open) close();
           else setOpen(true);
         }}
       >
-        Actions
-        <ChevronDown aria-hidden="true" />
+        {compact ? (
+          <MoreHorizontal aria-hidden="true" />
+        ) : (
+          <>
+            Actions
+            <ChevronDown aria-hidden="true" />
+          </>
+        )}
       </button>
       <EdPopover
         open={open}

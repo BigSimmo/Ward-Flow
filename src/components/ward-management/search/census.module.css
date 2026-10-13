@@ -370,6 +370,19 @@
   }
 }
 
+/* Tablet portrait: five pills beside the search ran off the right edge ("20 No..."), so they take
+   their own row under it (device audit 11 Oct 2026). */
+@container patient-search (max-width: 56rem) {
+  .heroBar {
+    flex-wrap: wrap;
+  }
+
+  .mapPills {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+}
+
 @container patient-search (min-width: 56rem) {
   .layout {
     grid-template-columns: minmax(0, 1fr) 300px;
@@ -463,11 +476,21 @@ table.censusTable {
 }
 
 .colWho {
-  width: 24%;
+  width: 21%;
 }
 
 .colTime {
   width: 100px;
+}
+
+/* Device audit 11 Oct 2026: Next step is the column a nurse reads, so it takes the spare width
+   that Where now had; Heading to stays narrower. */
+.colWhere {
+  width: 12%;
+}
+
+.colNext {
+  width: 18%;
 }
 
 .censusTable thead th {
@@ -1101,6 +1124,12 @@ table.censusTable {
   white-space: nowrap;
 }
 
+/* A group with no match in the running search dims (it is still there to press). */
+.phoneGroupZero b,
+.phoneGroupZero span {
+  color: var(--wf-ink-3);
+}
+
 .phoneGroup[aria-checked="true"] {
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
@@ -1115,33 +1144,6 @@ table.censusTable {
 .phoneTools {
   display: flex;
   gap: var(--wf-s-2);
-}
-
-.phoneTool {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 48px;
-  padding: 0 16px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-14) / 1 var(--wf-font);
-  cursor: pointer;
-}
-
-.phoneToolOn {
-  border-color: var(--wf-accent);
-  box-shadow: inset 0 0 0 1px var(--wf-accent);
-  font-weight: 600;
-}
-
-.phoneToolDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wf-accent);
 }
 
 .phoneList {
@@ -1191,41 +1193,11 @@ table.censusTable {
   outline-offset: -2px;
 }
 
-.phoneAvatar {
-  display: inline-flex;
-  grid-row: 1 / span 2;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--wf-surface-2);
-  border: 1px solid var(--wf-line-2);
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-}
-
 .phoneTime {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
-}
-
-.phoneLine {
-  display: flex;
-  grid-column: 2 / span 2;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-13);
-  white-space: nowrap;
-}
-
-.phoneLine > svg,
-.phoneLine > span:not(.truncate) {
-  flex: none;
 }
 
 .phoneMore {
@@ -1251,56 +1223,6 @@ table.censusTable {
   padding: 8px 12px;
   background: var(--wf-surface);
   font-size: var(--wf-fs-13);
-}
-
-.phoneActions {
-  display: flex;
-  gap: var(--wf-s-2);
-}
-
-.phoneActions .tap,
-.phoneActions > button {
-  min-height: 48px;
-}
-
-.sheetList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.sheetOption {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 52px;
-  padding: 0 4px;
-  border: 0;
-  border-bottom: 1px solid var(--wf-line);
-  background: transparent;
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-16) / 1 var(--wf-font);
-  text-align: left;
-  cursor: pointer;
-}
-
-.sheetOption[aria-pressed="true"] {
-  font-weight: 600;
-}
-
-.sheetOption[aria-pressed="true"]::after {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wf-accent);
-}
-
-.glyphSpace {
-  display: inline-block;
-  width: 10px;
 }
 
 .sheetFoot {
@@ -1355,4 +1277,374 @@ table.censusTable {
   width: 100%;
   height: max(100%, var(--ward-tap, var(--spacing-tap, 3rem)));
   transform: translateY(-50%);
+}
+
+/* ───── phone v10 (11 Oct 2026): rendered only by the phone census, its hero foot and Commands ───── */
+
+/* The field is 48px on phone, as drawn; the input, DOB and Clear inside it keep 48px each. */
+.searchFormPhone > div > div:first-of-type {
+  min-height: 48px;
+  height: 48px;
+  padding: 0 0 0 16px;
+}
+
+.phoneHeroFoot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  width: 100%;
+}
+
+.phoneHeroActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--wf-s-2);
+}
+
+.phoneHeroActions > a,
+.phoneHeroActions > button {
+  width: 100%;
+  min-height: 48px;
+  justify-content: center;
+  border-radius: var(--wf-r-pill);
+  white-space: nowrap;
+}
+
+.phoneChips {
+  display: flex;
+  gap: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: 2px var(--wf-s-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.phoneChips::-webkit-scrollbar {
+  display: none;
+}
+
+.phoneChip.phoneChip {
+  flex: none;
+  gap: 6px;
+  min-height: var(--spacing-tap, 3rem);
+  white-space: nowrap;
+}
+
+/* The glyph, the words and the count each keep 6px between them (the label is its own box). */
+.phoneChip.phoneChip > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.phoneChip.phoneChip[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+.phoneChipCount {
+  margin-left: 0;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-mono);
+}
+
+.phoneSeg {
+  position: sticky;
+  top: var(--wf-header-height, 3.5rem);
+  z-index: 3;
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-canvas);
+}
+
+.phone > .phoneList {
+  border-radius: 16px;
+  box-shadow: var(--wf-e1);
+}
+
+.phoneGroupBlock + .phoneGroupBlock {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneGroupHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.phoneGroupCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  letter-spacing: 0;
+}
+
+.phoneRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneRows > .phoneRow + .phoneRow {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* A highlighted row is marked by its ring, never by a tinted fill. */
+.phoneRowLit {
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+}
+
+.phoneRows .phoneRowButton {
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  grid-template-rows: auto;
+  align-items: start;
+  min-height: 72px;
+  padding: 10px var(--wf-s-3);
+}
+
+.phoneTier {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+  padding-top: 8px;
+}
+
+.phoneText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font: 600 var(--wf-fs-15) / 20px var(--wf-font);
+}
+
+.phoneMeta {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneEnd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding-top: 2px;
+}
+
+.phoneRows .phoneTime {
+  font: 700 var(--wf-fs-14) / 1 var(--wf-mono);
+  white-space: nowrap;
+}
+
+.phoneTimeWord {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.phoneShowAll,
+.phoneOffMore {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-14) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.phoneOffMore {
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+}
+
+.phoneShowAll:focus-visible,
+.phoneOffMore:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.phoneSheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.phoneSheetMeta {
+  color: var(--wf-ink-2);
+}
+
+.phoneSheetList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.phoneSheetList > div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: var(--wf-s-2);
+}
+
+.phoneSheetList dt {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+.phoneSheetList dd {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 500;
+}
+
+.phoneSheetNote {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.cmdBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.cmdFilter {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 48px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}
+
+.cmdFilter input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 46px;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-16) / 1 var(--wf-font);
+  outline: none;
+}
+
+.cmdFilter:focus-within {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.cmdGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cmdHead {
+  margin: 0;
+  padding: 0 4px;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cmdList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cmdItem {
+  display: flex;
+  gap: var(--wf-s-3);
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cmdItem > svg {
+  flex: none;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  border: 1px solid var(--wf-line);
+  border-radius: 50%;
+  background: var(--wf-surface);
+}
+
+.cmdItem:hover,
+.cmdItem:focus-visible {
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface);
+}
+
+.cmdItem:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.cmdLabel {
+  flex: none;
+  max-width: 60%;
+  overflow: hidden;
+  font: 500 var(--wf-fs-14) / 20px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdHint {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

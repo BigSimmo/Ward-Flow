@@ -276,7 +276,30 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const card = screen.getByTestId("ward-shortlist-transit-card");
       expect(card).toBeInTheDocument();
-      expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent("4h countdown active (4h hold)");
+      expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent(
+        "4h pull, end time not recorded",
+      );
+      // Audit A1-4: no arrival mode is invented when nothing is booked.
+      expect(screen.getByTestId("ward-shortlist-transit-mode")).toHaveTextContent("Not booked");
+    });
+
+    it("says a lapsed hold has expired, never that its countdown is active (A1-4)", () => {
+      render(
+        React.createElement(ShortlistPanel, {
+          movement: { ...movementPulled, pullExpiresAt: NOW - 10 },
+          now: NOW,
+          units: allUnits(),
+          bedReleases: [],
+          leaveBeds: [],
+          admissions: [],
+          referrals: [],
+          selectedUnitId: undefined,
+          onSelectUnit: () => {},
+          dispatch: () => {},
+          parallelReferralCap: 3,
+        }),
+      );
+      expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent("Pull expired 10m ago");
     });
   });
 
@@ -286,7 +309,9 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const badge = screen.getByTestId(`ward-ed-transit-badge-${movementPulled.id}`);
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent(/4h hold clock active/i);
+      // Audit A4-4: the one bed-hold rule; with no hold end recorded it states the configured length only.
+      expect(badge).toHaveTextContent(/Pulled · 4h pull/i);
+      expect(badge).not.toHaveTextContent(/clock active/i);
     });
 
     it("renders transit badge with active ETA and arrival mode when arrivalDetails present", () => {

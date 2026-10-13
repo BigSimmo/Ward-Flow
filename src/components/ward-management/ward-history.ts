@@ -189,6 +189,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   UNDO_HANDOVER_SIGN_OFF: { category: "neither", plainWording: "Handover sign-off undone" },
   UNDO_ED_STEP: { category: "patient", plainWording: "Emergency department step undone" },
   UNDO_TRANSPORT_STEP: { category: "both", plainWording: "Transport step undone" },
+  UNDO_DEPARTURE: { category: "neither", plainWording: "Departure undone" },
+  UNDO_ABSENT_WITHOUT_LEAVE: { category: "patient", plainWording: "Absent without leave record undone" },
 
   // 2.9 World and admin
   ADVANCE_CLOCK: { category: "neither", plainWording: "Operational demonstration clock advanced" },
@@ -196,6 +198,30 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   SET_SCENARIO: { category: "neither", plainWording: "Demonstration scenario selected" },
   SET_CONFIGURATION: { category: "neither", plainWording: "Operational configuration parameters updated" },
 };
+
+/**
+ * Josh, 13 Oct 2026 (A4-16): the transport officer's Delivered is raised as `PATIENT_ARRIVED` with
+ * role `officer`, but the reducer then only records `transport.arrivedAt` and leaves the movement
+ * open; the receiving ward confirms the arrival later. So an officer-raised `PATIENT_ARRIVED` is
+ * worded as a delivery, never as the patient's arrival.
+ */
+export function isTransportDelivery(type: string, role: string | null | undefined): boolean {
+  return type === "PATIENT_ARRIVED" && role === "officer";
+}
+
+export function transportDeliveredWording(wardName?: string): string {
+  return `Transport delivered to ${wardName && wardName.length > 0 ? wardName : "the receiving ward"}`;
+}
+
+/** The plain history wording for an event, with the officer's delivery told apart from arrival. */
+export function eventHistoryWording(
+  type: string,
+  role: string | null | undefined,
+  wardName?: string,
+): string | undefined {
+  if (isTransportDelivery(type, role)) return transportDeliveredWording(wardName);
+  return EVENT_HISTORY_TABLE[type as WardFlowEvent["type"]]?.plainWording;
+}
 
 /**
  * Helper to extract any recorded reason string from an event.
@@ -219,8 +245,7 @@ function extractEventReason(event: WardFlowEvent): string {
  * Follows the role-not-person rule and shows "Not recorded" for missing facts.
  */
 export function buildHistoryEntry(event: WardFlowEvent, now: Instant): WardHistoryEntry {
-  const config = EVENT_HISTORY_TABLE[event.type];
-  const summary = config ? config.plainWording : event.type;
+  const summary = eventHistoryWording(event.type, event.role) ?? event.type;
 
   const time =
     event.now !== undefined && typeof event.now === "number" && Number.isFinite(event.now)

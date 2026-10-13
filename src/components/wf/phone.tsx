@@ -23,7 +23,9 @@ import {
   updateSheetRoot,
   type SheetFocusController,
 } from "@/components/ui/sheet-focus";
+import { useWfBandBleed } from "./band";
 import { Button } from "./button";
+import { useIsPhone } from "./use-is-phone";
 import { cx, present } from "./cx";
 import type { DialogAction } from "./dialog";
 import { Icon } from "./icon";
@@ -64,6 +66,11 @@ export type PhoneSheetProps = {
   returnFocusRef?: RefObject<HTMLElement | null>;
   /** `content` sizes to its body (up to the top safe area). `tall` opens near full height. */
   height?: "content" | "tall";
+  /**
+   * Where the sheet docks. "bottom" (the default) is the phone sheet. "right" is the tablet
+   * slide-over: full height against the right edge, the same header, body and footer.
+   */
+  placement?: "bottom" | "right";
   className?: string;
   "data-testid"?: string;
 };
@@ -104,6 +111,7 @@ export function PhoneSheet({
   initialFocusRef,
   returnFocusRef,
   height = "content",
+  placement = "bottom",
   className,
   ...data
 }: PhoneSheetProps) {
@@ -241,6 +249,7 @@ export function PhoneSheet({
       <div
         ref={setScrimRef}
         className={styles.sheetScrim}
+        data-placement={placement === "right" ? "right" : undefined}
         onPointerDown={(event) => {
           scrimPressRef.current = event.target === event.currentTarget;
         }}
@@ -258,6 +267,7 @@ export function PhoneSheet({
           aria-describedby={present(description) ? descId : undefined}
           tabIndex={-1}
           data-height={height}
+          data-placement={placement === "right" ? "right" : undefined}
           className={cx(styles.sheet, !hasFooter && styles.sheetNoFooter, className)}
           {...data}
         >
@@ -301,8 +311,9 @@ export function PhoneSheet({
             <div className={styles.sheetFooter} data-phone-sheet-footer="">
               {secondary ? (
                 <Button
-                  variant="ghost"
+                  variant="sec"
                   size="lg"
+                  className={styles.sheetSecondary}
                   loading={secondary.loading}
                   disabledReason={secondary.disabledReason}
                   reasonDisplay="tooltip"
@@ -566,6 +577,8 @@ export type PhoneHeroFigure = {
 export type PhoneHeroProps = {
   /** One quiet line above the title ("Statewide · Day shift"). */
   eyebrow?: ReactNode;
+  /** A chip at the right end of the eyebrow line: a LiveChip, "Frozen" or "Demo profile". */
+  chip?: ReactNode;
   /** The answer, five words at most ("2 need you now"). */
   title: ReactNode;
   /** One quiet line under the title. */
@@ -590,6 +603,7 @@ export const PHONE_HERO_FIGURE_LIMIT = 3;
  */
 export function PhoneHero({
   eyebrow,
+  chip,
   title,
   sub,
   figures,
@@ -601,10 +615,26 @@ export function PhoneHero({
   const titleId = useId();
   const Heading = `h${level}` as ElementType;
   const shown = (figures ?? []).slice(0, PHONE_HERO_FIGURE_LIMIT);
+  // v10 phone mockup: a page that opens on this hero gets the band, as the shared Hero does; the
+  // lean bar joins it at rest. Phone only, so a desktop render keeps its inset card.
+  const sectionRef = useRef<HTMLElement>(null);
+  const isPhone = useIsPhone();
+  useWfBandBleed(sectionRef, isPhone);
   return (
-    <section className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
+    <section ref={sectionRef} className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
       <div className={styles.heroTitleBlock}>
-        {present(eyebrow) ? (
+        {present(chip) ? (
+          <div className={styles.heroEyebrowRow}>
+            {present(eyebrow) ? (
+              <p className={styles.heroEyebrow} title={textOf(eyebrow)}>
+                {eyebrow}
+              </p>
+            ) : (
+              <span className={styles.heroEyebrowSpacer} />
+            )}
+            <span className={styles.heroChip}>{chip}</span>
+          </div>
+        ) : present(eyebrow) ? (
           <p className={styles.heroEyebrow} title={textOf(eyebrow)}>
             {eyebrow}
           </p>
@@ -700,9 +730,18 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
   useEffect(() => {
     const row = rowRef.current;
     if (!row) return;
+    let frame = 0;
+    const schedule = () => {
+      if (!frame) {
+        frame = window.requestAnimationFrame(() => {
+          frame = 0;
+          measure();
+        });
+      }
+    };
     measure();
-    row.addEventListener("scroll", measure, { passive: true });
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    row.addEventListener("scroll", schedule, { passive: true });
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
     observer?.observe(row);
     // Chips arriving or leaving change the content width without resizing the row itself, so each
     // chip is watched too, and the list is refreshed only when chips actually change.
@@ -719,11 +758,12 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
                 if (node instanceof Element) observer?.observe(node);
               });
             }
-            measure();
+            schedule();
           });
     chips?.observe(row, { childList: true });
     return () => {
-      row.removeEventListener("scroll", measure);
+      row.removeEventListener("scroll", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
       observer?.disconnect();
       chips?.disconnect();
     };

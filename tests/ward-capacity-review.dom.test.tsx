@@ -7,6 +7,7 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 const scope = vi.hoisted(() => ({ service: null as HealthService | null }));
 vi.mock("@/components/ward-management/shell/ward-service-store", async (importOriginal) => ({
@@ -15,11 +16,13 @@ vi.mock("@/components/ward-management/shell/ward-service-store", async (importOr
 }));
 
 function renderCapacity() {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <CapacityScreen />
     </WardFlowProvider>,
   );
+  showWardTable();
+  return view;
 }
 
 describe("capacity review corrections", () => {
@@ -34,8 +37,9 @@ describe("capacity review corrections", () => {
     const table = screen.getByTestId("ward-capacity-network-table");
     const before = table.querySelectorAll('[data-testid^="ward-capacity-network-row-"]').length;
     expect(before).toBeGreaterThan(0);
-    // v6: the summary shortcuts are the "Highlight" chips under the bed map.
-    const available = screen.getByRole("button", { name: /^Bed ready/u });
+    // v6: the summary shortcuts are the "Highlight" chips under the bed map. Device audit option A
+    // (11 Oct 2026): each chip names what it counts, "Any bed ready" with its wards.
+    const available = screen.getByRole("button", { name: /^Any bed ready/u });
     expect(available.tagName).toBe("BUTTON");
     available.focus();
     await user.keyboard(" ");
@@ -45,7 +49,7 @@ describe("capacity review corrections", () => {
     expect(table.querySelectorAll('[data-testid^="ward-capacity-network-row-"]')).toHaveLength(before);
     // v10: the Wards count moved into the hero eyebrow, so a hero highlight chip pressed a second
     // time is what clears the highlight.
-    const locked = screen.getByRole("button", { name: /^\d+\s*Locked ready$/u });
+    const locked = screen.getByRole("button", { name: /^\d+\s*Locked beds ready$/u });
     locked.focus();
     await user.keyboard("{Enter}");
     expect(locked).toHaveAttribute("aria-pressed", "true");
@@ -66,8 +70,8 @@ describe("capacity review corrections", () => {
     expect(within(wards).getByRole("button", { name: /^Has a bed ready/u })).toHaveTextContent("3");
     expect(within(wards).getByRole("button", { name: /^Has a locked bed ready/u })).toHaveTextContent("1");
     expect(within(wards).getByRole("button", { name: /^Needs confirming/u })).toHaveTextContent("1");
-    expect(screen.getByRole("button", { name: /^Bed ready/u })).toHaveTextContent("3");
-    expect(screen.getByRole("button", { name: /^Locked ready/u })).toHaveTextContent("1");
+    expect(screen.getByRole("button", { name: /^Any bed ready/u })).toHaveTextContent("3");
+    expect(screen.getByRole("button", { name: /^Locked bed ready/u })).toHaveTextContent("1");
   });
 
   it("reports an empty service with zero matching wards and zero highlight counts", () => {
@@ -75,7 +79,7 @@ describe("capacity review corrections", () => {
     renderCapacity();
     const wards = screen.getByRole("region", { name: "Wards" });
     expect(wards).toHaveTextContent("0 wards in CAHS, 0 matching");
-    expect(screen.getByRole("button", { name: /^Bed ready/u })).toHaveTextContent("0");
+    expect(screen.getByRole("button", { name: /^Any bed ready/u })).toHaveTextContent("0");
     for (const button of within(wards).getAllByRole("button", {
       name: /^(All|Has a bed ready|Has a locked bed ready|Needs confirming)/u,
     })) {

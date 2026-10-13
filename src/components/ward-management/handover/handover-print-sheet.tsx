@@ -17,8 +17,6 @@ import {
   handoverGroups,
   isActNow,
   isbarLines,
-  isMoving,
-  isWaitingForBed,
   type HandoverGroupId,
   type HandoverRow,
   type HandoverWard,
@@ -308,8 +306,8 @@ export function HandoverPrintSheet({
     ["Open", rows.length],
     ["Act now", rows.filter((row) => isActNow(row, ctx.now)).length],
     [dueTitle, rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "due").length],
-    ["Waiting for a bed", rows.filter(isWaitingForBed).length],
-    ["Moving", rows.filter(isMoving).length],
+    ["Finding a ward", rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "bed").length],
+    ["Moving", rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "mov").length],
     ["Beds ready", wards.reduce((sum, ward) => sum + ward.ready, 0)],
     ["Being made ready", wards.reduce((sum, ward) => sum + ward.pendingPreparation, 0)],
   ];
@@ -399,7 +397,7 @@ export function HandoverPrintSheet({
       return (
         <tr key={`i-${item.row.id}`} className={styles.ib2}>
           <td colSpan={columns.length}>
-            {isbarLines(item.row, ctx.now)
+            {isbarLines(item.row, ctx.now, ctx.readyBeds)
               .slice(1)
               .map((line) => (
                 <span key={line.key}>

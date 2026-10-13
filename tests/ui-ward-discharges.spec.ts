@@ -112,6 +112,15 @@ async function goToCapacityBoard(page: Page) {
   // finds a live-looking hit that renders nothing; the render is at `capacity-screen.tsx:87`.
   await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
   await page.waitForLoadState("networkidle");
+  // Device audit option A (Capacity, 11 Oct 2026): the per-ward network table is the bed map's
+  // Table layout, so open it through the map's own control, as a coordinator would. A press before
+  // hydration does nothing, so press until the layout reports Table.
+  const table = page.getByRole("group", { name: "Bed map layout" }).getByRole("button", { name: "Table", exact: true });
+  await expect(async () => {
+    if ((await table.getAttribute("aria-pressed")) !== "true") await table.click();
+    await expect(table).toHaveAttribute("aria-pressed", "true", { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  await expect(page.getByTestId(`ward-capacity-network-row-${UNIT_ID}`)).toBeVisible();
 }
 
 async function goBackToWard(page: Page) {
@@ -152,9 +161,19 @@ function networkCell(page: Page, testId: string) {
   return page.getByTestId(`ward-capacity-network-row-${UNIT_ID}`).getByTestId(testId);
 }
 
-/** A board cell's own number: "none" reads as 0. */
+/**
+ * A board cell's own number: "none" reads as 0. The Ready cell can also carry an "N still being
+ * made ready" note beside its figure (audit round 2, A4-24: a departure now marks the bed Being made
+ * ready), so that note is left out before the figure is read.
+ */
 async function networkNumber(page: Page, testId: string): Promise<number> {
-  const text = ((await networkCell(page, testId).textContent()) ?? "").trim();
+  const text = (
+    await networkCell(page, testId).evaluate((cell) => {
+      const copy = cell.cloneNode(true) as HTMLElement;
+      copy.querySelector('[data-testid="ward-capacity-network-pending"]')?.remove();
+      return copy.textContent ?? "";
+    })
+  ).trim();
   return text === "none" ? 0 : Number.parseInt(text, 10);
 }
 

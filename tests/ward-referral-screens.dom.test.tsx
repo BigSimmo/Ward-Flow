@@ -460,9 +460,9 @@ describe("ReferralBoard", () => {
 
   it("offers the search on the Queue tab only, since it narrows queue rows", () => {
     renderBoard();
-    expect(screen.getByRole("searchbox", { name: "Search referrals" })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Filter referrals" })).toBeInTheDocument();
     openHistory();
-    expect(screen.queryByRole("searchbox", { name: "Search referrals" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("searchbox", { name: "Filter referrals" })).not.toBeInTheDocument();
   });
 
   it("renders the decided cards in the same order as the decided table, for the phone view", () => {

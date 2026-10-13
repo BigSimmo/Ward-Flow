@@ -82,15 +82,57 @@ export function absoluteWallClockMinutes(): number {
   return Math.floor((now.getTime() - now.getTimezoneOffset() * 60_000) / 60_000);
 }
 
+/** Perth is UTC+8 all year: Western Australia observes no daylight saving. */
+export const PERTH_UTC_OFFSET_MINUTES = 8 * 60;
+const PERTH_UTC_OFFSET_MS = PERTH_UTC_OFFSET_MINUTES * 60_000;
+const MS_PER_DAY = MINUTES_PER_DAY * 60_000;
+
 /**
- * The calendar date that the demo's day 0 falls on - local midnight of the day a session opened.
+ * The calendar date that the demo's day 0 falls on - Perth midnight of the Perth day a session opened.
  *
  * An `Instant` counts minutes from this moment, so it and this date together are a real point in
  * time. Held by the provider rather than derived per call: two components computing it separately
  * would disagree across midnight, which is the two-clocks-on-one-card failure a layer down.
+ *
+ * L7 (site review, 12 Oct 2026): Perth midnight, not the browser's. Every printed date is formatted
+ * in Australia/Perth and every clock face is read as AWST, so a day 0 at the browser's own midnight
+ * printed the wrong day outside Perth (a 01:00 Monday event read as Sunday under a Sydney clock).
  */
 export function demoDayZero(openedAt: Date): Date {
-  return new Date(openedAt.getFullYear(), openedAt.getMonth(), openedAt.getDate());
+  const perthMs = openedAt.getTime() + PERTH_UTC_OFFSET_MS;
+  const perthMidnight = perthMs - (((perthMs % MS_PER_DAY) + MS_PER_DAY) % MS_PER_DAY);
+  return new Date(perthMidnight - PERTH_UTC_OFFSET_MS);
+}
+
+/** Perth midnight at the start of a Perth calendar day (`monthIndex` 0-11), as a real moment. */
+export function perthMidnight(year: number, monthIndex: number, day: number): Date {
+  return new Date(Date.UTC(year, monthIndex, day) - PERTH_UTC_OFFSET_MS);
+}
+
+/** The Perth calendar day (and weekday, 0 Sunday) a real moment falls on, whatever the browser's zone. */
+export function perthCalendarDay(date: Date): { year: number; monthIndex: number; day: number; weekday: number } {
+  const shifted = new Date(date.getTime() + PERTH_UTC_OFFSET_MS);
+  return {
+    year: shifted.getUTCFullYear(),
+    monthIndex: shifted.getUTCMonth(),
+    day: shifted.getUTCDate(),
+    weekday: shifted.getUTCDay(),
+  };
+}
+
+/**
+ * A `datetime-local` value ("2026-10-12T14:30") read as Perth wall time, or undefined when it is not
+ * a well-formed, real date and time. `new Date(value)` reads it in the browser's zone instead (L7).
+ */
+export function perthDateTimeLocal(value: string): Date | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return undefined;
+  const [year, month, day, hours, minutes] = match.slice(1).map(Number) as [number, number, number, number, number];
+  if (hours > 23 || minutes > 59) return undefined;
+  const midnight = perthMidnight(year, month - 1, day);
+  const read = perthCalendarDay(midnight);
+  if (read.year !== year || read.monthIndex !== month - 1 || read.day !== day) return undefined;
+  return new Date(midnight.getTime() + (hours * 60 + minutes) * 60_000);
 }
 
 /** The real calendar moment an instant refers to, given the day 0 the session opened on. */
@@ -167,8 +209,10 @@ export function clockState(due: Instant, now: Instant): ClockState {
   if (!Number.isFinite(remaining)) return "due";
   if (remaining < 0) return "breached";
   // The 1-hour and 3-hour warnings are Josh's defaults, not legal limits (26 Sept 2026 card).
-  if (remaining < dueSoonThresholds.urgentMinutes) return "critical";
-  if (remaining < dueSoonThresholds.soonMinutes) return "due";
+  // Inclusive at each threshold (audit A3-4, 13 Oct 2026): exactly 60m left is act now on every
+  // page, matching the Delays board's `dueTone`/`isDueSoon`, so Forms and Delays never disagree.
+  if (remaining <= dueSoonThresholds.urgentMinutes) return "critical";
+  if (remaining <= dueSoonThresholds.soonMinutes) return "due";
   return "clear";
 }
 

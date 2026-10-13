@@ -1,5 +1,7 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
@@ -17,15 +19,17 @@ import {
   CheckingFoot,
   Count,
   Hero,
-  HeroStat,
   Icon,
   Menu,
   Drawer,
+  PhoneSheet,
   Popover,
+  Radio,
   SinceYouLooked,
   SrOnly,
   StatusGlyph,
   TextInput,
+  useIsPhone,
   useOptionalToast,
   type SinceItem,
   type WfTone,
@@ -51,8 +55,8 @@ import {
   communityTeamSuburbCounts,
   nearDuplicateSpellingsOf,
 } from "@/components/ward-management/community/community-vocabulary";
-import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
-import { applyAppearance } from "@/components/ward-management/shell/ward-bar";
+import { communityTeamHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { elapsedDaysPhrase } from "@/components/ward-management/community/community-elapsed";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
@@ -70,16 +74,10 @@ import { transportEtaRemainingLabel } from "@/components/ward-management/ward-bo
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import {
-  COHORTS,
   COMMUNITY_DECLINE_REASONS,
-  HOME_REGIONS,
-  REFERRAL_HISTORY_LIMITS,
   TRANSPORT_LEGAL_STATUSES,
   TRANSPORT_PROVIDERS,
-  URGENCY_LEVELS,
-  type Cohort,
   type CommunityDeclineReason,
-  type HomeRegion,
   type LegalForm,
   type Movement,
   type Referral,
@@ -98,7 +96,7 @@ import {
 } from "@/components/ward-management/community/community-team-contact-mapping";
 import { REFERENCE_TEAM_CAVEAT } from "@/components/ward-management/reference/ward-reference-teams";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import {
@@ -108,6 +106,16 @@ import {
   type PatientId,
 } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
+import phoneCss from "./community-team-phone.module.css";
+import {
+  CommunityAboutThisData,
+  CommunityPhoneFacts,
+  CommunityTeamPhone,
+  CommunityWorthAttention,
+  type CommunityPhoneList,
+  type CommunityPhoneListId,
+} from "./community-team-phone";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import v6 from "./community-team-v6.module.css";
 import {
   DEMO_COMMUNITY_REFERRALS,
@@ -275,7 +283,7 @@ type DrawerType =
   | "tools"
   | "toolsDrawer"
   | null;
-type ModalType = "intake" | "contact" | "handover" | "crisis" | null;
+type ModalType = "contact" | "handover" | "crisis" | null;
 
 /**
  * Clinical contact is the contact itself, not a sent message — team, time, and role only. Wired only
@@ -310,24 +318,6 @@ type CaseloadRow = {
   ageBand: string;
   legalForm: LegalForm | undefined;
   addressingState: ReferralAddressing["state"] | undefined;
-};
-
-type IntakeDraft = {
-  umrn: string;
-  ageBand: Cohort | "";
-  homeRegion: HomeRegion | "";
-  urgency: "" | "1" | "2" | "3";
-  originSiteCode: string;
-  history: string;
-};
-
-const BLANK_INTAKE_DRAFT: IntakeDraft = {
-  umrn: "",
-  ageBand: "",
-  homeRegion: "",
-  urgency: "",
-  originSiteCode: "",
-  history: "",
 };
 
 /**
@@ -549,6 +539,10 @@ export function CommunityScreen({
   const team =
     communityTeamById(teamId) ??
     (teamId === "fremantle" || teamId === "alma-street" ? communityTeamById("alma-street-fremantle") : null);
+  // Option B (Josh, 13 Oct 2026): one referral flow. New referral opens the referral slide-out
+  // from this team; the retired intake modal asked the same questions with no person named.
+  const referFromTeamHref = raiseReferralHref({ source: "community", teamId: team?.id ?? teamId });
+  const openNewReferral = useCallback(() => openReferralSheet(referFromTeamHref), [referFromTeamHref]);
   const [followUpFilter, setFollowUpFilter] = useState("all");
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineDraft, setDeclineDraft] = useState<CommunityDeclineReason | undefined>(undefined);
@@ -560,8 +554,18 @@ export function CommunityScreen({
     type: "review" | "assign";
     referral: Referral;
   } | null>(null);
+  // These dialogs do not join the sheet stack, so they hold the page still themselves (phone).
+  useWardPageScrollLock(transportBookFor !== undefined || transportCancelFor !== undefined || activeModal !== null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<ActiveTabType>("tab-triage");
+  // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
+  // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.
+  const [chosenTab, setChosenTab] = useState<ActiveTabType | null>(null);
+  // Set once the reader picks a list; until then the default may follow the resolved viewport.
+  const readerPickedTab = useRef(false);
+  const setActiveTab = useCallback((tab: ActiveTabType) => {
+    readerPickedTab.current = true;
+    setChosenTab(tab);
+  }, []);
   const [activeDrawer, setActiveDrawer] = useState<DrawerType>(null);
   const [activeModalType, setActiveModalType] = useState<ModalType>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
@@ -585,6 +589,18 @@ export function CommunityScreen({
   const undoCheckRef = useRef<number | null>(null);
   const [undoCheckToken, setUndoCheckToken] = useState(0);
   const [switchOpen, setSwitchOpen] = useState(false);
+  // Phone (v10): the waiting referral and the departure open as bottom sheets.
+  const isPhone = useIsPhone();
+  // The first render (and hydration) reads the viewport as desktop. Once the phone query resolves,
+  // clear the held default so it is re-picked from the phone's own lists, unless the reader chose one.
+  // Only the viewport change does this; rows leaving a list never switch it under the reader.
+  useEffect(() => {
+    if (!readerPickedTab.current) setChosenTab(null);
+  }, [isPhone]);
+  const [phoneReferralId, setPhoneReferralId] = useState<string | null>(null);
+  const [phoneDeclining, setPhoneDeclining] = useState(false);
+  const [phoneDepartureId, setPhoneDepartureId] = useState<string | null>(null);
+  const [phoneShowWholeCaseload, setPhoneShowWholeCaseload] = useState(false);
   const [switchQuery, setSwitchQuery] = useState("");
   const switchTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -653,7 +669,6 @@ export function CommunityScreen({
   // tier and review date belonged to nobody's record.
   const searchResults = findPatients(patients, searchQuery);
   const selectedPatient: Patient | undefined = patients.find((patient) => patient.id === selectedPatientId);
-  const [intakeDraft, setIntakeDraft] = useState<IntakeDraft>(BLANK_INTAKE_DRAFT);
   const [contactRecord, setContactRecord] = useState<{ role: WardFlowRole; at: Instant; teamId: string } | null>(null);
   const [dismissedTaskIds, setDismissedTaskIds] = useState<Set<string>>(new Set());
   const [uiState, setUiState] = useState<"populated" | "skeleton" | "empty" | "error">("populated");
@@ -717,14 +732,9 @@ export function CommunityScreen({
     if (typeof document === "undefined") return;
     const el = document.getElementById(id) || document.querySelector(`[data-testid="${id}"]`);
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
     }
   }, []);
-
-  function handleSetThemeExplicit(theme: "light" | "dark" | "auto") {
-    applyAppearance(theme);
-    setToastMessage(`Appearance set to ${theme}.`);
-  }
 
   function handleActionClick(action: "Contacted" | "Review" | "Assign", referral: Referral) {
     if (action === "Contacted") {
@@ -881,7 +891,7 @@ export function CommunityScreen({
       setActiveModalType("crisis");
     };
     win.openModal = (modalId: string) => {
-      if (modalId === "newReferralModal") setActiveModalType("intake");
+      if (modalId === "newReferralModal") openNewReferral();
       else if (modalId === "handoverModal") setActiveModalType("handover");
       else if (modalId === "contactModal") setActiveModalType("contact");
       else if (modalId === "crisisModal") setActiveModalType("crisis");
@@ -895,50 +905,16 @@ export function CommunityScreen({
         window.location.href = communityTeamHref(target);
       }
     };
-  }, [referrals, liveReferrals, handleCompleteContact, handleConfirmAccept, handleConfirmDecline, now]);
-
-  function intakeBlockedReason(draft: IntakeDraft): string | undefined {
-    if (draft.ageBand === "") return "Choose an age band before sending this follow-up referral.";
-    if (draft.homeRegion === "") return "Choose a home region before sending this follow-up referral.";
-    if (draft.urgency === "") return "Choose urgency before sending this follow-up referral.";
-    if (!siteByCode(draft.originSiteCode)) {
-      return "Choose the originating site before sending this follow-up referral.";
-    }
-    if (draft.history.length > REFERRAL_HISTORY_LIMITS.history) {
-      return `The history is ${draft.history.length} characters and the limit is ${REFERRAL_HISTORY_LIMITS.history}.`;
-    }
-    const umrn = draft.umrn.trim();
-    if (umrn !== "" && !patients.some((patient) => patient.umrn === umrn)) {
-      return "No person on file with that UMRN. Leave it blank if nobody is on file.";
-    }
-    return undefined;
-  }
-
-  function submitCommunityFollowUp(teamName: string) {
-    const blocked = intakeBlockedReason(intakeDraft);
-    if (blocked !== undefined) return;
-    const { ageBand, homeRegion, urgency, originSiteCode, history } = intakeDraft;
-    if (ageBand === "" || homeRegion === "" || urgency === "") return;
-    const umrn = intakeDraft.umrn.trim();
-    const patient = umrn === "" ? undefined : patients.find((candidate) => candidate.umrn === umrn);
-    dispatch({
-      type: "RECEIVE_REFERRAL",
-      role: "community",
-      now,
-      patientId: patient?.id,
-      ageBand,
-      destinations: [{ kind: "community_team", teamName }],
-      homeRegion,
-      suburb: { kind: "unknown", reason: "not_known" },
-      source: "community",
-      urgency: Number(urgency) as 1 | 2 | 3,
-      originSiteCode,
-      transportNeeded: false,
-      history,
-    });
-    setIntakeDraft(BLANK_INTAKE_DRAFT);
-    setActiveModalType(null);
-  }
+  }, [
+    referrals,
+    liveReferrals,
+    handleCompleteContact,
+    handleConfirmAccept,
+    handleConfirmDecline,
+    now,
+    setActiveTab,
+    openNewReferral,
+  ]);
 
   function handleSaveClinicalContact() {
     const recorded = recordClinicalContact(dispatch, now, teamId);
@@ -1161,7 +1137,6 @@ export function CommunityScreen({
     caseloadFilter === "all"
       ? caseloadRows
       : caseloadRows.filter((row) => caseloadStatutoryFormCode(row) === caseloadFilter);
-  const intakeBlocked = intakeBlockedReason(intakeDraft);
   /**
    * F10 (Opus adversarial review, 2026-09-17) / item 48: `community_referral_received` notices
    * have nowhere else to be seen. `WardChromeRole` (`ward-chrome-role.ts`) has no "community"
@@ -1243,496 +1218,1439 @@ export function CommunityScreen({
       </>,
     );
   }
-  if (unattributable.length > 0) {
-    attentionItems.push(
+  // Site review 12 Oct 2026: admissions matched to no team are a fact about the data, not about this
+  // team, and they showed twice (main column and rail). The count stays in About this data only.
+
+  const renderSearch = (close: () => void) => (
+    <div className={v6.search}>
+      <TextInput
+        type="search"
+        id="q"
+        icon={Search}
+        aria-label="Search sample patients"
+        placeholder="Type UMRN or name..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        onClear={() => setSearchQuery("")}
+      />
+      {searchQuery.trim() === "" ? (
+        <p className={v6.searchNote} data-testid="ward-community-search-hint">
+          Type a name or UMRN to search the sample patients.
+        </p>
+      ) : searchResults.length === 0 ? (
+        <p className={v6.searchNote} data-testid="ward-community-search-empty">
+          No sample patient matches &ldquo;{searchQuery.trim()}&rdquo;.
+        </p>
+      ) : (
+        <ul className={v6.searchList}>
+          {searchResults.slice(0, SEARCH_RESULT_LIMIT).map((patient) => (
+            <li key={patient.id}>
+              <button
+                type="button"
+                className={v6.searchHit}
+                data-testid={`ward-community-search-hit-${patient.id}`}
+                onClick={() => {
+                  setSelectedPatientId(patient.id);
+                  setActiveDrawer("pxDrawer");
+                  close();
+                }}
+              >
+                <span className={v6.searchHitTop}>
+                  <strong>
+                    {patientDisplayName(patient)} · {patient.umrn}
+                  </strong>
+                  <Badge size="sm">{patient.legalStatus ?? "Legal status not recorded"}</Badge>
+                </span>
+                <span className={v6.searchHitMeta}>
+                  {patient.catchmentCommunityTeam ?? "Community team not recorded"}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+  const noticesSection =
+    teamNotices.length > 0 ? (
+      <section aria-label="Notices for this team" data-testid="ward-community-notices">
+        <p className={styles.teamNoticesHead}>
+          Notices <span>· {unreadTeamNoticeCount} unread</span>
+        </p>
+        <ol className={styles.teamNoticesFeed}>
+          {teamNotices.map((notice) => {
+            const isRead = notice.readAt !== undefined;
+            return (
+              <li key={notice.id} data-notice-read={isRead}>
+                <time>{formatInstantWithDay(notice.raisedAt, now)}</time>
+                <div className={styles.teamNoticeContent}>
+                  <span>{withUmrnInPlaceOfMovementIds(notice.sentence, umrnLookup)}</span>
+                  {isRead ? (
+                    <span className={styles.teamNoticeReadLabel}>
+                      <span className={styles.readDot} aria-hidden="true" />
+                      Read
+                    </span>
+                  ) : (
+                    <div className={styles.noticeStatusActionRow}>
+                      <span className={styles.alertBadge}>
+                        <span className={styles.alertDot} aria-hidden="true" />
+                        Unread
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.teamNoticeMarkRead}
+                        onClick={() => markTeamNoticeRead(notice.id)}
+                      >
+                        Mark as read
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    ) : null;
+  // Device audit option A: a digest of all zeros folds to one quiet line.
+  const sinceQuiet = teamSinceItems(
+    sourceReferrals,
+    [team.name, ...ratifiedSameServiceNames(team.name)],
+    currentShiftStartInstant(now),
+    now,
+    waitingReferrals.length,
+  ).every((item) => item.value === 0);
+  const sinceElement = sinceQuiet ? (
+    <p className={phoneCss.quietLine} id="ward-community-since" data-testid="ward-community-since-quiet">
+      <StatusGlyph tone="neutral" size={9} /> No changes since the start of this shift.
+    </p>
+  ) : (
+    <SinceYouLooked
+      id="ward-community-since"
+      className={v6.since}
+      // This page renders elapsed time, never a clock face (owner ruling), so the window is named.
+      since="the start of this shift"
+      items={teamSinceItems(
+        sourceReferrals,
+        [team.name, ...ratifiedSameServiceNames(team.name)],
+        currentShiftStartInstant(now),
+        now,
+        waitingReferrals.length,
+      )}
+      onCopy={() => {
+        const lines = teamSinceItems(
+          sourceReferrals,
+          [team.name, ...ratifiedSameServiceNames(team.name)],
+          currentShiftStartInstant(now),
+          now,
+          waitingReferrals.length,
+        ).map((item) => `${item.value} ${item.word}`);
+        const text = `${team.name}, since the start of this shift (synthetic prototype): ${lines.join(", ")}.`;
+        void navigator.clipboard?.writeText(text).then(
+          () => toast?.push({ tone: "success", title: "Copied as handover text" }),
+          () => toast?.push({ tone: "warning", title: "Could not copy", body: text }),
+        );
+      }}
+    />
+  );
+  const howToReachPanel = (
+    <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
+      {(() => {
+        const contact = contactForTeam(team.name);
+        const decision = contactDecisionFor(team.name);
+        return (
+          <section className={v6.sideCard} aria-label="How to reach this team" data-testid="ward-community-contact">
+            <div className={v6.sideHead}>
+              <h3 className={v6.sideTitle}>How to reach</h3>
+              {contact === null ? null : <span className={v6.sideMeta}>Published, not call-tested</span>}
+            </div>
+            <div className={v6.sideBody} role="region" aria-label="How to reach this team details">
+              {contact === null ? (
+                <p className={v6.sideNote}>
+                  Nobody has yet recorded which real service this name refers to, so no contact detail is shown. That is
+                  not a statement that this team has no phone number.
+                </p>
+              ) : (
+                <>
+                  <dl className={v6.keyValues} data-testid="ward-community-contact-detail">
+                    {contact.publishedPhone === null ? null : (
+                      <div>
+                        <dt>Phone</dt>
+                        <dd className={v6.mono}>
+                          <a href={`tel:${contact.publishedPhone.replace(/[^\d+]/g, "")}`}>{contact.publishedPhone}</a>
+                        </dd>
+                      </div>
+                    )}
+                    {contact.publishedHours === null ? null : (
+                      <div>
+                        <dt>Hours</dt>
+                        <dd>{contact.publishedHours}</dd>
+                      </div>
+                    )}
+                    {contact.referralEmail === null ? null : (
+                      <div>
+                        <dt>Referrals</dt>
+                        <dd>
+                          <a href={`mailto:${contact.referralEmail}`}>{contact.referralEmail}</a>
+                        </dd>
+                      </div>
+                    )}
+                    {contact.address === null ? null : (
+                      <div>
+                        <dt>Address</dt>
+                        <dd>{contact.address}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  <p className={v6.sideNote}>{REFERENCE_TEAM_CAVEAT}</p>
+                  <p className={v6.sideNote}>
+                    Recorded {contact.recordedOn ?? "on a date the register does not give"}
+                    {decision === null
+                      ? null
+                      : `. Paired with ${decision.serviceName} by ${decision.decidedBy} on ${decision.decidedOn}.`}
+                  </p>
+                </>
+              )}
+            </div>
+          </section>
+        );
+      })()}
+    </div>
+  );
+  const onDutyPanel = isDemoMode ? (
+    <>
+      <div className={styles.cardPanel}>
+        <div className={styles.panelHead}>
+          <h2 className={styles.panelTitle}>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M6 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM11.5 8a2 2 0 100-4 2 2 0 000 4zM1.5 14c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M10.5 10.5c2 .3 3.5 1.6 3.5 3.5" />
+            </svg>
+            <span>Catchment Multidisciplinary Team Roster &amp; Duty Allocations</span>
+          </h2>
+          <span className={styles.badgePill} id="teamStaffCountBadge">
+            {teamConfig.staff} Key Clinicians Active
+          </span>
+        </div>
+        <div className={styles.panelBody}>
+          <div className={styles.teamRosterGrid}>
+            {DEMO_COMMUNITY_STAFF.map((staff) => (
+              <div key={staff.name} className={styles.staffCard}>
+                <div className={styles.staffHead}>
+                  <div>
+                    <div
+                      className={styles.staffName}
+                      id={staff.name === "Dr A. Nair" ? "leadConsultantName" : undefined}
+                    >
+                      {staff.name === "Dr A. Nair" ? teamConfig.consultant : staff.name}
+                    </div>
+                    <div className={styles.staffRole}>{staff.role}</div>
+                  </div>
+                  <span className={`${styles.statusPillBadge} ${styles[staff.statusTone]}`}>{staff.status}</span>
+                </div>
+                <div className={styles.staffMetrics}>
+                  <span>
+                    Caseload: <b>{staff.caseload}</b>
+                  </span>
+                  <span>
+                    Ext: <b>{staff.ext}</b>
+                  </span>
+                  <span>{staff.assignment}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.clinicFleetGrid}>
+        <div className={styles.cardPanel}>
+          <div className={styles.panelHead}>
+            <h3 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
+              Clinic Room Utilization
+            </h3>
+            <span className={styles.badgePill}>3 Rooms Active</span>
+          </div>
+          <div className={styles.panelBody}>
+            <div className={styles.clinicRoomItem}>
+              <div className={styles.clinicRoomTop}>
+                <span className={styles.clinicRoomTitle}>Room 1 · Consultant Clinic</span>
+                <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 1pm</span>
+              </div>
+              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
+                Dr K. Rao · Urgent Intakes &amp; Medication Reviews
+              </span>
+            </div>
+            <div className={styles.clinicRoomItem}>
+              <div className={styles.clinicRoomTop}>
+                <span className={styles.clinicRoomTitle}>Room 2 · Depot &amp; Physical Health</span>
+                <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 5pm</span>
+              </div>
+              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
+                RN C. Davis · Long-acting injections, ECG, metabolic monitoring
+              </span>
+            </div>
+            <div className={styles.clinicRoomItem}>
+              <div className={styles.clinicRoomTop}>
+                <span className={styles.clinicRoomTitle}>Room 3 · Crisis Walk-in &amp; Triage</span>
+                <span className={`${styles.statusPillBadge} ${styles.warn}`}>Active Standby</span>
+              </div>
+              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
+                Dr J. Lim · Urgent walk-in community assessments
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.cardPanel}>
+          <div className={styles.panelHead}>
+            <h3 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
+              Mobile Outreach Vehicles
+            </h3>
+            <span className={styles.badgePill}>2 Vehicles</span>
+          </div>
+          <div className={styles.panelBody}>
+            <div className={styles.clinicRoomItem}>
+              <div className={styles.clinicRoomTop}>
+                <span className={styles.clinicRoomTitle} id="fleetVehicle1Title">
+                  {teamConfig.fleet1}
+                </span>
+                <span className={`${styles.statusPillBadge} ${styles.warn}`}>In Field</span>
+              </div>
+              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
+                Staff: T. Bradley RN &amp; Dr J. Lim · Scheduled Home Visits
+              </span>
+            </div>
+            <div className={styles.clinicRoomItem}>
+              <div className={styles.clinicRoomTop}>
+                <span className={styles.clinicRoomTitle} id="fleetVehicle2Title">
+                  {teamConfig.fleet2}
+                </span>
+                <span className={`${styles.statusPillBadge} ${styles.good}`}>At Base</span>
+              </div>
+              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
+                Staff: M. Davies SW · Available for Urgent Dispatch
+              </span>
+            </div>
+            <div className={styles.clinicRoomItem}>
+              <div className={styles.clinicRoomTop}>
+                <span className={styles.clinicRoomTitle}>Morning MDT Huddle Log</span>
+                <span className={`${styles.statusPillBadge} ${styles.neutral}`}>10am Completed</span>
+              </div>
+              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
+                14 Catchment cases reviewed · 2 Inpatient transfers coordinated
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  ) : (
+    <section
+      className={v6.sideCard}
+      id="section-team-workspace"
+      aria-labelledby="ward-community-roster-title"
+      data-testid="ward-community-roster"
+    >
+      <div className={v6.sideHead}>
+        <h3 id="ward-community-roster-title" className={v6.sideTitle}>
+          On duty today
+        </h3>
+        <span id="teamStaffCountBadge" className={v6.sideMeta}>
+          Sample roster
+        </span>
+      </div>
+      <p className={v6.sampleNote} role="note">
+        Illustrative staffing and logistics only. These are not roster, huddle, room or vehicle records for
+        {` ${team.name}`}.
+      </p>
+      <ul className={v6.roster} aria-label="Sample roster, illustrative">
+        {SAMPLE_ROSTER.map((member) => (
+          <li key={member.role} className={v6.rosterRow}>
+            <span className={v6.initials} aria-hidden="true">
+              {member.initials}
+            </span>
+            <span className={v6.rosterWho}>
+              <span className={v6.rosterRole} id={member.lead ? "leadConsultantName" : undefined}>
+                {member.role}
+              </span>
+              <span className={v6.rosterDetail}>{member.detail}</span>
+            </span>
+            <span className={v6.rosterStatus}>
+              <StatusGlyph tone={ROSTER_TONE[member.status]} size={9} />
+              {member.status}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <details className={v6.sampleMore}>
+        <summary>Sample rooms and vehicles</summary>
+        <ul className={v6.sampleList} aria-label="Sample clinic rooms and vehicles, illustrative">
+          <li>
+            <span>Clinic room 1 · depot clinic</span>
+            <span className={v6.rosterDetail}>Active</span>
+          </li>
+          <li>
+            <span>Clinic room 2 · consultant reviews</span>
+            <span className={v6.rosterDetail}>Active</span>
+          </li>
+          <li>
+            <span>Clinic room 3 · urgent intake</span>
+            <span className={v6.rosterDetail}>Standby</span>
+          </li>
+          <li>
+            <span id="fleetVehicle1Title">Outreach vehicle 1 (dual crew)</span>
+            <span className={v6.rosterDetail}>In field</span>
+          </li>
+          <li>
+            <span id="fleetVehicle2Title">Outreach vehicle 2 (secondary)</span>
+            <span className={v6.rosterDetail}>At base</span>
+          </li>
+        </ul>
+      </details>
+    </section>
+  );
+  const coveragePanel = (
+    <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
+      <details ref={limitsDisclosureRef} className={styles.governanceSection} data-testid="ward-community-limits" open>
+        <summary className={styles.governanceSummary}>Provenance, coverage limits and team facts</summary>
+        <div className={styles.governanceBody}>
+          {/* Coverage limits */}
+          <div className={styles.cardPanel}>
+            <div className={styles.panelHead}>
+              <h3 className={styles.panelTitle}>
+                <span>Coverage limits</span>
+              </h3>
+            </div>
+            <div className={styles.panelBody} role="region" aria-label="Coverage limits details" tabIndex={0}>
+              <ul className={styles.limitsList}>
+                <li>
+                  <strong>Completeness.</strong> Only admissions linked to a referral this page can find are shown;{" "}
+                  <span>{unattributable.length}</span> {unattributable.length === 1 ? "admission is" : "admissions are"}{" "}
+                  counted rather than shown.
+                </li>
+                <li>
+                  <strong>Current care.</strong> No community-team closure is recorded, so prior acceptance does not
+                  establish current care.
+                </li>
+                <li>
+                  <strong>Follow-up.</strong> Follow-up status is not shown or editable here.
+                </li>
+                <li>
+                  <strong>Referrals raised.</strong> Community sources carry no team name.
+                </li>
+                <li>
+                  <strong>Population.</strong> This is a destination-team view, not a geographic population view.
+                </li>
+                <li>
+                  <strong>Dates.</strong> Elapsed time is shown instead of synthetic calendar dates.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* This team facts */}
+          <div className={styles.cardPanel} data-testid="ward-community-facts">
+            <div className={styles.panelHead}>
+              <h3 className={styles.panelTitle}>
+                <span>This team facts</span>
+              </h3>
+            </div>
+            <div className={styles.panelBody} role="region" aria-label="This team details" tabIndex={0}>
+              <dl className={styles.factsList}>
+                <div className={styles.factsRow}>
+                  <dt>Name recorded as</dt>
+                  <dd>{team.name}</dd>
+                </div>
+                <div className={styles.factsRow}>
+                  <dt>Suburbs naming it</dt>
+                  <dd data-testid="ward-community-suburb-count">
+                    {suburbsNamingTeam === undefined ? "Not derivable from the catchment table" : suburbsNamingTeam}
+                  </dd>
+                </div>
+                <div className={styles.factsRow}>
+                  <dt>Entries that read alike</dt>
+                  <dd>{nearDuplicates.length}</dd>
+                </div>
+                <div className={styles.factsRow}>
+                  <dt>Hours, contacts, staffing</dt>
+                  <dd>Published contacts held; roster not held</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          {/* Quick links */}
+          <div className={styles.cardPanel} data-testid="ward-community-links">
+            <div className={styles.panelHead}>
+              <h3 className={styles.panelTitle}>
+                <span>Go to</span>
+              </h3>
+            </div>
+            <div className={styles.panelBody} role="region" aria-label="Go to links" tabIndex={0}>
+              <ul className={styles.linksList}>
+                <li>
+                  <Link className={styles.linksItem} href="/mockups/ward-flow/community">
+                    All community teams
+                  </Link>
+                </li>
+                <li>
+                  <Link className={styles.linksItem} href={WARD_REFERRAL_INTAKE_HREF}>
+                    New referral
+                  </Link>
+                </li>
+                <li>
+                  <Link className={styles.linksItem} href="/mockups/ward-flow/referrals">
+                    Referrals
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Provenance and matching limits */}
+          <div
+            className={styles.aboutPage}
+            data-testid="ward-community-about"
+            aria-label="Community data provenance and matching limits"
+          >
+            <div className={styles.noticeGroup}>
+              <p className={styles.notice} data-testid="ward-community-placeholder-notice">
+                <strong>This team name comes from the S2015 catchment table.</strong> It is referral vocabulary, not a
+                current roster of Western Australian community services. No team has agreed to be represented and this
+                page does not identify who currently provides care.{" "}
+                {nearDuplicates.length > 0 ? (
+                  <strong data-testid="ward-community-near-duplicate-warning">
+                    {" "}
+                    That document also spells some teams more than one way, and this is one of them: it also contains{" "}
+                    {nearDuplicates.map((name, index) => (
+                      <span key={name}>
+                        {index > 0 ? (index === nearDuplicates.length - 1 ? " and " : ", ") : ""}
+                        <span className={styles.fieldName}>{name}</span>
+                      </span>
+                    ))}
+                    {nearDuplicates[nearDuplicates.length - 1].endsWith(".") ? "" : "."} Those are separate pages here,
+                    and each reports only the people whose referral was typed its way — so somebody referred to this
+                    team under another spelling is on that page and not on this one.
+                  </strong>
+                ) : null}
+              </p>
+
+              {sameService.length > 0 && ratifiedBy !== undefined ? (
+                <p className={styles.ratifiedNotice} data-testid="ward-community-ratified-alias">
+                  <strong>
+                    {ratifiedBy.decidedByKind === "person"
+                      ? "A person has ruled that this team and "
+                      : "This team has been recorded as the same service as "}
+                    {sameService.map((name, index) => (
+                      <span key={name}>
+                        {index > 0 ? (index === sameService.length - 1 ? " and " : ", ") : ""}
+                        <span className={styles.fieldName}>{name}</span>
+                      </span>
+                    ))}
+                    {ratifiedBy.decidedByKind === "person" ? " are one service." : ", pending review."}
+                  </strong>{" "}
+                  This is a judgement about the real clinic, not an observation that the names look alike. No rule here
+                  could have reached it and none did. Referrals typed under each spelling are still listed on that
+                  spelling&apos;s own page: the decision is recorded, and nobody has been moved.
+                  <span className={styles.ratifiedProvenance} data-testid="ward-community-ratified-provenance">
+                    {ratifiedBy.decidedByKind === "person" ? (
+                      <>
+                        Decided by {ratifiedBy.decidedBy} on {ratifiedBy.decidedOn}, after being shown each spelling and
+                        the suburbs it routes.
+                      </>
+                    ) : (
+                      <>
+                        Recorded by {ratifiedBy.decidedBy} on {ratifiedBy.decidedOn}. No person has seen these spellings
+                        or the suburbs they route, and this entry is waiting to be reviewed. Treat it as a working note,
+                        not as a decision anyone has signed.
+                      </>
+                    )}
+                  </span>
+                </p>
+              ) : null}
+
+              <p className={styles.notice} data-testid="ward-community-unattributable">
+                <strong>
+                  {unattributable.length}{" "}
+                  {unattributable.length === 1
+                    ? "admission is on no community team's page"
+                    : "admissions are on no community team's page"}
+                  .
+                </strong>{" "}
+                Only admissions linked to a referral naming this team appear here. Admissions without a matching
+                referral, or whose referral asked only for a bed or emergency department, appear on no team page. This
+                is not a geographic or complete population view.
+              </p>
+            </div>
+
+            <p className={styles.provenance} data-testid="ward-community-association">
+              Matches use the destination team written on the referral, never home region. A later decline or
+              cancellation does not remove that association.{" "}
+              <strong>
+                {waitlistedForTeam.length}{" "}
+                {waitlistedForTeam.length === 1
+                  ? "admission is matched to this team and still waitlisted"
+                  : "admissions are matched to this team and still waitlisted"}
+                .
+              </strong>{" "}
+              {waitlistedForTeam.length === 1 ? "That person has" : "Those people have"} no pulled bed, so they appear
+              in neither admitted list nor the unmatched count. A waitlisted match is still a match.
+            </p>
+          </div>
+        </div>
+      </details>
+    </div>
+  );
+
+  /*
+   * PHONE (v10 all-pages mockup, "Community team", Phone, 11 Oct 2026). Its own tree under 48rem,
+   * built from the same data and handlers as the desktop page: the band hero with three figures,
+   * Switch team and Refer from team; Since you looked as one row; tool chips (How to reach, On duty
+   * and Coverage open sheets holding the desktop side panels); Worth attention; then Waiting, In
+   * bed, Back and CTOs as person rows. Every coordinator action on desktop stays reachable here.
+   */
+  const tabCounts: [ActiveTabType, number][] = [
+    ["tab-triage", isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length],
+    ["tab-inpatients", isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length],
+    ["tab-egress", isDemoMode ? teamConfig.egress : lists.expectedBack.length],
+    ["tab-caseload", isDemoMode ? teamConfig.caseload : caseloadRows.length],
+  ];
+  // Phone lists render live rows (or the sample referrals), so the phone opens on one with rows in it.
+  const phoneRowCounts: [ActiveTabType, number][] = [
+    ["tab-triage", isDemoMode && !hasAnyReferralsForTeam ? demoTeamReferrals.length : waitingReferrals.length],
+    ["tab-inpatients", lists.currentlyAdmitted.length],
+    ["tab-egress", lists.expectedBack.length],
+    ["tab-caseload", caseloadRows.length],
+  ];
+  const firstListWithSomeone =
+    (isPhone ? phoneRowCounts : tabCounts).find(([, count]) => count > 0)?.[0] ?? "tab-caseload";
+  // Held from the first render (React's "adjust state while rendering" pattern), so the list never
+  // switches under the reader when the last row leaves it.
+  if (chosenTab === null) setChosenTab(firstListWithSomeone);
+  const activeTab: ActiveTabType = chosenTab ?? firstListWithSomeone;
+  const phoneListTab: Record<CommunityPhoneListId, ActiveTabType> = {
+    waiting: "tab-triage",
+    inBed: "tab-inpatients",
+    back: "tab-egress",
+    ctos: "tab-caseload",
+  };
+  const phoneList: CommunityPhoneListId =
+    activeTab === "tab-inpatients"
+      ? "inBed"
+      : activeTab === "tab-egress" || activeTab === "tab-expected"
+        ? "back"
+        : activeTab === "tab-caseload"
+          ? "ctos"
+          : "waiting";
+  const phonePerson = (patientId: string | null | undefined) =>
+    patientId ? patients.find((candidate) => candidate.id === patientId) : undefined;
+  const phoneName = (patient: Patient | undefined, fallback: string) =>
+    patient ? `${patient.familyName}, ${patient.givenName}` : fallback;
+  const openDossier = (patientId: string) => {
+    setSelectedPatientId(patientId);
+    setActiveDrawer("pxDrawer");
+  };
+  // With no recorded referrals the demonstration lists its sample referrals, so the phone count and
+  // rows come from the same source.
+  const phoneUsesDemoReferrals = isDemoMode && !hasAnyReferralsForTeam;
+  const phoneWaitingValue = phoneUsesDemoReferrals ? demoTeamReferrals.length : waitingReferrals.length;
+  const phoneUrgent = phoneUsesDemoReferrals
+    ? demoTeamReferrals.filter((referral) => referral.urgency === 1).length
+    : urgentWaitingCount;
+  const phoneCtoRows = caseloadRows.filter((row) => {
+    const code = caseloadStatutoryFormCode(row);
+    return code === "5A" || code === "5B";
+  });
+  const phoneCaseloadShown = phoneShowWholeCaseload ? caseloadRows : phoneCtoRows;
+  const phoneReferral = waitingReferrals.find((referral) => referral.id === phoneReferralId);
+  const phoneReferralPerson = phonePerson(phoneReferral?.patientId);
+  const phoneDeparture = lists.dischargedIntoTheArea.find((admission) => admission.id === phoneDepartureId);
+  const phoneDeparturePerson = phonePerson(phoneDeparture?.patientId);
+  const closePhoneReferral = () => {
+    setPhoneReferralId(null);
+    setPhoneDeclining(false);
+    setDeclineDraft(undefined);
+  };
+
+  // Phone attention rows: the same four conditions as desktop, naming the person (UMRN) rather than
+  // a referral or admission id, as one bold line and one quiet line.
+  const phoneAttentionItems: ReactNode[] = [];
+  if (waitingReferrals.length > 0) {
+    const oldest = waitingReferrals[0];
+    const person = phonePerson(oldest.patientId);
+    phoneAttentionItems.push(
       <>
-        {unattributable.length} admission{unattributable.length === 1 ? "" : "s"} could not be matched to any community
-        team at all — not this one, and not another.
+        <strong>Waiting {referralWaitLine(oldest, now)} for an answer</strong>
+        <span className={phoneCss.attentionMeta}>
+          {phoneName(person, "No person on file")} · longest of {waitingReferrals.length} waiting
+        </span>
+      </>,
+    );
+  }
+  if (shortestAcceptanceToAdmissionGap) {
+    const { admission, acceptedAt, arrivedAt } = shortestAcceptanceToAdmissionGap;
+    const person = phonePerson(admission.patientId);
+    phoneAttentionItems.push(
+      <>
+        <strong>Admitted {elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt))} after this team accepted</strong>
+        <span className={phoneCss.attentionMeta}>
+          {phoneName(person, "No person on file")} · {person?.umrn ?? "No UMRN"} · shortest of{" "}
+          {admittedWhileAlreadyWithTeam.length}
+        </span>
+      </>,
+    );
+  }
+  if (pastPlannedDateCount > 0) {
+    phoneAttentionItems.push(
+      <>
+        <strong>
+          {pastPlannedDateCount} planned discharge {pastPlannedDateCount === 1 ? "date has" : "dates have"} passed
+        </strong>
+        <span className={phoneCss.attentionMeta}>Of {lists.expectedBack.length} expected back</span>
       </>,
     );
   }
 
+  // Built only on a phone, so desktop does no phone work.
+  // Built only on a phone, so desktop does no phone work.
+  const phoneLists: CommunityPhoneList[] = isPhone
+    ? [
+        {
+          id: "waiting",
+          label: "Waiting",
+          groups: [
+            {
+              id: "waiting",
+              rows: phoneUsesDemoReferrals
+                ? demoTeamReferrals.map((referral) => {
+                    const person = phonePerson(referral.patientId);
+                    return {
+                      id: referral.id,
+                      testId: `ward-community-phone-waiting-${referral.id}`,
+                      name: phoneName(person, referral.patientDetails),
+                      meta: `${person?.umrn ?? "No UMRN"} · From ${referral.origin}`,
+                      value: referral.waitLabel,
+                      time: `Tier ${referral.urgency}`,
+                      actNow: referral.urgency === 1,
+                      onSelect: () => openDossier(referral.patientId),
+                    };
+                  })
+                : waitingReferrals.map((referral) => {
+                    const person = phonePerson(referral.patientId);
+                    return {
+                      id: referral.id,
+                      testId: `ward-community-phone-waiting-${referral.id}`,
+                      name: phoneName(person, "No person on file"),
+                      meta: `${person?.umrn ?? "No UMRN"} · From ${referralOriginLabel(referral)}`,
+                      value: referralWaitLine(referral, now),
+                      time: `Tier ${referral.urgency}`,
+                      actNow: referral.urgency === 1,
+                      onSelect: () => {
+                        setPhoneDeclining(false);
+                        setDeclineDraft(undefined);
+                        setPendingAcceptance(null);
+                        setAcceptanceError(null);
+                        setPhoneReferralId(referral.id);
+                      },
+                    };
+                  }),
+              empty: "No referral naming this team is waiting for an answer.",
+              after: (
+                <p className={phoneCss.quiet}>
+                  Community-team roles can accept or decline referrals addressed to their own team, for follow-up only.
+                </p>
+              ),
+            },
+          ],
+        },
+        {
+          id: "inBed",
+          label: "In bed",
+          groups: [
+            {
+              id: "in-bed",
+              rows: lists.currentlyAdmitted.map((admission) => {
+                const movement =
+                  admission.state === "pulled" && admission.movementId !== null
+                    ? movements.find((candidate) => candidate.id === admission.movementId)
+                    : undefined;
+                const transport = movement?.transport;
+                const ownBooking =
+                  transport !== undefined &&
+                  transport.bookedBy?.role === "community" &&
+                  transport.bookedBy.placeId === teamId &&
+                  transport.collectedAt === undefined;
+                const canBook =
+                  admission.state === "pulled" &&
+                  admission.movementId !== null &&
+                  movement !== undefined &&
+                  transport === undefined;
+                const person = phonePerson(admission.patientId);
+                const stayDays = daysInBed(admission, now);
+                const patientId = admission.patientId;
+                // A2-16 (audit round 2): the phone folds "accepted before the bed" into this row
+                // rather than listing the same people again in a second group.
+                const acceptedBefore = admittedWhileAlreadyWithTeam.find(
+                  (category) => category.admission.id === admission.id,
+                );
+                const acceptedNote =
+                  acceptedBefore === undefined
+                    ? undefined
+                    : `With the team ${elapsedSinceOrUnderADay(
+                        daysBetween(acceptedBefore.acceptedAt, acceptedBefore.arrivedAt),
+                      )} before the bed`;
+                return {
+                  id: admission.id,
+                  testId: `ward-community-phone-in-bed-${admission.id}`,
+                  name: phoneName(person, "No person on file"),
+                  meta: `${unitName(admission.unitId, units)} · ${person?.legalStatus ?? "Legal status not recorded"}`,
+                  value: stayDays === null ? "Not arrived" : `${stayDays}d`,
+                  time: bedStateLabel(admission),
+                  onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
+                  action: canBook
+                    ? { label: "Log transport", onAction: () => openTransportBook(admission.movementId!) }
+                    : ownBooking
+                      ? { label: "Cancel booking", onAction: () => openTransportCancel(admission.movementId!) }
+                      : undefined,
+                  note:
+                    transport === undefined
+                      ? acceptedNote
+                      : `${ownBooking ? "This team booked transport" : "Transport already booked"}${
+                          transport.estimatedAt !== undefined
+                            ? ` · ${transportEtaRemainingLabel(transport.estimatedAt, now)}`
+                            : ""
+                        }${acceptedNote === undefined ? "" : ` · ${acceptedNote}`}`,
+                };
+              }),
+              empty: cannotResolve
+                ? `A bed carries no link back to the referral that named this team, so this list cannot be built for ${team.name}.`
+                : "Nobody referred to this team is currently in a bed.",
+            },
+          ],
+        },
+        {
+          id: "back",
+          label: "Back",
+          groups: [
+            {
+              id: "expected",
+              title: "Expected back",
+              count: lists.expectedBack.length,
+              rows: lists.expectedBack.map((admission) => {
+                const person = phonePerson(admission.patientId);
+                const patientId = admission.patientId;
+                return {
+                  id: admission.id,
+                  name: phoneName(person, "No person on file"),
+                  meta: `${person?.umrn ?? "No UMRN"} · ${unitName(admission.unitId, units)}`,
+                  note: expectedBackLabel(admission, now),
+                  onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
+                };
+              }),
+              empty: "Nobody in a bed has a discharge date the ward has written down.",
+              after: <p className={phoneCss.quiet}>Ward-reported plan; elapsed time only. No target is applied.</p>,
+            },
+            {
+              id: "discharged",
+              title: "Discharged into the catchment",
+              count: lists.dischargedIntoTheArea.length,
+              before: (
+                <label className={phoneCss.filter}>
+                  Community follow-up filter
+                  <select value={followUpFilter} onChange={(e) => setFollowUpFilter(e.target.value)}>
+                    <option value="all">All community departures</option>
+                    <option value="missing_arrangement">Missing arrangements</option>
+                    <option value="missing_contact">No completed contact recorded</option>
+                  </select>
+                </label>
+              ),
+              rows: filteredDepartures.map((admission) => {
+                const person = phonePerson(admission.patientId);
+                return {
+                  id: admission.id,
+                  testId: `ward-community-phone-discharged-${admission.id}`,
+                  name: phoneName(person, "No person on file"),
+                  meta: `Follow-up ${admission.followUp?.state?.replaceAll("_", " ") ?? "not recorded"} · ${unitName(admission.unitId, units)}`,
+                  note: departureLabel(admission, now),
+                  onSelect: () => setPhoneDepartureId(admission.id),
+                };
+              }),
+              empty:
+                lists.dischargedIntoTheArea.length > 0
+                  ? "No community departures match this follow-up filter."
+                  : "No admission referred to this team is recorded as discharged to the community.",
+            },
+          ],
+        },
+        {
+          id: "ctos",
+          label: "CTOs",
+          groups: [
+            {
+              id: "ctos",
+              rows: phoneCaseloadShown.map((row) => {
+                const person = phonePerson(row.patientId);
+                const formCode = caseloadStatutoryFormCode(row);
+                const patientId = row.patientId;
+                return {
+                  id: row.key,
+                  testId: `ward-community-phone-cto-${row.referralId}`,
+                  name: phoneName(person, "No person on file"),
+                  meta: `${formCode ? `Form ${formCode}` : "No form recorded"} · ${row.umrn ?? row.referralId}`,
+                  time: caseloadRecordedExpiryLabel(row, now),
+                  onSelect: patientId !== undefined ? () => openDossier(patientId) : undefined,
+                };
+              }),
+              empty: phoneShowWholeCaseload
+                ? "No accepted follow-up or matched admission is on this team's caseload yet."
+                : "No recorded Form 5A or 5B on this team's caseload.",
+              after: (
+                <>
+                  {phoneShowWholeCaseload || caseloadRows.length === phoneCtoRows.length ? null : (
+                    <p className={phoneCss.quiet}>
+                      {caseloadRows.length - phoneCtoRows.length} more on the caseload are not listed here.
+                    </p>
+                  )}
+                  {caseloadRows.length === phoneCtoRows.length ? null : (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setPhoneShowWholeCaseload((all) => !all)}
+                      aria-pressed={phoneShowWholeCaseload}
+                    >
+                      {phoneShowWholeCaseload ? "Show CTOs only" : "Show the whole caseload"}
+                    </Button>
+                  )}
+                </>
+              ),
+            },
+          ],
+        },
+      ]
+    : [];
+  const phoneSheets = isPhone ? (
+    <>
+      <PhoneSheet
+        open={phoneReferral !== undefined}
+        onClose={closePhoneReferral}
+        title={phoneName(phoneReferralPerson, "Referral").split(", ").reverse().join(" ")}
+        description={`${phoneReferralPerson?.umrn ?? "No UMRN"} · Waiting answer`}
+        height="tall"
+        data-testid="ward-community-phone-referral"
+        primary={
+          phoneReferral === undefined
+            ? undefined
+            : phoneDeclining
+              ? {
+                  label: "Decline referral",
+                  disabledReason: declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined,
+                  onAction: () => {
+                    handleConfirmDecline(phoneReferral.id);
+                    closePhoneReferral();
+                  },
+                }
+              : { label: "Accept referral", onAction: () => handleConfirmAccept(phoneReferral.id) }
+        }
+        secondary={
+          phoneDeclining
+            ? {
+                label: "Back",
+                onAction: () => {
+                  setPhoneDeclining(false);
+                  setDeclineDraft(undefined);
+                },
+              }
+            : { label: "Decline", onAction: () => setPhoneDeclining(true) }
+        }
+      >
+        {phoneReferral ? (
+          <div className={phoneCss.sheetBody}>
+            {acceptanceMessage ? (
+              <p className={phoneCss.sheetNote} role={acceptanceError || acceptanceRefusal ? "alert" : "status"}>
+                {acceptanceMessage}
+              </p>
+            ) : null}
+            <CommunityPhoneFacts
+              facts={[
+                {
+                  label: "Waiting",
+                  value: referralWaitLine(phoneReferral, now),
+                  tone: phoneReferral.urgency === 1 ? "danger" : undefined,
+                },
+                { label: "From", value: referralOriginLabel(phoneReferral) },
+                { label: "Home", value: phoneReferral.homeRegion },
+                { label: "Priority", value: urgencyTierLabel(phoneReferral.urgency) },
+              ]}
+            />
+            {phoneDeclining ? (
+              <>
+                <fieldset className={phoneCss.reasons}>
+                  <legend>Why decline?</legend>
+                  {COMMUNITY_DECLINE_REASONS.map((reason) => (
+                    <Radio
+                      key={reason}
+                      name={`ward-community-phone-decline-${phoneReferral.id}`}
+                      className={phoneCss.reason}
+                      label={COMMUNITY_DECLINE_REASON_LABELS[reason]}
+                      checked={declineDraft === reason}
+                      onChange={() => setDeclineDraft(reason)}
+                    />
+                  ))}
+                </fieldset>
+                <p className={phoneCss.sheetNote}>The referrer sees the reason.</p>
+              </>
+            ) : (
+              <>
+                <p className={phoneCss.sheetNote}>
+                  {phoneReferral.history ||
+                    `${phoneReferral.ageBand} · ${phoneReferral.homeRegion}. ${phoneReferral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
+                </p>
+                <ReferralIntakeSummary intake={phoneReferral.intake} />
+                <div className={phoneCss.sheetActions}>
+                  <Button size="sm" onClick={() => handleActionClick("Contacted", phoneReferral)}>
+                    Log team contact
+                  </Button>
+                  <Button size="sm" onClick={() => handleActionClick("Assign", phoneReferral)}>
+                    Assign
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      closePhoneReferral();
+                      handleActionClick("Review", phoneReferral);
+                    }}
+                  >
+                    Full referral
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : null}
+      </PhoneSheet>
+
+      <PhoneSheet
+        open={phoneDeparture !== undefined}
+        onClose={() => setPhoneDepartureId(null)}
+        title={phoneName(phoneDeparturePerson, "Departure").split(", ").reverse().join(" ")}
+        description={`${phoneDeparturePerson?.umrn ?? "No UMRN"} · Discharged into the catchment`}
+        height="tall"
+        data-testid="ward-community-phone-departure"
+        primary={
+          phoneDeparture?.patientId
+            ? {
+                label: "Open patient",
+                onAction: () => {
+                  const patientId = phoneDeparture.patientId!;
+                  setPhoneDepartureId(null);
+                  openDossier(patientId);
+                },
+              }
+            : undefined
+        }
+      >
+        {phoneDeparture ? (
+          <div className={phoneCss.sheetBody}>
+            <CommunityPhoneFacts
+              facts={[
+                { label: "Left", value: departureLabel(phoneDeparture, now) },
+                { label: "From", value: unitName(phoneDeparture.unitId, units) },
+                {
+                  label: "Follow-up",
+                  value: phoneDeparture.followUp?.state?.replaceAll("_", " ") ?? "Not recorded",
+                },
+                {
+                  label: "Contact",
+                  value:
+                    currentCareContact(phoneDeparture.careJourney)?.outcome?.replaceAll("_", " ") ?? "Not recorded",
+                },
+              ]}
+            />
+            <CommunityFollowUp admissionId={phoneDeparture.id} teamId={team.id} />
+          </div>
+        ) : null}
+      </PhoneSheet>
+    </>
+  ) : null;
+
+  const communityPhoneTree = isPhone ? (
+    <>
+      <CommunityTeamPhone
+        teamName={team.name}
+        caseload={isDemoMode ? teamConfig.caseload : caseloadRows.length}
+        sub={
+          <>
+            {suburbsNamingTeam
+              ? `${suburbsNamingTeam} ${suburbsNamingTeam === 1 ? "suburb" : "suburbs"}`
+              : "Suburbs not recorded"}
+            {isDemoMode ? "" : " · crisis open not recorded"}
+          </>
+        }
+        figures={[
+          {
+            id: "waiting",
+            value: phoneWaitingValue,
+            label: "Waiting",
+            tone: phoneUrgent > 0 ? "danger" : undefined,
+          },
+          {
+            id: "inBed",
+            value: isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length,
+            label: "In a bed",
+          },
+          {
+            id: "back",
+            value: isDemoMode ? teamConfig.egress : lists.expectedBack.length,
+            label: "Back",
+            tone: pastPlannedDateCount > 0 ? "warning" : undefined,
+          },
+          { id: "ctos", value: phoneCtoRows.length, label: "On a CTO" },
+        ]}
+        list={phoneList}
+        onList={(id) => setActiveTab(phoneListTab[id])}
+        onIntake={openNewReferral}
+        onSwitchTeam={() => setSwitchOpen(true)}
+        switchTriggerRef={switchTriggerRef}
+        since={sinceElement}
+        notices={noticesSection}
+        howToReach={howToReachPanel}
+        onDuty={onDutyPanel}
+        coverage={coveragePanel}
+        search={renderSearch}
+        samples={[
+          { id: "activity", label: "Activity sample", onPress: () => setActiveDrawer("activityDrawer") },
+          { id: "tasks", label: "Tasks sample", onPress: () => setActiveDrawer("tasksDrawer") },
+          { id: "tools", label: "Tools sample", onPress: () => setActiveDrawer("toolsDrawer") },
+        ]}
+        actions={[
+          { id: "contact", label: "Record contact", icon: Phone, onPress: () => setActiveModalType("contact") },
+          {
+            id: "cto",
+            label: "CTO register",
+            icon: FileText,
+            onPress: () => {
+              setActiveTab("tab-caseload");
+              scrollToSection("ward-community-phone-lists");
+            },
+          },
+          { id: "mdt", label: "Catchment MDT", icon: Users, onPress: () => setActiveModalType("handover") },
+        ]}
+        attention={phoneAttentionItems}
+        lists={phoneLists}
+      />
+      {phoneSheets}
+    </>
+  ) : null;
+
   return (
     <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
       <main id="main-content" className={styles.main}>
-        <div className={v6.standing}>
-          {/*
-           * THE V6 HERO, 7 October 2026 — `design/pages-v6/CommunityTeam.png`. One band carries the
-           * team's name with its team menu, the six counts, the four tabs and the four team actions.
-           * It replaces the inner header (whose Activity, Tasks, Tools and Theme buttons repeated the
-           * shell's own), the action bar and the telemetry ribbon. Every count reads the same
-           * expression the ribbon and tab badges read, so no figure changed.
-           */}
-          <Hero
-            level={1}
-            eyebrow="Community team"
-            title={team.name}
-            titleMeta={
-              <>
-                <span className={v6.heroAnswer} data-testid="ward-community-hero-answer">
-                  <b>{isDemoMode ? teamConfig.caseload : caseloadRows.length}</b> on the caseload
-                </span>
-                <button
-                  ref={switchTriggerRef}
-                  type="button"
-                  className={v6.heroMenuButton}
-                  aria-label="Change team"
-                  title="Switch community team"
-                  aria-haspopup="dialog"
-                  aria-expanded={switchOpen}
-                  onClick={() => setSwitchOpen(true)}
-                  data-testid="ward-community-switch-team"
-                >
-                  <Icon icon={ChevronDown} size={14} />
-                </button>
-              </>
-            }
-            stats={
-              /*
-               * v10 (10 Oct 2026): four list chips at most five. Each one switches the list below,
-               * like its tab. The caseload is the answer beside the title; crisis episodes are not
-               * recorded anywhere in the model, so they sit in the Checking foot as not checked.
-               */
-              <div className={v6.heroStats} role="group" aria-label="Show a list">
-                <HeroStat
-                  inline
-                  value={isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
-                  trend={
-                    isDemoMode && !hasAnyReferralsForTeam
-                      ? `${teamConfig.urgentTriage} urgent`
-                      : urgentWaitingCount > 0
-                        ? `${urgentWaitingCount} urgent`
-                        : undefined
-                  }
-                  label="Waiting answer"
-                  pressed={activeTab === "tab-triage"}
-                  onToggle={() => {
-                    setActiveTab("tab-triage");
-                    scrollToSection("ward-community-waiting");
-                  }}
-                />
-                <HeroStat
-                  inline
-                  // One figure with the tab: everyone in a bed or holding one, and how many of
-                  // those hold a pulled bed they have not yet reached.
-                  value={isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
-                  label="In a bed"
-                  pressed={activeTab === "tab-inpatients"}
-                  onToggle={() => {
-                    setActiveTab("tab-inpatients");
-                    scrollToSection("ward-community-admitted");
-                  }}
-                />
-                <HeroStat
-                  inline
-                  value={isDemoMode ? teamConfig.egress : lists.expectedBack.length}
-                  label="Expected back"
-                  pressed={activeTab === "tab-egress"}
-                  onToggle={() => {
-                    setActiveTab("tab-egress");
-                    scrollToSection("ward-community-expected-back");
-                  }}
-                />
-                <HeroStat
-                  inline
-                  value={isDemoMode ? teamConfig.cto : form5ACount}
-                  label="On a CTO"
-                  pressed={activeTab === "tab-caseload"}
-                  onToggle={() => {
-                    setActiveTab("tab-caseload");
-                    scrollToSection("section-caseload");
-                  }}
-                />
-              </div>
-            }
-            foot={
-              <CheckingFoot
-                items={[
-                  { id: "caseload", label: "Caseload", value: isDemoMode ? teamConfig.caseload : caseloadRows.length },
-                  {
-                    id: "urgent",
-                    label: "Urgent answers",
-                    value: isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount,
-                    tone:
-                      (isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount) > 0
-                        ? "danger"
-                        : undefined,
-                  },
-                  ...(isDemoMode
-                    ? [{ id: "crisis", label: "Crisis open", value: teamConfig.crisis }]
-                    : [{ id: "pulled", label: "Bed pulled", value: bedPulledCount }]),
-                ]}
-                notChecked={isDemoMode ? [] : ["Crisis open, no record holds a team's crisis episodes"]}
-              />
-            }
-            aside={
-              <>
-                <Menu
-                  label="Illustrative drawers"
-                  align="end"
-                  items={[
-                    { id: "activity", label: "Activity sample", onSelect: () => setActiveDrawer("activityDrawer") },
-                    { id: "tasks", label: "Tasks sample", onSelect: () => setActiveDrawer("tasksDrawer") },
-                    { id: "tools", label: "Tools sample", onSelect: () => setActiveDrawer("toolsDrawer") },
-                  ]}
-                  trigger={(props) => (
-                    <Button {...props} variant="onHero" size="sm" iconEnd={ChevronDown}>
-                      Samples
+        {isPhone ? null : (
+          <>
+            <div className={v6.standing}>
+              {/*
+               * THE V6 HERO, 7 October 2026 — `design/pages-v6/CommunityTeam.png`. One band carries the
+               * team's name with its team menu, the six counts, the four tabs and the four team actions.
+               * It replaces the inner header (whose Activity, Tasks, Tools and Theme buttons repeated the
+               * shell's own), the action bar and the telemetry ribbon. Every count reads the same
+               * expression the ribbon and tab badges read, so no figure changed.
+               */}
+              <Hero
+                level={1}
+                eyebrow="Community team"
+                title={team.name}
+                titleMeta={
+                  <>
+                    <span className={v6.heroAnswer} data-testid="ward-community-hero-answer">
+                      <b>{isDemoMode ? teamConfig.caseload : caseloadRows.length}</b> on the caseload
+                    </span>
+                    <button
+                      ref={switchTriggerRef}
+                      type="button"
+                      className={v6.heroMenuButton}
+                      aria-label="Change team"
+                      title="Switch community team"
+                      aria-haspopup="dialog"
+                      aria-expanded={switchOpen}
+                      onClick={() => setSwitchOpen(true)}
+                      data-testid="ward-community-switch-team"
+                    >
+                      <Icon icon={ChevronDown} size={14} />
+                    </button>
+                  </>
+                }
+                // Device audit option A (11 Oct 2026): one switch. The tabs below the title are the
+                // lists; the four hero chips that repeated them are gone.
+                foot={
+                  <CheckingFoot
+                    items={[
+                      {
+                        id: "caseload",
+                        label: "Caseload",
+                        value: isDemoMode ? teamConfig.caseload : caseloadRows.length,
+                      },
+                      {
+                        id: "urgent",
+                        label: "Urgent answers",
+                        value: isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount,
+                        tone:
+                          (isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount) > 0
+                            ? "danger"
+                            : undefined,
+                      },
+                      ...(isDemoMode
+                        ? [{ id: "crisis", label: "Crisis open", value: teamConfig.crisis }]
+                        : [{ id: "pulled", label: "Bed pulled", value: bedPulledCount }]),
+                    ]}
+                    notChecked={isDemoMode ? [] : ["Crisis open, no record holds a team's crisis episodes"]}
+                  />
+                }
+                aside={
+                  <>
+                    <Menu
+                      label="Illustrative drawers"
+                      align="end"
+                      items={[
+                        { id: "activity", label: "Activity sample", onSelect: () => setActiveDrawer("activityDrawer") },
+                        { id: "tasks", label: "Tasks sample", onSelect: () => setActiveDrawer("tasksDrawer") },
+                        { id: "tools", label: "Tools sample", onSelect: () => setActiveDrawer("toolsDrawer") },
+                      ]}
+                      trigger={(props) => (
+                        <Button {...props} variant="onHero" size="sm" iconEnd={ChevronDown}>
+                          Samples
+                        </Button>
+                      )}
+                    />
+                    <Popover
+                      label="Search sample patients"
+                      align="end"
+                      panelClassName={v6.searchPanel}
+                      trigger={(props) => (
+                        <Button
+                          {...props}
+                          variant="onHero"
+                          size="sm"
+                          iconOnly
+                          icon={Search}
+                          id="ward-community-search-trigger"
+                          aria-label="Search sample patients by name or UMRN"
+                          title="Search sample patients by name or UMRN"
+                        />
+                      )}
+                    >
+                      {renderSearch}
+                    </Popover>
+                  </>
+                }
+                bar={
+                  <div className={v6.trackScroll}>
+                    <div className={v6.track} role="tablist" aria-label="Community team lists">
+                      {TEAM_TABS.map((tab) => {
+                        const selected = activeTab === tab.id;
+                        const count =
+                          tab.id === "tab-triage"
+                            ? isDemoMode && !hasAnyReferralsForTeam
+                              ? teamConfig.triage
+                              : waitingReferrals.length
+                            : tab.id === "tab-inpatients"
+                              ? isDemoMode
+                                ? teamConfig.inpatients
+                                : lists.currentlyAdmitted.length
+                              : tab.id === "tab-egress"
+                                ? isDemoMode
+                                  ? teamConfig.egress
+                                  : lists.expectedBack.length
+                                : isDemoMode
+                                  ? teamConfig.caseload
+                                  : caseloadRows.length;
+                        return (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            role="tab"
+                            id={tab.buttonId}
+                            aria-selected={selected}
+                            aria-controls={tab.id}
+                            tabIndex={selected ? 0 : -1}
+                            className={v6.trackItem}
+                            onClick={() => {
+                              setActiveTab(tab.id);
+                              scrollToSection(tab.section);
+                            }}
+                            onKeyDown={(event) => {
+                              const index = TEAM_TABS.findIndex((item) => item.id === tab.id);
+                              const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+                              if (step === 0) return;
+                              event.preventDefault();
+                              const next = TEAM_TABS[(index + step + TEAM_TABS.length) % TEAM_TABS.length]!;
+                              setActiveTab(next.id);
+                              document.getElementById(next.buttonId)?.focus();
+                            }}
+                          >
+                            <span>{tab.label}</span>
+                            <Count n={count} className={v6.trackCount} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                }
+                barAside={
+                  <div className={v6.actions}>
+                    <Button variant="onHero" size="sm" icon={Phone} onClick={() => setActiveModalType("contact")}>
+                      Record contact
                     </Button>
-                  )}
-                />
-                <Popover
-                  label="Search sample patients"
-                  align="end"
-                  panelClassName={v6.searchPanel}
-                  trigger={(props) => (
                     <Button
-                      {...props}
                       variant="onHero"
                       size="sm"
-                      iconOnly
-                      icon={Search}
-                      id="ward-community-search-trigger"
-                      aria-label="Search sample patients by name or UMRN"
-                      title="Search sample patients by name or UMRN"
-                    />
-                  )}
-                >
-                  {(close) => (
-                    <div className={v6.search}>
-                      <TextInput
-                        type="search"
-                        id="q"
-                        icon={Search}
-                        aria-label="Search sample patients"
-                        placeholder="Type UMRN or name..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onClear={() => setSearchQuery("")}
-                      />
-                      {searchQuery.trim() === "" ? (
-                        <p className={v6.searchNote} data-testid="ward-community-search-hint">
-                          Type a name or UMRN to search the sample patients.
-                        </p>
-                      ) : searchResults.length === 0 ? (
-                        <p className={v6.searchNote} data-testid="ward-community-search-empty">
-                          No sample patient matches &ldquo;{searchQuery.trim()}&rdquo;.
-                        </p>
-                      ) : (
-                        <ul className={v6.searchList}>
-                          {searchResults.slice(0, SEARCH_RESULT_LIMIT).map((patient) => (
-                            <li key={patient.id}>
-                              <button
-                                type="button"
-                                className={v6.searchHit}
-                                data-testid={`ward-community-search-hit-${patient.id}`}
-                                onClick={() => {
-                                  setSelectedPatientId(patient.id);
-                                  setActiveDrawer("pxDrawer");
-                                  close();
-                                }}
-                              >
-                                <span className={v6.searchHitTop}>
-                                  <strong>
-                                    {patientDisplayName(patient)} · {patient.umrn}
-                                  </strong>
-                                  <Badge size="sm">{patient.legalStatus ?? "Legal status not recorded"}</Badge>
-                                </span>
-                                <span className={v6.searchHitMeta}>
-                                  {patient.catchmentCommunityTeam ?? "Community team not recorded"}
-                                </span>
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                      icon={FileText}
+                      onClick={() => {
+                        setActiveTab("tab-caseload");
+                        scrollToSection("section-caseload");
+                      }}
+                    >
+                      CTO register
+                    </Button>
+                    <Button variant="onHero" size="sm" icon={Users} onClick={() => setActiveModalType("handover")}>
+                      Catchment MDT
+                    </Button>
+                    {/* New referral in the header is the page's one primary (device audit option A). */}
+                    <Button variant="onHero" size="sm" icon={Plus} id="btnMainIntake" onClick={openNewReferral}>
+                      Refer from team
+                    </Button>
+                  </div>
+                }
+              />
+              <SrOnly>The bed coordinator&apos;s view of this team&apos;s referrals and bed flow.</SrOnly>
+
+              {/* ── Figures across the top ── */}
+              <div className={styles.legacyFigureStrip}>
+                <WardFigureStrip>
+                  <WardFigure
+                    label="Waiting for an answer"
+                    value={`${waitingReferrals.length}`}
+                    sub={`referral${waitingReferrals.length === 1 ? "" : "s"} addressed to this team`}
+                  />
+                  <WardFigure
+                    label="Admitted while with the team"
+                    value={`${admittedWhileAlreadyWithTeam.length}`}
+                    unit={`of ${lists.currentlyAdmitted.length}`}
+                    sub="already accepted before the bed began"
+                    flagged={admittedWhileAlreadyWithTeam.length > 0}
+                  />
+                  <WardFigure
+                    label="In a bed or holding one"
+                    value={`${lists.currentlyAdmitted.length}`}
+                    sub={`${inBedCount} in the bed · ${bedPulledCount} bed pulled`}
+                  />
+                  <WardFigure
+                    label="Expected back"
+                    value={`${lists.expectedBack.length}`}
+                    unit={`of ${lists.currentlyAdmitted.length}`}
+                    sub={`${pastPlannedDateCount} planned date${pastPlannedDateCount === 1 ? "" : "s"} already passed`}
+                  />
+                  <WardFigure
+                    label="Discharged into the catchment"
+                    value={`${lists.dischargedIntoTheArea.length}`}
+                    sub="recorded as discharged to the community"
+                  />
+                  <WardFigure
+                    label="Longest wait"
+                    value={waitingReferrals.length === 0 ? "None waiting" : referralWaitLine(waitingReferrals[0], now)}
+                    sub={waitingReferrals.length === 0 ? undefined : `${waitingReferrals[0].id} · since it was raised`}
+                  />
+                </WardFigureStrip>
+              </div>
+
+              {/*
+               * Every other team, whatever the catchment source turns out to name. A builder over
+               * `COMMUNITY_TEAM_PAGES` rather than a hand-written list, for the same reason that array is
+               * derived: a further team must reach this navigation by appearing in the catchment source
+               * and by nothing else.
+               *
+               * ⚠️ **THIS SWITCHER IS NOT THE WAY IN. IT IS THE WAY ACROSS — AND THERE IS NOW A WAY IN.**
+               * `/mockups/ward-flow/community` (`community-index.tsx`) is the front door: it lists every
+               * team a referral can name, alphabetically, links each one, and `ward-nav.ts` carries it as
+               * the `community` entry so the index is itself reachable from the rail. So a reader who is
+               * not already on a team page reaches any team in two clicks, and this switcher is the
+               * convenience for a reader who is.
+               *
+               * ⚠️ **`tests/ward-nav.test.ts` STILL RECORDS NOUGHT REACHABLE INSTANCES FOR THIS ROUTE,
+               * AND THAT FIGURE NO LONGER MEANS WHAT IT SAYS ON ITS FACE.** Read the entry, not the
+               * number — and note that the count of the full set is deliberately not repeated here, for
+               * the reason the paragraph below gives. It now records a limit of a SOURCE SCAN, not a gap in the navigation: the index
+               * builds its hrefs inside a `.map()` via `communityTeamHref`, and that scan counts a built
+               * site as nought concrete instances **by design**, because reading a builder as
+               * reachability is the defect class the guard exists to catch. Teaching it to count this one
+               * would loosen it. What the index really covers is established by rendering it and reading
+               * the links back out of the markup — `tests/ward-community-index.dom.test.tsx` pins the
+               * linked set against `COMMUNITY_TEAM_PAGES` exactly and goes red on a single missing team.
+               *
+               * ⚠️ **THIS PARAGRAPH HAS NOW BEEN WRONG IN BOTH DIRECTIONS, WHICH IS THE POINT.** Until
+               * 2026-09-01 it claimed the rail already carried a worked instance of this route — the
+               * shape of `board/[unitId]`'s entry in that same test, not of this one. It was corrected to
+               * say the route was an orphan reachable only by typing a URL, which was true for about an
+               * hour, until `/community` landed in the merge that same evening. **A sentence describing
+               * an absence is a sentence with a short shelf life**, because the absence is usually
+               * somebody's next task. Cite the entry and its reasoning, never the bare figure: an
+               * unchanged number whose meaning inverted is the one a careless check waves through.
+               *
+               * ⚠️ **AND NO COUNT OF THE TEAMS IS WRITTEN HERE.** This paragraph carried two of them — a
+               * count of the other teams, and a count of the pages this switcher reaches — and both were
+               * residue from the region era, when membership came from `ward-teams.ts`'s
+               * `COMMUNITY_TEAMS`, a `Record<HomeRegion, string>` this hub deliberately does not read.
+               * The real size is a property of the extracted catchment table, so a figure typed here has
+               * no guard and goes stale the moment that source changes; the retired figures are not
+               * repeated even as history, because a phrase written down is a phrase that can be copied
+               * back. The list renders from the derivation; the prose describes the set.
+               *
+               * ⚠️ **KEPT AS ONE COMMENT WITH THE NOTE BELOW, DELIBERATELY.** `tests/ward-community-corrected-
+               * claims.test.ts` locates "the switcher's own comment" by walking backward from the `<nav>`
+               * to the nearest comment-close and comment-open marker pair, so a second, separate comment
+               * landing between this one and the element it scans for would be captured INSTEAD of this
+               * one — silently shrinking the region every absence pin below is checked against. A
+               * `<nav>`, not a `WardPanel` — the
+               * landmark role is what makes this switcher findable by `getByRole("navigation", ...)`, and
+               * `WardPanel` renders a `<section>`. `composes` borrows the primitive's own header classes
+               * instead, so the chrome matches every other panel on this page exactly rather than
+               * approximately.
+               */}
+              <nav className={styles.teamSwitcher} aria-label="Other community teams">
+                <details className={`${styles.teamDisclosure} source-print`}>
+                  <summary className={styles.teamSwitcherHeader}>
+                    <span className={styles.teamSwitcherTitle}>Change team</span>
+                    <span className={styles.switchCount}>{COMMUNITY_TEAM_PAGES.length - 1} other teams</span>
+                  </summary>
+                  <div className={styles.teamPopover}>
+                    <div className={styles.teamPopoverHeader}>
+                      <span>Select team</span>
+                      <span className={styles.teamPopoverMeta}>{COMMUNITY_TEAM_PAGES.length - 1} other catchments</span>
                     </div>
-                  )}
-                </Popover>
-              </>
-            }
-            bar={
-              <div className={v6.trackScroll}>
-                <div className={v6.track} role="tablist" aria-label="Community team lists">
-                  {TEAM_TABS.map((tab) => {
-                    const selected = activeTab === tab.id;
-                    const count =
-                      tab.id === "tab-triage"
-                        ? isDemoMode && !hasAnyReferralsForTeam
-                          ? teamConfig.triage
-                          : waitingReferrals.length
-                        : tab.id === "tab-inpatients"
-                          ? isDemoMode
-                            ? teamConfig.inpatients
-                            : lists.currentlyAdmitted.length
-                          : tab.id === "tab-egress"
-                            ? isDemoMode
-                              ? teamConfig.egress
-                              : lists.expectedBack.length
-                            : isDemoMode
-                              ? teamConfig.caseload
-                              : caseloadRows.length;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        role="tab"
-                        id={tab.buttonId}
-                        aria-selected={selected}
-                        aria-controls={tab.id}
-                        tabIndex={selected ? 0 : -1}
-                        className={v6.trackItem}
-                        onClick={() => {
-                          setActiveTab(tab.id);
-                          scrollToSection(tab.section);
-                        }}
-                        onKeyDown={(event) => {
-                          const index = TEAM_TABS.findIndex((item) => item.id === tab.id);
-                          const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-                          if (step === 0) return;
-                          event.preventDefault();
-                          const next = TEAM_TABS[(index + step + TEAM_TABS.length) % TEAM_TABS.length]!;
-                          setActiveTab(next.id);
-                          document.getElementById(next.buttonId)?.focus();
-                        }}
-                      >
-                        <span>{tab.label}</span>
-                        <Count n={count} className={v6.trackCount} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            }
-            barAside={
-              <div className={v6.actions}>
-                <Button variant="onHero" size="sm" icon={Phone} onClick={() => setActiveModalType("contact")}>
-                  Record contact
-                </Button>
-                <Button
-                  variant="onHero"
-                  size="sm"
-                  icon={FileText}
-                  onClick={() => {
-                    setActiveTab("tab-caseload");
-                    scrollToSection("section-caseload");
-                  }}
-                >
-                  CTO register
-                </Button>
-                <Button variant="onHero" size="sm" icon={Users} onClick={() => setActiveModalType("handover")}>
-                  Catchment MDT
-                </Button>
-                <Button
-                  variant="light"
-                  size="sm"
-                  icon={Plus}
-                  id="btnMainIntake"
-                  onClick={() => {
-                    setIntakeDraft(BLANK_INTAKE_DRAFT);
-                    setActiveModalType("intake");
-                  }}
-                >
-                  Intake referral
-                </Button>
-              </div>
-            }
-          />
-          <SrOnly>The bed coordinator&apos;s view of this team&apos;s referrals and bed flow.</SrOnly>
+                    <ul className={styles.teamList}>
+                      {COMMUNITY_TEAM_PAGES.filter((other) => other.id !== team.id).map((other) => {
+                        const suburbs = communityTeamSuburbCounts().get(other.name);
+                        return (
+                          <li key={other.id} className={styles.teamListItem}>
+                            <Link className={styles.teamLink} href={communityTeamHref(other)}>
+                              <span className={styles.teamLinkName}>{other.name}</span>
+                              {suburbs ? (
+                                <span className={styles.teamLinkMeta}>
+                                  {suburbs} {suburbs === 1 ? "suburb" : "suburbs"}
+                                </span>
+                              ) : null}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </details>
+              </nav>
+            </div>
 
-          {teamNotices.length > 0 ? (
-            <section aria-label="Notices for this team" data-testid="ward-community-notices">
-              <p className={styles.teamNoticesHead}>
-                Notices <span>· {unreadTeamNoticeCount} unread</span>
-              </p>
-              <ol className={styles.teamNoticesFeed}>
-                {teamNotices.map((notice) => {
-                  const isRead = notice.readAt !== undefined;
-                  return (
-                    <li key={notice.id} data-notice-read={isRead}>
-                      <time>{formatInstantWithDay(notice.raisedAt, now)}</time>
-                      <div className={styles.teamNoticeContent}>
-                        <span>{withUmrnInPlaceOfMovementIds(notice.sentence, umrnLookup)}</span>
-                        {isRead ? (
-                          <span className={styles.teamNoticeReadLabel}>
-                            <span className={styles.readDot} aria-hidden="true" />
-                            Read
-                          </span>
-                        ) : (
-                          <div className={styles.noticeStatusActionRow}>
-                            <span className={styles.alertBadge}>
-                              <span className={styles.alertDot} aria-hidden="true" />
-                              Unread
-                            </span>
-                            <button
-                              type="button"
-                              className={styles.teamNoticeMarkRead}
-                              onClick={() => markTeamNoticeRead(notice.id)}
-                            >
-                              Mark as read
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
-          ) : null}
-
-          {/* ── Figures across the top ── */}
-          <div className={styles.legacyFigureStrip}>
-            <WardFigureStrip>
-              <WardFigure
-                label="Waiting for an answer"
-                value={`${waitingReferrals.length}`}
-                sub={`referral${waitingReferrals.length === 1 ? "" : "s"} addressed to this team`}
-              />
-              <WardFigure
-                label="Admitted while with the team"
-                value={`${admittedWhileAlreadyWithTeam.length}`}
-                unit={`of ${lists.currentlyAdmitted.length}`}
-                sub="already accepted before the bed began"
-                flagged={admittedWhileAlreadyWithTeam.length > 0}
-              />
-              <WardFigure
-                label="In a bed or holding one"
-                value={`${lists.currentlyAdmitted.length}`}
-                sub={`${inBedCount} in the bed · ${bedPulledCount} bed pulled`}
-              />
-              <WardFigure
-                label="Expected back"
-                value={`${lists.expectedBack.length}`}
-                unit={`of ${lists.currentlyAdmitted.length}`}
-                sub={`${pastPlannedDateCount} planned date${pastPlannedDateCount === 1 ? "" : "s"} already passed`}
-              />
-              <WardFigure
-                label="Discharged into the catchment"
-                value={`${lists.dischargedIntoTheArea.length}`}
-                sub="recorded as discharged to the community"
-              />
-              <WardFigure
-                label="Longest wait"
-                value={waitingReferrals.length === 0 ? "None waiting" : referralWaitLine(waitingReferrals[0], now)}
-                sub={waitingReferrals.length === 0 ? undefined : `${waitingReferrals[0].id} · since it was raised`}
-              />
-            </WardFigureStrip>
-          </div>
-
-          {/*
-           * Every other team, whatever the catchment source turns out to name. A builder over
-           * `COMMUNITY_TEAM_PAGES` rather than a hand-written list, for the same reason that array is
-           * derived: a further team must reach this navigation by appearing in the catchment source
-           * and by nothing else.
-           *
-           * ⚠️ **THIS SWITCHER IS NOT THE WAY IN. IT IS THE WAY ACROSS — AND THERE IS NOW A WAY IN.**
-           * `/mockups/ward-flow/community` (`community-index.tsx`) is the front door: it lists every
-           * team a referral can name, alphabetically, links each one, and `ward-nav.ts` carries it as
-           * the `community` entry so the index is itself reachable from the rail. So a reader who is
-           * not already on a team page reaches any team in two clicks, and this switcher is the
-           * convenience for a reader who is.
-           *
-           * ⚠️ **`tests/ward-nav.test.ts` STILL RECORDS NOUGHT REACHABLE INSTANCES FOR THIS ROUTE,
-           * AND THAT FIGURE NO LONGER MEANS WHAT IT SAYS ON ITS FACE.** Read the entry, not the
-           * number — and note that the count of the full set is deliberately not repeated here, for
-           * the reason the paragraph below gives. It now records a limit of a SOURCE SCAN, not a gap in the navigation: the index
-           * builds its hrefs inside a `.map()` via `communityTeamHref`, and that scan counts a built
-           * site as nought concrete instances **by design**, because reading a builder as
-           * reachability is the defect class the guard exists to catch. Teaching it to count this one
-           * would loosen it. What the index really covers is established by rendering it and reading
-           * the links back out of the markup — `tests/ward-community-index.dom.test.tsx` pins the
-           * linked set against `COMMUNITY_TEAM_PAGES` exactly and goes red on a single missing team.
-           *
-           * ⚠️ **THIS PARAGRAPH HAS NOW BEEN WRONG IN BOTH DIRECTIONS, WHICH IS THE POINT.** Until
-           * 2026-09-01 it claimed the rail already carried a worked instance of this route — the
-           * shape of `board/[unitId]`'s entry in that same test, not of this one. It was corrected to
-           * say the route was an orphan reachable only by typing a URL, which was true for about an
-           * hour, until `/community` landed in the merge that same evening. **A sentence describing
-           * an absence is a sentence with a short shelf life**, because the absence is usually
-           * somebody's next task. Cite the entry and its reasoning, never the bare figure: an
-           * unchanged number whose meaning inverted is the one a careless check waves through.
-           *
-           * ⚠️ **AND NO COUNT OF THE TEAMS IS WRITTEN HERE.** This paragraph carried two of them — a
-           * count of the other teams, and a count of the pages this switcher reaches — and both were
-           * residue from the region era, when membership came from `ward-teams.ts`'s
-           * `COMMUNITY_TEAMS`, a `Record<HomeRegion, string>` this hub deliberately does not read.
-           * The real size is a property of the extracted catchment table, so a figure typed here has
-           * no guard and goes stale the moment that source changes; the retired figures are not
-           * repeated even as history, because a phrase written down is a phrase that can be copied
-           * back. The list renders from the derivation; the prose describes the set.
-           *
-           * ⚠️ **KEPT AS ONE COMMENT WITH THE NOTE BELOW, DELIBERATELY.** `tests/ward-community-corrected-
-           * claims.test.ts` locates "the switcher's own comment" by walking backward from the `<nav>`
-           * to the nearest comment-close and comment-open marker pair, so a second, separate comment
-           * landing between this one and the element it scans for would be captured INSTEAD of this
-           * one — silently shrinking the region every absence pin below is checked against. A
-           * `<nav>`, not a `WardPanel` — the
-           * landmark role is what makes this switcher findable by `getByRole("navigation", ...)`, and
-           * `WardPanel` renders a `<section>`. `composes` borrows the primitive's own header classes
-           * instead, so the chrome matches every other panel on this page exactly rather than
-           * approximately.
-           */}
-          <nav className={styles.teamSwitcher} aria-label="Other community teams">
-            <details className={`${styles.teamDisclosure} source-print`}>
-              <summary className={styles.teamSwitcherHeader}>
-                <span className={styles.teamSwitcherTitle}>Change team</span>
-                <span className={styles.switchCount}>{COMMUNITY_TEAM_PAGES.length - 1} other teams</span>
-              </summary>
-              <div className={styles.teamPopover}>
-                <div className={styles.teamPopoverHeader}>
-                  <span>Select team</span>
-                  <span className={styles.teamPopoverMeta}>{COMMUNITY_TEAM_PAGES.length - 1} other catchments</span>
-                </div>
-                <ul className={styles.teamList}>
-                  {COMMUNITY_TEAM_PAGES.filter((other) => other.id !== team.id).map((other) => {
-                    const suburbs = communityTeamSuburbCounts().get(other.name);
-                    return (
-                      <li key={other.id} className={styles.teamListItem}>
-                        <Link className={styles.teamLink} href={communityTeamHref(other)}>
-                          <span className={styles.teamLinkName}>{other.name}</span>
-                          {suburbs ? (
-                            <span className={styles.teamLinkMeta}>
-                              {suburbs} {suburbs === 1 ? "suburb" : "suburbs"}
-                            </span>
-                          ) : null}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            </details>
-          </nav>
-        </div>
-
-        <SinceYouLooked
-          id="ward-community-since"
-          className={v6.since}
-          // This page renders elapsed time, never a clock face (owner ruling), so the window is named.
-          since="the start of this shift"
-          items={teamSinceItems(
-            sourceReferrals,
-            [team.name, ...ratifiedSameServiceNames(team.name)],
-            currentShiftStartInstant(now),
-            now,
-            waitingReferrals.length,
-          )}
-          onCopy={() => {
-            const lines = teamSinceItems(
-              sourceReferrals,
-              [team.name, ...ratifiedSameServiceNames(team.name)],
-              currentShiftStartInstant(now),
-              now,
-              waitingReferrals.length,
-            ).map((item) => `${item.value} ${item.word}`);
-            const text = `${team.name}, since the start of this shift (synthetic prototype): ${lines.join(", ")}.`;
-            void navigator.clipboard?.writeText(text).then(
-              () => toast?.push({ tone: "success", title: "Copied as handover text" }),
-              () => toast?.push({ tone: "warning", title: "Could not copy", body: text }),
-            );
-          }}
-        />
+            {sinceElement}
+          </>
+        )}
+        {isPhone ? communityPhoneTree : null}
 
         <Drawer
           open={switchOpen}
@@ -1786,43 +2704,198 @@ export function CommunityScreen({
           </div>
         </Drawer>
 
-        <div className={`${styles.contentWorkspace} ${v6.workspace}`}>
-          {/* ── Tab 1: Priority Referral Triage Queue ── */}
-          <div
-            className={activeTab === "tab-triage" ? styles.tabPanelActive : styles.tabPanelHidden}
-            id="tab-triage"
-            role="tabpanel"
-            aria-labelledby="tabBtn-triage"
-          >
-            {/* ── Referrals addressed to this team, not yet answered — the team's own queue ── */}
-            <section
-              className={isDemoMode ? styles.workspaceSection : styles.cardPanel}
-              aria-label="Waiting for the team's answer"
-              data-testid="ward-community-waiting"
+        {isPhone ? null : (
+          <div className={`${styles.contentWorkspace} ${v6.workspace}`}>
+            {/* ── Tab 1: Priority Referral Triage Queue ── */}
+            <div
+              className={activeTab === "tab-triage" ? styles.tabPanelActive : styles.tabPanelHidden}
+              id="tab-triage"
+              role="tabpanel"
+              aria-labelledby="tabBtn-triage"
             >
-              {!isDemoMode && (
-                <div className={styles.panelHead}>
-                  <h2 className={styles.panelTitle}>
-                    <span>Waiting for the team&apos;s answer</span>
-                  </h2>
-                  <span className={styles.badgePill} data-ward-panel-count>
-                    {waitingReferrals.length}
-                  </span>
-                </div>
-              )}
-              <div
-                className={isDemoMode ? styles.workspaceBody : styles.panelBody}
-                role="region"
-                aria-label="Waiting for the team's answer details"
-                tabIndex={0}
+              {/* ── Referrals addressed to this team, not yet answered — the team's own queue ── */}
+              <section
+                className={isDemoMode ? styles.workspaceSection : styles.cardPanel}
+                aria-label="Waiting for the team's answer"
+                data-testid="ward-community-waiting"
               >
-                {waitingReferrals.length === 0 &&
-                isDemoMode &&
-                demoTeamReferrals.length > 0 &&
-                !hasAnyReferralsForTeam ? (
-                  <>
-                    <div className={styles.filterToolbar}>
-                      <div className={styles.filterChipsGroup}>
+                {!isDemoMode && (
+                  <div className={styles.panelHead}>
+                    <h2 className={styles.panelTitle}>
+                      <span>Waiting for the team&apos;s answer</span>
+                    </h2>
+                    <span className={styles.badgePill} data-ward-panel-count>
+                      {waitingReferrals.length}
+                    </span>
+                  </div>
+                )}
+                <div
+                  className={isDemoMode ? styles.workspaceBody : styles.panelBody}
+                  role="region"
+                  aria-label="Waiting for the team's answer details"
+                  tabIndex={0}
+                >
+                  {waitingReferrals.length === 0 &&
+                  isDemoMode &&
+                  demoTeamReferrals.length > 0 &&
+                  !hasAnyReferralsForTeam ? (
+                    <>
+                      <div className={styles.filterToolbar}>
+                        <div className={styles.filterChipsGroup}>
+                          <button
+                            type="button"
+                            className={styles.chipFilterBtn}
+                            aria-pressed={triageFilter === "all"}
+                            onClick={() => setTriageFilter("all")}
+                          >
+                            <span>All Referrals</span>
+                            <span className={styles.badgePill} id="chipAllRefBadge">
+                              {demoTeamReferrals.length}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.chipFilterBtn}
+                            aria-pressed={triageFilter === "p1"}
+                            onClick={() => setTriageFilter("p1")}
+                          >
+                            <span>Priority 1 Immediate</span>
+                            <span className={styles.badgePill} id="chipP1Badge" style={{ color: "var(--danger-ink)" }}>
+                              {demoTeamReferrals.filter((r) => r.urgency === 1).length}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.chipFilterBtn}
+                            aria-pressed={triageFilter === "p2"}
+                            onClick={() => setTriageFilter("p2")}
+                          >
+                            <span>Priority 2 Urgent</span>
+                            <span className={styles.badgePill} id="chipP2Badge">
+                              {demoTeamReferrals.filter((r) => r.urgency === 2).length}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.chipFilterBtn}
+                            aria-pressed={triageFilter === "p3"}
+                            onClick={() => setTriageFilter("p3")}
+                          >
+                            <span>Priority 3 Routine</span>
+                            <span className={styles.badgePill} id="chipP3Badge">
+                              {demoTeamReferrals.filter((r) => r.urgency === 3).length}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.chipFilterBtn}
+                            aria-pressed={triageFilter === "ed"}
+                            onClick={() => setTriageFilter("ed")}
+                          >
+                            <span>ED Liaison &amp; Crisis</span>
+                            <span className={styles.badgePill} id="chipEdBadge">
+                              {
+                                demoTeamReferrals.filter(
+                                  (r) =>
+                                    r.origin.toLowerCase().includes("ed") ||
+                                    r.origin.toLowerCase().includes("crisis") ||
+                                    r.origin.toLowerCase().includes("resus"),
+                                ).length
+                              }
+                            </span>
+                          </button>
+                        </div>
+                        <div style={{ fontFamily: "var(--mono)", fontSize: "var(--t-0)", color: "var(--muted)" }}>
+                          Sorted by Longest Wait
+                        </div>
+                      </div>
+                      {demoVisibleReferrals.length === 0 ? (
+                        <p className={styles.emptyNote} data-testid="ward-community-waiting-empty">
+                          No referral matching the selected triage priority is waiting for an answer.
+                        </p>
+                      ) : (
+                        <ul
+                          id="triageGrid"
+                          className={styles.triageQueueGrid}
+                          data-testid="ward-community-waiting-list"
+                        >
+                          {demoVisibleReferrals.map((referral) => (
+                            <li
+                              key={referral.id}
+                              className={styles.refCard}
+                              data-testid={`ward-community-waiting-${referral.id}`}
+                              data-ref-id={referral.id}
+                              data-prio={`p${referral.urgency}`}
+                              onClick={() => {
+                                setSelectedPatientId(referral.patientId);
+                                setActiveDrawer("pxDrawer");
+                              }}
+                              style={{ cursor: "pointer" }}
+                            >
+                              <div className={styles.refCardHead}>
+                                <span className={styles.refId}>
+                                  {referral.id} · {referral.priorityLabel}
+                                </span>
+                                <span className={styles.refWait} data-breach={referral.isBreach ? "true" : undefined}>
+                                  {referral.waitLabel}
+                                </span>
+                              </div>
+                              <div className={styles.refPatientRow}>
+                                <b className={styles.patientIdWrap}>
+                                  {referral.patientId} ({referral.patientDetails})
+                                </b>
+                                <span className={`${styles.statusPillBadge} ${styles[referral.legalStatusTone]}`}>
+                                  {referral.legalStatus}
+                                </span>
+                              </div>
+                              <p
+                                className={styles.refSummaryText}
+                                style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)", margin: "0.5rem 0" }}
+                              >
+                                {referral.clinicalSummary}
+                              </p>
+                              <div className={styles.refActionsRow} onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  className={styles.btnSmPrimary}
+                                  onClick={() => {
+                                    setToastMessage(`Accepted ${referral.id} into community triage.`);
+                                  }}
+                                >
+                                  {referral.primaryActionLabel}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.btnSmSec}
+                                  onClick={() => {
+                                    setSelectedPatientId(referral.patientId);
+                                    setActiveDrawer("pxDrawer");
+                                  }}
+                                >
+                                  {referral.secActionLabel}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.btnSmSec}
+                                  onClick={() => {
+                                    setToastMessage(`Decline option for ${referral.id} recorded.`);
+                                  }}
+                                >
+                                  {referral.declineActionLabel}
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  ) : waitingReferrals.length === 0 ? (
+                    <p className={styles.emptyNote} data-testid="ward-community-waiting-empty">
+                      No referral naming this team is currently waiting for an answer.
+                    </p>
+                  ) : (
+                    <>
+                      <div className={styles.filterChipsGroup} style={{ marginBottom: "0.75rem" }}>
                         <button
                           type="button"
                           className={styles.chipFilterBtn}
@@ -1831,7 +2904,7 @@ export function CommunityScreen({
                         >
                           <span>All Referrals</span>
                           <span className={styles.badgePill} id="chipAllRefBadge">
-                            {demoTeamReferrals.length}
+                            {waitingReferrals.length}
                           </span>
                         </button>
                         <button
@@ -1842,7 +2915,7 @@ export function CommunityScreen({
                         >
                           <span>Priority 1 Immediate</span>
                           <span className={styles.badgePill} id="chipP1Badge" style={{ color: "var(--danger-ink)" }}>
-                            {demoTeamReferrals.filter((r) => r.urgency === 1).length}
+                            {p1ReferralsCount}
                           </span>
                         </button>
                         <button
@@ -1853,7 +2926,7 @@ export function CommunityScreen({
                         >
                           <span>Priority 2 Urgent</span>
                           <span className={styles.badgePill} id="chipP2Badge">
-                            {demoTeamReferrals.filter((r) => r.urgency === 2).length}
+                            {p2ReferralsCount}
                           </span>
                         </button>
                         <button
@@ -1864,7 +2937,7 @@ export function CommunityScreen({
                         >
                           <span>Priority 3 Routine</span>
                           <span className={styles.badgePill} id="chipP3Badge">
-                            {demoTeamReferrals.filter((r) => r.urgency === 3).length}
+                            {p3ReferralsCount}
                           </span>
                         </button>
                         <button
@@ -1875,571 +2948,343 @@ export function CommunityScreen({
                         >
                           <span>ED Liaison &amp; Crisis</span>
                           <span className={styles.badgePill} id="chipEdBadge">
-                            {
-                              demoTeamReferrals.filter(
-                                (r) =>
-                                  r.origin.toLowerCase().includes("ed") ||
-                                  r.origin.toLowerCase().includes("crisis") ||
-                                  r.origin.toLowerCase().includes("resus"),
-                              ).length
-                            }
+                            {edReferralsCount}
                           </span>
                         </button>
                       </div>
-                      <div style={{ fontFamily: "var(--mono)", fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                        Sorted by Longest Wait
-                      </div>
-                    </div>
-                    {demoVisibleReferrals.length === 0 ? (
-                      <p className={styles.emptyNote} data-testid="ward-community-waiting-empty">
-                        No referral matching the selected triage priority is waiting for an answer.
+                      {visibleWaitingReferrals.length === 0 ? (
+                        <p className={styles.emptyNote}>
+                          No referral matching the selected triage priority is waiting for an answer.
+                        </p>
+                      ) : (
+                        <ul
+                          id="triageGrid"
+                          className={`${styles.cardList} ${styles.triageQueueGrid}`}
+                          data-testid="ward-community-waiting-list"
+                        >
+                          {visibleWaitingReferrals.map((referral) => {
+                            const declineOpen = declineOpenFor === referral.id;
+                            // Blocked only until a reason is chosen — the same "state a reason before
+                            // declining" rule `referral-match.tsx`'s own ward and ED controls hold to.
+                            const declineBlocked =
+                              declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined;
+                            return (
+                              <li
+                                key={referral.id}
+                                className={`${styles.card} ${styles.refCard} refCard`}
+                                data-testid={`ward-community-waiting-${referral.id}`}
+                                data-ref-id={referral.id}
+                                data-prio={`p${referral.urgency}${referral.source === "ed_medical" ? " ed" : ""}`}
+                              >
+                                <div className={styles.refCardHead}>
+                                  <span className={styles.refId}>
+                                    {referral.id} · {urgencyTierLabel(referral.urgency)}
+                                  </span>
+                                  <span
+                                    className={styles.refWait}
+                                    data-breach={referral.urgency === 1 ? "true" : undefined}
+                                  >
+                                    Wait: {referralWaitLine(referral, now)}
+                                  </span>
+                                </div>
+                                {(() => {
+                                  const pt = patients.find((p) => p.id === referral.patientId);
+                                  return (
+                                    <div className={styles.refPatientRow}>
+                                      <b className={styles.patientIdWrap}>
+                                        {referral.patientId ?? referral.id}{" "}
+                                        {pt ? `(${pt.sex === "Male" ? "M" : "F"})` : ""}
+                                      </b>
+                                      <span
+                                        className={`${styles.statusPillBadge} ${referral.urgency === 1 ? styles.danger : styles.neutral}`}
+                                      >
+                                        {pt?.legalStatus ?? "Legal status not recorded"}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
+                                <div className={styles.refClinicalSummary}>
+                                  Origin: {referralOriginLabel(referral)}.{" "}
+                                  {referral.history ||
+                                    `${referral.ageBand} · ${referral.homeRegion}. ${referral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
+                                </div>
+                                <ReferralIntakeSummary intake={referral.intake} />
+                                <p className={styles.cardDetail} style={{ display: "none" }}>
+                                  {referralWaitLine(referral, now)}
+                                </p>
+                                <p className={styles.cardDetail} style={{ display: "none" }}>
+                                  {referral.ageBand} · {referral.homeRegion} · {referralOriginLabel(referral)}
+                                </p>
+                                <p className={styles.cardDetail} style={{ display: "none" }}>
+                                  {referral.transportNeeded ? "Transport needed" : "No transport recorded"}
+                                </p>
+                                <div className={styles.cardActionsGroup}>
+                                  <div className={styles.cardWorkflowActions}>
+                                    <button
+                                      type="button"
+                                      className={styles.cardActionButton}
+                                      onClick={() => handleActionClick("Contacted", referral)}
+                                    >
+                                      Log team contact
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={styles.cardActionButton}
+                                      onClick={() => handleActionClick("Review", referral)}
+                                    >
+                                      Review
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={styles.cardActionButton}
+                                      onClick={() => handleActionClick("Assign", referral)}
+                                    >
+                                      Assign
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={styles.cardActionButton}
+                                      onClick={() => {
+                                        setSelectedReferralId(referral.id);
+                                        setPendingAcceptance(null);
+                                        setAcceptanceError(null);
+                                        setActiveDrawer("referralDrawer");
+                                      }}
+                                      title="Open full referral triage assessment"
+                                    >
+                                      Triage dossier
+                                    </button>
+                                  </div>
+                                  <div className={styles.declineActions}>
+                                    {/* RB5 (item 16, 2026-09-17) — "a community team may accept, for
+                                  follow-up only". Same row as the decline toggle beside it; no
+                                  reason to gate on, so this dispatches directly. */}
+                                    <button
+                                      type="button"
+                                      className={styles.acceptConfirmButton}
+                                      data-testid={`ward-community-accept-${referral.id}`}
+                                      onClick={() => handleConfirmAccept(referral.id)}
+                                    >
+                                      Accept referral
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={styles.declineButton}
+                                      data-testid={`ward-community-decline-toggle-${referral.id}`}
+                                      aria-expanded={declineOpen}
+                                      onClick={() => handleToggleDecline(referral.id)}
+                                    >
+                                      Decline referral
+                                    </button>
+                                    {declineOpen ? (
+                                      <div
+                                        className={styles.declineForm}
+                                        data-testid={`ward-community-decline-panel-${referral.id}`}
+                                      >
+                                        <label
+                                          className={styles.declineLabel}
+                                          htmlFor={`ward-community-decline-reason-${referral.id}`}
+                                        >
+                                          Decline reason
+                                          <select
+                                            id={`ward-community-decline-reason-${referral.id}`}
+                                            className={styles.declineSelect}
+                                            data-testid={`ward-community-decline-reason-${referral.id}`}
+                                            value={declineDraft ?? ""}
+                                            onChange={(e) => {
+                                              const chosen = e.target.value;
+                                              // Membership, never truthiness — the blank option must
+                                              // resolve to "no answer yet", never to a reason that merely
+                                              // sorts first (same discipline as `referral-match.tsx`'s own
+                                              // decline selects).
+                                              setDeclineDraft(
+                                                (COMMUNITY_DECLINE_REASONS as readonly string[]).includes(chosen)
+                                                  ? (chosen as CommunityDeclineReason)
+                                                  : undefined,
+                                              );
+                                            }}
+                                          >
+                                            <option value="">Select a reason...</option>
+                                            {COMMUNITY_DECLINE_REASONS.map((reason) => (
+                                              <option key={reason} value={reason}>
+                                                {COMMUNITY_DECLINE_REASON_LABELS[reason]}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </label>
+                                        <button
+                                          type="button"
+                                          className={styles.declineConfirmButton}
+                                          data-testid={`ward-community-decline-confirm-${referral.id}`}
+                                          aria-disabled={declineBlocked === undefined ? undefined : "true"}
+                                          aria-describedby={
+                                            declineBlocked === undefined
+                                              ? undefined
+                                              : `ward-community-decline-blocked-${referral.id}`
+                                          }
+                                          title={declineBlocked}
+                                          onClick={
+                                            declineBlocked === undefined
+                                              ? () => handleConfirmDecline(referral.id)
+                                              : ignoreUnavailableActivation
+                                          }
+                                        >
+                                          Confirm decline
+                                        </button>
+                                        {declineBlocked === undefined ? null : (
+                                          <span
+                                            id={`ward-community-decline-blocked-${referral.id}`}
+                                            className="sr-only"
+                                          >
+                                            {declineBlocked}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </>
+                  )}
+                  {/*
+                   * 🔴 RB5 (item 16, 2026-09-17) CLOSED THE GAP THIS COMMENT ONCE DESCRIBED. Community
+                   * teams can now accept their own community_team destination, for follow-up only —
+                   * `EVENT_ROLE.ACCEPT_REFERRAL` permits "community", scoped by the reducer's own
+                   * `answerableBy` map to that destination kind alone. What is still true, and still
+                   * the reason this footnote exists: accepting an INPATIENT admission (a ward's bed)
+                   * requires a ward or coordinator role and a bed allocation this team never holds.
+                   */}
+                  <p className={styles.footnote} data-testid="ward-community-waiting-not-actionable">
+                    Community-team roles can accept or decline referrals addressed to their own team, for follow-up
+                    only. Inpatient admission acceptance is not recordable from this page.
+                  </p>
+                </div>
+              </section>
+
+              <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
+                <section
+                  className={styles.cardPanel}
+                  aria-label="Worth attention"
+                  data-testid="ward-community-attention"
+                >
+                  <div className={styles.panelHead}>
+                    <h3 className={styles.panelTitle}>
+                      <span>Worth attention</span>
+                    </h3>
+                  </div>
+                  <div className={styles.panelBody} role="region" aria-label="Worth attention details" tabIndex={0}>
+                    {attentionItems.length === 0 ? (
+                      <p className={styles.emptyNote} data-testid="ward-community-attention-empty">
+                        Nothing on this page currently stands out beyond what the lists above already show.
                       </p>
                     ) : (
-                      <ul id="triageGrid" className={styles.triageQueueGrid} data-testid="ward-community-waiting-list">
-                        {demoVisibleReferrals.map((referral) => (
-                          <li
-                            key={referral.id}
-                            className={styles.refCard}
-                            data-testid={`ward-community-waiting-${referral.id}`}
-                            data-ref-id={referral.id}
-                            data-prio={`p${referral.urgency}`}
-                            onClick={() => {
-                              setSelectedPatientId(referral.patientId);
-                              setActiveDrawer("pxDrawer");
-                            }}
-                            style={{ cursor: "pointer" }}
-                          >
-                            <div className={styles.refCardHead}>
-                              <span className={styles.refId}>
-                                {referral.id} · {referral.priorityLabel}
-                              </span>
-                              <span className={styles.refWait} data-breach={referral.isBreach ? "true" : undefined}>
-                                {referral.waitLabel}
-                              </span>
-                            </div>
-                            <div className={styles.refPatientRow}>
-                              <b className={styles.patientIdWrap}>
-                                {referral.patientId} ({referral.patientDetails})
-                              </b>
-                              <span className={`${styles.statusPillBadge} ${styles[referral.legalStatusTone]}`}>
-                                {referral.legalStatus}
-                              </span>
-                            </div>
-                            <p
-                              className={styles.refSummaryText}
-                              style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)", margin: "0.5rem 0" }}
-                            >
-                              {referral.clinicalSummary}
-                            </p>
-                            <div className={styles.refActionsRow} onClick={(e) => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                className={styles.btnSmPrimary}
-                                onClick={() => {
-                                  setToastMessage(`Accepted ${referral.id} into community triage.`);
-                                }}
-                              >
-                                {referral.primaryActionLabel}
-                              </button>
-                              <button
-                                type="button"
-                                className={styles.btnSmSec}
-                                onClick={() => {
-                                  setSelectedPatientId(referral.patientId);
-                                  setActiveDrawer("pxDrawer");
-                                }}
-                              >
-                                {referral.secActionLabel}
-                              </button>
-                              <button
-                                type="button"
-                                className={styles.btnSmSec}
-                                onClick={() => {
-                                  setToastMessage(`Decline option for ${referral.id} recorded.`);
-                                }}
-                              >
-                                {referral.declineActionLabel}
-                              </button>
-                            </div>
+                      <ul className={styles.attentionList} data-testid="ward-community-attention-list">
+                        {attentionItems.map((item, index) => (
+                          <li key={index} className={styles.attentionItem}>
+                            {item}
                           </li>
                         ))}
                       </ul>
                     )}
-                  </>
-                ) : waitingReferrals.length === 0 ? (
-                  <p className={styles.emptyNote} data-testid="ward-community-waiting-empty">
-                    No referral naming this team is currently waiting for an answer.
-                  </p>
-                ) : (
-                  <>
-                    <div className={styles.filterChipsGroup} style={{ marginBottom: "0.75rem" }}>
-                      <button
-                        type="button"
-                        className={styles.chipFilterBtn}
-                        aria-pressed={triageFilter === "all"}
-                        onClick={() => setTriageFilter("all")}
-                      >
-                        <span>All Referrals</span>
-                        <span className={styles.badgePill} id="chipAllRefBadge">
-                          {waitingReferrals.length}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.chipFilterBtn}
-                        aria-pressed={triageFilter === "p1"}
-                        onClick={() => setTriageFilter("p1")}
-                      >
-                        <span>Priority 1 Immediate</span>
-                        <span className={styles.badgePill} id="chipP1Badge" style={{ color: "var(--danger-ink)" }}>
-                          {p1ReferralsCount}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.chipFilterBtn}
-                        aria-pressed={triageFilter === "p2"}
-                        onClick={() => setTriageFilter("p2")}
-                      >
-                        <span>Priority 2 Urgent</span>
-                        <span className={styles.badgePill} id="chipP2Badge">
-                          {p2ReferralsCount}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.chipFilterBtn}
-                        aria-pressed={triageFilter === "p3"}
-                        onClick={() => setTriageFilter("p3")}
-                      >
-                        <span>Priority 3 Routine</span>
-                        <span className={styles.badgePill} id="chipP3Badge">
-                          {p3ReferralsCount}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.chipFilterBtn}
-                        aria-pressed={triageFilter === "ed"}
-                        onClick={() => setTriageFilter("ed")}
-                      >
-                        <span>ED Liaison &amp; Crisis</span>
-                        <span className={styles.badgePill} id="chipEdBadge">
-                          {edReferralsCount}
-                        </span>
-                      </button>
-                    </div>
-                    {visibleWaitingReferrals.length === 0 ? (
-                      <p className={styles.emptyNote}>
-                        No referral matching the selected triage priority is waiting for an answer.
-                      </p>
-                    ) : (
-                      <ul
-                        id="triageGrid"
-                        className={`${styles.cardList} ${styles.triageQueueGrid}`}
-                        data-testid="ward-community-waiting-list"
-                      >
-                        {visibleWaitingReferrals.map((referral) => {
-                          const declineOpen = declineOpenFor === referral.id;
-                          // Blocked only until a reason is chosen — the same "state a reason before
-                          // declining" rule `referral-match.tsx`'s own ward and ED controls hold to.
-                          const declineBlocked =
-                            declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined;
-                          return (
-                            <li
-                              key={referral.id}
-                              className={`${styles.card} ${styles.refCard} refCard`}
-                              data-testid={`ward-community-waiting-${referral.id}`}
-                              data-ref-id={referral.id}
-                              data-prio={`p${referral.urgency}${referral.source === "ed_medical" ? " ed" : ""}`}
-                            >
-                              <div className={styles.refCardHead}>
-                                <span className={styles.refId}>
-                                  {referral.id} · {urgencyTierLabel(referral.urgency)}
-                                </span>
-                                <span
-                                  className={styles.refWait}
-                                  data-breach={referral.urgency === 1 ? "true" : undefined}
-                                >
-                                  Wait: {referralWaitLine(referral, now)}
-                                </span>
-                              </div>
-                              {(() => {
-                                const pt = patients.find((p) => p.id === referral.patientId);
-                                return (
-                                  <div className={styles.refPatientRow}>
-                                    <b className={styles.patientIdWrap}>
-                                      {referral.patientId ?? referral.id}{" "}
-                                      {pt ? `(${pt.sex === "Male" ? "M" : "F"})` : ""}
-                                    </b>
-                                    <span
-                                      className={`${styles.statusPillBadge} ${referral.urgency === 1 ? styles.danger : styles.neutral}`}
-                                    >
-                                      {pt?.legalStatus ?? "Legal status not recorded"}
-                                    </span>
-                                  </div>
-                                );
-                              })()}
-                              <div className={styles.refClinicalSummary}>
-                                Origin: {referralOriginLabel(referral)}.{" "}
-                                {referral.history ||
-                                  `${referral.ageBand} · ${referral.homeRegion}. ${referral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
-                              </div>
-                              <ReferralIntakeSummary intake={referral.intake} />
-                              <p className={styles.cardDetail} style={{ display: "none" }}>
-                                {referralWaitLine(referral, now)}
-                              </p>
-                              <p className={styles.cardDetail} style={{ display: "none" }}>
-                                {referral.ageBand} · {referral.homeRegion} · {referralOriginLabel(referral)}
-                              </p>
-                              <p className={styles.cardDetail} style={{ display: "none" }}>
-                                {referral.transportNeeded ? "Transport needed" : "No transport recorded"}
-                              </p>
-                              <div className={styles.cardActionsGroup}>
-                                <div className={styles.cardWorkflowActions}>
-                                  <button
-                                    type="button"
-                                    className={styles.cardActionButton}
-                                    onClick={() => handleActionClick("Contacted", referral)}
-                                  >
-                                    Log team contact
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={styles.cardActionButton}
-                                    onClick={() => handleActionClick("Review", referral)}
-                                  >
-                                    Review
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={styles.cardActionButton}
-                                    onClick={() => handleActionClick("Assign", referral)}
-                                  >
-                                    Assign
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={styles.cardActionButton}
-                                    onClick={() => {
-                                      setSelectedReferralId(referral.id);
-                                      setPendingAcceptance(null);
-                                      setAcceptanceError(null);
-                                      setActiveDrawer("referralDrawer");
-                                    }}
-                                    title="Open full referral triage assessment"
-                                  >
-                                    Triage Dossier
-                                  </button>
-                                </div>
-                                <div className={styles.declineActions}>
-                                  {/* RB5 (item 16, 2026-09-17) — "a community team may accept, for
-                                  follow-up only". Same row as the decline toggle beside it; no
-                                  reason to gate on, so this dispatches directly. */}
-                                  <button
-                                    type="button"
-                                    className={styles.acceptConfirmButton}
-                                    data-testid={`ward-community-accept-${referral.id}`}
-                                    onClick={() => handleConfirmAccept(referral.id)}
-                                  >
-                                    Accept referral
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={styles.declineButton}
-                                    data-testid={`ward-community-decline-toggle-${referral.id}`}
-                                    aria-expanded={declineOpen}
-                                    onClick={() => handleToggleDecline(referral.id)}
-                                  >
-                                    Decline referral
-                                  </button>
-                                  {declineOpen ? (
-                                    <div
-                                      className={styles.declineForm}
-                                      data-testid={`ward-community-decline-panel-${referral.id}`}
-                                    >
-                                      <label
-                                        className={styles.declineLabel}
-                                        htmlFor={`ward-community-decline-reason-${referral.id}`}
-                                      >
-                                        Decline reason
-                                        <select
-                                          id={`ward-community-decline-reason-${referral.id}`}
-                                          className={styles.declineSelect}
-                                          data-testid={`ward-community-decline-reason-${referral.id}`}
-                                          value={declineDraft ?? ""}
-                                          onChange={(e) => {
-                                            const chosen = e.target.value;
-                                            // Membership, never truthiness — the blank option must
-                                            // resolve to "no answer yet", never to a reason that merely
-                                            // sorts first (same discipline as `referral-match.tsx`'s own
-                                            // decline selects).
-                                            setDeclineDraft(
-                                              (COMMUNITY_DECLINE_REASONS as readonly string[]).includes(chosen)
-                                                ? (chosen as CommunityDeclineReason)
-                                                : undefined,
-                                            );
-                                          }}
-                                        >
-                                          <option value="">Select a reason...</option>
-                                          {COMMUNITY_DECLINE_REASONS.map((reason) => (
-                                            <option key={reason} value={reason}>
-                                              {COMMUNITY_DECLINE_REASON_LABELS[reason]}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </label>
-                                      <button
-                                        type="button"
-                                        className={styles.declineConfirmButton}
-                                        data-testid={`ward-community-decline-confirm-${referral.id}`}
-                                        aria-disabled={declineBlocked === undefined ? undefined : "true"}
-                                        aria-describedby={
-                                          declineBlocked === undefined
-                                            ? undefined
-                                            : `ward-community-decline-blocked-${referral.id}`
-                                        }
-                                        title={declineBlocked}
-                                        onClick={
-                                          declineBlocked === undefined
-                                            ? () => handleConfirmDecline(referral.id)
-                                            : ignoreUnavailableActivation
-                                        }
-                                      >
-                                        Confirm decline
-                                      </button>
-                                      {declineBlocked === undefined ? null : (
-                                        <span id={`ward-community-decline-blocked-${referral.id}`} className="sr-only">
-                                          {declineBlocked}
-                                        </span>
-                                      )}
-                                    </div>
-                                  ) : null}
-                                </div>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </>
-                )}
-                {/*
-                 * 🔴 RB5 (item 16, 2026-09-17) CLOSED THE GAP THIS COMMENT ONCE DESCRIBED. Community
-                 * teams can now accept their own community_team destination, for follow-up only —
-                 * `EVENT_ROLE.ACCEPT_REFERRAL` permits "community", scoped by the reducer's own
-                 * `answerableBy` map to that destination kind alone. What is still true, and still
-                 * the reason this footnote exists: accepting an INPATIENT admission (a ward's bed)
-                 * requires a ward or coordinator role and a bed allocation this team never holds.
-                 */}
-                <p className={styles.footnote} data-testid="ward-community-waiting-not-actionable">
-                  Community-team roles can accept or decline referrals addressed to their own team, for follow-up only.
-                  Inpatient admission acceptance is not recordable from this page.
-                </p>
+                  </div>
+                </section>
               </div>
-            </section>
-
-            <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-              <section className={styles.cardPanel} aria-label="Worth attention" data-testid="ward-community-attention">
-                <div className={styles.panelHead}>
-                  <h3 className={styles.panelTitle}>
-                    <span>Worth attention</span>
-                  </h3>
-                </div>
-                <div className={styles.panelBody} role="region" aria-label="Worth attention details" tabIndex={0}>
-                  {attentionItems.length === 0 ? (
-                    <p className={styles.emptyNote} data-testid="ward-community-attention-empty">
-                      Nothing on this page currently stands out beyond what the lists above already show.
-                    </p>
-                  ) : (
-                    <ul className={styles.attentionList} data-testid="ward-community-attention-list">
-                      {attentionItems.map((item, index) => (
-                        <li key={index} className={styles.attentionItem}>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </section>
             </div>
-          </div>
 
-          {/* ── Tab 2: Catchment Acute Inpatients ── */}
-          <div
-            className={activeTab === "tab-inpatients" ? styles.tabPanelActive : styles.tabPanelHidden}
-            id="tab-inpatients"
-            role="tabpanel"
-            aria-labelledby="tabBtn-inpatients"
-          >
-            {/* ── List 2, moved — everyone of ours in a bed or holding one ─────────────────── */}
-            <section
-              className={styles.cardPanel}
-              aria-label="In a bed or holding one"
-              data-testid="ward-community-admitted"
+            {/* ── Tab 2: Catchment Acute Inpatients ── */}
+            <div
+              className={activeTab === "tab-inpatients" ? styles.tabPanelActive : styles.tabPanelHidden}
+              id="tab-inpatients"
+              role="tabpanel"
+              aria-labelledby="tabBtn-inpatients"
             >
-              <div className={styles.panelHead}>
-                <h2 className={styles.panelTitle}>
-                  <span>In a bed or holding one</span>
-                </h2>
-                <span className={styles.badgePill} data-ward-panel-count>
-                  {isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
-                </span>
-              </div>
-              <div className={styles.panelBody} role="region" aria-label="In a bed or holding one details" tabIndex={0}>
-                {isDemoMode ? (
-                  <>
-                    <div className={styles.filterToolbar}>
-                      <div className={styles.filterChipsGroup} style={{ marginBottom: "0.75rem" }}>
-                        <button
-                          type="button"
-                          className={styles.chipFilterBtn}
-                          aria-pressed={inpatientFilter === "all"}
-                          onClick={() => setInpatientFilter("all")}
-                        >
-                          <span>All Inpatients</span>
-                          <span className={styles.badgePill} id="chipAllInpatBadge">
-                            {DEMO_COMMUNITY_INPATIENTS.length}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.chipFilterBtn}
-                          aria-pressed={inpatientFilter === "secure"}
-                          onClick={() => setInpatientFilter("secure")}
-                        >
-                          <span>Secure / Locked Beds</span>
-                          <span className={styles.badgePill}>
-                            {DEMO_COMMUNITY_INPATIENTS.filter((i) => i.category === "secure").length}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.chipFilterBtn}
-                          aria-pressed={inpatientFilter === "open"}
-                          onClick={() => setInpatientFilter("open")}
-                        >
-                          <span>Open Acute Beds</span>
-                          <span className={styles.badgePill}>
-                            {DEMO_COMMUNITY_INPATIENTS.filter((i) => i.category === "open").length}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.chipFilterBtn}
-                          aria-pressed={inpatientFilter === "older"}
-                          onClick={() => setInpatientFilter("older")}
-                        >
-                          <span>Older Adult Units</span>
-                          <span className={styles.badgePill}>
-                            {DEMO_COMMUNITY_INPATIENTS.filter((i) => i.category === "older").length}
-                          </span>
-                        </button>
-                      </div>
-                      <p
-                        id="inpatientSummaryNote"
-                        className={styles.count}
-                        style={{
-                          fontSize: "var(--t-0)",
-                          color: "var(--muted)",
-                          fontFamily: "var(--mono)",
-                          margin: "0.25rem 0 0.75rem",
-                        }}
-                      >
-                        14 Admitted Across 4 Hospital Sites
-                      </p>
-                    </div>
-
-                    <WardTable
-                      id="inpatientTable"
-                      className={styles.table}
-                      wrapperClassName={styles.tableScroll}
-                      testId="ward-community-admitted-list"
-                      hasScrollThreshold
-                    >
-                      <caption>People referred to this team in a bed or holding one</caption>
-                      <thead>
-                        <tr>
-                          <th scope="col">Patient</th>
-                          <th scope="col">Admitting Ward &amp; Health Service</th>
-                          <th scope="col">Bed</th>
-                          <th scope="col" className={styles.n}>
-                            Days in Bed
-                          </th>
-                          <th scope="col">Legal Status</th>
-                          <th scope="col">Community Key Clinician</th>
-                          <th scope="col">Liaison / MDT Status</th>
-                          <th scope="col" className={styles.actionsCol}>
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {demoVisibleInpatients.map((inp) => (
-                          <tr
-                            key={inp.id}
-                            onClick={() => {
-                              setSelectedPatientId(inp.patientId);
-                              setActiveDrawer("pxDrawer");
-                            }}
-                            style={{ cursor: "pointer" }}
+              {/* ── List 2, moved — everyone of ours in a bed or holding one ─────────────────── */}
+              <section
+                className={styles.cardPanel}
+                aria-label="In a bed or holding one"
+                data-testid="ward-community-admitted"
+              >
+                <div className={styles.panelHead}>
+                  <h2 className={styles.panelTitle}>
+                    <span>In a bed or holding one</span>
+                  </h2>
+                  <span className={styles.badgePill} data-ward-panel-count>
+                    {isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
+                  </span>
+                </div>
+                <div
+                  className={styles.panelBody}
+                  role="region"
+                  aria-label="In a bed or holding one details"
+                  tabIndex={0}
+                >
+                  {isDemoMode ? (
+                    <>
+                      <div className={styles.filterToolbar}>
+                        <div className={styles.filterChipsGroup} style={{ marginBottom: "0.75rem" }}>
+                          <button
+                            type="button"
+                            className={styles.chipFilterBtn}
+                            aria-pressed={inpatientFilter === "all"}
+                            onClick={() => setInpatientFilter("all")}
                           >
-                            <td style={{ whiteSpace: "nowrap" }}>
-                              <b className={styles.patientIdWrap}>{inp.patientId}</b> ({inp.patientDetails})
-                            </td>
-                            <td>
-                              {inp.wardName} ({inp.healthService})
-                            </td>
-                            <td>
-                              <span className={`${styles.statusPillBadge} ${styles.neutral}`}>{inp.bedId}</span>
-                            </td>
-                            <td className={styles.n}>{inp.daysInBed}</td>
-                            <td>
-                              <span className={`${styles.statusPillBadge} ${styles[inp.legalStatusTone]}`}>
-                                {inp.legalStatus}
-                              </span>
-                            </td>
-                            <td>{inp.keyClinician}</td>
-                            <td>{inp.mdtStatus}</td>
-                            <td className={styles.actionsCol} onClick={(e) => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                className={styles.btnSmSec}
-                                onClick={() => {
-                                  setSelectedPatientId(inp.patientId);
-                                  setActiveDrawer("pxDrawer");
-                                }}
-                              >
-                                Open Dossier
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </WardTable>
-                  </>
-                ) : (
-                  <>
-                    <p id="inpatientSummaryNote" className={styles.count} data-testid="ward-community-admitted-count">
-                      {lists.currentlyAdmitted.length}{" "}
-                      {lists.currentlyAdmitted.length === 1
-                        ? "person referred to this team is"
-                        : "people referred to this team are"}{" "}
-                      in a bed or have one pulled for them.
-                    </p>
-                    {lists.currentlyAdmitted.length === 0 ? (
-                      <p className={styles.emptyNote} data-testid="ward-community-admitted-empty">
-                        {cannotResolve ? (
-                          <>
-                            A bed carries no link back to the referral that named this team, so this list cannot be
-                            built for {team.name}. Its emptiness is a gap in the record rather than an answer about the
-                            team.
-                          </>
-                        ) : (
-                          <>Nobody referred to this team is currently in a bed.</>
-                        )}
-                      </p>
-                    ) : (
+                            <span>All Inpatients</span>
+                            <span className={styles.badgePill} id="chipAllInpatBadge">
+                              {DEMO_COMMUNITY_INPATIENTS.length}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.chipFilterBtn}
+                            aria-pressed={inpatientFilter === "secure"}
+                            onClick={() => setInpatientFilter("secure")}
+                          >
+                            <span>Secure / Locked Beds</span>
+                            <span className={styles.badgePill}>
+                              {DEMO_COMMUNITY_INPATIENTS.filter((i) => i.category === "secure").length}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.chipFilterBtn}
+                            aria-pressed={inpatientFilter === "open"}
+                            onClick={() => setInpatientFilter("open")}
+                          >
+                            <span>Open Acute Beds</span>
+                            <span className={styles.badgePill}>
+                              {DEMO_COMMUNITY_INPATIENTS.filter((i) => i.category === "open").length}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.chipFilterBtn}
+                            aria-pressed={inpatientFilter === "older"}
+                            onClick={() => setInpatientFilter("older")}
+                          >
+                            <span>Older Adult Units</span>
+                            <span className={styles.badgePill}>
+                              {DEMO_COMMUNITY_INPATIENTS.filter((i) => i.category === "older").length}
+                            </span>
+                          </button>
+                        </div>
+                        <p
+                          id="inpatientSummaryNote"
+                          className={styles.count}
+                          style={{
+                            fontSize: "var(--t-0)",
+                            color: "var(--muted)",
+                            fontFamily: "var(--mono)",
+                            margin: "0.25rem 0 0.75rem",
+                          }}
+                        >
+                          14 Admitted Across 4 Hospital Sites
+                        </p>
+                      </div>
+
                       <WardTable
                         id="inpatientTable"
                         className={styles.table}
@@ -2450,536 +3295,636 @@ export function CommunityScreen({
                         <caption>People referred to this team in a bed or holding one</caption>
                         <thead>
                           <tr>
-                            {/*
-                              v6 columns (`CommunityTeam--in-a-bed`), where the record holds the
-                              figure: no key clinician or liaison column, since nothing records
-                              either, and no invented bed number.
-                            */}
-                            <th scope="col">Person</th>
-                            <th scope="col">Unit</th>
-                            <th scope="col">Legal status</th>
+                            <th scope="col">Patient</th>
+                            <th scope="col">Admitting Ward &amp; Health Service</th>
+                            <th scope="col">Bed</th>
                             <th scope="col" className={styles.n}>
-                              In bed
+                              Days in Bed
                             </th>
-                            {/*
-                          Drawing Actions column shows Open Dossier only. Owner decision 1
-                          (22 Sep 2026): drawings own look; book/cancel stays as behaviour and
-                          the Actions cluster adjusts to fit (dossier + transport controls).
-                        */}
+                            <th scope="col">Legal Status</th>
+                            <th scope="col">Community Key Clinician</th>
+                            <th scope="col">Liaison / MDT Status</th>
                             <th scope="col" className={styles.actionsCol}>
                               Actions
                             </th>
                           </tr>
                         </thead>
                         <tbody>
-                          {lists.currentlyAdmitted.map((admission) => {
-                            const movement =
-                              admission.state === "pulled" && admission.movementId !== null
-                                ? movements.find((candidate) => candidate.id === admission.movementId)
-                                : undefined;
-                            const transport = movement?.transport;
-                            const ownUncollectedBooking =
-                              transport !== undefined &&
-                              transport.bookedBy?.role === "community" &&
-                              transport.bookedBy.placeId === teamId &&
-                              transport.collectedAt === undefined;
-                            const otherBooking = transport !== undefined && !ownUncollectedBooking;
-                            const canBook =
-                              admission.state === "pulled" &&
-                              admission.movementId !== null &&
-                              movement !== undefined &&
-                              transport === undefined;
-                            const dossierPatientId = admission.patientId;
-                            const pt = patients.find((p) => p.id === admission.patientId);
-                            const stayDays = daysInBed(admission, now);
-                            return (
-                              <tr key={admission.id} data-testid={`ward-community-admitted-${admission.id}`}>
-                                <td style={{ whiteSpace: "nowrap" }}>
-                                  <b className={styles.patientIdWrap}>{admission.patientId ?? admission.id}</b>
-                                  {pt ? ` (${pt.sex === "Male" ? "M" : "F"})` : ""}
-                                </td>
-                                <td>
-                                  <span className={styles.cellLead}>{unitName(admission.unitId, units)}</span>
-                                  <span className={styles.cellSub}>{bedStateLabel(admission)}</span>
-                                </td>
-                                <td>{pt?.legalStatus ?? "Not recorded"}</td>
-                                <td className={styles.n}>{stayDays === null ? "Not arrived" : `${stayDays}d`}</td>
-                                <td
-                                  className={styles.actionsCell}
-                                  data-testid={`ward-community-transport-cell-${admission.id}`}
-                                >
-                                  <div className={styles.rowActions}>
-                                    {dossierPatientId !== null ? (
-                                      <button
-                                        type="button"
-                                        className={styles.btnSmSec}
-                                        data-testid={`ward-community-open-dossier-${admission.id}`}
-                                        onClick={() => {
-                                          setSelectedPatientId(dossierPatientId);
-                                          setActiveDrawer("pxDrawer");
-                                        }}
-                                      >
-                                        Open Dossier
-                                      </button>
-                                    ) : null}
-                                    {canBook ? (
-                                      <button
-                                        type="button"
-                                        className={styles.btnSmPrimary}
-                                        data-testid={`ward-community-book-transport-${admission.movementId}`}
-                                        onClick={() => openTransportBook(admission.movementId!)}
-                                      >
-                                        Log transport booking
-                                      </button>
-                                    ) : null}
-                                    {ownUncollectedBooking ? (
-                                      <button
-                                        type="button"
-                                        className={styles.transportCancelButton}
-                                        data-testid={`ward-community-cancel-transport-${admission.movementId}`}
-                                        onClick={() => openTransportCancel(admission.movementId!)}
-                                      >
-                                        Cancel this team&apos;s booking
-                                      </button>
-                                    ) : null}
-                                  </div>
-                                  {ownUncollectedBooking && transport.estimatedAt !== undefined ? (
-                                    <p
-                                      className={styles.transportBookedNote}
-                                      data-testid={`ward-community-transport-eta-${admission.movementId}`}
-                                    >
-                                      Estimated {formatInstantWithDay(transport.estimatedAt, now)} ·{" "}
-                                      {transportEtaRemainingLabel(transport.estimatedAt, now)}
-                                    </p>
-                                  ) : null}
-                                  {otherBooking ? (
-                                    <p
-                                      className={styles.transportBookedNote}
-                                      data-testid={`ward-community-transport-booked-${admission.movementId}`}
-                                    >
-                                      Transport already booked
-                                      {transport.bookedBy?.role === "ed"
-                                        ? " by the emergency department"
-                                        : transport.bookedBy?.role === "ward"
-                                          ? " by a ward"
-                                          : transport.bookedBy?.role === "community" &&
-                                              transport.bookedBy.placeId !== teamId
-                                            ? " by another community team"
-                                            : ""}
-                                      {transport.estimatedAt !== undefined
-                                        ? ` · estimated ${formatInstantWithDay(transport.estimatedAt, now)} · ${transportEtaRemainingLabel(transport.estimatedAt, now)}`
-                                        : ""}
-                                      .
-                                    </p>
-                                  ) : null}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </WardTable>
-                    )}
-                  </>
-                )}
-              </div>
-            </section>
-
-            {/* ── Admitted while already with this team — the owner's most delicate request ──
-                 See `categoriseTeamAdmission`'s doc comment above for the exact rule this table
-                 draws on, and this file's header block (third edition) for why the wording below is
-                 constrained the way it is. */}
-            <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-              <section
-                className={styles.cardPanel}
-                aria-label="Admitted while already with the team"
-                data-testid="ward-community-accepted-before-admission"
-              >
-                <div className={styles.panelHead}>
-                  <h3 className={styles.panelTitle}>
-                    <span>Admitted while already with the team</span>
-                  </h3>
-                  <span className={styles.badgePill} data-ward-panel-count>
-                    {admittedWhileAlreadyWithTeam.length} of {lists.currentlyAdmitted.length}
-                  </span>
-                </div>
-                <div
-                  className={styles.panelBody}
-                  role="region"
-                  aria-label="Admitted while already with the team details"
-                  tabIndex={0}
-                >
-                  {admittedWhileAlreadyWithTeam.length === 0 ? (
-                    <p className={styles.emptyNote} data-testid="ward-community-accepted-before-admission-empty">
-                      {cannotResolve ? (
-                        <>
-                          A bed carries no link back to the referral that named this team, so this list cannot be built
-                          for {team.name}. Its emptiness is a gap in the record rather than an answer about the team.
-                        </>
-                      ) : (
-                        <>
-                          Nobody this team can currently see in a bed or holding one was accepted before that bed began.
-                        </>
-                      )}
-                    </p>
-                  ) : (
-                    <WardTable
-                      className={styles.table}
-                      wrapperClassName={styles.tableScroll}
-                      testId="ward-community-accepted-before-admission-table"
-                      hasScrollThreshold
-                    >
-                      <caption>Admissions this team had already accepted before the bed began</caption>
-                      <thead>
-                        <tr>
-                          <th scope="col">Admission</th>
-                          <th scope="col">Unit</th>
-                          <th scope="col">In a bed for</th>
-                          <th scope="col">Accepted before the bed began</th>
-                          <th scope="col">Accepted altogether</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {admittedWhileAlreadyWithTeam.map(({ admission, acceptedAt, arrivedAt }) => (
-                          <tr
-                            key={admission.id}
-                            data-testid={`ward-community-accepted-before-admission-${admission.id}`}
-                          >
-                            <th scope="row">
-                              <span className={styles.patientIdWrap}>{admission.id}</span>
-                            </th>
-                            <td>{unitName(admission.unitId, units)}</td>
-                            <td>{stayLabel(admission, now)}</td>
-                            <td>{elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt))} before the bed began</td>
-                            <td>{elapsedSinceOrUnderADay(daysBetween(acceptedAt, now))} since acceptance</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </WardTable>
-                  )}
-                  {/*
-                   * The two groups the table above deliberately excludes, named rather than silently
-                   * dropped — a referral made from the ward is the ward reaching out, not a relapse
-                   * under this team's care, and a pulled bed with nobody arrived yet has no admission
-                   * start to compare an acceptance against at all.
-                   */}
-                  <p
-                    className={styles.absenceNotice}
-                    data-testid="ward-community-accepted-before-admission-other-groups"
-                  >
-                    Excluded: {referredDuringThisAdmission.length} referred during the current admission and{" "}
-                    {bedPulledNotYetArrived.length} with a bed pulled but no arrival. Neither establishes care before
-                    admission.
-                  </p>
-                  <p
-                    className={styles.footnote}
-                    data-testid="ward-community-accepted-before-admission-not-active-claim"
-                  >
-                    Acceptance before admission does not establish current care; no community-team closure is recorded.
-                  </p>
-                </div>
-              </section>
-            </div>
-          </div>
-
-          {/* ── Tab 3: 7-Day Post-Discharge Follow-Up & Egress ── */}
-          <div
-            className={
-              activeTab === "tab-egress" || activeTab === "tab-expected" ? styles.tabPanelActive : styles.tabPanelHidden
-            }
-            id="tab-egress"
-            role="tabpanel"
-            aria-labelledby="tabBtn-egress"
-          >
-            {/* ── Sovereign 7-Day Post-Discharge Register ── */}
-            {isDemoMode && (
-              <>
-                <div className={styles.filterToolbar}>
-                  <div className={styles.filterChipsGroup}>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={egressFilter === "all"}
-                      onClick={() => setEgressFilter("all")}
-                    >
-                      <span>All Egress</span>
-                      <span className={styles.badgePill}>{DEMO_COMMUNITY_EGRESS.length}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={egressFilter === "overdue"}
-                      onClick={() => setEgressFilter("overdue")}
-                    >
-                      <span>Overdue (Priority Follow-up)</span>
-                      <span className={styles.badgePill} style={{ color: "var(--danger-ink)" }}>
-                        {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "overdue").length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={egressFilter === "today"}
-                      onClick={() => setEgressFilter("today")}
-                    >
-                      <span>Due Today</span>
-                      <span className={styles.badgePill}>
-                        {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "today").length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={egressFilter === "upcoming"}
-                      onClick={() => setEgressFilter("upcoming")}
-                    >
-                      <span>Upcoming Discharges</span>
-                      <span className={styles.badgePill}>
-                        {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "upcoming").length}
-                      </span>
-                    </button>
-                  </div>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                    Mandatory WA Health 7-Day Post-Discharge KPI
-                  </div>
-                </div>
-
-                <div className={styles.cardPanel}>
-                  <div className={styles.panelHead}>
-                    <h2 className={styles.panelTitle}>
-                      <svg
-                        viewBox="0 0 16 16"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                      >
-                        <path d="M9 3l4 5-4 5M13 8H3" />
-                      </svg>
-                      <span>7-Day Post-Discharge Follow-Up Register</span>
-                    </h2>
-                    <span className={styles.badgePill} id="egressHeadBadge">
-                      {demoVisibleEgress.length} Patients in 7-Day Window
-                    </span>
-                  </div>
-                  <div className={styles.tableScroll}>
-                    <table className={styles.table} id="egressTable">
-                      <thead>
-                        <tr>
-                          <th scope="col">Patient</th>
-                          <th scope="col">Discharging Unit</th>
-                          <th scope="col">Discharge Date / Plan</th>
-                          <th scope="col">Destination</th>
-                          <th scope="col">7-Day KPI Window Status</th>
-                          <th scope="col">Assigned Coordinator</th>
-                          <th scope="col" style={{ textAlign: "right" }}>
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {demoVisibleEgress.map((egr) => {
-                          const isContacted = liveAdmissions.some(
-                            (admission) =>
-                              admission.patientId === egr.patientId &&
-                              currentCareContactCompleted(admission.careJourney),
-                          );
-                          return (
+                          {demoVisibleInpatients.map((inp) => (
                             <tr
-                              key={egr.id}
-                              data-status={isContacted ? "completed" : egr.status}
-                              data-pt-id={egr.patientId}
+                              key={inp.id}
                               onClick={() => {
-                                setSelectedPatientId(egr.patientId);
+                                setSelectedPatientId(inp.patientId);
                                 setActiveDrawer("pxDrawer");
                               }}
                               style={{ cursor: "pointer" }}
                             >
                               <td style={{ whiteSpace: "nowrap" }}>
-                                <b className={styles.patientIdWrap}>{egr.patientId}</b> ({egr.patientDetails})
+                                <b className={styles.patientIdWrap}>{inp.patientId}</b> ({inp.patientDetails})
                               </td>
-                              <td>{egr.dischargingUnit}</td>
-                              <td>{egr.dischargeDatePlan}</td>
-                              <td>{egr.destination}</td>
                               <td>
-                                <span
-                                  className={`${styles.statusPillBadge} ${
-                                    isContacted ? styles.good : styles[egr.kpiTone]
-                                  }`}
-                                >
-                                  {isContacted ? "Completed" : egr.kpiStatusLabel}
+                                {inp.wardName} ({inp.healthService})
+                              </td>
+                              <td>
+                                <span className={`${styles.statusPillBadge} ${styles.neutral}`}>{inp.bedId}</span>
+                              </td>
+                              <td className={styles.n}>{inp.daysInBed}</td>
+                              <td>
+                                <span className={`${styles.statusPillBadge} ${styles[inp.legalStatusTone]}`}>
+                                  {inp.legalStatus}
                                 </span>
                               </td>
-                              <td>{egr.assignedCoordinator}</td>
-                              <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                              <td>{inp.keyClinician}</td>
+                              <td>{inp.mdtStatus}</td>
+                              <td className={styles.actionsCol} onClick={(e) => e.stopPropagation()}>
                                 <button
                                   type="button"
-                                  className={egr.isPrimaryAction ? styles.btnSmPrimary : styles.btnSmSec}
+                                  className={styles.btnSmSec}
                                   onClick={() => {
-                                    handleCompleteContact(egr.patientId);
-                                    if (!egr.isPrimaryAction) {
-                                      setSelectedPatientId(egr.patientId);
-                                      setActiveDrawer("pxDrawer");
-                                    }
+                                    setSelectedPatientId(inp.patientId);
+                                    setActiveDrawer("pxDrawer");
                                   }}
                                 >
-                                  {isContacted ? "Contact Logged" : egr.actionLabel}
+                                  Open dossier
                                 </button>
                               </td>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* ── List 4, moved — of those, who the ward expects back ──────────────────────── */}
-            <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-              <section className={styles.cardPanel} aria-label="Expected back" data-testid="ward-community-expected">
-                <div className={styles.panelHead}>
-                  <h3 className={styles.panelTitle}>
-                    <span>Expected back</span>
-                  </h3>
-                  <span className={styles.badgePill} data-ward-panel-count>
-                    {lists.expectedBack.length} of {lists.currentlyAdmitted.length}
-                  </span>
-                </div>
-                <div className={styles.panelBody} role="region" aria-label="Expected back details" tabIndex={0}>
-                  <p className={styles.count} data-testid="ward-community-expected-count">
-                    {lists.expectedBack.length} of the {lists.currentlyAdmitted.length}{" "}
-                    {lists.currentlyAdmitted.length === 1 ? "person" : "people"} above{" "}
-                    {lists.expectedBack.length === 1 ? "has" : "have"} a discharge date the ward has written down.
-                  </p>
-                  {/*
-                   * ⚠️ THE WORDING IS STILL CONSTRAINED BY ITS OWN GUARD, and deliberately. The natural
-                   * sentence here is "not a deadline, not a target, and a passed date is not overdue" —
-                   * words `tests/ward-community-hub.dom.test.tsx` refuses on sight, because a screen that
-                   * names a threshold in order to disclaim it has still put the word in front of a reader
-                   * who will remember the word. That guard did not go away when the date itself started
-                   * rendering: `expectedBackLabel` below says how long until the plan, or how long since it
-                   * passed, without ever spending the word "overdue" to do it. Saying what the elapsed time
-                   * IS, in either direction, carries the same meaning as naming a threshold and leaves
-                   * nothing to quote back.
-                   */}
-                  {/*
-                   * ⚠️ Corrected 2026-09-01, then acted on the same day: this justified the withheld date
-                   * first with a demonstration-clock defect and then with an unresolved product question.
-                   * Both are closed. `ward-reanchor.ts` shifts `expectedDischargeAt` with `now` (see this
-                   * file's header block), and the owner has since ruled that elapsed time should be shown.
-                   * A calendar date is still never printed — see the reason below.
-                   */}
-                  <p className={styles.footnote} data-testid="ward-community-expected-elapsed">
-                    Ward-reported plan; elapsed time only. No target is applied.
-                  </p>
-                  {lists.expectedBack.length === 0 ? (
-                    <p className={styles.emptyNote} data-testid="ward-community-expected-empty">
-                      {cannotResolve ? (
-                        <>
-                          A bed carries no link back to the referral that named this team, so this list cannot be built
-                          for {team.name}. Its emptiness is a gap in the record rather than an answer about the team.
-                        </>
-                      ) : (
-                        <>
-                          No one referred to this team who is currently in a bed or has one pulled has a discharge date
-                          the ward has written down.
-                        </>
-                      )}
-                    </p>
+                          ))}
+                        </tbody>
+                      </WardTable>
+                    </>
                   ) : (
-                    <ul className={styles.cardList} data-testid="ward-community-expected-list">
-                      {lists.expectedBack.map((admission) => (
-                        <li
-                          key={admission.id}
-                          className={styles.card}
-                          data-testid={`ward-community-expected-${admission.id}`}
+                    <>
+                      <p id="inpatientSummaryNote" className={styles.count} data-testid="ward-community-admitted-count">
+                        {lists.currentlyAdmitted.length}{" "}
+                        {lists.currentlyAdmitted.length === 1
+                          ? "person referred to this team is"
+                          : "people referred to this team are"}{" "}
+                        in a bed or have one pulled for them.
+                      </p>
+                      {lists.currentlyAdmitted.length === 0 ? (
+                        <p className={styles.emptyNote} data-testid="ward-community-admitted-empty">
+                          {cannotResolve ? (
+                            <>
+                              A bed carries no link back to the referral that named this team, so this list cannot be
+                              built for {team.name}. Its emptiness is a gap in the record rather than an answer about
+                              the team.
+                            </>
+                          ) : (
+                            <>Nobody referred to this team is currently in a bed.</>
+                          )}
+                        </p>
+                      ) : (
+                        <WardTable
+                          id="inpatientTable"
+                          className={styles.table}
+                          wrapperClassName={styles.tableScroll}
+                          testId="ward-community-admitted-list"
+                          hasScrollThreshold
                         >
-                          <p className={styles.cardUnit}>{unitName(admission.unitId, units)}</p>
-                          <p className={styles.cardDetail}>{expectedBackLabel(admission, now)}</p>
-                        </li>
-                      ))}
-                    </ul>
+                          <caption>People referred to this team in a bed or holding one</caption>
+                          <thead>
+                            <tr>
+                              {/*
+                              v6 columns (`CommunityTeam--in-a-bed`), where the record holds the
+                              figure: no key clinician or liaison column, since nothing records
+                              either, and no invented bed number.
+                            */}
+                              <th scope="col">Person</th>
+                              <th scope="col">Unit</th>
+                              <th scope="col">Legal status</th>
+                              <th scope="col" className={styles.n}>
+                                In bed
+                              </th>
+                              {/*
+                          Drawing Actions column shows Open Dossier only. Owner decision 1
+                          (22 Sep 2026): drawings own look; book/cancel stays as behaviour and
+                          the Actions cluster adjusts to fit (dossier + transport controls).
+                        */}
+                              <th scope="col" className={styles.actionsCol}>
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {lists.currentlyAdmitted.map((admission) => {
+                              const movement =
+                                admission.state === "pulled" && admission.movementId !== null
+                                  ? movements.find((candidate) => candidate.id === admission.movementId)
+                                  : undefined;
+                              const transport = movement?.transport;
+                              const ownUncollectedBooking =
+                                transport !== undefined &&
+                                transport.bookedBy?.role === "community" &&
+                                transport.bookedBy.placeId === teamId &&
+                                transport.collectedAt === undefined;
+                              const otherBooking = transport !== undefined && !ownUncollectedBooking;
+                              const canBook =
+                                admission.state === "pulled" &&
+                                admission.movementId !== null &&
+                                movement !== undefined &&
+                                transport === undefined;
+                              const dossierPatientId = admission.patientId;
+                              const pt = patients.find((p) => p.id === admission.patientId);
+                              const stayDays = daysInBed(admission, now);
+                              return (
+                                <tr key={admission.id} data-testid={`ward-community-admitted-${admission.id}`}>
+                                  <td style={{ whiteSpace: "nowrap" }}>
+                                    <b className={styles.patientIdWrap}>{admission.patientId ?? admission.id}</b>
+                                    {pt ? ` (${pt.sex === "Male" ? "M" : "F"})` : ""}
+                                  </td>
+                                  <td>
+                                    <span className={styles.cellLead}>{unitName(admission.unitId, units)}</span>
+                                    <span className={styles.cellSub}>{bedStateLabel(admission)}</span>
+                                  </td>
+                                  <td>{pt?.legalStatus ?? "Not recorded"}</td>
+                                  <td className={styles.n}>{stayDays === null ? "Not arrived" : `${stayDays}d`}</td>
+                                  <td
+                                    className={styles.actionsCell}
+                                    data-testid={`ward-community-transport-cell-${admission.id}`}
+                                  >
+                                    <div className={styles.rowActions}>
+                                      {dossierPatientId !== null ? (
+                                        <button
+                                          type="button"
+                                          className={styles.btnSmSec}
+                                          data-testid={`ward-community-open-dossier-${admission.id}`}
+                                          onClick={() => {
+                                            setSelectedPatientId(dossierPatientId);
+                                            setActiveDrawer("pxDrawer");
+                                          }}
+                                        >
+                                          Open dossier
+                                        </button>
+                                      ) : null}
+                                      {canBook ? (
+                                        <button
+                                          type="button"
+                                          className={styles.btnSmPrimary}
+                                          data-testid={`ward-community-book-transport-${admission.movementId}`}
+                                          onClick={() => openTransportBook(admission.movementId!)}
+                                        >
+                                          Log transport booking
+                                        </button>
+                                      ) : null}
+                                      {ownUncollectedBooking ? (
+                                        <button
+                                          type="button"
+                                          className={styles.transportCancelButton}
+                                          data-testid={`ward-community-cancel-transport-${admission.movementId}`}
+                                          onClick={() => openTransportCancel(admission.movementId!)}
+                                        >
+                                          Cancel this team&apos;s booking
+                                        </button>
+                                      ) : null}
+                                    </div>
+                                    {ownUncollectedBooking && transport.estimatedAt !== undefined ? (
+                                      <p
+                                        className={styles.transportBookedNote}
+                                        data-testid={`ward-community-transport-eta-${admission.movementId}`}
+                                      >
+                                        Estimated {formatInstantWithDay(transport.estimatedAt, now)} ·{" "}
+                                        {transportEtaRemainingLabel(transport.estimatedAt, now)}
+                                      </p>
+                                    ) : null}
+                                    {otherBooking ? (
+                                      <p
+                                        className={styles.transportBookedNote}
+                                        data-testid={`ward-community-transport-booked-${admission.movementId}`}
+                                      >
+                                        Transport already booked
+                                        {transport.bookedBy?.role === "ed"
+                                          ? " by the emergency department"
+                                          : transport.bookedBy?.role === "ward"
+                                            ? " by a ward"
+                                            : transport.bookedBy?.role === "community" &&
+                                                transport.bookedBy.placeId !== teamId
+                                              ? " by another community team"
+                                              : ""}
+                                        {transport.estimatedAt !== undefined
+                                          ? ` · estimated ${formatInstantWithDay(transport.estimatedAt, now)} · ${transportEtaRemainingLabel(transport.estimatedAt, now)}`
+                                          : ""}
+                                        .
+                                      </p>
+                                    ) : null}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </WardTable>
+                      )}
+                    </>
                   )}
                 </div>
               </section>
 
-              {/* ── List 1, moved and renamed to the owner's wording — discharged into the area ── */}
-              <section
-                className={styles.cardPanel}
-                aria-label="Discharged into the catchment"
-                data-testid="ward-community-discharged"
-              >
-                <div className={styles.panelHead}>
-                  <h3 className={styles.panelTitle}>
-                    <span>Discharged into the catchment</span>
-                  </h3>
-                  <span className={styles.badgePill} data-ward-panel-count>
-                    {lists.dischargedIntoTheArea.length}
-                  </span>
-                </div>
-                <div
-                  className={styles.panelBody}
-                  role="region"
-                  aria-label="Discharged into the catchment details"
-                  tabIndex={0}
+              {/* ── Admitted while already with this team — the owner's most delicate request ──
+                 See `categoriseTeamAdmission`'s doc comment above for the exact rule this table
+                 draws on, and this file's header block (third edition) for why the wording below is
+                 constrained the way it is. */}
+              <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
+                <section
+                  className={styles.cardPanel}
+                  aria-label="Admitted while already with the team"
+                  data-testid="ward-community-accepted-before-admission"
                 >
-                  {/*
-                   * Point 1. INSIDE the section and ABOVE the list, so it cannot be read past on the way to
-                   * an empty list, and worded as a statement about the record rather than as a caveat.
-                   *
-                   * Arrangements are recorded on the discharge board; this list remains all community
-                   * departures rather than a follow-up completion measure.
-                   */}
-                  <p className={styles.absenceNotice} data-testid="ward-community-follow-up-not-recorded">
-                    Follow-up arrangements and contact outcomes can be recorded for this team. An arrangement does not
-                    establish that contact occurred. All community departures shows recorded discharges into the
-                    community; an empty list does not establish that everybody is being followed up.
-                  </p>
-
-                  <label>
-                    Community follow-up filter
-                    <select value={followUpFilter} onChange={(e) => setFollowUpFilter(e.target.value)}>
-                      <option value="all">All community departures</option>
-                      <option value="missing_arrangement">Missing arrangements</option>
-                      <option value="missing_contact">No completed contact recorded</option>
-                    </select>
-                  </label>
-                  {filteredDepartures.length === 0 ? (
-                    <p className={styles.emptyNote} data-testid="ward-community-discharged-empty">
-                      {lists.dischargedIntoTheArea.length > 0 ? (
-                        <>No community departures match this follow-up filter.</>
-                      ) : cannotResolve ? (
-                        <>
-                          A bed carries no link back to the referral that named this team, so this list cannot be built
-                          for {team.name}. Its emptiness is a gap in the record rather than an answer about the team.
-                        </>
-                      ) : (
-                        <>No admission referred to this team is recorded as discharged to the community.</>
-                      )}
+                  <div className={styles.panelHead}>
+                    <h3 className={styles.panelTitle}>
+                      <span>Admitted while already with the team</span>
+                    </h3>
+                    <span className={styles.badgePill} data-ward-panel-count>
+                      {admittedWhileAlreadyWithTeam.length} of {lists.currentlyAdmitted.length}
+                    </span>
+                  </div>
+                  <div
+                    className={styles.panelBody}
+                    role="region"
+                    aria-label="Admitted while already with the team details"
+                    tabIndex={0}
+                  >
+                    {admittedWhileAlreadyWithTeam.length === 0 ? (
+                      <p className={styles.emptyNote} data-testid="ward-community-accepted-before-admission-empty">
+                        {cannotResolve ? (
+                          <>
+                            A bed carries no link back to the referral that named this team, so this list cannot be
+                            built for {team.name}. Its emptiness is a gap in the record rather than an answer about the
+                            team.
+                          </>
+                        ) : (
+                          <>
+                            Nobody this team can currently see in a bed or holding one was accepted before that bed
+                            began.
+                          </>
+                        )}
+                      </p>
+                    ) : (
+                      <WardTable
+                        className={styles.table}
+                        wrapperClassName={styles.tableScroll}
+                        testId="ward-community-accepted-before-admission-table"
+                        hasScrollThreshold
+                      >
+                        <caption>Admissions this team had already accepted before the bed began</caption>
+                        <thead>
+                          <tr>
+                            <th scope="col">Admission</th>
+                            <th scope="col">Unit</th>
+                            <th scope="col">In a bed for</th>
+                            <th scope="col">Accepted before the bed began</th>
+                            <th scope="col">Accepted altogether</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {admittedWhileAlreadyWithTeam.map(({ admission, acceptedAt, arrivedAt }) => (
+                            <tr
+                              key={admission.id}
+                              data-testid={`ward-community-accepted-before-admission-${admission.id}`}
+                            >
+                              <th scope="row">
+                                <span className={styles.patientIdWrap}>{admission.id}</span>
+                              </th>
+                              <td>{unitName(admission.unitId, units)}</td>
+                              <td>{stayLabel(admission, now)}</td>
+                              <td>
+                                {elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt))} before the bed began
+                              </td>
+                              <td>{elapsedSinceOrUnderADay(daysBetween(acceptedAt, now))} since acceptance</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </WardTable>
+                    )}
+                    {/*
+                     * The two groups the table above deliberately excludes, named rather than silently
+                     * dropped — a referral made from the ward is the ward reaching out, not a relapse
+                     * under this team's care, and a pulled bed with nobody arrived yet has no admission
+                     * start to compare an acceptance against at all.
+                     */}
+                    <p
+                      className={styles.absenceNotice}
+                      data-testid="ward-community-accepted-before-admission-other-groups"
+                    >
+                      Excluded: {referredDuringThisAdmission.length} referred during the current admission and{" "}
+                      {bedPulledNotYetArrived.length} with a bed pulled but no arrival. Neither establishes care before
+                      admission.
                     </p>
-                  ) : (
-                    <ul className={styles.cardList} data-testid="ward-community-discharged-list">
-                      {filteredDepartures.map((admission) => (
-                        <li
-                          key={admission.id}
-                          className={styles.card}
-                          data-testid={`ward-community-discharged-${admission.id}`}
-                        >
-                          <p className={styles.cardUnit}>{unitName(admission.unitId, units)}</p>
-                          <p className={styles.cardDetail}>{departureLabel(admission, now)}</p>
-                          <p>
-                            Follow-up: {admission.followUp?.state?.replaceAll("_", " ") ?? "Not recorded"} · Contact:{" "}
-                            {currentCareContact(admission.careJourney)?.outcome?.replaceAll("_", " ") ?? "Not recorded"}
-                          </p>
-                          <CommunityFollowUp admissionId={admission.id} teamId={team.id} />
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                    <p
+                      className={styles.footnote}
+                      data-testid="ward-community-accepted-before-admission-not-active-claim"
+                    >
+                      Acceptance before admission does not establish current care; no community-team closure is
+                      recorded.
+                    </p>
+                  </div>
+                </section>
+              </div>
+            </div>
 
-                  {/* Why the row above says HOW LONG AGO somebody left rather than a date — said here as
+            {/* ── Tab 3: 7-Day Post-Discharge Follow-Up & Egress ── */}
+            <div
+              className={
+                activeTab === "tab-egress" || activeTab === "tab-expected"
+                  ? styles.tabPanelActive
+                  : styles.tabPanelHidden
+              }
+              id="tab-egress"
+              role="tabpanel"
+              aria-labelledby="tabBtn-egress"
+            >
+              {/* ── Sovereign 7-Day Post-Discharge Register ── */}
+              {isDemoMode && (
+                <>
+                  <div className={styles.filterToolbar}>
+                    <div className={styles.filterChipsGroup}>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={egressFilter === "all"}
+                        onClick={() => setEgressFilter("all")}
+                      >
+                        <span>All Egress</span>
+                        <span className={styles.badgePill}>{DEMO_COMMUNITY_EGRESS.length}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={egressFilter === "overdue"}
+                        onClick={() => setEgressFilter("overdue")}
+                      >
+                        <span>Overdue (Priority Follow-up)</span>
+                        <span className={styles.badgePill} style={{ color: "var(--danger-ink)" }}>
+                          {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "overdue").length}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={egressFilter === "today"}
+                        onClick={() => setEgressFilter("today")}
+                      >
+                        <span>Due Today</span>
+                        <span className={styles.badgePill}>
+                          {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "today").length}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={egressFilter === "upcoming"}
+                        onClick={() => setEgressFilter("upcoming")}
+                      >
+                        <span>Upcoming Discharges</span>
+                        <span className={styles.badgePill}>
+                          {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "upcoming").length}
+                        </span>
+                      </button>
+                    </div>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: "var(--t-0)", color: "var(--muted)" }}>
+                      Mandatory WA Health 7-Day Post-Discharge KPI
+                    </div>
+                  </div>
+
+                  <div className={styles.cardPanel}>
+                    <div className={styles.panelHead}>
+                      <h2 className={styles.panelTitle}>
+                        <svg
+                          viewBox="0 0 16 16"
+                          width="16"
+                          height="16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                        >
+                          <path d="M9 3l4 5-4 5M13 8H3" />
+                        </svg>
+                        <span>7-Day Post-Discharge Follow-Up Register</span>
+                      </h2>
+                      <span className={styles.badgePill} id="egressHeadBadge">
+                        {demoVisibleEgress.length} Patients in 7-Day Window
+                      </span>
+                    </div>
+                    <div className={styles.tableScroll}>
+                      <table className={styles.table} id="egressTable">
+                        <thead>
+                          <tr>
+                            <th scope="col">Patient</th>
+                            <th scope="col">Discharging Unit</th>
+                            <th scope="col">Discharge Date / Plan</th>
+                            <th scope="col">Destination</th>
+                            <th scope="col">7-Day KPI Window Status</th>
+                            <th scope="col">Assigned Coordinator</th>
+                            <th scope="col" style={{ textAlign: "right" }}>
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {demoVisibleEgress.map((egr) => {
+                            const isContacted = liveAdmissions.some(
+                              (admission) =>
+                                admission.patientId === egr.patientId &&
+                                currentCareContactCompleted(admission.careJourney),
+                            );
+                            return (
+                              <tr
+                                key={egr.id}
+                                data-status={isContacted ? "completed" : egr.status}
+                                data-pt-id={egr.patientId}
+                                onClick={() => {
+                                  setSelectedPatientId(egr.patientId);
+                                  setActiveDrawer("pxDrawer");
+                                }}
+                                style={{ cursor: "pointer" }}
+                              >
+                                <td style={{ whiteSpace: "nowrap" }}>
+                                  <b className={styles.patientIdWrap}>{egr.patientId}</b> ({egr.patientDetails})
+                                </td>
+                                <td>{egr.dischargingUnit}</td>
+                                <td>{egr.dischargeDatePlan}</td>
+                                <td>{egr.destination}</td>
+                                <td>
+                                  <span
+                                    className={`${styles.statusPillBadge} ${
+                                      isContacted ? styles.good : styles[egr.kpiTone]
+                                    }`}
+                                  >
+                                    {isContacted ? "Completed" : egr.kpiStatusLabel}
+                                  </span>
+                                </td>
+                                <td>{egr.assignedCoordinator}</td>
+                                <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    type="button"
+                                    className={egr.isPrimaryAction ? styles.btnSmPrimary : styles.btnSmSec}
+                                    onClick={() => {
+                                      handleCompleteContact(egr.patientId);
+                                      if (!egr.isPrimaryAction) {
+                                        setSelectedPatientId(egr.patientId);
+                                        setActiveDrawer("pxDrawer");
+                                      }
+                                    }}
+                                  >
+                                    {isContacted ? "Contact Logged" : egr.actionLabel}
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── List 4, moved — of those, who the ward expects back ──────────────────────── */}
+              <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
+                <section className={styles.cardPanel} aria-label="Expected back" data-testid="ward-community-expected">
+                  <div className={styles.panelHead}>
+                    <h3 className={styles.panelTitle}>
+                      <span>Expected back</span>
+                    </h3>
+                    <span className={styles.badgePill} data-ward-panel-count>
+                      {lists.expectedBack.length} of {lists.currentlyAdmitted.length}
+                    </span>
+                  </div>
+                  <div className={styles.panelBody} role="region" aria-label="Expected back details" tabIndex={0}>
+                    <p className={styles.count} data-testid="ward-community-expected-count">
+                      {lists.expectedBack.length} of the {lists.currentlyAdmitted.length}{" "}
+                      {lists.currentlyAdmitted.length === 1 ? "person" : "people"} above{" "}
+                      {lists.expectedBack.length === 1 ? "has" : "have"} a discharge date the ward has written down.
+                    </p>
+                    {/*
+                     * ⚠️ THE WORDING IS STILL CONSTRAINED BY ITS OWN GUARD, and deliberately. The natural
+                     * sentence here is "not a deadline, not a target, and a passed date is not overdue" —
+                     * words `tests/ward-community-hub.dom.test.tsx` refuses on sight, because a screen that
+                     * names a threshold in order to disclaim it has still put the word in front of a reader
+                     * who will remember the word. That guard did not go away when the date itself started
+                     * rendering: `expectedBackLabel` below says how long until the plan, or how long since it
+                     * passed, without ever spending the word "overdue" to do it. Saying what the elapsed time
+                     * IS, in either direction, carries the same meaning as naming a threshold and leaves
+                     * nothing to quote back.
+                     */}
+                    {/*
+                     * ⚠️ Corrected 2026-09-01, then acted on the same day: this justified the withheld date
+                     * first with a demonstration-clock defect and then with an unresolved product question.
+                     * Both are closed. `ward-reanchor.ts` shifts `expectedDischargeAt` with `now` (see this
+                     * file's header block), and the owner has since ruled that elapsed time should be shown.
+                     * A calendar date is still never printed — see the reason below.
+                     */}
+                    <p className={styles.footnote} data-testid="ward-community-expected-elapsed">
+                      Ward-reported plan; elapsed time only. No target is applied.
+                    </p>
+                    {lists.expectedBack.length === 0 ? (
+                      <p className={styles.emptyNote} data-testid="ward-community-expected-empty">
+                        {cannotResolve ? (
+                          <>
+                            A bed carries no link back to the referral that named this team, so this list cannot be
+                            built for {team.name}. Its emptiness is a gap in the record rather than an answer about the
+                            team.
+                          </>
+                        ) : (
+                          <>
+                            No one referred to this team who is currently in a bed or has one pulled has a discharge
+                            date the ward has written down.
+                          </>
+                        )}
+                      </p>
+                    ) : (
+                      <ul className={styles.cardList} data-testid="ward-community-expected-list">
+                        {lists.expectedBack.map((admission) => (
+                          <li
+                            key={admission.id}
+                            className={styles.card}
+                            data-testid={`ward-community-expected-${admission.id}`}
+                          >
+                            <p className={styles.cardUnit}>{unitName(admission.unitId, units)}</p>
+                            <p className={styles.cardDetail}>{expectedBackLabel(admission, now)}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </section>
+
+                {/* ── List 1, moved and renamed to the owner's wording — discharged into the area ── */}
+                <section
+                  className={styles.cardPanel}
+                  aria-label="Discharged into the catchment"
+                  data-testid="ward-community-discharged"
+                >
+                  <div className={styles.panelHead}>
+                    <h3 className={styles.panelTitle}>
+                      <span>Discharged into the catchment</span>
+                    </h3>
+                    <span className={styles.badgePill} data-ward-panel-count>
+                      {lists.dischargedIntoTheArea.length}
+                    </span>
+                  </div>
+                  <div
+                    className={styles.panelBody}
+                    role="region"
+                    aria-label="Discharged into the catchment details"
+                    tabIndex={0}
+                  >
+                    {/*
+                     * Point 1. INSIDE the section and ABOVE the list, so it cannot be read past on the way to
+                     * an empty list, and worded as a statement about the record rather than as a caveat.
+                     *
+                     * Arrangements are recorded on the discharge board; this list remains all community
+                     * departures rather than a follow-up completion measure.
+                     */}
+                    <p className={styles.absenceNotice} data-testid="ward-community-follow-up-not-recorded">
+                      Follow-up arrangements and contact outcomes can be recorded for this team. An arrangement does not
+                      establish that contact occurred. All community departures shows recorded discharges into the
+                      community; an empty list does not establish that everybody is being followed up.
+                    </p>
+
+                    <label>
+                      Community follow-up filter
+                      <select value={followUpFilter} onChange={(e) => setFollowUpFilter(e.target.value)}>
+                        <option value="all">All community departures</option>
+                        <option value="missing_arrangement">Missing arrangements</option>
+                        <option value="missing_contact">No completed contact recorded</option>
+                      </select>
+                    </label>
+                    {filteredDepartures.length === 0 ? (
+                      <p className={styles.emptyNote} data-testid="ward-community-discharged-empty">
+                        {lists.dischargedIntoTheArea.length > 0 ? (
+                          <>No community departures match this follow-up filter.</>
+                        ) : cannotResolve ? (
+                          <>
+                            A bed carries no link back to the referral that named this team, so this list cannot be
+                            built for {team.name}. Its emptiness is a gap in the record rather than an answer about the
+                            team.
+                          </>
+                        ) : (
+                          <>No admission referred to this team is recorded as discharged to the community.</>
+                        )}
+                      </p>
+                    ) : (
+                      <ul className={styles.cardList} data-testid="ward-community-discharged-list">
+                        {filteredDepartures.map((admission) => (
+                          <li
+                            key={admission.id}
+                            className={styles.card}
+                            data-testid={`ward-community-discharged-${admission.id}`}
+                          >
+                            <p className={styles.cardUnit}>{unitName(admission.unitId, units)}</p>
+                            <p className={styles.cardDetail}>{departureLabel(admission, now)}</p>
+                            <p>
+                              Follow-up: {admission.followUp?.state?.replaceAll("_", " ") ?? "Not recorded"} · Contact:{" "}
+                              {currentCareContact(admission.careJourney)?.outcome?.replaceAll("_", " ") ??
+                                "Not recorded"}
+                            </p>
+                            <CommunityFollowUp admissionId={admission.id} teamId={team.id} />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {/* Why the row above says HOW LONG AGO somebody left rather than a date — said here as
                     well as in the expected-back section, because a reader who scrolls straight to this
                     list would otherwise wonder why no calendar date appears.
 
@@ -2988,847 +3933,389 @@ export function CommunityScreen({
                     unresolved product question. Both are closed: `ward-reanchor.ts` shifts `leftAt` with
                     `now` (see this file's header block), and the owner has since ruled that elapsed time
                     should be shown. A calendar date is still never printed — see the reason below. */}
-                  <p className={styles.footnote} data-testid="ward-community-departure-elapsed">
-                    Departure is shown as elapsed time; no calendar date is displayed.
-                  </p>
-                </div>
-              </section>
+                    <p className={styles.footnote} data-testid="ward-community-departure-elapsed">
+                      Departure is shown as elapsed time; no calendar date is displayed.
+                    </p>
+                  </div>
+                </section>
 
-              {/* ── Left the ward another way — the owner's order asks for this as its own numbered
+                {/* ── Left the ward another way — the owner's order asks for this as its own numbered
                  item. The paragraph below is the same one that used to sit as a footnote inside the
                  discharged panel above, word for word: it moved panel, not wording, and "the list
                  above" in its own text is still true because the discharged list still renders above
                  this panel on the page. ─────────────────────────────────────────────────────── */}
-              <section
-                className={styles.cardPanel}
-                aria-label="Left the ward another way"
-                data-testid="ward-community-other-departures-panel"
-              >
-                <div className={styles.panelHead}>
-                  <h3 className={styles.panelTitle}>
-                    <span>Left the ward another way</span>
-                  </h3>
-                  <span className={styles.badgePill} data-ward-panel-count>
-                    {lists.otherDepartures.length}
-                  </span>
-                </div>
-                <div
-                  className={styles.panelBody}
-                  role="region"
-                  aria-label="Left the ward another way details"
-                  tabIndex={0}
+                <section
+                  className={styles.cardPanel}
+                  aria-label="Left the ward another way"
+                  data-testid="ward-community-other-departures-panel"
                 >
-                  {/*
-                   * 🔴 **THIS SENTENCE CONTRADICTED THE ONE ABOVE IT, ON EVERY TEAM BUT ONE.** The empty
-                   * state says the list CANNOT BE BUILT because a bed carries no link back to the
-                   * referral; this footnote then said "No other admission referred to this team has
-                   * ended" — **a conclusion drawn from the very data the sentence above says cannot be
-                   * assembled.** If the list cannot be built, the page cannot know that no other
-                   * admission has ended, and "no other has ended" is exactly the reassuring reading the
-                   * first sentence exists to prevent.
-                   *
-                   * ⚠️ **AND IT IS INVISIBLE FROM THE ONE TEAM WHERE IT IS CORRECT.** On Inner City
-                   * Clinic the join resolves, the list builds, and "no other" legitimately means "that is
-                   * all of them". The sentence is true in one arm and false in the other, **and which arm
-                   * a team is in differs per team** — which is why reading one team's page proves nothing
-                   * about another's, and why it took a second reader opening both.
-                   *
-                   * So it renders only where the list could be built. Found by Ward Builder Three.
-                   */}
-                  <p className={styles.absenceNotice} data-testid="ward-community-other-departures">
-                    {cannotResolve
-                      ? "Whether any other admission referred to this team has ended cannot be told from the record either, for the same reason."
-                      : lists.otherDepartures.length === 0
-                        ? "No other admission referred to this team has ended."
-                        : `${lists.otherDepartures.length} other ${
-                            lists.otherDepartures.length === 1 ? "admission" : "admissions"
-                          } referred to this team ${lists.otherDepartures.length === 1 ? "has" : "have"} ended, recorded as: ${otherDepartureDestinations(lists.otherDepartures)}. None of those records says the person came back into the community, so none is on the list above.`}
-                  </p>
-                </div>
-              </section>
-
-              {/* ── List 3, moved to the end — the one that cannot be built ──────────────────── */}
-              <section
-                className={styles.cardPanel}
-                aria-label="Referrals we have made"
-                data-testid="ward-community-referrals"
-              >
-                <div className={styles.panelHead}>
-                  <h3 className={styles.panelTitle}>
-                    <span>Referrals we have made</span>
-                  </h3>
-                </div>
-                <div
-                  className={styles.panelBody}
-                  role="region"
-                  aria-label="Referrals we have made details"
-                  tabIndex={0}
-                >
-                  {/*
-                   * Point 3. Rendered as a section with a statement and no list, deliberately. Leaving the
-                   * section out would let a reader assume the hub had shown everything it knows; filtering
-                   * community-sourced referrals by the patient's home region would produce a list that
-                   * looked exactly right and was not this team's.
-                   *
-                   * No count in this panel's header, deliberately: a nought would read as "no referrals
-                   * raised", and nothing on this page can measure that.
-                   */}
-                  <p className={styles.absenceNotice} data-testid="ward-community-referrals-unattributable">
-                    <strong>Referrals raised by this team cannot be attributed.</strong> The source records only
-                    &ldquo;community&rdquo;, without a team name, so no list is shown.
-                  </p>
-                </div>
-              </section>
-            </div>
-          </div>
-
-          {/* ── Tab 4: Active Caseload & CTO Statutory Register ── */}
-          <div
-            className={activeTab === "tab-caseload" ? styles.tabPanelActive : styles.tabPanelHidden}
-            id="tab-caseload"
-            role="tabpanel"
-            aria-labelledby="tabBtn-caseload"
-          >
-            {isDemoMode ? (
-              <>
-                <div className={styles.filterToolbar}>
-                  <div className={styles.filterChipsGroup}>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={caseloadFilter === "all"}
-                      onClick={() => setCaseloadFilter("all")}
-                    >
-                      <span>All Active Caseload</span>
-                      <span className={styles.badgePill} id="chipAllCaseloadBadge">
-                        {DEMO_COMMUNITY_CASELOAD.length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={caseloadFilter === "cto" || caseloadFilter === "5A"}
-                      onClick={() => setCaseloadFilter("cto")}
-                    >
-                      <span>Active CTO (Form 5A)</span>
-                      <span className={styles.badgePill} id="chipCtoBadge" style={{ color: "var(--good)" }}>
-                        {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("cto")).length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={caseloadFilter === "high"}
-                      onClick={() => setCaseloadFilter("high")}
-                    >
-                      <span>High Acuity / Assertive Outreach</span>
-                      <span className={styles.badgePill} id="chipHighAcuityBadge">
-                        {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("high")).length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={caseloadFilter === "depot"}
-                      onClick={() => setCaseloadFilter("depot")}
-                    >
-                      <span>Depot Clinic Due</span>
-                      <span className={styles.badgePill} id="chipDepotBadge">
-                        {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("depot")).length}
-                      </span>
-                    </button>
-                  </div>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                    <span id="caseloadSectorNote">{team.name} / Sector Catchment</span>
-                  </div>
-                </div>
-
-                <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
-                    <h2 className={styles.panelTitle}>
-                      <svg
-                        viewBox="0 0 16 16"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                      >
-                        <circle cx="8" cy="8" r="6" />
-                        <path d="M8 5v3l2 2" />
-                      </svg>
-                      <span>Community Treatment Orders (Form 5A) &amp; High Acuity Caseload</span>
-                    </h2>
-                    <span className={styles.badgePill} id="caseloadHeadBadge">
-                      {demoVisibleCaseload.length} Active Records
+                    <h3 className={styles.panelTitle}>
+                      <span>Left the ward another way</span>
+                    </h3>
+                    <span className={styles.badgePill} data-ward-panel-count>
+                      {lists.otherDepartures.length}
                     </span>
                   </div>
+                  <div
+                    className={styles.panelBody}
+                    role="region"
+                    aria-label="Left the ward another way details"
+                    tabIndex={0}
+                  >
+                    {/*
+                     * 🔴 **THIS SENTENCE CONTRADICTED THE ONE ABOVE IT, ON EVERY TEAM BUT ONE.** The empty
+                     * state says the list CANNOT BE BUILT because a bed carries no link back to the
+                     * referral; this footnote then said "No other admission referred to this team has
+                     * ended" — **a conclusion drawn from the very data the sentence above says cannot be
+                     * assembled.** If the list cannot be built, the page cannot know that no other
+                     * admission has ended, and "no other has ended" is exactly the reassuring reading the
+                     * first sentence exists to prevent.
+                     *
+                     * ⚠️ **AND IT IS INVISIBLE FROM THE ONE TEAM WHERE IT IS CORRECT.** On Inner City
+                     * Clinic the join resolves, the list builds, and "no other" legitimately means "that is
+                     * all of them". The sentence is true in one arm and false in the other, **and which arm
+                     * a team is in differs per team** — which is why reading one team's page proves nothing
+                     * about another's, and why it took a second reader opening both.
+                     *
+                     * So it renders only where the list could be built. Found by Ward Builder Three.
+                     */}
+                    <p className={styles.absenceNotice} data-testid="ward-community-other-departures">
+                      {cannotResolve
+                        ? "Whether any other admission referred to this team has ended cannot be told from the record either, for the same reason."
+                        : lists.otherDepartures.length === 0
+                          ? "No other admission referred to this team has ended."
+                          : `${lists.otherDepartures.length} other ${
+                              lists.otherDepartures.length === 1 ? "admission" : "admissions"
+                            } referred to this team ${lists.otherDepartures.length === 1 ? "has" : "have"} ended, recorded as: ${otherDepartureDestinations(lists.otherDepartures)}. None of those records says the person came back into the community, so none is on the list above.`}
+                    </p>
+                  </div>
+                </section>
+
+                {/* ── List 3, moved to the end — the one that cannot be built ──────────────────── */}
+                <section
+                  className={styles.cardPanel}
+                  aria-label="Referrals we have made"
+                  data-testid="ward-community-referrals"
+                >
+                  <div className={styles.panelHead}>
+                    <h3 className={styles.panelTitle}>
+                      <span>Referrals we have made</span>
+                    </h3>
+                  </div>
+                  <div
+                    className={styles.panelBody}
+                    role="region"
+                    aria-label="Referrals we have made details"
+                    tabIndex={0}
+                  >
+                    {/*
+                     * Point 3. Rendered as a section with a statement and no list, deliberately. Leaving the
+                     * section out would let a reader assume the hub had shown everything it knows; filtering
+                     * community-sourced referrals by the patient's home region would produce a list that
+                     * looked exactly right and was not this team's.
+                     *
+                     * No count in this panel's header, deliberately: a nought would read as "no referrals
+                     * raised", and nothing on this page can measure that.
+                     */}
+                    <p className={styles.absenceNotice} data-testid="ward-community-referrals-unattributable">
+                      <strong>Referrals raised by this team cannot be attributed.</strong> The source records only
+                      &ldquo;community&rdquo;, without a team name, so no list is shown.
+                    </p>
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            {/* ── Tab 4: Active Caseload & CTO Statutory Register ── */}
+            <div
+              className={activeTab === "tab-caseload" ? styles.tabPanelActive : styles.tabPanelHidden}
+              id="tab-caseload"
+              role="tabpanel"
+              aria-labelledby="tabBtn-caseload"
+            >
+              {isDemoMode ? (
+                <>
+                  <div className={styles.filterToolbar}>
+                    <div className={styles.filterChipsGroup}>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={caseloadFilter === "all"}
+                        onClick={() => setCaseloadFilter("all")}
+                      >
+                        <span>All Active Caseload</span>
+                        <span className={styles.badgePill} id="chipAllCaseloadBadge">
+                          {DEMO_COMMUNITY_CASELOAD.length}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={caseloadFilter === "cto" || caseloadFilter === "5A"}
+                        onClick={() => setCaseloadFilter("cto")}
+                      >
+                        <span>Active CTO (Form 5A)</span>
+                        <span className={styles.badgePill} id="chipCtoBadge" style={{ color: "var(--good)" }}>
+                          {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("cto")).length}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={caseloadFilter === "high"}
+                        onClick={() => setCaseloadFilter("high")}
+                      >
+                        <span>High Acuity / Assertive Outreach</span>
+                        <span className={styles.badgePill} id="chipHighAcuityBadge">
+                          {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("high")).length}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={caseloadFilter === "depot"}
+                        onClick={() => setCaseloadFilter("depot")}
+                      >
+                        <span>Depot Clinic Due</span>
+                        <span className={styles.badgePill} id="chipDepotBadge">
+                          {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("depot")).length}
+                        </span>
+                      </button>
+                    </div>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: "var(--t-0)", color: "var(--muted)" }}>
+                      <span id="caseloadSectorNote">{team.name} / Sector Catchment</span>
+                    </div>
+                  </div>
+
+                  <div className={styles.cardPanel}>
+                    <div className={styles.panelHead}>
+                      <h2 className={styles.panelTitle}>
+                        <svg
+                          viewBox="0 0 16 16"
+                          width="16"
+                          height="16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                        >
+                          <circle cx="8" cy="8" r="6" />
+                          <path d="M8 5v3l2 2" />
+                        </svg>
+                        <span>Community Treatment Orders (Form 5A) &amp; High Acuity Caseload</span>
+                      </h2>
+                      <span className={styles.badgePill} id="caseloadHeadBadge">
+                        {demoVisibleCaseload.length} Active Records
+                      </span>
+                    </div>
+                    <div className={styles.tableScroll}>
+                      <table className={styles.table} id="caseloadTable">
+                        <thead>
+                          <tr>
+                            <th scope="col">UMRN / Patient</th>
+                            <th scope="col">Age / Sex</th>
+                            <th scope="col">Statutory Status</th>
+                            <th scope="col">Care Plan Tier</th>
+                            <th scope="col">Key Clinician</th>
+                            <th scope="col">Last Contact</th>
+                            <th scope="col">Next Scheduled Contact / Review</th>
+                            <th scope="col" style={{ textAlign: "right" }}>
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {demoVisibleCaseload.map((row) => (
+                            <tr
+                              key={row.id}
+                              data-cat={row.category}
+                              onClick={() => {
+                                setSelectedPatientId(row.patientId);
+                                setActiveDrawer("pxDrawer");
+                              }}
+                              style={{ cursor: "pointer" }}
+                            >
+                              <td>
+                                <b>{row.umrn}</b> · {row.patientId}
+                              </td>
+                              <td>{row.ageSex}</td>
+                              <td>
+                                <span className={`${styles.statusPillBadge} ${styles[row.statutoryTone]}`}>
+                                  {row.statutoryStatus}
+                                </span>
+                              </td>
+                              <td>{row.tier}</td>
+                              <td>{row.keyClinician}</td>
+                              <td>{row.lastContact}</td>
+                              <td>{row.nextReview}</td>
+                              <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  className={styles.btnSmSec}
+                                  onClick={() => {
+                                    setSelectedPatientId(row.patientId);
+                                    setActiveDrawer("pxDrawer");
+                                  }}
+                                >
+                                  Open dossier
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
+              {/* ── Active Caseload & CTO Statutory Register Table ── */}
+              <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
+                <section
+                  className={styles.caseloadSection}
+                  id="section-caseload"
+                  aria-label="Catchment Active Caseload and Statutory CTO Register"
+                >
+                  <div className={styles.caseloadHead}>
+                    <h3 className={styles.caseloadTitle}>
+                      <span>Catchment Active Caseload &amp; Statutory Register</span>
+                      <span id="caseloadHeadBadge" className={styles.badgePill}>
+                        {caseloadRows.length} Patients
+                      </span>
+                      <span id="caseloadSectorNote" style={{ display: "none" }}>
+                        {team.name}
+                      </span>
+                      <span id="chipDepotBadge" style={{ display: "none" }}>
+                        Depot
+                      </span>
+                      <span id="chipHighAcuityBadge" style={{ display: "none" }}>
+                        High Acuity
+                      </span>
+                    </h3>
+                    <div className={styles.filterChipsGroup}>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={caseloadFilter === "all"}
+                        onClick={() => setCaseloadFilter("all")}
+                      >
+                        <span>All Active</span>
+                        <span id="chipAllCaseloadBadge" className={styles.badgePill}>
+                          {caseloadRows.length}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={caseloadFilter === "5A"}
+                        onClick={() => setCaseloadFilter("5A")}
+                      >
+                        <span>Recorded Form 5A</span>
+                        <span id="chipCtoBadge" className={styles.badgePill}>
+                          {form5ACount}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.chipFilterBtn}
+                        aria-pressed={caseloadFilter === "5B"}
+                        onClick={() => setCaseloadFilter("5B")}
+                      >
+                        <span>Recorded Form 5B</span>
+                        <span className={styles.badgePill}>{form5BCount}</span>
+                      </button>
+                    </div>
+                  </div>
                   <div className={styles.tableScroll}>
-                    <table className={styles.table} id="caseloadTable">
+                    <table id="caseloadTable" className={styles.table} data-testid="ward-community-caseload-table">
                       <thead>
                         <tr>
-                          <th scope="col">UMRN / Patient</th>
-                          <th scope="col">Age / Sex</th>
-                          <th scope="col">Statutory Status</th>
-                          <th scope="col">Care Plan Tier</th>
-                          <th scope="col">Key Clinician</th>
-                          <th scope="col">Last Contact</th>
-                          <th scope="col">Next Scheduled Contact / Review</th>
-                          <th scope="col" style={{ textAlign: "right" }}>
-                            Actions
-                          </th>
+                          <th scope="col">Person</th>
+                          <th scope="col">Statutory status</th>
+                          <th scope="col">Recorded expiry</th>
+                          <th scope="col">Follow-up</th>
+                          <th scope="col">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {demoVisibleCaseload.map((row) => (
-                          <tr
-                            key={row.id}
-                            data-cat={row.category}
-                            onClick={() => {
-                              setSelectedPatientId(row.patientId);
-                              setActiveDrawer("pxDrawer");
-                            }}
-                            style={{ cursor: "pointer" }}
-                          >
-                            <td>
-                              <b>{row.umrn}</b> · {row.patientId}
-                            </td>
-                            <td>{row.ageSex}</td>
-                            <td>
-                              <span className={`${styles.statusPillBadge} ${styles[row.statutoryTone]}`}>
-                                {row.statutoryStatus}
-                              </span>
-                            </td>
-                            <td>{row.tier}</td>
-                            <td>{row.keyClinician}</td>
-                            <td>{row.lastContact}</td>
-                            <td>{row.nextReview}</td>
-                            <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                className={styles.btnSmSec}
-                                onClick={() => {
-                                  setSelectedPatientId(row.patientId);
-                                  setActiveDrawer("pxDrawer");
-                                }}
-                              >
-                                Open Dossier
-                              </button>
+                        {visibleCaseload.length === 0 ? (
+                          <tr>
+                            <td colSpan={5}>
+                              <p className={styles.emptyNote} data-testid="ward-community-caseload-empty">
+                                {caseloadFilter === "all"
+                                  ? "No accepted follow-up or matched admission is on this team's caseload yet."
+                                  : `No recorded Form ${caseloadFilter} on this team's caseload.`}
+                              </p>
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          visibleCaseload.map((row) => {
+                            const formCode = caseloadStatutoryFormCode(row);
+                            const formLabel = formCode ? legalFormName({ code: formCode }) : "No form recorded";
+                            const expiryLabel = caseloadRecordedExpiryLabel(row, now);
+                            const formTone =
+                              formCode === "5A" || formCode === "5B" ? "danger" : formCode ? "warn" : "neutral";
+                            return (
+                              <tr key={row.key} data-testid={`ward-community-caseload-${row.referralId}`}>
+                                <td>
+                                  <strong>{row.patientId ?? "No person on file"}</strong>
+                                  {/* The age band sits under the person, as the v6 table carries it. */}
+                                  <span className={styles.caseloadMeta}>
+                                    {row.umrn ?? row.referralId} · {row.ageBand}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className={styles.statusPillBadge} data-tone={formTone}>
+                                    {formLabel}
+                                  </span>
+                                </td>
+                                <td>{expiryLabel}</td>
+                                <td>{row.addressingState === "accepted" ? "Accepted" : "From matched admission"}</td>
+                                <td>
+                                  {row.patientId !== undefined ? (
+                                    <button
+                                      type="button"
+                                      className={styles.btnSmSec}
+                                      onClick={() => {
+                                        setSelectedPatientId(row.patientId!);
+                                        setActiveDrawer("pxDrawer");
+                                      }}
+                                    >
+                                      View dossier
+                                    </button>
+                                  ) : (
+                                    <span className={styles.footnote}>No dossier without a person on file.</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </>
-            ) : null}
-
-            {/* ── Active Caseload & CTO Statutory Register Table ── */}
-            <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-              <section
-                className={styles.caseloadSection}
-                id="section-caseload"
-                aria-label="Catchment Active Caseload and Statutory CTO Register"
-              >
-                <div className={styles.caseloadHead}>
-                  <h3 className={styles.caseloadTitle}>
-                    <span>Catchment Active Caseload &amp; Statutory Register</span>
-                    <span id="caseloadHeadBadge" className={styles.badgePill}>
-                      {caseloadRows.length} Patients
-                    </span>
-                    <span id="caseloadSectorNote" style={{ display: "none" }}>
-                      {team.name}
-                    </span>
-                    <span id="chipDepotBadge" style={{ display: "none" }}>
-                      Depot
-                    </span>
-                    <span id="chipHighAcuityBadge" style={{ display: "none" }}>
-                      High Acuity
-                    </span>
-                  </h3>
-                  <div className={styles.filterChipsGroup}>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={caseloadFilter === "all"}
-                      onClick={() => setCaseloadFilter("all")}
-                    >
-                      <span>All Active</span>
-                      <span id="chipAllCaseloadBadge" className={styles.badgePill}>
-                        {caseloadRows.length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={caseloadFilter === "5A"}
-                      onClick={() => setCaseloadFilter("5A")}
-                    >
-                      <span>Recorded Form 5A</span>
-                      <span id="chipCtoBadge" className={styles.badgePill}>
-                        {form5ACount}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.chipFilterBtn}
-                      aria-pressed={caseloadFilter === "5B"}
-                      onClick={() => setCaseloadFilter("5B")}
-                    >
-                      <span>Recorded Form 5B</span>
-                      <span className={styles.badgePill}>{form5BCount}</span>
-                    </button>
-                  </div>
-                </div>
-                <div className={styles.tableScroll}>
-                  <table id="caseloadTable" className={styles.table} data-testid="ward-community-caseload-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Person</th>
-                        <th scope="col">Statutory status</th>
-                        <th scope="col">Recorded expiry</th>
-                        <th scope="col">Follow-up</th>
-                        <th scope="col">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibleCaseload.length === 0 ? (
-                        <tr>
-                          <td colSpan={5}>
-                            <p className={styles.emptyNote} data-testid="ward-community-caseload-empty">
-                              {caseloadFilter === "all"
-                                ? "No accepted follow-up or matched admission is on this team's caseload yet."
-                                : `No recorded Form ${caseloadFilter} on this team's caseload.`}
-                            </p>
-                          </td>
-                        </tr>
-                      ) : (
-                        visibleCaseload.map((row) => {
-                          const formCode = caseloadStatutoryFormCode(row);
-                          const formLabel = formCode ? legalFormName({ code: formCode }) : "No form recorded";
-                          const expiryLabel = caseloadRecordedExpiryLabel(row, now);
-                          const formTone =
-                            formCode === "5A" || formCode === "5B" ? "danger" : formCode ? "warn" : "neutral";
-                          return (
-                            <tr key={row.key} data-testid={`ward-community-caseload-${row.referralId}`}>
-                              <td>
-                                <strong>{row.patientId ?? "No person on file"}</strong>
-                                {/* The age band sits under the person, as the v6 table carries it. */}
-                                <span className={styles.caseloadMeta}>
-                                  {row.umrn ?? row.referralId} · {row.ageBand}
-                                </span>
-                              </td>
-                              <td>
-                                <span className={styles.statusPillBadge} data-tone={formTone}>
-                                  {formLabel}
-                                </span>
-                              </td>
-                              <td>{expiryLabel}</td>
-                              <td>{row.addressingState === "accepted" ? "Accepted" : "From matched admission"}</td>
-                              <td>
-                                {row.patientId !== undefined ? (
-                                  <button
-                                    type="button"
-                                    className={styles.btnSmSec}
-                                    onClick={() => {
-                                      setSelectedPatientId(row.patientId!);
-                                      setActiveDrawer("pxDrawer");
-                                    }}
-                                  >
-                                    View Dossier
-                                  </button>
-                                ) : (
-                                  <span className={styles.footnote}>No dossier without a person on file.</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            </div>
-          </div>
-
-          {/* ── The team itself: how to reach it, and the sample deployment. Shown under every list (v6). ── */}
-          <div className={`${styles.tabPanelActive} ${v6.side}`} id="tab-team" data-wf-rail="1201">
-            {/* ── How to reach this team ── */}
-            <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-              {(() => {
-                const contact = contactForTeam(team.name);
-                const decision = contactDecisionFor(team.name);
-                return (
-                  <section
-                    className={v6.sideCard}
-                    aria-label="How to reach this team"
-                    data-testid="ward-community-contact"
-                  >
-                    <div className={v6.sideHead}>
-                      <h3 className={v6.sideTitle}>How to reach</h3>
-                      <span className={v6.sideMeta}>Published contacts</span>
-                    </div>
-                    <div className={v6.sideBody} role="region" aria-label="How to reach this team details">
-                      {contact === null ? (
-                        <p className={v6.sideNote}>
-                          Nobody has yet recorded which real service this name refers to, so no contact detail is shown.
-                          That is not a statement that this team has no phone number.
-                        </p>
-                      ) : (
-                        <>
-                          <dl className={v6.keyValues} data-testid="ward-community-contact-detail">
-                            {contact.publishedPhone === null ? null : (
-                              <div>
-                                <dt>Phone</dt>
-                                <dd className={v6.mono}>
-                                  <a href={`tel:${contact.publishedPhone.replace(/[^\d+]/g, "")}`}>
-                                    {contact.publishedPhone}
-                                  </a>
-                                </dd>
-                              </div>
-                            )}
-                            {contact.publishedHours === null ? null : (
-                              <div>
-                                <dt>Hours</dt>
-                                <dd>{contact.publishedHours}</dd>
-                              </div>
-                            )}
-                            {contact.referralEmail === null ? null : (
-                              <div>
-                                <dt>Referrals</dt>
-                                <dd>
-                                  <a href={`mailto:${contact.referralEmail}`}>{contact.referralEmail}</a>
-                                </dd>
-                              </div>
-                            )}
-                            {contact.address === null ? null : (
-                              <div>
-                                <dt>Address</dt>
-                                <dd>{contact.address}</dd>
-                              </div>
-                            )}
-                          </dl>
-                          <p className={v6.sideNote}>{REFERENCE_TEAM_CAVEAT}</p>
-                          <p className={v6.sideNote}>
-                            Recorded {contact.recordedOn ?? "on a date the register does not give"}
-                            {decision === null
-                              ? null
-                              : `. Paired with ${decision.serviceName} by ${decision.decidedBy} on ${decision.decidedOn}.`}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </section>
-                );
-              })()}
-            </div>
-
-            {/* ── Team Deployment, Clinic Rooms and Response Fleet ── */}
-            {isDemoMode ? (
-              <>
-                <div className={styles.cardPanel}>
-                  <div className={styles.panelHead}>
-                    <h2 className={styles.panelTitle}>
-                      <svg
-                        viewBox="0 0 16 16"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                      >
-                        <path d="M6 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM11.5 8a2 2 0 100-4 2 2 0 000 4zM1.5 14c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M10.5 10.5c2 .3 3.5 1.6 3.5 3.5" />
-                      </svg>
-                      <span>Catchment Multidisciplinary Team Roster &amp; Duty Allocations</span>
-                    </h2>
-                    <span className={styles.badgePill} id="teamStaffCountBadge">
-                      {teamConfig.staff} Key Clinicians Active
-                    </span>
-                  </div>
-                  <div className={styles.panelBody}>
-                    <div className={styles.teamRosterGrid}>
-                      {DEMO_COMMUNITY_STAFF.map((staff) => (
-                        <div key={staff.name} className={styles.staffCard}>
-                          <div className={styles.staffHead}>
-                            <div>
-                              <div
-                                className={styles.staffName}
-                                id={staff.name === "Dr A. Nair" ? "leadConsultantName" : undefined}
-                              >
-                                {staff.name === "Dr A. Nair" ? teamConfig.consultant : staff.name}
-                              </div>
-                              <div className={styles.staffRole}>{staff.role}</div>
-                            </div>
-                            <span className={`${styles.statusPillBadge} ${styles[staff.statusTone]}`}>
-                              {staff.status}
-                            </span>
-                          </div>
-                          <div className={styles.staffMetrics}>
-                            <span>
-                              Caseload: <b>{staff.caseload}</b>
-                            </span>
-                            <span>
-                              Ext: <b>{staff.ext}</b>
-                            </span>
-                            <span>{staff.assignment}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.clinicFleetGrid}>
-                  <div className={styles.cardPanel}>
-                    <div className={styles.panelHead}>
-                      <h3 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
-                        Clinic Room Utilization
-                      </h3>
-                      <span className={styles.badgePill}>3 Rooms Active</span>
-                    </div>
-                    <div className={styles.panelBody}>
-                      <div className={styles.clinicRoomItem}>
-                        <div className={styles.clinicRoomTop}>
-                          <span className={styles.clinicRoomTitle}>Room 1 · Consultant Clinic</span>
-                          <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 1pm</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                          Dr K. Rao · Urgent Intakes &amp; Medication Reviews
-                        </span>
-                      </div>
-                      <div className={styles.clinicRoomItem}>
-                        <div className={styles.clinicRoomTop}>
-                          <span className={styles.clinicRoomTitle}>Room 2 · Depot &amp; Physical Health</span>
-                          <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 5pm</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                          RN C. Davis · Long-acting injections, ECG, metabolic monitoring
-                        </span>
-                      </div>
-                      <div className={styles.clinicRoomItem}>
-                        <div className={styles.clinicRoomTop}>
-                          <span className={styles.clinicRoomTitle}>Room 3 · Crisis Walk-in &amp; Triage</span>
-                          <span className={`${styles.statusPillBadge} ${styles.warn}`}>Active Standby</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                          Dr J. Lim · Urgent walk-in community assessments
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.cardPanel}>
-                    <div className={styles.panelHead}>
-                      <h3 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
-                        Mobile Outreach Vehicles
-                      </h3>
-                      <span className={styles.badgePill}>2 Vehicles</span>
-                    </div>
-                    <div className={styles.panelBody}>
-                      <div className={styles.clinicRoomItem}>
-                        <div className={styles.clinicRoomTop}>
-                          <span className={styles.clinicRoomTitle} id="fleetVehicle1Title">
-                            {teamConfig.fleet1}
-                          </span>
-                          <span className={`${styles.statusPillBadge} ${styles.warn}`}>In Field</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                          Staff: T. Bradley RN &amp; Dr J. Lim · Scheduled Home Visits
-                        </span>
-                      </div>
-                      <div className={styles.clinicRoomItem}>
-                        <div className={styles.clinicRoomTop}>
-                          <span className={styles.clinicRoomTitle} id="fleetVehicle2Title">
-                            {teamConfig.fleet2}
-                          </span>
-                          <span className={`${styles.statusPillBadge} ${styles.good}`}>At Base</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                          Staff: M. Davies SW · Available for Urgent Dispatch
-                        </span>
-                      </div>
-                      <div className={styles.clinicRoomItem}>
-                        <div className={styles.clinicRoomTop}>
-                          <span className={styles.clinicRoomTitle}>Morning MDT Huddle Log</span>
-                          <span className={`${styles.statusPillBadge} ${styles.neutral}`}>10am Completed</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                          14 Catchment cases reviewed · 2 Inpatient transfers coordinated
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <section
-                className={v6.sideCard}
-                id="section-team-workspace"
-                aria-labelledby="ward-community-roster-title"
-                data-testid="ward-community-roster"
-              >
-                <div className={v6.sideHead}>
-                  <h3 id="ward-community-roster-title" className={v6.sideTitle}>
-                    On duty today
-                  </h3>
-                  <span id="teamStaffCountBadge" className={v6.sideMeta}>
-                    Sample roster
-                  </span>
-                </div>
-                <p className={v6.sampleNote} role="note">
-                  Illustrative staffing and logistics only. These are not roster, huddle, room or vehicle records for
-                  {` ${team.name}`}.
-                </p>
-                <ul className={v6.roster} aria-label="Sample roster, illustrative">
-                  {SAMPLE_ROSTER.map((member) => (
-                    <li key={member.role} className={v6.rosterRow}>
-                      <span className={v6.initials} aria-hidden="true">
-                        {member.initials}
-                      </span>
-                      <span className={v6.rosterWho}>
-                        <span className={v6.rosterRole} id={member.lead ? "leadConsultantName" : undefined}>
-                          {member.role}
-                        </span>
-                        <span className={v6.rosterDetail}>{member.detail}</span>
-                      </span>
-                      <span className={v6.rosterStatus}>
-                        <StatusGlyph tone={ROSTER_TONE[member.status]} size={9} />
-                        {member.status}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <details className={v6.sampleMore}>
-                  <summary>Sample rooms and vehicles</summary>
-                  <ul className={v6.sampleList} aria-label="Sample clinic rooms and vehicles, illustrative">
-                    <li>
-                      <span>Clinic room 1 · depot clinic</span>
-                      <span className={v6.rosterDetail}>Active</span>
-                    </li>
-                    <li>
-                      <span>Clinic room 2 · consultant reviews</span>
-                      <span className={v6.rosterDetail}>Active</span>
-                    </li>
-                    <li>
-                      <span>Clinic room 3 · urgent intake</span>
-                      <span className={v6.rosterDetail}>Standby</span>
-                    </li>
-                    <li>
-                      <span id="fleetVehicle1Title">Outreach vehicle 1 (dual crew)</span>
-                      <span className={v6.rosterDetail}>In field</span>
-                    </li>
-                    <li>
-                      <span id="fleetVehicle2Title">Outreach vehicle 2 (secondary)</span>
-                      <span className={v6.rosterDetail}>At base</span>
-                    </li>
-                  </ul>
-                </details>
-              </section>
-            )}
-          </div>
-
-          {/* ── Governance Accordion: Limits, Facts, Links & Provenance ── */}
-          <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-            <details
-              ref={limitsDisclosureRef}
-              className={styles.governanceSection}
-              data-testid="ward-community-limits"
-              open
-            >
-              <summary className={styles.governanceSummary}>Data provenance, coverage limits and team facts</summary>
-              <div className={styles.governanceBody}>
-                {/* Coverage limits */}
-                <div className={styles.cardPanel}>
-                  <div className={styles.panelHead}>
-                    <h3 className={styles.panelTitle}>
-                      <span>Coverage limits</span>
-                    </h3>
-                  </div>
-                  <div className={styles.panelBody} role="region" aria-label="Coverage limits details" tabIndex={0}>
-                    <ul className={styles.limitsList}>
-                      <li>
-                        <strong>Completeness.</strong> Only admissions linked to a referral this page can find are
-                        shown; <span>{unattributable.length}</span>{" "}
-                        {unattributable.length === 1 ? "admission is" : "admissions are"} counted rather than shown.
-                      </li>
-                      <li>
-                        <strong>Current care.</strong> No community-team closure is recorded, so prior acceptance does
-                        not establish current care.
-                      </li>
-                      <li>
-                        <strong>Follow-up.</strong> Follow-up status is not shown or editable here.
-                      </li>
-                      <li>
-                        <strong>Referrals raised.</strong> Community sources carry no team name.
-                      </li>
-                      <li>
-                        <strong>Population.</strong> This is a destination-team view, not a geographic population view.
-                      </li>
-                      <li>
-                        <strong>Dates.</strong> Elapsed time is shown instead of synthetic calendar dates.
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* This team facts */}
-                <div className={styles.cardPanel} data-testid="ward-community-facts">
-                  <div className={styles.panelHead}>
-                    <h3 className={styles.panelTitle}>
-                      <span>This team facts</span>
-                    </h3>
-                  </div>
-                  <div className={styles.panelBody} role="region" aria-label="This team details" tabIndex={0}>
-                    <dl className={styles.factsList}>
-                      <div className={styles.factsRow}>
-                        <dt>Name recorded as</dt>
-                        <dd>{team.name}</dd>
-                      </div>
-                      <div className={styles.factsRow}>
-                        <dt>Suburbs naming it</dt>
-                        <dd data-testid="ward-community-suburb-count">
-                          {suburbsNamingTeam === undefined
-                            ? "Not derivable from the catchment table"
-                            : suburbsNamingTeam}
-                        </dd>
-                      </div>
-                      <div className={styles.factsRow}>
-                        <dt>Entries that read alike</dt>
-                        <dd>{nearDuplicates.length}</dd>
-                      </div>
-                      <div className={styles.factsRow}>
-                        <dt>Hours, contacts, staffing</dt>
-                        <dd>Published contacts held; roster not held</dd>
-                      </div>
-                    </dl>
-                  </div>
-                </div>
-
-                {/* Quick links */}
-                <div className={styles.cardPanel} data-testid="ward-community-links">
-                  <div className={styles.panelHead}>
-                    <h3 className={styles.panelTitle}>
-                      <span>Go to</span>
-                    </h3>
-                  </div>
-                  <div className={styles.panelBody} role="region" aria-label="Go to links" tabIndex={0}>
-                    <ul className={styles.linksList}>
-                      <li>
-                        <Link className={styles.linksItem} href="/mockups/ward-flow/community">
-                          All community teams
-                        </Link>
-                      </li>
-                      <li>
-                        <Link className={styles.linksItem} href={WARD_REFERRAL_INTAKE_HREF}>
-                          New referral
-                        </Link>
-                      </li>
-                      <li>
-                        <Link className={styles.linksItem} href="/mockups/ward-flow/referrals">
-                          Referrals
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Provenance and matching limits */}
-                <div
-                  className={styles.aboutPage}
-                  data-testid="ward-community-about"
-                  aria-label="Community data provenance and matching limits"
-                >
-                  <div className={styles.noticeGroup}>
-                    <p className={styles.notice} data-testid="ward-community-placeholder-notice">
-                      <strong>This team name comes from the S2015 catchment table.</strong> It is referral vocabulary,
-                      not a current roster of Western Australian community services. No team has agreed to be
-                      represented and this page does not identify who currently provides care.{" "}
-                      {nearDuplicates.length > 0 ? (
-                        <strong data-testid="ward-community-near-duplicate-warning">
-                          {" "}
-                          That document also spells some teams more than one way, and this is one of them: it also
-                          contains{" "}
-                          {nearDuplicates.map((name, index) => (
-                            <span key={name}>
-                              {index > 0 ? (index === nearDuplicates.length - 1 ? " and " : ", ") : ""}
-                              <span className={styles.fieldName}>{name}</span>
-                            </span>
-                          ))}
-                          {nearDuplicates[nearDuplicates.length - 1].endsWith(".") ? "" : "."} Those are separate pages
-                          here, and each reports only the people whose referral was typed its way — so somebody referred
-                          to this team under another spelling is on that page and not on this one.
-                        </strong>
-                      ) : null}
-                    </p>
-
-                    {sameService.length > 0 && ratifiedBy !== undefined ? (
-                      <p className={styles.ratifiedNotice} data-testid="ward-community-ratified-alias">
-                        <strong>
-                          {ratifiedBy.decidedByKind === "person"
-                            ? "A person has ruled that this team and "
-                            : "This team has been recorded as the same service as "}
-                          {sameService.map((name, index) => (
-                            <span key={name}>
-                              {index > 0 ? (index === sameService.length - 1 ? " and " : ", ") : ""}
-                              <span className={styles.fieldName}>{name}</span>
-                            </span>
-                          ))}
-                          {ratifiedBy.decidedByKind === "person" ? " are one service." : ", pending review."}
-                        </strong>{" "}
-                        This is a judgement about the real clinic, not an observation that the names look alike. No rule
-                        here could have reached it and none did. Referrals typed under each spelling are still listed on
-                        that spelling&apos;s own page: the decision is recorded, and nobody has been moved.
-                        <span className={styles.ratifiedProvenance} data-testid="ward-community-ratified-provenance">
-                          {ratifiedBy.decidedByKind === "person" ? (
-                            <>
-                              Decided by {ratifiedBy.decidedBy} on {ratifiedBy.decidedOn}, after being shown each
-                              spelling and the suburbs it routes.
-                            </>
-                          ) : (
-                            <>
-                              Recorded by {ratifiedBy.decidedBy} on {ratifiedBy.decidedOn}. No person has seen these
-                              spellings or the suburbs they route, and this entry is waiting to be reviewed. Treat it as
-                              a working note, not as a decision anyone has signed.
-                            </>
-                          )}
-                        </span>
-                      </p>
-                    ) : null}
-
-                    <p className={styles.notice} data-testid="ward-community-unattributable">
-                      <strong>
-                        {unattributable.length}{" "}
-                        {unattributable.length === 1
-                          ? "admission is on no community team's page"
-                          : "admissions are on no community team's page"}
-                        .
-                      </strong>{" "}
-                      Only admissions linked to a referral naming this team appear here. Admissions without a matching
-                      referral, or whose referral asked only for a bed or emergency department, appear on no team page.
-                      This is not a geographic or complete population view.
-                    </p>
-                  </div>
-
-                  <p className={styles.provenance} data-testid="ward-community-association">
-                    Matches use the destination team written on the referral, never home region. A later decline or
-                    cancellation does not remove that association.{" "}
-                    <strong>
-                      {waitlistedForTeam.length}{" "}
-                      {waitlistedForTeam.length === 1
-                        ? "admission is matched to this team and still waitlisted"
-                        : "admissions are matched to this team and still waitlisted"}
-                      .
-                    </strong>{" "}
-                    {waitlistedForTeam.length === 1 ? "That person has" : "Those people have"} no pulled bed, so they
-                    appear in neither admitted list nor the unmatched count. A waitlisted match is still a match.
-                  </p>
-                </div>
+                </section>
               </div>
-            </details>
+            </div>
+
+            {/* ── The team itself: how to reach it, and the sample deployment. Shown under every list (v6). ── */}
+            <div className={`${styles.tabPanelActive} ${v6.side}`} id="tab-team" data-wf-rail="1201">
+              <CommunityWorthAttention items={phoneAttentionItems} />
+
+              {/* ── How to reach this team ── */}
+              {howToReachPanel}
+
+              {/* ── Team Deployment, Clinic Rooms and Response Fleet ── */}
+              {onDutyPanel}
+            </div>
+
+            {/* ── About this data: notices, limits, facts, links and provenance, closed (option A) ── */}
+            <CommunityAboutThisData>
+              {noticesSection}
+              {coveragePanel}
+            </CommunityAboutThisData>
           </div>
-        </div>
+        )}
 
         {transportBookFor !== undefined ? (
           <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportBook}>
@@ -4695,32 +5182,6 @@ export function CommunityScreen({
                 {(activeDrawer === "tools" || activeDrawer === "toolsDrawer") && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                     <div>
-                      <h4 style={{ margin: "0 0 0.5rem", fontSize: "var(--t-1)" }}>Appearance / Theme</h4>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button
-                          type="button"
-                          className={styles.btnSmSec}
-                          onClick={() => handleSetThemeExplicit("light")}
-                        >
-                          Light
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.btnSmSec}
-                          onClick={() => handleSetThemeExplicit("dark")}
-                        >
-                          Dark
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.btnSmSec}
-                          onClick={() => handleSetThemeExplicit("auto")}
-                        >
-                          System Auto
-                        </button>
-                      </div>
-                    </div>
-                    <div>
                       <h4 style={{ margin: "0 0 0.5rem", fontSize: "var(--t-1)" }}>Prototype State Simulation</h4>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                         <button
@@ -4771,14 +5232,16 @@ export function CommunityScreen({
 
               {(activeDrawer === "px" || activeDrawer === "pxDrawer") && (
                 <div className={styles.drawerFoot}>
+                  {/* D-16: pressable for the coordinator; it says it is not wired rather than greying. */}
                   <button
                     type="button"
                     className={styles.btnSmSec}
-                    aria-disabled="true"
-                    title="Not wired in this prototype."
-                    onClick={() => setToastMessage("Not wired in this prototype.")}
+                    onClick={() => {
+                      announceToWardShell("Edit dossier is not wired in this prototype.");
+                      setToastMessage("Not wired in this prototype.");
+                    }}
                   >
-                    Edit Dossier
+                    Edit dossier
                   </button>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button
@@ -4788,7 +5251,7 @@ export function CommunityScreen({
                         openPatientCare();
                       }}
                     >
-                      Record Contact
+                      Record contact
                     </button>
                     <button
                       type="button"
@@ -4796,7 +5259,7 @@ export function CommunityScreen({
                       id="pxConfirmFollowupBtn"
                       onClick={openPatientCare}
                     >
-                      Arrange Follow-Up
+                      Arrange follow-up
                     </button>
                   </div>
                 </div>
@@ -4830,7 +5293,7 @@ export function CommunityScreen({
                       else setAcceptanceError("Referral is unavailable. No acceptance was recorded.");
                     }}
                   >
-                    Accept Referral
+                    Accept referral
                   </button>
                 </div>
               )}
@@ -4844,46 +5307,39 @@ export function CommunityScreen({
             <div
               className={styles.modalBox}
               id={
-                activeModalType === "intake"
-                  ? "newReferralModal"
-                  : activeModalType === "contact"
-                    ? "contactModal"
-                    : activeModalType === "handover"
-                      ? "handoverModal"
-                      : activeModalType === "crisis"
-                        ? "crisisModal"
-                        : undefined
+                activeModalType === "contact"
+                  ? "contactModal"
+                  : activeModalType === "handover"
+                    ? "handoverModal"
+                    : activeModalType === "crisis"
+                      ? "crisisModal"
+                      : undefined
               }
               role="dialog"
               aria-labelledby={
-                activeModalType === "intake"
-                  ? "newRefModalTitle"
-                  : activeModalType === "contact"
-                    ? "contactModalTitle"
-                    : activeModalType === "handover"
-                      ? "handoverModalTitle"
-                      : activeModalType === "crisis"
-                        ? "crisisModalTitle"
-                        : "modal-heading"
+                activeModalType === "contact"
+                  ? "contactModalTitle"
+                  : activeModalType === "handover"
+                    ? "handoverModalTitle"
+                    : activeModalType === "crisis"
+                      ? "crisisModalTitle"
+                      : "modal-heading"
               }
               onClick={(e) => e.stopPropagation()}
             >
               <div className={styles.modalHead}>
                 <h3
                   id={
-                    activeModalType === "intake"
-                      ? "newRefModalTitle"
-                      : activeModalType === "contact"
-                        ? "contactModalTitle"
-                        : activeModalType === "handover"
-                          ? "handoverModalTitle"
-                          : activeModalType === "crisis"
-                            ? "crisisModalTitle"
-                            : "modal-heading"
+                    activeModalType === "contact"
+                      ? "contactModalTitle"
+                      : activeModalType === "handover"
+                        ? "handoverModalTitle"
+                        : activeModalType === "crisis"
+                          ? "crisisModalTitle"
+                          : "modal-heading"
                   }
                   className={styles.modalTitle}
                 >
-                  {activeModalType === "intake" && "New Catchment Referral Intake"}
                   {activeModalType === "contact" && "Record Clinical Contact"}
                   {activeModalType === "handover" && "Print Catchment MDT Summary"}
                   {activeModalType === "crisis" && "Catchment Crisis Response & Outreach Duty"}
@@ -4898,160 +5354,6 @@ export function CommunityScreen({
                 </button>
               </div>
               <div className={styles.modalBody}>
-                {activeModalType === "intake" && (
-                  <form
-                    data-testid="ward-community-intake-form"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      submitCommunityFollowUp(team.name);
-                    }}
-                    className={styles.intakeForm}
-                  >
-                    <p className={styles.footnote}>
-                      For community follow-up with {team.name}. This names the team and opens a real referral. It does
-                      not invent a statutory duration.
-                    </p>
-                    <label className={styles.intakeField}>
-                      <span>Team</span>
-                      <input
-                        type="text"
-                        readOnly
-                        value={team.name}
-                        className={styles.searchInput}
-                        data-testid="ward-community-intake-team"
-                      />
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>UMRN (optional)</span>
-                      <input
-                        type="text"
-                        value={intakeDraft.umrn}
-                        onChange={(event) => setIntakeDraft((current) => ({ ...current, umrn: event.target.value }))}
-                        placeholder="Leave blank if nobody is on file"
-                        className={styles.searchInput}
-                        data-testid="ward-community-intake-umrn"
-                      />
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>Age band</span>
-                      <select
-                        className={styles.declineSelect}
-                        value={intakeDraft.ageBand}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({
-                            ...current,
-                            ageBand: event.target.value as IntakeDraft["ageBand"],
-                          }))
-                        }
-                        data-testid="ward-community-intake-age-band"
-                      >
-                        <option value="">Choose one</option>
-                        {COHORTS.map((cohort) => (
-                          <option key={cohort} value={cohort}>
-                            {cohort}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>Home region</span>
-                      <select
-                        className={styles.declineSelect}
-                        value={intakeDraft.homeRegion}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({
-                            ...current,
-                            homeRegion: event.target.value as IntakeDraft["homeRegion"],
-                          }))
-                        }
-                        data-testid="ward-community-intake-home-region"
-                      >
-                        <option value="">Choose one</option>
-                        {HOME_REGIONS.map((region) => (
-                          <option key={region} value={region}>
-                            {region}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>Urgency</span>
-                      <select
-                        className={styles.declineSelect}
-                        value={intakeDraft.urgency}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({
-                            ...current,
-                            urgency: event.target.value as IntakeDraft["urgency"],
-                          }))
-                        }
-                        data-testid="ward-community-intake-urgency"
-                      >
-                        <option value="">Choose one</option>
-                        {URGENCY_LEVELS.map((level) => (
-                          <option key={level} value={String(level)}>
-                            {urgencyTierLabel(level)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>Originating site</span>
-                      <select
-                        className={styles.declineSelect}
-                        value={intakeDraft.originSiteCode}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({ ...current, originSiteCode: event.target.value }))
-                        }
-                        data-testid="ward-community-intake-origin-site"
-                      >
-                        <option value="">Choose one</option>
-                        {wardSites.map((site) => (
-                          <option key={site.code} value={site.code}>
-                            {site.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={styles.intakeField}>
-                      <span>History (optional)</span>
-                      <textarea
-                        value={intakeDraft.history}
-                        onChange={(event) => setIntakeDraft((current) => ({ ...current, history: event.target.value }))}
-                        className={styles.intakeHistory}
-                        rows={4}
-                        maxLength={REFERRAL_HISTORY_LIMITS.history}
-                        data-testid="ward-community-intake-history"
-                        data-gramm="false"
-                        data-enable-grammarly="false"
-                        spellCheck={false}
-                        autoComplete="off"
-                      />
-                    </label>
-                    <div className={styles.modalFoot}>
-                      <button type="button" className={styles.btnSmSec} onClick={() => setActiveModalType(null)}>
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className={styles.btnSmPrimary}
-                        data-testid="ward-community-intake-submit"
-                        aria-disabled={intakeBlocked === undefined ? undefined : "true"}
-                        aria-describedby={intakeBlocked === undefined ? undefined : "ward-community-intake-blocked"}
-                        title={intakeBlocked}
-                        onClick={intakeBlocked === undefined ? undefined : ignoreUnavailableActivation}
-                      >
-                        Send for community follow-up
-                      </button>
-                      {intakeBlocked === undefined ? null : (
-                        <span id="ward-community-intake-blocked" className="sr-only">
-                          {intakeBlocked}
-                        </span>
-                      )}
-                    </div>
-                  </form>
-                )}
-
                 {activeModalType === "contact" && (
                   <form
                     onSubmit={(e) => {
@@ -5120,7 +5422,7 @@ export function CommunityScreen({
                         title={clinicalContactCanSave() ? undefined : "Clinical contact is not recorded yet."}
                         onClick={clinicalContactCanSave() ? handleSaveClinicalContact : ignoreUnavailableActivation}
                       >
-                        Save Contact
+                        Save contact
                       </button>
                     </div>
                     <p
@@ -5166,7 +5468,7 @@ export function CommunityScreen({
                           if (typeof window !== "undefined") window.print();
                         }}
                       >
-                        Print Report
+                        Print report
                       </button>
                     </div>
                   </div>
@@ -5255,7 +5557,7 @@ export function CommunityScreen({
                       }}
                     >
                       <b>Current Deployment:</b> Urgent joint assessment PT-4620 with MHERT / WA Police co-response.
-                      En-route {teamConfig.campus} to catchment residence. Duress beacon active &amp; verified.
+                      En-route {teamConfig.campus} to catchment residence. Duress beacon: not wired in this prototype.
                     </div>
 
                     <div
@@ -5269,11 +5571,11 @@ export function CommunityScreen({
                         type="button"
                         className={styles.btnSmPrimary}
                         onClick={() => {
-                          setToastMessage("Duress GPS beacon tested and verified online.");
+                          setToastMessage("Not wired in this prototype.");
                           setActiveModalType(null);
                         }}
                       >
-                        Ping Duress GPS
+                        Ping duress GPS (not wired)
                       </button>
                     </div>
                   </div>

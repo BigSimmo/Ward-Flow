@@ -2,7 +2,7 @@
 
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 
-import { useEffect, useRef, useState, type Dispatch } from "react";
+import { useEffect, useRef, useState, type Dispatch, type ReactNode } from "react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
@@ -26,6 +26,7 @@ import {
   REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS,
   REFERRAL_DECLINE_REASONS,
   genderReviewNeeded,
+  type BedRelease,
   type CommunityDeclineReason,
   type Referral,
   type ReferralDeclineReason,
@@ -34,6 +35,8 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import {
   candidateAccepts,
   COMMUNITY_DECLINE_REASON_LABELS,
@@ -63,6 +66,8 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { getReferralPriority, referralPriorityLabel, PriorityGlyph } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
+import ph from "./referral-match-phone.module.css";
+import { StatusGlyph } from "@/components/wf";
 
 const GATE_LABELS: Record<EligibilityGate, string> = {
   acuity: "Acuity mix",
@@ -184,8 +189,11 @@ const REJECTED_DECISION_LABELS: Record<(typeof MATCH_VIEW_DECISION_EVENTS)[numbe
 function formatUmrn(umrn: string): string {
   if (!umrn || umrn === "UMRN not recorded") return "UMRN not recorded";
   if (umrn.toUpperCase().startsWith("UMRN")) return umrn;
-  return `UMRN: ${umrn}`;
+  return `UMRN ${umrn}`;
 }
+
+const NO_ADMISSIONS: readonly Admission[] = [];
+const NO_RELEASES: readonly BedRelease[] = [];
 
 type ReferralMatchViewProps = {
   referral: Referral;
@@ -200,6 +208,16 @@ type ReferralMatchViewProps = {
    * checks the reducer took it and offers Undo (`useReferralDecisionUndo`).
    */
   onDecision?: (title: string) => void;
+  /**
+   * v10 phone only. When set, the ward decision renders as the phone's one scrolling sheet: the
+   * candidate lists ("Fits, bed ready", "Fits, no bed now", "Needs review") with Decline and Accept
+   * pinned at the bottom. The node is the board's own extras (claim, timeline, patient details),
+   * rendered under the lists. Same handlers, same dispatches as the desktop view.
+   */
+  phone?: ReactNode;
+  /** For the shared occupancy figure (`ward-occupancy.ts`): occupied plus pulled, over every bed. */
+  admissions?: readonly Admission[];
+  bedReleases?: readonly BedRelease[];
 };
 
 /**
@@ -221,6 +239,12 @@ type ReferralMatchViewProps = {
  * Owns its own hooks (the draft note), independent of `ReferralMatchView`'s own strict hook order,
  * so it can be called from any of that component's three return branches without disturbing it.
  */
+/** Brings the confirm row into view when it opens, so Confirm and Cancel are never below the fold.
+ *  Module-level so React calls it once on mount, not on every render (site review, 12 Oct 2026). */
+function revealConfirmRow(node: HTMLDivElement | null) {
+  node?.scrollIntoView?.({ block: "nearest" });
+}
+
 export function ReferralHistoryAndCorrections({
   referral,
   now,
@@ -354,6 +378,9 @@ export function ReferralMatchView({
   patientInfo,
   hideDossierHeader = false,
   onDecision,
+  phone,
+  admissions = NO_ADMISSIONS,
+  bedReleases = NO_RELEASES,
 }: ReferralMatchViewProps) {
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
@@ -433,6 +460,10 @@ export function ReferralMatchView({
   const priorRejectionCountRef = useRef(rejections.length);
   const [checkToken, setCheckToken] = useState(0);
   const [collapsedTiers, setCollapsedTiers] = useState<Record<number, boolean>>({});
+  /* v10 phone sheet: the picked unit, whether the decline reasons are showing, and the fit list cap. */
+  const [phonePick, setPhonePick] = useState<string | undefined>(undefined);
+  const [phoneDeclining, setPhoneDeclining] = useState(false);
+  const [phoneAllFits, setPhoneAllFits] = useState(false);
 
   useEffect(() => {
     if (checkToken === 0) return;
@@ -503,54 +534,188 @@ export function ReferralMatchView({
    * FD-5: the referrer takes back the WHOLE referral. Every destination still waiting is marked
    * withdrawn; any answer already given stands. Offered only while the reducer would accept it.
    */
+  // Audit 11 Oct 2026: Decide holds the decision; withdrawing sits one tap away in a disclosure.
   const wholeWithdrawControl = referralWithdrawable(referral) ? (
-    <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">
-      <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">
-        Referrer cancelled this referral — recorded by
-      </label>
-      <div className={styles.selectWithActionRow}>
-        <select
-          id="ward-referral-match-withdraw-recorder"
-          data-testid="ward-referral-match-withdraw-recorder"
-          className={styles.select}
-          value={withdrawRecorder}
-          onChange={(event) => setWithdrawRecorder(event.target.value === "sender" ? "sender" : "coordinator")}
-        >
-          <option value="coordinator">{WARD_FLOW_ROLE_LABELS.coordinator}</option>
-          <option value="sender">{senderLabel}</option>
-        </select>
-        {!withdrawConfirmOpen ? (
-          <button
-            type="button"
-            className={styles.declineButton}
-            data-testid="ward-referral-match-withdraw"
-            onClick={() => setWithdrawConfirmOpen(true)}
+    <details className={styles.moreActions} data-testid="ward-referral-match-more-actions">
+      <summary className={styles.moreActionsSummary}>Referrer cancelled?</summary>
+      <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">
+        <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">
+          Referrer cancelled this referral — recorded by
+        </label>
+        <div className={styles.selectWithActionRow}>
+          <select
+            id="ward-referral-match-withdraw-recorder"
+            data-testid="ward-referral-match-withdraw-recorder"
+            className={styles.select}
+            value={withdrawRecorder}
+            onChange={(event) => setWithdrawRecorder(event.target.value === "sender" ? "sender" : "coordinator")}
           >
-            Withdraw referral
-          </button>
-        ) : (
-          <div className={styles.matchRowTop} data-testid="ward-referral-match-withdraw-confirm-group">
+            <option value="coordinator">{WARD_FLOW_ROLE_LABELS.coordinator}</option>
+            <option value="sender">{senderLabel}</option>
+          </select>
+          {!withdrawConfirmOpen ? (
             <button
               type="button"
               className={styles.declineButton}
-              data-testid="ward-referral-match-confirm-withdraw"
-              onClick={handleWholeWithdraw}
+              data-testid="ward-referral-match-withdraw"
+              onClick={() => setWithdrawConfirmOpen(true)}
             >
-              Confirm withdrawal
+              Withdraw referral
             </button>
-            <button
-              type="button"
-              className={styles.acceptButton}
-              data-testid="ward-referral-match-cancel-withdraw"
-              onClick={() => setWithdrawConfirmOpen(false)}
-            >
-              Keep referral
-            </button>
-          </div>
-        )}
+          ) : (
+            <div className={styles.matchRowTop} data-testid="ward-referral-match-withdraw-confirm-group">
+              <button
+                type="button"
+                className={styles.declineButton}
+                data-testid="ward-referral-match-confirm-withdraw"
+                onClick={handleWholeWithdraw}
+              >
+                Confirm withdrawal
+              </button>
+              <button
+                type="button"
+                className={styles.acceptButton}
+                data-testid="ward-referral-match-cancel-withdraw"
+                onClick={() => setWithdrawConfirmOpen(false)}
+              >
+                Keep referral
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </details>
   ) : null;
+  if (!ward && phone !== undefined && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
+    /* v10 phone, ED review: one scrolling sheet with Decline and Accept presentation pinned in the
+       foot, as the ward sheet does. Decline opens the reasons as radio rows; Accept asks once. */
+    return (
+      <section
+        className={`${styles.matchPanel} ${ph.sheet}`}
+        data-testid="ward-referral-match-not-a-bed-question"
+        data-phone="true"
+      >
+        <p className={ph.ch}>ED review</p>
+        <div className={styles.v10AskCard}>
+          <b className={styles.v10AskWhere}>{referralDestinationLabels(referral).join(" · ")}</b>
+          <span className={styles.v10AskWhat}>Psychiatric review, not answered by a bed</span>
+          <p className="sr-only">
+            {patientInfo ? (
+              <>
+                {formatUmrn(patientInfo.umrn)} <span>{referral.id}</span>
+              </>
+            ) : (
+              referral.id
+            )}{" "}
+            was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by
+            matching a bed. There is no bed shortlist for this referral.
+          </p>
+        </div>
+        {gpSourceNotice}
+        {phoneDeclining ? (
+          <>
+            <p className={ph.ch}>Why decline?</p>
+            <div className={ph.cands} role="radiogroup" aria-label="Why decline?">
+              {ED_DECLINE_REASONS.map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  role="radio"
+                  aria-checked={declineReason === reason}
+                  className={ph.cand}
+                  data-testid={`ward-referral-match-phone-decline-${reason}`}
+                  onClick={() => setDeclineReason(reason)}
+                >
+                  <span className={declineReason === reason ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
+                  <span className={ph.nm}>{DECLINE_REASON_LABELS[reason] ?? reason}</span>
+                </button>
+              ))}
+            </div>
+            <p className={ph.matchHint} id="ward-referral-match-decline-blocked-emergency_department">
+              {declineReason === undefined ? "Choose a reason to decline." : "Decline records this reason."}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className={ph.matchHint}>
+              {edAcceptConfirmOpen
+                ? "Confirm records the decision only. Nobody is moved."
+                : "Decline needs a reason. Accept records the decision only."}
+            </p>
+            {wholeWithdrawControl}
+          </>
+        )}
+        {lastRejection ? (
+          <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
+            {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
+            recorded: {lastRejection.reason}
+          </p>
+        ) : null}
+        {phoneDeclining ? null : phone}
+        <div className={ph.foot}>
+          {phoneDeclining ? (
+            <>
+              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
+                Back
+              </button>
+              <button
+                type="button"
+                className={ph.pri}
+                data-tone="danger"
+                data-testid="ward-referral-match-decline-emergency_department"
+                aria-disabled={declineReason === undefined ? "true" : undefined}
+                aria-describedby="ward-referral-match-decline-blocked-emergency_department"
+                title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
+                onClick={
+                  declineReason === undefined
+                    ? ignoreUnavailableActivation
+                    : () => {
+                        handleDecline("emergency_department");
+                        setPhoneDeclining(false);
+                      }
+                }
+              >
+                <span className={ph.ell}>Confirm decline</span>
+              </button>
+            </>
+          ) : edAcceptConfirmOpen ? (
+            <>
+              <button
+                type="button"
+                className={ph.sec}
+                data-testid="ward-referral-match-cancel-accept-emergency_department"
+                onClick={() => setEdAcceptConfirmOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={ph.pri}
+                data-testid="ward-referral-match-confirm-accept-emergency_department"
+                onClick={handleEdAccept}
+              >
+                <span className={ph.ell}>Confirm acceptance</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(true)}>
+                Decline
+              </button>
+              <button
+                type="button"
+                className={ph.pri}
+                data-testid="ward-referral-match-accept-emergency_department"
+                onClick={() => setEdAcceptConfirmOpen(true)}
+              >
+                <span className={ph.ell}>Accept presentation</span>
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+    );
+  }
   if (!ward) {
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">
@@ -636,7 +801,11 @@ export function ReferralMatchView({
           ) : null}
 
           {edAddressing && edAddressing.state === "queued" ? (
-            <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-emergency_department">
+            <div
+              className={styles.matchRowTop}
+              data-confirming={edAcceptConfirmOpen ? "true" : undefined}
+              data-testid="ward-referral-match-accept-controls-emergency_department"
+            >
               {!edAcceptConfirmOpen ? (
                 <button
                   type="button"
@@ -661,6 +830,7 @@ export function ReferralMatchView({
                 </button>
               ) : (
                 <div
+                  ref={revealConfirmRow}
                   className={styles.confirmActionRow}
                   data-testid="ward-referral-match-accept-confirm-group-emergency_department"
                 >
@@ -768,10 +938,11 @@ export function ReferralMatchView({
               </button>
             </div>
           ) : null}
-          <p className={styles.v10AskNote}>Decline needs a reason first. Accept records the decision only.</p>
-
-          {wholeWithdrawControl}
         </div>
+        {/* B4 (review 12 Oct 2026): the note and the withdraw disclosure sit outside the pinned
+            decision bar so the bar holds only Decline and Accept (or Confirm and Cancel). */}
+        <p className={styles.v10AskNote}>Decline needs a reason first. Accept records the decision only.</p>
+        {wholeWithdrawControl}
 
         {lastRejection ? (
           <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
@@ -780,6 +951,7 @@ export function ReferralMatchView({
           </p>
         ) : null}
         <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} />
+        {phone}
       </section>
     );
   }
@@ -1155,6 +1327,298 @@ export function ReferralMatchView({
           </p>
         ) : null}
         <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} />
+        {phone}
+      </section>
+    );
+  }
+
+  const communityControls =
+    communityAddressing && communityAddressing.state === "queued" && communityAddressing.withdrawnAt === undefined ? (
+      <>
+        <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-community_team">
+          <button
+            type="button"
+            className={styles.acceptButton}
+            data-testid="ward-referral-match-accept-community_team"
+            onClick={handleCommunityAccept}
+          >
+            Accept referral
+          </button>
+        </div>
+        <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls-community_team">
+          <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-community_team">
+            Decline reason (community team)
+          </label>
+          <select
+            id="ward-referral-match-decline-reason-community_team"
+            data-testid="ward-referral-match-decline-reason-community_team"
+            className={styles.select}
+            value={communityDeclineReason ?? ""}
+            onChange={(event) => {
+              const chosen = event.target.value;
+              setCommunityDeclineReason(
+                COMMUNITY_DECLINE_REASONS.includes(chosen as CommunityDeclineReason)
+                  ? (chosen as CommunityDeclineReason)
+                  : undefined,
+              );
+            }}
+          >
+            <option value="">Choose a reason…</option>
+            {COMMUNITY_DECLINE_REASONS.map((reason) => (
+              <option key={reason} value={reason}>
+                {COMMUNITY_DECLINE_REASON_LABELS[reason]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className={styles.declineButton}
+            data-testid="ward-referral-match-decline-community_team"
+            aria-disabled={communityDeclineReason === undefined ? "true" : undefined}
+            aria-describedby={
+              communityDeclineReason === undefined ? "ward-referral-match-decline-blocked-community_team" : undefined
+            }
+            title={communityDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_COMMUNITY : undefined}
+            onClick={communityDeclineReason === undefined ? ignoreUnavailableActivation : handleCommunityDecline}
+          >
+            Decline referral
+          </button>
+          {communityDeclineReason === undefined ? (
+            <span id="ward-referral-match-decline-blocked-community_team" className="sr-only">
+              {DECLINE_REASON_UNCHOSEN_COMMUNITY}
+            </span>
+          ) : null}
+        </div>
+      </>
+    ) : null;
+
+  /*
+   * v10 phone: the decision reads as ONE scrolling sheet — three candidate lists, the board's own
+   * extras under them, and Decline and Accept pinned at the bottom. Every dispatch below is one of
+   * this view's own handlers above; nothing here decides anything the desktop view does not.
+   */
+  if (phone !== undefined) {
+    const bandOf = new Map<string, string>();
+    bandGroups.forEach((group) =>
+      group.candidates.forEach((candidate) => bandOf.set(candidate.unit.id, travelBandGroupLabel(group.band))),
+    );
+    const pick = candidates.find((c) => c.unit.id === phonePick) ?? tier1Candidates[0] ?? candidates[0];
+    const pickPlain = pick !== undefined && candidateAccepts(pick) && !needsGenderPlacement(pick.unit.id);
+    const FIT_CAP = 3;
+    const fitsShown = phoneAllFits ? tier1Candidates : tier1Candidates.slice(0, FIT_CAP);
+    const fitsHidden = tier1Candidates.length - fitsShown.length;
+
+    const candRow = (c: ReferralCandidate, kind: "yes" | "nobed" | "review") => {
+      const failed = c.verdict.gates.find((gate) => !gate.pass);
+      // Tier 2 holds both a full ward and one whose bed count is not current: name which.
+      const noBed = c.verdict.gates.some((gate) => gate.gate === "allocatable_bed" && !gate.pass);
+      const label =
+        kind === "yes"
+          ? "Fits"
+          : kind === "nobed"
+            ? noBed
+              ? "No bed now"
+              : "Count not current"
+            : failed
+              ? GATE_LABELS[failed.gate]
+              : "Review";
+      const tone = kind === "yes" ? "success" : kind === "nobed" ? "warning" : "neutral";
+      const checked = pick?.unit.id === c.unit.id;
+      return (
+        <button
+          key={c.unit.id}
+          type="button"
+          role="radio"
+          aria-checked={checked}
+          className={ph.cand}
+          data-kind={kind}
+          data-testid={`ward-referral-match-phone-cand-${c.unit.id}`}
+          onClick={() => setPhonePick(c.unit.id)}
+        >
+          <span className={checked ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
+          <span className={ph.who}>
+            <span className={ph.nm}>{c.unit.name}</span>
+            <span className={ph.sub}>
+              {bandOf.get(c.unit.id) ?? NOT_RECORDED_LABEL} · {c.unit.allocatable.value} ready
+            </span>
+          </span>
+          <span className={ph.lab}>
+            <StatusGlyph tone={tone} size={9} />
+            {label}
+          </span>
+        </button>
+      );
+    };
+
+    const group = (title: string, list: ReferralCandidate[], kind: "yes" | "nobed" | "review") =>
+      list.length > 0 ? (
+        <>
+          <p className={ph.ch}>
+            {title} <span className={ph.k}>{list.length}</span>
+          </p>
+          <div className={ph.cands} role="radiogroup" aria-label={title}>
+            {(kind === "yes" ? fitsShown : list).map((c) => candRow(c, kind))}
+          </div>
+          {kind === "yes" && fitsHidden > 0 ? (
+            <button type="button" className={ph.more} onClick={() => setPhoneAllFits(true)}>
+              Show {fitsHidden} more with a bed ready
+            </button>
+          ) : null}
+        </>
+      ) : null;
+
+    /* A pick that needs a reason (an override, or a gender placement check) accepts through the one
+       form `MatchRow` already owns: Accept takes the coordinator to it rather than skipping it. */
+    const revealPickForm = () => {
+      if (!pick) return;
+      const field =
+        document.getElementById(`ward-referral-match-gender-placement-reason-${pick.unit.id}`) ??
+        document.getElementById(`ward-referral-match-override-reason-${pick.unit.id}`);
+      field?.scrollIntoView?.({ block: "center" });
+      field?.focus();
+    };
+
+    return (
+      <section className={`${styles.matchPanel} ${ph.sheet}`} data-testid="ward-referral-match-panel" data-phone="true">
+        <div className="sr-only">
+          <span>{referral.id}</span>
+          <span data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
+            {urgencyTierLabel(referral.urgency)}
+          </span>
+          <span data-testid="ward-referral-match-accepting-count">
+            {accepting.length} of {candidates.length} units accept this referral right now.
+          </span>
+        </div>
+        {lastRejection ? (
+          <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
+            {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
+            recorded: {lastRejection.reason}
+          </p>
+        ) : null}
+
+        {phoneDeclining ? (
+          <>
+            <p className={ph.ch}>Why decline?</p>
+            <div className={ph.cands} role="radiogroup" aria-label="Why decline?">
+              {REFERRAL_DECLINE_REASONS.map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  role="radio"
+                  aria-checked={declineReason === reason}
+                  className={ph.cand}
+                  data-testid={`ward-referral-match-phone-decline-${reason}`}
+                  onClick={() => setDeclineReason(reason)}
+                >
+                  <span className={declineReason === reason ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
+                  <span className={ph.nm}>{DECLINE_REASON_LABELS[reason] ?? reason}</span>
+                </button>
+              ))}
+            </div>
+            <p className={ph.matchHint} id="ward-referral-match-decline-blocked">
+              {declineReason === undefined ? "Choose a reason to decline." : "Decline records this reason."}
+            </p>
+          </>
+        ) : (
+          <>
+            {gpSourceNotice}
+            {!hasCohort ? (
+              <p className={styles.structuralGap} role="alert" data-testid="ward-referral-match-structural-gap">
+                No {referral.ageBand.toLowerCase()} unit exists in this network.
+              </p>
+            ) : noBed ? (
+              <p className={ph.matchHint} role="alert" data-testid="ward-referral-match-no-bed">
+                No unit accepts this referral right now. Every unit is listed below with its reason.
+              </p>
+            ) : null}
+            {group("Fits, bed ready", tier1Candidates, "yes")}
+            {group("Fits, no bed now", tier2Candidates, "nobed")}
+            {group("Needs review", tier3Candidates, "review")}
+            {pick && !pickPlain ? (
+              <ul className={`${styles.bandRows} ${ph.pickForm}`}>
+                <MatchRow
+                  key={pick.unit.id}
+                  candidate={pick}
+                  bandText={bandOf.get(pick.unit.id) ?? NOT_RECORDED_LABEL}
+                  onAccept={handleAccept}
+                  needsGenderPlacement={needsGenderPlacement(pick.unit.id)}
+                />
+              </ul>
+            ) : null}
+            <p className={ph.note} data-testid="ward-referral-match-governance">
+              Not a medical device. Units are listed in the network&apos;s fixed order; a coordinator decides each
+              placement. {SYNTHETIC_TRAVEL_TIMES_NOTICE}
+            </p>
+            {phone}
+            {referral.localBedSought ? (
+              <p className={ph.matchHint} data-testid="ward-referral-match-local-bed-sought-record">
+                A local bed was sought and none was suitable, at {formatInstant(referral.localBedSought.at)}.
+              </p>
+            ) : (
+              <button
+                type="button"
+                className={ph.more}
+                data-testid="ward-referral-match-local-bed-sought"
+                onClick={handleLocalBedSought}
+              >
+                Record a local bed was sought
+              </button>
+            )}
+            {communityControls}
+            {wholeWithdrawControl}
+          </>
+        )}
+
+        <div className={ph.foot}>
+          {phoneDeclining ? (
+            <>
+              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
+                Back
+              </button>
+              <button
+                type="button"
+                className={ph.pri}
+                data-tone="danger"
+                data-testid="ward-referral-match-decline"
+                aria-disabled={declineReason === undefined ? "true" : undefined}
+                aria-describedby="ward-referral-match-decline-blocked"
+                title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
+                onClick={
+                  declineReason === undefined
+                    ? ignoreUnavailableActivation
+                    : () => {
+                        handleDecline("psychiatric_ward");
+                        setPhoneDeclining(false);
+                      }
+                }
+              >
+                <span className={ph.ell}>Decline referral</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(true)}>
+                Decline
+              </button>
+              <button
+                type="button"
+                className={ph.pri}
+                data-testid="ward-referral-match-phone-accept"
+                aria-disabled={pick === undefined ? "true" : undefined}
+                title={pick === undefined ? "No unit to accept at in this network." : undefined}
+                onClick={
+                  pick === undefined
+                    ? ignoreUnavailableActivation
+                    : pickPlain
+                      ? () => handleAccept(pick.unit.id)
+                      : revealPickForm
+                }
+              >
+                <span className={ph.ell}>{pick ? `Accept at ${pick.unit.name}` : "Accept"}</span>
+              </button>
+            </>
+          )}
+        </div>
       </section>
     );
   }
@@ -1385,8 +1849,8 @@ export function ReferralMatchView({
                   const freeBeds = c.unit.allocatable.value;
                   const bedLabel = freeBeds > 0 ? `${freeBeds} ${freeBeds === 1 ? "bed" : "beds"} ready` : "Bed ready";
                   const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
-                  const occPct =
-                    c.unit.beds > 0 ? Math.round(((c.unit.beds - c.unit.empty.value) / c.unit.beds) * 100) : 0;
+                  // L1 (review 12 Oct 2026): the one occupancy count every page uses, occupied plus pulled.
+                  const occupancy = wardOccupancy([c.unit], admissions, bedReleases);
 
                   return (
                     <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardReady}`}>
@@ -1425,9 +1889,9 @@ export function ReferralMatchView({
                         <span className={styles.demoDot}>·</span>
                         <span>
                           <strong>
-                            {c.unit.beds - c.unit.empty.value} of {c.unit.beds}
+                            {occupancy.inUse} of {occupancy.beds}
                           </strong>{" "}
-                          beds occupied ({occPct}%)
+                          beds in use ({formatWardOccupancy(occupancy, "not recorded")})
                         </span>
                       </div>
 
@@ -1803,66 +2267,7 @@ export function ReferralMatchView({
         ) : null}
       </div>
 
-      {communityAddressing &&
-      communityAddressing.state === "queued" &&
-      communityAddressing.withdrawnAt === undefined ? (
-        <>
-          <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-community_team">
-            <button
-              type="button"
-              className={styles.acceptButton}
-              data-testid="ward-referral-match-accept-community_team"
-              onClick={handleCommunityAccept}
-            >
-              Accept referral
-            </button>
-          </div>
-          <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls-community_team">
-            <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-community_team">
-              Decline reason (community team)
-            </label>
-            <select
-              id="ward-referral-match-decline-reason-community_team"
-              data-testid="ward-referral-match-decline-reason-community_team"
-              className={styles.select}
-              value={communityDeclineReason ?? ""}
-              onChange={(event) => {
-                const chosen = event.target.value;
-                setCommunityDeclineReason(
-                  COMMUNITY_DECLINE_REASONS.includes(chosen as CommunityDeclineReason)
-                    ? (chosen as CommunityDeclineReason)
-                    : undefined,
-                );
-              }}
-            >
-              <option value="">Choose a reason…</option>
-              {COMMUNITY_DECLINE_REASONS.map((reason) => (
-                <option key={reason} value={reason}>
-                  {COMMUNITY_DECLINE_REASON_LABELS[reason]}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className={styles.declineButton}
-              data-testid="ward-referral-match-decline-community_team"
-              aria-disabled={communityDeclineReason === undefined ? "true" : undefined}
-              aria-describedby={
-                communityDeclineReason === undefined ? "ward-referral-match-decline-blocked-community_team" : undefined
-              }
-              title={communityDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_COMMUNITY : undefined}
-              onClick={communityDeclineReason === undefined ? ignoreUnavailableActivation : handleCommunityDecline}
-            >
-              Decline referral
-            </button>
-            {communityDeclineReason === undefined ? (
-              <span id="ward-referral-match-decline-blocked-community_team" className="sr-only">
-                {DECLINE_REASON_UNCHOSEN_COMMUNITY}
-              </span>
-            ) : null}
-          </div>
-        </>
-      ) : null}
+      {communityControls}
 
       {wholeWithdrawControl}
 

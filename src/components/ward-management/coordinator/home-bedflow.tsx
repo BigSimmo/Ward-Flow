@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Star } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -117,7 +117,7 @@ export function HomeBedflow({
   // three the routed shortlist keeps. Green where a bed is ready, amber where the ward fits but has
   // no bed now. Placement counts the same groups, so the two columns agree.
   const fitGroupsForMovement = useMemo(
-    () => (movement ? fitGroups(shortlistCandidates(movement, units, now)) : undefined),
+    () => (movement ? fitGroups(shortlistCandidates(movement, units, now), movement) : undefined),
     [movement, units, now],
   );
   const fitByUnitId = useMemo(() => {
@@ -131,8 +131,8 @@ export function HomeBedflow({
   const reviewCount = fitGroupsForMovement?.review.length ?? 0;
 
   const occupancy = useMemo(
-    () => deriveServiceBedAlerts(units, bedReleases, undefined, movements, now),
-    [units, bedReleases, movements, now],
+    () => deriveServiceBedAlerts(units, bedReleases, undefined, movements, now, undefined, admissions),
+    [units, bedReleases, movements, now, admissions],
   );
   const occupancyByService = new Map(occupancy.services.map((row) => [row.shortName, row.occupancyPercent]));
 
@@ -199,7 +199,8 @@ export function HomeBedflow({
     const isReferred = !isAccepted && (movement?.referredUnitIds.includes(unit.id) ?? false);
     const notice =
       movement !== undefined && (candidate || isAccepted || isReferred) ? restrictionNotice(movement, unit) : undefined;
-    const fit = candidate?.verdict.eligible === true;
+    // Audit S-21: a voluntary patient's locked ward reads Review, not fit (`home-fit.ts`).
+    const fit = candidate?.verdict.eligible === true && notice?.level !== "voluntary_on_locked";
     const optionFit = fitByUnitId.get(unit.id);
     const dim = movement !== undefined && !candidate && !optionFit && !isAccepted && !isReferred;
     const selected = selectedUnitId === unit.id;
@@ -256,7 +257,14 @@ export function HomeBedflow({
               <span className={styles.unitNameText} title={unit.name}>
                 {unit.name}
               </span>
-              {isBest ? <span className={styles.unitBestTag}>Best fit</span> : null}
+              {/* A glyph, not a word pill, so the ward name keeps its width (device audit, 11 Oct
+                  2026: "Mental He..." was cut beside "Best fit"). */}
+              {isBest ? (
+                <span className={styles.unitBestGlyph} title="Best fit">
+                  <Star size={12} aria-hidden="true" />
+                  <span className="sr-only">Best fit</span>
+                </span>
+              ) : null}
             </span>
             <span className={styles.unitSub}>
               {unit.cohort} {unitKind(unit)} · {unit.beds} beds
@@ -349,7 +357,13 @@ export function HomeBedflow({
           {/* Where this patient stands, once a destination or referral is recorded, or when no
               candidate is eligible (the line then names how many were excluded). */}
           {movement.acceptedUnitId || movement.referredUnitIds.length > 0 || !bestFit ? (
-            <p className={styles.forStatus}>{hubStatusText(movement, shortlist, units, now, who.displayName)}</p>
+            // The name already leads the line above, so the status drops it (device audit, 11 Oct
+            // 2026: the repeated name pushed this onto two lines).
+            <p className={styles.forStatus}>
+              {sentenceCase(
+                hubStatusText(movement, shortlist, units, now, who.displayName).replace(`${who.displayName} — `, ""),
+              )}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -440,4 +454,8 @@ export function HomeBedflow({
       </div>
     </Card>
   );
+}
+
+function sentenceCase(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }

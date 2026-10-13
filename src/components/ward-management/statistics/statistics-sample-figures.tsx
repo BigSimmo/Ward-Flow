@@ -35,7 +35,7 @@ export function StatisticsSampleFigures() {
     return null;
   const scope = ward?.name ?? ed?.name ?? team?.name ?? (mode === "service" ? id : "Whole network");
   const capacity = occupiedBeds(scopedUnits, state.admissions, state.bedReleases, state.leaveBeds);
-  const occupancy = capacity.beds ? (capacity.occupied / capacity.beds) * 100 : 0;
+  const occupancy = capacity.beds ? (capacity.inUse / capacity.beds) * 100 : 0;
   const metrics =
     mode === "ed"
       ? [

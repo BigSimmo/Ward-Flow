@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { showWardTable } from "./helpers/capacity-ward-table";
 import { expectSays } from "./helpers/ward-caption";
 
 // Same reason as the sibling dom suites (ward-screen.dom.test.tsx,
@@ -16,6 +17,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
@@ -25,6 +27,11 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { bedReleases, referrals as seededReferrals, wardMovements } from "@/components/ward-management/ward-movements";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { formTitleForCode } from "@/lib/form-register";
+import {
+  EdInboxReferralFixture,
+  markNotYetIdentified,
+  openRaiseIntoMovementForm,
+} from "./helpers/ed-raise-into-movement";
 
 /**
  * The two surfaces the fix-wave-1 reviewer named as untested: that the intake picker's chosen
@@ -57,9 +64,20 @@ function LastMovementProbe() {
 /** The id `RAISE_REFERRAL` gives the first referral raised against a freshly seeded state. */
 const FIRST_RAISED_ID = "WF-901";
 
+function renderCapacity() {
+  const view = render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <CapacityScreen />
+    </WardFlowProvider>,
+  );
+  showWardTable();
+  return view;
+}
+
 function renderEd() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <EdInboxReferralFixture edId="jhc-ed" />
       <EdScreen edId="jhc-ed" />
       <LastMovementProbe />
     </WardFlowProvider>,
@@ -91,6 +109,8 @@ const REQUIRED_REFERRAL_FIELDS = [
  * clinical-safety fix the `describe` block near the end of this file is about.
  */
 function fillRequiredReferralFields() {
+  // A2-1: the form starts from a person; these cases raise for one not yet identified.
+  markNotYetIdentified();
   for (const field of REQUIRED_REFERRAL_FIELDS) {
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }
@@ -111,6 +131,8 @@ function fillRequiredReferralFields() {
  * chose and then explicitly cleared is unanswered.
  */
 function fillRequiredReferralFieldsExcept(skipTestId: string) {
+  // A2-1: the form starts from a person; these cases raise for one not yet identified.
+  markNotYetIdentified();
   for (const field of REQUIRED_REFERRAL_FIELDS) {
     if (field.testId === skipTestId) continue;
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
@@ -126,7 +148,7 @@ function fillRequiredReferralFieldsExcept(skipTestId: string) {
 /** Opens the intake form, answers the five required fields (see `fillRequiredReferralFields`),
  *  sets the legal-form picker to `code`, and submits. */
 function raiseReferralWithForm(code: string) {
-  fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+  openRaiseIntoMovementForm();
   fillRequiredReferralFields();
   fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: code } });
   fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
@@ -192,6 +214,7 @@ function PullToWardHarness() {
 function renderEdWithHarness() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <EdInboxReferralFixture edId="jhc-ed" />
       <EdScreen edId="jhc-ed" />
       <LastMovementProbe />
       <PullToWardHarness />
@@ -202,7 +225,7 @@ function renderEdWithHarness() {
 describe("emergency department intake picker", () => {
   it("offers every declared form, titled from the official register, and defaults to no form", () => {
     renderEd();
-    fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    openRaiseIntoMovementForm();
     const picker = screen.getByTestId("ward-ed-referral-legal-form") as HTMLSelectElement;
 
     // Defaults to no form: the clinician picks one, the software never picks one for them.
@@ -234,7 +257,7 @@ describe("emergency department intake picker", () => {
   // than a second hand-written copy of it, and Youth is explicitly asserted present.
   it("offers every cohort in COHORTS, Youth included", () => {
     renderEd();
-    fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    openRaiseIntoMovementForm();
     const picker = screen.getByTestId("ward-ed-referral-cohort") as HTMLSelectElement;
     // Index 0 is now the "Choose a cohort" placeholder — nothing is chosen for the clinician —
     // so the real options start at index 1, the same convention the legal-form picker test above
@@ -260,7 +283,7 @@ describe("emergency department intake picker", () => {
 
   it("raises a referral with no form when the legal-form picker is left alone", () => {
     renderEd();
-    fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    openRaiseIntoMovementForm();
     // The other five fields must still be answered — this test is about the legal-form picker
     // specifically being left alone, not about the clinical-safety fix covered further down.
     fillRequiredReferralFields();
@@ -287,6 +310,8 @@ describe("emergency department intake picker", () => {
     // the deleted inference ever applied to.
     expect(screen.getByTestId("probe")).toHaveTextContent(`${FIRST_RAISED_ID}|1A|`);
 
+    // Device audit 11 Oct 2026 (owner pick A2): board edits live in the person sheet; the row name opens it.
+    fireEvent.click(screen.getByTestId(`ward-ed-row-name-${FIRST_RAISED_ID}`));
     const outstanding = screen.getByTestId(`ward-ed-outstanding-${FIRST_RAISED_ID}`);
     expect(outstanding).toHaveAttribute("data-kind", "examination");
     /*
@@ -346,9 +371,23 @@ describe("emergency department intake picker", () => {
     // Still a 3B. The examination no longer replaces the clinician's chosen form.
     expect(screen.getByTestId("probe")).toHaveTextContent(`${FIRST_RAISED_ID}|3B|`);
     // And the outstanding item now reports the recorded outcome rather than the missing one.
+    // The presentation lives in the person sheet (device audit 11 Oct 2026, owner pick A2).
+    fireEvent.click(screen.getByTestId(`ward-ed-row-name-${FIRST_RAISED_ID}`));
     const outstanding = screen.getByTestId(`ward-ed-outstanding-${FIRST_RAISED_ID}`);
     expect(outstanding).toHaveAttribute("data-kind", "form");
     expect(outstanding).toHaveTextContent("examination recorded (inpatient order)");
+  });
+
+  // S-7 (audit 13 Oct 2026): "Record outcome" (discharge or community follow-up) was the primary
+  // after an inpatient order, ending the bed search. The bed search now carries on.
+  it("makes Refer to a ward the next step after an inpatient order, keeping Record outcome in the menu", () => {
+    renderEd();
+    raiseReferralWithForm("3B");
+    fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${FIRST_RAISED_ID}`));
+    fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    expect(screen.getByTestId(`ward-ed-next-${FIRST_RAISED_ID}`)).toHaveTextContent("Refer to a ward");
+    expect(screen.getByTestId(`ward-ed-outcome-toggle-${FIRST_RAISED_ID}`)).toBeInTheDocument();
   });
 });
 
@@ -370,7 +409,7 @@ describe("emergency department intake picker", () => {
 describe("emergency department urgency pickers", () => {
   it("labels every option on the raise-referral picker with its direction", () => {
     renderEd();
-    fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    openRaiseIntoMovementForm();
 
     // The test-id itself is part of the fix: this picker had none, so no test could address the
     // one urgency control a clinician uses at referral time.
@@ -448,6 +487,7 @@ function UrgencyProbe() {
 function renderEdWithUrgencies() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <EdInboxReferralFixture edId="jhc-ed" />
       <EdScreen edId="jhc-ed" />
       <UrgencyProbe />
     </WardFlowProvider>,
@@ -547,7 +587,7 @@ describe("emergency department cards carry the urgency tier", () => {
 describe("emergency department referral form refuses an unanswered submission", () => {
   it("does not create a referral when the form is submitted untouched", () => {
     renderEd();
-    fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    openRaiseIntoMovementForm();
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
 
     // The outcome, not the button's own attribute: no new movement was created, and this
@@ -574,7 +614,7 @@ describe("emergency department referral form refuses an unanswered submission", 
     "still refuses to submit when only %s is left unanswered",
     (leftUnanswered) => {
       renderEd();
-      fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+      openRaiseIntoMovementForm();
       fillRequiredReferralFieldsExcept(leftUnanswered);
 
       fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
@@ -592,7 +632,7 @@ describe("emergency department referral form refuses an unanswered submission", 
    */
   it("raises a referral when the clinician explicitly answers gender as Not yet recorded", () => {
     renderEd();
-    fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    openRaiseIntoMovementForm();
     fillRequiredReferralFieldsExcept("ward-ed-referral-gender");
     fireEvent.change(screen.getByTestId("ward-ed-referral-gender"), { target: { value: "not_recorded" } });
 
@@ -609,7 +649,9 @@ describe("emergency department referral form refuses an unanswered submission", 
    */
   it("submits and records exactly the chosen values once every field is answered", () => {
     renderEd();
-    fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    // A2-1: raised from an inbox referral with no person on it, the form opens as not yet identified.
+    openRaiseIntoMovementForm();
+    expect(screen.getByTestId("ward-ed-referral-unidentified")).toBeChecked();
     fireEvent.change(screen.getByTestId("ward-ed-referral-cohort"), { target: { value: "Older adult" } });
     fireEvent.change(screen.getByTestId("ward-ed-referral-security"), { target: { value: "Secure" } });
     fireEvent.change(screen.getByTestId("ward-ed-referral-sex"), { target: { value: "Male" } });
@@ -738,7 +780,7 @@ describe("the urgency change reason starts unchosen", () => {
 describe("one-to-one nursing must be stated, not assumed", () => {
   it("blocks the referral until one-to-one nursing is answered either way", () => {
     renderEd();
-    fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    openRaiseIntoMovementForm();
     fillRequiredReferralFieldsExcept("ward-ed-referral-specialling-not-required");
 
     const submit = screen.getByTestId("ward-ed-referral-submit");
@@ -764,7 +806,12 @@ describe("one-to-one nursing must be stated, not assumed", () => {
   });
 });
 
-describe("the ED screen's statewide capacity table says which ready beds are not yet usable", () => {
+describe("the statewide capacity table the ED page links to says which ready beds are not yet usable", () => {
+  /*
+   * ED A2 (owner pick, 11 Oct 2026): the ED page no longer repeats the statewide capacity table; it
+   * links to the Capacity screen, which owns it. The ruling below travels with the table, so these
+   * assertions now read that screen's network table and also pin the ED page's link to it.
+   */
   /*
    * 🔴 **OWNER RULING 2026-09-05, CARRIED TO THIS SCREEN 2026-09-06.** "Ready" counts beds the
    * application itself refuses to admit a patient into — `ward-flow-reducer.ts` rejects
@@ -791,8 +838,15 @@ describe("the ED screen's statewide capacity table says which ready beds are not
 
   it("shows the cleaning count beside that ward's Ready figure, and the figure itself is untouched", () => {
     renderEd();
-    const cell = screen.getByTestId(`ward-ed-capacity-ready-${PREPARING_UNIT}`);
-    const note = within(cell).getByTestId(`ward-ed-capacity-pending-${PREPARING_UNIT}`);
+    expect(within(screen.getByTestId("ward-ed-elsewhere")).getByRole("link", { name: /capacity/iu })).toHaveAttribute(
+      "href",
+      "/mockups/ward-flow/capacity",
+    );
+    cleanup();
+    renderCapacity();
+    const row = screen.getByTestId(`ward-capacity-network-row-${PREPARING_UNIT}`);
+    const cell = within(row).getByTestId("ward-capacity-network-ready");
+    const note = within(cell).getByTestId("ward-capacity-network-pending");
 
     expect(note).toHaveTextContent(/still being made ready/u);
 
@@ -817,9 +871,10 @@ describe("the ED screen's statewide capacity table says which ready beds are not
     const quiet = allUnits().find(
       (unit) => !bedReleases.some((r) => r.unitId === unit.id && r.state === "discharged" && r.preparing),
     )!;
-    renderEd();
+    renderCapacity();
+    const quietRow = screen.getByTestId(`ward-capacity-network-row-${quiet.id}`);
     expect(
-      screen.queryByTestId(`ward-ed-capacity-pending-${quiet.id}`),
+      within(quietRow).queryByTestId("ward-capacity-network-pending"),
       `${quiet.id} has nothing being made ready and must not claim it does`,
     ).toBeNull();
   });
@@ -1184,7 +1239,7 @@ describe("P3-2 (Ward Lead audit, 2026-09-17): 'Under a form' counts a legal form
       name: /Under a form/,
     }).textContent;
 
-    fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    openRaiseIntoMovementForm();
     fillRequiredReferralFields();
     // Left at the picker's own "No form" default — never touched — while legalStatus is set to a
     // real, non-Voluntary clinical status. Before this fix `!!m.legalStatus` alone counted this as
@@ -1205,13 +1260,16 @@ describe("P3-2 (Ward Lead audit, 2026-09-17): 'Under a form' counts a legal form
   });
 });
 
-describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No destination' exclude a recorded ED outcome", () => {
+// S-19 (audit 13 Oct 2026): the "No destination" chip became "No bed yet", counted by the hero's own rule.
+describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No bed yet' exclude a recorded ED outcome", () => {
   it("drops a freshly raised, unreviewed, destination-less patient out of both chips once its outcome is recorded", () => {
     renderEd();
     const notReviewedBefore = screen.getByRole("button", { name: /Not reviewed/ }).textContent;
-    const noDestBefore = screen.getByRole("button", { name: /No destination/ }).textContent;
+    const noDestBefore = within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", {
+      name: /No bed yet/,
+    }).textContent;
 
-    fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+    openRaiseIntoMovementForm();
     fillRequiredReferralFields();
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
     const id = screen.getByTestId("probe").textContent!.split("|")[0]!;
@@ -1220,7 +1278,10 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No destination
     // Freshly raised: no examination, no destination — counted in both chips, proving the walk is
     // real before the fix under test can be observed at all.
     expect(screen.getByRole("button", { name: /Not reviewed/ }).textContent).not.toBe(notReviewedBefore);
-    expect(screen.getByRole("button", { name: /No destination/ }).textContent).not.toBe(noDestBefore);
+    expect(
+      within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ })
+        .textContent,
+    ).not.toBe(noDestBefore);
 
     fireEvent.click(screen.getByTestId(`ward-ed-outcome-toggle-${id}`));
     fireEvent.click(screen.getByTestId(`ward-ed-outcome-discharge-${id}`));
@@ -1230,7 +1291,8 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No destination
       "P3-1: a settled ED outcome is not an unreviewed patient",
     ).toBe(notReviewedBefore);
     expect(
-      screen.getByRole("button", { name: /No destination/ }).textContent,
+      within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ })
+        .textContent,
       "P3-1: a settled ED outcome is not a destination-less patient",
     ).toBe(noDestBefore);
   });
@@ -1246,6 +1308,9 @@ describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, ne
       </WardFlowProvider>,
     );
 
+    // Needs you opens as a slide-over where the full board table leaves no room beside it
+    // (device audit 11 Oct 2026, owner pick A2).
+    fireEvent.click(screen.getByTestId("wf-portrait-rail-trigger"));
     const title = screen.getByText("Waiting over 24 hours");
     const row = title.closest("li");
     expect(row).not.toBeNull();
@@ -1264,3 +1329,15 @@ function seedPatientName(movementId: string): string {
     seed,
   ).displayName;
 }
+
+describe("S-19 (audit 13 Oct 2026): one 'No bed yet' rule for the hero and the board chip", () => {
+  it("shows the same No bed yet count on every control that names it", () => {
+    renderEd();
+    const counts = screen
+      .getAllByText(/No bed yet/u)
+      .map((node) => Number(/(\d+)/u.exec(node.closest("button")?.textContent ?? "")?.[1] ?? NaN))
+      .filter((value) => !Number.isNaN(value));
+    expect(counts.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(counts).size).toBe(1);
+  });
+});

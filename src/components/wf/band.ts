@@ -8,11 +8,19 @@ import { useLayoutEffect, useSyncExternalStore, type RefObject } from "react";
  * When a page opens on a hero that is not quiet (its top within 40px of the top of the page), the
  * hero runs square across the work column and up behind the header. The header (`WardBar`) reads
  * `useWfBandActive()` and sits in hero ink at rest, then turns solid and light once the page
- * scrolls. Phone (48rem and under) never bands: it keeps its own lean bar.
+ * scrolls. Phone bands too (v10 Home mockup, Josh 11 Oct 2026): its lean bar sits in hero ink at
+ * rest over a square, full-width hero, then turns solid once the page scrolls.
  *
  * The hero registers itself here, so a page gets the band by using the shared `Hero` and nothing
  * else. The bleed is measured, not a MutationObserver: the hero reads where it would sit, then
  * pulls itself out to the column edges and up to the header's bottom edge with negative margins.
+ *
+ * First paint (site review B6, 12 Oct 2026): the bleed is measured after hydration, so a band hero
+ * that waited for it painted as a rounded card first and jumped (layout shift up to 0.49). The
+ * server render is now already the band: until `useWfBandBleed` has measured, a band hero inside
+ * the work column carries no `data-band` and `hero.module.css` styles it as the band with the
+ * usual 16px page insets (desktop and tablet only; phone is unchanged). The measure then writes
+ * `data-band="on"` with the real insets, or `data-band="off"` when the page does not open on it.
  *
  * The header stays in flow above the page and paints the band's top colour at rest, so the band
  * reads as one surface from the top of the window. The hero never rises above the page's own
@@ -20,8 +28,8 @@ import { useLayoutEffect, useSyncExternalStore, type RefObject } from "react";
  * hero pulled up behind the header would be cut off there.
  */
 
-/** Above the phone width, the band applies. Matches the phone shell's `(max-width: 48rem)`. */
-export const WF_BAND_QUERY = "(min-width: 48.0625rem)";
+/** The band applies at every width, phone included (v10 Home mockup, Josh 11 Oct 2026). */
+export const WF_BAND_QUERY = "all";
 
 /** A hero this close to the top of the page opens the page. */
 export const WF_BAND_TOP_SLACK_PX = 40;
@@ -60,7 +68,7 @@ export function registerWfBandHero(): () => void {
   };
 }
 
-/** True while the current page opens on a band hero (desktop and tablet only). */
+/** True while the current page opens on a band hero. */
 export function useWfBandActive(): boolean {
   return useSyncExternalStore(subscribe, snapshot, () => false);
 }
@@ -93,7 +101,14 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
   useLayoutEffect(() => {
     const hero = ref.current;
     if (!enabled || !hero || typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    // Leave the server-rendered band so the first measure reads where the hero would sit. This
+    // runs before the browser paints again, so the band never shows as a card in between.
+    // "measuring" styles the hero like "off", but the header's pre-hydration ink rule
+    // (ward-bar.module.css) only lets go on a final "off". With "off" here, the forced layout in
+    // the first measure restyled the header as light glass, and its band transition then faded it
+    // back to ink: a light flash on every load (13 Oct 2026).
     const scroller = scrollAreaOf(hero);
+    if (hero.dataset.band === undefined) hero.dataset.band = scroller ? "measuring" : "off";
     if (!scroller) return;
     const query = window.matchMedia(WF_BAND_QUERY);
 
@@ -101,13 +116,15 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
     let release: (() => void) | null = null;
     let frame = 0;
 
-    const clear = () => {
+    const clear = (state: "off" | null) => {
       if (release) {
         release();
         release = null;
       }
       applied = NO_BLEED;
-      delete hero.dataset.band;
+      // "off" ends the server-rendered band (see the header): this hero is measured and not a band.
+      if (state) hero.dataset.band = state;
+      else delete hero.dataset.band;
       hero.style.removeProperty("--wf-band-top");
       hero.style.removeProperty("--wf-band-left");
       hero.style.removeProperty("--wf-band-right");
@@ -116,7 +133,7 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
     const measure = () => {
       frame = 0;
       if (!query.matches) {
-        clear();
+        clear("off");
         return;
       }
       const area = scroller.getBoundingClientRect();
@@ -130,7 +147,7 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
       // banner, a breadcrumb, a filter row) means the page does not open on its hero.
       const gap = naturalTop - barHeight;
       if (gap < 0 || gap > WF_BAND_TOP_SLACK_PX) {
-        clear();
+        clear("off");
         return;
       }
       const next: Bleed = {
@@ -163,7 +180,7 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
       observer?.disconnect();
       query.removeEventListener("change", schedule);
       window.removeEventListener("resize", schedule);
-      clear();
+      clear(null);
     };
   }, [ref, enabled]);
 }

@@ -224,20 +224,20 @@ describe("Ward Flow sidebar, by role", () => {
     }
   });
 
-  it("puts a ward's own bed board first and an emergency department's movements first", () => {
-    const coordinator = drawerHrefs(COORDINATOR_ROUTE);
-    const ward = drawerHrefs(WARD_ROUTE);
-    const ed = drawerHrefs(ED_ROUTE);
-
-    // The claim is that the order CHANGES; asserting one fixed permutation would pin today's
-    // opinion about what a nurse wants first, which is the owner's to change.
-    expect(ward).not.toEqual(coordinator);
-    expect(ed).not.toEqual(coordinator);
+  // Device audit, 11 Oct 2026 (stable shell): the order follows the signed-in person, not the
+  // route, so a coordinator visiting a ward or an ED keeps the same sidebar. The per-role orders in
+  // ward-nav-role-order.ts stay for the day a different person signs in.
+  it("keeps the signed-in coordinator's order on a ward and an emergency department route", () => {
+    // Nav destinations only: an ED route still adds its own route-scoped standing links.
+    const navHrefs = new Set<string | null>([...WARD_VIEWS, ...WARD_NAV].map((item) => item.href));
+    const navOrder = (pathname: string) => drawerHrefs(pathname).filter((href) => navHrefs.has(href));
+    const coordinator = navOrder(COORDINATOR_ROUTE);
+    expect(coordinator.length).toBeGreaterThan(0);
+    expect(navOrder(WARD_ROUTE)).toEqual(coordinator);
+    expect(navOrder(ED_ROUTE)).toEqual(coordinator);
 
     const firstView = (hrefs: (string | null)[]) => hrefs.find((href) => WARD_VIEWS.some((view) => view.href === href));
     expect(firstView(coordinator)).toBe("/mockups/ward-flow");
-    expect(firstView(ward)).toBe("/mockups/ward-flow/capacity");
-    expect(firstView(ed)).toBe("/mockups/ward-flow/movements");
   });
 
   /**

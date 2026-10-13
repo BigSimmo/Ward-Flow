@@ -36,7 +36,9 @@
   border: 1px solid var(--wf-line-2);
   border-bottom: 0;
   border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
-  background-color: var(--wf-glass-sheet, var(--wf-glass-thick));
+  /* Near solid (about 98%): sheet glass mixed toward the solid overlay surface, so page text under
+     the sheet never reads through it, even where the blur is unavailable or stopped. */
+  background-color: color-mix(in srgb, var(--wf-overlay) 85%, var(--wf-glass-sheet, var(--wf-glass-thick)));
   background-image: var(--wf-sheen);
   -webkit-backdrop-filter: blur(32px) saturate(1.4);
   backdrop-filter: blur(32px) saturate(1.4);
@@ -52,6 +54,40 @@
 
 .sheet[data-height="tall"] {
   height: 100%;
+}
+
+/* Tablet slide-over: the same sheet docked full height to the right edge. */
+.sheetScrim[data-placement="right"] {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0 env(safe-area-inset-right) 0 0;
+}
+
+.sheet[data-placement="right"] {
+  width: min(440px, 92vw);
+  max-width: 440px;
+  height: 100%;
+  border-bottom: 1px solid var(--wf-line-2);
+  border-right: 0;
+  border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
+  animation-name: wfPhoneSheetInRight;
+}
+
+.sheet[data-placement="right"] .handle {
+  display: none;
+}
+
+.sheet[data-placement="right"] .sheetHeader {
+  padding-top: var(--wf-s-4);
+}
+
+@keyframes wfPhoneSheetInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
 }
 
 .sheet:focus-visible {
@@ -155,6 +191,13 @@
   justify-content: center;
 }
 
+/* v10 phone mockup: the secondary is an outlined pill beside the primary, not ghost text. */
+.sheetSecondary {
+  flex: none;
+  justify-content: center;
+  border-radius: var(--wf-r-pill);
+}
+
 @keyframes wfPhoneScrimIn {
   from {
     background-color: transparent;
@@ -184,6 +227,9 @@
   .sheet {
     animation-name: wfPhoneSheetFade;
     transition: none;
+  }
+  .sheet[data-placement="right"] {
+    animation-name: wfPhoneSheetFade;
   }
 }
 
@@ -302,15 +348,28 @@
   list-style: none;
 }
 
-/* Act now: a thin red edge all round, never a fill (v9 sections 3 and 5, as the table's actNow).
-   Drawn on its own layer above the hover fill, so hover and press never hide it. */
+/* Approved attention is inset so adjacent phone rows never form a red box. */
+.rowActNow {
+  background: var(--wf-act-tint);
+}
+
 .rowActNow::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: 999px;
   z-index: 3;
-  box-shadow: inset 0 0 0 1px var(--wf-danger);
+  background: var(--wf-danger);
   pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .rowActNow::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }
 
 /* The row target fills the row. Its ::after stretches over the whole row (behind the action), so a
@@ -432,6 +491,14 @@
   white-space: nowrap;
 }
 
+/* Phone (v10 phone row): the time word under the value is sans, ink-2. */
+@media (max-width: 48rem) {
+  .rowTime {
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-2);
+  }
+}
+
 /* The action sits above the stretched target, beside it, never inside it. */
 .rowActionSlot {
   position: relative;
@@ -505,6 +572,27 @@
   white-space: nowrap;
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-hero-ink-2);
+}
+
+/* The eyebrow line with a chip at its right end (Live, Frozen, Demo profile). */
+.heroEyebrowRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  min-height: 28px;
+}
+
+.heroEyebrowRow > .heroEyebrow,
+.heroEyebrowSpacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.heroChip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
 }
 
 .heroEyebrow {
@@ -632,8 +720,10 @@
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  /* Room for the children's focus rings, which would otherwise be clipped by the scroller. */
-  padding: 4px 2px;
+  /* Room for the children's focus rings, which would otherwise be clipped by the scroller. The end
+     padding is the fade's width, so the last chip clears the fade once the row is scrolled to its
+     end (device audit, 11 Oct 2026: clipped chips should read as scrollable). */
+  padding: 4px var(--phone-fade) 4px 2px;
   -webkit-mask-image: linear-gradient(
     to right,
     transparent 0,
@@ -726,5 +816,63 @@
     overflow: visible;
     -webkit-mask-image: none;
     mask-image: none;
+  }
+}
+
+/* Phone band (v10 phone mockup): a page that opens on PhoneHero runs it square, edge to edge
+ * under the lean bar, which joins it at rest, with the same 22px lip as the shared Hero. The
+ * eyebrow is caps, as on the Hero band. `data-band` is only set on phone (`useWfBandBleed`). */
+@media (max-width: 48rem) {
+  .hero[data-band="on"] {
+    position: relative;
+    margin-top: calc(-1 * var(--wf-band-top, 0px));
+    margin-left: calc(-1 * var(--wf-band-left, 0px));
+    margin-right: calc(-1 * var(--wf-band-right, 0px));
+    margin-bottom: -10px;
+    padding: 6px 16px calc(18px + var(--wf-band-lip));
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background:
+      radial-gradient(
+        720px 200px at 88% -40%,
+        color-mix(in srgb, var(--wf-hero-info) 16%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  }
+
+  .hero[data-band="on"]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: var(--wf-band-lip);
+    border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
+    background: var(--wf-canvas);
+    box-shadow: 0 -1px 0 var(--wf-hero-edge);
+    pointer-events: none;
+  }
+
+  .hero[data-band="on"] .heroEyebrow {
+    min-height: 28px;
+    line-height: 28px;
+    font-weight: 600;
+    letter-spacing: var(--wf-tr-caps);
+    text-transform: uppercase;
+  }
+
+  .hero[data-band="on"] .heroEyebrowRow {
+    align-items: center;
+  }
+
+  /* Phone taps (13 Oct 2026): the plain scroller clipped its 32px chips' 48px hit areas to its own
+     40px box. An 8px band, taken back by the negative margin, lets them run the full 48px; the row
+     does not move. A track given its own `rowClassName` (one with a space in its class) already
+     sets its own band, so it is left alone. */
+  .scrollTrack:not([class*=" "]) {
+    margin-block: -4px;
+    padding-block: 8px;
   }
 }

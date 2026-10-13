@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import type { ReactNode } from "react";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -82,7 +83,7 @@ describe("OccupancyRing", () => {
   it("says at risk at or over the alert line, with the figure to one decimal", () => {
     render(<OccupancyRing percent={90.34} alertAt={90} scope="Statewide" />);
     const ring = screen.getByTestId("wf-occupancy-ring");
-    expect(ring).toHaveAccessibleName("Statewide 90.3% of open beds occupied. Alert line 90%. At risk, over 90%.");
+    expect(ring).toHaveAccessibleName("Statewide 90.3% of beds occupied. Alert line 90%. At risk, over 90%.");
   });
 
   it("says Not recorded rather than drawing a value it does not hold", () => {
@@ -189,6 +190,51 @@ describe("Hero: quiet and band", () => {
     render(<Hero title="As at 10:42" quiet testId="quiet-hero" />);
     expect(screen.getByTestId("quiet-hero")).toHaveAttribute("data-wf-hero", "quiet");
     expect(screen.getByTestId("quiet-hero")).not.toHaveAttribute("data-band");
+  });
+
+  // Site review B6 (12 Oct 2026): the band was decided after hydration, so every heroed page
+  // painted a rounded card first and jumped (layout shift up to 0.49). The server HTML must already
+  // be the band: a band hero with no measured `data-band`, which the desktop CSS paints as the band.
+  it("server-renders a band hero as the band, before any measure", () => {
+    const html = renderToString(
+      <div data-wf-scroller="">
+        <Hero title="Alerts" testId="band-hero" />
+        <Hero title="As at 10:42" quiet testId="quiet-hero" />
+        <Hero title="Inset" band={false} testId="card-hero" />
+      </div>,
+    );
+    const host = document.createElement("div");
+    host.innerHTML = html;
+    const band = host.querySelector('[data-testid="band-hero"]')!;
+    expect(band).toHaveAttribute("data-wf-hero", "band");
+    expect(band).not.toHaveAttribute("data-band");
+    expect(host.querySelector('[data-testid="quiet-hero"]')).toHaveAttribute("data-wf-hero", "quiet");
+    expect(host.querySelector('[data-testid="card-hero"]')).toHaveAttribute("data-wf-hero", "card");
+
+    const css = readFileSync("src/components/wf/hero.module.css", "utf8").replace(/\/\*[\s\S]*?\*\//gu, "");
+    const desktop =
+      /@media\s*\(min-width:\s*48\.0625rem\)\s*\{\s*:global\(\[data-wf-scroller\]\)\s*\.hero\[data-wf-hero="band"\]:not\(\[data-band\]\)\s*\{([^}]*)\}/u.exec(
+        css,
+      )?.[1];
+    expect(desktop, "no desktop server-band rule in hero.module.css").toBeDefined();
+    expect(desktop).toMatch(/margin-top:\s*calc\(-1 \* var\(--wf-band-top\)\)/u);
+    expect(desktop).toMatch(/border-radius:\s*0/u);
+    // Phone keeps its own measured band: no server-band rule under 48rem.
+    const phoneBlocks = [...css.matchAll(/@media\s*\(max-width:\s*48rem\)\s*\{([\s\S]*?)\n\}/gu)].map((m) => m[1]);
+    expect(phoneBlocks.join("")).not.toMatch(/:not\(\[data-band\]\)/u);
+  });
+
+  it("ends the server band once measured: on when the page opens on it, off when it does not", () => {
+    const scroller = document.createElement("div");
+    scroller.setAttribute("data-wf-scroller", "");
+    document.body.append(scroller);
+    try {
+      render(<Hero title="Below a banner" testId="measured-hero" />, { container: scroller });
+      // jsdom has no layout, so the hero reads as far from the header: measured, not a band.
+      expect(screen.getByTestId("measured-hero")).toHaveAttribute("data-band", expect.stringMatching(/^(on|off)$/u));
+    } finally {
+      scroller.remove();
+    }
   });
 });
 

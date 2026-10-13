@@ -1,5 +1,7 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob } from "./officer-jobs";
 import {
   useCallback,
@@ -22,6 +24,9 @@ import {
   EmptyState,
   FilterChip,
   Hero,
+  HeroChip,
+  HeroChips,
+  LiveChip,
   HeroStat,
   Icon,
   Kbd,
@@ -60,7 +65,8 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
-import { edById } from "@/components/ward-management/ward-sites";
+import { edById, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
+import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   DIVERSION_REASONS,
@@ -77,8 +83,25 @@ import {
   UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
 
-import { FormsPack, PACK_SLOTS, packCount, packForm, packOutstanding, packRequired } from "./officer-forms-pack";
+import {
+  FormsPack,
+  PACK_SLOTS,
+  packCount,
+  packForm,
+  packNeedsForms,
+  packOutstanding,
+  packRequired,
+} from "./officer-forms-pack";
 import styles from "./officer.module.css";
+import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
+import type { TransportExceptionInput } from "@/components/ward-management/ward-flow-events";
+import {
+  collectionGaps,
+  holdEndsBeforeEta,
+  legalNowText,
+  transportExceptionText,
+  transportStatusClashes,
+} from "@/components/ward-management/ward-transport-checks";
 
 /**
  * `TRANSPORT_ACCEPTED`'s own preconditions (`ward-flow-reducer.ts`), named here so the Accepted
@@ -237,6 +260,10 @@ export function arrivedBlockedReason(movement: Movement, unit: Unit | undefined,
   if (movement.transport?.diversion) {
     return `${who ?? "This patient"} was diverted; release the held bed rather than recording delivery.`;
   }
+  // A4-16: Delivered ends the transport leg once; the receiving ward then confirms arrival.
+  if (movement.transport?.arrivedAt !== undefined) {
+    return `${who ?? "This patient"} was already delivered. The receiving ward confirms arrival.`;
+  }
   if (movement.stage !== "moving" || movement.transport?.collectedAt === undefined) {
     return `${who ?? "This patient"} cannot be marked arrived before the patient has been collected.`;
   }
@@ -366,12 +393,22 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  */
 export function OfficerScreen() {
   const { movements, units, dispatch, rejections, patients, referrals, dayZero } = useWardFlow();
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 48rem)");
+    const sync = () => setIsPhone(query.matches);
+    sync();
+    query.addEventListener?.("change", sync);
+    return () => query.removeEventListener?.("change", sync);
+  }, []);
   const officerPatientName = useCallback(
     (movement: Movement) => {
       const info = resolveSubjectPatient(movement, { patients, referrals, movements });
-      return info.patient ? info.displayName : "Not recorded";
+      // Phone (v10) lists people surname first.
+      return info.patient ? (isPhone ? info.formalName : info.displayName) : "Not recorded";
     },
-    [patients, referrals, movements],
+    [patients, referrals, movements, isPhone],
   );
   // Owner, 26 Sept 2026: undefined (not "Not recorded") lets the blocked-reason helpers below
   // fall back to their own "This patient" wording instead of printing a placeholder mid-sentence.
@@ -388,7 +425,9 @@ export function OfficerScreen() {
   };
   const now = useWardFlowClock();
 
+  const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
   const jobs = movements.filter(isOfficerJob);
+  const collectCheck = collectCheckId ? movements.find((movement) => movement.id === collectCheckId) : undefined;
   const unitFor = (movement: Movement): Unit | undefined =>
     movement.acceptedUnitId ? units.find((unit) => unit.id === movement.acceptedUnitId) : undefined;
   const destinationLabelFor = (movement: Movement) =>
@@ -413,14 +452,20 @@ export function OfficerScreen() {
   const [historyTab, setHistoryTab] = useState<HistoryTab>("delivered");
 
   const late = (movement: Movement) => pastWardEta(movement, now);
+  // Audit round 2, S-14: "To accept" holds only jobs the officer can accept now. A job whose bed is
+  // not yet at handover is waiting on the sending team, not on the officer.
+  const readyToAccept = (movement: Movement) =>
+    movement.transport !== undefined &&
+    officerLeg(movement.transport) === "Requested" &&
+    acceptedBlockedReason(movement) === undefined;
   const matchesPill = (movement: Movement, which: HighlightPill): boolean => {
     const leg = movement.transport ? officerLeg(movement.transport) : undefined;
-    if (which === "requested") return leg === "Requested";
+    if (which === "requested") return readyToAccept(movement);
     if (which === "accepted") return leg === "Accepted";
     if (which === "en_route") return leg === "En route";
     if (which === "collected") return leg === "Collected";
     if (which === "late") return late(movement);
-    return packOutstanding(movement);
+    return packNeedsForms(movement);
   };
   const query = searchQuery.toLowerCase().trim();
   const matchesSearch = (movement: Movement) => {
@@ -458,6 +503,9 @@ export function OfficerScreen() {
 
   // Next action first: late, then forms still to upload, then the jobs furthest along.
   const priority = (movement: Movement) => {
+    // Audit round 2, A4-13 (phone): a job to accept is pinned to the top, oldest first, so a new
+    // booking is the Next action rather than the last row.
+    if (isPhone && readyToAccept(movement)) return -1;
     if (late(movement)) return 0;
     if (packOutstanding(movement)) return 1;
     const leg = movement.transport ? officerLeg(movement.transport) : undefined;
@@ -532,19 +580,11 @@ export function OfficerScreen() {
   useEffect(() => {
     if (selectedId === undefined || typeof window.matchMedia !== "function") return;
     if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
-    sideRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    sideRef.current?.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
   }, [selectedId]);
   // On a phone the panel is a modal bottom sheet, so it takes focus, traps Tab, isolates the page
   // behind it and hands focus back on close. Wider screens keep the side panel non-modal.
-  const [isPhone, setIsPhone] = useState(false);
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(max-width: 48rem)");
-    const sync = () => setIsPhone(query.matches);
-    sync();
-    query.addEventListener?.("change", sync);
-    return () => query.removeEventListener?.("change", sync);
-  }, []);
+  // isPhone is declared above officerPatientName, which reads it.
 
   const formModalSheetId = useId();
   useEffect(() => {
@@ -616,11 +656,11 @@ export function OfficerScreen() {
   const inCustody = jobs.filter(
     (job) => job.transport?.collectedAt !== undefined && job.transport?.arrivedAt === undefined,
   ).length;
-  const awaitingDeparture = jobs.filter((job) => job.transport?.acceptedAt === undefined).length;
+  const awaitingDeparture = jobs.filter(readyToAccept).length;
   const crewToSend = legCount("Accepted");
   const crewEnRoute = legCount("En route");
   const pastEta = jobs.filter(late).length;
-  const formsOutstanding = jobs.filter(packOutstanding).length;
+  const formsOutstanding = jobs.filter(packNeedsForms).length;
 
   const nextArrival = jobs
     .map((movement) => ({ movement, at: expectedArrival(movement)?.at }))
@@ -735,8 +775,22 @@ export function OfficerScreen() {
       movement.id,
     );
   };
+  // Audit A4-11 / S-2: Collected with no Form 4A or no fit to travel warns and records a reason.
   const runCollected = (movement: Movement) => {
-    dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id });
+    if (collectionGaps(movement).length > 0) {
+      setCollectCheckId(movement.id);
+      return;
+    }
+    recordCollected(movement);
+  };
+  const recordCollected = (movement: Movement, exception?: TransportExceptionInput) => {
+    dispatch({
+      type: "PATIENT_COLLECTED",
+      role: "officer",
+      now,
+      movementId: movement.id,
+      ...(exception ? { exception } : {}),
+    });
     reportOutcome(
       `Patient collected for ${officerPatientName(movement)}. In transit.`,
       "Collection",
@@ -764,7 +818,7 @@ export function OfficerScreen() {
       return { leg, verb: "Accept", blocked: acceptedBlockedReason(movement, who), run: runAccepted };
     }
     if (leg === "Accepted") {
-      return { leg, verb: "Send crew", blocked: enRouteBlockedReason(movement, who), run: runEnRoute };
+      return { leg, verb: "En route", blocked: enRouteBlockedReason(movement, who), run: runEnRoute };
     }
     if (leg === "En route") {
       return { leg, verb: "Collected", blocked: collectedBlockedReason(movement, who), run: runCollected };
@@ -777,7 +831,33 @@ export function OfficerScreen() {
     };
   };
 
-  const nextButton = (movement: Movement, testId: string, variant: "pri" | "sec", size: "sm" | "md" | "lg") => {
+  /**
+   * Audit round 2, S-14: why the next step cannot be taken yet, printed (not a hover title) on
+   * phone. A job still short of handover is waiting on the sending team, so it says so plainly.
+   */
+  const blockedNote = (movement: Movement): string | undefined => {
+    const step = nextStep(movement);
+    if (!step?.blocked) return undefined;
+    if (
+      step.leg === "Requested" &&
+      !movement.closure &&
+      movement.stage !== "handover_ready" &&
+      !revokedHoldingBedReason(movement, "accepted for transport")
+    ) {
+      const sender = edShortName(edById(movement.originEdId)) || "the sending team";
+      return `Waiting for ${sender} to mark handover ready.`;
+    }
+    return step.blocked;
+  };
+
+  const nextButton = (
+    movement: Movement,
+    testId: string,
+    variant: "pri" | "sec",
+    size: "sm" | "md" | "lg",
+    describedBy?: string,
+    openAfter = false,
+  ) => {
     const step = nextStep(movement);
     if (!step) return null;
     return (
@@ -786,12 +866,16 @@ export function OfficerScreen() {
         size={size}
         data-testid={`${testId}-${movement.id}`}
         aria-disabled={step.blocked ? "true" : undefined}
+        aria-describedby={step.blocked ? describedBy : undefined}
         title={step.blocked ?? undefined}
         aria-label={`${step.verb}, ${officerPatientName(movement)}`}
         onClick={(event) => {
           event.stopPropagation();
           if (step.blocked) return;
           step.run(movement);
+          // Audit round 2, S-15 (phone): after advancing from the Next action card, the job's sheet
+          // opens with its next milestone as the pinned primary, so the officer stays on this job.
+          if (openAfter) openJob(movement.id);
         }}
       >
         {step.verb}
@@ -853,6 +937,104 @@ export function OfficerScreen() {
 
   const topJob = sortedJobs[0];
 
+  /** Inspect form and Divert: the panel foot on desktop, the end of the sheet body on phone. */
+  function detailExtraActions(job: Movement) {
+    if (!job.transport) return null;
+    return (
+      <>
+        <Button
+          variant="sec"
+          size="sm"
+          icon={ShieldCheck}
+          data-testid={`ward-officer-inspect-form-${job.id}`}
+          onClick={(e) => openFormModal(job, e)}
+        >
+          Inspect form
+        </Button>
+        {!job.closure &&
+        job.transport.collectedAt !== undefined &&
+        job.transport.arrivedAt === undefined &&
+        job.transport.diversion === undefined ? (
+          <Button
+            variant="sec"
+            size="sm"
+            icon={MapPin}
+            aria-expanded={diversionOpen}
+            data-testid={`ward-officer-divert-${job.id}`}
+            onClick={() => setDiversionOpen((open) => !open)}
+          >
+            Divert
+          </Button>
+        ) : null}
+      </>
+    );
+  }
+
+  /** v10 phone: the job sheet's four stage buttons, pinned to its foot; the next one is primary and
+   * an unavailable one is greyed with its reason (build guide: "the four stage buttons pinned"). */
+  function renderPhoneNextStep(movement: Movement) {
+    const transport = movement.transport;
+    if (!transport || movement.closure) return null;
+    const leg = officerLeg(transport);
+    const index = leg ? OFFICER_LEG_STEPS.indexOf(leg) : -1;
+    if (index < 0) return null;
+    const patientName = resolvedPatientName(movement);
+    const steps = [
+      {
+        label: "Accepted",
+        testId: "ward-officer-accept",
+        run: () => runAccepted(movement),
+        blocked: () => acceptedBlockedReason(movement, patientName),
+      },
+      {
+        label: "En route",
+        testId: "ward-officer-enroute",
+        run: () => runEnRoute(movement),
+        blocked: () => enRouteBlockedReason(movement, patientName),
+      },
+      {
+        label: "Collected",
+        testId: "ward-officer-collect",
+        run: () => runCollected(movement),
+        blocked: () => collectedBlockedReason(movement, patientName),
+      },
+      {
+        label: "Delivered",
+        testId: "ward-officer-arrive",
+        run: () => runDelivered(movement),
+        blocked: () => arrivedBlockedReason(movement, unitFor(movement), patientName),
+      },
+    ];
+    // Device audit, 11 Oct 2026: one pinned primary for the next step, not four equal pills; the
+    // Steps list above stays the record of what is done.
+    const step = steps[index];
+    if (!step) return null;
+    const blocked = step.blocked();
+    return (
+      <div className={styles.phStageRow}>
+        <Button
+          variant="pri"
+          size="lg"
+          className={styles.phNextStep}
+          data-testid={`${step.testId}-${movement.id}`}
+          aria-disabled={blocked ? "true" : undefined}
+          aria-describedby={blocked ? `${step.testId}-unavailable-${movement.id}` : undefined}
+          title={blocked ?? undefined}
+          onClick={blocked ? ignoreUnavailableActivation : step.run}
+        >
+          Mark {step.label.toLowerCase()}
+        </Button>
+        {/* Audit round 2, S-14: the reason is printed, since a touch user cannot see a title. */}
+        {blocked ? (
+          <p id={`${step.testId}-unavailable-${movement.id}`} className={styles.nextNote}>
+            <Icon icon={Lock} size={14} />
+            {blockedNote(movement) ?? blocked}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
   function renderDetail(movement: Movement) {
     const transport = movement.transport;
     if (!transport) return null;
@@ -874,7 +1056,8 @@ export function OfficerScreen() {
             : leg === "Collected"
               ? arrivedBlocked
               : undefined;
-    const eta = expectedArrival(movement)?.at;
+    const arrival = expectedArrival(movement);
+    const eta = arrival?.at;
     const canDivert =
       !movement.closure &&
       transport.collectedAt !== undefined &&
@@ -944,59 +1127,119 @@ export function OfficerScreen() {
       );
     };
 
+    // v10 phone: the four facts as a 2x2 grid and the leg as a Steps list; the four stage buttons
+    // are pinned to the sheet's foot (see the panel foot).
+    const roadRoute = referenceDistance(
+      edById(movement.originEdId)?.referenceEdId,
+      destinationUnit ? siteByCode(destinationUnit.siteCode)?.referenceSiteId : undefined,
+    );
+    const stepLabels = ["Accepted", "En route", "Collected", "Delivered"] as const;
+    const phoneTop = (
+      <>
+        <dl className={styles.phGrid}>
+          <div>
+            {/* A booking estimate is the transport provider's, not a time the ward recorded. */}
+            <dt>{arrival?.booked ? "Transport ETA" : "Ward ETA"}</dt>
+            <dd className={styles.mono}>{eta !== undefined ? formatInstantWithDay(eta, now) : "Not recorded"}</dd>
+          </div>
+          <div>
+            <dt>By road</dt>
+            <dd className={styles.mono}>{roadRoute ? `${roadRoute.min} min` : "Not recorded"}</dd>
+          </div>
+          <div>
+            <dt>Provider</dt>
+            <dd>{transport.provider}</dd>
+          </div>
+          <div>
+            <dt>CAD</dt>
+            <dd className={styles.mono}>{transport.cadNumber ?? "Not recorded"}</dd>
+          </div>
+        </dl>
+        <section className={styles.phCard} aria-label="Steps">
+          <h3 className={styles.phCardHead}>
+            Steps <span className={styles.mono}>{Math.max(0, legIndex)} of 4</span>
+          </h3>
+          <ol className={styles.phSteps}>
+            {stepLabels.map((label, index) => {
+              const done = legIndex >= index + 1;
+              const current = index === legIndex;
+              return (
+                <li key={label} className={styles.phStep} data-state={done ? "done" : current ? "now" : undefined}>
+                  <StatusGlyph tone={done ? "success" : current ? "info" : "neutral"} size={10} />
+                  <span className={styles.phStepText}>
+                    <span className={styles.phStepTitle}>{label}</span>
+                  </span>
+                  {done ? <span className={styles.phStepDone}>Done</span> : null}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      </>
+    );
+
     return (
       <>
-        <div className={styles.route}>
-          <div className={styles.routeLeg}>
-            <StatusGlyph tone="neutral" size={9} />
-            <span className={styles.routePlace}>{originLabelFor(movement)}</span>
-            <span className={styles.routeTime}>
-              {transport.collectedAt !== undefined ? `Left ${formatInstantWithDay(transport.collectedAt, now)}` : null}
-            </span>
+        {isPhone ? phoneTop : null}
+        {isPhone ? null : (
+          <div className={styles.route}>
+            <div className={styles.routeLeg}>
+              <StatusGlyph tone="neutral" size={9} />
+              <span className={styles.routePlace}>{originLabelFor(movement)}</span>
+              <span className={styles.routeTime}>
+                {transport.collectedAt !== undefined
+                  ? `Left ${formatInstantWithDay(transport.collectedAt, now)}`
+                  : null}
+              </span>
+            </div>
+            <div className={styles.routeLeg}>
+              <StatusGlyph tone="info" size={9} />
+              <span className={styles.routePlace}>{destinationLabelFor(movement)}</span>
+              <span className={styles.routeTime}>
+                {eta !== undefined ? (
+                  <>
+                    {formatInstantWithDay(eta, now)} <span>{transportEtaRemainingLabel(eta, now)}</span>
+                  </>
+                ) : (
+                  "No ETA recorded"
+                )}
+              </span>
+            </div>
           </div>
-          <div className={styles.routeLeg}>
-            <StatusGlyph tone="info" size={9} />
-            <span className={styles.routePlace}>{destinationLabelFor(movement)}</span>
-            <span className={styles.routeTime}>
-              {eta !== undefined ? (
-                <>
-                  {formatInstantWithDay(eta, now)} <span>{transportEtaRemainingLabel(eta, now)}</span>
-                </>
-              ) : (
-                "No ETA recorded"
-              )}
-            </span>
-          </div>
-        </div>
+        )}
 
-        <div className={styles.actionRow}>
-          {step(0, "Accepted", "ward-officer-accept", acceptedBlocked, () => runAccepted(movement))}
-          {step(1, "En route", "ward-officer-enroute", enRouteBlocked, () => runEnRoute(movement))}
-          {step(2, "Collected", "ward-officer-collect", collectedBlocked, () => runCollected(movement))}
-          {step(3, "Delivered", "ward-officer-arrive", arrivedBlocked, () => runDelivered(movement))}
-        </div>
-        {nextBlocked ? (
+        {isPhone ? null : (
+          <div className={styles.actionRow}>
+            {step(0, "Accepted", "ward-officer-accept", acceptedBlocked, () => runAccepted(movement))}
+            {step(1, "En route", "ward-officer-enroute", enRouteBlocked, () => runEnRoute(movement))}
+            {step(2, "Collected", "ward-officer-collect", collectedBlocked, () => runCollected(movement))}
+            {step(3, "Delivered", "ward-officer-arrive", arrivedBlocked, () => runDelivered(movement))}
+          </div>
+        )}
+        {nextBlocked && !isPhone ? (
           <p className={styles.nextNote}>
             <Icon icon={Lock} size={14} />
             {nextBlocked}
           </p>
         ) : null}
-        {acceptedBlocked ? (
+        {/* Audit round 2, A4-14: on phone only the pinned next step is a button, and it prints its
+            own reason, so these reasons for done and future steps are desktop only. */}
+        {acceptedBlocked && !isPhone ? (
           <span id={`ward-officer-accept-unavailable-${movement.id}`} className="sr-only">
             {acceptedBlocked}
           </span>
         ) : null}
-        {enRouteBlocked ? (
+        {enRouteBlocked && !isPhone ? (
           <span id={`ward-officer-enroute-unavailable-${movement.id}`} className="sr-only">
             {enRouteBlocked}
           </span>
         ) : null}
-        {collectedBlocked ? (
+        {collectedBlocked && !isPhone ? (
           <span id={`ward-officer-collect-unavailable-${movement.id}`} className="sr-only">
             {collectedBlocked}
           </span>
         ) : null}
-        {arrivedBlocked ? (
+        {arrivedBlocked && !isPhone ? (
           <span id={`ward-officer-arrive-unavailable-${movement.id}`} className="sr-only">
             {arrivedBlocked}
           </span>
@@ -1030,17 +1273,29 @@ export function OfficerScreen() {
         <section className={styles.section} aria-label="Booking">
           <h3 className={styles.sectionTitle}>Booking</h3>
           <dl className={styles.facts}>
-            <div>
-              <dt>Provider</dt>
-              <dd>{transport.provider}</dd>
-            </div>
-            <div data-testid={`ward-officer-cad-number-${movement.id}`}>
-              <dt>CAD (dispatch) number</dt>
-              <dd>{cadNumberLabel(transport)}</dd>
-            </div>
+            {isPhone ? null : (
+              <>
+                <div>
+                  <dt>Provider</dt>
+                  <dd>{transport.provider}</dd>
+                </div>
+                <div data-testid={`ward-officer-cad-number-${movement.id}`}>
+                  <dt>CAD (dispatch) number</dt>
+                  <dd>{cadNumberLabel(transport)}</dd>
+                </div>
+              </>
+            )}
             <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
               <dt>Transport logged as</dt>
-              <dd>{transportLegalStatusLabel(transport)}</dd>
+              <dd>
+                {transportStatusClashes(movement, transport.transportLegalStatus) ? (
+                  <StatusGlyph tone="warning" size={9} />
+                ) : null}
+                {transportLegalStatusLabel(transport)}
+                {transportStatusClashes(movement, transport.transportLegalStatus)
+                  ? `, Legal now ${legalNowText(movement)}`
+                  : null}
+              </dd>
             </div>
             <div>
               <dt>Escort required</dt>
@@ -1054,6 +1309,28 @@ export function OfficerScreen() {
               <dt>Estimated time</dt>
               <dd>{estimatedTimeLabel(transport, now)}</dd>
             </div>
+            {/* Audit A4-2: the officer sees when the bed hold ends, and whether the ETA is after it. */}
+            {movement.pullExpiresAt !== undefined && transport.collectedAt === undefined ? (
+              <div data-testid={`ward-officer-hold-ends-${movement.id}`}>
+                <dt>Bed held until</dt>
+                <dd>
+                  {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? (
+                    <StatusGlyph tone="warning" size={9} />
+                  ) : null}
+                  {formatInstantWithDay(movement.pullExpiresAt, now)}
+                  {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? ", before the ETA" : null}
+                </dd>
+              </div>
+            ) : null}
+            {(transport.exceptions ?? []).map((exception) => (
+              <div key={`${exception.step}-${exception.at}`} data-testid={`ward-officer-exception-${movement.id}`}>
+                <dt>
+                  {exception.step === "collected" ? "Collected" : "Booked"} {formatInstantWithDay(exception.at, now)}{" "}
+                  with
+                </dt>
+                <dd>{transportExceptionText(exception)}</dd>
+              </div>
+            ))}
           </dl>
         </section>
 
@@ -1183,23 +1460,92 @@ export function OfficerScreen() {
     );
   }
 
-  const pillStat = (which: HighlightPill, value: number, label: string, short: string, tone?: WfTone) => (
-    <HeroStat
-      className={cx(styles.heroPill, PHONE_PILLS.includes(which) ? undefined : styles.deskOnly)}
-      value={value}
-      label={
-        <>
-          <span className={styles.longLabel}>{label}</span>
-          <span className={styles.shortLabel}>{short}</span>
-        </>
-      }
-      tone={tone}
-      pressed={pill === which}
-      onToggle={() => setPill((current) => (current === which ? null : which))}
-    />
+  // Larger screen: the shared hero chip every other page uses (site review U5). Phone keeps its own
+  // v10 design of three plain figures, so it stays on `HeroStat` and its phone styles.
+  const pillStat = (which: HighlightPill, value: number, label: string, short: string, tone?: WfTone) =>
+    isPhone ? (
+      <HeroStat
+        className={cx(styles.heroPill, PHONE_PILLS.includes(which) ? undefined : styles.deskOnly)}
+        value={value}
+        label={
+          <>
+            <span className={styles.longLabel}>{label}</span>
+            <span className={styles.shortLabel}>{short}</span>
+          </>
+        }
+        tone={tone}
+        pressed={pill === which}
+        onToggle={() => setPill((current) => (current === which ? null : which))}
+      />
+    ) : (
+      <HeroChip
+        key={which}
+        value={value}
+        label={label}
+        tone={tone}
+        pressed={pill === which}
+        onPress={() => setPill((current) => (current === which ? null : which))}
+      />
+    );
+
+  const heroPillStats = (
+    <>
+      {pillStat("requested", awaitingDeparture, "To accept", "To accept", "neutral")}
+      {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
+      {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
+      {pillStat("collected", inCustody, "On board", "On board", "info")}
+      {pillStat("late", pastEta, "Past ward ETA", "Late", pastEta > 0 ? "warning" : "neutral")}
+      {pillStat("forms", formsOutstanding, "Jobs need forms", "Need forms", "neutral")}
+    </>
+  );
+
+  // Hero tools: beside the title on the larger screen, under the figures on phone (v10).
+  const heroTools = (
+    <div className={styles.heroTools}>
+      {nextArrival ? (
+        <span className={styles.nextArrival} title="Next expected arrival">
+          <Icon icon={Clock} size={14} />
+          Next <b>{formatInstantWithDay(nextArrival.at, now)}</b>
+          <span className={styles.nextArrivalPlace}>{destinationLabelFor(nextArrival.movement)}</span>
+        </span>
+      ) : null}
+      <Button
+        variant="onHero"
+        size="sm"
+        icon={Copy}
+        className={styles.copyButton}
+        onClick={copyHandover}
+        aria-label="Copy handover"
+        title="Copy a plain text summary of open jobs"
+      >
+        <span className={styles.longLabel}>Copy handover</span>
+      </Button>
+      {/* Phone (v10): Arrivals jumps to the arrivals list below the jobs. */}
+      {isPhone && upcoming > 0 ? (
+        <Button
+          variant="onHero"
+          size="sm"
+          icon={Clock}
+          className={styles.phArrivalsButton}
+          onClick={() =>
+            document
+              .getElementById("ward-officer-arrivals-heading")
+              ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() })
+          }
+        >
+          Arrivals <span className={styles.phArrivalsCount}>{upcoming}</span>
+        </Button>
+      ) : null}
+      <NotWiredButton variant="onHero" size="sm" icon={Truck} label="Log booking" wrapClassName={styles.deskOnly} />
+    </div>
   );
 
   const panelOpen = selectedJob !== undefined && selectedJob.transport !== undefined;
+  const anyJobEta = jobs.some((movement) => expectedArrival(movement) !== undefined);
+  // Site review 12 Oct 2026: a column that says the same thing on every row ("0 of 3" thirteen
+  // times) says nothing; the hero's "Jobs need forms" and the job sheet still carry the count.
+  const formsVary =
+    jobs.length < 2 || new Set(jobs.map((movement) => (packRequired(movement) ? packCount(movement) : -1))).size > 1;
   useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
 
   return (
@@ -1209,56 +1555,25 @@ export function OfficerScreen() {
           level={1}
           className={styles.dispatchHero}
           eyebrow="Transport dispatch"
-          title={`${inCustody} on board`}
-          titleMeta={`${crewEnRoute} ${crewEnRoute === 1 ? "crew" : "crews"} en route`}
-          aside={
-            <div className={styles.heroTools}>
-              {nextArrival ? (
-                <span className={styles.nextArrival} title="Next expected arrival">
-                  <Icon icon={Clock} size={14} />
-                  Next <b>{formatInstantWithDay(nextArrival.at, now)}</b>
-                  <span className={styles.nextArrivalPlace}>{destinationLabelFor(nextArrival.movement)}</span>
-                </span>
-              ) : null}
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={Copy}
-                className={styles.copyButton}
-                onClick={copyHandover}
-                aria-label="Copy handover"
-                title="Copy a plain text summary of open jobs"
-              >
-                <span className={styles.longLabel}>Copy handover</span>
-              </Button>
-              <span className={cx(styles.preview, styles.onHeroPreview, styles.deskOnly)}>Preview</span>
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={Truck}
-                className={cx(styles.previewButton, styles.deskOnly)}
-                aria-disabled="true"
-                title="Not wired in this prototype."
-                onClick={(event) => event.preventDefault()}
-              >
-                Log booking
-              </Button>
-            </div>
-          }
+          // S-17 (audit 13 Oct 2026): the on-board figure is a part of the jobs count, so it says so.
+          title={`${inCustody} of ${jobs.length} ${jobs.length === 1 ? "job" : "jobs"} on board`}
+          aside={isPhone ? <LiveChip state="live" onHero /> : heroTools}
+          barAside={isPhone ? heroTools : undefined}
           bar={
-            <div className={styles.heroPills} role="group" aria-label="Highlight jobs">
-              {pillStat("requested", awaitingDeparture, "Not accepted", "To accept", "neutral")}
-              {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
-              {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
-              {pillStat("collected", inCustody, "On board", "On board", "info")}
-              {pillStat("late", pastEta, "Past ward ETA", "Late", pastEta > 0 ? "warning" : "neutral")}
-              {pillStat("forms", formsOutstanding, "Forms to upload", "Forms", "neutral")}
-            </div>
+            isPhone ? (
+              <div className={styles.heroPills} role="group" aria-label="Highlight jobs">
+                {heroPillStats}
+              </div>
+            ) : (
+              <HeroChips label="Highlight jobs">{heroPillStats}</HeroChips>
+            )
           }
           foot={
             <div className={styles.fleetPanel} role="group" aria-label="Highlight jobs by provider">
               <span className={styles.fleetLabel}>Providers</span>
-              {TRANSPORT_PROVIDERS.map((provider) => {
+              {TRANSPORT_PROVIDERS.filter((provider) =>
+                jobs.some((movement) => movement.transport?.provider === provider),
+              ).map((provider) => {
                 const providerJobs = jobs.filter((movement) => movement.transport?.provider === provider);
                 const moving = providerJobs.filter((movement) => {
                   const leg = transportLeg(movement.transport);
@@ -1316,9 +1631,49 @@ export function OfficerScreen() {
               <Button variant="sec" size="lg" onClick={() => openJob(topJob.id)}>
                 Open
               </Button>
-              {nextButton(topJob, "ward-officer-nextcard", "pri", "lg")}
+              {nextButton(
+                topJob,
+                "ward-officer-nextcard",
+                "pri",
+                "lg",
+                isPhone ? `ward-officer-nextcard-unavailable-${topJob.id}` : undefined,
+                isPhone,
+              )}
             </div>
+            {isPhone && blockedNote(topJob) ? (
+              <p id={`ward-officer-nextcard-unavailable-${topJob.id}`} className={styles.nextNote}>
+                <Icon icon={Lock} size={14} />
+                {blockedNote(topJob)}
+              </p>
+            ) : null}
           </Card>
+        ) : null}
+
+        {isPhone ? (
+          <div className={styles.phProviders} role="group" aria-label="Highlight jobs by provider">
+            {/* Zero providers are hidden (device audit, 11 Oct 2026): "0 Ambulance" took the row
+                and pushed a real one off screen. */}
+            {TRANSPORT_PROVIDERS.filter((provider) =>
+              jobs.some((movement) => movement.transport?.provider === provider),
+            ).map((provider) => {
+              const isSelected = providerHighlight === provider;
+              return (
+                <button
+                  key={provider}
+                  type="button"
+                  className={styles.phProvider}
+                  onClick={() => setProviderHighlight((prev) => (prev === provider ? null : provider))}
+                  title={isSelected ? "Stop highlighting this provider" : `Highlight ${provider} jobs`}
+                  aria-pressed={isSelected}
+                >
+                  <span className={styles.phProviderCount}>
+                    {jobs.filter((movement) => movement.transport?.provider === provider).length}
+                  </span>
+                  {provider.replace(/ service$/, "")}
+                </button>
+              );
+            })}
+          </div>
         ) : null}
 
         <div className={styles.layout} data-open={panelOpen ? "true" : undefined}>
@@ -1394,7 +1749,7 @@ export function OfficerScreen() {
                     items={[
                       { id: "next", label: "Next action" },
                       { id: "wait", label: "Longest wait" },
-                      { id: "eta", label: "ETA" },
+                      ...(anyJobEta ? [{ id: "eta" as const, label: "ETA" }] : []),
                     ]}
                   />
                 </div>
@@ -1415,8 +1770,14 @@ export function OfficerScreen() {
                           <th scope="col">Patient</th>
                           <th scope="col">Route</th>
                           <th scope="col">Stage</th>
-                          <th scope="col">Forms</th>
-                          <th scope="col">ETA</th>
+                          <th scope="col" className={formsVary ? undefined : styles.etaOff}>
+                            Forms
+                          </th>
+                          {/* Device audit, 11 Oct 2026: the ETA column shows only when a job has one;
+                              thirteen rows of "No ETA" said nothing. */}
+                          <th scope="col" className={anyJobEta ? undefined : styles.etaOff}>
+                            ETA
+                          </th>
                           <th scope="col" className={tableClasses.num}>
                             Next
                           </th>
@@ -1466,14 +1827,24 @@ export function OfficerScreen() {
                                   >
                                     {officerPatientName(movement)}
                                   </strong>
+                                  {isPhone && transport.escortRequired ? (
+                                    <ShieldCheck size={14} className={styles.phEscort} aria-label="Escort required" />
+                                  ) : null}
                                   <span className={styles.jobUmrn}>{umrnFor(movement)}</span>
                                 </button>
                               </td>
                               <td>
-                                <span className={styles.jobRoute}>
-                                  <span className={styles.jobRouteTo}>{destinationLabelFor(movement)}</span>
-                                  <span className={styles.jobRouteFrom}> from {originShortFor(movement)}</span>
-                                </span>
+                                {isPhone ? (
+                                  // Phone (v10): from first, as the mockup's "ARM to ward" line reads.
+                                  <span className={styles.jobRoute}>
+                                    <b>{originShortFor(movement)}</b> to {destinationLabelFor(movement)}
+                                  </span>
+                                ) : (
+                                  <span className={styles.jobRoute}>
+                                    <span className={styles.jobRouteTo}>{destinationLabelFor(movement)}</span>
+                                    <span className={styles.jobRouteFrom}> from {originShortFor(movement)}</span>
+                                  </span>
+                                )}
                                 <span className={styles.jobMeta}>
                                   {transport.provider.replace(/ service$/, "")}
                                   {transport.escortRequired ? " · escort" : ""}
@@ -1510,7 +1881,7 @@ export function OfficerScreen() {
                                   transportLeg(transport)
                                 )}
                               </td>
-                              <td>
+                              <td className={formsVary ? undefined : styles.etaOff}>
                                 {!packRequired(movement) ? (
                                   <span className={styles.muted}>Not needed</span>
                                 ) : (
@@ -1533,7 +1904,7 @@ export function OfficerScreen() {
                                   </span>
                                 )}
                               </td>
-                              <td>
+                              <td className={anyJobEta ? undefined : styles.etaOff}>
                                 {expected ? (
                                   <span className={styles.etaCell}>
                                     {isLate ? <StatusGlyph tone="warning" size={9} /> : null}
@@ -1659,7 +2030,12 @@ export function OfficerScreen() {
               </TabPanel>
             </Card>
 
-            <Card className={styles.arrivalsCard} aria-labelledby="ward-officer-arrivals-heading">
+            {/* An empty Arrivals card ("0 still to come") is hidden (device audit, 11 Oct 2026). */}
+            <Card
+              className={styles.arrivalsCard}
+              aria-labelledby="ward-officer-arrivals-heading"
+              hidden={arrivals.length === 0}
+            >
               <CardHead
                 id="ward-officer-arrivals-heading"
                 title="Arrivals"
@@ -1757,9 +2133,19 @@ export function OfficerScreen() {
                     meta={
                       <>
                         <span className={styles.mono}>{umrnFor(selectedJob)}</span>
-                        {" · "}
-                        {transportLegalStatusLabel(selectedJob.transport)}
-                        {selectedJob.transport.escortRequired ? " · Escort" : ""}
+                        {isPhone ? (
+                          <>
+                            {"\u00a0· "}
+                            {originShortFor(selectedJob)} to {destinationLabelFor(selectedJob)}
+                            {selectedJob.transport.escortRequired ? "\u00a0· Escort" : ""}
+                          </>
+                        ) : (
+                          <>
+                            {" · "}
+                            {transportLegalStatusLabel(selectedJob.transport)}
+                            {selectedJob.transport.escortRequired ? " · Escort" : ""}
+                          </>
+                        )}
                       </>
                     }
                     aside={
@@ -1783,33 +2169,17 @@ export function OfficerScreen() {
                       </>
                     }
                   />
-                  <CardBody className={styles.detailBody}>{renderDetail(selectedJob)}</CardBody>
-                  <CardFoot className={styles.inactiveRow}>
-                    <Button
-                      variant="sec"
-                      size="sm"
-                      icon={ShieldCheck}
-                      data-testid={`ward-officer-inspect-form-${selectedJob.id}`}
-                      onClick={(e) => openFormModal(selectedJob, e)}
-                    >
-                      Inspect form
-                    </Button>
-                    {!selectedJob.closure &&
-                    selectedJob.transport.collectedAt !== undefined &&
-                    selectedJob.transport.arrivedAt === undefined &&
-                    selectedJob.transport.diversion === undefined ? (
-                      <Button
-                        variant="sec"
-                        size="sm"
-                        icon={MapPin}
-                        aria-expanded={diversionOpen}
-                        data-testid={`ward-officer-divert-${selectedJob.id}`}
-                        onClick={() => setDiversionOpen((open) => !open)}
-                      >
-                        Divert
-                      </Button>
-                    ) : null}
-                  </CardFoot>
+                  <CardBody className={styles.detailBody}>
+                    {renderDetail(selectedJob)}
+                    {isPhone ? <div className={styles.phMoreActions}>{detailExtraActions(selectedJob)}</div> : null}
+                  </CardBody>
+                  {isPhone ? (
+                    renderPhoneNextStep(selectedJob) ? (
+                      <CardFoot className={styles.detailFooter}>{renderPhoneNextStep(selectedJob)}</CardFoot>
+                    ) : null
+                  ) : (
+                    <CardFoot className={styles.inactiveRow}>{detailExtraActions(selectedJob)}</CardFoot>
+                  )}
                 </Card>
               </div>
             </>
@@ -1897,6 +2267,20 @@ export function OfficerScreen() {
         </div>
       ) : null}
 
+      {collectCheck ? (
+        <TransportExceptionDialog
+          open
+          who={officerPatientName(collectCheck)}
+          action="Collected"
+          gaps={collectionGaps(collectCheck)}
+          onClose={() => setCollectCheckId(null)}
+          onConfirm={(reason) => {
+            setCollectCheckId(null);
+            recordCollected(collectCheck, { gaps: collectionGaps(collectCheck), reason });
+          }}
+          testId="ward-officer-collect-check"
+        />
+      ) : null}
       {toastText ? (
         <div className={styles.toast}>
           <StatusLine tone="success" title={toastText} />

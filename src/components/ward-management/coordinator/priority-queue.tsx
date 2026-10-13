@@ -32,13 +32,25 @@ import {
 } from "@/components/ward-management/ward-priority";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
+import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-management/ward-shared-figures";
+
 import styles from "./home.module.css";
+
+/** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
+export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
+  if (unitIds.length === 1) {
+    const name = units.find((unit) => unit.id === unitIds[0])?.name;
+    return `Offered to ${name ? name.split(" — ")[0] : "a ward"}`;
+  }
+  return `Offered to ${unitIds.length} wards`;
+}
 
 type QueueTab = "patients" | "referrals";
 
@@ -50,18 +62,19 @@ const HIGHLIGHT_LABEL: Record<QueueHighlight, string> = { overdue: "overdue", ti
 const MS_PER_MINUTE = 60_000;
 
 /**
- * Tier targets for the queue (v10 Home): Tier 1 8h, Tier 2 24h, Tier 3 72h. A row is overdue past
- * its target and "due in" within the hour before it. Invented values, pending clinical sign-off.
+ * Tier targets for the queue. L4 (site review, 12 Oct 2026): Home used its own 8h/24h/72h while
+ * Settings ("Tier 1 overdue after 1h") and the Referrals board used 1h/4h/24h, so one patient was
+ * overdue on one page and not on another. Every marker now reads the one rule,
+ * `tierOverdueAfterMinutes` (`ward-shared-figures.ts`). A row is overdue past its target and "due
+ * in" within the hour (or half the window, if shorter) before it. Pending clinical sign-off.
  */
-const TIER_TARGET_HOURS: Record<number, number> = { 1: 8, 2: 24, 3: 72 };
-
 export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue: number } {
-  const overdue = (TIER_TARGET_HOURS[urgency] ?? TIER_TARGET_HOURS[3]) * 60;
-  return { dueSoon: overdue - 60, overdue };
+  const overdue = tierOverdueAfterMinutes(urgency);
+  return { dueSoon: overdue - Math.min(60, overdue / 2), overdue };
 }
 
 /** Shown wherever the tier targets drive a figure. */
-export const TIER_TARGETS_NOTE = "Targets T1 8h, T2 24h, T3 72h, pending clinical sign-off";
+export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, pending clinical sign-off`;
 
 /** "Soon": a recorded legal form due within the due-soon window, or already past it. */
 function isSoon(movement: Movement, now: Instant) {
@@ -73,6 +86,8 @@ function isSoon(movement: Movement, now: Instant) {
 
 type PriorityQueueProps = {
   movements: Movement[];
+  /** Live units, to name the ward an offer went to (audit A1-14). */
+  units?: readonly { id: string; name: string }[];
   /**
    * Every referral this coordinator is still working, already filtered and ordered by
    * `referralQueueOrder` (`ward-referrals.ts`). Never re-filtered or re-sorted here. Optional only
@@ -109,6 +124,10 @@ type PriorityQueueProps = {
    * nothing is lost and the cards below the queue stay reachable (v10 Home phone, direction A).
    */
   rowCap?: number;
+  /** Phone (v10 Home, direction A): the switch reads "ED" and "Referrals". */
+  phone?: boolean;
+  /** Movements pinned on top for an active act-now task (`queueOrder`), marked `data-pinned`. */
+  pinnedIds?: ReadonlySet<string>;
 };
 
 /**
@@ -135,17 +154,23 @@ export function PriorityQueue({
   highlight,
   onClearHighlight,
   rowCap,
+  phone = false,
+  pinnedIds,
+  units = [],
 }: PriorityQueueProps) {
   const [showAllRows, setShowAllRows] = useState(false);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
   const [soonOnly, setSoonOnly] = useState(false);
   const patientOf = usePatientOf();
+  // A2-20: initials plus UMRN on a phone when Discreet names is on; the name everywhere else.
+  const nameFor = usePatientNameDisplay();
 
   const edsById = new Map(allEmergencyDepartments().map((ed) => [ed.id, ed]));
   const filterEd = filterEdId ? edsById.get(filterEdId) : undefined;
 
   const soonCount = movements.filter((movement) => isSoon(movement, now)).length;
+  // Form due is offered on the phone too, so the count stays visible there (audit A1-16).
   const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now)) : movements;
   const total = totalMovements ?? movements.length;
   const isOverdue = (movement: Movement) =>
@@ -163,17 +188,27 @@ export function PriorityQueue({
 
   return (
     <Card className={styles.queueCard} aria-label="Priority queue">
-      <CardHead title="Priority queue" aside={<span className={styles.headCount}>{headCount}</span>} />
+      <CardHead
+        className={styles.queueHead}
+        title="Priority queue"
+        aside={<span className={styles.headCount}>{headCount}</span>}
+      />
       <div className={styles.queueTools}>
         <Segmented
           label="Queues"
+          className={styles.queueSeg}
           items={[
-            { id: "patients", label: "Patients", count: movements.length === 0 ? "none" : movements.length },
+            {
+              id: "patients",
+              label: phone ? "ED" : "Patients",
+              count: movements.length === 0 ? "none" : movements.length,
+            },
             { id: "referrals", label: "Referrals", count: referralQueue.length === 0 ? "none" : referralQueue.length },
           ]}
           value={activeTab}
           onChange={setActiveTab}
         />
+        {/* Shown on the phone as well so the form-due count is not lost there (audit A1-16). */}
         {activeTab === "patients" ? (
           <FilterChip
             pressed={soonOnly}
@@ -182,7 +217,8 @@ export function PriorityQueue({
             count={soonCount}
             className={styles.noShrink}
           >
-            Soon
+            {/* Names its noun: recorded legal forms due soon or past (device audit, 11 Oct 2026). */}
+            Form due
           </FilterChip>
         ) : null}
       </div>
@@ -229,9 +265,15 @@ export function PriorityQueue({
             const thresholds = queueWaitThresholds(movement.urgency);
             const level =
               waitedMinutes >= thresholds.overdue ? "over" : waitedMinutes >= thresholds.dueSoon ? "soon" : null;
-            // Neutral words (v10): the glyph on the timer carries the tone.
+            // Keep the duration neutral; the overdue label and glyph carry the status.
             const toTarget = thresholds.overdue - waitedMinutes;
-            const word = level === "over" ? "overdue" : toTarget <= 60 ? `due in ${durMinutes(toTarget)}` : "waiting";
+            // Whole minutes (device audit, 11 Oct 2026: "8m 00s" is false precision).
+            const word =
+              level === "over"
+                ? "overdue"
+                : toTarget <= 60
+                  ? `due in ${toTarget < 60 ? `${Math.max(1, Math.ceil(toTarget))}m` : durMinutes(toTarget)}`
+                  : "waiting";
             const arrival = movement.arrivalDetails;
             const arrivalMode = arrival
               ? (arrival.modeOfArrival ??
@@ -253,6 +295,7 @@ export function PriorityQueue({
                 data-score={score}
                 data-wait={waitedMinutes}
                 data-overdue={level === "over" ? "true" : undefined}
+                data-pinned={pinnedIds?.has(movement.id) ? "true" : undefined}
                 data-dim={dimmed ? "true" : undefined}
                 className={cx(styles.queueRow, selected && styles.queueRowSelected)}
                 aria-pressed={selected}
@@ -267,15 +310,16 @@ export function PriorityQueue({
                 </span>
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
-                    <strong>{who.formalName}</strong>
+                    <strong>{nameFor(who.formalName, who.umrn)}</strong>
                   </span>
                   <span className={styles.queueSub}>
-                    {/* v10 Home: "▲ Urgent · Adult open · RPH · UM827674". The word stays neutral and
-                        the red triangle carries the tone; "Flagged" stays for assistive technology. */}
+                    {/* v10 Home: "▲ Flagged · Adult open · RPH · UM827674". The word stays neutral and
+                        the red triangle carries the tone. */}
                     {movement.flaggedUrgent ? (
                       <span className={styles.queueFlag} data-testid={`ward-queue-flag-${movement.id}`}>
                         <StatusGlyph tone="danger" size={9} />
-                        <SrOnly>Flagged </SrOnly>Urgent
+                        {/* L4: the flag is not the tier, so a T3 row is never labelled "Urgent". */}
+                        Flagged<SrOnly> urgent</SrOnly>
                       </span>
                     ) : null}
                     <span className={styles.queueSubText}>
@@ -283,16 +327,8 @@ export function PriorityQueue({
                       {movement.cohort} {movement.security.toLowerCase()} ·{" "}
                       {originEd ? originEd.siteCode : "unknown ED"} · {who.umrn}
                     </span>
-                    {/* The operational score, painted small and labelled "Op" so it never reads as
-                        clinical severity; the screen-reader line below says "Operational" in full. */}
-                    <span
-                      className={styles.queueScore}
-                      data-ward-type-floor="command-score"
-                      title="Operational score: how the movement is going operationally, not clinical severity"
-                      aria-hidden="true"
-                    >
-                      Op {score}
-                    </span>
+                    {/* Device audit, 11 Oct 2026: the visible "Op" score token is gone from the row;
+                        the screen-reader line still says the operational score in full. */}
                   </span>
                   {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}
                   <span className={styles.queueMarks}>
@@ -313,6 +349,17 @@ export function PriorityQueue({
                         <StatusGlyph tone="danger" size={9} />
                         {legalFactor ? legalFactor.detail : "Form due time passed"}
                         <LegalLimitsNotChecked variant="tag" />
+                      </span>
+                    ) : null}
+                    {/* A1-14 (audit 13 Oct 2026): an offer made from Home shows on the row, so the
+                        coordinator sees it is out and how long the ward has had it. */}
+                    {movement.referredUnitIds.length > 0 && !movement.acceptedUnitId && movement.stage !== "pulled" ? (
+                      <span className={styles.queueMark} data-testid={`ward-queue-offered-${movement.id}`}>
+                        <StatusGlyph tone="info" size={9} />
+                        {offeredToLabel(movement.referredUnitIds, units)}
+                        {movement.referredAt === undefined
+                          ? ""
+                          : ` · waiting ${durMinutes(Math.max(0, now - movement.referredAt))}`}
                       </span>
                     ) : null}
                     {arrival ? (
@@ -346,26 +393,29 @@ export function PriorityQueue({
                       {flagDetail}
                     </span>
                   ) : null}
-                  <SrOnly>
-                    {urgencyTierLabel(movement.urgency)}. Operational {score}.
-                  </SrOnly>
+                  {/* U3 (site review, 12 Oct 2026): the "Operational 23" leftover is gone; the score
+                      stays on `data-score` for the ordering journey only. */}
+                  <SrOnly>{urgencyTierLabel(movement.urgency)}.</SrOnly>
                 </span>
                 <span className={styles.queueWait}>
                   <Timer
                     at={movement.openedAt * MS_PER_MINUTE}
                     now={now * MS_PER_MINUTE}
                     direction="waiting"
-                    thresholds={{
-                      dueSoon: thresholds.dueSoon * MS_PER_MINUTE,
-                      overdue: thresholds.overdue * MS_PER_MINUTE,
-                    }}
-                    hideFlagWord
-                    hideDirection
                     className={styles.queueTimer}
                   />
-                  <span className={cx(styles.queueWord, level && styles.queueWordStrong)} aria-hidden="true">
-                    {word}
-                  </span>
+                  {/* U3: the timer already says "waiting", so the word shows only for a status. */}
+                  {level ? (
+                    <span
+                      className={cx(
+                        styles.queueWord,
+                        level === "over" ? styles.queueWordOverdue : styles.queueWordStrong,
+                      )}
+                    >
+                      <StatusGlyph tone={level === "over" ? "danger" : "warning"} size={9} />
+                      {word}
+                    </span>
+                  ) : null}
                 </span>
               </button>
             );
@@ -412,7 +462,7 @@ export function PriorityQueue({
                 <TierTile tier={referral.urgency} className={styles.queueTier} />
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
-                    <strong>{patientOf(referral).formalName}</strong>
+                    <strong>{nameFor(patientOf(referral).formalName, patientOf(referral).umrn)}</strong>
                   </span>
                   <span className={styles.queueSub}>
                     <span className={styles.queueSubText}>
@@ -455,14 +505,15 @@ export function PriorityQueue({
           </span>
         ) : (
           <span className={styles.footMeta} title={activeTab === "referrals" ? undefined : TIER_TARGETS_NOTE}>
-            {activeTab === "referrals" ? "Longest wait first" : "Urgent first, then tier, then longest wait"}
+            {activeTab === "referrals" ? "Longest wait first" : "Flagged and act now first, then longest wait"}
           </span>
         )}
         {activeTab === "patients" && highlight && onClearHighlight ? (
           <button type="button" className={styles.footButton} onClick={onClearHighlight}>
             Clear
           </button>
-        ) : (
+        ) : phone ? null : (
+          // Phone (v10 Home): the foot is the order line alone; Delays is in the Menu.
           <Link href={delaysHref} className={styles.footLink}>
             Open in Delays
           </Link>

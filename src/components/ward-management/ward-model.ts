@@ -922,6 +922,27 @@ export type TransportProvider = (typeof TRANSPORT_PROVIDERS)[number];
 export const TRANSPORT_LEGAL_STATUSES = ["voluntary", "involuntary"] as const;
 export type TransportLegalStatus = (typeof TRANSPORT_LEGAL_STATUSES)[number];
 
+/**
+ * Audit fix (13 Oct 2026): a transport step taken while a paperwork or clearance check was not met.
+ * The coordinator (and the officer) is warned and never blocked; the step records which checks were
+ * open and a coded reason, never free text, so the event stays off the typed-text list.
+ */
+export const TRANSPORT_EXCEPTION_GAPS = [
+  "legal_status_differs",
+  "transport_order_missing",
+  "fit_to_travel_missing",
+] as const;
+export type TransportExceptionGap = (typeof TRANSPORT_EXCEPTION_GAPS)[number];
+export const TRANSPORT_EXCEPTION_REASONS = ["paper_sighted", "treating_team_confirmed", "urgent_to_follow"] as const;
+export type TransportExceptionReason = (typeof TRANSPORT_EXCEPTION_REASONS)[number];
+export type TransportException = {
+  at: Instant;
+  by: WardFlowRole;
+  step: "booked" | "collected" | "arrived";
+  gaps: TransportExceptionGap[];
+  reason: TransportExceptionReason;
+};
+
 export type TransportJob = {
   id: string;
   /** From `TRANSPORT_PROVIDERS`. Never free text — see that list's own doc comment. */
@@ -978,6 +999,8 @@ export type TransportJob = {
    * Optional on the type for the same seed-predates-this reason `cadNumber` above states.
    */
   transportLegalStatus?: TransportLegalStatus;
+  /** Audit fix (13 Oct 2026): steps taken with a check open, oldest first. Absent when none. */
+  exceptions?: TransportException[];
   /**
    * THE ESTIMATED TIME THE BOOKER WAS GIVEN — owner's third ruling, 2026-09-17, the third of the
    * three booking-popup answers. Typed as HH:MM by the person logging the call and resolved to an
@@ -1708,6 +1731,11 @@ export type Movement = {
    */
   arrivalLateNotifiedAt?: Instant;
   medicalClearance?: { cleared: boolean; at: Instant };
+  /**
+   * Audit r1 item 4 (13 Oct 2026): a journey with no transport leg confirmed arrived while fit to
+   * travel was not recorded. Never blocks; records the open check and a coded reason.
+   */
+  arrivalException?: TransportException;
   /** D-34: explicit ED deterioration; ordinary unknown clearance is not this event.
    * The unwind/stage trails retain every occurrence, including after fresh re-clearance. */
   medicalDeterioration?: { at: Instant; by: "ed"; resumedAt?: Instant };
@@ -1983,18 +2011,40 @@ export type LeaveBed = {
 export const ABSENCE_STEPS = [
   "searched",
   "psychiatrist_told",
+  // Audit A3-2 (13 Oct 2026): the psychiatrist's apprehension and return order. Neutral wording on
+  // purpose: the MHA 2014 form number is added only after an MHA adviser confirms it.
+  "return_order_made",
   "description_recorded",
   "police_notified",
   "next_of_kin_told",
 ] as const;
 export type AbsenceStep = (typeof ABSENCE_STEPS)[number];
 
+/**
+ * A3-13 (Josh signed off): a voluntary patient who is not back from leave is not on an order, so
+ * no return order step is asked for. The one list the status card, step count and summary read.
+ */
+export function absenceStepsFor(voluntary: boolean): readonly AbsenceStep[] {
+  return voluntary ? ABSENCE_STEPS.filter((step) => step !== "return_order_made") : ABSENCE_STEPS;
+}
+
 export const ABSENCE_STEP_LABELS: Record<AbsenceStep, string> = {
   searched: "Ward and grounds searched",
   psychiatrist_told: "Treating psychiatrist told",
+  return_order_made: "Return order made",
   description_recorded: "Description recorded",
   police_notified: "Police notified",
   next_of_kin_told: "Next of kin told",
+};
+
+/** The phone's pinned button for each step, so a bare "Record" never stands alone (audit A3-11). */
+export const ABSENCE_STEP_BAR_LABELS: Record<AbsenceStep, string> = {
+  searched: "Record search done",
+  psychiatrist_told: "Record psychiatrist told",
+  return_order_made: "Record return order",
+  description_recorded: "Record description",
+  police_notified: "Record police notified",
+  next_of_kin_told: "Record next of kin told",
 };
 
 /**

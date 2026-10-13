@@ -1,6 +1,6 @@
 /*
  * Referrals, phone only (v10). The page renders these parts only below 48rem, so nothing here can
- * change the desktop or tablet board. 44px targets, 12px floor, words neutral and glyphs toned.
+ * change the desktop or tablet board. 48px targets, 12px floor, words neutral and glyphs toned.
  */
 
 .top {
@@ -30,6 +30,34 @@
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
   color: var(--wf-hero-ink);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+/* v10 phone band: the hero runs square from edge to edge under the lean bar, then the page rises
+   over its foot with the 22px round lip (the same rules as the shared Hero's band). */
+.phHero[data-band="on"] {
+  position: relative;
+  margin-top: calc(-1 * var(--wf-band-top, 0px));
+  margin-left: calc(-1 * var(--wf-band-left, 0px));
+  margin-right: calc(-1 * var(--wf-band-right, 0px));
+  padding: var(--wf-s-3) max(var(--wf-band-right, 0px), 16px) calc(var(--wf-s-4) + var(--wf-band-lip))
+    max(var(--wf-band-left, 0px), 16px);
+  margin-bottom: calc(-1 * var(--wf-s-3));
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.phHero[data-band="on"]::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: var(--wf-band-lip);
+  border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
+  background: var(--wf-canvas);
+  box-shadow: 0 -1px 0 var(--wf-hero-edge);
+  content: "";
+  pointer-events: none;
 }
 
 .eyebrow {
@@ -161,30 +189,40 @@
   margin-right: calc(var(--wf-s-3) * -1);
 }
 
-.chips {
+/* The shared phone pill size (`--wf-phone-pill-*`, Josh, 12 Oct 2026): a 32px chip face with a
+   transparent hit area to the 48px floor. The row's block padding is that hit area, so the sideways
+   scroll never clips it. */
+.chips.chips {
   display: flex;
-  gap: var(--wf-s-2);
-  padding: 2px var(--wf-s-3) 2px 2px;
+  gap: var(--wf-phone-pill-gap);
+  padding: var(--wf-phone-pill-hit) var(--wf-s-3) var(--wf-phone-pill-hit) 2px;
 }
 
 .chip {
+  position: relative;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: var(--wf-s-2);
-  min-height: 48px;
-  padding: 0 var(--wf-s-3);
+  gap: 6px;
+  height: var(--wf-phone-pill-h);
+  padding: 0 var(--wf-phone-pill-px);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  font: 600 var(--wf-phone-pill-fs) / 1 var(--wf-font);
   white-space: nowrap;
   cursor: pointer;
 }
 
+.chip::before {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+}
+
 .chip b {
-  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font: 600 var(--wf-phone-pill-count-fs) / 1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 

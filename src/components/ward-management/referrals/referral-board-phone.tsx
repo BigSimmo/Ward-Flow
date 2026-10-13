@@ -1,16 +1,16 @@
 "use client";
 
 import { ChevronRight, Clock, ListOrdered, TriangleAlert } from "lucide-react";
-import { useId, type ReactNode } from "react";
+import { useId, useRef, type ReactNode } from "react";
 
-import { Button, LiveChip, ScrollRow, StatusGlyph, cx } from "@/components/wf";
+import { Button, LiveChip, ScrollRow, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
 
 import styles from "./referral-board-phone.module.css";
 
 /**
  * Referrals on the phone (v10 build guide, Referrals > Phone). Its own design at 390 wide: the hero
  * with three figures (Overdue, Tier 1, Beds ready), Next overdue and Bed meeting list, then the
- * highlight chips scrolling sideways at 44px, then the waiting axis one tap away. Desktop never
+ * highlight chips scrolling sideways (compact, 48px targets), then the waiting axis one tap away. Desktop never
  * renders any of this.
  */
 
@@ -44,8 +44,17 @@ export function ReferralPhoneHero({
   onMeeting: () => void;
 }) {
   const titleId = useId();
+  const heroRef = useRef<HTMLElement>(null);
+  // v10 phone: the hero opens the page as the square band under the lean bar, like the shared Hero.
+  useWfBandBleed(heroRef, true);
   return (
-    <section className={styles.phHero} aria-labelledby={titleId} data-testid="ward-referral-phone-hero">
+    <section
+      ref={heroRef}
+      className={styles.phHero}
+      aria-labelledby={titleId}
+      data-testid="ward-referral-phone-hero"
+      data-wf-hero="band"
+    >
       <div className={styles.eyebrow}>
         <span className={styles.eyebrowText}>Referrals · statewide</span>
         <LiveChip state="live" onHero />
@@ -142,7 +151,7 @@ function Figure({
 
 export type PhoneChip = { key: string; label: string; count: number };
 
-/** The rest of the highlight chips, one sideways row of 44px chips. They never wrap. */
+/** The rest of the highlight chips, one sideways row of compact chips with 48px targets. They never wrap. */
 export function ReferralPhoneChips({
   chips,
   highlight,

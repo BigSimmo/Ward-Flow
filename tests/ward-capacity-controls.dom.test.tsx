@@ -12,6 +12,7 @@ import { wardAdmissions } from "@/components/ward-management/ward-admissions-see
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * WF-27 — the Wards panel's own controls: the sort box that orders rows inside each health-service
@@ -63,12 +64,14 @@ function FlowProbe() {
 }
 
 function renderScreen() {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <FlowProbe />
       <CapacityScreen />
     </WardFlowProvider>,
   );
+  showWardTable();
+  return view;
 }
 
 beforeEach(() => {

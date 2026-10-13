@@ -5,6 +5,7 @@ const sha = /^[0-9a-f]{40}$/i;
 const docsOnly = (file) => file === "README.md" || /^docs\/ward-flow\/.*\.md$/u.test(file);
 const maintainedPolicyRoots = new Set([
   "AGENTS.md",
+  "PROJECT-INSTRUCTIONS-CONTINUATION.md",
   "CLAUDE.md",
   "GEMINI.md",
   "docs/ward-flow/HOW-WE-WORK.md",

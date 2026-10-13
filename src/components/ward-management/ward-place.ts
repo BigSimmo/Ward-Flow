@@ -1,6 +1,6 @@
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { edById } from "@/components/ward-management/ward-sites";
+import { edById, edShortName } from "@/components/ward-management/ward-sites";
 
 /**
  * THE PLACE A ROUTE PUTS YOU IN — a ward unit, an emergency department, a community team — or no
@@ -70,7 +70,7 @@ export function wardPlaceFor(pathname: string, units: readonly Unit[]): WardPlac
   if (edMatch) {
     const id = decodeSegment(edMatch[1]);
     const department = id === undefined ? undefined : edById(id);
-    return department === undefined ? undefined : { kind: "ed", name: department.name };
+    return department === undefined ? undefined : { kind: "ed", name: edShortName(department) };
   }
 
   const teamMatch = COMMUNITY_TEAM_ROUTE.exec(pathname);

@@ -108,6 +108,8 @@ describe("the Forms screen", () => {
     expect(noDeadline.length, "no rows without a deadline - the screen's whole subject is untested").toBeGreaterThan(0);
 
     renderScreen();
+    // Audit A3-6 (13 Oct 2026): "Time not written" is no longer folded; the helper is a no-op now.
+    openFoldedGroup();
     const lists = screen.getAllByRole("list");
     // Owner, 26 Sept 2026: the visible id slot now carries the patient's name, never the WF journey
     // number, so a row is found here by its hidden `data-record-key` (the movement id) instead.
@@ -139,6 +141,7 @@ describe("the Forms screen", () => {
   // Owner, 26 Sept 2026: the patient's name, never the WF journey number.
   it("identifies a row by the hidden movement id, and names it by the resolved patient, never the WF number", () => {
     renderScreen();
+    openFoldedGroup();
     const expectedIds = rows.map((movement) => movement.id);
     const listRegion = screen.getByRole("region", { name: "Legal forms list" });
     const rowEls = Array.from(listRegion.querySelectorAll("[data-ward-primitive='record-row']"));
@@ -245,13 +248,27 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     }
   });
 
+  it("never folds Time not written: every row shows with no Show all (audit A3-6)", () => {
+    renderScreen();
+    const region = screen.getByRole("region", { name: "Legal forms list" });
+    expect(region.querySelectorAll("[data-record-key]").length).toBe(rows.length);
+    expect(screen.queryByRole("button", { name: /^Show all \d+$/ })).toBeNull();
+    expect(screen.getAllByText("Time not written").length).toBeGreaterThan(0);
+  });
+
   it("highlights by dimming the other rows by colour, keeps every row and counts the highlighted rows", () => {
     renderScreen();
+    openFoldedGroup();
     const before = document.querySelectorAll("[data-record-key]").length;
-    fireEvent.click(screen.getByRole("button", { name: /No expiry typed/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Time not written/ }));
     expect(document.querySelectorAll("[data-record-key]").length).toBe(before);
     const dimmed = document.querySelectorAll('[data-record-key][data-dim="true"]').length;
     expect(dimmed).toBe(before - noDeadline.length);
     expect(screen.getByText(`${noDeadline.length} of ${rows.length} highlighted, all rows stay`)).toBeInTheDocument();
   });
 });
+
+function openFoldedGroup() {
+  const showAll = screen.queryByRole("button", { name: /^Show all \d+$/ });
+  if (showAll) fireEvent.click(showAll);
+}

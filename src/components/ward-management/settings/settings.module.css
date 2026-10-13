@@ -76,12 +76,6 @@
   flex: 0 0 auto;
 }
 
-/* Words on the band are set in the body face; mono stays for numbers and times. */
-.wordStat > span:first-child > span:first-child {
-  font-family: var(--wf-font);
-  letter-spacing: -0.01em;
-}
-
 .tabs {
   border-radius: var(--wf-r-pill);
 }
@@ -467,13 +461,12 @@
   color: var(--wf-ink-2);
 }
 
+/* Who reads the rule is the point of the line, so it wraps rather than cutting a name off. */
 .usedBy {
   max-width: 100%;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 /* Form warning window: calm, due soon, first warning. */
@@ -1124,4 +1117,78 @@
   .ruleRow {
     transition: none;
   }
+}
+
+/* v10 phone (11 Oct 2026): the switch's track carries its state; the On or Off word (aria-hidden)
+   leaves the phone rows, as in the mockup. Only the phone "On this phone" card uses this class. */
+.phoneSwitch > span:last-child {
+  display: none;
+}
+
+/* v10 phone hero: "Demo profile" as a quiet outlined chip at the end of the eyebrow line. */
+.phoneProfileChip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-hero-ink);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+/* v10 phone sheets: the switch alone shows its state; the On or Off word stays for wider screens
+ * (it is aria-hidden; the switch's aria-checked carries the state). */
+.phoneSheetBody [role="switch"] > span:last-child {
+  display: none;
+}
+
+/* v10 phone Rules sheet (11 Oct 2026): each rule's words on the left with the 44px stepper inline
+ * at the right, then its effect, with reset at the right end of that line. Only the phone sheet
+ * renders .phoneSheetBody. */
+.phoneSheetBody .ruleRow {
+  grid-template-columns: minmax(0, 1fr) 10rem;
+  column-gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.phoneSheetBody .ruleRow > .rowText {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.phoneSheetBody .ruleRow > .ruleValue {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.phoneSheetBody .ruleRow > .effectCell {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: center;
+  justify-content: flex-start;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.phoneSheetBody .ruleRow > .resetCell {
+  grid-column: 2;
+  grid-row: 2;
+  justify-content: flex-end;
+  align-self: center;
+}
+
+.phoneSheetBody .ruleRow:not(:has(.resetButton)) > .effectCell {
+  grid-column: 1 / -1;
+}
+
+/* A changed rule is edged all round in the accent, never a side stripe. */
+.phoneSheetBody .ruleChanged {
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.phoneSheetBody .ruleStepper > span:first-child > [role="spinbutton"] {
+  min-width: 0;
+  white-space: nowrap;
 }

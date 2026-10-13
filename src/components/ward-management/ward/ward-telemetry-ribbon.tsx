@@ -1,6 +1,6 @@
 "use client";
 
-import { HeroStat, durMinutes } from "@/components/wf";
+import { HeroStat, SrOnly, durMinutes } from "@/components/wf";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { dayShiftEndInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -28,6 +28,11 @@ interface WardTelemetryRibbonProps {
   actNow?: number;
   /** Opens This shift's to do list. */
   onActNow?: () => void;
+  /**
+   * Phone (v10): three figures for the hero's figure row (Ready now, Act now, By shift end), as
+   * bare `HeroStat`s so the hero lays them out with hairlines. Occupied is in the subtitle.
+   */
+  phone?: boolean;
 }
 
 /**
@@ -46,12 +51,55 @@ export function WardTelemetryRibbon({
   onFilter,
   actNow = 0,
   onActNow,
+  phone = false,
 }: WardTelemetryRibbonProps) {
   const { bedReleases } = useWardFlow();
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const shiftEnd = dayShiftEndInstant(now);
   const freeingByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
   const confirmedByWard = unit.allocatable.source === "ward";
+
+  if (onFilter && phone) {
+    const pick = (next: WardBedFilter) => {
+      onFilter(filter === next && next !== "all" ? "all" : next);
+    };
+    return (
+      <>
+        <HeroStat
+          value={
+            <span data-testid="ward-hero-ready">
+              {capacity.available}
+              <SrOnly>, {pendingPreparation} being made ready</SrOnly>
+            </span>
+          }
+          label="Ready now"
+          tone="success"
+          pressed={filter === "free"}
+          onToggle={() => {
+            pick("free");
+          }}
+        />
+        {onActNow ? (
+          <HeroStat
+            value={actNow}
+            label="Tasks due now"
+            tone={actNow > 0 ? "danger" : "success"}
+            command
+            onToggle={onActNow}
+          />
+        ) : null}
+        <HeroStat
+          value={capacity.available + freeingByShiftEnd}
+          label={`By ${formatInstantWithDay(shiftEnd, now)}`}
+          tone="info"
+          pressed={filter === "shift-end"}
+          onToggle={() => {
+            pick("shift-end");
+          }}
+        />
+      </>
+    );
+  }
 
   if (onFilter) {
     const pick = (next: WardBedFilter) => {
@@ -94,7 +142,7 @@ export function WardTelemetryRibbon({
           <HeroStat
             inline
             value={actNow}
-            label="Act now"
+            label="Tasks due now"
             tone={actNow > 0 ? "danger" : "success"}
             command
             onToggle={onActNow}

@@ -1,0 +1,419 @@
+/* Community team, phone only (v10 all-pages mockup, "Community team", Phone). Rendered only under
+   48rem by `CommunityTeamPhone`, so nothing here reaches desktop or tablet. */
+
+.phone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* The band: the PhoneHero runs square from edge to edge under the lean bar, then the page rises
+   over its foot with the round lip (the shared Hero's band rules). */
+.band {
+  position: relative;
+  min-width: 0;
+}
+
+.band[data-band="on"] {
+  margin-top: calc(-1 * var(--wf-band-top, 0px));
+  margin-left: calc(-1 * var(--wf-band-left, 0px));
+  margin-right: calc(-1 * var(--wf-band-right, 0px));
+  margin-bottom: calc(-1 * var(--wf-s-3));
+  background:
+    radial-gradient(120% 90% at 100% -20%, color-mix(in srgb, var(--wf-hero-info) 22%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+}
+
+.band[data-band="on"]::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: var(--wf-band-lip);
+  border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
+  background: var(--wf-canvas);
+  box-shadow: 0 -1px 0 var(--wf-hero-edge);
+  content: "";
+  pointer-events: none;
+}
+
+.band[data-band="on"] .teamHero {
+  padding: var(--wf-s-4) max(var(--wf-band-right, 0px), 16px) calc(var(--wf-s-4) + var(--wf-band-lip))
+    max(var(--wf-band-left, 0px), 16px);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.teamHero {
+  gap: var(--wf-s-3);
+}
+
+/* The eyebrow reads in caps, as the mockup's "COMMUNITY TEAM · EMHS". */
+.teamHero > div:first-child > p:first-child {
+  letter-spacing: var(--wf-tr-caps, 0.06em);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Switch team (round, 44px) and Intake referral (the light pill, the rest of the row). */
+.teamHero > div:last-child {
+  flex-wrap: nowrap;
+}
+
+.heroRound.heroRound {
+  flex: none;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  border-radius: var(--wf-r-pill);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* Tool chips: one sideways row of 48px chips that never wrap. */
+.chipsFrame {
+  margin: 0 calc(-1 * var(--wf-s-3));
+}
+
+.chips {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3);
+}
+
+.chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 48px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip svg {
+  flex: none;
+  color: var(--wf-ink-2);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.section,
+.group,
+.lists {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.lists {
+  gap: var(--wf-s-3);
+  scroll-margin-top: var(--wf-s-6);
+}
+
+.segmented {
+  width: 100%;
+}
+
+.segmented > * {
+  flex: 1 1 0;
+  justify-content: center;
+}
+
+/* One card holding rows, hairlines between, no tint and no accent stripe. */
+.card {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.rowItem + .rowItem {
+  border-top: 1px solid var(--wf-line);
+}
+
+.rowNote {
+  margin: 0;
+  padding: 0 var(--wf-s-3) var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.attention {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attentionItem {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.attentionItem + .attentionItem {
+  border-top: 1px solid var(--wf-line);
+}
+
+.attentionGlyph {
+  display: inline-flex;
+  flex: none;
+  padding-top: 4px;
+}
+
+.more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.quiet {
+  margin: 0;
+  padding: var(--wf-s-1);
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-align: center;
+}
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* The sheet panels reuse the desktop side cards; on a phone they lose the card frame. */
+.sheetBody section,
+.sheetBody details {
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* Facts in a two-column grid (Waiting, From, Priority, Home). */
+.facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.fact:nth-child(-n + 2) {
+  border-top: 0;
+}
+
+.fact:nth-child(even) {
+  border-left: 1px solid var(--wf-line);
+}
+
+.fact dt {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.fact dd {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reasons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.reasons legend {
+  margin-bottom: var(--wf-s-2);
+  padding: 0;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: var(--wf-tr-caps, 0.06em);
+  text-transform: uppercase;
+}
+
+.reason {
+  min-height: 48px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.sheetNote {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.sheetActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.filter select {
+  min-height: 48px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+}
+
+/* The desktop side cards carry their own head; the sheet's title already names them. */
+.sheetBody > section > div:first-child,
+.sheetBody > div > section > div:first-child,
+.sheetBody > div > details > summary {
+  display: none;
+}
+
+/* Worth attention: a plain section head, as the mockup draws it (no grey band, sentence case). */
+.plainHead.plainHead {
+  min-height: 32px;
+  padding: 0 var(--wf-s-1);
+  background: transparent;
+}
+
+.plainHead.plainHead span {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.plainHead.plainHead span + span {
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+}
+
+.attentionItem strong {
+  display: block;
+  font-weight: 600;
+}
+
+.attentionMeta {
+  display: block;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* Device audit option A (11 Oct 2026): one quiet line when nothing changed since the shift began. */
+.quietLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+/* Device audit option A: notices and provenance behind one closed "About this data". */
+.about {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.about > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-touch);
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.about > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.aboutBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+}

@@ -57,6 +57,8 @@ import type {
   Security,
   RecordedSex,
   StepBackReason,
+  TransportExceptionGap,
+  TransportExceptionReason,
   TransportLegalStatus,
   TransportProvider,
   AbsenceStep,
@@ -74,6 +76,10 @@ import type { InboxSnoozeReason } from "@/components/ward-management/ward-inbox-
  * `ward-model.ts` into this whole file put the release model inside the module graph the D15
  * contract (`tests/ward-referral-matching.test.ts`) walks from matching's own entry points.
  */
+
+/** The open checks a transport step went ahead with, and the coded reason the person chose. */
+export type TransportExceptionInput = { gaps: TransportExceptionGap[]; reason: TransportExceptionReason };
+
 export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -489,13 +495,22 @@ export type WardFlowEvent =
     }
   | { type: "TRANSPORT_ACCEPTED"; role: WardFlowRole; now: Instant; movementId: string }
   | { type: "TRANSPORT_EN_ROUTE"; role: WardFlowRole; now: Instant; movementId: string }
-  | { type: "PATIENT_COLLECTED"; role: WardFlowRole; now: Instant; movementId: string }
+  | {
+      type: "PATIENT_COLLECTED";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      /** Audit fix (13 Oct 2026): collected with a check open (no Form 4A, no clearance), and why. */
+      exception?: TransportExceptionInput;
+    }
   | {
       type: "PATIENT_ARRIVED";
       role: WardFlowRole;
       now: Instant;
       movementId: string;
       actingUnitId?: string;
+      /** Audit r1 item 4: arrived with no transport leg and fit to travel not recorded, and why. */
+      exception?: TransportExceptionInput;
     }
   | {
       /**
@@ -805,6 +820,8 @@ export type WardFlowEvent =
       cadNumber: string;
       transportLegalStatus: TransportLegalStatus;
       estimatedAt: Instant;
+      /** Audit fix (13 Oct 2026): booked with a check open (status differs from Legal now), and why. */
+      exception?: TransportExceptionInput;
     }
   | {
       type: "CANCEL_TRANSPORT";
@@ -1351,6 +1368,9 @@ export type WardFlowEvent =
        * addressing as `heldBedNumber`.
        */
       bedNumber?: number;
+      /** B1: a ward answering names itself; refused when it answers for another ward. The
+       *  coordinator acts for any ward and sends none. */
+      actingUnitId?: string;
       /** Optional fields for reassessment of clinical decisions (WF-17) */
       clinicalUpdate?: boolean;
       reassessment?: boolean;
@@ -1377,6 +1397,8 @@ export type WardFlowEvent =
       waitlist?: boolean;
       /** Required to answer one of several explicitly addressed wards. */
       unitId?: string;
+      /** B1: as `ACCEPT_REFERRAL.actingUnitId`. */
+      actingUnitId?: string;
       role: WardFlowRole;
       now: Instant;
       /** The referral being decided. */
@@ -2387,6 +2409,28 @@ export type WardFlowEvent =
       movementId: string;
       /** A ward undoing its own recorded arrival names itself. */
       actingUnitId?: string;
+    }
+  | {
+      /** Takes back the newest recorded departure ("Has left") of this stay (audit A1-12). */
+      type: "UNDO_DEPARTURE";
+      role: WardFlowRole;
+      now: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
+      admissionId: string;
+      /** A ward undoing its own recorded departure names itself. */
+      actingUnitId?: string;
+    }
+  | {
+      /** Takes back the newest `RECORD_ABSENT_WITHOUT_LEAVE` on this stay (audit A3-10, 13 Oct 2026). */
+      type: "UNDO_ABSENT_WITHOUT_LEAVE";
+      role: WardFlowRole;
+      now: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
+      admissionId: string;
+      /** A ward undoing its own record names itself. */
+      actingUnitId?: string;
     };
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
@@ -2925,4 +2969,6 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
   UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
   UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
+  UNDO_DEPARTURE: ["ward", "coordinator"],
+  UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
 };

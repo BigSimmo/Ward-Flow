@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BedSingle, ChevronRight, Flag, Lock, PhoneCall, ShieldCheck, Truck, X } from "lucide-react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -29,7 +30,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
-import { StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
+import { Badge, PhoneSheet, StatusGlyph, TierTile, buttonClass, useIsPhone, type WfTone } from "@/components/wf";
 
 import { movementNextStep, nextStepTarget } from "./movement-next-step";
 import { declineReasonLabels } from "./movement-workspace-derivations";
@@ -126,7 +127,7 @@ const STEPS: { stage: Movement["stage"]; label: string }[] = [
 
 const LEG_WORD: Record<string, string> = {
   Requested: "Requested",
-  Accepted: "Booked",
+  Accepted: "Accepted",
   "En route": "En route",
   Collected: "Collected",
   Arrived: "Arrived",
@@ -180,6 +181,8 @@ export function MovementDrawer({
   // Item 37 (2026-09-17): the flag needs a reason chosen from URGENT_MARK_REASONS. Declared before
   // the early return so hook order never depends on whether `movement` resolves.
   const [urgentFlagReason, setUrgentFlagReason] = useState<UrgentMarkReason | undefined>(undefined);
+  // Phone only: the tier uses the shared TierTile; desktop keeps its own pill (owner, 2026-10-11).
+  const isPhone = useIsPhone();
 
   if (movement === undefined) return null;
 
@@ -309,6 +312,29 @@ export function MovementDrawer({
     }
   }
 
+  if (isPhone) {
+    return (
+      <MovementPhoneSheet
+        movement={movement}
+        now={now}
+        subject={subject}
+        recordHref={recordHref}
+        from={originEd ? `${originEd.siteCode} ED` : originLabel}
+        to={accepted ? accepted.name : "Destination pending"}
+        accepted={accepted}
+        waited={waited}
+        waitTone={waitTone}
+        legalTitle={legalTitle}
+        legalWhen={legalWhen}
+        legalTone={legalTone}
+        hasBlocker={hasBlocker && !closure}
+        open={open}
+        onClose={onClose}
+        onFocusMovement={onFocusMovement}
+      />
+    );
+  }
+
   return (
     <Sheet
       open
@@ -334,11 +360,21 @@ export function MovementDrawer({
             ) : null}
           </p>
         </div>
-        <span className={d.tier} data-tier={movement.urgency} title={`Urgency tier ${movement.urgency}`}>
-          <span className="sr-only">Urgency tier </span>
-          <span aria-hidden="true">T</span>
-          {movement.urgency}
-        </span>
+        {isPhone ? (
+          <TierTile
+            tier={movement.urgency}
+            label="Urgency tier"
+            className={d.tierTile}
+            data-tier={movement.urgency}
+            title={`Urgency tier ${movement.urgency}`}
+          />
+        ) : (
+          <span className={d.tier} data-tier={movement.urgency} title={`Urgency tier ${movement.urgency}`}>
+            <span className="sr-only">Urgency tier </span>
+            <span aria-hidden="true">T</span>
+            {movement.urgency}
+          </span>
+        )}
         <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={recordHref} title="Open the Patient page">
           <span className={d.linkText}>Patient</span>
           <ChevronRight size={14} aria-hidden="true" />
@@ -680,5 +716,174 @@ export function MovementDrawer({
         </p>
       </div>
     </Sheet>
+  );
+}
+
+/**
+ * v10 phone: the row opens a compact sheet, not the desktop pop-up. Name, UMRN and stage; From,
+ * To, Waited and Legal; the barrier; the next step; Open record and the next step pinned in the
+ * foot. Everything else lives on the movement record, one tap away.
+ */
+function MovementPhoneSheet({
+  movement,
+  now,
+  subject,
+  recordHref,
+  from,
+  to,
+  accepted,
+  waited,
+  waitTone,
+  legalTitle,
+  legalWhen,
+  legalTone,
+  hasBlocker,
+  open,
+  onClose,
+  onFocusMovement,
+}: {
+  movement: Movement;
+  now: Instant;
+  subject: { formalName: string; umrn: string };
+  recordHref: string;
+  from: string;
+  to: string;
+  accepted: Unit | undefined;
+  waited: number;
+  waitTone: "danger" | "warning" | undefined;
+  legalTitle: string;
+  legalWhen: string;
+  /** Set when the RECORDED expiry has passed or is near (D5: a typed time, never a computed one). */
+  legalTone: WfTone | undefined;
+  hasBlocker: boolean;
+  open: boolean;
+  onClose: () => void;
+  onFocusMovement?: (movementId: string) => void;
+}) {
+  const router = useRouter();
+  const step = open ? movementNextStep(movement) : undefined;
+  const target = step && step.kind !== "wait" ? nextStepTarget(step, movement.id) : undefined;
+  const closure = movement.closure;
+  return (
+    <PhoneSheet
+      open
+      onClose={onClose}
+      title={subject.formalName}
+      data-testid="ward-movement-phone-sheet"
+      description={
+        <span className={d.phSub}>
+          <span className={d.phSubLine}>
+            <span className={d.mono}>{subject.umrn}</span>
+            {"\u00a0· "}
+            {movement.cohort}
+            {"\u00a0· "}
+            {movement.sex}
+          </span>
+          <span className={d.phPills}>
+            <TierTile tier={movement.urgency} label="Urgency tier" data-tier={movement.urgency} />
+            <Badge tone={closure ? "neutral" : "info"} size="sm">
+              {closure
+                ? closure.outcome === "arrived"
+                  ? "Arrived"
+                  : "Did not proceed"
+                : stageCopy[movement.stage].label}
+            </Badge>
+          </span>
+        </span>
+      }
+      secondary={{ label: "Open record", onAction: () => router.push(recordHref) }}
+      primary={
+        step && target
+          ? {
+              label: step.label,
+              onAction: () => {
+                if (step.kind === "escalate") onFocusMovement?.(movement.id);
+                router.push(target.href);
+              },
+            }
+          : undefined
+      }
+    >
+      <div className={d.phBody}>
+        <dl className={d.phGrid}>
+          <div>
+            <dt>From</dt>
+            <dd>{from}</dd>
+          </div>
+          <div>
+            <dt>To</dt>
+            <dd>{to}</dd>
+          </div>
+          <div>
+            <dt>Waited</dt>
+            <dd className={d.mono}>
+              {waitTone ? <StatusGlyph tone={waitTone} size={9} /> : null}
+              {splitDuration(waited)}
+            </dd>
+          </div>
+          <div>
+            <dt>Legal</dt>
+            <dd>
+              {legalTone ? <StatusGlyph tone={legalTone} size={9} /> : null}
+              {legalTitle}
+            </dd>
+          </div>
+        </dl>
+        {legalTone && !hasBlocker && !closure ? (
+          <div className={d.phBox} data-testid="ward-movement-phone-legal-expiry">
+            <h3 className={d.phLabel}>Legal</h3>
+            <p className={d.phLine}>
+              <StatusGlyph tone={legalTone} size={9} />
+              {legalTitle} · {legalWhen}
+            </p>
+          </div>
+        ) : null}
+        {closure ? (
+          <div className={d.phBox}>
+            <h3 className={d.phLabel}>Ended</h3>
+            <p className={d.phLine}>
+              <StatusGlyph tone={closure.outcome === "arrived" ? "success" : "closed"} size={9} />
+              {formatInstantWithDay(closure.at, now)} · {closure.reason}
+            </p>
+          </div>
+        ) : hasBlocker ? (
+          <div className={d.phBox}>
+            <h3 className={d.phLabel}>Barrier</h3>
+            <p className={d.phLine}>
+              <StatusGlyph tone={waitTone === "danger" ? "danger" : "warning"} size={9} />
+              <strong>{movement.blocker}</strong>
+            </p>
+            <p className={d.phMeta}>
+              {stageCopy[movement.stage].label}
+              {legalWhen ? ` · ${legalWhen}` : ""}
+            </p>
+          </div>
+        ) : null}
+        {step ? (
+          <div className={d.phBox}>
+            <h3 className={d.phLabel}>Next step</h3>
+            <p className={d.phLine}>
+              <strong>{step.label}</strong>
+              <span className={d.phMetaInline}>· {step.owner}</span>
+            </p>
+          </div>
+        ) : null}
+        {open || accepted ? (
+          <div className={d.phActions}>
+            {open ? <PullNowButton movement={movement} /> : null}
+            {accepted ? (
+              <Link
+                href={`/mockups/ward-flow/board/${accepted.id}`}
+                className={buttonClass({ variant: "sec", size: "sm" })}
+                title={`Open ${accepted.name} Bed Board`}
+              >
+                <BedSingle size={14} aria-hidden="true" />
+                Ward board
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </PhoneSheet>
   );
 }

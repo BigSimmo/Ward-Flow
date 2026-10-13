@@ -270,6 +270,12 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // placement outstanding). Any ward that would need a reason is chosen in Placement instead,
   // where shortlist-panel.tsx's Override records one. So there is no override to record here.
   "src/components/ward-management/coordinator/coordinator-screen.tsx": "REFER_TO_UNITS",
+  // Audit S-8 (13 Oct 2026): Placement's "Accept for this ward" accepts for a ward the coordinator
+  // already offered to. That offer passed every gate or carried the coordinator's override reason
+  // (REFER_TO_UNITS, which the reducer's eligibility check honours for that unit), so there is
+  // nothing new to justify. A gate that has since failed is refused as usual, and this panel's own
+  // Override control records the reason.
+  "src/components/ward-management/coordinator/shortlist-panel.tsx": "ACCEPT_IN_PRINCIPLE",
 };
 
 const derivedMembers = deriveWardFlowEventMembers();
@@ -578,8 +584,8 @@ describe("ward override-surface guard", () => {
     // compliance guard below actually passing against real, non-empty groups.
     // User-approved ward inbox offers normal acceptance only; coordinator review retains overrides.
     // v10 pass 3: the ward page's Bed board placement (3) and Home's Offer, plain fits only (4).
-    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(4);
-    expect(stillInViolation.size).toBe(4);
+    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(5);
+    expect(stillInViolation.size).toBe(5);
   });
 
   // --- The compliance guard: every site the scan CAN see meets the rule. ---
@@ -672,12 +678,19 @@ describe("ward override-surface guard", () => {
       // file's entry in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON above for why it needs no reason.
       "src/components/ward-management/community/community-screen.tsx::ACCEPT_REFERRAL": 1,
       // v10 Home pass 3: State bedflow's Offer with Undo, plain fits only (allowlisted above).
+      // 1 -> 2, 11 Oct 2026: the phone patient sheet's "Refer to <ward>" runs the same plain
+      // REFER_TO_UNITS through the Undo step (the panel's canRefer gate already passed), as the v10
+      // mockup toasts "Offered ... " with Undo there.
+      // 2 -> 1, 13 Oct 2026 (round 2, option B): that phone sheet Refer now opens the referral
+      // slide-out instead of offering at once, so only the bedflow Offer remains.
       "src/components/ward-management/coordinator/coordinator-screen.tsx::REFER_TO_UNITS": 1,
       "src/components/ward-management/referrals/ward-referral-inbox.tsx::ACCEPT_REFERRAL": 1,
       // 2 -> 3, T12 (item 9, 2026-09-17): the non-binary placement form dispatches the same
       // REFER_TO_UNITS with genderPlacementReason and genderPlacementChecked. Verified by reading
       // shortlist-panel.tsx: an added site (the gender-placement submit), not a lost overrideReason
       // on the existing override site, which still carries one.
+      // Audit S-8: Accept for this ward (allowlisted above).
+      "src/components/ward-management/coordinator/shortlist-panel.tsx::ACCEPT_IN_PRINCIPLE": 1,
       "src/components/ward-management/coordinator/shortlist-panel.tsx::REFER_TO_UNITS": 3,
       // Patient transit deck (PR #69): ordinary first attempt plus override re-dispatch for each
       // overridable placement event, matching ward-screen / shortlist shape.

@@ -135,25 +135,32 @@ function onlyFields(value: unknown, keys: readonly string[]): boolean {
   );
 }
 
+/** "name", "name and email", "name, email and role". */
+function joinAnd(items: string[]): string {
+  return items.length <= 1 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
+}
+
+/**
+ * L6 (review 12 Oct 2026): the message names exactly what is still missing, in the form's order,
+ * so the send footer and the field errors agree ("Enter your email", never "Enter your name, role
+ * and location" once the name is in).
+ */
 export function referralContactError(contact: ReferralContact): string | null {
-  if (
-    !onlyFields(contact, ["name", "email", "phone", "role", "location"]) ||
-    [contact.name, contact.role, contact.location].some((v) => typeof v !== "string" || !v.trim() || v.length > 200)
-  )
-    return "Enter your name, role and location / service.";
-  if (
-    typeof contact.email !== "string" ||
-    contact.email.length > 254 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)
-  )
-    return "Enter a valid email address.";
-  if (
-    typeof contact.phone !== "string" ||
-    contact.phone.length > 40 ||
-    !/^[+\d\s().-]+$/.test(contact.phone) ||
-    contact.phone.replace(/\D/g, "").length < 8
-  )
-    return "Enter a valid contact phone number.";
+  if (!onlyFields(contact, ["name", "email", "phone", "role", "location"]))
+    return "Enter your name, email, phone number, role and location or service.";
+  const text = (value: unknown) => (typeof value === "string" ? value : "");
+  const missing: string[] = [];
+  if (!text(contact.name).trim()) missing.push("name");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text(contact.email))) missing.push("email");
+  if (!/^[+\d\s().-]+$/.test(text(contact.phone)) || text(contact.phone).replace(/\D/g, "").length < 8)
+    missing.push("phone number");
+  if (!text(contact.role).trim()) missing.push("role");
+  if (!text(contact.location).trim()) missing.push("location or service");
+  if (missing.length) return `Enter your ${joinAnd(missing)}.`;
+  if ([contact.name, contact.role, contact.location].some((v) => v.length > 200))
+    return "Shorten your name, role or location to 200 characters.";
+  if (contact.email.length > 254) return "Shorten your email to 254 characters.";
+  if (contact.phone.length > 40) return "Shorten your phone number to 40 characters.";
   return null;
 }
 

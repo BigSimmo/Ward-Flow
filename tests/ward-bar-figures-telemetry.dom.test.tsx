@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -63,7 +63,9 @@ describe("Figures in the Tools workspace", () => {
   it("removes Figures from the header and offers it inside Tools", () => {
     const tools = openTools();
     expect(within(tools).getByTestId("ward-bar-figures-trigger")).toHaveTextContent("Figures");
-    expect(within(tools).getByTestId("ward-bar-figures-trigger")).toHaveTextContent("Nothing flagged");
+    // Audit A3-4 (13 Oct 2026): the seeded form at exactly 60 minutes is inside the first warning,
+    // the same rule Forms and Delays use, so Figures flags it.
+    expect(within(tools).getByTestId("ward-bar-figures-trigger")).toHaveTextContent("1 due within 1h");
   });
 
   it("keeps deadline status reactive when the shared clock advances", () => {
@@ -116,10 +118,11 @@ describe("Figures in the Tools workspace", () => {
     expect(within(tools).getByText("No matching contacts")).toBeVisible();
   });
 
-  it("closes Tools from Figures without leaving a second drawer open", () => {
+  it("closes Tools from Figures without leaving a second drawer open", async () => {
     const tools = openTools();
     fireEvent.click(within(tools).getByTestId("ward-bar-figures-trigger"));
     fireEvent.click(within(tools).getByRole("button", { name: /^close$/i }));
-    expect(screen.queryByRole("dialog")).toBeNull();
+    // Closing steps Back through the drawer's own history entry; the sheet stays until popstate.
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 });

@@ -93,3 +93,131 @@
     flex: 1 1 100%;
   }
 }
+
+/* v10 Patient, phone (11 Oct 2026): "Record a change" as a page heading over a row of chips; the
+ * leave and discharge forms rise as a bottom sheet. These classes render only on phone. */
+.phSection {
+  display: grid;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.phHead {
+  margin: var(--wf-s-1) 0 0;
+  padding: 0 var(--wf-s-1);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+.phSheetForm {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.phSheetFoot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  width: 100%;
+}
+
+.phSheetFoot > button {
+  min-height: 48px;
+  justify-content: center;
+  border-radius: var(--wf-r-pill);
+}
+
+@media (max-width: 48rem) {
+  .phSection .changeRow {
+    flex-wrap: wrap;
+    padding: 0;
+  }
+
+  .phSection .changeRow > * {
+    flex: 0 0 auto;
+    min-height: 48px;
+    padding: 0 var(--wf-s-4);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+  }
+
+  .phSection .refusal {
+    padding: 0 var(--wf-s-1);
+  }
+
+  .phSheetForm .kindRow > .kindChoice {
+    flex: 1 1 0;
+    min-height: 48px;
+    border-radius: var(--wf-r-lg);
+  }
+
+  .phSheetForm .changeField {
+    min-width: 0;
+  }
+
+  .phSheetForm .changeField select,
+  .phSheetForm .changeField input {
+    min-height: 48px;
+    width: 100%;
+  }
+}
+
+/* v10 phone leave sheet (renders on phone only): four return-time chips and a one-line summary. */
+.phFieldLabel {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.phPresetGroup {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.phPresets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.phPresets > .kindChoice {
+  min-width: 0;
+  min-height: 48px;
+  overflow: hidden;
+  border-radius: var(--wf-r-lg);
+  text-overflow: ellipsis;
+}
+
+.phSummary {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.phOther {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+/* Audit S-32: the legal form in the leave sheet, two short lines, never wrapped. */
+.legalLine {
+  display: grid;
+  flex: 1 1 100%;
+  gap: 2px;
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.legalLine > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

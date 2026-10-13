@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { createBrowserStore } from "@/lib/client-store-factory";
 
+import { Copy } from "lucide-react";
 import {
+  Button,
   CheckingFoot,
   Hero,
   HeroStat,
@@ -19,25 +22,27 @@ import {
 import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
 import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
-import { clockState, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
+import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import {
   allDeclines,
   allOverrides,
-  buildActionInbox,
   isOpen,
   referralBlockedReason,
   shortlistCandidates,
 } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
+import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { queueOrder } from "@/components/ward-management/ward-priority";
-import { edPressure } from "@/components/ward-management/ward-pressure";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import {
   movementBelongsToService,
@@ -56,12 +61,58 @@ import { HomeBedflow } from "./home-bedflow";
 import { HomeEdPressure, dueWindowLabel } from "./home-ed-pressure";
 import { PriorityQueue, queueWaitThresholds, type QueueHighlight } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
-import { SinceLastLookPanel, sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
+import {
+  SinceLastLookPanel,
+  SinceLastLookSheetBody,
+  sinceLastLookCount,
+  sinceHandoverText,
+  sinceSheetDescription,
+  useSinceLastLook,
+} from "./since-last-look-panel";
 import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
-import { HomeBedsReadyCard, HomeWardSheet } from "./home-phone-sheets";
+import { HomeWardSheet } from "./home-phone-sheets";
 
 const HANDOVER_HREF = "/mockups/ward-flow/handover";
+
+/*
+ * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
+ * back keeps it (the "Filtered to" chip shows it is on). sessionStorage, wrapped so a blocked
+ * store never throws; the server snapshot is no filter.
+ */
+const HOME_ED_FILTER_KEY = "ward_flow_home_ed_filter";
+const HOME_ED_FILTER_EVENT = "ward_flow_home_ed_filter_change";
+let homeEdFilterFallback: string | null | undefined;
+
+function readHomeEdFilter(): string | null {
+  try {
+    return window.sessionStorage.getItem(HOME_ED_FILTER_KEY);
+  } catch {
+    return homeEdFilterFallback ?? null;
+  }
+}
+
+function writeHomeEdFilter(edId: string | undefined): void {
+  try {
+    if (edId) window.sessionStorage.setItem(HOME_ED_FILTER_KEY, edId);
+    else window.sessionStorage.removeItem(HOME_ED_FILTER_KEY);
+  } catch {
+    // A blocked store: the filter lasts for this page only.
+    homeEdFilterFallback = edId ?? null;
+  }
+  try {
+    window.dispatchEvent(new Event(HOME_ED_FILTER_EVENT));
+  } catch {
+    // Nothing else depends on the notification.
+  }
+}
+
+function subscribeHomeEdFilter(onChange: () => void) {
+  window.addEventListener(HOME_ED_FILTER_EVENT, onChange);
+  return () => window.removeEventListener(HOME_ED_FILTER_EVENT, onChange);
+}
+
+const useHomeEdFilter = createBrowserStore(subscribeHomeEdFilter, readHomeEdFilter, null);
 /** Activity lines shown under "Since you looked". */
 const SINCE_TIMELINE_LINES = 8;
 const DELAYS_HREF = "/mockups/ward-flow/delays";
@@ -112,6 +163,7 @@ export function CoordinatorScreen() {
     plannedAdmissions,
     patients,
     supportNotifications,
+    inboxSnoozes,
   } = useWardFlow();
   const liveNow = useWardFlowClock();
   const service = useServiceScope();
@@ -131,7 +183,8 @@ export function CoordinatorScreen() {
     return restored && isOpen(restored) ? restored.id : undefined;
   });
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>(undefined);
-  const [selectedEdId, setSelectedEdId] = useState<string | undefined>(undefined);
+  const selectedEdId = useHomeEdFilter() ?? undefined;
+  const setSelectedEdId = writeHomeEdFilter;
   // The shortlist's other possible subject. Switching the queue between Patients and Referrals
   // never touches either selection.
   const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(undefined);
@@ -213,7 +266,42 @@ export function CoordinatorScreen() {
   }, [service, units]);
 
   const scopedFilteredMovements = isInServiceScope ? filteredMovements.filter(isInServiceScope) : filteredMovements;
-  const queue = queueOrder(scopedFilteredMovements, now);
+  // D-32 on Home (decision 4, 12 Oct 2026): movements with an active act-now task are pinned on top
+  // of the queue, then longest wait first. The act-now rows are the shared ones (`activeActNowItems`).
+  const actNowMovementIds = useMemo(
+    () =>
+      new Set(
+        activeActNowItems(
+          {
+            movements,
+            units,
+            configuration,
+            inboxSnoozes,
+            admissions,
+            patients,
+            referrals,
+            supportNotifications,
+            plannedAdmissions,
+            leaveBeds,
+          },
+          now,
+        ).map((item) => item.movementId),
+      ),
+    [
+      movements,
+      units,
+      configuration,
+      inboxSnoozes,
+      admissions,
+      patients,
+      referrals,
+      supportNotifications,
+      plannedAdmissions,
+      leaveBeds,
+      now,
+    ],
+  );
+  const queue = queueOrder(scopedFilteredMovements, now, actNowMovementIds);
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
 
   const noRecordedServiceCount = useMemo(() => noRecordedServiceMovementCount(movements, units), [movements, units]);
@@ -305,7 +393,7 @@ export function CoordinatorScreen() {
     const candidate = shortlistCandidates(movement, [unit], liveNow)[0];
     const plain =
       candidate !== undefined &&
-      fitKind(candidate) === "bed" &&
+      fitKind(candidate, movement) === "bed" &&
       referralBlockedReason(movement) === undefined &&
       !(
         genderReviewNeeded(movement.gender, movement.sex) &&
@@ -331,17 +419,46 @@ export function CoordinatorScreen() {
     );
   }
 
+  /*
+   * Option B (Josh, 13 Oct 2026; D-30): Refer on Home's placement shortlist writes a referral, not an
+   * instant offer to the ward. It opens the one referral slide-out for this person, from their ED,
+   * with the wards already picked here preselected, so the referral reaches the coordinator queue
+   * and Referrals like any other. The sheet closes so the slide-out is not under it.
+   */
+  function referFromSheet(movement: Movement, unitIds: string[]) {
+    const personId = patientOf(movement).patient?.id;
+    openReferralSheet(
+      raiseReferralHref({
+        ...(personId ? { patientId: personId } : {}),
+        source: "ed_medical",
+        refer: "ward",
+        originEdId: movement.originEdId,
+        unitIds,
+      }),
+    );
+    closeShortlist();
+  }
+
   // The work list is network-wide and open movements only, never scoped to the ED filter.
+  // L1 (site review, 12 Oct 2026): the same active task list as the header's Tasks badge
+  // (`activeTaskItems`), so snoozed rows leave the count and decision targets join it.
   const actionInbox = useMemo(
     () =>
-      buildActionInbox(openMovements, now, units, {
-        movements,
-        admissions,
-        patients,
-        referrals,
-        supportNotifications,
-        plannedAdmissions,
-      }).map((item) => {
+      activeTaskItems(
+        {
+          movements,
+          units,
+          configuration,
+          inboxSnoozes,
+          admissions,
+          patients,
+          referrals,
+          supportNotifications,
+          plannedAdmissions,
+          leaveBeds,
+        },
+        now,
+      ).map((item) => {
         if (!item.id.startsWith("bed-pull-") && item.title !== "Bed pull expired") return item;
         return {
           ...item,
@@ -349,7 +466,19 @@ export function CoordinatorScreen() {
           detail: `${item.detail} · Release the bed or set a new reserved time`,
         };
       }),
-    [openMovements, now, units, plannedAdmissions, movements, admissions, patients, referrals, supportNotifications],
+    [
+      movements,
+      units,
+      configuration,
+      inboxSnoozes,
+      admissions,
+      patients,
+      referrals,
+      supportNotifications,
+      plannedAdmissions,
+      leaveBeds,
+      now,
+    ],
   );
   const silenceReminders = useMemo(() => {
     const notes = new Map<string, string>();
@@ -396,10 +525,8 @@ export function CoordinatorScreen() {
     () => wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now }),
     [movements, units, referrals, bedReleases, leaveBeds, now],
   );
-  const waitingInEd = useMemo(
-    () => edPressure(now, movements).reduce((sum, row) => sum + row.waiting, 0),
-    [now, movements],
-  );
+  // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
+  const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);
   const breachWithinHour = openMovements.filter(
     (movement) => movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now) === "critical",
   ).length;
@@ -411,14 +538,12 @@ export function CoordinatorScreen() {
   const tierOneInQueue = queue.filter((movement) => movement.urgency === 1).length;
   const dueWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
 
-  // v10 hero: the one ring on the page is statewide occupancy, read from the same ward rows as the
-  // Capacity page's ring so the two pages show one figure, against the sidebar's alert line.
-  const statewideOccupancy = useMemo(() => {
-    const rows = networkWardRows(units, now, bedReleases, admissions, leaveBeds);
-    const beds = rows.reduce((sum, row) => sum + row.unit.beds, 0);
-    const occupied = rows.reduce((sum, row) => sum + row.occupied, 0);
-    return beds > 0 ? (occupied / beds) * 100 : null;
-  }, [units, now, bedReleases, admissions, leaveBeds]);
+  // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
+  // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
+  const statewideOccupancy = useMemo(
+    () => wardOccupancy(units, admissions, bedReleases).percent,
+    [units, admissions, bedReleases],
+  );
   // Checking foot: what this page watched, as counts. Never "All clear".
   const staleBedCounts = units.filter((unit) => now - unit.allocatable.confirmedAt > BED_COUNT_FRESH_MINUTES).length;
   const wardsNotReporting = units.filter(
@@ -432,8 +557,8 @@ export function CoordinatorScreen() {
     .toLowerCase();
   const heroTitle = (
     <>
-      <span className={styles.heroNum}>{waitingInEd}</span> waiting, <span className={styles.heroNum}>{bedsReady}</span>{" "}
-      {bedsReady === 1 ? "bed" : "beds"} ready
+      <span className={styles.heroNum}>{waitingInEd}</span> waiting in ED,{" "}
+      <span className={styles.heroNum}>{bedsReady}</span> {bedsReady === 1 ? "bed" : "beds"} ready
     </>
   );
   // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
@@ -551,6 +676,7 @@ export function CoordinatorScreen() {
                 dispatch={dispatch}
                 parallelReferralCap={configuration.parallelReferralCap}
                 pullHoldMinutes={configuration.pullHoldMinutes}
+                onRefer={panelMovement ? (unitIds) => referFromSheet(panelMovement, unitIds) : undefined}
               />
             )}
           </aside>
@@ -573,14 +699,18 @@ export function CoordinatorScreen() {
             eyebrow={isPhone ? `Statewide · ${shiftWord}` : `Statewide · mental health beds · ${shiftWord}`}
             title={heroTitle}
             titleMeta={
-              isPhone && statewideOccupancy !== null ? `${statewideOccupancy.toFixed(0)}% of open beds full` : undefined
+              isPhone
+                ? `Prototype data, invented records${
+                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% occupied` : ""
+                  }`
+                : undefined
             }
             stats={
               isPhone ? (
                 <>
                   <HeroStat
                     value={overdueInQueue}
-                    label="Overdue"
+                    label="Overdue waits"
                     tone={overdueInQueue > 0 ? "danger" : undefined}
                     pressed={highlight === "overdue"}
                     onToggle={() => toggleHighlight("overdue")}
@@ -588,13 +718,14 @@ export function CoordinatorScreen() {
                   <HeroStat
                     value={tierOneInQueue}
                     label="Tier 1"
+                    tone="neutral"
                     pressed={highlight === "tier1"}
                     onToggle={() => toggleHighlight("tier1")}
                   />
                   <HeroStat
                     value={actionInbox.length}
                     label="Exceptions"
-                    tone={actionInbox.length > 0 ? "warning" : undefined}
+                    tone={actionInbox.length > 0 ? "danger" : undefined}
                     command
                     expanded={phoneSheet?.kind === "exceptions"}
                     onToggle={() => {
@@ -613,23 +744,31 @@ export function CoordinatorScreen() {
             }
             bar={
               isPhone ? (
+                // v10 phone hero: the full-width "N since you looked at HH:MM" pill and a round
+                // pause. The Live chip itself sits on the eyebrow line (`aside` below). The pill
+                // shows only when something changed (device audit, 11 Oct 2026: "0 since you
+                // looked" cost 45px of hero for nothing).
                 <div className={styles.phoneHeroActs}>
-                  <HeroStat
-                    inline
-                    value={newEvents}
-                    label={sinceLabel}
-                    command
-                    expanded={phoneSheet?.kind === "since"}
-                    onToggle={() => setPhoneSheet({ kind: "since" })}
-                  />
-                  <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
+                  {newEvents > 0 ? (
+                    <Button
+                      variant="onHero"
+                      className={styles.phoneSince}
+                      aria-haspopup="dialog"
+                      aria-expanded={phoneSheet?.kind === "since"}
+                      onClick={() => setPhoneSheet({ kind: "since" })}
+                    >
+                      <b className={styles.phoneSinceMono}>{newEvents}</b>{" "}
+                      {lastLook.changes?.basis === "shift" ? "new since" : "since you looked at"}{" "}
+                      <span className={styles.phoneSinceMono}>{sinceClock}</span>
+                    </Button>
+                  ) : null}
                 </div>
               ) : (
                 <div className={styles.heroToggles}>
                   <HeroStat
                     inline
                     value={overdueInQueue}
-                    label="Overdue"
+                    label="Overdue waits"
                     tone={overdueInQueue > 0 ? "danger" : undefined}
                     pressed={highlight === "overdue"}
                     onToggle={() => toggleHighlight("overdue")}
@@ -644,7 +783,9 @@ export function CoordinatorScreen() {
                   <HeroStat
                     inline
                     value={breachWithinHour}
-                    label={`Due within ${dueWindow}`}
+                    // Names its noun (device audit, 11 Oct 2026): it counts recorded legal forms due
+                    // within the saved window, not the queue's "due in" wait targets.
+                    label={`Forms due within ${dueWindow}`}
                     tone={breachWithinHour > 0 ? "warning" : undefined}
                     className={styles.heroDueChip}
                   />
@@ -683,7 +824,15 @@ export function CoordinatorScreen() {
               )
             }
             aside={
-              isPhone ? undefined : (
+              isPhone ? (
+                // Device audit (11 Oct 2026): the pause is folded into the Live pill.
+                <LiveChip
+                  state={paused ? "paused" : "live"}
+                  onHero
+                  age={formatInstant(now)}
+                  onTogglePause={togglePause}
+                />
+              ) : (
                 <>
                   <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
                   <Link href={HANDOVER_HREF} className={buttonClass({ variant: "light" })}>
@@ -754,7 +903,9 @@ export function CoordinatorScreen() {
               value={portraitView}
               onChange={setPortraitView}
               items={[
-                { id: "queue", label: "Priority queue", count: queue.length + referralQueue.length },
+                // The count is patients plus referrals, so the label says both (device audit, 11 Oct
+                // 2026: "Priority queue 77" sat beside the card's "70 of 70").
+                { id: "queue", label: "Queue and referrals", count: queue.length + referralQueue.length },
                 { id: "bedflow", label: "State bedflow", count: units.length },
               ]}
             />
@@ -772,6 +923,7 @@ export function CoordinatorScreen() {
               <div className={styles.side}>
                 <PriorityQueue
                   movements={queue}
+                  units={units}
                   referralQueue={referralQueue}
                   now={now}
                   selectedId={selectedMovementId}
@@ -787,16 +939,11 @@ export function CoordinatorScreen() {
                   highlight={highlight}
                   onClearHighlight={() => setHighlight(undefined)}
                   rowCap={isPhone ? PHONE_QUEUE_ROWS : undefined}
+                  phone={isPhone}
+                  pinnedIds={actNowMovementIds}
                 />
-                {isPhone ? (
-                  <HomeBedsReadyCard
-                    units={units}
-                    admissions={admissions}
-                    bedReleases={bedReleases}
-                    leaveBeds={leaveBeds}
-                    onOpenWard={(unitId) => setPhoneSheet({ kind: "ward", unitId })}
-                  />
-                ) : null}
+                {/* Phone (v10 Home): the queue ends the page; the beds-ready list is on Capacity
+                    and Places, not repeated here. */}
               </div>
             )}
 
@@ -830,16 +977,33 @@ export function CoordinatorScreen() {
               open
               onClose={() => setPhoneSheet(undefined)}
               title="Since you looked"
+              description={sinceSheetDescription(lastLook.changes, now)}
               mobilePlacement="bottom"
               testId="ward-home-since-sheet"
+              footer={
+                // v10: Copy as handover text is the sheet's primary; Mark as seen stays beside it.
+                <div className={styles.sinceSheetFootRow}>
+                  {lastLook.changes ? (
+                    <Button variant="sec" className={styles.sinceSheetFoot} onClick={lastLook.markSeen}>
+                      Mark as seen
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="pri"
+                    icon={Copy}
+                    className={styles.sinceSheetFoot}
+                    onClick={() => {
+                      void navigator.clipboard
+                        ?.writeText(sinceHandoverText(lastLook.changes, now))
+                        .catch(() => undefined);
+                    }}
+                  >
+                    Copy as handover text
+                  </Button>
+                </div>
+              }
             >
-              <SinceLastLookPanel
-                changes={lastLook.changes}
-                now={now}
-                activity={recentActivity}
-                onMarkSeen={lastLook.markSeen}
-                placement="band"
-              />
+              <SinceLastLookSheetBody changes={lastLook.changes} />
             </Sheet>
           ) : null}
           {isPhone && phoneSheet?.kind === "exceptions" ? (

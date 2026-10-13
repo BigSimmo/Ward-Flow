@@ -574,7 +574,7 @@
 
 .alertRow {
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr) 3.25rem;
+  grid-template-columns: minmax(4.5rem, 4.5rem) minmax(0, 1fr) 3.25rem;
   align-items: center;
   gap: 0.625rem;
   min-height: 1.375rem;
@@ -1775,12 +1775,6 @@
   color: var(--wf-ink-off);
 }
 
-.sheetUtility {
-  margin-top: 0.75rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--wf-line);
-}
-
 .sheetUtilityLink {
   display: flex;
   align-items: center;
@@ -1815,13 +1809,81 @@
   outline-offset: -2px;
 }
 
+/* The pinned foot (device audit, 11 Oct 2026): the person, then Settings and Appearance, then the
+ * prototype line. The list above scrolls and fades at its foot while there is more below. */
 .moreSheetFoot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.moreSheetFoot > div {
+  width: 100%;
+}
+
+.moreFootPerson {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+}
+
+.moreFootActions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.25rem;
+}
+
+.moreFootActions > .sheetUtilityLink {
+  min-width: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.moreFootValue {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+.moreFootLine {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
+  padding: 0 0.5rem;
+}
+
+@property --wf-sheet-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes wfSheetFade {
+  from {
+    --wf-sheet-fade: 32px;
+  }
+  to {
+    --wf-sheet-fade: 0px;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .moreSheetBody {
+    -webkit-mask-image: linear-gradient(to bottom, black calc(100% - var(--wf-sheet-fade)), transparent 100%);
+    mask-image: linear-gradient(to bottom, black calc(100% - var(--wf-sheet-fade)), transparent 100%);
+    animation: wfSheetFade linear both;
+    animation-timeline: scroll(self block);
+  }
 }
 
 .moreSheetPolicy {
@@ -1854,10 +1916,6 @@
 /* ── Desktop: the open rail and the closed strip (collapsed rail board) ────────────────────── */
 
 @media (min-width: 1001px) {
-  .rail[data-rail="open"] .compactExtra {
-    display: none;
-  }
-
   /* Appearance and Settings share one row in the open rail (8 October 2026). */
   .rail[data-rail="open"] .utilityLinks {
     flex-direction: row;
@@ -1867,10 +1925,6 @@
   .rail[data-rail="open"] .utilityLinks > * {
     flex: 1 1 0;
     min-width: 0;
-  }
-
-  .rail[data-rail="open"] .railGroup:not(:has(li:not(.compactExtra))) {
-    display: none;
   }
 
   .rail[data-rail="closed"] {
@@ -1899,7 +1953,10 @@
     padding: 0;
   }
 
+  /* The mark is 36px; the button round it is the full 48px touch target. */
   .rail[data-rail="closed"] .brandLink {
+    justify-content: center;
+    min-width: var(--ward-tap, var(--spacing-tap, 3rem));
     margin: 0 auto;
     border: 0;
     background: transparent;
@@ -2324,6 +2381,34 @@
  * are unchanged. These blocks sit last so they win over the 1000px wrapping-row block above. */
 .stripMore {
   display: none;
+}
+
+/* Header taps (Josh, 11 Oct 2026): the server cannot know the width, so it drew the full sidebar
+ * here and the app folded it to the icon rail on load, sliding every header button 208px left
+ * under a finger mid-tap. Until the rail knows it is in landscape (`data-tablet`, set on load), it
+ * holds the icon rail's width and hides what only the full sidebar shows (the same list as the closed
+ * rail), so its icon links stay usable and no cut-off labels flash before the icon rail arrives. */
+@media (min-width: 1001px) and (max-width: 1200px) {
+  .rail:not([data-tablet]) {
+    width: var(--rail-closed-w);
+    overflow: hidden;
+  }
+
+  .rail:not([data-tablet]) .brandTitle,
+  .rail:not([data-tablet]) .brandStateText,
+  .rail:not([data-tablet]) .shiftCockpit,
+  .rail:not([data-tablet]) .capacityPulseStrip,
+  .rail:not([data-tablet]) .groupHead,
+  .rail:not([data-tablet]) .railLabel,
+  .rail:not([data-tablet]) .railState,
+  .rail:not([data-tablet]) .userMeta,
+  .rail:not([data-tablet]) .userChevron,
+  .rail:not([data-tablet]) .railPolicyFoot,
+  .rail:not([data-tablet]) .utilityLink > span,
+  .rail:not([data-tablet]) .railToggle,
+  .rail:not([data-tablet]) .tag {
+    display: none;
+  }
 }
 
 @media (min-width: 1001px) and (max-width: 1200px) {

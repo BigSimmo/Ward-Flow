@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus, UserRound } from "lucide-react";
+import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
 import {
   Button,
   Card,
@@ -12,6 +12,7 @@ import {
   Hero,
   HeroStat,
   HeroTrack,
+  LiveChip,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -27,7 +28,7 @@ import {
   useIsTabletPortrait,
 } from "@/components/wf";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -43,9 +44,9 @@ import {
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { WardBarPageTools, wardBarToolStyles } from "@/components/ward-management/shell/ward-bar-page-tools";
 
 import {
+  currentLegalDueAt,
   legalDeadlineText,
   legalExpiryReminderSummary,
   legalFormBreakdown,
@@ -53,6 +54,8 @@ import {
   legalFormRowClassification,
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
+import { orderByActPeriodShare } from "./act-periods-demo";
+import { formProgression } from "./legal-form-progression";
 import { FocusPanel, SummaryPanel, type FocusTab } from "./legal-forms-panel";
 import {
   ExtendSheet,
@@ -81,6 +84,7 @@ import {
   type RecordGap,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 
 /**
  * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work
@@ -117,7 +121,8 @@ const CODE_CHIPS_SHOWN = 3;
 
 const GAP_ACTION: Record<RecordGap, string> = {
   written: "Add time",
-  received: "Mark received",
+  // "Mark received" truncated in the task strip (device audit 11 Oct 2026).
+  received: "Received",
   examination: "Record exam",
 };
 
@@ -136,12 +141,15 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     useWardFlow();
   const now = useWardFlowClock();
   const gate = useRoleGate();
+  // B2 (site review, 12 Oct 2026): every step is recorded as the route's own role, so history names
+  // who acted (the coordinator here) rather than a borrowed "ED".
+  const routeRole = useRouteRole();
   // v10 pass 3: a recorded form time and a Tell record each offer Undo on the toast.
   const { run: runStep, offer: offerUndo } = useUndoableStep({
     dispatch,
     rejections,
     now,
-    routeRole: useRouteRole(),
+    routeRole,
   });
 
   const [view, setView] = useState<View>("clocks");
@@ -164,10 +172,12 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const isTabletPortrait = useIsTabletPortrait();
   // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
   const [allCodes, setAllCodes] = useState(false);
-
   const openMovements = movements.filter(isOpen);
   const withDeadline = legalFormGroupRows(movements, now, "with-deadline");
-  const noDeadline = legalFormGroupRows(movements, now, "no-deadline");
+  // Audit A3-6 (13 Oct 2026): "Time not written" holds forms that do carry Act periods, so it is
+  // never folded and runs by share of the demo Act period used, counted from arrival in ED. It
+  // replaces the 11 Oct fold after 5 on a phone and 10 elsewhere.
+  const noDeadline = orderByActPeriodShare(legalFormGroupRows(movements, now, "no-deadline"), now, dayZero);
   const rows = [...withDeadline, ...noDeadline];
   const voluntary = openMovements.length - rows.length;
   const breakdown = legalFormBreakdown(rows, now);
@@ -194,7 +204,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     const standing = clockStanding(movement, now);
     if (highlight.kind === "act") return isActNow(standing);
     if (highlight.kind === "soon") return standing === "soon";
-    if (highlight.kind === "none") return movement.legalForm?.dueAt === undefined;
+    if (highlight.kind === "none") return currentLegalDueAt(movement) === undefined;
     if (highlight.kind === "code") return movement.legalForm?.code === highlight.code;
     return offersGap(movement, highlight.gap);
   };
@@ -269,8 +279,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     setRecordOpen(true);
   };
 
-  // Feature 11: Mark received is the ED's event; this coordinator route keeps it through the
-  // listed cross-role pair in `ward-role-permissions.ts`.
+  // Feature 11: Mark received is the ED's or the coordinator's event, raised as the route's role.
   const receivedGate = gate("RECORD_LEGAL_FORM_RECEIVED");
   // Record a form: the coordinator always may; another route sees it greyed with the reason.
   const recordGate = gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form");
@@ -278,10 +287,10 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     if (!receivedGate.allowed) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
     runStep(
-      { type: "RECORD_LEGAL_FORM_RECEIVED", role: "ed", now, movementId: movement.id },
+      { type: "RECORD_LEGAL_FORM_RECEIVED", role: routeRole, now, movementId: movement.id },
       {
         success: "Form marked received",
-        undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: "ed", now: at, movementId: movement.id }),
+        undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
         undone: "Received mark undone.",
       },
     );
@@ -328,7 +337,42 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   });
 
   const historyList =
-    closedWithForms.length > 0 ? (
+    isPhone && closedWithForms.length > 0 ? (
+      // v10 phone: one row per closed move, the code chip first and the closing time at the end.
+      <ul className={styles.phoneList} aria-label="Closed moves with a form">
+        {closedWithForms.map((movement) => {
+          const outcome = movement.closure?.outcome;
+          const ward = wardNameOf(movement);
+          const closedAt = movement.closure?.at;
+          const face = closedAt !== undefined ? formatInstant(closedAt) : "";
+          const full = closedAt !== undefined ? formatInstantWithDay(closedAt, now) : "";
+          return (
+            <PhoneListRow
+              key={movement.id}
+              as="li"
+              className={styles.phoneRow}
+              leading={<span className={styles.code}>{movement.legalForm?.code}</span>}
+              name={nameOf(movement)}
+              meta={
+                outcome === "arrived"
+                  ? `Arrived at ${ward ?? "the receiving ward"}`
+                  : outcome === "did_not_proceed"
+                    ? "Did not proceed"
+                    : `Closed · ${edNameOf(movement)}`
+              }
+              value={face}
+              time={
+                closedAt === undefined
+                  ? undefined
+                  : full === face
+                    ? "today"
+                    : full.slice(face.length).replace(/^,?\s*/u, "")
+              }
+            />
+          );
+        })}
+      </ul>
+    ) : closedWithForms.length > 0 ? (
       <ul className={styles.historyList} aria-label="Closed moves with a form">
         {closedWithForms.map((movement) => (
           <li key={movement.id} className={styles.historyRow}>
@@ -363,6 +407,16 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
       <p className={styles.absent}>No closed move carries a form yet.</p>
     );
 
+  const copySelectedSummary = () => {
+    if (!selected) return;
+    copyText(
+      "summary",
+      `${nameOf(selected)} (${umrnOf(selected)})\n${
+        selected.legalForm ? legalFormName(selected.legalForm) : "Voluntary"
+      }\n${legalDeadlineText(selected, now)}`,
+    );
+  };
+
   const focusPanel = selected ? (
     <FocusPanel
       key={selected.id}
@@ -385,7 +439,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
         runStep(
           {
             type: "RECORD_LEGAL_FORM_WRITTEN",
-            role: "coordinator",
+            role: routeRole,
             now,
             movementId,
             formCode,
@@ -395,7 +449,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           },
           {
             success: "Form time recorded",
-            undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: "coordinator", now: at, movementId }),
+            undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
             undone: "Form time undone.",
           },
         );
@@ -405,14 +459,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
       onExtend={() => setExtendId(selected.id)}
       onRecordNext={() => openRecord(selected.id)}
       onRequirements={(code) => setRequirementsCode(code)}
-      onCopy={() =>
-        copyText(
-          "summary",
-          `${nameOf(selected)} (${umrnOf(selected)})\n${
-            selected.legalForm ? legalFormName(selected.legalForm) : "Voluntary"
-          }\n${legalDeadlineText(selected, now)}`,
-        )
-      }
+      onCopy={copySelectedSummary}
       copied={copied === "summary"}
     />
   ) : null;
@@ -441,6 +488,13 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           },
         }
       : undefined;
+  // v10 phone: the sheet foot always pins the next step. With no gap left to record it is the
+  // panel's own "Record next form", and Copy sits beside it, so neither floats mid-sheet.
+  const phoneSheetPrimary =
+    phonePrimary ?? (selected ? { label: "Record next form", onAction: () => openRecord(selected.id) } : undefined);
+  const phoneSheetSecondary = selected
+    ? { label: copied === "summary" ? "Copied" : "Copy", onAction: copySelectedSummary }
+    : undefined;
 
   const taskStrip = (
     <div className={styles.strip}>
@@ -603,55 +657,29 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           </div>
         </dl>
 
-        <WardBarPageTools label="Forms tools">
-          <button
-            type="button"
-            className={wardBarToolStyles.tool}
-            onClick={() => setRequirementsCode(CATALOGUE[0]!.code)}
-          >
-            <BookOpen size={14} aria-hidden="true" />
-            <span className={wardBarToolStyles.label}>Requirements</span>
-          </button>
-          <button
-            type="button"
-            className={wardBarToolStyles.tool}
-            onClick={() => setTell({ party: "personal_support_person", key: null })}
-          >
-            <UserRound size={14} aria-hidden="true" />
-            <span className={wardBarToolStyles.label}>Tell PSP</span>
-            <span className={wardBarToolStyles.count}>{partyCount("personal_support_person")}</span>
-          </button>
-          <button
-            type="button"
-            className={wardBarToolStyles.tool}
-            aria-disabled={handover.length === 0 ? "true" : undefined}
-            title={handover.length === 0 ? "No typed expiry is coming up" : "Copy upcoming expiries for handover"}
-            onClick={() => {
-              if (handover.length > 0) copyText("handover", handover.join("\n"));
-            }}
-          >
-            <ClipboardCopy size={14} aria-hidden="true" />
-            <span className={wardBarToolStyles.label}>{copied === "handover" ? "Copied" : "Handover"}</span>
-            <span className={wardBarToolStyles.count}>{handover.length}</span>
-          </button>
-        </WardBarPageTools>
+        {/* The three unlabelled top-bar tools (Requirements, Tell PSP, Handover) only repeated the
+            Requirements link, the Tell task card and Copy for handover (device audit 11 Oct 2026). */}
 
         {isPhone ? (
           <>
             <PhoneHero
               data-testid="ward-legal-hud-island"
+              className={styles.phoneHero}
+              eyebrow="Mental Health Act forms"
+              chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
               title={`${rows.length} forms on open moves`}
               sub={`${voluntary} voluntary, no form · warnings at ${reminders.soonHours}h and ${reminders.urgentHours}h`}
               figures={[
                 { id: "act", value: actNow, label: "Act now", tone: "danger" },
                 { id: "soon", value: reminders.withinSoon, label: `Within ${reminders.soonHours}h`, tone: "warning" },
-                { id: "none", value: noDeadline.length, label: "No expiry", tone: "closed" },
+                { id: "none", value: noDeadline.length, label: "Time not written", tone: "closed" },
               ]}
               actions={
                 <>
                   <Button
-                    variant="light"
+                    variant="onHero"
                     icon={Plus}
+                    className={styles.phoneHeroAction}
                     disabledReason={recordGate.allowed ? undefined : recordGate.reason}
                     reasonDisplay="tooltip"
                     onClick={() => openRecord()}
@@ -661,11 +689,12 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                   <Button
                     variant="onHero"
                     icon={ClipboardCopy}
+                    className={styles.phoneHeroAction}
                     disabledReason={handover.length === 0 ? "No typed expiry is coming up" : undefined}
                     reasonDisplay="tooltip"
                     onClick={() => copyText("handover", handover.join("\n"))}
                   >
-                    {copied === "handover" ? "Copied" : `Handover ${handover.length}`}
+                    {copied === "handover" ? "Copied" : `Copy for handover ${handover.length}`}
                   </Button>
                 </>
               }
@@ -682,7 +711,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               <ChevronRight size={16} aria-hidden="true" />
             </button>
             <Segmented<View>
-              className={styles.phoneViews}
+              className={`${styles.phoneViews} ${wardPin.pinnedSwitch}`}
               label="View"
               value={view}
               onChange={setView}
@@ -715,9 +744,9 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                         ))}
                       </ul>
                       <div className={styles.groupHead}>
-                        <span>No expiry typed</span>
+                        <span>Time not written</span>
                         <span className={styles.groupCount}>{noDeadline.length}</span>
-                        <span className={styles.groupOrder}>longest in ED</span>
+                        <span className={styles.groupOrder}>most period used</span>
                       </div>
                       <ul className={styles.phoneList}>
                         {noDeadline.map((movement) => (
@@ -729,12 +758,10 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                 </section>
               ) : null}
               {view === "checklist" ? (
-                <ChecklistView
+                <PhoneChecklist
                   rows={rows}
-                  now={now}
                   nameOf={nameOf}
                   umrnOf={umrnOf}
-                  selectedId={selectedId}
                   isHighlighted={matches}
                   highlightOn={highlight !== null}
                   onSelect={select}
@@ -749,10 +776,19 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               open={selected !== null}
               onClose={() => setSelectedId(null)}
               title={selected ? nameOf(selected) : "Form"}
+              description={
+                selected ? (
+                  <>
+                    <span className={styles.mono}>{umrnOf(selected)}</span> · {edNameOf(selected)}
+                  </>
+                ) : undefined
+              }
               height="tall"
-              primary={phonePrimary}
+              primary={phoneSheetPrimary}
+              secondary={phoneSheetSecondary}
             >
-              {focusPanel}
+              {/* v10 phone: the sheet's own header names the person, so the panel drops its head. */}
+              <div className={styles.phoneFocus}>{focusPanel}</div>
             </PhoneSheet>
           </>
         ) : (
@@ -811,7 +847,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                     <HeroStat
                       inline
                       value={noDeadline.length}
-                      label="No expiry typed"
+                      label="Time not written"
                       tone="neutral"
                       pressed={highlight?.kind === "none"}
                       onToggle={() => toggleHighlight({ kind: "none" })}
@@ -914,17 +950,19 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                             </p>
                           )}
                           <div className={styles.groupHead}>
-                            <span>No expiry typed</span>
+                            <span>Time not written</span>
                             <span className={styles.groupCount}>{noDeadline.length}</span>
-                            <span className={styles.groupOrder}>longest in ED first</span>
+                            <span className={styles.groupOrder}>most of the period used first</span>
                             <span className={styles.srOnly}>Forms with no deadline recorded</span>
                           </div>
                           {noDeadline.length > 0 ? (
-                            <ul className={styles.rowList}>
-                              {noDeadline.map((movement) => (
-                                <FormRow key={movement.id} {...rowProps(movement)} />
-                              ))}
-                            </ul>
+                            <>
+                              <ul className={styles.rowList}>
+                                {noDeadline.map((movement) => (
+                                  <FormRow key={movement.id} {...rowProps(movement)} />
+                                ))}
+                              </ul>
+                            </>
                           ) : (
                             <p className={styles.absent} data-testid="ward-legal-forms-none-without-deadline">
                               Every open movement carrying a form has a deadline recorded on it.
@@ -962,9 +1000,6 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                     dayZero={dayZero}
                     soonHours={reminders.soonHours}
                     urgentHours={reminders.urgentHours}
-                    nameOf={nameOf}
-                    umrnOf={umrnOf}
-                    edNameOf={edNameOf}
                     onSelect={select}
                   />
                 )}
@@ -1074,6 +1109,9 @@ function FormRow({
   const done = facts.filter((fact) => fact.at !== undefined).length;
   const missing = facts.filter((fact) => fact.at === undefined).map((fact) => TO_RECORD_WORD[fact.gap]);
   const canAddTime = movement.formedAt === undefined && isOwnedLegalFormCode(legalForm.code);
+  // Audit S-6: an ended form's typed expiry is history, so the row shows it ended, not a countdown.
+  const progression = formProgression(movement);
+  const hasDue = currentLegalDueAt(movement) !== undefined;
 
   return (
     <DataRow
@@ -1104,14 +1142,24 @@ function FormRow({
       </span>
       <span className={styles.formCell}>
         <span className={styles.code}>{legalForm.code}</span>
-        <span className={styles.formTitle}>{formTitle(legalForm.code)}</span>
+        <span className={styles.formTitle} title={formTitle(legalForm.code)}>
+          {formTitle(legalForm.code)}
+        </span>
       </span>
       <span className={styles.cellStack}>
         <span className={styles.truncate}>{edName}</span>
         <span className={cx(styles.sub, styles.truncate)}>{wardName ? `to ${wardName}` : "No receiving ward"}</span>
       </span>
       <span className={styles.cellStack}>
-        {legalForm.dueAt !== undefined ? (
+        {progression ? (
+          <>
+            <span className={styles.leftLine}>
+              <StatusGlyph tone="closed" size={9} />
+              <span className={styles.sub}>Ended {progression.endedWhen}</span>
+            </span>
+            <span className={styles.sub}>Form {progression.nextCode} to record</span>
+          </>
+        ) : hasDue ? (
           <>
             <span className={styles.leftLine}>
               <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
@@ -1157,8 +1205,9 @@ function FormRow({
         ) : (
           <>
             <StatusGlyph tone="neutral" size={9} />
+            {/* One fact names itself; more show as a count so the cell never cuts a word. */}
             <span className={styles.recordedText} title={missing.join(", ")}>
-              {missing.join(", ")}
+              {missing.length === 1 ? missing[0] : `${missing.length} to record`}
             </span>
           </>
         )}
@@ -1181,6 +1230,7 @@ function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onS
   const facts = recordedFacts(movement);
   const missing = facts.filter((fact) => fact.at === undefined).length;
   const where = wardName ? `${edName} to ${wardName}` : edName;
+  const hasDue = currentLegalDueAt(movement) !== undefined;
   return (
     <PhoneListRow
       as="li"
@@ -1192,27 +1242,90 @@ function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onS
       name={name}
       meta={
         <>
-          {formTitle(legalForm.code)} · {where}
-          {missing > 0 ? ` · ${missing} to record` : ""}
+          <span className={styles.phoneMetaLine}>{formTitle(legalForm.code)}</span>
+          <span className={styles.phoneMetaLine}>
+            {where}
+            {missing > 0 ? ` · ${missing} to record` : ""}
+          </span>
         </>
       }
+      // Josh's no-wrap rule: the time and its word sit on one line ("1h 00m left"), not stacked.
       value={
-        legalForm.dueAt !== undefined ? (
+        hasDue ? (
           <span className={styles.leftLine}>
             <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
             {leftText(movement, now)}
+            <span className={styles.phoneTimeWord}>{standing === "passed" ? "passed" : "left"}</span>
           </span>
         ) : (
           <span className={styles.leftLine}>
-            <StatusGlyph tone="closed" size={9} />
-            None
+            {durText(now - movement.openedAt)}
+            <span className={styles.phoneTimeWord}>in ED</span>
           </span>
         )
       }
-      time={legalForm.dueAt !== undefined ? (standing === "passed" ? "passed" : "left") : "typed"}
       aria-label={`${name}, ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}`}
       onSelect={() => onSelect(movement)}
     />
+  );
+}
+
+/**
+ * Phone checklist (v10): one row per person, the code chip first, what is still to record under
+ * the name and the recorded count at the end. The whole row opens the form sheet.
+ */
+function PhoneChecklist({
+  rows,
+  nameOf,
+  umrnOf,
+  isHighlighted,
+  highlightOn,
+  onSelect,
+}: {
+  rows: Movement[];
+  nameOf: (movement: Movement) => string;
+  umrnOf: (movement: Movement) => string;
+  isHighlighted: (movement: Movement) => boolean;
+  highlightOn: boolean;
+  onSelect: (movement: Movement) => void;
+}) {
+  return (
+    <ul className={styles.phoneList} aria-label="Checklist">
+      {rows.map((movement) => {
+        const facts = recordedFacts(movement);
+        const missing = facts.filter((fact) => fact.at === undefined);
+        const done = facts.length - missing.length;
+        const dimmed = highlightOn && !isHighlighted(movement);
+        return (
+          <PhoneListRow
+            key={movement.id}
+            as="li"
+            className={styles.phoneRow}
+            {...(dimmed ? { "data-dim": "true" } : {})}
+            leading={<span className={styles.code}>{movement.legalForm?.code}</span>}
+            name={nameOf(movement)}
+            meta={
+              facts.length === 0
+                ? "Not tracked"
+                : missing.length === 0
+                  ? "Everything recorded"
+                  : `To do ${missing.map((fact) => fact.label).join(", ")}`
+            }
+            value={
+              facts.length === 0 ? undefined : (
+                <span className={styles.leftLine}>
+                  <StatusGlyph tone={missing.length === 0 ? "success" : "neutral"} size={9} />
+                  {done}/{facts.length}
+                </span>
+              )
+            }
+            time={facts.length === 0 ? undefined : "recorded"}
+            aria-label={`${nameOf(movement)}, ${umrnOf(movement)}, ${done} of ${facts.length} recorded`}
+            onSelect={() => onSelect(movement)}
+          />
+        );
+      })}
+    </ul>
   );
 }
 

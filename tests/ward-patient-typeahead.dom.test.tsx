@@ -86,33 +86,23 @@ function getInput() {
 }
 
 describe("PatientTypeahead — D1: the active option scrolls into view", () => {
-  it("scrolls the option ArrowDown/End moved to, using block: 'nearest', not merely the popup opening", () => {
-    // Predict, before running: typing "a" matches every seeded patient (checked directly below
-    // rather than assumed, per the brief's own example) — the failure case the reviewer found is
-    // pressing End on a list long enough that the popup clips it.
+  it("reveals the option selected with End inside its popup without scrolling the page", () => {
     const matches = findPatients(wardPatients, "a");
-    expect(matches, '"a" must match every seeded patient for this test to exercise the clipped case').toHaveLength(
-      wardPatients.length,
-    );
-
-    const scrollSpy = vi.fn();
-    // jsdom implements no scrollIntoView at all; the component guards the call with `?.`, so
-    // nothing breaks in suites that never touch this — this spy exists only to observe the call.
-    Element.prototype.scrollIntoView = scrollSpy;
-
+    expect(matches).toHaveLength(wardPatients.length);
+    const pageScroll = vi.fn();
+    Element.prototype.scrollIntoView = pageScroll;
     render(<Harness patients={wardPatients} referrals={[]} />);
     const input = getInput();
     fireEvent.change(input, { target: { value: "a" } });
+    const popup = screen.getByTestId("ward-patient-typeahead-popup");
+    popup.style.overflowY = "auto";
+    Object.defineProperty(popup, "clientHeight", { configurable: true, value: 100 });
+    vi.spyOn(popup, "getBoundingClientRect").mockReturnValue({ top: 10, bottom: 110 } as DOMRect);
+    const option = screen.getByTestId(`ward-patient-typeahead-option-${matches.at(-1)!.id}`);
+    vi.spyOn(option, "getBoundingClientRect").mockReturnValue({ top: 310, bottom: 350 } as DOMRect);
     fireEvent.keyDown(input, { key: "End" });
-
-    const lastPatient = matches[matches.length - 1];
-    const expectedEl = screen.getByTestId(`ward-patient-typeahead-option-${lastPatient.id}`);
-
-    expect(scrollSpy).toHaveBeenCalled();
-    // `mock.contexts` records `this` at call time — proves it scrolled THIS row, not merely that
-    // something on the page called scrollIntoView.
-    expect(scrollSpy.mock.contexts.at(-1)).toBe(expectedEl);
-    expect(scrollSpy.mock.calls.at(-1)?.[0]).toMatchObject({ block: "nearest" });
+    expect(popup.scrollTop).toBe(240);
+    expect(pageScroll).not.toHaveBeenCalled();
   });
 });
 

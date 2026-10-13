@@ -104,6 +104,21 @@ interface TooltipState {
   y: number;
 }
 
+/** Accepted corridors merged per ED and ward pair, busiest first (the rail and the phone sheet). */
+/** "02:42 tomorrow" as its clock face and day words, so the two can clip differently. */
+function splitClockAndDay(label: string): { clock: string; day: string } {
+  const match = /^(\d{1,2}:\d{2})(?:,?\s*)(.*)$/.exec(label);
+  return match ? { clock: match[1], day: match[2] } : { clock: label, day: "" };
+}
+
+export function rankCorridorPairs(corridors: MovementHorizonGanttProps["corridors"]) {
+  const acceptedPairs = new Set(corridors.map((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}`));
+  return Array.from(acceptedPairs, (key) => {
+    const stages = corridors.filter((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}` === key);
+    return { ...stages[0], count: stages.reduce((total, stage) => total + stage.count, 0), stages };
+  }).sort((a, b) => b.count - a.count);
+}
+
 export function MovementHorizonGantt({
   lanes,
   corridors,
@@ -163,6 +178,8 @@ export function MovementHorizonGantt({
       isNow,
       offset: isNow ? "Now" : `+${Math.round(h)}h`,
       time: formatInstantWithDay(tickInstant, now),
+      // Site review 12 Oct 2026: the clock time never truncates; only its day word may.
+      ...splitClockAndDay(formatInstantWithDay(tickInstant, now)),
     });
   }
   const scrubStep = Math.round(step);
@@ -175,10 +192,7 @@ export function MovementHorizonGantt({
 
   // Corridor calculations for the rail
   const acceptedPairs = new Set(corridors.map((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}`));
-  const rankedPairs = Array.from(acceptedPairs, (key) => {
-    const stages = corridors.filter((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}` === key);
-    return { ...stages[0], count: stages.reduce((total, stage) => total + stage.count, 0), stages };
-  }).sort((a, b) => b.count - a.count);
+  const rankedPairs = rankCorridorPairs(corridors);
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>, ev: MovementHorizonEvent) => {
     const rect = e.currentTarget.closest(`.${styles.diagWrap}`)?.getBoundingClientRect();
@@ -322,6 +336,7 @@ export function MovementHorizonGantt({
                 type="button"
                 className={buttonClass({ variant: "sec", size: "sm", iconOnly: true, className: styles.scrubStep })}
                 aria-label={`Back ${scrubStep} hours`}
+                title={scrub === 0 ? "Already at now" : undefined}
                 disabled={scrub === 0}
                 onClick={() => handleScrubberChange(Math.max(0, scrub - scrubStep))}
               >
@@ -424,7 +439,10 @@ export function MovementHorizonGantt({
                           title={`${t.offset} ${t.time}`}
                         >
                           <span className={styles.tickOffset}>{t.offset}</span>
-                          <span className={styles.tickTime}>{t.time}</span>
+                          <span className={styles.tickTime}>
+                            <span className={styles.tickClock}>{t.clock}</span>
+                            {t.day ? <span className={styles.tickDay}> {t.day}</span> : null}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -501,9 +519,12 @@ export function MovementHorizonGantt({
                                   className={`${styles.ganttBar} ${swatchClass}${isSelected ? ` ${styles.activeSelect}` : ""}${isScrubMatch ? ` ${styles.scrubActive}` : ""}`}
                                   style={
                                     {
-                                      // A bar near the far edge keeps its short name inside the track.
-                                      left: `min(${leftPct.toFixed(2)}%, calc(100% - 104px))`,
-                                      width: `${actualW.toFixed(2)}%`,
+                                      // A bar is never narrower than its "Surname, I" label
+                                      // (device audit, 11 Oct 2026: many patients share a
+                                      // surname, so a cut one is ambiguous), and a bar near the
+                                      // far edge keeps that width inside the track.
+                                      left: `min(${leftPct.toFixed(2)}%, calc(100% - max(${actualW.toFixed(2)}%, ${BAR_MIN_WIDTH})))`,
+                                      width: `max(${actualW.toFixed(2)}%, ${BAR_MIN_WIDTH})`,
                                       top: `${cfg.barTop + row * rowStep}px`,
                                       height: `${cfg.barHeight}px`,
                                     } as CSSProperties
@@ -661,6 +682,9 @@ function formatGanttBarLabel(ev: MovementHorizonEvent, zoom: number): string {
   if (pct < 22) return `${name} · ${sub}`;
   return `${name} · ${ev.title}`;
 }
+
+/** The narrowest a bar draws: wide enough for "Pallowmere, O" at the bar's type size. */
+const BAR_MIN_WIDTH = "7.5rem";
 
 /** The patient's name for a bar, or the resolver's own "Unknown Patient" when none is linked. */
 function barPatientName(ev: MovementHorizonEvent): string {

@@ -966,12 +966,6 @@
   color: var(--net-muted);
 }
 
-.placementNote {
-  color: var(--net-muted);
-  font-size: var(--text-3xs);
-  line-height: var(--net-leading-body);
-}
-
 /* --- band arrangement (Task 8) ------------------------------------------ */
 
 /*
@@ -1635,5 +1629,25 @@
 
   .canvasPanel {
     display: none;
+  }
+}
+
+/* Phone (v10): a stage name never cuts mid-word; it wraps to a second line, then truncates. */
+@media (max-width: 48rem) {
+  .pipelineStage,
+  .pipelineStage:first-child {
+    padding-block: var(--wf-s-1);
+  }
+
+  .pipelineStage .pipelineLabel {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+    text-align: left;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 }

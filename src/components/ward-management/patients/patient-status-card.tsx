@@ -1,18 +1,21 @@
 import type { MouseEvent, ReactNode } from "react";
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { BedDouble, CalendarDays, Clock, DoorOpen, Eye, Scale, Stethoscope, Truck, Users } from "lucide-react";
 import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
-  ABSENCE_STEPS,
+  absenceStepsFor,
+  ABSENCE_STEP_BAR_LABELS,
   ABSENCE_STEP_LABELS,
   type AbsenceStep,
   type LeaveBed,
   type Movement,
 } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { legalStatusTextIsInvoluntary } from "@/components/ward-management/ward-support-notifications";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
 import type { PatientMode } from "./patient-mode";
@@ -32,6 +35,8 @@ export interface StatusCell {
   /** True when this gate is clear. Counted by the meter, and never given the primary action. */
   clear?: boolean;
   action?: StatusAction;
+  /** Decision 2 (site review, 12 Oct 2026): the value opens the record it names (the ward, the job). */
+  href?: string;
 }
 
 export type StatusAction =
@@ -44,6 +49,10 @@ export type StatusAction =
       onClick: (event: MouseEvent<HTMLButtonElement>) => void;
       /** The event this button dispatches, so the route's role can limit it (feature 11). */
       event?: WardFlowEventType;
+      /** A correction to something already recorded (Update booking): never the card's one primary. */
+      secondary?: boolean;
+      /** The words when pinned in the phone bar, away from its row ("Record search done"). */
+      pinnedLabel?: string;
     }
   | { kind: "unavailable"; label: string; reason: string };
 
@@ -58,6 +67,11 @@ export interface PatientStatus {
   cells: StatusCell[];
   /** A checklist in place of the three cells (absent without leave). */
   rows?: StatusRow[];
+  /**
+   * Audit A4-9: the next step once every gate is clear (Mark handover ready). It takes the page's
+   * one primary only when no gate holds it, and on a phone it is pinned in the action bar.
+   */
+  next?: StatusAction;
 }
 
 /** One checklist row: done or not, when, and at most one action. */
@@ -82,6 +96,8 @@ export interface PatientStatusContext {
   onClearance: (event: MouseEvent<HTMLButtonElement>) => void;
   onBookTransport: () => void;
   onArrivalTime: () => void;
+  /** Phone: the booking is updated from the Moving to card, as no separate transport block shows. */
+  bookingInCard?: boolean;
   /** D-38: the stay's held bed when on leave or absent, and the actions on it. */
   leaveBed?: LeaveBed;
   stayUnitName?: string;
@@ -98,8 +114,20 @@ export interface PatientStatusContext {
   onEndCto: () => void;
   /** Why the next forward step would be refused (the held ward no longer suits), or undefined. */
   handoverRefusal?: string;
+  /** Audit A4-9: records handover ready once every gate is clear. */
+  onHandoverReady?: () => void;
   /** Feature 11: why the route's role may not dispatch this event ("Ward only"), or undefined. */
   roleLimit?: (eventType: WardFlowEventType) => string | undefined;
+  /** Decision 2: the accepted ward's page, linked from the Bed cell's value. */
+  bedHref?: string;
+  /** Decision 2: the movement's own page (its transport job), linked from the Transport cell's value. */
+  transportHref?: string;
+  /**
+   * S-9 (audit 13 Oct 2026): a ward accepted a referral for this person and nothing is open yet
+   * (accepting pulls no bed and creates no movement). The card says so, and links the ward board
+   * where the bed is held, instead of reading "Not active".
+   */
+  acceptedReferral?: { unitName: string; boardHref: string };
 }
 
 function clearanceCell(movement: Movement, onClearance: PatientStatusContext["onClearance"]): StatusCell {
@@ -128,6 +156,9 @@ function transportCell(
   ready: boolean,
   onBook: () => void,
   waitingFor = "an accepted bed",
+  bookingInCard = false,
+  /** B3: before the bed is held, Log booking opens the step that holds it rather than greying. */
+  onPriorStep?: () => void,
 ): StatusCell {
   const job = movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
   if (job)
@@ -138,9 +169,22 @@ function transportCell(
       owner: "ED nurse in charge",
       tone: "success",
       value: job.provider,
-      sub: job.cadNumber ? `CAD ${job.cadNumber}` : "CAD not recorded",
+      // Audit round 2, A4-19: a number recorded as "CAD-11111" is not prefixed again.
+      sub: job.cadNumber ? (/^CAD/i.test(job.cadNumber) ? job.cadNumber : `CAD ${job.cadNumber}`) : "CAD not recorded",
       time: job.estimatedAt !== undefined ? `ETA ${clock(job.estimatedAt)}, typed by the booker` : undefined,
       clear: true,
+      action: bookingInCard
+        ? {
+            kind: "button",
+            label: "Update booking",
+            secondary: true,
+            icon: Truck,
+            onClick: () => {
+              onBook();
+            },
+            event: "BOOK_TRANSPORT",
+          }
+        : undefined,
     };
   if (movement.transportNeed?.needed === false)
     return {
@@ -171,7 +215,19 @@ function transportCell(
           },
           event: "BOOK_TRANSPORT",
         }
-      : { kind: "unavailable", label: "Log booking", reason: `Needs ${waitingFor}` },
+      : onPriorStep
+        ? {
+            kind: "button",
+            label: "Log booking",
+            ariaLabel: `Log booking. Needs ${waitingFor} first; opens that step`,
+            icon: Truck,
+            secondary: true,
+            onClick: () => {
+              onPriorStep();
+            },
+            event: "BOOK_TRANSPORT",
+          }
+        : { kind: "unavailable", label: "Log booking", reason: `Needs ${waitingFor}` },
   };
 }
 
@@ -211,6 +267,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
     ...status,
     cells: status.cells.map((cell) => ({ ...cell, action: limited(cell.action) })),
     rows: status.rows?.map((row) => ({ ...row, action: limited(row.action) })),
+    next: limited(status.next),
   };
 }
 
@@ -238,26 +295,44 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       tone: "danger",
       verdict: "Cannot move",
       meta: "Bed is the blocker",
-      cells: [bed, clearanceCell(movement, ctx.onClearance), transportCell(movement, false, ctx.onBookTransport)],
+      cells: [
+        bed,
+        clearanceCell(movement, ctx.onClearance),
+        withHref(
+          transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onOpenPlacement),
+          ctx.transportHref,
+        ),
+      ],
     });
   }
 
   if (mode === "held" && movement) {
+    // Audit A4-1: the one bed-hold rule (`ward-bed-hold.ts`). A lapsed hold is act now with
+    // "Move or release" as the primary; under an hour left is the amber at-risk dot.
+    const hold = ctx.hasBedHold ? bedHold(movement.pullExpiresAt, now) : null;
+    const lapsed = hold?.state === "lapsed";
     const bed: StatusCell = {
       key: "bed",
       icon: BedDouble,
       label: "Bed",
       owner: "Bed coordinator",
-      tone: ctx.hasBedHold ? "success" : "warning",
+      tone: !ctx.hasBedHold || hold?.state === "at-risk" ? "warning" : lapsed ? "danger" : "success",
       value: ctx.acceptedUnitName ?? "Accepted ward not recorded",
       sub: ctx.hasBedHold
-        ? movement.pullExpiresAt !== undefined
-          ? `Held, ${pullHoldRemainingLabel(movement.pullExpiresAt, now)}`
+        ? hold
+          ? lapsed
+            ? hold.label
+            : `Pulled, ${hold.short}`
           : "Bed held"
         : "Accepted, no bed held yet",
       time: movement.acceptedAt !== undefined ? `Accepted ${clock(movement.acceptedAt)}` : undefined,
-      clear: ctx.hasBedHold,
-      action: ctx.hasBedHold ? undefined : { kind: "button", label: "Hold the bed", onClick: ctx.onOpenPlacement },
+      clear: ctx.hasBedHold && !lapsed,
+      action: !ctx.hasBedHold
+        ? { kind: "button", label: "Hold the bed", onClick: ctx.onOpenPlacement }
+        : lapsed
+          ? { kind: "button", label: "Move or release", onClick: ctx.onOpenPlacement }
+          : undefined,
+      href: ctx.acceptedUnitName ? ctx.bedHref : undefined,
     };
     const status = withMeter({
       tone: "info",
@@ -266,15 +341,40 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       cells: [
         bed,
         clearanceCell(movement, ctx.onClearance),
-        transportCell(movement, movement.stage === "pulled", ctx.onBookTransport, "the bed held"),
+        withHref(
+          transportCell(
+            movement,
+            movement.stage === "pulled",
+            ctx.onBookTransport,
+            "the bed held",
+            ctx.bookingInCard,
+            ctx.onOpenPlacement,
+          ),
+          ctx.transportHref,
+        ),
       ],
     });
-    if (ctx.handoverRefusal) {
+    if (lapsed && hold) {
+      status.tone = "danger";
+      status.verdict = "Bed pull expired";
+      status.meta = `${hold.label}. Move or release the bed.`;
+    } else if (ctx.handoverRefusal) {
       // The engine refuses the next forward step, so the three gates are not the whole answer.
       status.tone = "danger";
       status.verdict = "Cannot move";
       status.meta = ctx.handoverRefusal;
-    } else if (status.meter && status.meter.clear === status.meter.of) status.verdict = "Ready to move";
+    } else if (status.meter && status.meter.clear === status.meter.of) {
+      status.verdict = "Ready to move";
+      if (movement.stage === "pulled" && ctx.onHandoverReady) {
+        const onHandoverReady = ctx.onHandoverReady;
+        status.next = {
+          kind: "button",
+          label: "Mark handover ready",
+          onClick: () => onHandoverReady(),
+          event: "HANDOVER_READY",
+        };
+      }
+    }
     return status;
   }
 
@@ -285,18 +385,33 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
     return {
       tone: late ? "danger" : "info",
       verdict: ctx.acceptedUnitName ? `Moving to ${ctx.acceptedUnitName}` : "Moving",
-      meta: movement.stage === "moving" ? "Collected and on the way" : "Handover ready, awaiting collection",
+      meta: movement.stage === "moving" ? "Collected and on the way" : "Awaiting collection",
       cells: [
         {
           key: "collected",
           icon: Truck,
+          href: ctx.transportHref,
           label: "Collected",
           owner: "ED nurse in charge",
           tone: job?.collectedAt !== undefined ? "success" : "warning",
+          // Device audit (11 Oct 2026): a ticked cell counts as clear, so the phone's "N of 3 Clear"
+          // agrees with the ticks on this card.
+          clear: job?.collectedAt !== undefined,
           value: job?.collectedAt !== undefined ? clock(job.collectedAt) : "Not yet",
           sub: job ? job.provider : "No transport logged",
           action: job
-            ? undefined
+            ? ctx.bookingInCard
+              ? {
+                  kind: "button",
+                  label: "Update booking",
+                  secondary: true,
+                  icon: Truck,
+                  onClick: () => {
+                    ctx.onBookTransport();
+                  },
+                  event: "BOOK_TRANSPORT",
+                }
+              : undefined
             : movement.stage === "handover_ready"
               ? {
                   kind: "button",
@@ -335,8 +450,10 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
           label: "Receiving ward",
           owner: "Ward nurse in charge",
           tone: ctx.hasBedHold ? "success" : "warning",
+          clear: ctx.hasBedHold,
           value: ctx.acceptedUnitName ?? "Not recorded",
           sub: ctx.hasBedHold ? "Bed held" : "No bed hold recorded",
+          href: ctx.acceptedUnitName ? ctx.bedHref : undefined,
         },
       ],
     };
@@ -518,7 +635,13 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
 
   if (mode === "awol" && ctx.leaveBed?.absentWithoutLeave) {
     const absence = ctx.leaveBed.absentWithoutLeave;
-    const rows: StatusRow[] = ABSENCE_STEPS.map((step) => {
+    // A3-13: a voluntary patient is not on an order, so no return order is asked for (A3-2's step
+    // is for a person on one); the other missing person steps are the same.
+    // Either source reading involuntary wins, as in the reducer's guards.
+    const voluntary =
+      /^voluntary\b/i.test(legalValue(movement, patient).trim()) && !legalStatusTextIsInvoluntary(patient?.legalStatus);
+    const steps = absenceStepsFor(voluntary);
+    const rows: StatusRow[] = steps.map((step) => {
       const at = absence.steps.find((done) => done.step === step)?.at;
       return {
         key: step,
@@ -531,6 +654,8 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
                 kind: "button",
                 label: "Record",
                 ariaLabel: `Record ${ABSENCE_STEP_LABELS[step]}`,
+                // Audit A3-11: pinned alone in the phone bar, the button names its step.
+                pinnedLabel: ABSENCE_STEP_BAR_LABELS[step],
                 onClick: () => {
                   ctx.onAbsenceStep(step);
                 },
@@ -541,7 +666,8 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
     });
     return {
       tone: "danger",
-      verdict: "Absent without leave",
+      // A3-13: absent without leave is for a person on an order; a voluntary patient is not back.
+      verdict: voluntary ? "Not back from leave" : "Absent without leave",
       meter: { clear: rows.filter((r) => r.done).length, of: rows.length },
       meterWord: "steps done",
       meta: `Since ${clock(absence.since)}, owner nurse in charge`,
@@ -550,13 +676,52 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
     };
   }
 
-  if (mode === "cto" && patient?.communityTreatmentOrder) {
-    const order = patient.communityTreatmentOrder;
+  // An accepted ward referral with no bed held. On a CTO it sits beside the order (Qodo review,
+  // 13 Oct 2026), so the order's form details and "Record ended" stay on the card.
+  const acceptedBedCell: StatusCell | undefined = ctx.acceptedReferral
+    ? {
+        key: "bed",
+        icon: BedDouble,
+        label: "Bed",
+        owner: "Ward",
+        value: `Hold on ${ctx.acceptedReferral.unitName}`,
+        sub: "Accepted referral, no bed held yet",
+        href: ctx.acceptedReferral.boardHref,
+      }
+    : undefined;
+
+  const ctoOrder = mode === "cto" ? patient?.communityTreatmentOrder : undefined;
+  if (mode === "idle" || (mode === "cto" && !ctoOrder)) {
+    if (ctx.acceptedReferral && acceptedBedCell) {
+      return {
+        tone: "info",
+        verdict: "Accepted, no bed held",
+        meta: `Accepted at ${ctx.acceptedReferral.unitName}. Next: hold the bed`,
+        cells: [
+          acceptedBedCell,
+          {
+            key: "catchment",
+            icon: Users,
+            label: "Catchment team",
+            owner: "Community",
+            value: patient?.catchmentCommunityTeam ?? "Not recorded",
+            sub: "Recorded catchment",
+          },
+        ],
+      };
+    }
+  }
+
+  if (mode === "cto" && patient && ctoOrder) {
+    const order = ctoOrder;
     return {
-      tone: "neutral",
-      verdict: "Not active, on a CTO",
-      meta: "No open placement or stay",
+      tone: acceptedBedCell ? "info" : "neutral",
+      verdict: acceptedBedCell ? "Accepted, on a CTO" : "Not active, on a CTO",
+      meta: ctx.acceptedReferral
+        ? `Accepted at ${ctx.acceptedReferral.unitName}. Next: hold the bed`
+        : "No open placement or stay",
       cells: [
+        ...(acceptedBedCell ? [acceptedBedCell] : []),
         {
           key: "cto",
           icon: Scale,
@@ -645,12 +810,16 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
   };
 }
 
+function withHref(cell: StatusCell, href: string | undefined): StatusCell {
+  return href ? { ...cell, href } : cell;
+}
+
 function withMeter(status: PatientStatus): PatientStatus {
   const clear = status.cells.filter((c) => c.clear).length;
   return { ...status, meter: { clear, of: status.cells.length } };
 }
 
-function CellAction({ action, primary }: { action: StatusAction; primary: boolean }): ReactNode {
+export function CellAction({ action, primary }: { action: StatusAction; primary: boolean }): ReactNode {
   if (action.kind === "unavailable")
     return (
       <Button size="sm" disabledReason={action.reason} reasonDisplay="tooltip">
@@ -675,11 +844,26 @@ function CellAction({ action, primary }: { action: StatusAction; primary: boolea
  * cell names its owner and carries at most one action. The first gate that is not clear holds
  * the page's one primary action.
  */
-export function PatientStatusCard({ mode, context }: { mode: PatientMode; context: PatientStatusContext }) {
+export function PatientStatusCard({
+  mode,
+  context,
+  barLead,
+  barMain,
+  phoneFoot,
+}: {
+  mode: PatientMode;
+  context: PatientStatusContext;
+  /** v10 phone: a quiet control at the start of the pinned bar (Copy summary). Phone only. */
+  barLead?: ReactNode;
+  /** v10 phone: the bar's main control when no gate holds the primary (New referral). Phone only. */
+  barMain?: ReactNode;
+  /** v10 phone: the quiet line at the foot of the card ("Arrived Mon 5 Oct 09:12"). Phone only. */
+  phoneFoot?: string;
+}) {
   const status = buildPatientStatus(mode, context);
   const primaryKey =
     status.rows?.find((r) => !r.done && r.action?.kind === "button")?.key ??
-    status.cells.find((c) => !c.clear && c.action?.kind === "button")?.key;
+    status.cells.find((c) => !c.clear && c.action?.kind === "button" && !c.action.secondary)?.key;
   const word = status.meterWord ?? "clear";
   /*
    * v10 Patient, Phone: "Its one primary is pinned in a sticky action bar and is not repeated in
@@ -687,18 +871,25 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
    */
   const isPhone = useIsPhone();
   const pinned = isPhone
-    ? (status.rows?.find((r) => r.key === primaryKey)?.action ?? status.cells.find((c) => c.key === primaryKey)?.action)
+    ? (status.rows?.find((r) => r.key === primaryKey)?.action ??
+      status.cells.find((c) => c.key === primaryKey)?.action ??
+      (primaryKey === undefined ? status.next : undefined))
     : undefined;
   const inList = (key: string) => !(pinned && key === primaryKey);
+  /* v10 Patient, phone: outside a placement the card has no verdict row unless it counts steps
+   * (absent without leave); the mode is already the hero's eyebrow, and the meta moves to a foot. */
+  const placing = mode === "find" || mode === "held" || mode === "transit";
+  const phoneQuiet = isPhone && !placing && !status.meter;
   return (
     <>
       <section
         className={styles.card}
         aria-label="Status"
         data-act={status.tone === "danger" || undefined}
+        data-ph-placing={(isPhone && placing) || undefined}
         data-testid="ward-patient-status-card"
       >
-        <div className={styles.head}>
+        <div className={styles.head} hidden={phoneQuiet}>
           <span className={styles.verdict} data-testid="ward-patient-status-verdict">
             <StatusGlyph tone={status.tone} size={12} />
             {status.verdict}
@@ -720,6 +911,13 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
             </span>
           ) : null}
           <span className={styles.meta}>{status.meta}</span>
+          {/* Qodo review (13 Oct 2026): with every gate clear, the next step (Mark handover ready)
+              is the card's one primary on desktop too; on a phone it is pinned in the bar. */}
+          {!isPhone && primaryKey === undefined && status.next ? (
+            <span className={styles.headAction} data-testid="ward-patient-status-next">
+              <CellAction action={status.next} primary />
+            </span>
+          ) : null}
         </div>
         {status.rows ? (
           <ul className={styles.rows} aria-label="Missing person steps">
@@ -746,7 +944,12 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
         ) : null}
         <div className={styles.cells} hidden={status.cells.length === 0}>
           {status.cells.map((cell) => (
-            <div key={cell.key} className={styles.cell} data-testid={`ward-patient-gate-${cell.key}`}>
+            <div
+              key={cell.key}
+              className={styles.cell}
+              data-testid={`ward-patient-gate-${cell.key}`}
+              data-ph-quiet={isPhone || undefined}
+            >
               <div className={styles.label}>
                 <cell.icon size={14} aria-hidden="true" />
                 <span>{cell.label}</span>
@@ -754,7 +957,13 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
               </div>
               <div className={styles.value}>
                 {cell.tone ? <StatusGlyph tone={cell.tone} size={11} /> : null}
-                <span>{cell.value}</span>
+                {cell.href ? (
+                  <Link className={styles.valueLink} href={cell.href}>
+                    {cell.value}
+                  </Link>
+                ) : (
+                  <span>{cell.value}</span>
+                )}
               </div>
               <div className={styles.sub}>{cell.sub}</div>
               {cell.time ? <div className={styles.time}>{cell.time}</div> : null}
@@ -766,10 +975,21 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
             </div>
           ))}
         </div>
+        {phoneQuiet ? <p className={styles.phFoot}>{phoneFoot ?? status.meta}</p> : null}
       </section>
-      {pinned ? (
-        <div className={styles.phBar} data-testid="ward-patient-phone-action-bar">
-          <CellAction action={pinned} primary />
+      {isPhone && (pinned || barLead || barMain) ? (
+        <div className={styles.phBar} data-testid="ward-patient-phone-action-bar" data-wf-phone-action-bar="">
+          {barLead ? <span className={styles.phLead}>{barLead}</span> : null}
+          {pinned ? (
+            <CellAction
+              action={
+                pinned.kind === "button" && pinned.pinnedLabel ? { ...pinned, label: pinned.pinnedLabel } : pinned
+              }
+              primary
+            />
+          ) : (
+            barMain
+          )}
         </div>
       ) : null}
     </>

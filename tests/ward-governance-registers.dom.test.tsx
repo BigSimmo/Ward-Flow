@@ -160,8 +160,21 @@ describe("the override and decision registers hold only what this session record
   });
 
   it("opens the endorse form empty, so nobody records a review they did not write", () => {
-    const seed = seedWardFlowState();
-    render(<GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />);
+    function Harness() {
+      const flow = useWardFlow();
+      return <GovernanceWorkbench movements={flow.movements} units={flow.units} now={NOW} api={flow} />;
+    }
+    render(
+      <WardFlowProvider initialNow={NOW}>
+        <Harness />
+      </WardFlowProvider>,
+    );
+    // Device audit 11 Oct 2026: the hero Record review waits for a chosen event.
+    const recordReview = screen.getByRole("button", { name: "Record review" });
+    expect(recordReview).toHaveAttribute("aria-disabled", "true");
+    const firstRow = document.querySelector<HTMLButtonElement>("[data-audit-row]");
+    expect(firstRow).not.toBeNull();
+    fireEvent.click(firstRow!);
     fireEvent.click(screen.getByRole("button", { name: "Record review" }));
     expect((document.getElementById("endorseVerdict") as HTMLSelectElement).value).toBe("");
     expect((document.getElementById("endorseRole") as HTMLSelectElement).value).toBe("");
@@ -196,5 +209,40 @@ describe("Governance v10 pass (10 Oct 2026)", () => {
     expect(screen.getByRole("region", { name: "Seclusion register" })).toHaveTextContent("Preview");
     expect(screen.getByRole("region", { name: "Bodily restraint register" })).toHaveTextContent("Preview");
     expect(document.body.textContent).not.toMatch(/Form 1[01]\b/);
+  });
+});
+
+describe("Governance phone review sheet (device audit 11 Oct 2026)", () => {
+  it("opens with neither answer picked and Record review waiting for a choice", () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(max-width: 48rem)",
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as unknown as typeof window.matchMedia;
+    try {
+      function Harness() {
+        const flow = useWardFlow();
+        return <GovernanceWorkbench movements={flow.movements} units={flow.units} now={NOW} api={flow} />;
+      }
+      render(
+        <WardFlowProvider initialNow={NOW}>
+          <Harness />
+        </WardFlowProvider>,
+      );
+      fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
+      const decision = screen.getByRole("radiogroup", { name: "Review decision" });
+      for (const radio of within(decision).getAllByRole("radio")) {
+        expect(radio).toHaveAttribute("aria-checked", "false");
+      }
+      const record = screen.getByRole("button", { name: /Record review/ });
+      expect(record).toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(within(decision).getByRole("radio", { name: "Follow-up" }));
+      expect(within(decision).getByRole("radio", { name: "Follow-up" })).toHaveAttribute("aria-checked", "true");
+      expect(screen.getByRole("button", { name: /Record review/ })).not.toHaveAttribute("aria-disabled", "true");
+    } finally {
+      window.matchMedia = original;
+    }
   });
 });

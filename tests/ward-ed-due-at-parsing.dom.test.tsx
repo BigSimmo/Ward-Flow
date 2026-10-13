@@ -15,6 +15,8 @@ vi.mock("next/link", () => ({
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { perthCalendarDay } from "@/components/ward-management/ward-clock";
+import { EdInboxReferralFixture, openRaiseIntoMovementForm } from "./helpers/ed-raise-into-movement";
 
 /**
  * WHAT THE CLINICIAN TYPED IS WHAT THE MOVEMENT CARRIES — END TO END, THROUGH THE REAL FORM.
@@ -67,15 +69,14 @@ function DeadlineProbe() {
  *  itself would report, built by hand rather than with `toISOString` (which reports UTC and would
  *  disagree with the LOCAL date `demoDayZero` anchors to, exactly the drift that function's own
  *  doc comment warns a UTC epoch would cause for a Perth session). */
+/** The Perth calendar day a moment falls on, as a date input reads it (L7), whatever the test's zone. */
 function dateInputValue(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const { year, monthIndex, day } = perthCalendarDay(date);
+  return `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 const TODAY = dateInputValue(new Date());
-const TOMORROW = dateInputValue(new Date(new Date().setDate(new Date().getDate() + 1)));
+const TOMORROW = dateInputValue(new Date(Date.now() + 864e5));
 
 const REQUIRED = [
   { testId: "ward-ed-referral-cohort", value: "Adult" },
@@ -92,11 +93,14 @@ const REQUIRED = [
 function raiseTransportReferral(typed: { date: string; time: string } | undefined) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <EdInboxReferralFixture edId="jhc-ed" />
       <EdScreen edId="jhc-ed" />
       <DeadlineProbe />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+  // A2-1: the form starts from a person; the inbox referral has none, so it opens as not yet identified.
+  openRaiseIntoMovementForm();
+  expect(screen.getByTestId("ward-ed-referral-unidentified")).toBeChecked();
   for (const field of REQUIRED) {
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }

@@ -4,14 +4,15 @@ import { useId, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Copy,
   Download,
   ListOrdered,
+  MoreHorizontal,
   Printer,
   Search,
-  SlidersHorizontal,
   X,
 } from "lucide-react";
 
@@ -22,11 +23,10 @@ import {
   Drawer,
   FactGrid,
   Hero,
-  HeroChip,
-  HeroChips,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
+  PillTabs,
   Segmented,
   Select,
   StatusGlyph,
@@ -52,6 +52,7 @@ import {
   type ChronologySource,
 } from "./patient-chronology";
 import { reportDay, reportMoment } from "./report-parts";
+import phone from "./patient-chronology-phone.module.css";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
@@ -66,6 +67,12 @@ const SOURCE_OF_TAB: Record<Exclude<SourceTab, "all">, ChronologySource> = {
 };
 
 /** One recorded event as a line of text, for Copy row. */
+/** The phone row's second line: what changed, else the kind of record it belongs to. */
+function rowDetail(row: ChronologyRow): string {
+  if (row.before && row.after) return `${row.before} → ${row.after}`;
+  return row.after || row.before || row.record;
+}
+
 function rowText(row: ChronologyRow, dayZero: Date): string {
   return [
     `Occurred ${chronologyTime(row.occurredAt, dayZero)}`,
@@ -144,6 +151,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const [openKey, setOpenKey] = useState<string | null>(null);
   // Phone only: the sheet that holds record kind and the role view, one tap from the list.
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Phone only: the patient name in the hero opens this list of people to choose from.
+  const [pickerOpen, setPickerOpen] = useState(false);
   const tableScroll = useRef<HTMLDivElement>(null);
 
   // Read once per world (the read returns a fresh copy each call), and only for the coordinator.
@@ -192,6 +201,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   };
 
   const count = (source: ChronologySource) => rows.filter((row) => row.source === source).length;
+  // Source tab counts read every event of that source, so an empty source shows 0 without a tap.
+  const sourceCount = (source: ChronologySource) => sourceRows.filter((row) => row.source === source).length;
   const name = chronology?.patient ? patientDisplayName(chronology.patient) : null;
   const umrn = chronology?.patient?.umrn || "UMRN not recorded";
   const recordCount = chronology
@@ -329,79 +340,165 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   /* ---------------------------------------------------------------- phone */
   if (isPhone) {
+    const kindSummary = `${kind === "all" ? "Every record kind" : `${kind} only`}${
+      coordinator ? ` · ${nurseView ? "Ward nurse" : "Bed coordinator"}` : ""
+    }`;
     return (
       <div className={cx(styles.page, styles.phonePage)} data-testid="ward-patient-chronology" data-ward-design="v10">
         <main id="main-content" className={styles.main}>
           <PhoneHero
             level={1}
-            title={name ?? "Patient chronology"}
-            sub={chronology ? umrn : "Choose a patient to read their events"}
+            eyebrow={
+              <span data-testid="ward-chronology-generated">
+                PIR chronology · generated {formatInstant(now)}
+                <span className={phone.srOnly}> · Synthetic demo data</span>
+              </span>
+            }
+            title={
+              <button
+                type="button"
+                className={phone.who}
+                aria-haspopup="dialog"
+                aria-label={name ? `${name}, change patient` : "Choose a patient"}
+                onClick={() => setPickerOpen(true)}
+                data-testid="ward-chronology-phone-who"
+              >
+                <span className={phone.whoName}>{name ?? "Choose a patient"}</span>
+                <ChevronDown size={18} aria-hidden="true" />
+              </button>
+            }
+            sub={
+              chronology ? (
+                <>
+                  <b className={phone.mono}>{umrn}</b> · synthetic demo data, not a clinical record
+                </>
+              ) : (
+                "Synthetic demo data · choose a patient to read their events"
+              )
+            }
             figures={
               chronology
                 ? [
-                    { id: "events", value: rows.length, label: "Events" },
-                    { id: "records", value: recordCount, label: "Records" },
+                    { id: "events", value: rows.length, label: rows.length === 1 ? "Event" : "Events" },
+                    { id: "records", value: count("Record"), label: "From records" },
                     { id: "audit", value: count("Audit"), label: "Audit" },
                   ]
                 : undefined
             }
           />
-          {patientPicker}
-          <p className={styles.phoneNote} data-testid="ward-chronology-generated">
-            Synthetic demo data · generated {reportMoment(now, dayZero)}
-          </p>
           {chronology ? (
             <>
-              {sourceTabs("md")}
-              <ul className={styles.phoneList}>
-                <PhoneListRow
-                  as="li"
-                  data-testid="ward-chronology-phone-filters"
-                  leading={<SlidersHorizontal size={16} aria-hidden="true" />}
-                  name="Record kind and view"
-                  meta={`${kind === "all" ? "Every record kind" : `${kind} only`}${
-                    coordinator ? ` · ${nurseView ? "Ward nurse" : "Bed coordinator"}` : ""
-                  }`}
-                  onSelect={() => setFiltersOpen(true)}
+              <div className={phone.seg}>
+                <PillTabs<SourceTab>
+                  label="Source"
+                  value={tab}
+                  onChange={(next) => {
+                    setTab(next);
+                    setOpenKey(null);
+                  }}
+                  fill
+                  items={[
+                    { id: "all", label: "All", count: sourceRows.length },
+                    { id: "records", label: "Records", count: sourceCount("Record") },
+                    ...(auditShown ? [{ id: "audit" as const, label: "Audit", count: sourceCount("Audit") }] : []),
+                    { id: "session", label: "Session", count: sourceCount("Session log") },
+                  ]}
                 />
-              </ul>
+              </div>
               {withheld}
               {emptyState}
-              {dayGroups(rows, dayZero).map((group) => (
-                <section key={group.key} className={styles.phoneGroup} aria-label={group.label}>
-                  <h2 className={styles.dayHead}>
-                    {group.label}
-                    <span>
-                      {group.rows.length} {group.rows.length === 1 ? "event" : "events"}
-                    </span>
-                  </h2>
-                  <ul className={styles.phoneList}>
-                    {group.rows.map((row) => (
-                      <PhoneListRow
-                        key={row.key}
-                        as="li"
-                        leading={<SourceMark source={row.source} />}
-                        name={row.action}
-                        meta={`${row.record} · ${row.who || "Who not recorded"}`}
-                        value={clockOrMissing(row.occurredAt)}
-                        onSelect={() => setOpenKey(row.key)}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              ))}
-              <div className={styles.phoneActionBar}>
-                <Button variant="pri" icon={Download} onClick={downloadCsv} data-testid="ward-chronology-csv">
+              {rows.length ? (
+                <div className={phone.list}>
+                  {dayGroups(rows, dayZero).map((group) => (
+                    <section key={group.key} aria-label={group.label}>
+                      <h2 className={phone.dayHead}>
+                        <span>{group.label}</span>
+                        <b>
+                          {group.rows.length}
+                          <span className={phone.srOnly}> {group.rows.length === 1 ? "event" : "events"}</span>
+                        </b>
+                      </h2>
+                      <ul className={phone.rows}>
+                        {group.rows.map((row) => (
+                          <li key={row.key}>
+                            <button type="button" className={phone.row} onClick={() => setOpenKey(row.key)}>
+                              <span className={phone.time}>
+                                {row.occurredAt === null ? (
+                                  <span className={phone.noTime}>No time</span>
+                                ) : (
+                                  formatInstant(row.occurredAt)
+                                )}
+                              </span>
+                              <span className={phone.text}>
+                                <span className={phone.action}>{row.action}</span>
+                                <span className={phone.meta}>{rowDetail(row)}</span>
+                              </span>
+                              <SourceMark source={row.source} />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
+                </div>
+              ) : null}
+              <p className={phone.foot}>Synthetic prototype · invented person · not a clinical record</p>
+              <div className={phone.bar}>
+                <span data-testid="ward-chronology-phone-filters" className={phone.more}>
+                  <button
+                    type="button"
+                    className={phone.moreButton}
+                    aria-haspopup="dialog"
+                    onClick={() => setFiltersOpen(true)}
+                  >
+                    <MoreHorizontal size={20} aria-hidden="true" />
+                    <span className={phone.srOnly}>Record kind, view and print: {kindSummary}</span>
+                  </button>
+                </span>
+                <Button
+                  variant="pri"
+                  icon={Download}
+                  className={phone.barPrimary}
+                  onClick={downloadCsv}
+                  data-testid="ward-chronology-csv"
+                >
                   Download CSV
-                </Button>
-                <Button variant="sec" icon={Printer} onClick={() => window.print()} data-testid="ward-chronology-print">
-                  Print
                 </Button>
               </div>
             </>
           ) : (
-            <p className={styles.phoneNote}>No patient chosen. Choose one above.</p>
+            <div className={phone.choose}>
+              <p>No patient chosen.</p>
+              <Button variant="pri" className={phone.barPrimary} onClick={() => setPickerOpen(true)}>
+                Choose a patient
+              </Button>
+            </div>
           )}
+          <PhoneSheet
+            open={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            title="Choose a patient"
+            description="People with at least one record of their own"
+            height="tall"
+            data-testid="ward-chronology-phone-picker"
+          >
+            <ul className={styles.phoneList} aria-label="Patients">
+              {people.map((patient) => (
+                <PhoneListRow
+                  key={patient.id}
+                  as="li"
+                  leading={patient.id === patientId ? <Check size={16} aria-hidden="true" /> : undefined}
+                  name={patientDisplayName(patient)}
+                  aria-label={`${patientDisplayName(patient)}${patient.id === patientId ? ", chosen" : ""}`}
+                  value={<span className={phone.mono}>{patient.umrn || "UMRN not recorded"}</span>}
+                  onSelect={() => {
+                    choosePatient(patient.id);
+                    setPickerOpen(false);
+                  }}
+                />
+              ))}
+            </ul>
+          </PhoneSheet>
           <PhoneSheet
             open={filtersOpen}
             onClose={() => setFiltersOpen(false)}
@@ -453,20 +550,26 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   ]}
                 />
               ) : null}
+              <Button variant="sec" icon={Printer} onClick={() => window.print()} data-testid="ward-chronology-print">
+                Print
+              </Button>
             </div>
           </PhoneSheet>
-          <PhoneSheet open={open !== null} onClose={() => setOpenKey(null)} title={open?.action ?? ""}>
+          <PhoneSheet
+            open={open !== null}
+            onClose={() => setOpenKey(null)}
+            title={open?.action ?? ""}
+            description={open ? `${open.record} · ${open.source}` : undefined}
+            primary={open ? { label: "Copy row", onAction: () => copyRow(open) } : undefined}
+          >
             {open ? (
               <div className={styles.sheetBody}>
                 <FactGrid facts={detailFacts(open)} />
                 <EventChange row={open} />
-                <Button size="sm" variant="sec" icon={Copy} onClick={() => copyRow(open)}>
-                  Copy row
-                </Button>
               </div>
             ) : null}
           </PhoneSheet>
-          <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" />
+          <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" className={phone.phPageFoot} />
         </main>
       </div>
     );
@@ -547,20 +650,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               </span>
             ) : undefined
           }
-          bar={
-            chronology ? (
-              <HeroChips label="Counts of the events shown">
-                <HeroChip value={rows.length} label={rows.length === 1 ? "event" : "events"} />
-                <HeroChip value={recordCount} label={recordCount === 1 ? "record" : "records"} />
-                <HeroChip value={count("Record")} label="from records" />
-                {auditShown ? <HeroChip value={count("Audit")} label="audit" /> : null}
-                <HeroChip value={count("Session log")} label="session log" />
-              </HeroChips>
-            ) : (
-              <span className={styles.heroLine}>{generated}</span>
-            )
-          }
-          barAside={chronology ? <span className={styles.heroLine}>{generated}</span> : undefined}
+          // The counts live once, in the Summary rail beside the table (device audit 11 Oct 2026).
+          bar={<span className={styles.heroLine}>{generated}</span>}
         />
 
         <div className={styles.filterBar} data-print-hide>
@@ -574,8 +665,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 type="search"
                 icon={Search}
                 boxClassName={styles.findBox}
-                aria-label="Find an action, person or reason"
-                placeholder="Find an action, person or reason"
+                aria-label="Find in events"
+                placeholder="Find in events"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -594,20 +685,22 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 ))}
               </Select>
               {coordinator ? (
-                <Segmented<ViewRole>
-                  className={styles.roleSwitch}
-                  label="View as"
-                  value={viewRole}
-                  onChange={(next) => {
-                    setViewRole(next);
-                    if (next === "nurse" && tab === "audit") setTab("all");
-                    setOpenKey(null);
-                  }}
-                  items={[
-                    { id: "coordinator", label: "Bed coordinator" },
-                    { id: "nurse", label: "Ward nurse" },
-                  ]}
-                />
+                <span className={styles.roleSwitch}>
+                  <span className={styles.fieldWord}>View as</span>
+                  <Segmented<ViewRole>
+                    label="View as"
+                    value={viewRole}
+                    onChange={(next) => {
+                      setViewRole(next);
+                      if (next === "nurse" && tab === "audit") setTab("all");
+                      setOpenKey(null);
+                    }}
+                    items={[
+                      { id: "coordinator", label: "Bed coordinator" },
+                      { id: "nurse", label: "Ward nurse" },
+                    ]}
+                  />
+                </span>
               ) : null}
             </>
           ) : null}
@@ -748,7 +841,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                     <FactGrid
                       facts={[
                         { id: "events", label: "Events", value: String(rows.length) },
-                        { id: "records", label: "Records", value: String(recordCount) },
+                        { id: "records", label: "Linked records", value: String(recordCount) },
                       ]}
                     />
                     <dl className={styles.sideList}>
@@ -813,7 +906,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
         <p className={styles.disclosure}>
           Recorded or typed times only, nothing calculated. Audit trail and session log cover this browser session.
         </p>
-        <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" />
+        <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" className={phone.phPageFoot} />
       </main>
     </div>
   );

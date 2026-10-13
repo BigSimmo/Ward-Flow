@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { acceptedWardOf } from "./accepted-ward-referral";
 import {
   Check,
   ChevronRight,
@@ -34,6 +36,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
@@ -69,6 +72,7 @@ import {
   EmptyState,
   FilterChip,
   Hero,
+  JourneyStrip,
   Kbd,
   LiveChip,
   Sheet,
@@ -81,10 +85,13 @@ import {
   buttonClass,
   cx,
   durMinutes,
+  type JourneyStage,
 } from "@/components/wf";
 
 import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
+import { WardOffersSection } from "./ward-offers-section";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import {
@@ -93,7 +100,6 @@ import {
   DecisionClock,
   HeroTools,
   IsbarSheet,
-  NOT_WIRED,
   REFERRAL_SOURCE_WORDS,
   ReferralAlerts,
   ReferralPatientTab,
@@ -116,8 +122,11 @@ import {
 import styles from "./referrals.module.css";
 import a from "./referral-board.module.css";
 import p from "./referral-board-phone.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 import { ReferralPhoneCard, ReferralPhoneChips, ReferralPhoneHero, ReferralPhoneTop } from "./referral-board-phone";
 import { createBrowserStore } from "@/lib/client-store-factory";
+import { useIsPhone } from "@/components/wf";
+import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 /**
@@ -407,21 +416,8 @@ const useSplitDetailLayout = createBrowserStore<boolean>(
   false,
 );
 
-/** v10 phone: its own design below 48rem. Desktop is the server value, so tests and SSR see it. */
-const PHONE_MEDIA_QUERY = "(max-width: 48rem)";
-const usePhoneLayout = createBrowserStore<boolean>(
-  (onStoreChange) => {
-    if (typeof window.matchMedia !== "function") return () => {};
-    const media = window.matchMedia(PHONE_MEDIA_QUERY);
-    media.addEventListener("change", onStoreChange);
-    return () => media.removeEventListener("change", onStoreChange);
-  },
-  () => (typeof window.matchMedia === "function" ? window.matchMedia(PHONE_MEDIA_QUERY).matches : false),
-  false,
-);
-
-type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "community" | "refused";
-const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed", "community", "refused"];
+type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "both" | "community" | "refused";
+const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed", "both", "community", "refused"];
 type InspectorTab = "place" | "patient" | "timeline";
 type BoardSheet = "meeting" | "summary" | "keys" | null;
 
@@ -434,7 +430,27 @@ const HIGHLIGHT_LABELS: readonly (readonly [Exclude<HighlightKey, "refused">, st
   ["community", "Community"],
 ];
 
-function highlightTest(key: HighlightKey, referral: Referral, now: Instant): boolean {
+/**
+ * Audit round 2 (A2-13): the phone's type chips count each referral once. A referral that asks
+ * for more than one kind of place sits under Both, not under each kind, so the chips sum to the
+ * hero's "awaiting decision" count. Desktop pills keep their "asks for" meaning.
+ */
+function askedKinds(referral: Referral): Set<string> {
+  return new Set(openArms(referral).map((arm) => arm.destination.kind));
+}
+
+function phoneTypeTest(key: "ward" | "ed" | "both" | "community", referral: Referral): boolean {
+  const kinds = askedKinds(referral);
+  if (key === "both") return kinds.size > 1;
+  if (kinds.size !== 1) return false;
+  const kind = key === "ward" ? "psychiatric_ward" : key === "ed" ? "emergency_department" : "community_team";
+  return kinds.has(kind);
+}
+
+function highlightTest(key: HighlightKey, referral: Referral, now: Instant, phone = false): boolean {
+  if (phone && (key === "ward" || key === "ed" || key === "both" || key === "community")) {
+    return phoneTypeTest(key, referral);
+  }
   switch (key) {
     case "overdue":
       return isOverdue(referral, now);
@@ -446,6 +462,8 @@ function highlightTest(key: HighlightKey, referral: Referral, now: Instant): boo
       return openArms(referral).some((arm) => arm.destination.kind === "emergency_department");
     case "community":
       return openArms(referral).some((arm) => arm.destination.kind === "community_team");
+    case "both":
+      return askedKinds(referral).size > 1;
     case "refused":
       return declinedAddressings(referral).length > 0;
   }
@@ -460,6 +478,14 @@ function isTyping(target: EventTarget | null): boolean {
     element.tagName === "SELECT" ||
     element.isContentEditable === true
   );
+}
+
+function subscribeToLocation(listener: () => void) {
+  window.addEventListener("popstate", listener);
+  return () => window.removeEventListener("popstate", listener);
+}
+function readLinkedReferralId(): string | null {
+  return new URLSearchParams(window.location.search).get("referral");
 }
 
 /**
@@ -488,13 +514,18 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   // "New referral" and rail) before anyone had chosen anything (f997ac75a1 + 81553692fb).
   const [chosenReferralId, setSelectedReferralId] = useState<string | null | undefined>(undefined);
   const splitDetailLayout = useSplitDetailLayout();
-  const phoneLayout = usePhoneLayout();
+  // A1-17: the shared phone query, so the server's phone guess draws the phone layout first.
+  const phoneLayout = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<"axis" | "beds" | null>(null);
+  // A2-5: `?referral=<id>` (the ED row's "Referred to" link) opens that referral until someone chooses.
+  const linkedReferralId = useSyncExternalStore(subscribeToLocation, readLinkedReferralId, () => null);
   const selectedReferralId =
     chosenReferralId === undefined
-      ? defaultSelectFirst && splitDetailLayout
-        ? queued[0]?.id
-        : undefined
+      ? linkedReferralId !== null && referrals.some((referral) => referral.id === linkedReferralId)
+        ? linkedReferralId
+        : defaultSelectFirst && splitDetailLayout
+          ? queued[0]?.id
+          : undefined
       : (chosenReferralId ?? undefined);
   const [view, setView] = useState<"queue" | "history">("queue");
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);
@@ -502,6 +533,10 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   // The board's decisions are dispatched as the coordinator (CO-D2), so Undo is too.
   const watchDecision = useReferralDecisionUndo("coordinator");
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("place");
+  /* v10 phone: the sheet has no tabs; the timeline and the patient details open in place. */
+  const isPhone = useIsPhone();
+  const [phoneTimelineOpen, setPhoneTimelineOpen] = useState(false);
+  const [phonePatientOpen, setPhonePatientOpen] = useState(false);
   const [sheet, setSheet] = useState<BoardSheet>(null);
   const [umrnCopied, setUmrnCopied] = useState(false);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -560,8 +595,16 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   const searching = searchQuery.trim() !== "";
   const shownQueued = searching ? queued.filter(matchesSearch) : queued;
   const anyHighlight = highlight !== null;
-  const isHighlighted = (referral: Referral) => highlight !== null && highlightTest(highlight, referral, now);
+  const isHighlighted = (referral: Referral) =>
+    highlight !== null && highlightTest(highlight, referral, now, phoneLayout);
   const highlightedCount = anyHighlight ? shownQueued.filter(isHighlighted).length : 0;
+  /*
+   * Audit round 2 (A2-14): on the phone a chip FILTERS. Dimming greyed the overdue row's act-now
+   * marker and left the match below the fold. Desktop keeps highlight-and-dim (Josh, 13 Oct 2026),
+   * but an overdue (act-now) row is never dimmed on either.
+   */
+  const phoneFiltered = phoneLayout && anyHighlight;
+  const listedQueued = phoneFiltered ? shownQueued.filter(isHighlighted) : shownQueued;
 
   const decided = recentlyDecidedReferrals(referrals);
   // The DENOMINATOR, uncapped. `decided` above is already truncated to the display limit, so its
@@ -616,8 +659,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     value: decidedToday.filter((r) => Math.floor(minuteOfDay(referralDecidedAt(r)!) / 60) === hour).length,
   }));
   const bedsSummary = useMemo(
-    () => bedsReadySummary(units, admissions, bedReleases, leaveBeds, now),
-    [units, admissions, bedReleases, leaveBeds, now],
+    () => bedsReadySummary(units, bedReleases, leaveBeds, now),
+    [units, bedReleases, leaveBeds, now],
   );
   const meetingRows: MeetingRow[] = queued.map((referral) => {
     const person = resolveSubjectPatient(referral, resolverState);
@@ -646,7 +689,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
       detailRef.current.scrollTop = 0;
       if (typeof window !== "undefined" && window.innerWidth <= 768) {
         if (typeof detailRef.current.scrollIntoView === "function") {
-          detailRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
         }
       }
     }
@@ -695,6 +738,65 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   const selectedUmrn = selectedPatientInfo.umrn;
   const umrnCopyable = /^UM\d{6}$/.test(selectedUmrn);
 
+  /* The wait clock and the facts grid: in the fixed panel top on desktop, inside the scrolling
+   sheet on a phone (v10), so the decision list gets the height. */
+  const renderDetailFacts = (r: Referral) => (
+    <>
+      {referralState(r) === "queued" ? <DecisionClock referral={r} now={now} /> : null}
+
+      <dl className={a.strip}>
+        <div>
+          <dt>From</dt>
+          <dd>{siteByCode(r.originSiteCode)?.name ?? r.originSiteCode}</dd>
+          <dd className={a.stripSub}>{REFERRAL_SOURCE_WORDS[r.source]}</dd>
+        </div>
+        {/* U3: once every request is answered there is nothing being asked for, so the cell goes. */}
+        {openArms(r).length > 0 ? (
+          <div>
+            <dt>Asking for</dt>
+            <dd>{askingForShort(r)}</dd>
+            <dd className={a.stripSub}>{needWords(r).join(", ") || "No bed needs"}</dd>
+          </div>
+        ) : null}
+        <div data-testid="ward-referral-detail-legal-status">
+          <dt>Legal status</dt>
+          <dd>{r.intake?.legalStatus?.trim() || "Not recorded"}</dd>
+        </div>
+        {/* v10 phone: the facts read as a two by two grid, so the needs get their own cell. */}
+        {/* Hidden above the phone by CSS, so screen readers meet it only where it shows. */}
+        <div className={a.stripPhone}>
+          <dt>Needs</dt>
+          <dd>
+            {(() => {
+              const ward = wardArm(r)?.destination;
+              const words = [
+                ward?.secureBedNeeded ? "Secure bed" : undefined,
+                ward?.involuntaryBedNeeded ? "Involuntary" : undefined,
+                ward?.highAcuityNursingNeeded ? "High acuity" : undefined,
+                r.transportNeeded ? "Transport" : undefined,
+              ].filter(Boolean);
+              return words.length > 0 ? words.join(", ") : "None";
+            })()}
+          </dd>
+        </div>
+      </dl>
+    </>
+  );
+
+  const viewSwitch = (
+    <Tabs
+      label="Referral views"
+      idPrefix="ward-referral-view"
+      className={a.viewTabs}
+      value={view}
+      onChange={setView}
+      items={[
+        { id: "queue", label: "Queue", count: queued.length },
+        { id: "history", label: "History", count: decidedTotal },
+      ]}
+    />
+  );
+
   return (
     <div
       className={styles.screen}
@@ -713,7 +815,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               median={medianDecision !== undefined ? durMinutes(medianDecision) : undefined}
               overdue={overdueQueued.length}
               tier1={queued.filter((r) => highlightTest("tier1", r, now)).length}
-              bedsReady={bedsSummary.cells.reduce((sum, cell) => sum + cell.value, 0)}
+              bedsReady={bedsSummary.total}
               highlight={highlight}
               onHighlight={(key) => {
                 setSearchQuery("");
@@ -725,10 +827,15 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               onMeeting={() => setSheet("meeting")}
             />
             <ReferralPhoneChips
-              chips={(["ward", "ed", "community", "refused"] as const).map((key) => ({
+              chips={(["ward", "ed", "both", "community", "refused"] as const).map((key) => ({
                 key,
-                label: key === "refused" ? "Refused once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
-                count: queued.filter((r) => highlightTest(key, r, now)).length,
+                label:
+                  key === "refused"
+                    ? "Refused once"
+                    : key === "both"
+                      ? "Both"
+                      : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
+                count: queued.filter((r) => highlightTest(key, r, now, true)).length,
               }))}
               highlight={highlight}
               onHighlight={(key) => {
@@ -741,7 +848,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
             {queued.length > 0 ? (
               <ReferralPhoneCard
                 title="Waiting time against due times"
-                meta={`Due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h · tap a mark to open`}
+                meta={`${queued.filter((r) => highlightTest("overdue", r, now)).length} past due · due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h`}
                 expanded={phoneSheet === "axis"}
                 onOpen={() => setPhoneSheet("axis")}
               />
@@ -850,29 +957,22 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           ) : null}
           <div className={styles.registerQueue} role="region" aria-label="Referral queues" tabIndex={0}>
             <Card className={cx(styles.v6QueueCard, a.queueCard)}>
+              {/* Phone (Josh, 12 Oct 2026): Queue and History pin under the phone header, as Home's
+                  queue switch does. The row sits in the queue card beside the list it pins over. */}
+              {phoneLayout ? <div className={cx(a.phoneViewRow, wardPin.pinnedSwitch)}>{viewSwitch}</div> : null}
               <div className={a.toolbar}>
-                <Tabs
-                  label="Referral views"
-                  idPrefix="ward-referral-view"
-                  className={a.viewTabs}
-                  value={view}
-                  onChange={setView}
-                  items={[
-                    { id: "queue", label: "Queue", count: queued.length },
-                    { id: "history", label: "History", count: decidedTotal },
-                  ]}
-                />
+                {phoneLayout ? null : viewSwitch}
                 {/* The search narrows queue rows only, so History (at most ten rows) does not offer it. */}
                 {view === "queue" ? (
                   <TextInput
                     type="search"
                     icon={Search}
                     boxClassName={a.search}
-                    placeholder="Name, UMRN, hospital or suburb"
+                    placeholder="Filter queue"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onClear={() => setSearchQuery("")}
-                    aria-label="Search referrals"
+                    aria-label="Filter referrals"
                   />
                 ) : null}
                 {/* v10: Refused once moved here from the hero, which keeps its five chips. */}
@@ -902,7 +1002,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                           <b>
                             {highlightedCount} of {shownQueued.length}
                           </b>{" "}
-                          highlighted · all rows stay
+                          {phoneFiltered ? "shown" : "highlighted · all rows stay"}
                         </span>
                       ) : null}
                       <Button variant="ghost" size="sm" onClick={clearHighlights}>
@@ -910,17 +1010,23 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       </Button>
                     </>
                   ) : (
-                    <span className={a.orderNote} data-testid="ward-referral-board-order-note">
+                    <span
+                      className={a.orderNote}
+                      data-testid="ward-referral-board-order-note"
+                      title="Longest wait first, tier breaks ties"
+                    >
                       <ListOrdered size={14} aria-hidden="true" />
-                      <b>Longest wait first</b> · tier breaks ties
+                      <b>Longest wait first</b>
+                      <span className={a.orderTie}> · tier breaks ties</span>
                     </span>
                   )}
                 </span>
               </div>
               <TabPanel idPrefix="ward-referral-view" id="queue" hidden={view !== "queue"}>
                 <QueuedSection
-                  queued={shownQueued}
-                  searchMiss={searching && shownQueued.length === 0 && queued.length > 0}
+                  queued={listedQueued}
+                  searchMiss={(searching || phoneFiltered) && listedQueued.length === 0 && queued.length > 0}
+                  filterMiss={phoneFiltered && !searching}
                   now={now}
                   selectedId={selectedReferralId}
                   onSelect={handleSelect}
@@ -929,8 +1035,17 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   patients={patients}
                   allReferrals={referrals}
                   readmissionIndex={readmissionIndex}
-                  isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
-                  isDimmed={(referral) => anyHighlight && !isHighlighted(referral)}
+                  isHighlighted={(referral) => anyHighlight && !phoneFiltered && isHighlighted(referral)}
+                  isDimmed={(referral) =>
+                    anyHighlight && !phoneFiltered && !isHighlighted(referral) && !isOverdue(referral, now)
+                  }
+                />
+                <WardOffersSection
+                  movements={movements}
+                  referrals={referrals}
+                  units={units}
+                  patients={patients}
+                  now={now}
                 />
               </TabPanel>
               <TabPanel idPrefix="ward-referral-view" id="history" className={a.history} hidden={view !== "history"}>
@@ -956,19 +1071,25 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 ) : null}
               </TabPanel>
               <div className={a.queueFoot}>
-                <span className={a.keyHint}>
+                <span className={a.keyHint} data-kbd-hint="">
                   <Kbd>J</Kbd>
                   <Kbd>K</Kbd> move
                 </span>
-                <span className={a.keyHint}>
+                <span className={a.keyHint} data-kbd-hint="">
                   <Kbd>Esc</Kbd> close
                 </span>
-                <button type="button" className={a.keyLink} onClick={() => setSheet("keys")}>
+                <button type="button" className={a.keyLink} data-kbd-hint="" onClick={() => setSheet("keys")}>
                   <Kbd>?</Kbd> all shortcuts
                 </button>
                 <span className={a.footNote}>
                   Highlights dim rows and keep every referral. Search narrows the list.
                 </span>
+                {/* v10 phone: the order note sits under the queue instead of in the toolbar. */}
+                {view === "queue" ? (
+                  <span className={a.phoneFootNote} aria-hidden="true">
+                    Longest wait first · tier breaks ties
+                  </span>
+                ) : null}
               </div>
             </Card>
           </div>
@@ -1036,29 +1157,57 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     {(() => {
                       const accepted = acceptedAddressing(selectedReferral);
                       const linkedMovement = movements.find((m) => m.referralId === selectedReferral.id && !m.closure);
-                      const targetWardUnitId = accepted?.acceptedUnitId ?? linkedMovement?.acceptedUnitId;
+                      const targetWardUnitId =
+                        accepted?.acceptedUnitId ??
+                        linkedMovement?.acceptedUnitId ??
+                        acceptedWardOf(selectedReferral, units)?.unitId;
                       const targetWard = targetWardUnitId ? units.find((u) => u.id === targetWardUnitId) : undefined;
                       if (!targetWardUnitId) return null;
+                      // S-9 (audit 13 Oct 2026): an accepted referral was a dead end. It links on to
+                      // its movement when one is open, otherwise names the next step, holding the
+                      // bed on the accepting ward, and links the patient record.
                       return (
-                        <Link
-                          href={`/mockups/ward-flow/board/${targetWardUnitId}`}
-                          className={buttonClass({ variant: "ghost", size: "sm" })}
-                          title={`Open ${targetWard?.name ?? "ward"} bed board`}
-                        >
-                          Open ward board
-                        </Link>
+                        <>
+                          {linkedMovement ? (
+                            <Link
+                              href={`/mockups/ward-flow/movements/${encodeURIComponent(linkedMovement.id)}`}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
+                              data-testid="ward-referral-open-movement"
+                            >
+                              Open movement
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/mockups/ward-flow/board/${targetWardUnitId}`}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
+                              title={`Open ${targetWard?.name ?? "ward"} bed board`}
+                              data-testid="ward-referral-hold-bed"
+                            >
+                              Hold the bed
+                            </Link>
+                          )}
+                          {selectedReferral.patientId && !isPhone ? (
+                            <Link
+                              href={`/mockups/ward-flow/people/${encodeURIComponent(selectedReferral.patientId)}`}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
+                              data-testid="ward-referral-open-patient"
+                            >
+                              Patient
+                            </Link>
+                          ) : null}
+                        </>
                       );
                     })()}
-                    <Button
-                      variant="sec"
-                      size="sm"
-                      icon={Hand}
-                      disabledReason={NOT_WIRED}
-                      reasonDisplay="tooltip"
-                      className={a.preview}
-                    >
-                      Claim
-                    </Button>
+                    {!isPhone ? (
+                      <NotWiredButton
+                        label="Claim"
+                        variant="sec"
+                        size="sm"
+                        icon={Hand}
+                        className={a.preview}
+                        data-testid="ward-referral-claim"
+                      />
+                    ) : null}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1076,52 +1225,61 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       selectedReadmission ? <ReadmissionFlag flag={selectedReadmission} expandable={false} /> : null
                     }
                   />
-                  {referralState(selectedReferral) === "queued" ? (
-                    <DecisionClock referral={selectedReferral} now={now} />
+                  {!isPhone ? renderDetailFacts(selectedReferral) : null}
+
+                  {!isPhone ? (
+                    <Tabs
+                      label="Referral detail"
+                      idPrefix="ward-referral-inspector"
+                      className={a.panelTabs}
+                      value={inspectorTab}
+                      onChange={setInspectorTab}
+                      items={[
+                        {
+                          id: "place",
+                          label: wardArm(selectedReferral) ? "Place" : "Decide",
+                          count: selectedReadyUnits,
+                        },
+                        { id: "patient", label: "Patient" },
+                        {
+                          id: "timeline",
+                          label: "Timeline",
+                          count: referralTimeline(selectedReferral, units).length,
+                        },
+                      ]}
+                    />
                   ) : null}
-
-                  <dl className={a.strip}>
-                    <div>
-                      <dt>From</dt>
-                      <dd>{siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode}</dd>
-                      <dd className={a.stripSub}>{REFERRAL_SOURCE_WORDS[selectedReferral.source]}</dd>
-                    </div>
-                    <div>
-                      <dt>Asking for</dt>
-                      <dd>{askingForShort(selectedReferral)}</dd>
-                      <dd className={a.stripSub}>{needWords(selectedReferral).join(", ") || "No bed needs"}</dd>
-                    </div>
-                    <div data-testid="ward-referral-detail-legal-status">
-                      <dt>Legal status</dt>
-                      <dd>{selectedReferral.intake?.legalStatus?.trim() || "Not recorded"}</dd>
-                    </div>
-                  </dl>
-
-                  <Tabs
-                    label="Referral detail"
-                    idPrefix="ward-referral-inspector"
-                    className={a.panelTabs}
-                    value={inspectorTab}
-                    onChange={setInspectorTab}
-                    items={[
-                      { id: "place", label: wardArm(selectedReferral) ? "Place" : "Decide", count: selectedReadyUnits },
-                      { id: "patient", label: "Patient" },
-                      {
-                        id: "timeline",
-                        label: "Timeline",
-                        count: referralTimeline(selectedReferral, units).length,
-                      },
-                    ]}
-                  />
                 </div>
 
-                <TabPanel
-                  key={`${selectedReferral.id}-${inspectorTab}`}
-                  idPrefix="ward-referral-inspector"
-                  id={inspectorTab}
-                  className={cx(styles.registerDetailBody, a.panelBody)}
-                >
-                  {inspectorTab === "place" ? (
+                {isPhone ? (
+                  <div className={cx(styles.registerDetailBody, a.panelBody, mph.body)}>
+                    {renderDetailFacts(selectedReferral)}
+                    {(() => {
+                      const stages = referralJourneyStages(selectedReferral, now);
+                      return stages ? (
+                        <section className={mph.journey} aria-labelledby="ward-referral-phone-journey">
+                          <p className={mph.ch} id="ward-referral-phone-journey">
+                            Journey
+                          </p>
+                          <JourneyStrip
+                            label="Referral journey"
+                            stages={stages}
+                            formatDuration={journeyDuration}
+                            note={false}
+                          />
+                          {(() => {
+                            // U3 (review 12 Oct 2026): words, not "Now: Bed offered 0s".
+                            const current = stages.find((stage) => stage.now);
+                            return current ? (
+                              <p className={mph.journeyNote} aria-hidden="true">
+                                {current.label}{" "}
+                                {current.minutes < 1 ? "just now" : `${durMinutes(current.minutes)} ago`}
+                              </p>
+                            ) : null;
+                          })()}
+                        </section>
+                      ) : null;
+                    })()}
                     <ReferralMatchView
                       key={selectedReferral.id}
                       referral={selectedReferral}
@@ -1132,41 +1290,133 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       patientInfo={selectedPatientInfo}
                       hideDossierHeader
                       onDecision={(title) => watchDecision(selectedReferral.id, title)}
+                      admissions={admissions}
+                      bedReleases={bedReleases}
+                      phone={
+                        <>
+                          <span className={a.notWiredStart}>
+                            <NotWiredButton
+                              label="Claim this referral"
+                              variant="sec"
+                              icon={Hand}
+                              className={mph.tall}
+                              data-testid="ward-referral-phone-claim"
+                            />
+                          </span>
+                          <button
+                            type="button"
+                            className={mph.more}
+                            aria-expanded={phoneTimelineOpen}
+                            onClick={() => setPhoneTimelineOpen((open) => !open)}
+                          >
+                            {phoneTimelineOpen
+                              ? "Hide timeline"
+                              : `Show timeline, ${referralTimeline(selectedReferral, units).length} ${referralTimeline(selectedReferral, units).length === 1 ? "event" : "events"}`}
+                          </button>
+                          {phoneTimelineOpen ? (
+                            <ReferralTimeline referral={selectedReferral} units={units} now={now}>
+                              <ReferralHistoryAndCorrections
+                                referral={selectedReferral}
+                                now={now}
+                                dispatch={dispatch}
+                              />
+                            </ReferralTimeline>
+                          ) : null}
+                          <button
+                            type="button"
+                            className={mph.more}
+                            aria-expanded={phonePatientOpen}
+                            onClick={() => setPhonePatientOpen((open) => !open)}
+                          >
+                            {phonePatientOpen ? "Hide patient details" : "Show patient details"}
+                          </button>
+                          {phonePatientOpen ? (
+                            <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
+                          ) : null}
+                          <div className={mph.acts}>
+                            <span className={a.notWiredUp}>
+                              <NotWiredButton
+                                label="Escalate"
+                                variant="ghost"
+                                size="sm"
+                                icon={Megaphone}
+                                data-testid="ward-referral-phone-escalate"
+                              />
+                            </span>
+                            <span className={a.spacer} />
+                            <SummaryButton onClick={() => setSheet("summary")} />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={ChevronRight}
+                              onClick={() => selectAt(1)}
+                              title="Next referral (J)"
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        </>
+                      }
                     />
-                  ) : null}
-                  {inspectorTab === "patient" ? (
-                    <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
-                  ) : null}
-                  {inspectorTab === "timeline" ? (
-                    <ReferralTimeline referral={selectedReferral} units={units} now={now}>
-                      <ReferralHistoryAndCorrections referral={selectedReferral} now={now} dispatch={dispatch} />
-                    </ReferralTimeline>
-                  ) : null}
-                </TabPanel>
+                  </div>
+                ) : (
+                  <TabPanel
+                    key={`${selectedReferral.id}-${inspectorTab}`}
+                    idPrefix="ward-referral-inspector"
+                    id={inspectorTab}
+                    className={cx(styles.registerDetailBody, a.panelBody)}
+                  >
+                    {inspectorTab === "place" ? (
+                      <ReferralMatchView
+                        key={selectedReferral.id}
+                        referral={selectedReferral}
+                        units={units}
+                        now={now}
+                        dispatch={dispatch}
+                        rejections={rejections}
+                        patientInfo={selectedPatientInfo}
+                        hideDossierHeader
+                        onDecision={(title) => watchDecision(selectedReferral.id, title)}
+                        admissions={admissions}
+                        bedReleases={bedReleases}
+                      />
+                    ) : null}
+                    {inspectorTab === "patient" ? (
+                      <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
+                    ) : null}
+                    {inspectorTab === "timeline" ? (
+                      <ReferralTimeline referral={selectedReferral} units={units} now={now}>
+                        <ReferralHistoryAndCorrections referral={selectedReferral} now={now} dispatch={dispatch} />
+                      </ReferralTimeline>
+                    ) : null}
+                  </TabPanel>
+                )}
 
-                <div className={a.panelFoot}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={Megaphone}
-                    disabledReason={NOT_WIRED}
-                    reasonDisplay="tooltip"
-                    className={a.preview}
-                  >
-                    Escalate
-                  </Button>
-                  <span className={a.spacer} />
-                  <SummaryButton onClick={() => setSheet("summary")} />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={ChevronRight}
-                    onClick={() => selectAt(1)}
-                    title="Next referral (J)"
-                  >
-                    Next
-                  </Button>
-                </div>
+                {!isPhone ? (
+                  <div className={a.panelFoot}>
+                    <span className={a.notWiredUp}>
+                      <NotWiredButton
+                        label="Escalate"
+                        variant="ghost"
+                        size="sm"
+                        icon={Megaphone}
+                        className={a.preview}
+                        data-testid="ward-referral-escalate"
+                      />
+                    </span>
+                    <span className={a.spacer} />
+                    <SummaryButton onClick={() => setSheet("summary")} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={ChevronRight}
+                      onClick={() => selectAt(1)}
+                      title="Next referral (J)"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                ) : null}
                 <IsbarSheet
                   open={sheet === "summary"}
                   onClose={() => setSheet(null)}
@@ -1225,8 +1475,11 @@ function QueuedSection({
   isHighlighted = () => false,
   isDimmed = () => false,
   searchMiss = false,
+  filterMiss = false,
 }: {
   queued: Referral[];
+  /** The phone's chip filter, not the search, narrowed the queue to nothing. */
+  filterMiss?: boolean;
   /** The search narrowed an open queue to nothing: say so rather than "no referral is queued". */
   searchMiss?: boolean;
   /** Every referral, not just the queue: a prior stay links to its person through its own referral. */
@@ -1246,6 +1499,8 @@ function QueuedSection({
     () => ({ patients, referrals: allReferrals, movements }),
     [patients, allReferrals, movements],
   );
+  // A2-20: initials plus UMRN on a phone when Discreet names is on.
+  const nameFor = usePatientNameDisplay();
   return (
     <section className={styles.v6Section} data-testid="ward-referral-board-queued">
       <h2 className="sr-only">
@@ -1253,7 +1508,11 @@ function QueuedSection({
       </h2>
       {queued.length === 0 ? (
         <p className={styles.v6Empty} data-testid="ward-referral-board-queued-empty">
-          {searchMiss ? "No queued referral matches the search." : "None. No referral is currently queued."}
+          {searchMiss
+            ? filterMiss
+              ? "No queued referral matches this chip."
+              : "No queued referral matches the search."
+            : "None. No referral is currently queued."}
         </p>
       ) : (
         <>
@@ -1332,7 +1591,7 @@ function QueuedSection({
                             onSelect(referral.id);
                           }}
                         >
-                          {patientInfo.displayName}
+                          {nameFor(patientInfo.displayName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
                           <span className={a.mono}>{patientInfo.umrn}</span> · {demographicLabel(referral)}
@@ -1356,10 +1615,15 @@ function QueuedSection({
                     </td>
                     <td data-testid={`ward-referral-board-hospital-${referral.id}`}>
                       <span className={a.who}>
-                        <span className={a.truncate} title={sendingHospital}>
-                          {sendingHospital}
+                        {/* Audit 11 Oct 2026: the site code, as phone shows, so names and figures are not cut. */}
+                        <span
+                          className={cx(a.truncate, a.mono)}
+                          title={`${sendingHospital}, ${REFERRAL_SOURCE_WORDS[referral.source]}`}
+                        >
+                          <span aria-hidden="true">{referral.originSiteCode}</span>
+                          <span className="sr-only">{sendingHospital}</span>
                         </span>
-                        <span className={a.sub}>{REFERRAL_SOURCE_WORDS[referral.source]}</span>
+                        <span className={cx(a.sub, a.fromSource)}>{REFERRAL_SOURCE_WORDS[referral.source]}</span>
                       </span>
                     </td>
                     <td>
@@ -1436,6 +1700,14 @@ function QueuedSection({
               const assignedUnit = unitId ? units.find((u) => u.id === unitId) : undefined;
               const selected = referral.id === selectedId;
               const dueAt = referralDueAt(referral, now);
+              const cardWait = referralWaitLine(referral, now);
+              const cardWard = wardArm(referral)?.destination;
+              const cardNeeds = [
+                cardWard?.secureBedNeeded,
+                cardWard?.involuntaryBedNeeded,
+                cardWard?.highAcuityNursingNeeded,
+                referral.transportNeeded,
+              ].filter(Boolean).length;
 
               return (
                 <li
@@ -1462,7 +1734,7 @@ function QueuedSection({
                     </span>
                     <span className={a.cardMain}>
                       <span className={a.cardName}>
-                        <strong>{patientInfo.displayName}</strong>
+                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong>
                         <ReadmissionFlag
                           flag={referralReadmissionFlag(referral, readmissionIndex)}
                           expandable={false}
@@ -1470,16 +1742,27 @@ function QueuedSection({
                         />
                       </span>
                       <span className={a.cardRoute}>
-                        {referral.originSiteCode} to {askingForShort(referral)}
+                        <b>{referral.originSiteCode}</b> to {askingForShort(referral)}
                       </span>
+                      {/* v10 phone row: age band and sex, then how many bed needs, never the region. */}
                       <span className={a.cardFacts} data-testid={`ward-referral-board-card-service-${referral.id}`}>
-                        {referralPersonFactsStatingSex(referral).join(" · ")}
+                        {[
+                          ...referralPersonFactsStatingSex(referral).slice(0, 2),
+                          ...(cardNeeds > 0 ? [`${cardNeeds} ${cardNeeds === 1 ? "need" : "needs"}`] : []),
+                        ].join(" · ")}
                         {assignedUnit ? ` · Bed at ${assignedUnit.name}` : ""}
                       </span>
                     </span>
                     <span className={a.cardClock}>
                       <span className={a.cardWait} data-testid={`ward-referral-board-card-wait-${referral.id}`}>
-                        {referralWaitLine(referral, now)}
+                        {cardWait.endsWith(" waiting") ? (
+                          <>
+                            {cardWait.slice(0, -" waiting".length)}
+                            <span className="sr-only"> waiting</span>
+                          </>
+                        ) : (
+                          cardWait
+                        )}
                       </span>
                       {dueAt !== undefined ? <DueTimer dueAt={dueAt} now={now} /> : null}
                     </span>
@@ -1537,6 +1820,7 @@ function DecidedSection({
   onSelect: (id: string) => void;
   onResetFilters?: () => void;
 }) {
+  const nameFor = usePatientNameDisplay();
   return (
     <section className={cx(styles.v6Section, styles.v6Decided)} data-testid="ward-referral-board-decided">
       <CardHead
@@ -1606,7 +1890,7 @@ function DecidedSection({
                     <td>
                       <div>{outcomeLabel(referral)}</div>
                       <span style={{ display: "block", fontSize: "0.82rem", marginTop: "0.2rem" }}>
-                        <strong>{patientInfo.displayName}</strong>
+                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong>
                       </span>
                     </td>
                     <td data-testid={`ward-referral-board-decided-detail-${referral.id}`}>
@@ -1655,7 +1939,7 @@ function DecidedSection({
                       <span className={styles.v6RowLine}>
                         <StatusGlyph tone={accepted ? "success" : "closed"} size={10} />
                         <span className="sr-only">{outcomeLabel(referral)}, </span>
-                        <strong>{patientInfo.displayName}</strong> {accepted ? "to " : ""}
+                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong> {accepted ? "to " : ""}
                         <span
                           className={styles.v6RowOutcome}
                           data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}
@@ -1688,4 +1972,48 @@ function DecidedSection({
       )}
     </section>
   );
+}
+
+/** Journey segment time: "just now" under a minute, never "0s". */
+function journeyDuration(minutes: number): string {
+  return minutes < 1 ? "just now" : durMinutes(minutes);
+}
+
+/**
+ * v10 phone referral sheet: the referral's own recorded steps as a journey strip (Referred,
+ * Triaged, Bed offered), sized by real time. Undefined while there is only one step to show.
+ */
+function referralJourneyStages(referral: Referral, now: Instant): JourneyStage[] | undefined {
+  // Only a ward's acceptance offers a bed; an ED or community team accepting offers none.
+  const offeredAt = referral.destinations
+    .filter(
+      (arm) => arm.destination.kind === "psychiatric_ward" && arm.state === "accepted" && arm.decidedAt !== undefined,
+    )
+    .map((arm) => arm.decidedAt as number)
+    .sort((x, y) => x - y)[0];
+  // A triage time recorded before the referral was raised (or after the offer) cannot size the
+  // strip without counting time outside its own stage, so the strip leaves it out.
+  const triagedAt =
+    referral.triagedAt !== undefined &&
+    referral.triagedAt >= referral.raisedAt &&
+    (offeredAt === undefined || referral.triagedAt <= offeredAt)
+      ? referral.triagedAt
+      : undefined;
+  if (triagedAt === undefined && offeredAt === undefined) return undefined;
+  const stages: JourneyStage[] = [];
+  const referredEnd = triagedAt ?? offeredAt ?? now;
+  stages.push({ id: "referred", label: "Referred", minutes: Math.max(0, referredEnd - referral.raisedAt) });
+  if (triagedAt !== undefined) {
+    const end = offeredAt ?? now;
+    stages.push({
+      id: "triaged",
+      label: "Triaged",
+      minutes: Math.max(0, end - triagedAt),
+      now: offeredAt === undefined,
+    });
+  }
+  if (offeredAt !== undefined) {
+    stages.push({ id: "offered", label: "Bed offered", minutes: Math.max(0, now - offeredAt), now: true });
+  }
+  return stages;
 }

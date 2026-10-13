@@ -3,7 +3,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { CalendarClock } from "lucide-react";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { CountBubble, Icon, SrOnly, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
+import { CountBubble, Icon, SrOnly, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
 import styles from "./ward-decisions-cockpit.module.css";
 
 export interface DepartureDecision {
@@ -91,6 +91,14 @@ interface DecisionItem {
   actions?: ReactNode;
   /** Shown for awareness only. Nothing here can be decided, so it never counts as open. */
   info?: boolean;
+  /** Phone list (v10): the kind of decision leads the title ("Held up · name"). */
+  kind?: string;
+  /** Phone list: the second line without the kind repeated. */
+  detail?: string;
+  /** Phone list: a title of its own where kind and title would repeat each other. */
+  phoneTitle?: string;
+  /** Phone list (v10 glyphs): planned work reads as a bar, a referral as an open ring. */
+  phoneTone?: WfTone;
 }
 
 interface WindowSpec {
@@ -234,6 +242,7 @@ function Queue({
   children?: ReactNode;
 }) {
   const baseId = useId();
+  const isPhone = useIsPhone();
   const [sent, setSent] = useState<SentAction | null>(null);
   const [history, setHistory] = useState<{ id: string; kind: ActionKind; title: string }[]>([]);
   const [dismissedSeq, setDismissedSeq] = useState(0);
@@ -291,8 +300,10 @@ function Queue({
       id: "rollup",
       group: "act",
       tone: "danger",
-      title: `${rollupTimeLabel} Morning Bed Rollup Overdue`,
+      title: `${rollupTimeLabel} morning bed rollup overdue`,
       sub: staffingFact,
+      phoneTitle: `Rollup overdue · due ${rollupTimeLabel}`,
+      detail: staffingFact,
       testId: "ward-morning-rollup-overdue-banner",
       actions: onConfirmRollup ? (
         <button
@@ -312,7 +323,7 @@ function Queue({
       id: "rollup",
       group: "wait",
       tone: "neutral",
-      title: `Morning Bed Rollup due ${rollupTimeLabel}`,
+      title: `Morning bed rollup due ${rollupTimeLabel}`,
       sub: staffingFact,
     });
   }
@@ -321,7 +332,7 @@ function Queue({
       id: "rollup-done",
       group: "done",
       tone: "success",
-      title: `${rollupTimeLabel} Morning Bed Rollup Confirmed`,
+      title: `${rollupTimeLabel} morning bed rollup confirmed`,
       sub: `${plannedDischarges} discharges scheduled today`,
       testId: "ward-morning-rollup-confirmed-banner",
     });
@@ -336,6 +347,9 @@ function Queue({
       tone: "warning",
       title: name,
       sub: joinSub(detail, "Referral to answer"),
+      kind: "Referral to answer",
+      detail,
+      phoneTone: "neutral",
       actions: onAccept ? (
         <button
           type="button"
@@ -364,12 +378,14 @@ function Queue({
       tone: "danger",
       title: name,
       sub: joinSub(detail, "Held up"),
+      kind: "Held up",
+      detail,
       actions: (
         <>
           {onConfirm ? (
             <button
               type="button"
-              className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.pill)}
+              className={cx(buttonClass({ variant: isPhone ? "sec" : "ghost", size: "sm" }), styles.pill)}
               onClick={() => {
                 send("sign", [{ id: row.id, title: row.title, run: onConfirm }]);
               }}
@@ -401,10 +417,13 @@ function Queue({
       tone: "warning",
       title: name,
       sub: detail ?? "Ready to sign off",
+      kind: "Ready to sign off",
+      detail,
+      phoneTone: "info",
       actions: onConfirm ? (
         <button
           type="button"
-          className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.pill)}
+          className={cx(buttonClass({ variant: isPhone ? "sec" : "ghost", size: "sm" }), styles.pill)}
           onClick={() => {
             send("sign", [{ id: row.id, title: row.title, run: onConfirm }]);
           }}
@@ -490,7 +509,8 @@ function Queue({
   let notice: { tone: WfTone; text: string } | null = null;
   // The notice belongs to the window the action was taken in, so another window never shows it.
   const sentWindow: WindowId | null = sent ? (sent.kind === "accept" ? "intake" : "departures") : null;
-  if (sent && sent.seq !== dismissedSeq && chosen === sentWindow) {
+  // Phone shows every window in one list, so the notice shows whichever window the action came from.
+  if (sent && sent.seq !== dismissedSeq && (isPhone || chosen === sentWindow)) {
     const done = sent.ids.filter((id) => recorded(sent.kind, id));
     const n = sent.ids.length;
     const first = sent.titles.get(sent.ids[0]) ?? "";
@@ -521,11 +541,90 @@ function Queue({
   }
 
   const groupLabel = new Map<Group, string>([
-    ["act", chosen === "departures" ? "Held up" : "Act now"],
+    // "Act now" is the Ward hero's and Home's own figure (L1, site review 12 Oct 2026), so a window
+    // here names what its red rows are instead of printing a second, smaller "Act now" count.
+    ["act", chosen === "departures" ? "Held up" : "Overdue"],
     ["wait", "Waiting"],
     ["ready", "Ready to sign off"],
     ["done", "Done"],
   ]);
+
+  if (isPhone) {
+    // Phone (v10): one flat list grouped Intake, Departures, Leave and away, Staffing. The same
+    // rows and actions as the windows above it on desktop, without the window track.
+    const sections: { id: WindowId; label: string }[] = [
+      { id: "intake", label: "Intake" },
+      { id: "departures", label: "Departures" },
+      { id: "leave", label: "Leave and away" },
+      { id: "staffing", label: "Staffing" },
+    ];
+    return (
+      <div className={styles.container}>
+        <h2 className={styles.srOnly}>Decisions, {dueCount > 0 ? `${dueCount} due` : "Done"}</h2>
+        <section className={styles.phoneList} aria-label="Decisions this shift">
+          <p className={styles.notice} role="status" aria-live="polite">
+            {notice ? (
+              <>
+                <StatusGlyph tone={notice.tone} />
+                <span>{notice.text}</span>
+              </>
+            ) : null}
+          </p>
+          {sections.map((section) => {
+            const list = [...itemsOf(section.id)].sort(
+              (a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group),
+            );
+            const headingId = `${baseId}-phone-${section.id}`;
+            const staffingChildren = section.id === "staffing" ? children : null;
+            if (list.length === 0 && staffingChildren == null) return null;
+            return (
+              <div key={section.id} className={styles.phoneGroup} role="group" aria-labelledby={headingId}>
+                <h3 id={headingId} className={styles.phoneHead}>
+                  <span>{section.label}</span>
+                  <span className={styles.phoneCount}>{list.length}</span>
+                </h3>
+                {list.length > 0 ? (
+                  <ul className={styles.rows}>
+                    {list.map((item) => (
+                      <DecisionRow key={item.id} item={item} phone />
+                    ))}
+                  </ul>
+                ) : null}
+                {staffingChildren}
+                {section.id === "departures" && signable.length > 1 ? (
+                  <div className={styles.phoneBulk}>
+                    <span className={styles.bulkMeta}>
+                      <b>{signable.length}</b> ready to sign off
+                    </span>
+                    <button
+                      type="button"
+                      className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
+                      onClick={() => {
+                        send(
+                          "sign",
+                          signable.map((row) => ({ id: row.id, title: row.title, run: row.onConfirm })),
+                        );
+                      }}
+                    >
+                      Sign off {signable.length}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+          {dueCount === 0 && sections.every((section) => itemsOf(section.id).length === 0) ? (
+            <ul className={styles.rows}>
+              <DecisionRow
+                item={{ id: "none", group: "done", tone: "success", title: "Nothing due", sub: unitName }}
+                phone
+              />
+            </ul>
+          ) : null}
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -745,13 +844,20 @@ function Queue({
   );
 }
 
-function DecisionRow({ item }: { item: DecisionItem }) {
+function DecisionRow({ item, phone = false }: { item: DecisionItem; phone?: boolean }) {
+  const title = phone ? (item.phoneTitle ?? (item.kind ? `${item.kind} · ${item.title}` : item.title)) : item.title;
+  const sub = phone && (item.kind || item.phoneTitle) ? item.detail : item.sub;
+  const tone = phone ? (item.phoneTone ?? item.tone) : item.tone;
   return (
-    <li className={styles.row} data-testid={item.testId}>
-      <StatusGlyph tone={item.tone} />
+    <li
+      className={cx(styles.row, phone && styles.phoneRow)}
+      data-testid={item.testId}
+      data-act={phone && item.group === "act" ? "true" : undefined}
+    >
+      <StatusGlyph tone={tone} />
       <span className={styles.rowText}>
-        <span className={styles.rowTitle}>{item.title}</span>
-        {item.sub ? <span className={styles.rowSub}>{item.sub}</span> : null}
+        <span className={styles.rowTitle}>{title}</span>
+        {sub ? <span className={styles.rowSub}>{sub}</span> : null}
       </span>
       {item.actions ? <span className={styles.rowActions}>{item.actions}</span> : null}
     </li>

@@ -79,7 +79,8 @@ describe("gate board status card review fixes", () => {
       buildPatientStatus(mode, ctx({ ...base, stage, transport: undefined, transportNeed: undefined })).cells.find(
         (cell) => cell.key === (mode === "held" ? "transport" : "collected"),
       )?.action?.kind;
-    expect(booking("accepted_awaiting_bed", "held")).toBe("unavailable");
+    // B3 (site review, 12 Oct 2026): before the bed is held, Log booking opens that step instead of greying.
+    expect(booking("accepted_awaiting_bed", "held")).toBe("button");
     expect(booking("pulled", "held")).toBe("button");
     expect(booking("handover_ready", "transit")).toBe("button");
     expect(booking("moving", "transit")).toBe("unavailable");
@@ -88,6 +89,30 @@ describe("gate board status card review fixes", () => {
       ctx({ ...base, stage: "accepted_awaiting_bed", transport: undefined, transportNeed: undefined }),
     ).cells.find((cell) => cell.key === "transport");
     expect(waiting?.sub).toBe("Needs the bed held");
+    let opened = "";
+    const prior = buildPatientStatus(
+      "held",
+      ctx(
+        { ...base, stage: "accepted_awaiting_bed", transport: undefined, transportNeed: undefined },
+        { onOpenPlacement: () => (opened = "placement"), onBookTransport: () => (opened = "booking") },
+      ),
+    ).cells.find((cell) => cell.key === "transport")?.action;
+    expect(prior?.kind === "button" && prior.secondary).toBe(true);
+    if (prior?.kind === "button") prior.onClick({} as never);
+    expect(opened).toBe("placement");
+  });
+
+  it("links the Bed and Transport values to the ward and the movement (decision 2)", () => {
+    const held = buildPatientStatus(
+      "held",
+      ctx(base, {
+        acceptedUnitName: "Synthetic ward",
+        bedHref: "/mockups/ward-flow/ward/U-1",
+        transportHref: `/mockups/ward-flow/movements/${base.id}`,
+      }),
+    );
+    expect(held.cells.find((cell) => cell.key === "bed")?.href).toBe("/mockups/ward-flow/ward/U-1");
+    expect(held.cells.find((cell) => cell.key === "transport")?.href).toBe(`/mockups/ward-flow/movements/${base.id}`);
   });
 
   it("names each missing person step's Record button by its step", () => {
@@ -102,6 +127,24 @@ describe("gate board status card review fixes", () => {
     const names = absent.rows?.map((row) => (row.action?.kind === "button" ? row.action.ariaLabel : undefined));
     expect(names).toContain("Record Ward and grounds searched");
     expect(new Set(names).size).toBe(names?.length);
+  });
+
+  it("keeps the return order step when either the movement or the patient record is involuntary", () => {
+    const stepsFor = (patientLegal: string) =>
+      buildPatientStatus(
+        "awol",
+        ctx(
+          { ...base, legalStatus: "Voluntary", legalForm: undefined, closure: undefined },
+          {
+            patient: { legalStatus: patientLegal } as PatientStatusContext["patient"],
+            leaveBed: {
+              absentWithoutLeave: { since: NOW_ANCHOR - 30, steps: [] },
+            } as unknown as PatientStatusContext["leaveBed"],
+          },
+        ),
+      ).rows?.map((row) => row.key);
+    expect(stepsFor("Involuntary patient (recorded)")).toContain("return_order_made");
+    expect(stepsFor("Voluntary")).not.toContain("return_order_made");
   });
 
   it("keeps an arrived stay's form in force on leave, and drops a movement that did not proceed", () => {
@@ -138,5 +181,20 @@ describe("gate board status card review fixes", () => {
       },
     } as PatientStatusContext["patient"]);
     expect(ended).toMatchObject({ kind: "button", label: "Record CTO" });
+  });
+
+  it("keeps an active CTO and its Record ended beside an accepted referral (Qodo, 13 Oct 2026)", () => {
+    const patient = {
+      communityTreatmentOrder: { form: "5A", recordedAt: NOW_ANCHOR - 120, recordedBy: "Community" },
+    } as PatientStatusContext["patient"];
+    const acceptedReferral = { unitName: "Synthetic Ward", boardHref: "/ward" };
+    const status = buildPatientStatus("cto", ctx(base, { patient, acceptedReferral }));
+    const cto = status.cells.find((cell) => cell.key === "cto");
+    expect(cto?.value).toBe("Form 5A in force");
+    expect(cto?.action).toMatchObject({ kind: "button", label: "Record ended" });
+    expect(status.cells.find((cell) => cell.key === "bed")?.value).toBe("Hold on Synthetic Ward");
+    expect(status.meta).toBe("Accepted at Synthetic Ward. Next: hold the bed");
+    // Idle keeps the accepted-referral card.
+    expect(buildPatientStatus("idle", ctx(base, { acceptedReferral })).verdict).toBe("Accepted, no bed held");
   });
 });

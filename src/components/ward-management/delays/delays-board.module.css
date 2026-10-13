@@ -542,11 +542,28 @@ button.stat:hover .statV {
 }
 
 .colB {
-  width: 9.5rem;
+  width: 9rem;
 }
 
+/* U1: wide enough for "Form 3B" plus the recorded time left, so legal status is never cut. */
 .colL {
-  width: 8.75rem;
+  width: 11rem;
+}
+
+/* Device audit (11 Oct 2026): on a tablet the table sits inside a narrower column, so the name and
+   wait columns give up width and Last update is no longer clipped at the right edge. */
+@media (min-width: 48.0625rem) and (max-width: 73.75rem) {
+  .tbl {
+    min-width: 0;
+  }
+
+  .colP {
+    width: 10rem;
+  }
+
+  .colW {
+    width: 8rem;
+  }
 }
 
 .tbl th {
@@ -1982,5 +1999,786 @@ button.gLaneL:hover {
     max-height: 88dvh;
     border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* The owner tile's sub count reads exactly as before on desktop and tablet. */
+.ownSubCount {
+  font-weight: inherit;
+}
+
+.sideB[hidden],
+.phCards {
+  display: none;
+}
+
+/*
+ * Phone (v10 Delays > Phone). The owner chips read name, count, then the act-now count. Order and
+ * the waited chips sit on the canvas; the groups and rows sit in one card, each row two lines with
+ * the tier, the wait and the last update. The registers, the longest quiet list and the graphs are
+ * cards that open sheets. Nothing here applies above 48rem.
+ */
+@media (max-width: 48rem) {
+  .own > small {
+    display: inline-flex;
+    gap: 4px;
+    order: 2;
+    color: var(--wf-ink-2);
+  }
+
+  .own > small:has(> span > .ownSubCount) {
+    display: inline-flex;
+  }
+
+  .ownSubText {
+    display: none;
+  }
+
+  .ownSubCount {
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  }
+
+  .own {
+    gap: 6px;
+  }
+
+  .ownTop {
+    flex-direction: row-reverse;
+    gap: 6px;
+  }
+
+  .ownName {
+    font-size: var(--wf-fs-13);
+  }
+
+  .ownTop b {
+    font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  }
+
+  /* The table card opens up: its controls sit on the canvas, its rows in one card. */
+  .tableCard {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .tableCard > .chead {
+    padding: 0;
+    border: 0;
+  }
+
+  .tableCard > .chead:first-child {
+    margin-bottom: var(--wf-s-3);
+  }
+
+  .tableCard > .chead:first-child > :not(.seg) {
+    display: none;
+  }
+
+  .tableCard > .chead:first-child > .seg {
+    display: grid;
+    flex: 1 1 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tableCard > .chead .seg button {
+    height: 40px;
+    font-size: var(--wf-fs-13);
+  }
+
+  .fRow {
+    flex-wrap: nowrap;
+    gap: var(--wf-s-2);
+    margin-bottom: var(--wf-s-3);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .fRow > .eyebrow {
+    display: none;
+  }
+
+  /* 8h+ and 24h+ are the hero's figures on a phone; All is the figure pressed again. */
+  .fRow > .seg {
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .fRow > .seg > button:not(:nth-child(3)) {
+    display: none;
+  }
+
+  .fRow > .seg > button,
+  .fRow > .chip {
+    flex: 0 0 auto;
+    height: 44px;
+    padding: 0 var(--wf-s-3);
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font-size: var(--wf-fs-13);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .fRow > .seg > button[aria-pressed="true"],
+  .fRow > .chip[aria-pressed="true"] {
+    border-color: var(--wf-accent);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  .fRow .k {
+    min-width: 0;
+    padding: 0;
+    background: none;
+    color: var(--wf-ink-1);
+    font-size: var(--wf-fs-13);
+  }
+
+  .tableWrap {
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .grpH td {
+    height: auto;
+  }
+
+  .gin {
+    height: 44px;
+    padding: 0 var(--wf-s-3);
+    font-size: var(--wf-fs-13);
+  }
+
+  .tbl .r {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "tier who wait"
+      "tier who upd";
+    align-items: center;
+    gap: 2px 10px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .r .who {
+    grid-area: who;
+  }
+
+  .r .cTier {
+    grid-area: tier;
+    grid-row: 1 / 3;
+    grid-column: 1;
+  }
+
+  .r .cWait {
+    grid-area: wait;
+    grid-column: 3;
+    justify-self: end;
+  }
+
+  .r .cUpd {
+    grid-area: upd;
+    grid-column: 3;
+    justify-self: end;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+  }
+
+  .r .cWard,
+  .r .cLegal,
+  .r .wbw {
+    display: none;
+  }
+
+  .r .whoBtn {
+    padding: 2px 0;
+  }
+
+  .r .whoBtn b {
+    font-size: var(--wf-fs-14);
+  }
+
+  .r .whoBtn > span {
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+  }
+
+  .r .wt {
+    min-width: 0;
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14, 20px) var(--wf-mono);
+  }
+
+  .r .cTier > span {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 6px;
+    border: 1px solid var(--wf-line-3);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  }
+
+  .more td {
+    height: auto;
+  }
+
+  .moreBtn {
+    height: 48px;
+    color: var(--wf-ink-1);
+    font-size: var(--wf-fs-13);
+    text-align: center;
+  }
+
+  /* The registers, longest quiet and graphs: one tap away. */
+  .phCards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+  }
+
+  .phCard {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 56px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    color: var(--wf-ink-1);
+    font: inherit;
+    font-size: var(--wf-fs-13);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .phCardIcon {
+    flex: 0 0 auto;
+    color: var(--wf-ink-3);
+  }
+
+  .phCardText {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .phCardTitle {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phCardMeta {
+    overflow: hidden;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phCardMeta b {
+    color: var(--wf-ink-1);
+    font-family: var(--wf-mono);
+  }
+
+  .phCardAction {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 var(--wf-s-4);
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* Inside a sheet the registers read without their own card: four pill tabs, two by two. */
+  .side[data-part] {
+    position: static;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .side[data-part] > .sideB {
+    padding: 0;
+    border: 0;
+  }
+
+  .side[data-part] .seg {
+    gap: var(--wf-s-2);
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .side[data-part] .seg button {
+    justify-content: space-between;
+    height: 44px;
+    padding: 0 var(--wf-s-3);
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    font-size: var(--wf-fs-13);
+  }
+
+  .side[data-part] .seg button[aria-selected="true"] {
+    border-color: var(--wf-accent);
+    box-shadow: inset 0 0 0 1px var(--wf-accent);
+  }
+
+  /* A person's sheet: grab handle, a close button, the facts in one card and the actions pinned. */
+  .split[data-person-open] > .side {
+    padding-top: var(--wf-s-3);
+  }
+
+  .split[data-person-open] > .side::before {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 36px;
+    height: 4px;
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-line-3);
+    content: "";
+    transform: translateX(-50%);
+  }
+
+  .split[data-person-open] > .side {
+    position: fixed;
+  }
+
+  .sideTitle .lnk {
+    display: none;
+  }
+
+  .sideH {
+    align-items: center;
+    padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  }
+
+  .sideH .x {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+  }
+
+  .side > .sideB {
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .facts {
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+  }
+
+  .facts dt,
+  .facts dd {
+    min-height: 34px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .facts dt {
+    padding-right: 0;
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-2);
+  }
+
+  .facts dd {
+    font-weight: 600;
+  }
+
+  .facts dt:first-of-type,
+  .facts dd:first-of-type {
+    border-top: 0;
+  }
+
+  .acts {
+    position: sticky;
+    z-index: 1;
+    bottom: 0;
+    order: 10;
+    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+    background: var(--wf-surface);
+  }
+
+  .acts .btn {
+    min-width: 0;
+    height: 48px;
+    padding: 0 var(--wf-s-3);
+    letter-spacing: -0.01em;
+  }
+
+  .acts .btn:last-child {
+    flex: 0 0 auto;
+  }
+}
+
+/* Phone hero figures (v10 Delays): one row of three, 15px mono, with hairline dividers. */
+@media (max-width: 48rem) {
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+  }
+
+  .stat,
+  .stat:nth-child(odd) {
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 10px;
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+
+  .stat:first-child {
+    border-left: 0;
+  }
+
+  .statV {
+    font-size: var(--wf-fs-15);
+    line-height: var(--wf-lh-15);
+  }
+
+  .statL {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* v10 phone: the second line's lead (legal time left, or escalated), and a red edge on the rows
+   that are yours to act on now. */
+@media (max-width: 48rem) {
+  .r .whoBtn > span > svg {
+    margin-right: 4px;
+    vertical-align: -1px;
+  }
+
+  .r .whoBtn .phPre {
+    color: var(--wf-ink-1);
+    font-size: inherit;
+    font-weight: 600;
+  }
+
+  .tbl .r[data-act="true"] {
+    background: var(--wf-act-tint);
+    position: relative;
+  }
+
+  .tbl .r[data-act="true"]::before {
+    position: absolute;
+    inset-block: 0.625rem;
+    inset-inline-start: 6px;
+    width: 3px;
+    border-radius: var(--radius-pill, 9999px);
+    background: var(--wf-danger);
+    content: "";
+    pointer-events: none;
+  }
+}
+
+/* v10 phone group trend mark (renders on phone only): bar glyph and "+N" at the row's end. */
+.phTrend {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+/* v10 phone person sheet (renders on phone only): arrival-to-now journey bar, the quiet part hatched. */
+.phJourney {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.phJourneyBar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 10px;
+}
+
+.phJourneyDone {
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-ink-3);
+}
+
+.phJourneyQuiet {
+  height: 8px;
+  border-radius: var(--wf-r-pill);
+  background: repeating-linear-gradient(-45deg, var(--wf-ink-3) 0 2px, transparent 2px 5px);
+  opacity: 0.7;
+}
+
+.phJourneyNow {
+  flex: none;
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--wf-info);
+}
+
+.phJourneyRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.phJourneyRow > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phJourneyRow b {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+.phJourneyEnd {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.phJourneyEnd b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---------- iPad portrait pattern mockups (preview routes only) ---------- */
+
+.portraitBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+
+.portraitTools {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* The person opens as a right slide-over in the slide and tab options, and a bottom sheet in the
+   drawer option, so the person and the registers open from the same edge. */
+@media (max-width: 64rem) {
+  .split[data-portrait="slide"][data-person-open] > .side {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    width: min(440px, 92vw);
+    max-height: none;
+    border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
+  }
+}
+
+@media (forced-colors: active) {
+  .tbl .r[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
+/* U1 (review 12 Oct 2026): legal status as a short chip ("Form 3B", "Involuntary"), never cut. */
+.legalChip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: var(--wf-h-chip, 1.375rem);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.legalLeft {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/*
+ * Phone compact controls (Josh, 12 Oct 2026). The owner pills, the order switch and the filter chips
+ * take the one shared phone size (`--wf-phone-*` in the v6 tokens): 32px pills, a 34px track with
+ * 28px options, 13px 600 labels and 12px mono counts. Each face stays small and a transparent hit
+ * area reaches the 48px tap floor; the scrolling rows carry that hit area in their own padding so it
+ * is not clipped. The order switch pins under the phone header while the list scrolls (the shared
+ * `pinnedSwitch`, as Home's queue switch). Nothing here applies above 48rem.
+ */
+@media (max-width: 48rem) {
+  .owners {
+    gap: var(--wf-phone-pill-gap);
+    padding-block: var(--wf-phone-pill-hit);
+  }
+
+  .own,
+  .own:first-child,
+  .own:nth-child(3),
+  .own:nth-child(n + 3) {
+    position: relative;
+    gap: var(--wf-phone-pill-gap);
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+  }
+
+  .own::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+
+  .ownTop {
+    gap: var(--wf-phone-pill-gap);
+  }
+
+  .ownName {
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .ownTop b,
+  .ownSubCount {
+    font: 600 var(--wf-phone-pill-count-fs) / 1 var(--wf-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The order switch pins through the shared `pinnedSwitch`; this sets its band. */
+  .tableCard > .chead:first-child {
+    margin-bottom: 0;
+    padding: var(--wf-s-2) 0;
+  }
+
+  .tableCard > .chead:first-child > .seg {
+    padding: 2px;
+  }
+
+  .tableCard > .chead .seg button {
+    position: relative;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .tableCard > .chead .seg button::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
+  }
+
+  .fRow {
+    gap: var(--wf-phone-pill-gap);
+    margin-bottom: var(--wf-s-1);
+    padding-block: var(--wf-phone-pill-hit);
+  }
+
+  .chip,
+  .fRow > .seg > button,
+  .fRow > .chip,
+  .side[data-part] .seg button {
+    position: relative;
+    gap: var(--wf-phone-pill-gap);
+    height: var(--wf-phone-pill-h);
+    min-height: 0;
+    padding: 0 var(--wf-phone-pill-px);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .chip::before,
+  .fRow > .seg > button::before,
+  .side[data-part] .seg button::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+
+  .side[data-part] .seg {
+    gap: var(--wf-phone-pill-gap);
+  }
+
+  .fRow .k,
+  .chip .k {
+    font-size: var(--wf-phone-pill-count-fs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Phone taps (13 Oct 2026): `.tableCard > .chead` took this scroller's band away, so it clipped
+     the 32px chips' 48px hit areas to 32px. The band is back, taken back again by negative margins,
+     so the row does not move. */
+  .tableCard > .chead.fRow {
+    /* 6px clear of the pinned order switch's hit area (13 Oct 2026), so each chip keeps a 44px tap. */
+    margin-top: calc(6px - var(--wf-phone-pill-hit));
+    margin-bottom: calc(var(--wf-s-1) - var(--wf-phone-pill-hit));
+    padding-block: var(--wf-phone-pill-hit);
+  }
+}
+
+/*
+ * Phone: one card only (Josh, 12 Oct 2026, iPhone). The owner pills and the blocker chips sit on the
+ * page, not in their own white cards, and the list keeps its one card. The pinned order switch's
+ * band takes this page's ground, so it no longer shows as a grey strip past the card edges.
+ * Nothing here applies above 48rem.
+ */
+@media (max-width: 48rem) {
+  /* Tripled with the attribute so it outranks delays.module.css's
+     `.screen[data-ward-design="v6"] [data-ward-primitive="panel"]`, which drew the cards back. */
+  .owners.owners.owners[data-ward-primitive],
+  .tableCard.tableCard.tableCard[data-ward-primitive] {
+    --wf-pin-ground: var(--ground, var(--wf-canvas));
+
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .owners.owners {
+    padding-inline: 0;
   }
 }

@@ -365,7 +365,6 @@
 .codeChip:focus-visible,
 .taskLabel:focus-visible,
 .rowLink:focus-visible,
-.nextRow:focus-visible,
 .reqItem:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
@@ -774,45 +773,6 @@ button.taskLabel[aria-pressed="true"] {
   font-variant-numeric: tabular-nums;
 }
 
-.nextList {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.nextRow {
-  display: grid;
-  grid-template-columns: 12px minmax(0, 1fr) auto 64px;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-height: 44px;
-  padding: 4px 0;
-  border: 0;
-  border-bottom: 1px solid var(--wf-line);
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.nextList li:last-child .nextRow {
-  border-bottom: 0;
-}
-
-.nextRow:hover .name {
-  text-decoration: underline;
-}
-
-.nextLeft {
-  justify-self: end;
-  font: 700 var(--wf-fs-13) / 1 var(--wf-mono);
-  white-space: nowrap;
-}
-
 .windows {
   display: flex;
   gap: var(--wf-s-2);
@@ -866,7 +826,10 @@ button.taskLabel[aria-pressed="true"] {
 }
 
 .focusClock[data-tone="danger"] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .focusClockLine {
@@ -1440,7 +1403,128 @@ button.taskLabel[aria-pressed="true"] {
   gap: 6px;
 }
 
+/* The word after the phone row's time ("left", "passed", "in ED"), on the same line as it. */
+.phoneTimeWord {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
 .phoneRow[data-dim="true"],
 .phoneRow[data-dim="true"] * {
   color: var(--wf-dim);
+}
+
+/* v10 phone row (11 Oct 2026): the form's name, then where and what is left to record, each on its
+   own line. Only the phone row renders these spans. */
+.phoneMetaLine {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 48rem) {
+  /* v10 phone: the group head names its order at the right ("least time left"). */
+  .groupHead > .groupOrder {
+    display: inline;
+    font-size: var(--wf-fs-12);
+  }
+}
+
+/* v10 phone second pass: the two hero actions share the row equally, and the view switch stays
+ * under the bar while the list scrolls. Phone only (both render on the phone alone). */
+/* Phone hero figures size to their words, so "Time not written" reads in full beside the two short
+ * labels instead of truncating in an equal third. Still one row; a narrow screen shrinks them. */
+.phoneHero [data-count] {
+  grid-auto-columns: auto;
+}
+
+.phoneHeroAction {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+}
+
+.phoneViews {
+  position: sticky;
+  top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
+  z-index: 6;
+  box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
+}
+
+/* v10 phone form sheet: one header (the sheet's), and the panel sits flat in the sheet. Only the
+ * phone sheet renders .phoneFocus. */
+.phoneFocus .focusHead {
+  display: none;
+}
+
+.phoneFocus .panel {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* ─── v10 phone fidelity (11 Oct 2026) ───
+ * The view switch keeps its 8px canvas collar right under the bar throughout the scroll, so no row
+ * shows through a gap. In the form sheet, Copy and the next step live in the sheet's own pinned foot, so
+ * the panel's foot keeps only the quiet Open move link, flat on the sheet. Phone only. */
+@media (max-width: 48rem) {
+  .phoneFocus .focusFoot {
+    justify-content: center;
+    padding: var(--wf-s-2) 0 0;
+    border-top: 0;
+    background: none;
+  }
+
+  .phoneFocus .focusFoot > button,
+  .phoneFocus .focusFoot > .footSpacer {
+    display: none;
+  }
+
+  .phoneFocus .focusFoot > :last-child {
+    flex: 0 1 auto;
+  }
+}
+
+/* "Show all N" under a folded group (device audit 11 Oct 2026). */
+.showAll {
+  display: flex;
+  justify-content: center;
+  padding: var(--wf-s-2) 0;
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.focusClock[data-tone="danger"] {
+  position: relative;
+}
+
+.focusClock[data-tone="danger"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .focusClock[data-tone="danger"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
+/* Phone compact switch (Josh, 12 Oct 2026): the views take the shared phone track (`--wf-phone-*`);
+ * each option's hit area reaches the 48px floor, so the face drops its own 44px floor. The switch
+ * pins under the phone header through the shared `pinnedSwitch` (ward-pinned-switch.module.css). */
+@media (max-width: 48rem) {
+  .phoneViews button,
+  .phoneViews [role="radio"] {
+    min-height: 0;
+  }
 }

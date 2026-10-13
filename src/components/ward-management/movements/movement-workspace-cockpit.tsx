@@ -8,6 +8,7 @@
  */
 
 "use client";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
 import { SupportNotificationChecklist } from "./support-notification-checklist";
 
@@ -1177,11 +1178,9 @@ export function MovementWorkspaceCockpit({
 
         <WardPrototypeFooter
           testId="ward-console-governance"
+          className={styles.phPageFoot}
           note="Synthetic prototype only · Eligibility is checked automatically; an authorised human confirms every destination · Not clinical severity"
         />
-        <span id="ward-console-confirm-unavailable" className="sr-only">
-          Confirming a destination is not built yet. Nothing is recorded when this control is activated.
-        </span>
       </main>
     </div>
   );
@@ -1374,18 +1373,9 @@ export function MovementWorkspaceCockpit({
               <h3 className={styles.actionSectionTitle}>Confirm a destination</h3>
               <p className={styles.actionSay}>
                 Not built yet. Which record a confirmation writes, and in whose name, is a decision the owner still
-                holds — so this control is deliberately inert and says so rather than being hidden.
+                holds — so this control says it is not wired rather than being hidden or greyed (D-16).
               </p>
-              <button
-                type="button"
-                aria-disabled="true"
-                aria-describedby="ward-console-confirm-unavailable"
-                title="Confirming a destination is not built yet — coming soon."
-                className={styles.controlButton}
-                onClick={ignoreUnavailableActivation}
-              >
-                Review &amp; confirm
-              </button>
+              <NotWiredButton label="Review and confirm" name="Confirm a destination" />
             </section>
 
             {/* 4. ORPHANED TRANSPORT JOB */}

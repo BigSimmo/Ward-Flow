@@ -94,7 +94,7 @@ function ArrivalDriverHarness({ movementId, unitId }: { movementId: string; unit
         onClick={() => {
           dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId });
           dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId });
-          dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId, actingUnitId: unitId });
+          dispatch({ type: "PATIENT_ARRIVED", role: "coordinator", now, movementId, actingUnitId: unitId });
         }}
       >
         drive to arrival
@@ -460,24 +460,20 @@ describe("the coordinator's mode workspaces say pull", () => {
    * `ACCEPT_IN_PRINCIPLE` and `PULL_PATIENT` are actually dispatched, as
    * `ward-management-modes.tsx`'s own comment on `roleTaskLabel` says.
    */
-  it("names the coordinator's own focus as pulls, and the ward's as time-limited pulls", () => {
+  // CHANGED 11 Oct 2026 (device audit, Network): the role focus banner was generic text and is
+  // removed, so this case now pins that neither role's banner returns, rather than its wording.
+  it("shows no generic role focus banner for the coordinator or the ward role", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardModeWorkspace mode="network" />
       </WardFlowProvider>,
     );
 
-    const focus = screen.getByText(/Statewide coordination focus/u).closest("section") as HTMLElement;
-    expect(focus.textContent ?? "").toContain("pulls and owned exceptions");
-    expect(focus.textContent ?? "", "the coordinator's focus calls a bed reservation a hold").not.toContain("holds");
+    expect(screen.queryByText(/Statewide coordination focus/u)).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Current role"), { target: { value: "ward" } });
 
-    const wardFocus = screen.getByText(/Ward capacity focus/u).closest("section") as HTMLElement;
-    expect(wardFocus.textContent ?? "").toContain("time-limited pulls");
-    expect(wardFocus.textContent ?? "", "the ward's focus calls a bed reservation a hold").not.toContain(
-      "time-limited holds",
-    );
+    expect(screen.queryByText(/Ward capacity focus/u)).not.toBeInTheDocument();
   });
 });
 

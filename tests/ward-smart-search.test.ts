@@ -2,16 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import {
   detectSearchIntent,
+  normaliseCommaNameQuery,
   searchGroupOrder,
   searchIntentLabel,
   searchWardFlow,
   type SearchIntent,
 } from "@/components/ward-management/search/ward-smart-search";
-import { searchMovements } from "@/components/ward-management/ward-derivations";
+import { isOpen, searchMovements } from "@/components/ward-management/ward-derivations";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
-import { allUnits } from "@/components/ward-management/ward-sites";
+import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const units = allUnits();
 
@@ -176,5 +178,64 @@ describe("movement display names", () => {
     expect(found.intent).toBe("person");
     expect(found.movements.some((item) => item.id === movement.id)).toBe(true);
     expect(found.people.some((item) => item.id === patient.id)).toBe(true);
+  });
+});
+
+/**
+ * L5 (site review, 12 Oct 2026): "Wren" or his UMRN found Tobias Wren but not his open movement,
+ * which is linked to him through its referral. Every open movement is indexed by its patient's
+ * name and UMRN.
+ */
+describe("smart search finds a person's open movement by name and UMRN", () => {
+  it("finds Tobias Wren's movement by family name and by UMRN", () => {
+    const state = seedWardFlowState();
+    const wren = state.patients.find((patient) => patient.familyName === "Wren");
+    expect(wren, "the seed must hold Tobias Wren").toBeDefined();
+    const open = state.movements.filter(isOpen);
+    for (const query of ["Wren", wren!.umrn]) {
+      const results = searchWardFlow({
+        query,
+        patients: state.patients,
+        movements: state.movements,
+        units: state.units,
+        referrals: state.referrals,
+        now: NOW_ANCHOR,
+      });
+      expect(
+        results.people.map((patient) => patient.id),
+        query,
+      ).toContain(wren!.id);
+      expect(results.movements.length, `${query} finds no open movement`).toBeGreaterThan(0);
+      expect(results.movements.every((movement) => open.includes(movement))).toBe(true);
+    }
+  });
+});
+
+describe("a name typed the way lists print it (audit round 2, S-33)", () => {
+  it("reads 'Surname, Given' as 'Given Surname' and leaves digit queries alone", () => {
+    expect(normaliseCommaNameQuery("Pallowmere, Orla")).toBe("Orla Pallowmere");
+    expect(normaliseCommaNameQuery(" Pallowmere,")).toBe("Pallowmere");
+    expect(normaliseCommaNameQuery("12/03/1990, x")).toBe("12/03/1990, x");
+    expect(normaliseCommaNameQuery("Orla Pallowmere")).toBe("Orla Pallowmere");
+  });
+
+  it("finds a seeded person from the comma form", () => {
+    const person = wardPatients[0];
+    const result = searchWardFlow({
+      query: `${person.familyName}, ${person.givenName}`,
+      patients: wardPatients,
+      movements: [],
+      units: [],
+    });
+    expect(result.people.map((patient) => patient.id)).toContain(person.id);
+  });
+
+  it("keeps a comma query as typed for wards, so it is not reordered like a name", () => {
+    // A synthetic two-word ward name; the old rewrite turned "Beta, Alpha" into "Alpha Beta".
+    const unit = { ...units[0], name: "Alpha Beta" };
+    const wardsFor = (query: string) =>
+      searchWardFlow({ query, patients: [], movements: [], units: [unit] }).wards.map((ward) => ward.unit.id);
+    expect(wardsFor("Beta, Alpha")).not.toContain(unit.id);
+    expect(wardsFor("Alpha Beta")).toContain(unit.id);
   });
 });

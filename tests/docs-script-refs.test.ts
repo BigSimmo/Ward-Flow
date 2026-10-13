@@ -1,3 +1,7 @@
+import { spawnSync } from "node:child_process";
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   extractScriptRefs,
@@ -19,6 +23,39 @@ describe("maintained root guidance", () => {
     ].join("\n");
     const refs = extractScriptRefs(stripHistoricalSections(document));
     expect(findStaleRefs(refs, new Set(["ensure"]))).toEqual(["absent-current"]);
+  });
+});
+
+describe("instruction continuation coverage", () => {
+  it("scans the root continuation so moved commands stay checked", async () => {
+    expect(MAINTAINED_ROOT_DOCS).toContain("PROJECT-INSTRUCTIONS-CONTINUATION.md");
+    const { readFileSync } = await import("node:fs");
+    const text = readFileSync("PROJECT-INSTRUCTIONS-CONTINUATION.md", "utf8");
+    const pkg = parsePackageScripts(readFileSync("package.json", "utf8"));
+    const refs = extractScriptRefs(stripHistoricalSections(text));
+    expect(refs).toContain("sync:pr-branches");
+    expect(findStaleRefs(refs, pkg)).toEqual([]);
+  });
+});
+
+describe("missing maintained documents", () => {
+  it("fails instead of passing when a maintained root document is absent", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "docs-script-refs-"));
+    try {
+      mkdirSync(path.join(root, "scripts"));
+      mkdirSync(path.join(root, "docs"));
+      copyFileSync("scripts/check-docs-script-refs.mjs", path.join(root, "scripts/check-docs-script-refs.mjs"));
+      writeFileSync(path.join(root, "package.json"), JSON.stringify({ scripts: { build: "x" } }));
+      for (const doc of MAINTAINED_ROOT_DOCS.filter((name) => name !== "PROJECT-INSTRUCTIONS-CONTINUATION.md"))
+        writeFileSync(path.join(root, doc), "Run `npm run build`.\n");
+      const result = spawnSync(process.execPath, [path.join(root, "scripts/check-docs-script-refs.mjs")], {
+        encoding: "utf8",
+      });
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("PROJECT-INSTRUCTIONS-CONTINUATION.md: maintained document could not be read");
+    } finally {
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
   });
 });
 

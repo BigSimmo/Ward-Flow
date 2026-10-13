@@ -53,6 +53,18 @@ const MAY_ASSERT_TODAY = new Map([
     'Reports: reportMoment prefixes reportDay ("Sat 10 Oct 10:42"), and the chronology\'s clockOrMissing sits under a day-group heading (reportDay) on desktop and phone, so the row still names the day.',
   ],
   [
+    "addedAt",
+    "Add patient phone list (11 Oct 2026): the bare clock is only compared with formatInstantWithDay's text to say Today or Yesterday in front of it; any other day returns formatInstantWithDay's text, so the row still names the day.",
+  ],
+  [
+    "closedAt",
+    "Legal forms phone history (11 Oct 2026): the clock sits beside a time label taken from formatInstantWithDay (today, yesterday or the day), so the row still names the day.",
+  ],
+  [
+    "row.occurredAt",
+    "Patient chronology phone list (11 Oct 2026): every row sits under its day-group heading, so the row still names the day.",
+  ],
+  [
     "selectedPatient.openedAtInstant",
     "Patient search Latest timeline: the clock sits in the time column and withDay adds the day from formatInstantWithDay to the event text beside it, so the row still names the day.",
   ],

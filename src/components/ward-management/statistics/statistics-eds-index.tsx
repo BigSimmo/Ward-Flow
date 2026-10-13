@@ -4,7 +4,20 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeftRight, Clock, Hospital, Users } from "lucide-react";
 
-import { CardBody, CardFoot, ColumnChart, HeroStat, StatusGlyph, cx, durMinutes, tableClasses } from "@/components/wf";
+import {
+  CardBody,
+  CardFoot,
+  ColumnChart,
+  HeroStat,
+  PhoneListRow,
+  RowSpark,
+  StatusGlyph,
+  cx,
+  durMinutes,
+  tableClasses,
+  useIsPhone,
+} from "@/components/wf";
+import { edWaitingSeries } from "@/components/ward-management/ed/ed-home-derivations";
 import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
@@ -17,6 +30,7 @@ import { FlushRow, Follow } from "./statistics-layout";
 import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
 import { ServiceDot } from "./statistics-services-index";
 import { SortTh } from "./statistics-wards-index";
+import { PhoneBody, PhoneGroup, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
 
@@ -61,6 +75,7 @@ export function StatisticsEdsIndexScreen() {
 
   const [sort, setSort] = useState<EdSortKey>("waiting");
   const [asc, setAsc] = useState(false);
+  const isPhone = useIsPhone();
 
   const departments = useMemo(
     () =>
@@ -79,6 +94,7 @@ export function StatisticsEdsIndexScreen() {
           over48: figures.over48h,
           longest: figures.longestWait ? figures.longestWait.waitMinutes : null,
           median: median(waits),
+          urgent: figures.urgent,
           waits,
         };
       }),
@@ -115,6 +131,7 @@ export function StatisticsEdsIndexScreen() {
   const over24 = total((row) => row.over24);
   const over48 = total((row) => row.over48);
   const unplaced = total((row) => row.unplaced);
+  const urgent = total((row) => row.urgent);
   const longestRow = departments.reduce<Row | null>(
     (best, row) => (row.longest !== null && (best === null || (best.longest ?? 0) < row.longest) ? row : best),
     null,
@@ -151,6 +168,17 @@ export function StatisticsEdsIndexScreen() {
           Compare EDs
         </HeroTool>
       }
+      phone={{
+        title: `${waiting} waiting in EDs`,
+        sub: `Longest ${waitText(longestRow?.longest ?? null)} · median ${waitText(networkMedian)}`,
+        stats: (
+          <>
+            <HeroStat value={over24} label={`Past ${LONG_HOURS}h`} tone={over24 > 0 ? "warning" : undefined} />
+            <HeroStat value={unplaced} label="No ward yet" />
+            <HeroStat value={urgent} label="Urgent" />
+          </>
+        ),
+      }}
       stats={
         <>
           <HeroStat value={waiting} label="Waiting" />
@@ -173,136 +201,192 @@ export function StatisticsEdsIndexScreen() {
         </>
       }
     >
-      <StatCard
-        icon={Users}
-        id="everyone-waiting"
-        className={index.anchorTarget}
-        title="Everyone waiting, by ED"
-        aside={
-          <span
-            className={cx(styles.muted, index.phoneHide)}
-          >{`${waiting} waiting across ${departments.length} EDs`}</span>
-        }
-        data-testid="ward-statistics-eds-swarm-card"
-      >
-        <div className={index.swarmBody}>
-          <StatisticsEdSwarm rows={swarmRows} labelWidth={176} testId="ward-statistics-eds-swarm" />
-        </div>
-        <CardFoot
-          meta={`Each mark is one person. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits. Open a row for that ED's page.`}
-        />
-      </StatCard>
-
-      <FlushRow layout="lead3">
-        <StatCard
-          icon={Hospital}
-          id="every-ed"
-          className={index.anchorTarget}
-          title="Every emergency department"
-          aside={<span className={cx(styles.muted, index.phoneHide)}>Sort by any column</span>}
-          data-testid="ward-statistics-eds-table-card"
-        >
-          <div
-            className={index.tableScroll}
-            tabIndex={0}
-            role="region"
-            aria-label="Every emergency department, scrollable"
-          >
-            <table className={cx(tableClasses.table, styles.table)} data-testid="ward-statistics-eds-table">
-              <caption className={styles.srOnly}>
-                Every emergency department: people waiting for a mental health bed, those with no ward yet, long waits,
-                the longest and the median wait
-              </caption>
-              <thead>
-                <tr>
-                  <SortTh id="name" label="ED" sort={sort} asc={asc} onSort={onSort} />
-                  <SortTh id="waiting" label="Waiting" sort={sort} asc={asc} onSort={onSort} numeric />
-                  <SortTh id="unplaced" label="No ward yet" sort={sort} asc={asc} onSort={onSort} numeric />
-                  <SortTh id="over24" label={`Past ${LONG_HOURS}h`} sort={sort} asc={asc} onSort={onSort} numeric />
-                  <SortTh
-                    id="over48"
-                    label={`Past ${VERY_LONG_HOURS}h`}
-                    sort={sort}
-                    asc={asc}
-                    onSort={onSort}
-                    numeric
-                  />
-                  <SortTh id="longest" label="Longest" sort={sort} asc={asc} onSort={onSort} numeric />
-                  <SortTh id="median" label="Median" sort={sort} asc={asc} onSort={onSort} numeric />
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((row) => (
-                  <tr key={row.id}>
-                    <th scope="row">
-                      <span className={index.rowName}>
-                        <Link href={edStatisticsHref(row.id)} className={index.rowLink}>
-                          {row.name}
-                        </Link>
-                        <span className={index.rowSub}>
-                          <ServiceDot service={row.service} />
-                          {row.code}
-                          {row.service ? ` · ${row.service}` : ""}
-                        </span>
-                      </span>
-                    </th>
-                    <td className={cx(styles.num, row.waiting === 0 && styles.zero)}>{row.waiting}</td>
-                    <td className={cx(styles.num, row.unplaced === 0 && styles.zero)}>{row.unplaced}</td>
-                    <td className={cx(styles.num, row.over24 === 0 && styles.zero)}>
-                      <span className={styles.flagged}>
-                        {row.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                        {row.over24}
-                      </span>
-                    </td>
-                    <td className={cx(styles.num, row.over48 === 0 && styles.zero)}>
-                      <span className={styles.flagged}>
-                        {row.over48 > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
-                        {row.over48}
-                      </span>
-                    </td>
-                    <td className={cx(styles.num, row.longest === null && styles.zero)}>{waitText(row.longest)}</td>
-                    <td className={cx(styles.num, row.median === null && styles.zero)}>{waitText(row.median)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <th scope="row">All {departments.length} EDs</th>
-                  <td className={styles.num}>{waiting}</td>
-                  <td className={styles.num}>{unplaced}</td>
-                  <td className={styles.num}>{over24}</td>
-                  <td className={styles.num}>{over48}</td>
-                  <td className={styles.num}>{waitText(longestRow?.longest ?? null)}</td>
-                  <td className={styles.num}>{waitText(networkMedian)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-          <CardFoot
-            meta={`Past ${VERY_LONG_HOURS}h is part of past ${LONG_HOURS}h, so the two are never added together.`}
-          />
-        </StatCard>
-
-        <Follow>
-          <StatCard
-            icon={Clock}
-            id="wait-bands"
-            className={index.anchorTarget}
-            title="Wait bands"
-            aside={<span className={cx(styles.muted, index.phoneHide)}>Everyone waiting</span>}
-            data-testid="ward-statistics-eds-bands"
-          >
-            <CardBody>
+      {isPhone ? (
+        <PhoneBody testId="ward-statistics-eds-phone">
+          <PhoneList label="Emergency departments, busiest first">
+            {swarmRows.map((swarm) => {
+              const row = departments.find((each) => each.id === swarm.id)!;
+              const trend = edWaitingSeries(movements, row.id, now);
+              // The last point is now: it reads the same open count as the row, by construction.
+              trend[trend.length - 1] = row.waiting;
+              return (
+                <PhoneListRow
+                  key={row.id}
+                  as="li"
+                  name={row.name}
+                  meta={
+                    <span className={phone.dotName}>
+                      <ServiceDot service={row.service} />
+                      {row.waiting === 0 ? "No one waiting" : `${row.unplaced} no ward yet`}
+                    </span>
+                  }
+                  value={
+                    <span className={phone.trendValue}>
+                      <RowSpark values={trend} name={row.name} testId="ward-statistics-eds-phone-spark" />
+                      {row.waiting}
+                    </span>
+                  }
+                  time={`longest ${waitText(row.longest)}`}
+                  href={edStatisticsHref(row.id)}
+                />
+              );
+            })}
+          </PhoneList>
+          <PhoneGroup title="Wait bands" aside="everyone waiting">
+            <div className={phone.chartCard}>
               <ColumnChart
                 label="People waiting in an emergency department, by how long"
                 columns={bands}
-                height={220}
+                height={160}
               />
-            </CardBody>
-            <CardFoot meta="The bands do not overlap: they add up to everyone waiting." />
+            </div>
+          </PhoneGroup>
+          <PhoneSheetRow
+            icon={Users}
+            title="Everyone, one mark each"
+            sub={`Axis to ${VERY_LONG_HOURS * 1.5}h, longer waits on its last line`}
+            testId="ward-statistics-eds-phone-swarm"
+          >
+            <StatisticsEdSwarm rows={swarmRows} labelWidth={96} testId="ward-statistics-eds-swarm" />
+            <p className={phone.note}>
+              {`Each mark is one person. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`}
+            </p>
+          </PhoneSheetRow>
+        </PhoneBody>
+      ) : (
+        <>
+          <StatCard
+            icon={Users}
+            id="everyone-waiting"
+            className={index.anchorTarget}
+            title="Everyone waiting, by ED"
+            aside={
+              <span
+                className={cx(styles.muted, index.phoneHide)}
+              >{`${waiting} waiting across ${departments.length} EDs`}</span>
+            }
+            data-testid="ward-statistics-eds-swarm-card"
+          >
+            <div className={index.swarmBody}>
+              <StatisticsEdSwarm rows={swarmRows} labelWidth={176} testId="ward-statistics-eds-swarm" />
+            </div>
+            <CardFoot
+              meta={`Each mark is one person. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits. Open a row for that ED's page.`}
+            />
           </StatCard>
-        </Follow>
-      </FlushRow>
+
+          <FlushRow layout="lead3">
+            <StatCard
+              icon={Hospital}
+              id="every-ed"
+              className={index.anchorTarget}
+              title="Every emergency department"
+              aside={<span className={cx(styles.muted, index.phoneHide)}>Sort by any column</span>}
+              data-testid="ward-statistics-eds-table-card"
+            >
+              <div
+                className={index.tableScroll}
+                tabIndex={0}
+                role="region"
+                aria-label="Every emergency department, scrollable"
+              >
+                <table className={cx(tableClasses.table, styles.table)} data-testid="ward-statistics-eds-table">
+                  <caption className={styles.srOnly}>
+                    Every emergency department: people waiting for a mental health bed, those with no ward yet, long
+                    waits, the longest and the median wait
+                  </caption>
+                  <thead>
+                    <tr>
+                      <SortTh id="name" label="ED" sort={sort} asc={asc} onSort={onSort} />
+                      <SortTh id="waiting" label="Waiting" sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="unplaced" label="No ward yet" sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="over24" label={`Past ${LONG_HOURS}h`} sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh
+                        id="over48"
+                        label={`Past ${VERY_LONG_HOURS}h`}
+                        sort={sort}
+                        asc={asc}
+                        onSort={onSort}
+                        numeric
+                      />
+                      <SortTh id="longest" label="Longest" sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="median" label="Median" sort={sort} asc={asc} onSort={onSort} numeric />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sorted.map((row) => (
+                      <tr key={row.id}>
+                        <th scope="row">
+                          <span className={index.rowName}>
+                            <Link href={edStatisticsHref(row.id)} className={index.rowLink}>
+                              {row.name}
+                            </Link>
+                            <span className={index.rowSub}>
+                              <ServiceDot service={row.service} />
+                              {row.code}
+                              {row.service ? ` · ${row.service}` : ""}
+                            </span>
+                          </span>
+                        </th>
+                        <td className={cx(styles.num, row.waiting === 0 && styles.zero)}>{row.waiting}</td>
+                        <td className={cx(styles.num, row.unplaced === 0 && styles.zero)}>{row.unplaced}</td>
+                        <td className={cx(styles.num, row.over24 === 0 && styles.zero)}>
+                          <span className={styles.flagged}>
+                            {row.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                            {row.over24}
+                          </span>
+                        </td>
+                        <td className={cx(styles.num, row.over48 === 0 && styles.zero)}>
+                          <span className={styles.flagged}>
+                            {row.over48 > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
+                            {row.over48}
+                          </span>
+                        </td>
+                        <td className={cx(styles.num, row.longest === null && styles.zero)}>{waitText(row.longest)}</td>
+                        <td className={cx(styles.num, row.median === null && styles.zero)}>{waitText(row.median)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th scope="row">All {departments.length} EDs</th>
+                      <td className={styles.num}>{waiting}</td>
+                      <td className={styles.num}>{unplaced}</td>
+                      <td className={styles.num}>{over24}</td>
+                      <td className={styles.num}>{over48}</td>
+                      <td className={styles.num}>{waitText(longestRow?.longest ?? null)}</td>
+                      <td className={styles.num}>{waitText(networkMedian)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <CardFoot
+                meta={`Past ${VERY_LONG_HOURS}h is part of past ${LONG_HOURS}h, so the two are never added together.`}
+              />
+            </StatCard>
+
+            <Follow>
+              <StatCard
+                icon={Clock}
+                id="wait-bands"
+                className={index.anchorTarget}
+                title="Wait bands"
+                aside={<span className={cx(styles.muted, index.phoneHide)}>Everyone waiting</span>}
+                data-testid="ward-statistics-eds-bands"
+              >
+                <CardBody>
+                  <ColumnChart
+                    label="People waiting in an emergency department, by how long"
+                    columns={bands}
+                    height={220}
+                  />
+                </CardBody>
+                <CardFoot meta="The bands do not overlap: they add up to everyone waiting." />
+              </StatCard>
+            </Follow>
+          </FlushRow>
+        </>
+      )}
     </StatisticsPage>
   );
 }

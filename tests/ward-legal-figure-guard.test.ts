@@ -595,7 +595,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
   /*
    * The dueAt provenance sweep ("every dueAt the sweep produces, of any code, through any event,
    * traces to a value this file supplied") now lives in `helpers/ward-legal-figure-sweep.ts` and
-   * runs from `ward-legal-figure-guard-sweep-1..4.test.ts`, split by form code so the same checks
+   * runs from `ward-legal-figure-guard-sweep-1..8.test.ts`, split by form code so the same checks
    * run in parallel. Nothing it checks was removed.
    */
 

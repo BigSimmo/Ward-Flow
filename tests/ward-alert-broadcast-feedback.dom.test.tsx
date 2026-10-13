@@ -48,9 +48,11 @@ it("announces accepted dispatch for the selected scope and restores keyboard foc
   fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.getByRole("status", { name: "Broadcast feedback" })).toHaveTextContent(
-    "dispatched to Frankland Centre Forensic Mental Health.",
+    "shown in this prototype for Frankland Centre Forensic Mental Health only; no external notifications are sent.",
   );
-  expect(screen.getByRole("status", { name: "Broadcast feedback" })).not.toHaveTextContent("dispatched statewide");
+  expect(screen.getByRole("status", { name: "Broadcast feedback" })).not.toHaveTextContent(
+    "shown in this prototype only",
+  );
   expect(screen.getByRole("button", { name: "Broadcast alert" })).toHaveFocus();
   fireEvent.click(screen.getByRole("button", { name: "Dismiss notice" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -84,11 +86,11 @@ it("keeps the draft and modal open after the engine refuses a dispatch, then all
   expect(title.value).toBe(before.title);
   expect(message.value).toBe(before.message);
   expect((screen.getByLabelText(/^Target scope$/i) as HTMLSelectElement).value).toBe("forensic");
-  expect(screen.queryByText(/dispatched to/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/no external notifications are sent/i)).not.toBeInTheDocument();
   harness.refuse = false;
   fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.getByRole("status", { name: "Broadcast feedback" })).toHaveTextContent(
-    "dispatched to Frankland Centre Forensic Mental Health.",
+    "shown in this prototype for Frankland Centre Forensic Mental Health only; no external notifications are sent.",
   );
 });

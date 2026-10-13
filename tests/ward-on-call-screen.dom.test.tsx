@@ -98,7 +98,7 @@ describe("the on-call screen", () => {
 
   it("never shows a published community team number", () => {
     const { container } = renderOnCall();
-    fireEvent.click(screen.getByRole("tab", { name: /Community/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Teams/u }));
     const text = container.textContent ?? "";
     const published = REFERENCE_TEAM_NAMES.map((name) => referenceTeamDetail(name)?.publishedPhone).filter(Boolean);
     expect(published.length).toBeGreaterThan(0);
@@ -142,7 +142,7 @@ describe("the on-call screen", () => {
     expect(container.querySelector("#ward-reach-switchboard")).toBe(screen.getByTestId("ward-on-call-directory"));
     fireEvent.click(screen.getByTestId("ward-on-call-key-sw-mherl"));
     expect(panel().getByRole("heading", { name: "Mental Health Emergency Response Line" })).toBeVisible();
-    expect(screen.getByRole("tab", { name: /Statewide/u })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^State(?! bed)/u })).toHaveAttribute("aria-selected", "true");
   });
 
   it("Call copies the number and says calling is not wired", async () => {
@@ -210,17 +210,17 @@ describe("the on-call screen", () => {
 
   it("picking a line that is not starred leaves My list for that line's tab", () => {
     renderOnCall();
-    fireEvent.click(screen.getByRole("tab", { name: /My list/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Mine/u }));
     fireEvent.click(screen.getByTestId("ward-on-call-key-sw-mherl"));
-    expect(screen.getByRole("tab", { name: /Statewide/u })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^State(?! bed)/u })).toHaveAttribute("aria-selected", "true");
     expect(row("sw-mherl")).toBeVisible();
   });
 
   it("switches between hospitals, community teams and statewide lines", () => {
     renderOnCall();
-    fireEvent.click(screen.getByRole("tab", { name: /Community/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Teams/u }));
     expect(screen.getByText(REFERENCE_TEAM_NAMES[0]!)).toBeVisible();
-    fireEvent.click(screen.getByRole("tab", { name: /Statewide/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^State(?! bed)/u }));
     expect(row("sw-mherl")).toBeVisible();
     expect(screen.queryByTestId("ward-on-call-row-nmhs-bfc")).toBeNull();
   });
@@ -296,11 +296,12 @@ describe("the on-call screen", () => {
     expect(panel().getByText(/Call now:/u)).toBeVisible();
   });
 
-  it("marks Report change as not wired", () => {
+  it("keeps Report change pressable and says it is not wired (D-16)", () => {
     renderOnCall();
     const report = panel().getByRole("button", { name: /Report change/u });
-    expect(report).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getAllByText("Not wired in this prototype.").length).toBeGreaterThan(0);
+    expect(report).not.toHaveAttribute("aria-disabled");
+    fireEvent.click(report);
+    expect(screen.getByTestId("not-wired-popover")).toHaveTextContent("Not wired in this prototype.");
   });
 
   it("keeps My list as contact ids only, and restores it", async () => {
@@ -309,19 +310,19 @@ describe("the on-call screen", () => {
     expect(JSON.parse(localStorage.getItem("ward-flow:on-call:favourites")!)).toEqual(["nmhs-bfc"]);
     first.unmount();
     renderOnCall();
-    await waitFor(() => expect(screen.getByRole("tab", { name: /My list/u })).toHaveTextContent("1"));
-    fireEvent.click(screen.getByRole("tab", { name: /My list/u }));
+    await waitFor(() => expect(screen.getByRole("tab", { name: /^Mine/u })).toHaveTextContent("1"));
+    fireEvent.click(screen.getByRole("tab", { name: /^Mine/u }));
     expect(row("nmhs-bfc")).toBeVisible();
   });
 
   it("rejects unknown saved ids and malformed preferences", async () => {
     localStorage.setItem("ward-flow:on-call:favourites", JSON.stringify(["nmhs-bfc", "not-a-contact", 7]));
     const first = renderOnCall();
-    await waitFor(() => expect(screen.getByRole("tab", { name: /My list/u })).toHaveTextContent("1"));
+    await waitFor(() => expect(screen.getByRole("tab", { name: /^Mine/u })).toHaveTextContent("1"));
     first.unmount();
     localStorage.setItem("ward-flow:on-call:favourites", "broken");
     renderOnCall();
-    expect(screen.getByRole("tab", { name: /My list/u })).toHaveTextContent("0");
+    expect(screen.getByRole("tab", { name: /^Mine/u })).toHaveTextContent("0");
   });
 
   it("keeps My list for the visit when storage fails, and says so", () => {
@@ -331,7 +332,7 @@ describe("the on-call screen", () => {
     renderOnCall();
     fireEvent.click(within(row("nmhs-bfc")).getByRole("button", { name: /to My list/u }));
     expect(screen.getByTestId("ward-on-call-notice")).toHaveTextContent(/this visit only/u);
-    expect(screen.getByRole("tab", { name: /My list/u })).toHaveTextContent("1");
+    expect(screen.getByRole("tab", { name: /^Mine/u })).toHaveTextContent("1");
   });
 
   it("opens the downtime card with every key line and copies it as text", async () => {
@@ -348,8 +349,8 @@ describe("the on-call screen", () => {
   it("carries My list saved by the earlier roster page over to the same lines", async () => {
     localStorage.setItem("ward-flow:on-call:favourites", JSON.stringify(["nm-coordinator", "governance-lead"]));
     renderOnCall();
-    await waitFor(() => expect(screen.getByRole("tab", { name: /My list/u })).toHaveTextContent("2"));
-    fireEvent.click(screen.getByRole("tab", { name: /My list/u }));
+    await waitFor(() => expect(screen.getByRole("tab", { name: /^Mine/u })).toHaveTextContent("2"));
+    fireEvent.click(screen.getByRole("tab", { name: /^Mine/u }));
     expect(row("nmhs-bfc")).toBeVisible();
     expect(row("sw-gov")).toBeVisible();
   });

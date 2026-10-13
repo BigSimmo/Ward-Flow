@@ -44,6 +44,8 @@ export type ToastViewProps = {
   "data-testid"?: string;
   "data-tone"?: string;
   "data-announce-key"?: number;
+  /** "true" when the toast closes itself; the phone pill then hides its X. */
+  "data-auto-dismiss"?: string;
 };
 
 type UndoPhase = "running" | "undone" | "expired";
@@ -150,6 +152,8 @@ export function ToastView({
       style={undo ? ({ ...style, "--wf-undo-ms": `${Math.max(0, undo.durationMs)}ms` } as CSSProperties) : style}
       data-undo={undo ? phase : undefined}
       data-paused={undo && paused ? "true" : undefined}
+      // The phone pill reads the tone to drop the success and info glyph; a caller's own wins.
+      data-tone={tone}
       {...handlers}
       {...data}
     >

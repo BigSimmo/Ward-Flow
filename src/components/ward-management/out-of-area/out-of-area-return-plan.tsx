@@ -1,5 +1,7 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BedDouble, Car, Check, Clock, House, Plane } from "lucide-react";
@@ -41,7 +43,14 @@ import {
 } from "./out-of-area-model";
 import styles from "./out-of-area-board.module.css";
 
-export type PlanPatient = { displayName: string; umrn: string; profileHref: string | null };
+export type PlanPatient = {
+  displayName: string;
+  umrn: string;
+  profileHref: string | null;
+  /** Audit A3-18: the short legal word ("Form 6A", "Voluntary"), and whether they are on an order. */
+  legal?: string;
+  onOrder?: boolean;
+};
 
 const WA_SERVICE_ORDER = ["North Metro", "South Metro", "East Metro", "WACHS", "CAHS", "Private"] as const;
 
@@ -228,6 +237,10 @@ export function ReturnPlan({
             </dd>
           </div>
           <div>
+            <dt>Legal</dt>
+            <dd data-testid="ward-out-of-area-plan-legal">{patient.legal ?? "Not recorded"}</dd>
+          </div>
+          <div>
             <dt>Discharge</dt>
             <dd className={overdue ? styles.inkWarning : undefined}>
               {overdue ? <StatusGlyph tone="warning" size={9} /> : null}
@@ -405,6 +418,11 @@ export function ReturnPlan({
                 options={TRANSPORT_LEGAL_STATUSES.map((status) => ({ value: status, label: LEGAL_LABELS[status] }))}
                 onChange={(transportLegalStatus) => onDraft({ transportLegalStatus })}
               />
+              {patient.onOrder ? (
+                <p className={styles.legalNeed} data-testid="ward-out-of-area-plan-needs-form">
+                  On an order: needs {legalFormNameLabelFirst({ code: "4C" })}
+                </p>
+              ) : null}
             </section>
 
             <section className={styles.planStep} aria-label="Step 3, dispatch">
@@ -459,9 +477,7 @@ export function ReturnPlan({
                 </>
               )}
             </span>
-            <Button variant="sec" size="sm" disabledReason="Not wired in this prototype." reasonDisplay="tooltip">
-              Send to ward
-            </Button>
+            <NotWiredButton variant="sec" size="sm" label="Send to ward" />
             <Button
               variant="pri"
               size="sm"
@@ -532,9 +548,7 @@ function RecordedReturn({
             <span className={styles.need}>
               <StatusGlyph tone="neutral" size={10} /> Awaiting the receiving ward
             </span>
-            <Button variant="sec" size="sm" disabledReason="Not wired in this prototype." reasonDisplay="tooltip">
-              Mark ward agreed
-            </Button>
+            <NotWiredButton variant="sec" size="sm" label="Mark ward agreed" />
           </>
         )}
       </div>

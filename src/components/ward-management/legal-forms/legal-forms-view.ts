@@ -1,5 +1,11 @@
 import type { WfTone } from "@/components/wf";
-import { formatInstantWithDay, minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstantWithDay,
+  minutesUntil,
+  perthCalendarDay,
+  perthMidnight,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -15,7 +21,12 @@ import {
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { formTitleForCode } from "@/lib/form-register";
 
-import { isLegalDeadlineBreached, legalExpiryReminderOf, reminderHours } from "./legal-forms-derivations";
+import {
+  currentLegalDueAt,
+  isLegalDeadlineBreached,
+  legalExpiryReminderOf,
+  reminderHours,
+} from "./legal-forms-derivations";
 
 /**
  * Small view helpers for the Forms page. Everything here reads what a person typed or recorded on
@@ -67,7 +78,7 @@ export function formTitle(code: string): string {
 export type ClockStanding = "passed" | "urgent" | "soon" | "later" | "none";
 
 export function clockStanding(movement: Movement, now: Instant): ClockStanding {
-  if (movement.legalForm?.dueAt === undefined) return "none";
+  if (currentLegalDueAt(movement) === undefined) return "none";
   if (isLegalDeadlineBreached(movement, now)) return "passed";
   const reminder = legalExpiryReminderOf(movement, now);
   if (reminder === "within-urgent") return "urgent";
@@ -89,7 +100,7 @@ export function standingWord(standing: ClockStanding): string {
   if (standing === "urgent") return `Within ${reminderHours("within-urgent")}h`;
   if (standing === "soon") return `Within ${reminderHours("within-soon")}h`;
   if (standing === "later") return "Later";
-  return "No expiry typed";
+  return "Time not written";
 }
 
 /** Act now means passed or inside the first warning window. */
@@ -220,7 +231,7 @@ export function handoverLines(
 ): string[] {
   return movements
     .filter((movement) => {
-      const dueAt = movement.legalForm?.dueAt;
+      const dueAt = currentLegalDueAt(movement);
       if (dueAt === undefined) return false;
       const left = minutesUntil(dueAt, now);
       return left >= 0 && left <= windowMinutes;
@@ -259,8 +270,10 @@ export function instantFromDateAndTimeInputs(dateValue: string, timeValue: strin
   const day = Number(rawDay);
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return undefined;
   if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
-  const typedDate = new Date(year, month - 1, day);
-  if (typedDate.getFullYear() !== year || typedDate.getMonth() !== month - 1 || typedDate.getDate() !== day) {
+  // A typed date is a Perth calendar day, counted from `dayZero`'s Perth midnight (L7).
+  const typedDate = perthMidnight(year, month - 1, day);
+  const read = perthCalendarDay(typedDate);
+  if (read.year !== year || read.monthIndex !== month - 1 || read.day !== day) {
     return undefined;
   }
   const dayOffsetMinutes = Math.round((typedDate.getTime() - dayZero.getTime()) / 60_000);

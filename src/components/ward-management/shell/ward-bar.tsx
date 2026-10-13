@@ -9,6 +9,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ClipboardCheck,
   FileText,
   FlaskConical,
   Hospital,
@@ -25,12 +26,19 @@ import {
   Wrench,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
-import { StatusGlyph, WF_BAND_SCROLLED_PX, useWfBandActive, type WfTone } from "@/components/wf";
+import {
+  StatusGlyph,
+  WF_BAND_SCROLLED_PX,
+  publishLiveClock,
+  useIsPhone,
+  useWfBandActive,
+  type WfTone,
+} from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   readStoredGlarePreference,
@@ -41,8 +49,8 @@ import {
   subscribeThemePreference,
 } from "@/lib/theme-client";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
+import { taskItems } from "@/components/ward-management/ward-act-now-items";
+import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
@@ -59,10 +67,10 @@ import {
   resolveWardPrimaryAction,
   resolveWardScreenTitle,
 } from "@/components/ward-management/ward-nav";
-import { wardPlaceFor } from "@/components/ward-management/ward-place";
+import { wardPlaceFor, wardPlaceIdFor } from "@/components/ward-management/ward-place";
+import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import {
   edHealthService,
-  movementBelongsToService,
   SERVICE_SCOPED_SCREENS,
   unitHealthService,
 } from "@/components/ward-management/ward-service-scope";
@@ -99,7 +107,7 @@ const WardMhaCalculator = dynamic(
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
-import { openWardMenu, PHONE_QUERY, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
+import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import {
   digestHref,
   dischargeHref,
@@ -114,6 +122,8 @@ import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPri
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
+import { replayEarlyHeaderTap } from "./ward-early-tap";
+import { WardDataModeSlot } from "../ward-shared-access";
 import styles from "./ward-bar.module.css";
 
 /**
@@ -274,7 +284,7 @@ const SERVICE_SCOPE_NOTE = `One service, or all of them. ${
   SERVICE_SCOPED_SCREENS.length > 1
     ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
     : SERVICE_SCOPED_SCREENS.join(", ")
-} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not.`;
+} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not. Each count is the people waiting in that service's emergency departments; a narrowed list also shows people referred to its wards.`;
 
 /** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (D-16) — named
  *  in one place so the three "not wired" primary-action kinds and any future caller share the
@@ -357,31 +367,41 @@ export function isPendingNavigation(href: string, current: string): boolean {
 
 /**
  * Phone bar (Josh, 8 Oct 2026, board 00b): bar A with C's behaviour. It never hides. At the top of
- * the page it sits on the page with no fill; once the page scrolls it condenses and turns solid.
+ * the page it sits on the page with no fill; once the page scrolls its controls condense and it
+ * turns solid. Its layout height stays fixed so scrolling never moves the content below it.
  * Phone only: `enabled` is false above 48rem, so the desktop bar never gets `data-scrolled`.
  */
 const SCROLLED_AFTER_PX = 8;
+const RESTING_BELOW_PX = 2;
 
-function useBarScrolled(enabled: boolean): boolean {
+function useBarScrolled(barRef: RefObject<HTMLElement | null>, enabled: boolean): boolean {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     if (!enabled) return;
+    // Phone scrolls inside the work column (`[data-wf-scroller]`), not the window, so iOS Safari's
+    // toolbar never collapses and the fixed dock stays put (Josh, 12 Oct 2026). The window is still
+    // watched in case a page is ever shown without the shell's column.
+    const scroller = barRef.current?.closest<HTMLElement>("[data-wf-scroller]") ?? null;
     let frame = 0;
     const update = () => {
       frame = 0;
-      setScrolled(window.scrollY > SCROLLED_AFTER_PX);
+      const offset = Math.max(scroller?.scrollTop ?? 0, window.scrollY);
+      // Separate entry and exit thresholds avoid flicker during small scroll reversals or bounce.
+      setScrolled((previous) => offset > (previous ? RESTING_BELOW_PX : SCROLLED_AFTER_PX));
     };
     const onScroll = () => {
       if (!frame) frame = window.requestAnimationFrame(update);
     };
     frame = window.requestAnimationFrame(update);
+    scroller?.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
+      scroller?.removeEventListener("scroll", onScroll);
       window.removeEventListener("scroll", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [enabled]);
+  }, [barRef, enabled]);
 
   return enabled && scrolled;
 }
@@ -417,21 +437,6 @@ function useBandScrolled(barRef: RefObject<HTMLElement | null>, enabled: boolean
   }, [barRef, enabled]);
 
   return enabled && scrolled;
-}
-
-function subscribePhone(onChange: () => void) {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
-  const query = window.matchMedia(PHONE_QUERY);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-function usePhoneViewport(): boolean {
-  return useSyncExternalStore(
-    subscribePhone,
-    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
-    () => false,
-  );
 }
 
 /** The desktop bar keeps each page's own primary action; phone actions live in the phone menu. */
@@ -531,7 +536,8 @@ function isReferralSheetPath(pathname: string): boolean {
 export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
-  const isPhone = usePhoneViewport();
+  // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
+  const isPhone = useIsPhone();
   const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
   const {
     movements,
@@ -556,12 +562,23 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
   const now = useWardFlowClock();
+  // Phone Live chips read "Live HH:MM" from this one clock (v10 phone hero, `publishLiveClock`).
+  const liveClockFace = formatInstant(now);
+  useEffect(() => {
+    publishLiveClock(liveClockFace);
+  }, [liveClockFace]);
+  useEffect(() => () => publishLiveClock(undefined), []);
+  // The header is ready: press the panel button a reader tapped while it was still loading.
+  useEffect(() => replayEarlyHeaderTap(), []);
 
-  const { role, placeId } = useWardNavCounts();
+  const { role, shellRole, placeId } = useWardNavCounts();
   const roleCategory = roleReferralCategory(role);
   const checksPublication = useWardChecks();
 
   const [openPanel, setOpenPanel] = useState<WardBarPopoverId | null>(null);
+  // A history Back is asynchronous. Keep the drawer identity here so repeated closes are
+  // ignored and a delayed popstate cannot close a drawer opened in the meantime.
+  const closingViaHistoryRef = useRef<{ id: WardBarPopoverId; announce: boolean } | null>(null);
   const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
   // The slide-out fills this with its guarded close, which asks before discarding a draft.
   const referralCloseRef = useRef<(() => void) | null>(null);
@@ -620,7 +637,29 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, []);
 
   const place = wardPlaceFor(pathname, units);
+  // Phone (v10 mockup): the patient, movement and add pages name the page itself in the lean bar.
+  const phoneRouteTitle = !isPhone
+    ? undefined
+    : pathname === WARD_ADD_PERSON_HREF
+      ? "Add patient"
+      : /^\/mockups\/ward-flow\/people\/[^/]+\/?$/u.test(pathname)
+        ? "Patient"
+        : /^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname)
+          ? "Movement"
+          : /^\/mockups\/ward-flow\/statistics\/(services|wards|eds|teams)\/?$/u.test(pathname)
+            ? ({ services: "Services", wards: "Wards", eds: "EDs", teams: "Teams" } as const)[
+                pathname.replace(/\/$/u, "").split("/").pop() as "services" | "wards" | "eds" | "teams"
+              ]
+            : /^\/mockups\/ward-flow\/statistics\/weekly\/?$/u.test(pathname)
+              ? "Weekly"
+              : place?.kind === "ward" && /\/answer\/?$/u.test(pathname)
+                ? "Ward answer"
+                : place?.kind === "ed"
+                  ? // The short name ("RPH ED") fits the lean bar; the full name is in the hero.
+                    edShortName(edById(wardPlaceIdFor(pathname) ?? "")) || place.name
+                  : undefined;
   const routeTitle =
+    phoneRouteTitle ??
     (/^\/mockups\/ward-flow\/statistics\/ward\//u.test(pathname) ? "Ward statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/statistics\/ed\//u.test(pathname) ? "Emergency department statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
@@ -652,32 +691,40 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // the one place that must gate — `wardTasksAreActionableForRole` exists in `ward-chrome-role.ts`
   // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
   // own "No outstanding work right now." empty state, never a network list with every action refused.
+  // Device audit item 6 (11 Oct 2026): Tasks is the signed-in person's count on every page, so it
+  // is gated on `shellRole`, not the route — it no longer drops to 0 on ED, team and officer pages.
+  // L1 (site review, 12 Oct 2026): the one task list (`taskItems`, `ward-act-now-items.ts`) that
+  // Alerts and Home Exceptions read too, so the badge and those lists cannot disagree.
   const tasksItems = useMemo(() => {
-    if (!wardTasksAreActionableForRole(role)) return [];
-    const open = movements.filter(isOpen);
-    // Stream A, 9 Oct 2026: decision targets join the same list.
-    return [
-      ...buildActionInbox(open, now, units, {
+    if (!wardTasksAreActionableForRole(shellRole)) return [];
+    return taskItems(
+      {
         movements,
+        units,
+        configuration,
+        inboxSnoozes,
         admissions,
         patients,
         referrals,
         supportNotifications,
         plannedAdmissions,
-      }),
-      ...decisionTargetInboxItems(open, now, configuration),
-    ];
+        leaveBeds,
+      },
+      now,
+    );
   }, [
     movements,
     now,
     units,
-    role,
+    shellRole,
     plannedAdmissions,
     admissions,
     patients,
     referrals,
     supportNotifications,
     configuration,
+    inboxSnoozes,
+    leaveBeds,
   ]);
   // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
   const tasksActiveCount = useMemo(
@@ -685,32 +732,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [tasksItems, inboxSnoozes, now],
   );
   /**
-   * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service
-   * panel"). One open-movement membership count per `HEALTH_SERVICES` member, through
-   * `ward-service-scope.ts`'s own `movementBelongsToService` — the SAME join this panel's own
-   * count can never disagree with by construction, since it calls that function directly rather
-   * than a second copy.
-   *
-   * ⚠️ **CORRECTED, R2 (2026-09-17).** This used to cite a `shown + outside = total` test in
-   * `tests/ward-service-scope.test.ts` proving movement membership over the real seed — that test
-   * existed for MOVEMENTS once, under the name "TEST 8", but R1's own review had already replaced
-   * it (it proved only that a filter and its negation sum to the total, true of any predicate) and
-   * R2 replaced its successor again for the same reason. What proves `movementBelongsToService`
-   * correct today is that file's `movementHealthServices`/`movementBelongsToService` describe
-   * block, plus the R2 landmark-membership test — `shown + outside = total` survives in that file
-   * only for REFERRALS, a different population from what this comment named.
+   * The Service selector's own "{n} waiting" counts. L1 (site review, 12 Oct 2026): this used to
+   * count every open movement that touched a service (origin ED or any ward asked), so a person
+   * referred across services counted twice: "All services 70 open" over services adding to 97,
+   * and East Metro 43 here against 35 on Network. It now reads `waitingInEds`
+   * (`ward-shared-figures.ts`), the figure Home's hero and Network print: people waiting in each
+   * service's emergency departments. A person waits in one department, so the services add up to
+   * All services.
    */
-  const serviceOptionOpenCounts = useMemo(() => {
-    const openMovementsList = movements.filter(isOpen);
-    const counts = new Map<HealthService, number>();
-    for (const candidate of HEALTH_SERVICES) {
-      counts.set(
-        candidate,
-        openMovementsList.filter((movement) => movementBelongsToService(movement, candidate, units)).length,
-      );
-    }
-    return counts;
-  }, [movements, units]);
+  const waiting = useMemo(() => waitingInEds(movements, now), [movements, now]);
   const commandActivity = useMemo(
     () =>
       deriveCommandActivity({
@@ -816,20 +846,30 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, []);
 
   const closePopover = useCallback((id: WardBarPopoverId, announce = true) => {
-    setOpenPanel((current) => (current === id ? null : current));
-    if (announce) announceToWardShell("Closed.");
-    if (typeof window === "undefined" || !window.history) return;
+    // Do not issue another Back while the first one is still waiting for popstate.
+    if (closingViaHistoryRef.current !== null) return;
+    if (typeof window === "undefined" || !window.history) {
+      setOpenPanel((current) => (current === id ? null : current));
+      if (announce) announceToWardShell("Closed.");
+      return;
+    }
     const step = drawerCloseHistoryStep({
       drawerEntryIsCurrent: Boolean(window.history.state?.wardDrawer),
       navigationPending: navigationPendingRef.current,
       canGoBack: typeof window.history.back === "function",
     });
     if (step === "back") {
+      // Keep the sheet and its background lock until popstate completes the close.
+      closingViaHistoryRef.current = { id, announce };
       window.history.back();
-    } else if (step === "clear") {
-      const nextState = { ...window.history.state };
-      delete nextState.wardDrawer;
-      window.history.replaceState(nextState, "");
+    } else {
+      setOpenPanel((current) => (current === id ? null : current));
+      if (announce) announceToWardShell("Closed.");
+      if (step === "clear") {
+        const nextState = { ...window.history.state };
+        delete nextState.wardDrawer;
+        window.history.replaceState(nextState, "");
+      }
     }
     // Used once: a link whose own handler stopped the page change (a menu that opens a drawer
     // instead) must not keep later closes from stepping back.
@@ -838,6 +878,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {
+      // A replacement open must wait for the pending Back; otherwise its popstate would
+      // be indistinguishable from the drawer that initiated the close.
+      if (closingViaHistoryRef.current !== null) return;
       setOpenPanel(id);
       if (typeof window !== "undefined" && window.history && isDrawerPanel(id)) {
         if (window.history.state?.wardDrawer) {
@@ -940,23 +983,37 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   useEffect(() => {
     function onPopState() {
-      setOpenPanel((current) => {
-        if (current !== null) {
-          announceToWardShell("Closed.");
-          return null;
-        }
-        return current;
-      });
+      const closing = closingViaHistoryRef.current;
+      if (closing !== null) {
+        // Only the drawer that initiated Back may be closed by its delayed event, and it keeps
+        // the caller's choice not to announce (a service pick announces its own confirmation).
+        closingViaHistoryRef.current = null;
+        if (openPanel !== closing.id) return;
+        setOpenPanel(null);
+        if (closing.announce) announceToWardShell("Closed.");
+        return;
+      }
+      if (openPanel === null) return;
+      setOpenPanel(null);
+      // Announce in the event, outside React's state updater/render phase.
+      announceToWardShell("Closed.");
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [openPanel]);
 
   useEffect(() => {
-    const unsubOpen = subscribeWardDrawer((drawerId) => {
+    const unsubOpen = subscribeWardDrawer((drawerId, href) => {
       if (drawerId === "referral") {
         const opener = document.activeElement;
-        openReferral({ category: roleCategory }, opener instanceof HTMLElement ? opener : null);
+        // A button that raises a referral from where it sits (ED, community team, Home) passes the
+        // same link a Refer link would, so the slide-out opens prefilled from that place.
+        const request = href ? referralSheetRequestFromHref(href, window.location.origin) : null;
+        const search = href ? new URL(href, window.location.origin).searchParams : null;
+        openReferral(
+          request && search ? withRoleCategory(request, search, roleCategory) : { category: roleCategory },
+          opener instanceof HTMLElement ? opener : null,
+        );
         return;
       }
       openPopover(drawerId);
@@ -1054,6 +1111,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       const target = event.target as Node;
       if (panelRef.current?.contains(target)) return;
       if (triggerRef.current?.contains(target)) return;
+      // The phone service sheet's scrim closes it on its own click, so the tap never reaches the page.
+      if (target instanceof Element && target.closest("[data-ward-service-scrim]")) return;
       closePopover(activePanel, false);
     }
     document.addEventListener("mousedown", onPointerDown);
@@ -1127,16 +1186,26 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const activeServiceBadgeLabel = activeService ?? "Statewide";
   const activityHasUnread = unreadNoticeCount > 0;
 
-  const barScrolled = useBarScrolled(isPhone);
-  // Desktop and tablet only: a page that opens on the shared Hero bands the header (v10 7.1).
+  // A page that opens on the shared Hero bands the header (v10 7.1). On phone the lean bar sits in
+  // hero ink at rest and hands over to its own solid scrolled face (v10 Home mockup, 11 Oct 2026).
   const barRef = useRef<HTMLElement>(null);
-  const bandActive = useWfBandActive() && !isPhone;
-  const bandScrolled = useBandScrolled(barRef, bandActive);
-  const bandState = bandActive ? (bandScrolled ? "light" : "ink") : undefined;
+  const barScrolled = useBarScrolled(barRef, isPhone);
+  const bandHero = useWfBandActive();
+  const bandScrolled = useBandScrolled(barRef, bandHero && !isPhone);
+  const bandState = !bandHero
+    ? undefined
+    : isPhone
+      ? barScrolled
+        ? undefined
+        : "ink"
+      : bandScrolled
+        ? "light"
+        : "ink";
   // Phone only: the condensed bar's live line, the open movements in the current scope.
-  const scopeOpenCount = activeService
-    ? (serviceOptionOpenCounts.get(activeService as HealthService) ?? 0)
-    : movements.filter(isOpen).length;
+  const allWaitingCount = waiting.total;
+  const scopeWaitingCount = activeService
+    ? (waiting.byService.get(activeService as HealthService) ?? 0)
+    : allWaitingCount;
 
   return (
     <header
@@ -1158,7 +1227,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         onOpenDrawer={openPopover}
         onOpenReferral={openReferral}
       />
-      <div className={styles.title}>
+      {/* Device audit (11 Oct 2026): on the phone the whole title block is the service control's
+          tap target, not only the 91 x 18 service line. A tap on the title forwards to the service
+          button, which stays the one keyboard and screen-reader control; taps inside the button's
+          own container (the button itself, the sheet and its scrim) are left to it. */}
+      <div
+        className={styles.title}
+        onClick={
+          isPhone
+            ? (event) => {
+                if ((event.target as Element).closest(`.${styles.scopeBadgeContainer}`)) return;
+                serviceTriggerRef.current?.click();
+              }
+            : undefined
+        }
+      >
         <div className={styles.titleGroup}>
           <span
             className={styles.place}
@@ -1204,10 +1287,18 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           </button>
           {isPhone ? (
             <span className={styles.scopeLive} aria-hidden="true">
-              {scopeOpenCount} open · {activeServiceBadgeLabel}
+              {scopeWaitingCount} waiting · {activeServiceBadgeLabel}
             </span>
           ) : null}
 
+          {isPhone && !isFixedJurisdiction && openPanel === "service" ? (
+            <div
+              className={styles.serviceScrim}
+              data-ward-service-scrim=""
+              aria-hidden="true"
+              onClick={() => closePopover("service", false)}
+            />
+          ) : null}
           {!isFixedJurisdiction && openPanel === "service" ? (
             <div
               id="ward-bar-service-panel"
@@ -1218,6 +1309,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               data-testid="ward-bar-service-panel"
             >
               <p className={styles.popoverHead}>Service</p>
+              {/* Phone (v10 service sheet): the quiet line under the title. */}
+              <p className={styles.serviceSheetNote} aria-hidden="true">
+                What every page and count shows
+              </p>
               <p className="sr-only">{SERVICE_SCOPE_NOTE}</p>
               <button
                 type="button"
@@ -1227,11 +1322,14 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               >
                 <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
                 <span className={styles.serviceName}>All services</span>
+                <span className={`${styles.serviceOptionCount} ${styles.serviceAllCount}`} aria-hidden="true">
+                  {waitingText(allWaitingCount)}
+                </span>
                 <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === null} />
               </button>
               <hr className={styles.popoverRule} />
               {HEALTH_SERVICES.map((candidate) => {
-                const openCount = serviceOptionOpenCounts.get(candidate) ?? 0;
+                const waitingCount = waiting.byService.get(candidate) ?? 0;
                 return (
                   <button
                     key={candidate}
@@ -1247,7 +1345,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                     />
                     <span className={styles.serviceName}>{candidate}</span>
                     <span className={styles.serviceOptionCount} aria-hidden="true">
-                      {openCount > 0 ? `${openCount} open` : "none open"}
+                      {waitingText(waitingCount)}
                     </span>
                     <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === candidate} />
                   </button>
@@ -1259,6 +1357,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
         {/* A page's own header tools land here (`ward-bar-page-tools.tsx`). Empty on most pages. */}
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
+
+        {/* v10: the Prototype pill beside the service pill, in place of the Data mode bar. */}
+        <WardDataModeSlot className={styles.dataMode} />
 
         <span
           className={styles.mark}
@@ -1320,9 +1421,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           aria-controls="ward-bar-tasks-drawer"
           onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
         >
-          <ListChecks className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+          <ListChecks className={`${styles.triggerIcon} ${styles.tasksWide}`} aria-hidden="true" strokeWidth={1.75} />
+          {/* Phone (v10 lean bar): the clipboard. CSS shows one of the two, so desktop is unchanged. */}
+          <ClipboardCheck
+            className={`${styles.triggerIcon} ${styles.tasksPhone}`}
+            aria-hidden="true"
+            strokeWidth={1.75}
+          />
           <span className={styles.triggerLabel}>Tasks</span>
-          <span className={styles.badge}>{tasksActiveCount}</span>
+          <span className={styles.badge} data-zero={tasksActiveCount === 0 || undefined}>
+            {tasksActiveCount}
+          </span>
         </button>
 
         <button
@@ -1470,14 +1579,24 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         testId="ward-bar-activity-sheet"
         returnFocusRef={isPhone ? phoneMenuRef : activityTriggerRef}
         descriptionContent={
-          <p className={styles.activityFreshness} data-tone={activityTone}>
-            <span>
-              Synthetic state · demo time {formatInstant(now)}
-              {lastActivityAt === undefined
-                ? " · no recorded event"
-                : ` · last event ${formatInstantWithDay(lastActivityAt, now)}`}
-            </span>
-          </p>
+          isPhone ? (
+            // v10 Activity sheet (phone): one quiet line, then the list.
+            <p className={styles.activityFreshness} data-tone={activityTone}>
+              <span>
+                {unreadNoticeCount > 0 ? `${unreadNoticeCount} unread · ` : ""}
+                {shownActivity?.changes.length ?? 0} events · newest first
+              </span>
+            </p>
+          ) : (
+            <p className={styles.activityFreshness} data-tone={activityTone}>
+              <span>
+                Synthetic state · demo time {formatInstant(now)}
+                {lastActivityAt === undefined
+                  ? " · no recorded event"
+                  : ` · last event ${formatInstantWithDay(lastActivityAt, now)}`}
+              </span>
+            </p>
+          )
         }
         desktopBackdropClassName={styles.drawerBackdrop}
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
@@ -1486,41 +1605,47 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         closeButtonClassName={styles.drawerClose}
         bodyClassName={styles.drawerBody}
         footer={
-          <p className={styles.drawerFoot}>
-            <span>Synthetic events · newest first</span>
-            <span className={styles.footClock}>
-              Demo time <b>{formatInstant(now)}</b>
-            </span>
-          </p>
+          isPhone ? undefined : (
+            <p className={styles.drawerFoot}>
+              <span>Synthetic events · newest first</span>
+              <span className={styles.footClock}>
+                Demo time <b>{formatInstant(now)}</b>
+              </span>
+            </p>
+          )
         }
         footerClassName={styles.drawerFooter}
       >
-        <div className={styles.activitySegments} role="group" aria-label="Activity sections">
-          <div className={styles.segTrack}>
-            <button
-              type="button"
-              className={styles.segBtn}
-              aria-pressed={activityPart === "activity"}
-              aria-controls="ward-bar-activity-events"
-              onClick={() => setActivityPart("activity")}
-            >
-              Activity
-              <span>{shownActivity?.changes.length ?? 0}</span>
-            </button>
-            <button
-              type="button"
-              className={styles.segBtn}
-              aria-pressed={activityPart === "tally"}
-              aria-controls="ward-bar-activity-tally"
-              onClick={() => setActivityPart("tally")}
-            >
-              Live tally
-              <span>{shownActivity?.pageTitle ?? "Current page"}</span>
-            </button>
+        {/* Phone (v10 Activity sheet): a plain list. The tally, search and category chips stay on
+            the larger layouts; every notice keeps its Mark as read. */}
+        {isPhone ? null : (
+          <div className={styles.activitySegments} role="group" aria-label="Activity sections">
+            <div className={styles.segTrack}>
+              <button
+                type="button"
+                className={styles.segBtn}
+                aria-pressed={activityPart === "activity"}
+                aria-controls="ward-bar-activity-events"
+                onClick={() => setActivityPart("activity")}
+              >
+                Activity
+                <span>{shownActivity?.changes.length ?? 0}</span>
+              </button>
+              <button
+                type="button"
+                className={styles.segBtn}
+                aria-pressed={activityPart === "tally"}
+                aria-controls="ward-bar-activity-tally"
+                onClick={() => setActivityPart("tally")}
+              >
+                Live tally
+                <span>{shownActivity?.pageTitle ?? "Current page"}</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {activityPart === "activity" ? (
+        {activityPart === "activity" && !isPhone ? (
           <div className={styles.activityToolbar}>
             <div className={styles.drawerSummary}>
               <div>
@@ -1575,7 +1700,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           </div>
         ) : null}
 
-        <section id="ward-bar-activity-events" className={styles.activitySection} hidden={activityPart !== "activity"}>
+        <section
+          id="ward-bar-activity-events"
+          className={styles.activitySection}
+          hidden={!isPhone && activityPart !== "activity"}
+        >
           {scopedNotices.length > 0 ? (
             <div className={styles.card}>
               {/* Item 48, Q2: "counts show unread only" — the heading counts unread notices, never
@@ -1626,7 +1755,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             </div>
           ) : null}
           <div className={styles.card}>
-            <div className={styles.cardHead}>
+            <div className={`${styles.cardHead} ${styles.changesHead}`}>
               <p className={styles.activityHead}>
                 Recent changes <span className={styles.countPill}>{filteredActivityChanges.length}</span>
               </p>
@@ -1676,7 +1805,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               </ol>
             )}
           </div>
-          {(shownActivity && shownActivity.changes.length > 0) || publishedChecks.length > 0 ? (
+          {!isPhone && ((shownActivity && shownActivity.changes.length > 0) || publishedChecks.length > 0) ? (
             <div className={styles.card}>
               {shownActivity && shownActivity.changes.length > 0 ? (
                 <p className={styles.activityKey}>
@@ -1714,7 +1843,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           ) : null}
         </section>
 
-        <section id="ward-bar-activity-tally" className={styles.activitySection} hidden={activityPart !== "tally"}>
+        <section
+          id="ward-bar-activity-tally"
+          className={styles.activitySection}
+          hidden={isPhone || activityPart !== "tally"}
+        >
           {shownActivity ? (
             <>
               <p className={styles.activityTitle}>{shownActivity.pageTitle} now</p>
@@ -1805,7 +1938,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             ownership={inboxOwnership}
             snoozes={inboxSnoozes}
             configuration={configuration}
-            role={role}
+            role={shellRole}
             now={now}
             dispatch={dispatch}
             onClose={() => closePopover("tasks")}
@@ -2059,6 +2192,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           initialDestination={referralRequest.destination}
           initialPatientId={referralRequest.personId}
           initialOriginSiteCode={referralRequest.originSiteCode}
+          initialSendingTeam={referralRequest.sendingTeam}
+          initialUnitIds={referralRequest.unitIds}
           closeRequestRef={referralCloseRef}
           onClose={closeReferral}
         />

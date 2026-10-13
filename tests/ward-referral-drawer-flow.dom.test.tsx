@@ -5,8 +5,13 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { WardReferralInbox } from "@/components/ward-management/referrals/ward-referral-inbox";
-import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
+import {
+  discardReferralDraft,
+  forgetReferrerContact,
+  readLastReferrerContact,
+} from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -34,7 +39,7 @@ function Probe() {
 }
 
 function setup(withBoard = false) {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardReferralDrawer onClose={vi.fn()} />
       <WardReferralInbox unitId="rph-adult-secure" />
@@ -42,6 +47,9 @@ function setup(withBoard = false) {
       <Probe />
     </WardFlowProvider>,
   );
+  // Opened plainly the sheet starts on nobody (A2-3); these cases walk step 1 for WF-009's person.
+  chooseSampleReferralPerson();
+  return view;
 }
 function tab(name: string) {
   fireEvent.click(within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name }));
@@ -64,14 +72,14 @@ function answer(label: string, answer: string) {
 describe("approved four-tab referral drawer journey", () => {
   it("requires catchment confirmation and places the story in Referral, documents in Documentation", () => {
     setup();
-    // v6 (ReferralDrawer.webp): the footer always offers "Next: Referral"; it checks the patient step when pressed.
-    expect(screen.getByRole("button", { name: "Next: Referral" })).toBeInTheDocument();
+    // v6 (ReferralDrawer.webp): the footer always offers "Next, referral"; it checks the patient step when pressed.
+    expect(screen.getByRole("button", { name: "Next, referral" })).toBeInTheDocument();
     tab("Wards");
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Confirm the patient's catchment");
     tab("Patient");
     confirmCatchment();
-    next("Next: Referral");
+    next("Next, referral");
     expect(screen.getByLabelText(/Patient story/)).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Medical clearance" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Mental State Examination/)).not.toBeInTheDocument();
@@ -91,7 +99,7 @@ describe("approved four-tab referral drawer journey", () => {
     tab("Referral");
     expect(screen.getByLabelText(/Patient story/)).toHaveValue("Synthetic story retained");
     tab("Patient");
-    fireEvent.click(screen.getByRole("button", { name: "Switch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
     const results = screen.getByRole("listbox");
     fireEvent.click(within(results).getAllByRole("option")[1]);
     expect(screen.getByRole("button", { name: "Confirm catchment" })).toBeInTheDocument();
@@ -106,13 +114,13 @@ describe("approved four-tab referral drawer journey", () => {
   it("uploads actual charts, opens contact confirmation without dispatching, then sends once to selected inboxes", async () => {
     setup(true);
     confirmCatchment();
-    next("Next: Referral");
+    next("Next, referral");
     fireEvent.click(screen.getByRole("button", { name: "Emergency" }));
     fireEvent.change(screen.getByLabelText("Referring emergency department"), { target: { value: "RPH" } });
     fireEvent.change(screen.getByLabelText(/Patient story/), {
       target: { value: "Synthetic patient story for inbox review" },
     });
-    next("Next: Clearance");
+    next("Next, clearance");
     answer("Has the patient been medically cleared?", "No");
     fireEvent.change(screen.getByLabelText("Expected clearance"), { target: { value: "2026-10-07T18:00" } });
     fireEvent.change(screen.getByLabelText("Contact name"), { target: { value: "Demo Doctor" } });
@@ -127,7 +135,7 @@ describe("approved four-tab referral drawer journey", () => {
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Replace" })).toHaveLength(2), {
       timeout: 10_000,
     });
-    next("Next: Wards");
+    next("Next, wards");
     const locations = screen.getByRole("list", { name: "Placement Destination Options" });
     const first = within(locations).getByRole("checkbox", { name: /rph-adult-secure/ });
     fireEvent.click(first);
@@ -144,6 +152,9 @@ describe("approved four-tab referral drawer journey", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Referral sent" })).toBeVisible());
     expect(screen.getByTestId("submitted-count")).toHaveTextContent("1");
     expect(screen.getByTestId("referral-errors")).toBeEmptyDOMElement();
+    // A2-6: the details sent are kept in tab memory for the next referral, never browser storage.
+    expect(readLastReferrerContact()).toMatchObject({ name: "Demo Sender", role: "Nurse" });
+    forgetReferrerContact();
     expect(JSON.stringify(sessionStorage)).not.toContain("sender@example.com");
     fireEvent.submit(document.getElementById("referralConfirmForm")!);
     expect(screen.getByTestId("submitted-count")).toHaveTextContent("1");

@@ -96,3 +96,18 @@ describe("downtimePack", () => {
     expect(lastDowntimePack()).toBeNull();
   });
 });
+
+describe("downtime pack dates (device audit 11 Oct 2026)", () => {
+  it("never lists an ED arrival after the pack's freeze time", async () => {
+    const { pack } = packFor();
+    for (const line of pack.edQueue) expect(line.openedAt).toBeLessThanOrEqual(pack.generatedAt);
+  });
+});
+
+describe("downtime pack ED population (device audit 11 Oct 2026)", () => {
+  it("says how the still-in-ED count relates to every open journey", () => {
+    const { state, pack } = packFor();
+    expect(pack.edQueue.length + pack.leftEd).toBe(state.movements.filter(isOpen).length);
+    for (const line of pack.edQueue) expect(line.ed).not.toMatch(/Emergency Department$/u);
+  });
+});

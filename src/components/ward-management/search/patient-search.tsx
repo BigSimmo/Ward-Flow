@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
   useEffect,
@@ -10,9 +11,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { UserPlus } from "lucide-react";
+import { ArrowRight, ChevronRight, Command, Copy, History, UserPlus, Zap } from "lucide-react";
 
-import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx } from "@/components/wf";
+import { Button, Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx } from "@/components/wf";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -78,7 +79,6 @@ import { referralState } from "@/components/ward-management/ward-referrals";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import {
-  CENSUS_GROUPS,
   CENSUS_HIGHLIGHTS,
   buildCensus,
   censusLine,
@@ -97,13 +97,16 @@ import {
   CensusTable,
   FlowChip,
   PhoneCensus,
+  PhoneCommands,
   PhoneDobField,
+  type PhoneCommand,
   SearchAdornment,
   ShiftSummary,
 } from "./patient-census-view";
 
 import styles from "./search.module.css";
 import cs from "./census.module.css";
+import { isCommunityReferral } from "./community-referral";
 
 const ACCESS_RECORD_EMPTY = "No searches submitted this session. Press Enter in the search field to record a search.";
 
@@ -261,7 +264,7 @@ export function PatientSearchPage() {
   });
   const [showAllWard, setShowAllWard] = useState(false);
   const [flashKey, setFlashKey] = useState<string | null>(null);
-  const [phoneGroup, setPhoneGroup] = useState<CensusGroup>("wait");
+  const [commandsOpen, setCommandsOpen] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const showToast = (msg: string) => setCopyNote(msg);
@@ -331,10 +334,7 @@ export function PatientSearchPage() {
       if (activeKpiFacet === "live") {
         if (result.kind === "movement" && !isOpen(result.movement)) return false;
         if (result.kind === "referral") {
-          const isComm =
-            result.referral.originSiteCode.includes("CMHT") ||
-            result.referral.originSiteCode.includes("Clinic") ||
-            (result.referral.homeRegion as unknown as string) === "Community";
+          const isComm = isCommunityReferral(result.referral);
           if (isComm) return false;
         }
       }
@@ -345,10 +345,7 @@ export function PatientSearchPage() {
       if (activeKpiFacet === "notin") {
         if (result.kind === "movement") return false;
         if (result.kind === "referral") {
-          const isComm =
-            result.referral.originSiteCode.includes("CMHT") ||
-            result.referral.originSiteCode.includes("Clinic") ||
-            (result.referral.homeRegion as unknown as string) === "Community";
+          const isComm = isCommunityReferral(result.referral);
           if (!isComm) return false;
         }
       }
@@ -385,7 +382,7 @@ export function PatientSearchPage() {
   const people = useMemo(() => {
     if (isChip) {
       const allPeople = findPatients(patients, "", { movements, referrals, units });
-      if (text === "● Live") {
+      if (text === "● On this board") {
         return allPeople.filter((p) => getPatientPresence(p, referrals, movements).key === "live");
       }
       if (text === "○ Not in Hospital") {
@@ -462,7 +459,7 @@ export function PatientSearchPage() {
           transportStatus: operational.transportStatus,
           nurseEscort: Boolean(m.transport?.escortRequired),
           presence: "live",
-          presenceLabel: "Live in Hospital",
+          presenceLabel: "On this board",
           presenceDetail: `${operational.setting === "transit" ? "Collected from" : "Origin"} ${originText} · ${operational.holdStatus}`,
           clinicalNote: NO_CLINICAL_NOTE,
           personRecordId: info.patient?.id ?? null,
@@ -473,10 +470,7 @@ export function PatientSearchPage() {
       } else if (r.kind === "referral") {
         const ref = r.referral;
         const info = resolveSubjectPatient(ref, { patients, referrals, movements });
-        const isComm =
-          ref.originSiteCode.includes("CMHT") ||
-          ref.originSiteCode.includes("Clinic") ||
-          (ref.homeRegion as unknown as string) === "Community";
+        const isComm = isCommunityReferral(ref);
         const acceptedDest = ref.destinations.find((d) => d.acceptedUnitId);
         const destUnit = acceptedDest ? units.find((u) => u.id === acceptedDest.acceptedUnitId) : null;
         const waitH = Math.max(0, (now - ref.raisedAt) / 60);
@@ -514,7 +508,7 @@ export function PatientSearchPage() {
           transportStatus: isComm ? "Not required" : "Pending allocation",
           nurseEscort: false,
           presence: isComm ? "community" : "live",
-          presenceLabel: isComm ? "Not in Hospital" : "Live in Hospital",
+          presenceLabel: isComm ? "Not in Hospital" : "On this board",
           presenceDetail: isComm
             ? `Active Community Referral · ${ref.originSiteCode}`
             : `Queued Referral · ${ref.originSiteCode} ED`,
@@ -659,7 +653,12 @@ export function PatientSearchPage() {
     const lifted = highlightTest(highlight);
     return sortCensusRows(
       (refusal ? [] : census.rows).filter((row) => {
-        if (row.kind === "movement" || row.kind === "referral") {
+        // A referral with a bed found has left the legacy record search (it only holds queued
+        // referrals) but stays in the census, so it is filtered like a ward or person row instead of
+        // dropped: dropping it made the list read "Bed found 31" under a hero "41" (device audit
+        // 11 Oct 2026).
+        const foundReferral = row.kind === "referral" && row.group === "found" && !caseIds.has(row.key);
+        if ((row.kind === "movement" || row.kind === "referral") && !foundReferral) {
           // A place shown in the census also finds the case, not only the legacy record search.
           if (!caseIds.has(row.key) && !(needle.length >= 2 && row.placeText.includes(needle))) return false;
         } else {
@@ -780,19 +779,18 @@ export function PatientSearchPage() {
     window.setTimeout(() => {
       document
         .querySelector(`[data-id="${CSS.escape(row.key)}"]`)
-        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+        ?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
     }, 30);
     window.setTimeout(() => setFlashKey(null), 1800);
   };
 
   const jumpToGroup = (group: CensusGroup) => {
     setTab("now");
-    setPhoneGroup(group);
     setOpenGroups((current) => ({ ...current, [group]: true }));
     window.setTimeout(() => {
       document
         .getElementById(`ward-patient-search-group-${group}`)
-        ?.scrollIntoView({ block: "start", behavior: "smooth" });
+        ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
     }, 30);
   };
 
@@ -819,10 +817,14 @@ export function PatientSearchPage() {
   };
 
   // While a search runs on the phone, a group with no match gives way to the first one with any.
-  const phoneGroupShown =
-    searching && groupMatches[phoneGroup] === 0
-      ? (CENSUS_GROUPS.find((group) => groupMatches[group.id] > 0)?.id ?? phoneGroup)
-      : phoneGroup;
+  const firstWaiting = visibleRows.find((row) => row.group === "wait") ?? null;
+  const flowLine = (() => {
+    const closed = census.closedToday;
+    const arrived = closed.filter((row) => row.outcome === "Arrived").length;
+    const left = closed.filter((row) => row.outcome === "Discharged" || row.outcome === "Transferred").length;
+    const stopped = closed.filter((row) => row.outcome === "Did not proceed").length;
+    return `Today ${arrived} arrived · ${left} left · ${stopped} did not proceed`;
+  })();
   const historyCount = census.closedToday.length + accessRecord.length;
   const addPatientClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
     if (isNewTabClick(event)) {
@@ -952,6 +954,7 @@ export function PatientSearchPage() {
             className={cx(cs.censusHero, isPhone && cs.heroPhone)}
             eyebrow="Statewide census"
             title={`${liveCount} patients now`}
+            titleMeta={isPhone ? flowLine : undefined}
             aside={
               <>
                 {isPhone ? null : <FlowChip closed={census.closedToday} onOpen={() => setTab("history")} />}
@@ -982,9 +985,39 @@ export function PatientSearchPage() {
                 )}
               </div>
             }
+            footKind={isPhone ? "actions" : "line"}
+            foot={
+              isPhone ? (
+                <div className={cs.phoneHeroFoot}>
+                  {/* The five group figures live once, in the band under the hero (device audit
+                      11 Oct 2026): a three-up here repeated 51 / 41 / 242 directly above it. */}
+                  <div className={cs.phoneHeroActions}>
+                    <Button
+                      variant="onHero"
+                      icon={Command}
+                      aria-haspopup="dialog"
+                      onClick={() => setCommandsOpen(true)}
+                      data-testid="ward-patient-search-commands-open"
+                    >
+                      Commands
+                    </Button>
+                    <Link
+                      href={WARD_ADD_PERSON_HREF}
+                      className={buttonClass({ variant: "onHero" })}
+                      data-testid="ward-patient-search-add"
+                      onClick={addPatientClick}
+                    >
+                      <Icon icon={UserPlus} size={16} />
+                      <span>Add patient</span>
+                    </Link>
+                  </div>
+                </div>
+              ) : undefined
+            }
           />
 
-          {/* The counts and filters below the bar that tests and assistive tech read directly. */}
+          {/* The counts and filters below the bar that tests and assistive tech read directly. Out of the
+              Tab order (11 Oct 2026), so keyboard focus never lands on a control nobody can see. */}
           <div className="sr-only" data-testid="ward-patient-search-yield-strip">
             <span data-testid="ward-patient-search-yield-total">{yieldMetrics.total}</span>
             <span data-testid="ward-patient-search-yield-holds">{yieldMetrics.live}</span>
@@ -1001,6 +1034,7 @@ export function PatientSearchPage() {
                 const isActive = text === chip.query;
                 return (
                   <button
+                    tabIndex={-1}
                     key={chip.label}
                     type="button"
                     data-chip={chip.query}
@@ -1014,6 +1048,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-wait">Wait Band</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-wait"
               value={waitFilter}
               onChange={(e) => setWaitFilter(e.target.value)}
@@ -1036,6 +1071,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-presence">Presence</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-presence"
               value={presenceFilter}
               onChange={(e) => setPresenceFilter(e.target.value as PresenceFilter)}
@@ -1050,6 +1086,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-stage">Stage</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-stage"
               value={stage}
               aria-label="Stage"
@@ -1065,6 +1102,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-department">Department</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-department"
               value={edId}
               aria-label="Department"
@@ -1080,6 +1118,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-setting">Setting</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-setting"
               value={settingFilter}
               onChange={(e) => setSettingFilter(e.target.value)}
@@ -1096,6 +1135,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-service">Service</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-service"
               value={serviceFilter}
               onChange={(e) => setServiceFilter(e.target.value)}
@@ -1110,6 +1150,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-legal">Legal Status</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-legal"
               value={legalFilter}
               onChange={(e) => setLegalFilter(e.target.value)}
@@ -1125,6 +1166,7 @@ export function PatientSearchPage() {
 
             <label htmlFor="ward-patient-search-tier">Acuity Tier</label>
             <select
+              tabIndex={-1}
               id="ward-patient-search-tier"
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
@@ -1137,6 +1179,7 @@ export function PatientSearchPage() {
             </select>
 
             <button
+              tabIndex={-1}
               type="button"
               onClick={resetAllFilters}
               data-testid="ward-patient-search-reset-filters"
@@ -1212,8 +1255,6 @@ export function PatientSearchPage() {
             matched={groupMatches}
             searching={searching}
             needle={needle}
-            group={phoneGroupShown}
-            onGroup={setPhoneGroup}
             highlight={highlight}
             onHighlight={setHighlight}
             highlightCounts={highlightCounts}
@@ -1227,8 +1268,71 @@ export function PatientSearchPage() {
             history={history}
             historyCount={historyCount}
             empty={refusalNotice ?? empty}
+            onJump={jumpToGroup}
           />
-        ) : (
+        ) : null}
+        {isPhone ? (
+          <PhoneCommands
+            open={commandsOpen}
+            onClose={() => setCommandsOpen(false)}
+            actions={[
+              {
+                id: "add",
+                label: "Add patient",
+                hint: "New record with a UMRN",
+                icon: UserPlus,
+                href: WARD_ADD_PERSON_HREF,
+              },
+              ...(firstWaiting
+                ? [
+                    {
+                      id: "find",
+                      label: `Find a bed for ${firstWaiting.name}`,
+                      hint: `${firstWaiting.umrn} · ${firstWaiting.where}`,
+                      icon: ArrowRight,
+                      onAction: () => selectRow(firstWaiting),
+                    },
+                  ]
+                : []),
+              {
+                id: "copy",
+                label: "Copy list",
+                hint: `${visibleRows.length} rows as text`,
+                icon: Copy,
+                onAction: copyList,
+              },
+              {
+                id: "history",
+                label: "Show today's history",
+                hint: "Arrived, left and did not proceed",
+                icon: History,
+                onAction: () => setTab("history"),
+              },
+              {
+                id: "t1",
+                label: "Highlight Tier 1",
+                hint: `${highlightCounts.t1} patients`,
+                icon: Zap,
+                onAction: () => {
+                  setTab("now");
+                  setHighlight("t1");
+                },
+              },
+              {
+                id: "long",
+                label: "Highlight waiting over 24 hours",
+                hint: `${highlightCounts.long} waiting`,
+                icon: Zap,
+                onAction: () => {
+                  setTab("now");
+                  setHighlight("long");
+                },
+              },
+            ]}
+            places={PHONE_PLACES}
+          />
+        ) : null}
+        {isPhone ? null : (
           <div className={cs.layout}>
             <CensusTable
               rows={refusal ? [] : visibleRows}
@@ -1345,7 +1449,7 @@ function getPatientPresence(
   movements: readonly Movement[],
 ): { key: "live" | "community" | "scheduled" | "past"; label: string } {
   const movement = movements.find((m) => (m as Record<string, unknown>)["patient" + "Id"] === patient.id && isOpen(m));
-  if (movement) return { key: "live", label: "Live in Hospital" };
+  if (movement) return { key: "live", label: "On this board" };
   const referral = referrals.find(
     (r) => (r as Record<string, unknown>)["patient" + "Id"] === patient.id && referralState(r) === "queued",
   );
@@ -1353,7 +1457,7 @@ function getPatientPresence(
     if (referral.originSiteCode.includes("CMHT") || referral.originSiteCode.includes("Clinic")) {
       return { key: "community", label: "Community / Home" };
     }
-    return { key: "live", label: "Live in Hospital" };
+    return { key: "live", label: "On this board" };
   }
   return { key: "past", label: "Past / Discharged" };
 }
@@ -1419,7 +1523,11 @@ export function PeopleSection({
               >
                 <div className={styles.personHeaderCluster}>
                   <span className={`${styles.presenceTag} ${styles[presence.key]}`}>
-                    {presence.key === "live" ? "● Live" : presence.key === "community" ? "○ Not in Hosp" : "◌ Past"}
+                    {presence.key === "live"
+                      ? "● On this board"
+                      : presence.key === "community"
+                        ? "○ Not in Hosp"
+                        : "◌ Past"}
                   </span>
                   <span className={styles.personUmrn}>{patient.umrn}</span>
                   <span className={styles.personName}>{patientDisplayName(patient)}</span>
@@ -1518,12 +1626,9 @@ export function ResultsSection({
         <ul className={styles.referralList} data-testid="ward-patient-search-referrals">
           {referralResults.map(({ referral }) => {
             const summary = buildReferralSummary(referral);
-            const isComm =
-              referral.originSiteCode.includes("CMHT") ||
-              referral.originSiteCode.includes("Clinic") ||
-              (referral.homeRegion as unknown as string) === "Community";
+            const isComm = isCommunityReferral(referral);
             const presenceKey = isComm ? "community" : "live";
-            const presenceLabel = isComm ? "○ Not in Hosp" : "● Live";
+            const presenceLabel = isComm ? "○ Not in Hosp" : "● On this board";
             const isSelected = selectedReferralId === referral.id;
             return (
               <li
@@ -1674,7 +1779,7 @@ function ResultRow({
     <tr className={rowClass}>
       <td className={styles.cellIdentity}>
         <div className={styles.movementIdCluster}>
-          <span className={`${styles.presenceTag} ${styles.live}`}>● Live</span>
+          <span className={`${styles.presenceTag} ${styles.live}`}>● On this board</span>
           {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
           <span className={styles.movementIdText}>{patientName}</span>
         </div>
@@ -1731,3 +1836,37 @@ function AccessRecordPanel({ entries, now }: { entries: readonly AccessEntry[]; 
     </WardPanel>
   );
 }
+
+/** The main places in the phone Commands sheet (v10). Each is an existing route. */
+const PHONE_PLACES: readonly PhoneCommand[] = [
+  { id: "home", label: "Home", hint: "Today's board", icon: ChevronRight, href: "/mockups/ward-flow" },
+  {
+    id: "referrals",
+    label: "Referrals",
+    hint: "Who needs a bed",
+    icon: ChevronRight,
+    href: "/mockups/ward-flow/referrals",
+  },
+  {
+    id: "movements",
+    label: "Movements",
+    hint: "Booked and on the road",
+    icon: ChevronRight,
+    href: "/mockups/ward-flow/movements",
+  },
+  {
+    id: "forms",
+    label: "Forms",
+    hint: "Mental Health Act forms",
+    icon: ChevronRight,
+    href: "/mockups/ward-flow/legal-forms",
+  },
+  { id: "wards", label: "Wards", hint: "Every ward and bed", icon: ChevronRight, href: "/mockups/ward-flow/wards" },
+  {
+    id: "settings",
+    label: "Settings",
+    hint: "Rules, alerts and display",
+    icon: ChevronRight,
+    href: "/mockups/ward-flow/settings",
+  },
+];

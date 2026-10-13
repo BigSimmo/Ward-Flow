@@ -116,6 +116,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                 type="button"
                 data-testid={`ward-ed-${row.ed.id}`}
                 className={styles.edButton}
+                data-service={serviceAcronym || undefined}
                 data-selected={selected ? "true" : undefined}
                 data-breaching={row.breaching}
                 data-longest-minutes={row.longestWaitMinutes}

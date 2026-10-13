@@ -3,10 +3,10 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { readConfig } from "./config.mjs";
-import { createStore, openStorage } from "./database.mjs";
-import { createAuthenticator, VerifierUnavailableError } from "./auth.mjs";
+import { VerifierUnavailableError } from "./auth.mjs";
+import { createBackend } from "./providers.mjs";
 import { createSharedHandler } from "./shared-http.mjs";
-import { createPush, errorFields } from "./push.mjs";
+import { errorFields } from "./push.mjs";
 
 const BODY_LIMIT = 1_048_576;
 const SESSION_PATH = /^\/v1\/sessions\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
@@ -63,7 +63,7 @@ export function createHandler({
           );
     const requestId = randomUUID();
     const startedAt = performance.now();
-    const match = SESSION_PATH.exec(path);
+    const match = store ? SESSION_PATH.exec(path) : null;
     const route = match ? "session" : path === "/readyz" ? "readiness" : path === "/healthz" ? "liveness" : "unknown";
     const origin = request.headers.get("origin");
     const headers = { "cache-control": "no-store", "x-content-type-options": "nosniff", "x-request-id": requestId };
@@ -107,15 +107,15 @@ export function createHandler({
     } catch (error) {
       if (error instanceof VerifierUnavailableError)
         return respond(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable");
-      return respond(401, { error: "Sign in with the authorised Microsoft account" }, "auth_denied");
+      return respond(401, { error: "Sign in with the authorised account" }, "auth_denied");
     }
     // Blob names are case-sensitive; one logical session must map to one blob.
     const sessionId = match?.[1].toLowerCase();
     try {
       if (path === "/readyz" && request.method === "GET") {
-        await store.ready();
+        if (store) await store.ready();
         if (sharedStore) await sharedStore.ready();
-        return respond(200, sharedStore ? { storage: "ready", database: "ready" } : { storage: "ready" });
+        return respond(200, { ...(store ? { storage: "ready" } : {}), ...(sharedStore ? { database: "ready" } : {}) });
       }
       if (!match) return respond(405, { error: "Method not allowed" });
       if (request.method === "GET") {
@@ -227,20 +227,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   let pool;
   try {
     const config = readConfig();
-    const storage = await openStorage(config.storage);
-    const authenticate = await createAuthenticator(config);
-    let sharedStore;
-    if (config.shared) {
-      const { createPostgresPool, createWorkspaceStore } = await import("./postgres.mjs");
-      const engine = await import("./dist/engine.mjs");
-      pool = createPostgresPool(config.postgres);
-      sharedStore = createWorkspaceStore(pool, {
-        workspaceId: config.workspaceId,
-        engine,
-        push: await createPush(config),
-      });
-    }
-    const server = listen(createHandler({ config, store: createStore(storage), authenticate, sharedStore }), config);
+    const backend = await createBackend(config);
+    pool = backend.pool;
+    const { sharedStore } = backend;
+    const server = listen(createHandler(backend), config);
     registerShutdown(server, pool);
     // Phone push: the same five-minute act-now re-check the Azure timer trigger runs.
     if (sharedStore?.pushEnabled)

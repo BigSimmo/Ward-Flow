@@ -2,21 +2,36 @@
 
 import Link from "next/link";
 import {
+  useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { CalendarDays, ChevronDown, Clock, Copy, Eye, History, Search, SearchX, UserPlus, X } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  Clock,
+  Copy,
+  Eye,
+  Search,
+  SearchX,
+  UserPlus,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
   Avatar,
   Button,
+  FactGrid,
   FilterChip,
   HeroStat,
   Icon,
+  PhoneSheet,
+  PillTabs,
   Segmented,
-  Sheet,
   StatusGlyph,
   Tabs,
   Timeline,
@@ -24,6 +39,7 @@ import {
   tableClasses,
   cx,
   type WfTone,
+  useMediaQuery,
 } from "@/components/wf";
 import {
   formatInstant,
@@ -287,6 +303,8 @@ export type CensusTableProps = {
 };
 
 const WARD_CAP = 40;
+/** Waiting, Bed found and Moving fold after this many rows on the desktop table, like phone. */
+const GROUP_CAP = 10;
 
 export function rowTestId(row: CensusRow): string {
   return row.kind === "movement" || row.kind === "referral"
@@ -299,6 +317,13 @@ export function CensusTable(props: CensusTableProps) {
   const lifting = highlight !== null;
   const groups = CENSUS_GROUPS.map((group) => ({ group, rows: rows.filter((row) => row.group === group.id) }));
   const groupsFound = groups.filter((entry) => entry.rows.length > 0).length;
+  // Device audit 11 Oct 2026: 51 Waiting and 41 Bed found fully open made the page 4,630px; each
+  // open group shows its first ten with "Show all N" (On a ward keeps its own wider cap).
+  const [shownAll, setShownAll] = useState<ReadonlySet<CensusGroup>>(() => new Set());
+  // Tablets: "Heading to" reads "No ward yet" on every waiting row and took the width Next step
+  // needs, so it goes below 75rem; the side card still shows where the person is heading.
+  const showTo = !useMediaQuery("(max-width: 75rem)");
+  const cols = showTo ? 7 : 6;
 
   return (
     <section
@@ -379,7 +404,7 @@ export function CensusTable(props: CensusTableProps) {
               <col className={styles.colTier} />
               <col className={styles.colWho} />
               <col className={styles.colWhere} />
-              <col className={styles.colTo} />
+              {showTo ? <col className={styles.colTo} /> : null}
               <col className={styles.colNext} />
               <col className={styles.colLegal} />
               <col className={styles.colTime} />
@@ -389,7 +414,7 @@ export function CensusTable(props: CensusTableProps) {
                 <th scope="col">Tier</th>
                 <th scope="col">Patient</th>
                 <th scope="col">Where now</th>
-                <th scope="col">Heading to</th>
+                {showTo ? <th scope="col">Heading to</th> : null}
                 <th scope="col">Next step</th>
                 <th scope="col">Legal</th>
                 <th scope="col" className={styles.num}>
@@ -402,11 +427,19 @@ export function CensusTable(props: CensusTableProps) {
               const litCount = lifting ? groupRows.filter(lifted).length : 0;
               const open = searching || openGroups[group.id] || litCount > 0;
               const cap =
-                group.id === "ward" && !searching && !lifting && !props.showAllWard ? WARD_CAP : groupRows.length;
+                searching || lifting
+                  ? groupRows.length
+                  : group.id === "ward"
+                    ? props.showAllWard
+                      ? groupRows.length
+                      : WARD_CAP
+                    : group.id === "off" || shownAll.has(group.id)
+                      ? groupRows.length
+                      : GROUP_CAP;
               return (
                 <tbody key={group.id} id={`ward-patient-search-group-${group.id}`} className={styles.group}>
                   <tr className={cx(styles.groupRow, group.id === "off" && styles.groupQuiet)}>
-                    <th colSpan={7} scope="rowgroup">
+                    <th colSpan={cols} scope="rowgroup">
                       <button
                         type="button"
                         className={styles.groupButton}
@@ -439,13 +472,22 @@ export function CensusTable(props: CensusTableProps) {
                             lifted={lifting && lifted(row)}
                             flash={row.key === props.flashKey}
                             onSelect={props.onSelect}
+                            showTo={showTo}
                           />
                         ))
                     : null}
                   {open && cap < groupRows.length ? (
                     <tr className={styles.moreRow}>
-                      <td colSpan={7}>
-                        <Button variant="ghost" size="sm" onClick={props.onShowAllWard}>
+                      <td colSpan={cols}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={
+                            group.id === "ward"
+                              ? props.onShowAllWard
+                              : () => setShownAll((current) => new Set(current).add(group.id))
+                          }
+                        >
                           Show all {groupRows.length}
                         </Button>
                       </td>
@@ -477,7 +519,9 @@ function CensusTableRow({
   lifted,
   flash,
   onSelect,
+  showTo = true,
 }: {
+  showTo?: boolean;
   row: CensusRow;
   needle: string;
   selected: boolean;
@@ -544,12 +588,14 @@ function CensusTableRow({
           <span>{row.whereSub}</span>
         </span>
       </td>
-      <td>
-        <span className={styles.two}>
-          <b>{row.to}</b>
-          <span>{row.toSub}</span>
-        </span>
-      </td>
+      {showTo ? (
+        <td>
+          <span className={styles.two}>
+            <b>{row.to}</b>
+            <span>{row.toSub}</span>
+          </span>
+        </td>
+      ) : null}
       <td>
         <span className={styles.next}>
           <CensusGlyphMark glyph={row.glyph} />
@@ -976,8 +1022,6 @@ export type PhoneCensusProps = {
   matched: Record<CensusGroup, number>;
   searching: boolean;
   needle: string;
-  group: CensusGroup;
-  onGroup: (group: CensusGroup) => void;
   highlight: CensusHighlight | null;
   onHighlight: (next: CensusHighlight | null) => void;
   highlightCounts: Record<CensusHighlight, number>;
@@ -991,21 +1035,44 @@ export type PhoneCensusProps = {
   history: ReactNode;
   historyCount: number;
   empty: ReactNode;
+  /** Scrolls the list to a group's band. */
+  onJump: (group: CensusGroup) => void;
+};
+
+/** Rows a group shows before "Show all". */
+const PHONE_GROUP_ROWS = 5;
+
+/** The quiet word under a row's time, by where the person is. */
+const TIME_WORD: Record<CensusGroup, string> = {
+  wait: "waiting",
+  found: "since found",
+  move: "on the road",
+  ward: "on the ward",
+  off: "",
 };
 
 /**
- * The phone's own census (390 by 844): one group at a time from a five-way control, card rows that
- * open in place with four facts and 48px actions, and the highlight chips in a bottom sheet.
+ * The phone's own census (v10, 390 by 844): highlight chips that scroll sideways, Now and History
+ * as pill tabs that stay under the header, then every group as a band in one inset list, five rows
+ * each until Show all. A row opens the person as a tall sheet with Open patient pinned at its foot.
  */
 export function PhoneCensus(props: PhoneCensusProps) {
-  const [sheetOpen, setSheetOpen] = useState(false);
-  // A search lists every match, so a near-spelling pair in two groups shows together; tapping a group
-  // narrows that search until the words change.
-  const [narrowedFor, setNarrowedFor] = useState<string | null>(null);
-  const { rows, searching, group, highlight } = props;
-  const narrowed = !searching || narrowedFor === props.needle;
-  const shown = narrowed ? rows.filter((row) => row.group === group) : rows;
-  const active = CENSUS_HIGHLIGHTS.find((chip) => chip.id === highlight);
+  const [allShown, setAllShown] = useState<ReadonlySet<CensusGroup>>(() => new Set());
+  // A2-20: initials plus UMRN when Discreet names on phone is on.
+  const nameFor = usePatientNameDisplay();
+  const openLink = useRef<HTMLAnchorElement>(null);
+  const { rows, searching, highlight } = props;
+  const open = props.expandedKey === null ? null : (rows.find((row) => row.key === props.expandedKey) ?? null);
+  const [offShown, setOffShown] = useState(false);
+  const offCount = rows.filter((row) => row.group === "off").length;
+  // Not active records wait behind one button under the list unless a search is running.
+  const offInList = searching || offShown;
+  const groups = CENSUS_GROUPS.map((entry) => ({
+    ...entry,
+    rows: rows.filter((row) => row.group === entry.id),
+  })).filter((entry) => entry.rows.length > 0 && (entry.id !== "off" || offInList));
+  // The five groups as one radio set: choosing one moves the list to that group's band.
+  const [jumped, setJumped] = useState<CensusGroup | null>(null);
   return (
     <section className={styles.phone} data-testid="ward-patient-search-results-console" aria-label="Patients">
       <div className={styles.phoneGroups} role="radiogroup" aria-label="Where patients are now">
@@ -1016,12 +1083,13 @@ export function PhoneCensus(props: PhoneCensusProps) {
               key={entry.id}
               type="button"
               role="radio"
-              aria-checked={narrowed && group === entry.id && props.tab === "now"}
-              className={cx(styles.phoneGroup, searching && n === 0 && styles.mapPillZero)}
+              aria-checked={props.tab === "now" && jumped === entry.id}
+              className={cx(styles.phoneGroup, searching && n === 0 && styles.phoneGroupZero)}
               onClick={() => {
                 props.onTab("now");
-                props.onGroup(entry.id);
-                setNarrowedFor(searching ? props.needle : null);
+                if (entry.id === "off") setOffShown(true);
+                setJumped(entry.id);
+                props.onJump(entry.id);
               }}
             >
               <b>{n}</b>
@@ -1030,182 +1098,304 @@ export function PhoneCensus(props: PhoneCensusProps) {
           );
         })}
       </div>
-      <div className={styles.phoneTools}>
-        <button
-          type="button"
-          className={cx(styles.phoneTool, active && styles.phoneToolOn)}
-          onClick={() => setSheetOpen(true)}
-          aria-haspopup="dialog"
-        >
-          {active ? <span className={styles.phoneToolDot} aria-hidden="true" /> : null}
-          {active ? active.label : "Highlight"}
-        </button>
-        <button
-          type="button"
-          className={cx(styles.phoneTool, props.tab === "history" && styles.phoneToolOn)}
-          onClick={() => props.onTab(props.tab === "history" ? "now" : "history")}
-          aria-pressed={props.tab === "history"}
-        >
-          <Icon icon={History} size={14} />
-          History <span className={styles.groupCount}>{props.historyCount}</span>
-        </button>
+      <div className={styles.phoneChips} role="group" aria-label="Highlight">
+        {CENSUS_HIGHLIGHTS.map((chip) => (
+          <FilterChip
+            key={chip.id}
+            className={styles.phoneChip}
+            pressed={highlight === chip.id}
+            onPressedChange={() => {
+              props.onTab("now");
+              props.onHighlight(highlight === chip.id ? null : chip.id);
+            }}
+          >
+            {chip.glyph ? <CensusGlyphMark glyph={chip.glyph} size={8} /> : null}
+            {chip.label}
+            <b className={styles.phoneChipCount}>{props.highlightCounts[chip.id]}</b>
+          </FilterChip>
+        ))}
+      </div>
+      <div className={styles.phoneSeg}>
+        <PillTabs<"now" | "history">
+          label="Patients now or history"
+          value={props.tab}
+          onChange={props.onTab}
+          fill
+          items={[
+            { id: "now", label: "Now", count: searching ? rows.length : undefined },
+            { id: "history", label: "History", count: props.historyCount || undefined },
+          ]}
+        />
       </div>
       {props.tab === "history" ? (
         props.history
-      ) : shown.length === 0 ? (
+      ) : rows.length === 0 ? (
         props.empty
       ) : (
-        <ul className={styles.phoneList}>
-          {shown.map((row) => {
-            const open = props.expandedKey === row.key;
-            const lit = highlight !== null && props.lifted(row);
+        <div className={styles.phoneList}>
+          {groups.map((group) => {
+            const full = allShown.has(group.id) || group.rows.length <= PHONE_GROUP_ROWS + 1;
+            const shown = full ? group.rows : group.rows.slice(0, PHONE_GROUP_ROWS);
             return (
-              <li key={row.key} className={cx(styles.phoneRow, lit && styles.lifted, open && styles.phoneRowOpen)}>
-                <button
-                  type="button"
-                  className={styles.phoneRowButton}
-                  aria-expanded={open}
-                  data-testid={rowTestId(row)}
-                  onClick={() => props.onExpand(row)}
-                >
-                  <span
-                    className={cx(styles.phoneAvatar, row.group === "off" && styles.avatarQuiet)}
-                    aria-hidden="true"
+              <section
+                key={group.id}
+                id={`ward-patient-search-group-${group.id}`}
+                className={styles.phoneGroupBlock}
+                aria-label={group.label}
+              >
+                <h2 className={styles.phoneGroupHead}>
+                  <CensusGlyphMark glyph={group.glyph} size={8} />
+                  <span>{group.label}</span>
+                  {searching ? <span className={styles.phoneGroupCount}>{group.rows.length}</span> : null}
+                </h2>
+                <ul className={styles.phoneRows}>
+                  {shown.map((row) => {
+                    const lit = highlight !== null && props.lifted(row);
+                    return (
+                      <li key={row.key} className={cx(styles.phoneRow, lit && styles.phoneRowLit)}>
+                        <button
+                          type="button"
+                          className={styles.phoneRowButton}
+                          aria-expanded={props.expandedKey === row.key}
+                          aria-haspopup="dialog"
+                          data-testid={rowTestId(row)}
+                          onClick={() => props.onExpand(row)}
+                        >
+                          <span className={styles.phoneTier}>
+                            {row.tier !== null ? <TierPill tier={row.tier} /> : null}
+                          </span>
+                          <span className={styles.phoneText}>
+                            <b className={styles.phoneName}>
+                              <span className={styles.truncate}>
+                                <Marked text={nameFor(row.name, row.umrn)} needle={props.needle} />
+                              </span>
+                              {row.confidential ? <span className={styles.restricted}>Restricted</span> : null}
+                            </b>
+                            <span className={styles.phoneMeta}>
+                              <span className={styles.mono}>
+                                <Marked text={row.umrn} needle={props.needle} />
+                              </span>{" "}
+                              {/* Date of birth tells near-spelling names apart while a search runs. */}
+                              {searching ? <span>· {dobText(row.dob)} </span> : null}· {row.where}
+                            </span>
+                            <span className={styles.phoneMeta}>
+                              {row.next}
+                              {row.formCode ? ` · Form ${row.formCode}` : ""}
+                            </span>
+                          </span>
+                          <span className={styles.phoneEnd}>
+                            <span className={styles.phoneTime}>
+                              {row.longWait ? <StatusGlyph tone="warning" size={9} /> : null}
+                              {row.waitMinutes !== null || row.group === "ward" ? row.timeText : ""}
+                            </span>
+                            <span className={styles.phoneTimeWord}>{TIME_WORD[row.group]}</span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {full ? null : (
+                  <button
+                    type="button"
+                    className={styles.phoneShowAll}
+                    onClick={() => setAllShown((current) => new Set(current).add(group.id))}
                   >
-                    {initials(row.name)}
-                  </span>
-                  <span className={styles.two}>
-                    <b className={styles.name}>
-                      <span className={styles.truncate}>
-                        <Marked text={row.name} needle={props.needle} />
-                      </span>
-                      {row.confidential ? <span className={styles.restricted}>Restricted</span> : null}
-                    </b>
-                    <span>
-                      <span className={styles.mono}>
-                        <Marked text={row.umrn} needle={props.needle} />
-                      </span>{" "}
-                      {searching ? `· ${dobText(row.dob)} ` : ""}· {row.tier !== null ? `T${row.tier}` : ageSex(row)}
-                    </span>
-                  </span>
-                  <span className={styles.phoneTime}>
-                    {row.longWait ? <StatusGlyph tone="warning" size={9} /> : null}
-                    {row.waitMinutes !== null ? row.timeText : ""}
-                  </span>
-                  <span className={styles.phoneLine}>
-                    {row.where} · <CensusGlyphMark glyph={row.glyph} size={9} />
-                    <span className={styles.truncate}>{row.next}</span>
-                  </span>
-                </button>
-                {open ? (
-                  <div className={styles.phoneMore}>
-                    <dl className={styles.phoneFacts}>
-                      <div>
-                        <dt>Where now</dt>
-                        <dd>{row.where}</dd>
-                        <dd className={styles.factSub}>{row.whereSub}</dd>
-                      </div>
-                      <div>
-                        <dt>Heading to</dt>
-                        <dd>{row.to}</dd>
-                        <dd className={styles.factSub}>{row.toSub}</dd>
-                      </div>
-                      <div>
-                        <dt>Next step</dt>
-                        <dd>{row.next}</dd>
-                        <dd className={styles.factSub}>{row.nextWho || "Nothing open"}</dd>
-                      </div>
-                      <div>
-                        <dt>Legal</dt>
-                        <dd>{row.legal}</dd>
-                        <dd className={styles.factSub}>{row.legalSub}</dd>
-                      </div>
-                    </dl>
-                    <div className={styles.phoneActions}>
-                      <Button
-                        variant="sec"
-                        icon={Copy}
-                        iconOnly
-                        aria-label="Copy summary"
-                        onClick={() => props.onCopy(row)}
-                      />
-                      {row.kind === "movement" ? (
-                        <Link
-                          className={buttonClass({ className: styles.tap })}
-                          href={`/mockups/ward-flow/movements/${row.key}`}
-                        >
-                          Movement
-                        </Link>
-                      ) : row.kind === "referral" ? (
-                        <Link className={buttonClass({ className: styles.tap })} href="/mockups/ward-flow/referrals">
-                          Referral
-                        </Link>
-                      ) : null}
-                      {row.patientRecordId ? (
-                        <Link
-                          className={buttonClass({ variant: "pri", className: cx(styles.tap, styles.grow) })}
-                          href={`/mockups/ward-flow/people/${row.patientRecordId}`}
-                        >
-                          Open patient
-                        </Link>
-                      ) : null}
-                    </div>
-                    {props.copyNote ? (
-                      <span className={styles.copyNote} role="status" aria-live="polite">
-                        {props.copyNote}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
+                    Show all {group.rows.length}
+                  </button>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      )}
+      {props.tab === "now" && rows.length > 0 && offCount > 0 && !offInList ? (
+        <button type="button" className={styles.phoneOffMore} onClick={() => setOffShown(true)}>
+          Show {offCount} not active records
+        </button>
+      ) : null}
+      <PhoneSheet
+        open={open !== null}
+        onClose={() => {
+          if (open) props.onExpand(open);
+        }}
+        title={open?.name ?? "Patient"}
+        description={
+          open ? (
+            <span className={styles.phoneSheetMeta}>
+              <span className={styles.mono}>{open.umrn}</span> · {ageSex(open)}
+            </span>
+          ) : undefined
+        }
+        primary={
+          open?.patientRecordId
+            ? {
+                label: "Open patient",
+                // A real link does the navigation, so it stays client side and keeps the session.
+                onAction: () => openLink.current?.click(),
+              }
+            : undefined
+        }
+        secondary={open ? { label: "Copy", onAction: () => props.onCopy(open) } : undefined}
+        data-testid="ward-patient-search-phone-sheet"
+      >
+        {open ? (
+          <div className={styles.phoneSheet}>
+            {open.tier !== null ? (
+              <span>
+                <TierPill tier={open.tier} />
+              </span>
+            ) : null}
+            <FactGrid
+              facts={[
+                { id: "where", label: "Where now", value: open.where },
+                {
+                  id: "time",
+                  label: open.group === "ward" ? "On the ward" : open.waitMinutes !== null ? "Waiting" : "Time",
+                  value: <span className={styles.mono}>{open.timeText || "Not recorded"}</span>,
+                },
+                { id: "to", label: "Heading to", value: open.to },
+                { id: "legal", label: "Legal", value: open.legal },
+              ]}
+            />
+            <dl className={styles.phoneSheetList}>
+              <div>
+                <dt>Status</dt>
+                <dd>{CENSUS_GROUPS.find((entry) => entry.id === open.group)?.label}</dd>
+              </div>
+              <div>
+                <dt>Next step</dt>
+                <dd>
+                  {open.next}
+                  {open.nextWho ? ` · ${open.nextWho}` : ""}
+                </dd>
+              </div>
+              <div>
+                <dt>Region</dt>
+                <dd>{open.service ?? "Not recorded"}</dd>
+              </div>
+              <div>
+                <dt>Date of birth</dt>
+                <dd>{dobText(open.dob)}</dd>
+              </div>
+            </dl>
+            {props.copyNote ? (
+              <span className={styles.copyNote} role="status" aria-live="polite">
+                {props.copyNote}
+              </span>
+            ) : null}
+            <p className={styles.phoneSheetNote}>Names are invented. Identity is the UMRN.</p>
+            {open.patientRecordId ? (
+              <Link
+                ref={openLink}
+                href={`/mockups/ward-flow/people/${open.patientRecordId}`}
+                className="sr-only"
+                tabIndex={-1}
+                aria-hidden="true"
+              >
+                Open patient
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
+      </PhoneSheet>
+    </section>
+  );
+}
+
+export type PhoneCommand = {
+  id: string;
+  label: string;
+  hint: string;
+  icon: LucideIcon;
+  href?: string;
+  onAction?: () => void;
+};
+
+/**
+ * Commands (v10 phone): the page's verbs and the main places as a bottom sheet, with a filter.
+ * Every command is something the page or the menu already does.
+ */
+export function PhoneCommands({
+  open,
+  onClose,
+  actions,
+  places,
+}: {
+  open: boolean;
+  onClose: () => void;
+  actions: readonly PhoneCommand[];
+  places: readonly PhoneCommand[];
+}) {
+  const [filter, setFilter] = useState("");
+  const words = filter.trim().toLowerCase();
+  const match = (item: PhoneCommand) => !words || `${item.label} ${item.hint}`.toLowerCase().includes(words);
+  const list = (title: string, items: readonly PhoneCommand[]) => {
+    const shown = items.filter(match);
+    if (shown.length === 0) return null;
+    return (
+      <section className={styles.cmdGroup} aria-label={title}>
+        <h3 className={styles.cmdHead}>{title}</h3>
+        <ul className={styles.cmdList}>
+          {shown.map((item) => {
+            const body = (
+              <>
+                <Icon icon={item.icon} size={16} />
+                <span className={styles.cmdLabel}>{item.label}</span>
+                <span className={styles.cmdHint}>{item.hint}</span>
+              </>
+            );
+            return (
+              <li key={item.id}>
+                {item.href ? (
+                  <Link className={styles.cmdItem} href={item.href} onClick={onClose}>
+                    {body}
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.cmdItem}
+                    onClick={() => {
+                      item.onAction?.();
+                      onClose();
+                    }}
+                  >
+                    {body}
+                  </button>
+                )}
               </li>
             );
           })}
         </ul>
-      )}
-      <Sheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        title="Highlight"
-        description="Lifts and tints rows. Nothing is hidden."
-        mobilePlacement="bottom"
-        mobileSize="content"
-        footer={
-          <div className={styles.sheetFoot}>
-            <Button
-              variant="sec"
-              className={styles.grow}
-              onClick={() => props.onHighlight(null)}
-              disabled={highlight === null}
-            >
-              Clear
-            </Button>
-            <Button variant="pri" className={styles.grow} onClick={() => setSheetOpen(false)}>
-              Done
-            </Button>
-          </div>
-        }
-      >
-        <ul className={styles.sheetList}>
-          {CENSUS_HIGHLIGHTS.map((chip) => (
-            <li key={chip.id}>
-              <button
-                type="button"
-                className={styles.sheetOption}
-                aria-pressed={highlight === chip.id}
-                onClick={() => {
-                  props.onHighlight(highlight === chip.id ? null : chip.id);
-                  setSheetOpen(false);
-                }}
-              >
-                {chip.glyph ? <CensusGlyphMark glyph={chip.glyph} /> : <span className={styles.glyphSpace} />}
-                <span>{chip.label}</span>
-                <span className={styles.spacer} />
-                <span className={styles.groupCount}>{props.highlightCounts[chip.id]}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </Sheet>
-    </section>
+      </section>
+    );
+  };
+  return (
+    <PhoneSheet
+      open={open}
+      onClose={onClose}
+      title="Commands"
+      description="Do, go to, or change the screen"
+      height="tall"
+      data-testid="ward-patient-search-commands"
+    >
+      <div className={styles.cmdBody}>
+        <label className={styles.cmdFilter}>
+          <Icon icon={Search} size={16} />
+          <span className="sr-only">Filter commands</span>
+          <input
+            type="search"
+            value={filter}
+            placeholder="Type a verb, a name or a page"
+            onChange={(event) => setFilter(event.target.value)}
+          />
+        </label>
+        {list("Do", actions)}
+        {list("Go to", places)}
+        {actions.filter(match).length + places.filter(match).length === 0 ? (
+          <p className={styles.phoneSheetNote}>No command matches.</p>
+        ) : null}
+      </div>
+    </PhoneSheet>
   );
 }

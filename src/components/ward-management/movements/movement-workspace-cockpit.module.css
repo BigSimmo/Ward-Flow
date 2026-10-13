@@ -186,13 +186,6 @@
   color: var(--ward-blue, var(--clinical-accent));
 }
 
-.trajectoryTags {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2, 0.5rem);
-  margin-left: auto;
-}
-
 /* Active Blocker Alert Banner */
 .blockerAlertBanner {
   display: flex;
@@ -205,35 +198,6 @@
   border-radius: var(--radius-md, 0.375rem);
   color: var(--ward-warning, var(--ward-text));
   font-size: 0.8125rem;
-  line-height: 1.4;
-}
-
-.blockerAlertIcon {
-  flex-shrink: 0;
-  margin-top: 2px;
-  color: var(--ward-warning);
-}
-
-.blockerAlertBody {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-
-.blockerAlertTitle {
-  font-weight: 600;
-  color: var(--ward-warning, var(--ward-heading));
-}
-
-/* Legal Notice */
-.legalNoticeBox {
-  margin: 0;
-  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-  background: var(--surface-subtle, var(--surface));
-  border-left: 3px solid var(--ward-border-strong, var(--border));
-  font-size: 12px;
-  color: var(--ward-muted, var(--text-muted));
   line-height: 1.4;
 }
 
@@ -393,32 +357,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* =========================================================================
-   3. TELEMETRY & FIGURE STRIP
-   ========================================================================= */
-.figureGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-3, 0.75rem);
-}
-
-.figureCard {
-  display: flex;
-  flex-direction: column;
-  background: var(--surface-raised, var(--surface));
-  border: 1px solid var(--ward-border, var(--border));
-  border-radius: var(--radius-md, 0.375rem);
-  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-  box-shadow: var(--lift-sm, 0 1px 2px 0 var(--ward-shadow-black-05));
-  position: relative;
-}
-
-.figureCard[data-flagged="true"] {
-  border-color: var(--warning-border, var(--ward-warning));
-  background: var(--ward-warning-soft, var(--surface-raised));
-  border-left: 3px solid var(--ward-warning);
 }
 
 .figureLabel {
@@ -894,23 +832,6 @@
   outline-offset: 2px;
 }
 
-.controlButtonPrimary {
-  background: var(--ward-blue, var(--clinical-accent));
-  color: var(--on-accent, var(--ward-fixed-white));
-  border-color: var(--ward-blue, var(--clinical-accent));
-}
-
-.controlButtonPrimary:hover:not([disabled]):not([aria-disabled="true"]) {
-  background: var(--wf-pri-2);
-  border-color: var(--wf-pri-2);
-}
-
-.controlButtonDanger {
-  background: var(--ward-danger-soft, var(--surface-raised));
-  color: var(--ward-danger);
-  border-color: var(--danger-border, var(--border));
-}
-
 /* Greyed for a role that cannot act (its reason shows beside it): by colour, never opacity. */
 .controlButton[disabled],
 .controlButton[aria-disabled="true"] {
@@ -1008,4 +929,11 @@
 .embeddedActions :is(button, input, select, textarea):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
+}
+
+/* v10 phone: one disclaimer line per page, the shared footer; this page-level copy hides on phone (A7). */
+@media (max-width: 48rem) {
+  .phPageFoot {
+    display: none;
+  }
 }

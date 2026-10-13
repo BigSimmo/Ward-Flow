@@ -7,9 +7,11 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 
 import { Badge, Button, Card, CardHead, Stat, StatGroup, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 
 import styles from "./home.module.css";
 import {
+  changesSinceInstant,
   changesSinceLastLook,
   hasAnyChange,
   LAST_LOOK_STORAGE_KEY,
@@ -137,9 +139,123 @@ export function useSinceLastLook(world: LastLookWorld, now: Instant) {
     };
   }, []);
 
-  const changes = useMemo(() => changesSinceLastLook(previous, current, world), [previous, current, world]);
+  // Before any look this session, count what the record says happened since the shift started, so
+  // "N new since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026).
+  const changes = useMemo(
+    () =>
+      changesSinceLastLook(previous, current, world) ?? changesSinceInstant(world, currentShiftStartInstant(now), now),
+    [previous, current, world, now],
+  );
   const markSeen = useCallback(() => writeSnapshot(latest.current), []);
   return { changes, markSeen };
+}
+
+/** One group row of the phone sheet: a glyph, a bold count line, and a quiet detail line. */
+type SinceGroup = { key: string; tone: WfTone; title: string; detail?: string };
+
+/** The phone sheet's quiet line under its title: when the last look was, and how long ago. */
+export function sinceSheetDescription(changes: ChangesSinceLastLook | undefined, now: Instant): string {
+  if (!changes) return "First look this session";
+  if (changes.basis === "shift")
+    return `First look this session. Counted from the shift start, ${formatInstantWithDay(changes.since, now)}`;
+  const minutesAgo = Math.max(0, now - changes.since);
+  const ago = minutesAgo < 1 ? "just now" : `${durMinutes(minutesAgo)} ago`;
+  return `Your last visit ${formatInstantWithDay(changes.since, now)}, ${ago}`;
+}
+
+function sinceGroups(changes: ChangesSinceLastLook): SinceGroup[] {
+  const groups: SinceGroup[] = [];
+  const bedsTotal = changes.bedsFreed.reduce((sum, entry) => sum + entry.count, 0);
+  if (changes.newReferralIds.length > 0) {
+    groups.push({
+      key: "referrals",
+      tone: "info",
+      title: plural(changes.newReferralIds.length, "new referral", "new referrals"),
+    });
+  }
+  if (changes.newMovementIds.length > 0) {
+    groups.push({ key: "journeys", tone: "neutral", title: `${changes.newMovementIds.length} new in ED` });
+  }
+  if (bedsTotal > 0) {
+    groups.push({
+      key: "beds",
+      tone: "success",
+      title: `${bedsTotal} ${bedsTotal === 1 ? "bed" : "beds"} freed`,
+      detail: changes.bedsFreed.map((entry) => `${entry.count} at ${entry.unitName}`).join(", "),
+    });
+  }
+  if (changes.newDelays.length > 0) {
+    const delayCounts = new Map<string, number>();
+    for (const delay of changes.newDelays) delayCounts.set(delay.title, (delayCounts.get(delay.title) ?? 0) + 1);
+    groups.push({
+      key: "delays",
+      tone: "warning",
+      title: plural(changes.newDelays.length, "new delay", "new delays"),
+      detail: [...delayCounts].map(([title, count]) => `${title}, ${count}`).join(" · "),
+    });
+  }
+  if (changes.newEscalationIds.length > 0) {
+    groups.push({
+      key: "escalations",
+      tone: "warning",
+      title: plural(changes.newEscalationIds.length, "new escalation", "new escalations"),
+      detail: "No suitable bed",
+    });
+  }
+  return groups;
+}
+
+/**
+ * Phone sheet body (v10 Home phone, "Since you looked"): one card of group rows, each a glyph,
+ * a bold count and a quiet detail line. The sheet's own title and description carry the time.
+ * A look with nothing new says so in one line; a first look says new events count from the next
+ * look. The event-by-event list lives in Activity, never here (it named records by id and read as
+ * news under "Nothing new").
+ */
+export function SinceLastLookSheetBody({
+  changes,
+}: {
+  changes: ChangesSinceLastLook | undefined;
+  /** Accepted for the band panel's signature; the phone sheet lists counts only. */
+  activity?: readonly SinceActivityLine[];
+}) {
+  const groups = changes ? sinceGroups(changes) : [];
+  const rows: SinceGroup[] =
+    groups.length > 0
+      ? groups
+      : [
+          {
+            key: "quiet",
+            tone: changes ? "success" : "neutral",
+            title: !changes
+              ? "New events count from your next look"
+              : changes.basis === "shift"
+                ? "Nothing new since the shift started"
+                : "Nothing new since you last looked",
+            detail: !changes || changes.basis === "shift" ? "This is your first look this session" : undefined,
+          },
+        ];
+  return (
+    <ul className={styles.sinceSheetList} data-testid="ward-since-last-look" aria-label="Since you last looked">
+      {rows.map((row) => (
+        <li key={row.key} className={styles.sinceSheetRow} data-change={row.key}>
+          <StatusGlyph tone={row.tone} size={10} />
+          <span className={styles.sinceSheetText}>
+            <span className={styles.sinceSheetTitle}>{row.title}</span>
+            {row.detail ? <span className={styles.sinceSheetDetail}>{row.detail}</span> : null}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The phone sheet's digest as plain handover text, one line per group. */
+export function sinceHandoverText(changes: ChangesSinceLastLook | undefined, now: Instant): string {
+  const head = `Since you looked: ${sinceSheetDescription(changes, now)}`;
+  const groups = changes ? sinceGroups(changes) : [];
+  if (groups.length === 0) return `${head}\n${changes ? "Nothing new." : "First look this session."}`;
+  return [head, ...groups.map((group) => (group.detail ? `${group.title}: ${group.detail}` : group.title))].join("\n");
 }
 
 export function SinceLastLookPanel({
@@ -181,7 +297,9 @@ export function SinceLastLookPanel({
         <CardHead icon={History} title="Since you looked" aside={<Badge variant="mono">{ago}</Badge>} />
         <p className={styles.sinceQuiet}>
           <StatusGlyph tone="success" size={9} />
-          Nothing new since you last looked at {since}.
+          {changes.basis === "shift"
+            ? `Nothing new since the shift started at ${since}.`
+            : `Nothing new since you last looked at ${since}.`}
         </p>
         <ActivityTimeline lines={activity} />
       </Card>
@@ -242,7 +360,7 @@ export function SinceLastLookPanel({
       <CardHead
         icon={History}
         title="Since you looked"
-        meta={`at ${since}`}
+        meta={changes.basis === "shift" ? `since the shift started at ${since}` : `at ${since}`}
         aside={<Badge variant="mono">{ago}</Badge>}
       />
       <StatGroup className={styles.sinceStats}>

@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { useId } from "react";
 
-import { Frac, ToastView } from "@/components/wf";
+import { Frac, StatusGlyph, ToastView, cx, useIsPhone } from "@/components/wf";
 
 import styles from "./discharge-ready-to-leave.module.css";
 
@@ -21,7 +21,13 @@ export const READY_TO_LEAVE_ITEMS = [
   { id: "follow-up", label: "Follow up booked" },
 ] as const;
 
-export type ReadyToLeaveItemId = (typeof READY_TO_LEAVE_ITEMS)[number]["id"];
+/**
+ * S-29 (Josh, audit round 2): a person on a community treatment order gets one more line, the
+ * community team or GP handover. It warns while open and never blocks the discharge.
+ */
+export const CTO_HANDOVER_ITEM = { id: "cto-handover", label: "Community team or GP told" } as const;
+
+export type ReadyToLeaveItemId = (typeof READY_TO_LEAVE_ITEMS)[number]["id"] | typeof CTO_HANDOVER_ITEM.id;
 
 /** Invented starting ticks: a stable count from the release id, so every load shows the same demo. */
 export function demoReadyTicks(releaseId: string): ReadyToLeaveItemId[] {
@@ -38,33 +44,39 @@ export function ReadyToLeave({
   lastChange,
   onUndo,
   onDismiss,
+  onCto = false,
 }: {
   ticked: readonly ReadyToLeaveItemId[];
+  /** A community treatment order is in force, so the community team or GP line is added. */
+  onCto?: boolean;
   onToggle: (itemId: ReadyToLeaveItemId) => void;
   lastChange: ReadyToLeaveUndo | null;
   onUndo: () => void;
   onDismiss: () => void;
 }) {
   const headingId = useId();
-  const done = READY_TO_LEAVE_ITEMS.filter((item) => ticked.includes(item.id)).length;
-  const changedLabel = lastChange
-    ? READY_TO_LEAVE_ITEMS.find((item) => item.id === lastChange.itemId)?.label
-    : undefined;
+  // v10 phone: a glyph list (green tick or open circle), not checkbox squares.
+  const isPhone = useIsPhone();
+  const items: readonly { id: ReadyToLeaveItemId; label: string }[] = onCto
+    ? [...READY_TO_LEAVE_ITEMS, CTO_HANDOVER_ITEM]
+    : READY_TO_LEAVE_ITEMS;
+  const done = items.filter((item) => ticked.includes(item.id)).length;
+  const changedLabel = lastChange ? items.find((item) => item.id === lastChange.itemId)?.label : undefined;
   return (
     <section className={styles.readyPanel} aria-labelledby={headingId} data-testid="ward-discharge-ready-to-leave">
       <header className={styles.head}>
-        <h3 id={headingId} className={styles.title}>
+        <h3 id={headingId} className={cx(styles.title, isPhone && styles.phTitle)}>
           Ready to leave
         </h3>
         <Frac
           done={done}
-          total={READY_TO_LEAVE_ITEMS.length}
+          total={items.length}
           label="ready to leave items done"
-          tone={done === READY_TO_LEAVE_ITEMS.length ? "success" : undefined}
+          tone={done === items.length ? "success" : undefined}
         />
       </header>
       <ul className={styles.list}>
-        {READY_TO_LEAVE_ITEMS.map((item) => {
+        {items.map((item) => {
           const on = ticked.includes(item.id);
           return (
             <li key={item.id}>
@@ -75,10 +87,21 @@ export function ReadyToLeave({
                 onClick={() => onToggle(item.id)}
                 data-testid={`ward-discharge-ready-${item.id}`}
               >
-                <span className={styles.box} aria-hidden="true">
-                  {on ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : null}
-                </span>
+                {isPhone ? (
+                  <span className={styles.glyph} aria-hidden="true">
+                    <StatusGlyph tone={on ? "success" : "neutral"} size={12} />
+                  </span>
+                ) : (
+                  <span className={styles.box} aria-hidden="true">
+                    {on ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : null}
+                  </span>
+                )}
                 <span className={styles.label}>{item.label}</span>
+                {item.id === CTO_HANDOVER_ITEM.id && !on ? (
+                  <span className={styles.glyph} aria-hidden="true">
+                    <StatusGlyph tone="warning" size={9} />
+                  </span>
+                ) : null}
               </button>
             </li>
           );
@@ -90,7 +113,7 @@ export function ReadyToLeave({
           className={styles.toast}
           tone="info"
           title={`${changedLabel} ${lastChange.ticked ? "ticked" : "unticked"}`}
-          meta={`${done} of ${READY_TO_LEAVE_ITEMS.length}`}
+          meta={`${done} of ${items.length}`}
           action={{ label: "Undo", onAction: onUndo }}
           onClose={onDismiss}
           closeLabel="Dismiss"

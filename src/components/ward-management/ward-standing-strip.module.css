@@ -206,13 +206,6 @@
   }
 }
 
-.hudDivider {
-  width: 1px;
-  height: 0.875rem;
-  background: var(--ward-border);
-  flex-shrink: 0;
-}
-
 .hudBadge {
   display: inline-flex;
   align-items: center;

@@ -178,7 +178,9 @@
 
 .railBay[data-on="true"] {
   border-style: solid;
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  color: var(--wf-danger-ink);
 }
 
 .railBayValue {
@@ -428,5 +430,56 @@
   .pill,
   .journeySeg {
     border-color: CanvasText;
+  }
+}
+
+/* Phone (v10 mockup): the facts are one bordered card with hairline dividers, not separate tiles. */
+@media (max-width: 48rem) {
+  .factGrid {
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-line);
+  }
+
+  .fact {
+    border: 0;
+    border-radius: 0;
+    background: var(--wf-surface);
+  }
+
+  .fact:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── Edge fade for chip rows (device audit, 11 Oct 2026) ─────────────────────────────────────────
+ * A row that is clipped at its end fades there, so the cut chip reads as "scroll for more", and the
+ * end padding lets the last chip clear the fade once scrolled. Scroll-driven: the fade runs from
+ * full at the start to none at the end, and a row that does not overflow has an inactive timeline,
+ * so it never fades. Browsers without scroll timelines draw no fade (the padding still helps). */
+@property --wf-row-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes wfRowFade {
+  from {
+    --wf-row-fade: 24px;
+  }
+  to {
+    --wf-row-fade: 0px;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .chips {
+    padding-inline-end: 24px;
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    animation: wfRowFade linear both;
+    animation-timeline: scroll(self inline);
   }
 }

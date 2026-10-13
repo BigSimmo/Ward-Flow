@@ -25,15 +25,6 @@
   border: 0;
 }
 
-/* Grids. Every grid collapses to one column under 1100px. Cards in a row end flush (Josh, 9 Oct
- * 2026): each row stretches its cards, and a stack's last card takes the stack's spare height. */
-.gridMain {
-  display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
-  gap: var(--wf-s-3);
-  align-items: stretch;
-}
-
 .grid2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -48,7 +39,6 @@
   align-items: stretch;
 }
 
-.gridMain > .stack > :last-child,
 .grid2 > .stack > :last-child,
 .grid3 > .stack > :last-child {
   flex: 1 1 auto;
@@ -66,7 +56,6 @@
 }
 
 @media (max-width: 1100px) {
-  .gridMain,
   .grid2,
   .grid3 {
     grid-template-columns: minmax(0, 1fr);
@@ -157,6 +146,13 @@
 .table tfoot th,
 .table tfoot td {
   font-weight: 600;
+}
+
+/* A time or count never truncates; the site name does (device audit 11 Oct 2026). */
+.table td.num {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
 .num {
@@ -282,6 +278,20 @@
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface-2);
+}
+
+/* Two across, two down: each label keeps its words. */
+.tilesTwo {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tilesTwo > .tile:nth-child(odd) {
+  border-left: 0;
+}
+
+.tilesTwo > .tile:nth-child(n + 3) {
+  border-top: 1px solid var(--wf-line);
 }
 
 .tile {
@@ -779,4 +789,21 @@
 
 .table tr[data-dim="true"] :is(.occFill, .occTick) {
   background: var(--wf-glyph-dim);
+}
+
+/* Device audit 11 Oct 2026, tablet: the two wide tables take a row each so no column is cut, and
+ * the three small charts sit two across (the third spans) rather than three cut titles or one
+ * long column. Phone keeps its own layout. */
+@media (min-width: 48.0625rem) and (max-width: 80rem) {
+  .grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .grid3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid3 > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }

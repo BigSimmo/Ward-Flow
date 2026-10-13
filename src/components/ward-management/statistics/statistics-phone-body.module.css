@@ -1,0 +1,520 @@
+/* Statistics sub-pages on a phone (v10 phone, 390 wide, 11 Oct 2026). Every class here is used only
+   by the phone tree (`useIsPhone`), so desktop and tablet never read it. Tokens only; touch targets
+   come from the shared phone parts or are 48px here. */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+/* Group heads read as a plain 14px title on the canvas with a quiet note at the right. */
+.head {
+  padding-inline: var(--wf-s-1);
+}
+
+.head :global(*)::after {
+  display: none;
+}
+
+.head > span:first-child :global(*) {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.head > span:last-child {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.list > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* A service head inside a grouped list card (All wards, By service). */
+.listHead {
+  list-style: none;
+}
+
+.listHead > * {
+  min-height: 36px;
+  border-bottom: 0;
+}
+
+.listHead > * > span:first-child :global(*) {
+  font-size: var(--wf-fs-12);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.showAllItem {
+  display: flex;
+}
+
+.showAll {
+  flex: 1;
+  min-height: var(--spacing-tap, 3rem);
+  border: 0;
+  background: none;
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.factsFlush {
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.fact:nth-child(even) {
+  border-left: 1px solid var(--wf-line);
+}
+
+.fact:nth-child(n + 3) {
+  border-top: 1px solid var(--wf-line);
+}
+
+.fact dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fact dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / 1.25 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 44px;
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-2);
+}
+
+.cardTitle {
+  flex: 0 0 auto;
+  max-width: 70%;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cardAside {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  text-align: right;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cardBody {
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
+}
+
+.navRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 56px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.navText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.navText > b {
+  font-weight: 600;
+  font-size: var(--wf-fs-14);
+}
+
+.navText > span {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.navGo {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.navRow:focus-visible,
+.showAll:focus-visible,
+.clear:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.flagged {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+}
+
+/* U2 (site review, 12 Oct 2026): a unit after a figure ("12 d") at the 12px text floor; a bare
+ * <small> rendered 11.2px. */
+.unit {
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+/* Segmented controls run the full width with equal options. */
+.seg {
+  width: 100%;
+}
+
+.seg :is(a, button) {
+  flex: 1 1 0;
+  justify-content: center;
+  min-height: var(--wf-touch, 48px);
+}
+
+/* A segmented control that stays in view under the header while its list scrolls (One ward). */
+.stickySeg {
+  position: sticky;
+  /* Follow the same stable height as the phone app bar. */
+  top: var(--wf-header-height, 3.5rem);
+  z-index: 2;
+  padding-block: var(--wf-s-1);
+  background: var(--wf-canvas);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.highlightLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 32px;
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.clear {
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  background: none;
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+/* The row's trailing figure with a small trend before it (EDs). */
+.trendValue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+/* A small occupancy ring before a service name. */
+.ring {
+  flex: none;
+}
+
+.dotName {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* One ward's beds as a strip of small boxes, grouped by state (the model has no bed numbers). */
+.bedCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.bedStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bed {
+  width: 16px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface-2);
+}
+
+.bed[data-kind="leave"] {
+  background: var(--wf-surface);
+}
+
+.bed[data-kind="pulled"] {
+  border-style: dashed;
+  border-color: var(--wf-ink-3);
+  background: var(--wf-surface);
+}
+
+.bed[data-kind="closed"] {
+  background: var(--wf-track);
+  border-color: var(--wf-line);
+}
+
+.bed[data-kind="prep"] {
+  border-style: dashed;
+  border-color: var(--wf-success);
+  background: var(--wf-surface);
+}
+
+.bed[data-kind="ready"] {
+  border-color: var(--wf-success);
+  background: var(--wf-surface);
+}
+
+.bedLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.bedLegend b {
+  margin-left: 4px;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+/* A triage tier ("T2") before an ED wait row. */
+.tier {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+/* The countdown card above an ED's wait list. */
+.next {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.nextText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nextText > b {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1.3 var(--wf-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.nextText > span {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.nextText > span > b {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.ring0 {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--wf-ink-3);
+  border-radius: 50%;
+}
+
+/* A chart inside a phone card (Compare bars, wait bands). */
+.chartCard {
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.search {
+  width: 100%;
+}
+
+/* The pinned primary action at the foot of the phone screen. */
+.pinned {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3) calc(var(--wf-s-2) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-canvas);
+}
+
+.pinnedButton {
+  display: flex;
+  justify-content: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  border-radius: var(--wf-r-pill);
+}
+
+@media print {
+  .pinned {
+    display: none;
+  }
+}
+
+/* A row outside the chosen highlight stays in the list, in quieter ink (dim by colour, never hidden). */
+.dim {
+  color: var(--wf-ink-3);
+}
+
+.dim :is(span, b) {
+  color: inherit;
+}
+
+/* The group head sits on the canvas as bare text: no band, no rule. */
+.head,
+.head:is(div, button) {
+  border: 0;
+  background: transparent;
+  min-height: 32px;
+  padding-block: var(--wf-s-2) 0;
+}

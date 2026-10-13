@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowRight, BookOpen, ChevronRight, Download, History, Info, MapPin, Plus, Search, X } from "lucide-react";
@@ -258,7 +259,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const [drawerOpen, setDrawerOpen] = useState(false);
   /** Phone (v10): A to Z, Suburb, Alike and Services are one tap apart. */
   const isPhone = useIsPhone();
-  const [phonePane, setPhonePane] = useState<"az" | "suburb" | "alike" | "services">("az");
+  const [phonePane, setPhonePane] = useState<"az" | "suburb" | "alike" | "services">("suburb");
 
   // `useSyncExternalStore` through `createBrowserStore`: the recent list lives in localStorage, and
   // a server render (and `renderToStaticMarkup` in tests) sees the empty server snapshot.
@@ -302,8 +303,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       if (index >= 0) setFamilyIndex(index);
       const card = document.getElementById(FAMILY_CARD_ID);
       if (!card) return;
-      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-      card.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      card.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
     },
     [familyGroups],
   );
@@ -312,9 +312,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const jumpToLetter = useCallback((letter: string) => {
     const heading = document.getElementById(letterHeadingId(letter));
     if (!heading) return;
-    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    heading.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-    heading.focus();
+    heading.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
+    heading.focus({ preventScroll: true });
   }, []);
 
   // One source-validated recent list feeds the strip, so a renamed or removed name never shows.
@@ -422,9 +421,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     window.setTimeout(() => {
       const link = document.getElementById(teamRowId(team.id))?.querySelector("a");
       if (!(link instanceof HTMLElement)) return;
-      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-      link.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
-      link.focus();
+      link.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "center" });
+      link.focus({ preventScroll: true });
     }, 0);
   }
 
@@ -455,42 +453,67 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow="Community · Team directory"
+          eyebrow={isPhone ? "Community · Statewide" : "Community · Team directory"}
+          // Device audit 11 Oct 2026: one title on every device; Read alike is its own figure below.
           title={
             <>
               <SrOnly>Community: </SrOnly>
-              <b className={styles.heroFigure}>{allTeams.length}</b> names,{" "}
-              <b className={styles.heroFigure}>{alikeTeamCount}</b> read alike
+              <b className={styles.heroFigure}>{allTeams.length}</b> names
             </>
           }
+          titleMeta={isPhone ? "Recorded names, not verified services" : undefined}
           stats={
-            <div className={styles.heroChips} role="group" aria-label="Highlight team names">
-              <HeroStat
-                inline
-                value={alikeTeamCount}
-                label="Read alike"
-                tone={alikeTeamCount > 0 ? "warning" : undefined}
-                pressed={alikeOnly}
-                onToggle={() => setAlikeOnly((value) => !value)}
-              />
-              <HeroStat
-                inline
-                value={sharedSuburbs.suburbs}
-                label="Suburbs with two names"
-                pressed={sharedSuburbOnly}
-                onToggle={() => setSharedSuburbOnly((value) => !value)}
-              />
-            </div>
+            isPhone ? (
+              // v10 phone: three figures on hairlines, value over label.
+              <>
+                {/* On a phone, dimming the list showed only dimmed names on the first screen, so the
+                    figure opens the Alike tab instead (device audit 11 Oct 2026). */}
+                <HeroStat
+                  value={alikeTeamCount}
+                  label="Read alike"
+                  tone={alikeTeamCount > 0 ? "warning" : undefined}
+                  pressed={phonePane === "alike"}
+                  onToggle={() => setPhonePane((pane) => (pane === "alike" ? "suburb" : "alike"))}
+                />
+                <HeroStat
+                  value={sharedSuburbs.suburbs}
+                  label="Suburbs with two names"
+                  pressed={sharedSuburbOnly}
+                  onToggle={() => setSharedSuburbOnly((value) => !value)}
+                />
+                <HeroStat value={suburbsMapped} label="Suburbs" />
+              </>
+            ) : (
+              <div className={styles.heroChips} role="group" aria-label="Highlight team names">
+                <HeroStat
+                  inline
+                  value={alikeTeamCount}
+                  label="Read alike"
+                  tone={alikeTeamCount > 0 ? "warning" : undefined}
+                  pressed={alikeOnly}
+                  onToggle={() => setAlikeOnly((value) => !value)}
+                />
+                <HeroStat
+                  inline
+                  value={sharedSuburbs.suburbs}
+                  label="Suburbs with two names"
+                  pressed={sharedSuburbOnly}
+                  onToggle={() => setSharedSuburbOnly((value) => !value)}
+                />
+              </div>
+            )
           }
           foot={
-            <CheckingFoot
-              items={[
-                { id: "names", label: "Team names", value: allTeams.length },
-                { id: "services", label: "Health services", value: serviceCounts.size },
-                { id: "suburbs", label: "Suburbs mapped", value: suburbsMapped },
-              ]}
-              notChecked={["verified services, these are recorded names"]}
-            />
+            isPhone ? undefined : (
+              <CheckingFoot
+                items={[
+                  { id: "names", label: "Team names", value: allTeams.length },
+                  { id: "services", label: "Health services", value: serviceCounts.size },
+                  { id: "suburbs", label: "Suburbs mapped", value: suburbsMapped },
+                ]}
+                notChecked={["verified services, these are recorded names"]}
+              />
+            )
           }
           aside={
             <div className={styles.heroActions}>
@@ -503,16 +526,18 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 aria-haspopup="dialog"
                 aria-expanded={drawerOpen}
               >
-                Catchment guide
+                {isPhone ? "Guide" : "Catchment guide"}
               </Button>
-              <Link
-                href="/mockups/ward-flow/referrals"
-                className={buttonClass({ variant: "onHero" })}
-                data-testid="community-action-referral-board"
-              >
-                <Icon icon={ArrowRight} size={16} />
-                Referrals
-              </Link>
+              {isPhone ? null : (
+                <Link
+                  href="/mockups/ward-flow/referrals"
+                  className={buttonClass({ variant: "onHero" })}
+                  data-testid="community-action-referral-board"
+                >
+                  <Icon icon={ArrowRight} size={16} />
+                  Referrals
+                </Link>
+              )}
               <Link
                 href="/mockups/ward-flow/referrals/new"
                 className={buttonClass({ variant: "light" })}
@@ -558,8 +583,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               value={phonePane}
               onChange={setPhonePane}
               items={[
-                { id: "az" as const, label: "A to Z" },
+                // Suburb leads: "which team covers this suburb" is the phone job.
                 { id: "suburb" as const, label: "Suburb" },
+                { id: "az" as const, label: "A to Z" },
                 { id: "alike" as const, label: "Alike" },
                 { id: "services" as const, label: "Services" },
               ]}
@@ -594,7 +620,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 type="search"
                 icon={Search}
                 boxClassName={styles.searchBox}
-                placeholder="Search"
+                placeholder={isPhone ? "Team, suburb or postcode" : "Search"}
                 autoComplete="off"
                 aria-label="Search team names"
                 value={query}
@@ -605,7 +631,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                     setQuery("");
                   }
                 }}
-                trailing={<Kbd>/</Kbd>}
+                trailing={isPhone ? undefined : <Kbd>/</Kbd>}
               />
               <Segmented
                 label="Filter team names"
@@ -703,7 +729,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                         <GroupHead
                           variant="letter"
                           title={letter}
-                          count={isPhone ? (grouped.get(letter) ?? []).length : undefined}
+                          aside={isPhone ? (grouped.get(letter) ?? []).length : undefined}
                           className={styles.letterRow}
                         />
                       </div>
@@ -798,7 +824,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 id="community-gateway-service-title"
                 title="Teams by service"
                 eyebrow
-                aside={<span className={styles.headNote}>Line is the mean</span>}
+                aside={<span className={styles.headNote}>Teams, and how many read alike</span>}
               />
               <CardBody>
                 <ServiceBars serviceCounts={serviceCounts} />
@@ -854,6 +880,27 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           title="Catchment guide"
           returnFocusRef={drawerTriggerRef}
           testId="community-catchment-guide"
+          footer={
+            // v10 phone: the guide's one pinned action opens the Suburb pane on its lookup.
+            isPhone ? (
+              <Button
+                variant="pri"
+                icon={MapPin}
+                className={styles.guideFootAction}
+                onClick={() => {
+                  setDrawerOpen(false);
+                  setPhonePane("suburb");
+                  requestAnimationFrame(() =>
+                    document
+                      .querySelector<HTMLInputElement>('[data-pane="suburb"] input[aria-label="Suburb"]')
+                      ?.focus(),
+                  );
+                }}
+              >
+                Look up a suburb
+              </Button>
+            ) : undefined
+          }
         >
           <div className={styles.guide}>
             <section className={styles.guideSection} aria-labelledby="community-guide-source">
@@ -905,24 +952,27 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 </li>
               </ul>
             </section>
-            <section className={styles.guideSection} aria-labelledby="community-guide-actions">
-              <h3 id="community-guide-actions" className={styles.guideHead}>
-                Actions
-              </h3>
-              <div className={styles.guideActions}>
-                <Link href="/mockups/ward-flow/referrals/new" className={buttonClass({ variant: "sec" })}>
-                  <Icon icon={Plus} size={16} />
-                  Raise referral
-                </Link>
-                <Link href="/mockups/ward-flow/referrals" className={buttonClass({ variant: "sec" })}>
-                  <Icon icon={ArrowRight} size={16} />
-                  Open referrals
-                </Link>
-                <Button variant="sec" icon={Download} onClick={exportTeamList}>
-                  Export team list
-                </Button>
-              </div>
-            </section>
+            {/* v10 phone: the guide is reading only; its actions live on the page and in the foot. */}
+            {isPhone ? null : (
+              <section className={styles.guideSection} aria-labelledby="community-guide-actions">
+                <h3 id="community-guide-actions" className={styles.guideHead}>
+                  Actions
+                </h3>
+                <div className={styles.guideActions}>
+                  <Link href="/mockups/ward-flow/referrals/new" className={buttonClass({ variant: "sec" })}>
+                    <Icon icon={Plus} size={16} />
+                    Raise referral
+                  </Link>
+                  <Link href="/mockups/ward-flow/referrals" className={buttonClass({ variant: "sec" })}>
+                    <Icon icon={ArrowRight} size={16} />
+                    Open referrals
+                  </Link>
+                  <Button variant="sec" icon={Download} onClick={exportTeamList}>
+                    Export team list
+                  </Button>
+                </div>
+              </section>
+            )}
           </div>
         </Drawer>
       </main>
@@ -1089,18 +1139,31 @@ function TeamRow({
       >
         <HighlightedName name={team.name} query={query} />
       </Link>
-      <span className={styles.service} data-row-detail="service">
+      <span className={styles.service} data-row-detail="service" data-service={facts?.service}>
         {facts?.service}
       </span>
-      <span className={styles.suburbs} data-row-detail="suburbs">
+      {/* v10 phone: the meta line ends "· reads like N others". It is drawn from `data-alike` by the
+          phone stylesheet only (hidden from screen readers, which hear the marker's own words), so
+          the row's text stays the name and the catchment facts. */}
+      <span
+        className={styles.suburbs}
+        data-row-detail="suburbs"
+        data-one={facts?.suburbs === 1 ? "true" : undefined}
+        data-alike={
+          collision
+            ? `reads like ${collision.names.length - 1} ${collision.names.length - 1 === 1 ? "other" : "others"}`
+            : undefined
+        }
+      >
         {facts?.suburbs ?? 0}
       </span>
       <span className={styles.check}>
         {collision ? (
           <ReadsAlikeMarker collision={collision} onOpen={() => onOpenFamily(collision)} />
         ) : (
+          // Blank when there is nothing to say (device audit 11 Oct 2026: "No marker" on 42 rows).
           <span className={styles.noMarker} data-row-detail="no-marker">
-            No marker
+            <SrOnly>No marker</SrOnly>
           </span>
         )}
       </span>
@@ -1227,7 +1290,6 @@ function ServiceBars({ serviceCounts }: { serviceCounts: ReadonlyMap<string, { t
   );
   const present = codes.filter((code) => (serviceCounts.get(code)?.teams ?? 0) > 0);
   if (present.length === 0) return <p className={styles.muted}>No team on this page maps to a health service.</p>;
-  const total = present.reduce((sum, code) => sum + (serviceCounts.get(code)?.teams ?? 0), 0);
   const rows: BarListRow[] = present.map((code) => {
     const entry = serviceCounts.get(code) ?? { teams: 0, alike: 0 };
     return {
@@ -1239,7 +1301,7 @@ function ServiceBars({ serviceCounts }: { serviceCounts: ReadonlyMap<string, { t
           {entry.teams}
           <span className={styles.alikeFigure}>
             <StatusGlyph tone={entry.alike > 0 ? "warning" : "neutral"} size={9} />
-            {entry.alike}
+            {entry.alike} alike
           </span>
         </span>
       ),
@@ -1247,13 +1309,7 @@ function ServiceBars({ serviceCounts }: { serviceCounts: ReadonlyMap<string, { t
   });
   return (
     <>
-      <BarList
-        rows={rows}
-        mean={total / present.length}
-        meanLabel="Mean"
-        label="Community teams by health service"
-        labelWidth="9.5rem"
-      />
+      <BarList rows={rows} label="Community teams by health service" labelWidth="9.5rem" />
       <SrOnly>
         <ul>
           {present.map((code) => (

@@ -13,9 +13,9 @@ PR skips a job only when its changes cannot affect it (see [Scope by change](#sc
 | Job                                | Runners | What it runs                                                                                                                                                                                             | Typical time |
 | ---------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | `Ward Flow static checks`          | 1       | CI contracts, document links, screen record, dependency review, changed-file checks, the PR's related tests, backend tests, reference data, legal wording, and one type check of source and route types. | 1 to 2 min   |
-| `Ward Flow unit shard 1` to `5`    | 5       | The reconciled offline unit population, split into five disjoint, cost-balanced shards (`WARD_GATE_SHARD=i/5`). Together they run every file once.                                                       | 2 to 3 min   |
+| `Ward Flow unit shard 1` to `8`    | 8       | The reconciled offline unit population, split into eight disjoint, cost-balanced shards (`WARD_GATE_SHARD=i/8`). Together they run every file once.                                                      | 2 to 3 min   |
 | `Ward Flow browser journeys 1`–`3` | 3       | The Ward browser journeys, split into three duration-balanced groups of spec files (`WARD_JOURNEY_GROUP=i/3`), each on its own server and runner.                                                        | about 3 min  |
-| `Ward Flow coverage`               | 1       | Merges the five unit shards' coverage blob reports and applies the `vitest.config.mts` thresholds to the whole suite. Starts when the shards finish.                                                     | about 1 min  |
+| `Ward Flow coverage`               | 1       | Merges the eight unit shards' coverage blob reports and applies the `vitest.config.mts` thresholds to the whole suite. Starts when the shards finish.                                                    | about 1 min  |
 | `Ward Flow required`               | 1       | Passes only when every job succeeds (see [Main pushes](#main-pushes) for the one reuse case). This is the check the default-branch ruleset requires.                                                     | seconds      |
 
 Details that keep the split sound:
@@ -23,12 +23,14 @@ Details that keep the split sound:
 - **Unit shards.** The discovery floor is checked on the whole population before splitting. Files are
   dealt longest first onto the lightest shard using `scripts/ward-flow/unit-durations.json` (each
   file's measured cost; an unmeasured file counts as the median, and with no record the split falls back
-  to every fifth file). Every runner computes the same deal, so the shards stay disjoint. Each shard's
+  to every eighth file). Every runner computes the same deal, so the shards stay disjoint. Each shard's
   floors scale with its share of the files, and each shard runs as one vitest process. Each shard is
   compared only with the expected-reds manifest entries for its own files, so the shards cover every
-  file and every entry exactly once. Refresh the cost record when the shards drift apart, from a recent
-  run's `ward-coverage-blob-*` artifacts: each shard's Vitest blob report records every file's cost on
-  the real runner, with coverage on.
+  file and every entry exactly once. Eight shards (five until 11 October 2026): balancing five
+  left the slowest at about 6.5 minutes, because files in one shard slow each other down; more
+  runners was the remaining lever. Refresh the cost record when the shards drift apart: the
+  coverage job's "Report measured unit test costs" step prints every file's cost on that run, read from
+  the shards' Vitest blob reports (real runner, coverage on), in the record's own format.
 - **Longest first.** In CI (`CI` set) Vitest runs each unit shard's files, and the related-tests step's
   files, longest first by the same record (`scripts/ward-flow/unit-durations.mjs`). A fresh runner has
   no Vitest results cache, so its own order is the file listing, and a 2.5-minute file starting last
@@ -37,7 +39,7 @@ Details that keep the split sound:
   shard 3 of 5 from 291 to 198 seconds.
 - **Coverage.** Each unit shard also records V8 coverage for its own files into a Vitest blob report
   (`WARD_COVERAGE_BLOB_DIR`), with the thresholds switched off for that one slice. The coverage job
-  downloads all five blobs, fails if any shard's blob is missing, and runs
+  downloads all eight blobs, fails if any shard's blob is missing, and runs
   `vitest --merge-reports --coverage`, which applies the unchanged thresholds to the merged whole-suite
   result. Until 6 October 2026 a separate job ran the whole unit suite a second time for coverage, which
   took about seventeen minutes on its own.
@@ -117,7 +119,7 @@ so a hung run fails quickly instead of holding a runner.
 - `node scripts/ward-ci-public/changed-checks.mjs --base origin/main`: the CI changed-file checks.
 - `npm run test:related`: runs only the tests related to your changes against `origin/main` (about two
   seconds for a small change). This is the same selection as the quick-feedback job.
-- `WARD_GATE_SHARD=2/5 npm run check:ward-expected-reds`: reproduces one CI unit shard exactly.
+- `WARD_GATE_SHARD=2/8 npm run check:ward-expected-reds`: reproduces one CI unit shard exactly.
 - `WARD_JOURNEY_GROUP=1/3 npm run test:e2e:ward-journeys`: reproduces one CI browser group (Node 24).
 
 ## History

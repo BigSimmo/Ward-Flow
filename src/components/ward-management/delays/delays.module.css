@@ -160,17 +160,6 @@
   border-color: var(--line-strong);
 }
 
-/* Restoring the per-row facts the old priority queue and escalation board each carried alone
- * (MERGE 01 audit, 2026-09-05): a blocked-on sentence and the escalation facts are each their own
- * fact, so each renders on its own line inside the row's shared `annotation` slot rather than
- * running together as one paragraph. */
-.annotationLine {
-  display: block;
-}
-.annotationLine + .annotationLine {
-  margin-top: var(--ward-space-4);
-}
-
 /*
  * The synthetic-data disclosure every other ward screen already carries. Added 2026-09-06 after a
  * walk of the running app found this screen showing invented figures and named Perth hospitals with
@@ -185,27 +174,6 @@
  * still renders at every width** — `tests/ward-prototype-disclosure.test.ts` requires a real
  * `styles.prototypeBadge` element in the tree, and shrinking it is not the same as removing it.
  */
-
-@media (max-width: 40rem) {
-  /* 🔴 THIS BLOCK ONCE ALSO SET A HARD-CODED CHIP SIZE OF ABOUT 10.5px, described in its own
-   * comment as "the mockup's own chip size". THAT ONE LINE IS DELETED ON PURPOSE AND THE REST OF
-   * THE BLOCK IS NOT — do not read the absence as an omission and helpfully put one back.
-   *
-   * The restyle's stated purpose, at the top of this media query, is VERTICAL SPACE on a 375px
-   * viewport. `min-height: 0` is what actually reclaims it; the padding and gap help. A chip that
-   * is one line at either size reclaims essentially NOTHING by shrinking its text — and it costs
-   * legibility at exactly the width where a small chip is hardest to read.
-   *
-   * ⚠️ It would also have SURVIVED the type-floor raise. The base rule above now resolves to 12px;
-   * this one would have kept painting the smaller size below 40rem. The screen would have read as
-   * fixed at desktop width, the diff would have looked complete, and the narrow width would have
-   * kept the violation — invisible to a diff, and to any enumeration run at a single width.
-   *
-   * ⚠️ The exact literal is deliberately NOT quoted above. A comment that spells out the value it
-   * removed makes every later search for that value find this file, so a check asking "is the
-   * hard-coded size gone?" would answer no — the removal documenting itself out of its own
-   * verification. `git log -p` on this block has the number if anyone needs it. */
-}
 
 /* ---------- the attention list, scoped to your own place ---------- */
 
@@ -434,20 +402,6 @@
   color: var(--ink);
 }
 
-.tabBtnActive {
-  color: var(--ink);
-}
-
-.tabBtnActive::after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--gilt, var(--ward-warning));
-}
-
 .tabNum {
   font-family: var(--mono);
   font-size: var(--t-0, 12px);
@@ -458,19 +412,6 @@
   color: var(--muted);
   border: 1px solid var(--line);
   font-variant-numeric: tabular-nums;
-}
-
-.tabBtnActive .tabNum {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.tabNumZero {
-  font-family: var(--body);
-  font-size: var(--t-0, 12px);
-  font-style: italic;
-  color: var(--muted);
 }
 
 .tabBody {
@@ -517,14 +458,6 @@
   display: flex;
   align-items: baseline;
   gap: var(--ward-space-6);
-}
-
-.rowId {
-  font-family: var(--mono);
-  color: var(--ink);
-  font-size: var(--t-1);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 
 .rowWhen {
@@ -585,51 +518,6 @@
   gap: var(--ward-space-2) var(--ward-space-10);
 }
 
-.detailLabel {
-  padding-top: var(--ward-space-1);
-  color: var(--muted);
-  font-size: var(--t-0);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.detailValue {
-  margin: 0;
-  color: var(--ink);
-  font-size: var(--t-1);
-}
-
-.clearLine {
-  display: flex;
-  align-items: baseline;
-  gap: var(--ward-space-6);
-  flex-wrap: wrap;
-  border: 0.0625rem solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
-  padding: var(--ward-space-6) var(--ward-space-8);
-}
-
-.clearLineUncleared {
-  border-color: var(--warn);
-  background: var(--warn-soft);
-}
-
-.clearState {
-  color: var(--ink);
-  font-size: var(--t-1);
-  font-weight: 700;
-}
-
-.clearLineUncleared .clearState {
-  color: var(--ink);
-}
-
-.clearWhy {
-  color: var(--ink);
-  font-size: var(--t-0);
-}
-
 /* ---------- the wait, drawn to scale ----------
  * One person, one rail, proportional to their whole wait. `tlSeg`/`tlSegQuiet` are the fills along
  * `tlTrack`; `tlEvent` is a marker positioned along that rail (its own `left` is set inline by the
@@ -641,53 +529,6 @@
   position: relative;
   margin-top: var(--ward-space-6);
   padding-top: var(--ward-space-10);
-}
-
-.tlTrack {
-  position: relative;
-  display: flex;
-  height: 0.875rem;
-  border: 0.0625rem solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  overflow: hidden;
-}
-
-.tlSeg {
-  min-width: 0;
-  height: 100%;
-  background: var(--line-strong);
-}
-
-/* The trailing gap since the last recorded event — the longest and most important segment. */
-.tlSegQuiet {
-  border-left: 1px solid var(--line);
-  background: var(--warn-soft);
-}
-
-.tlEvent {
-  position: absolute;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transform: translateX(-50%);
-}
-
-.tlDot {
-  width: 0.5rem;
-  height: 0.5rem;
-  margin-top: var(--ward-space-3);
-  border: 0.0625rem solid var(--surface);
-  border-radius: var(--ward-radius-round);
-  background: var(--line-strong);
-}
-
-.tlCaption {
-  margin-top: var(--ward-space-6);
-  color: var(--ink);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
 }
 
 /*
@@ -722,17 +563,10 @@
  * readers get today, same as everyone else.
  */
 @media (forced-colors: active) {
-  .clearLineUncleared,
   .row,
   .tabBtn {
     border: 0.0625rem solid CanvasText;
     background: Canvas;
-  }
-  .tlSeg,
-  .tlSegQuiet,
-  .tlDot,
-  .tlEvent {
-    background: CanvasText;
   }
 }
 
@@ -821,26 +655,10 @@
   background: transparent;
   box-shadow: none;
 }
-
-.detailReminder {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: var(--t-0);
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--ink);
-}
-
-.detailReminder {
-  margin-top: var(--ward-space-4);
-}
 .tabBtn {
   font-size: var(--t-0);
   font-weight: 600;
   min-height: 2.75rem;
-}
-.tabBtnActive {
-  border-bottom-color: var(--gilt);
 }
 .tabNum {
   font-size: var(--t-0);
@@ -859,119 +677,13 @@
   padding: 1rem;
   gap: 0.875rem;
 }
-.detailTitleRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-.detailCloseBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm, 0.25rem);
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 1.125rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.detailCloseBtn:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-  border-color: var(--line-strong);
-}
-.detailCloseBtn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
 .detailName {
   font-size: var(--t-5);
-}
-.detailLabel {
-  font-size: var(--t-0);
 }
 .detailFacts {
   grid-template-columns: minmax(5rem, 0.8fr) minmax(0, 1.8fr);
   gap: 0.625rem 0.875rem;
   margin: 0;
-}
-.detailValue {
-  font-size: var(--t-2);
-}
-.clearWhy,
-.tlCaption {
-  font-size: var(--t-1);
-}
-.attentionTabList {
-  list-style: none;
-  margin: 0;
-  padding: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.attentionCard {
-  width: 100%;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  padding: 0.625rem 0.75rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.attentionCard:hover {
-  background: var(--surface-2);
-  border-color: var(--line-strong);
-}
-.attentionCardActive {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-}
-.attentionCard:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -1px;
-}
-.attentionCardTop {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-.attentionWhen {
-  margin-left: auto;
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  color: var(--muted);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-.attentionCardBottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: var(--t-0);
-  color: var(--ink-soft);
-}
-.attentionOutside {
-  font-size: var(--t-0);
-  font-weight: 600;
-  color: var(--ink);
-}
-.attentionTitle {
-  font-weight: 500;
-}
-.tabNumZero {
-  color: var(--wf-dim);
 }
 .attentionWho {
   font-size: var(--t-2);
@@ -985,52 +697,6 @@
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   box-shadow: none;
-}
-
-/* Systemic delays and network holds (Image 2 elevation) */
-.systemicPanel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ward-space-12, 0.75rem);
-  padding: 0.75rem 0.875rem 1rem;
-}
-.systemicHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.logHoldButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--ward-tap, 3rem);
-  padding: 0.375rem 0.875rem;
-  border-radius: var(--radius-sm, 0.375rem);
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease-in-out;
-}
-.logHoldButton:hover {
-  background: var(--surface-2);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.logHoldButton:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-.systemicGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-  gap: 0.75rem;
-  min-width: 0;
-  max-width: 100%;
 }
 @media (max-width: 1099px) {
   .colDetail {
@@ -1127,25 +793,16 @@
  * Dark Theme Crisp Borders for Delay Reason Cards, Panels, and Rows.
  * Uses semantic token var(--line-strong) to maintain crisp boundary separation in dark mode.
  */
-:global([data-theme="dark"]) .attentionCard,
-:global(.dark) .attentionCard,
 :global([data-theme="dark"]) .row,
 :global(.dark) .row,
-:global([data-theme="dark"]) .clearLine,
-:global(.dark) .clearLine,
 :global([data-theme="dark"]) .tabbar,
-:global(.dark) .tabbar,
-:global([data-theme="dark"]) .logHoldButton,
-:global(.dark) .logHoldButton {
+:global(.dark) .tabbar {
   border-color: var(--line-strong);
 }
 
 @media (prefers-color-scheme: dark) {
-  :global(:root:not([data-theme="light"])) .attentionCard,
   :global(:root:not([data-theme="light"])) .row,
-  :global(:root:not([data-theme="light"])) .clearLine,
-  :global(:root:not([data-theme="light"])) .tabbar,
-  :global(:root:not([data-theme="light"])) .logHoldButton {
+  :global(:root:not([data-theme="light"])) .tabbar {
     border-color: var(--line-strong);
   }
 }
@@ -1190,41 +847,6 @@
    WARD FLOW DELAYS & BOTTLENECK CONTROL — PERFECTED MASTER EXTENSIONS
    ═══════════════════════════════════════════════════════════════════════ */
 
-.btnAction {
-  height: var(--ward-tap, 44px);
-  min-height: var(--ward-tap, 44px);
-  padding: 0 14px;
-  border-radius: var(--r2, 6px);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  font-family: var(--body);
-  font-size: var(--t-1);
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: all 0.12s;
-  white-space: nowrap;
-}
-
-.btnAction:hover {
-  background: var(--surface-2);
-  border-color: var(--line-strong);
-}
-
-.btnActionPrimary {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
-}
-
-.btnActionPrimary:hover {
-  background: var(--accent-ink);
-  border-color: var(--accent-ink);
-}
-
 .toastNotice {
   position: fixed;
   bottom: 24px;
@@ -1248,24 +870,6 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.dossierSectionTitle {
-  font-size: var(--t-1);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--accent-ink);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.legalClockTop {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
 }
 
 .wardQueryList {
@@ -1345,24 +949,6 @@
   gap: 8px;
 }
 
-.dossierSectionTitle {
-  font-size: var(--t-0, 12px);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.legalClockTop {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
 .wardQueryList {
   display: flex;
   flex-direction: column;
@@ -1421,159 +1007,6 @@
 }
 
 /* State B: Statewide Bottlenecks & Escalations Tabs */
-
-/* ================================================================================
- * SYSTEMIC DELAY HOLDS (DELAYS WITH NO NAMED PERSON)
- * ================================================================================ */
-.systemicPanel {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  box-shadow: var(--lift);
-  padding: 18px 20px;
-  margin-top: 14px;
-}
-
-.systemicHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-}
-
-.logHoldButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: var(--r2, 6px);
-  background: var(--surface-2);
-  border: 1px solid var(--line-strong);
-  font-size: var(--t-0);
-  font-weight: 600;
-  color: var(--ink);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.logHoldButton:hover {
-  background: var(--sunk);
-  border-color: var(--ink);
-}
-
-.logHoldButton:focus-visible {
-  outline: 2px solid var(--accent);
-}
-
-.systemicGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-  gap: 14px;
-}
-
-.systemicCard {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 8px);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: var(--lift-sm);
-}
-
-.systemicCardDanger {
-  border-color: var(--danger-line, var(--danger-line, var(--ward-danger)));
-  background: var(--ward-danger-soft, var(--danger-soft));
-}
-
-.systemicCardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.systemicCardTitleCluster {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.systemicFacility {
-  font-weight: 700;
-  font-size: var(--t-1);
-  color: var(--ink);
-}
-
-.systemicCatPill {
-  font-size: var(--t-0, 12px);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 2px 8px;
-  border-radius: var(--pill, 9999px);
-  background: var(--sunk);
-  border: 1px solid var(--line);
-  color: var(--muted);
-}
-
-.systemicElapsed {
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  color: var(--muted);
-  flex-shrink: 0;
-}
-
-.systemicReason {
-  font-size: var(--t-1);
-  color: var(--ink);
-  line-height: 1.45;
-  margin: 0;
-}
-
-.systemicImpactStrip {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  background: var(--ward-warning-soft, var(--warn-soft));
-  border-left: 3px solid var(--ward-warning, var(--warn));
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: var(--t-0);
-  color: var(--ink);
-}
-
-.systemicImpactLabel {
-  font-weight: 700;
-  color: var(--ward-warning, var(--warn-ink));
-}
-
-.systemicImpactValue {
-  font-weight: 500;
-}
-
-.systemicCardFooter {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: auto;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-  font-size: var(--t-0);
-  color: var(--muted);
-}
-
-.systemicReview {
-  font-family: var(--mono);
-}
-
-.systemicOwner {
-  font-weight: 500;
-}
 
 /* Keyboard focus on the sort boxes: both .sortSelect rules above remove the outline with nothing in
    its place (polish report, 26 September 2026). Same ring as the cards and tabs; focus only, so the
@@ -1645,49 +1078,11 @@
   padding: 22px 24px 30px;
   gap: 20px;
 }
-.queueScope {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  border-radius: 6px;
-  padding: 12px 16px;
-  font-size: 13px;
-  color: var(--accent-ink);
-  scroll-margin-top: 80px;
-}
-.queueScope button {
-  border: 0;
-  background: none;
-  font: inherit;
-  color: var(--accent);
-  text-decoration: underline;
-  cursor: pointer;
-}
 @media (max-width: 700px) {
   .main {
     padding: 16px 12px 24px;
     gap: 16px;
   }
-  .queueScope {
-    flex-wrap: wrap;
-  }
-}
-.systemicPanel {
-  margin-top: 0;
-  padding: 8px 12px;
-  box-shadow: none;
-}
-.systemicHeader {
-  align-items: center;
-  margin-bottom: 6px;
-}
-.systemicEmptyLine {
-  margin: 2px 0 0;
-  color: var(--muted);
-  font-size: 12px;
 }
 .tabBody {
   max-height: 160px;
@@ -1698,71 +1093,8 @@
   gap: 12px;
   padding: 14px 16px 22px;
 }
-.lowerBand {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-  gap: 12px;
-  align-items: stretch;
-}
-.lowerBand > [data-ward-primitive="panel"] {
-  display: flex;
-  flex-direction: column;
-  min-height: 440px;
-}
-.lowerBand .tabBody {
-  flex: 1 1 auto;
-  max-height: none;
-  min-height: 280px;
-}
-.lowerBand .systemicPanel {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  margin: 0;
-  padding: 12px 14px 16px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.lowerBand .systemicHeader {
-  align-items: center;
-  margin-bottom: 0;
-}
-.lowerBand .logHoldButton {
-  min-height: 26px;
-  height: 26px;
-  padding: 2px 8px;
-  gap: 4px;
-  font-size: 12px;
-  line-height: 1;
-}
-.lowerBand .logHoldButton svg {
-  width: 12px;
-  height: 12px;
-}
-.lowerBand .systemicGrid {
-  flex: 1 1 auto;
-}
-.lowerBand .systemicEmptyLine {
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  min-height: 0;
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  text-align: center;
-  color: color-mix(in srgb, var(--muted) 70%, white);
-  text-shadow: 0 1px 0 color-mix(in srgb, white 85%, transparent);
-}
 .tabBtn,
-.logHoldButton,
-.aliasBannerDismiss,
-.queueScope,
-.queueScope button {
+.aliasBannerDismiss {
   border-radius: 8px;
 }
 .screen[data-ward-page="delays"] [data-ward-primitive="panel"] {
@@ -1801,17 +1133,6 @@
   box-shadow: none;
   color: var(--muted);
 }
-.tabBtnActive {
-  background: var(--surface);
-  color: var(--ink);
-  border-color: transparent;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
-    0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
-}
-.tabBtnActive::after {
-  content: none;
-}
 .tabNum {
   border: 0;
   border-radius: 4px;
@@ -1819,27 +1140,11 @@
   color: var(--muted);
   box-shadow: none;
 }
-.tabBtnActive .tabNum {
-  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
-  color: var(--accent);
-}
-.row,
-.attentionCard {
+.row {
   border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
   border-radius: 8px;
   background: color-mix(in srgb, var(--surface) 90%, transparent);
   box-shadow: none;
-}
-.queueScope {
-  width: auto;
-  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--ink) 5%, transparent);
-}
-@media (max-width: 960px) {
-  .lowerBand {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 @media (max-width: 700px) {
   .main {
@@ -1848,29 +1153,18 @@
   }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .queueScope,
   .screen[data-ward-page="delays"] [data-ward-primitive="panel"] {
     background: var(--surface);
     backdrop-filter: none;
   }
 }
 @media (forced-colors: active) {
-  .queueScope,
   .tabbar,
   .screen[data-ward-page="delays"] [data-ward-primitive="panel"] {
     border: 1px solid CanvasText;
     background: Canvas;
     box-shadow: none;
     backdrop-filter: none;
-  }
-  .tabBtnActive {
-    border: 1px solid CanvasText;
-    background: Canvas;
-    color: CanvasText;
-  }
-  .lowerBand .systemicEmptyLine {
-    color: CanvasText;
-    text-shadow: none;
   }
 }
 
@@ -1932,21 +1226,6 @@
   text-transform: none;
 }
 
-/* Bottom row: blocker bar list, the registers, system delays. */
-.screen[data-ward-design="v6"] .lowerBand {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--wf-s-3);
-  align-items: start;
-}
-
-.screen[data-ward-design="v6"] .lowerBand > [data-ward-primitive="panel"] {
-  min-height: 0;
-}
-
-.screen[data-ward-design="v6"] .lowerBand .tabBody {
-  min-height: 0;
-}
-
 .screen[data-ward-design="v6"] .tabbar {
   flex-wrap: nowrap;
   max-width: calc(100% - 2 * var(--wf-s-4));
@@ -1967,72 +1246,10 @@
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
-.screen[data-ward-design="v6"] .tabBtnActive {
-  border-color: var(--wf-line-ctl);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
-  color: var(--wf-ink-1);
-  font-weight: 600;
-}
-
-.screen[data-ward-design="v6"] .tabNum,
-.screen[data-ward-design="v6"] .tabBtnActive .tabNum {
+.screen[data-ward-design="v6"] .tabNum {
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
   font-family: var(--wf-mono);
-}
-
-.screen[data-ward-design="v6"] .lowerBand .row,
-.screen[data-ward-design="v6"] .lowerBand .attentionCard {
-  border: 0;
-  border-bottom: 1px solid var(--wf-line);
-  border-radius: 0;
-  background: none;
-}
-
-.screen[data-ward-design="v6"] .lowerBand .rowId,
-.screen[data-ward-design="v6"] .lowerBand .attentionWho {
-  font-family: var(--wf-font);
-  font-weight: 600;
-}
-
-.screen[data-ward-design="v6"] .lowerBand .systemicPanel {
-  padding: 0;
-}
-
-.systemicEmpty {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4);
-}
-
-.systemicEmpty p {
-  display: grid;
-  margin: 0;
-}
-
-.systemicEmpty strong {
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-}
-
-.systemicEmpty span {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-@media (max-width: 1200px) {
-  .screen[data-ward-design="v6"] .lowerBand {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
-  .screen[data-ward-design="v6"] .lowerBand {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 /* Phone pass 2 (8 Oct 2026). Phone only; nothing here applies above 48rem. 12px gutters; a
@@ -2040,7 +1257,7 @@
    clipping the last one. */
 @media (max-width: 48rem) {
   .screen[data-ward-design="v6"] .main {
-    padding: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-8);
   }
 
   .screen[data-ward-page="delays"] [data-ward-primitive="panel-header"] {
@@ -2065,5 +1282,49 @@
 
   .screen[data-ward-page="delays"] .tabNum {
     padding-inline: var(--wf-s-1);
+  }
+}
+
+/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
+   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
+   tablet keep the toast above. */
+@media (max-width: 48rem) {
+  .toastNotice {
+    --toast-bg: light-dark(
+      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
+      color-mix(in srgb, var(--wf-track) 97%, transparent)
+    );
+    --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
+    --toast-ring: light-dark(transparent, var(--wf-line-2));
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 92px;
+    left: 12px;
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    margin: 0 auto;
+    transform: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: var(--toast-bg);
+    box-shadow:
+      0 0 0 1px var(--toast-ring),
+      var(--wf-e2);
+    color: var(--toast-ink);
+    font: 500 var(--wf-fs-13) / 18px var(--wf-font);
+    text-align: left;
+    white-space: normal;
+    z-index: var(--z-toast);
+  }
+  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
+  :global(html:has([role="dialog"][aria-modal="true"])) .toastNotice {
+    bottom: 136px;
   }
 }

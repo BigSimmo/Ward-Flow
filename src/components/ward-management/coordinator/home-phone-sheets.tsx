@@ -133,7 +133,7 @@ export function HomeWardSheet({
     for (const movement of queue) {
       const candidate = shortlistCandidates(movement, [unit], now)[0];
       if (!candidate) continue;
-      const kind = fitKind(candidate);
+      const kind = fitKind(candidate, movement);
       if (kind === "bed" || kind === "review") found.push({ movement, kind });
       if (found.length >= WARD_SHEET_PEOPLE) break;
     }

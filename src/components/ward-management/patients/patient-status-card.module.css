@@ -68,9 +68,15 @@
   font-size: var(--wf-fs-12);
 }
 
+/* The card's next step once every gate is clear (desktop; the phone pins it in the bar). */
+.headAction {
+  display: inline-flex;
+}
+
 .cells {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  container-type: inline-size;
 }
 
 .cell {
@@ -124,6 +130,27 @@
   white-space: nowrap;
 }
 
+/* Decision 2: a value that opens its record reads as the value, underlined as a link. */
+.valueLink {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--wf-line-2);
+  text-underline-offset: 3px;
+}
+
+.valueLink:hover {
+  text-decoration-color: currentColor;
+}
+
+.valueLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .sub {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
@@ -138,6 +165,24 @@
   grid-column: 2;
   grid-row: 2 / span 3;
   align-self: end;
+}
+
+/*
+ * U1 (site review, 12 Oct 2026): a status value is never cut. When the three cells are narrow (an
+ * iPad in portrait), each cell's action moves under its value so the value has the full width.
+ * Phone cells (`data-ph-quiet`) keep their own layout.
+ */
+@container (max-width: 720px) {
+  .cell:not([data-ph-quiet]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cell:not([data-ph-quiet]) .action {
+    grid-column: 1;
+    grid-row: auto;
+    align-self: start;
+    margin-top: var(--wf-s-1);
+  }
 }
 
 @media (max-width: 760px) {
@@ -204,24 +249,174 @@
   display: none;
 }
 
-/* v10: act now is the thin red full edge, no fill. */
+/* v10: act now is an inset coral marker and subtle tint. */
 .card[data-act="true"] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
-/* v10 phone: the gate board's one primary, pinned at the bottom of the screen. */
+/* v10 phone: the gate board's one primary, pinned at the bottom of the screen with Copy beside it.
+ * It sits last in the Now pane (order) so it stays pinned while the whole pane scrolls. */
 .phBar {
   position: sticky;
-  bottom: var(--wf-s-2);
+  bottom: 0;
   z-index: 3;
+  order: 99;
   display: flex;
-  padding: var(--wf-s-2);
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-3)) calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-canvas);
 }
 
 .phBar > * {
   flex: 1 1 auto;
-  min-height: var(--wf-touch, 44px);
+  min-height: 48px;
+  justify-content: center;
+  border-radius: var(--wf-r-pill);
+}
+
+.phBar > .phLead {
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-height: 48px;
+  align-items: center;
+}
+
+.phLead > button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.head[hidden] {
+  display: none;
+}
+
+/* v10 Patient, phone (11 Oct 2026), outside a placement: each row is the icon, then "Label · Owner"
+ * over the value and its quiet line, with the one action at the end; a quiet foot line closes the
+ * card. `data-ph-quiet` and `.phFoot` render only on phone. */
+.cell[data-ph-quiet] {
+  position: relative;
+  padding: 10px var(--wf-s-3) 10px 44px;
+  row-gap: 1px;
+}
+
+.cell[data-ph-quiet] .label {
+  grid-column: 1;
+  gap: 0;
+}
+
+.cell[data-ph-quiet] .label > svg {
+  position: absolute;
+  top: 50%;
+  left: var(--wf-s-3);
+  width: 18px;
+  height: 18px;
+  color: var(--wf-ink-2);
+  transform: translateY(-50%);
+}
+
+.cell[data-ph-quiet] .owner {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.cell[data-ph-quiet] .owner::before {
+  content: "\00a0·\00a0";
+}
+
+.cell[data-ph-quiet] .value {
+  font-size: var(--wf-fs-15, 15px);
+  line-height: 22px;
+}
+
+.cell[data-ph-quiet] .sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell[data-ph-quiet] .action {
+  grid-row: 1 / span 4;
+  align-self: center;
+}
+
+.cell[data-ph-quiet] .action button {
+  min-height: 44px;
+  border-radius: var(--wf-r-pill);
+}
+
+.phFoot {
+  margin: 0;
+  padding: 10px var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+/* v10 Movement, phone: the verdict alone heads the card; the clear count is the hero's third
+ * figure, so the meter and meta leave the row. */
+@media (max-width: 48rem) {
+  .head {
+    min-height: 40px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .card[data-ph-placing] .meterGroup,
+  .card[data-ph-placing] .meta {
+    display: none;
+  }
+
+  .verdict {
+    font-size: var(--wf-fs-14);
+    line-height: 20px;
+  }
+}
+
+/* v10 phone: the pinned primary is a full 48px pill, over the small button's own height. */
+.phBar.phBar > button,
+.phBar.phBar > a {
+  height: 48px;
+  min-height: 48px;
+  font-size: var(--wf-fs-14);
+}
+
+/* The pinned action bar sits flush on the phone dock (Josh, 12 Oct 2026, iPhone). A sticky bar
+   already stops above the scroller's dock padding, so its offset only steps back down to the dock's
+   flat edge, and its own padding keeps the button clear of the + hump. */
+@media (max-width: 48rem) {
+  .phBar {
+    bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px));
+    padding-bottom: calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px));
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.card[data-act="true"] {
+  position: relative;
+}
+
+.card[data-act="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .card[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }

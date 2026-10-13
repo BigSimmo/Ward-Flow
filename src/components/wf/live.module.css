@@ -24,18 +24,65 @@
   border: 1px solid var(--wf-line);
 }
 
-/* The pause control matches the chip's height, so the pair reads as one control. */
-.group > button.pause {
-  width: var(--wf-h-chip);
-  height: var(--wf-h-chip);
+/* Device audit (11 Oct 2026): the pause is folded into the pill. The whole pill is one button, at
+ * the chip's control height, with a pause or play glyph at its end.
+ * Site review (12 Oct 2026): the button box itself is at least 28px tall (44px on touch tablets
+ * through `--wf-tablet-tap`), centred on the pill. The negative block margin takes back the extra
+ * height, so the pill sits exactly where it did and nothing around it moves. */
+.toggle {
+  --wf-live-hit: max(28px, var(--wf-tablet-tap, 0px));
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  min-height: var(--wf-live-hit);
+  margin-block: calc((max(var(--wf-h-chip), var(--wf-tablet-tap, 0px)) - var(--wf-live-hit)) / 2);
+  padding: 0;
+  border: 0;
   border-radius: var(--wf-r-xs);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
-.group:has(> button.pause) > .lv {
+.toggle > .lv {
   height: var(--wf-h-chip);
 }
 
-.group > button.pause svg {
+/* Header touch (11 Oct 2026): the pill stays small, but presses up to 48px tall land on it. */
+.toggle::after {
+  content: "";
+  position: absolute;
+  inset: 50% -4px auto;
+  height: var(--ward-tap, var(--spacing-tap, 3rem));
+  transform: translateY(-50%);
+}
+
+.toggle:hover > .lv {
+  border-color: var(--wf-line-2);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Site review (12 Oct 2026): no hairline before the glyph, so the pill reads as one control rather
+ * than a chip with a pause tile beside it. */
+.toggleGlyph {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  margin-left: 1px;
+  color: var(--wf-ink-3);
+}
+
+.onHero .toggleGlyph {
+  color: var(--wf-hero-ink-3);
+}
+
+.toggleGlyph svg {
   width: 12px;
   height: 12px;
 }
@@ -185,5 +232,20 @@
   .lv,
   .chip {
     border-color: CanvasText;
+  }
+}
+
+/* Phone (v10): the clock after "Live" is mono at the chip's own weight and ink ("Live 10:42"). */
+@media (max-width: 48rem) {
+  /* Keep the folded pause at the 48px minimum touch target on phone. */
+  .toggle {
+    --wf-live-hit: 48px;
+  }
+  .u.clk {
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    color: var(--wf-ink-1);
+  }
+  .onHero .u.clk {
+    color: var(--wf-hero-ink);
   }
 }

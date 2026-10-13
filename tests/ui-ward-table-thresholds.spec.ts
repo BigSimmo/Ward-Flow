@@ -574,7 +574,7 @@ const TYPE_FLOOR_ROUTES = [
     route: "/mockups/ward-flow/delays",
     expect: ["delays-cause", "delays-profile", "delays-wait", "delays-since", "banner", "badge"],
   },
-  { route: "/mockups/ward-flow", expect: ["command-tier", "command-score", "banner", "badge"] },
+  { route: "/mockups/ward-flow", expect: ["command-tier", "banner", "badge"] },
   { route: "/mockups/ward-flow/movements", expect: ["banner", "badge"] },
   { route: "/mockups/ward-flow/capacity", expect: ["banner", "badge"] },
 ] as const;

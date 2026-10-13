@@ -447,7 +447,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       const hud = screen.getByTestId("ward-handover-kpi-strip");
       expect(hud).toBeDefined();
       expect(within(hud).getByRole("button", { name: /Act now/ })).toBeDefined();
-      expect(within(hud).getByRole("button", { name: /Waiting for a bed/ })).toBeDefined();
+      expect(within(hud).getByRole("button", { name: /Finding a ward/ })).toBeDefined();
     });
 
     it("Mounts DischargeBoard with WardFlowProvider and tests interactive filter clicking", () => {
@@ -501,8 +501,8 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       expect(hud).toBeDefined();
       expect(gapTable).toBeDefined();
       // v6: the hero carries the Live chip with its pause control, and the counts are hero stats.
-      expect(screen.getByRole("button", { name: "Pause live updates" })).toBeDefined();
-      expect(within(hud).getByRole("button", { name: /^\d+\s*locked ready$/iu })).toBeDefined();
+      expect(screen.getByRole("button", { name: "Pause demo updates" })).toBeDefined();
+      expect(within(hud).getByRole("button", { name: /^\d+\s*locked (?:beds )?ready$/iu })).toBeDefined();
     });
   });
 });

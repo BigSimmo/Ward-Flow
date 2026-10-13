@@ -161,18 +161,6 @@
   font-size: var(--t-0);
 }
 
-.boardLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--ward-tap);
-  margin-top: var(--ward-space-8);
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 0.1875rem;
-}
-
 .sectionHeading {
   margin: 0 0 var(--ward-space-8);
   color: var(--ink);
@@ -625,47 +613,6 @@
   gap: var(--ward-space-8);
 }
 
-.heroFigureMain {
-  display: flex;
-  align-items: baseline;
-  gap: var(--ward-space-12);
-}
-
-.heroFigureValue {
-  color: var(--ink);
-  font-size: 2.5rem;
-  font-weight: 700;
-  line-height: var(--ward-leading-none);
-  font-variant-numeric: tabular-nums;
-}
-
-.heroFigureLabel {
-  max-width: 16rem;
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
-}
-
-.heroCost {
-  margin: 0;
-  max-width: 34rem;
-  color: var(--ink);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-prose);
-}
-
-.heroCost strong {
-  color: var(--ward-warning);
-  font-weight: 600;
-}
-
-.heroAction {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--ward-space-8);
-}
-
 .heroCta {
   display: inline-flex;
   min-height: var(--ward-tap);
@@ -687,53 +634,6 @@
 
 .heroCta:hover {
   background: var(--clinical-accent-hover, var(--clinical-accent));
-}
-
-.heroCtaSub {
-  color: var(--surface);
-  font-size: var(--t-0);
-  font-weight: 500;
-  opacity: 0.85;
-}
-
-/* ⚠️ WORDED, NEVER ONLY POSITIONED. This sentence is the second, independent proof that the CTA
-   above is unconditional — see the doc comment at the top of this section. It renders exactly
-   once, unconditionally, regardless of `confirmedToday`. */
-.heroAvailability {
-  margin: 0;
-  max-width: 16rem;
-  color: var(--muted);
-  font-size: var(--t-0);
-  text-align: center;
-}
-
-/* The confirm panel — content that renders INSIDE a `<WardPanel>`, so it takes no border or
-   background of its own. */
-.confirmAllButton {
-  display: flex;
-  min-height: var(--ward-tap);
-  width: 100%;
-  align-items: center;
-  border: 0.0625rem solid var(--ward-success);
-  border-radius: var(--radius-sm);
-  background: var(--ward-success-soft);
-  padding: 0 var(--ward-space-12);
-  color: var(--ward-success);
-  font-weight: 600;
-  font-size: var(--t-1);
-  text-align: left;
-}
-
-.confirmAllButton:hover {
-  background: var(--success-bg-hover, var(--ward-success-soft));
-}
-
-.confirmRows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .confirmRow {
@@ -774,154 +674,6 @@
    */
   border-left: 0.1875rem solid var(--ward-border-strong);
   padding-left: var(--ward-space-10);
-}
-
-/*
- * The record stamp on daily-return rows 4 and 5. Deliberately NOT `WardFreshness` — see the long
- * comment at its call site in `ward-screen.tsx`; that component's four renderings are all about a
- * CONFIRMATION, and these two rows have none. Mirrors its typography so the two read as the same
- * kind of small print, because they are: a time and a role, quietly stated.
- */
-.recordStamp {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ward-space-4);
-  color: var(--ward-muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-copy);
-}
-
-/*
- * The row-4/5 links. Same box as `.confirmRowButton` — including its `min-height: var(--ward-tap)`
- * 48 px floor, which an anchor needs just as much as a button — with the underline removed,
- * because it is styled as a control and reads as one.
- *
- * 🔴 **THIS USED `composes: confirmRowButton` AND IT BROKE THE WHOLE SCREEN.** `composes` requires
- * the referenced class to be declared EARLIER in the file; `.confirmRowButton` is at :788 and this
- * rule was at :753. Webpack refuses outright —
- * `Syntax error: referenced class name "confirmRowButton" in composes not found` — and every
- * request to a ward's own page returned **HTTP 500**.
- *
- * ⚠️ **NOTHING IN THE TEST SUITE COULD SEE THIS.** jsdom tests import the CSS module as an object
- * of class names and never run the real compiler, so 335 test files stayed green over a stylesheet
- * that cannot build. `tsc` cannot see it either. **It surfaced the first time a browser-capable
- * server actually started — which is the entire argument for looking at a rendered page.**
- *
- * ⚠️ **And an adversarial review had already found this exact line and ranked it "fragile, not
- * broken".** It was broken. The reasoning offered — that `text-decoration: none` survives only
- * because `.confirmRowButton` declares no `text-decoration` — is about the CASCADE, and the real
- * fault is at COMPILE time, which never comes up if you are reasoning about specificity.
- *
- * Written out rather than composed. The duplication is four declarations and it cannot fail to
- * build; a comment on `.confirmRowButton` points here so the pair stays in step.
- */
-.confirmRowLink {
-  display: inline-flex;
-  min-height: var(--ward-tap);
-  align-items: center;
-  margin-top: var(--ward-space-8);
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  padding: 0 var(--ward-space-12);
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.confirmRowHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--ward-space-8);
-}
-
-.confirmRowLabel {
-  max-width: 26rem;
-  color: var(--ink);
-  font-size: var(--t-1);
-  font-weight: 500;
-}
-
-.confirmRowValue {
-  color: var(--ink);
-  font-size: var(--t-3);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.confirmRowMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ward-space-8);
-  margin-top: var(--ward-space-6);
-}
-
-/* ⚠️ `.confirmRowLink` above is a hand-copy of this box (see the comment there for why it is not
-   `composes`). Change one, change both — they are the button and anchor forms of one control. */
-.confirmRowButton {
-  display: inline-flex;
-  min-height: var(--ward-tap);
-  align-items: center;
-  margin-top: var(--ward-space-8);
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  padding: 0 var(--ward-space-12);
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 600;
-}
-
-.confirmAnswerRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ward-space-8);
-  margin-top: var(--ward-space-8);
-}
-
-.confirmAnswerInput {
-  flex: 1 1 14rem;
-  min-height: var(--ward-tap);
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  padding: 0 var(--ward-space-10);
-  color: var(--ink);
-  font-size: var(--t-0);
-}
-
-/* Owner Answer 18 (second round, 2026-09-17): the fixed-list replacement for the constraints
-   free-text box. A plain `border: 0` fieldset — the row it sits in already carries the visual
-   frame — laid out as a wrapping list of tap-target options rather than a grid, so it reflows at
-   phone width without a breakpoint. */
-.confirmConstraintsFieldset {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ward-space-4);
-  width: 100%;
-  margin: 0;
-  border: 0;
-  padding: 0;
-}
-
-.confirmConstraintOption {
-  display: flex;
-  min-height: var(--ward-tap);
-  align-items: center;
-  gap: var(--ward-space-8);
-  color: var(--ink);
-  font-size: var(--t-0);
-}
-
-.confirmSkipNote {
-  margin: var(--ward-space-8) 0 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
 }
 
 /*
@@ -1065,12 +817,6 @@
   display: grid;
   gap: var(--ward-space-10);
   margin: var(--ward-space-8) 0;
-}
-
-.suburbRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ward-space-8);
 }
 
 .suburbAnswer {
@@ -1250,14 +996,6 @@
   line-height: 1.5;
 }
 
-.boardLink {
-  min-height: 3rem;
-  margin: 0 0 0 0.5rem;
-  align-self: center;
-  color: var(--accent-ink);
-  font-size: var(--t-1);
-}
-
 .entryHero {
   order: 2;
   border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
@@ -1342,82 +1080,14 @@
   background: var(--warn-soft);
 }
 
-.answerNav {
-  display: flex;
-  min-height: 3rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  color: var(--muted);
-  background: var(--surface-2);
-  font-size: var(--t-1);
-}
-
-.answerNav a {
-  color: var(--accent-ink);
-  font-weight: 650;
-}
-
-.answerStepper {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.75rem 1rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink-soft);
-  font-size: var(--t-1);
-}
-
-.answerStepper strong {
-  font-family: var(--mono);
-}
-
-.answerStepper span {
-  grid-column: 1 / -1;
-  color: var(--muted);
-}
-
-.answerStepper button {
-  min-width: 5.25rem;
-  min-height: 3rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  color: var(--ink);
-  background: var(--surface);
-  font: inherit;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.answerStepper button:disabled {
-  color: var(--muted);
-  cursor: default;
-  opacity: 0.6;
-}
-
 .screen[data-presentation="answer"] .main > * {
   display: none;
 }
 
-.screen[data-presentation="answer"] .main > .answerNav,
 .screen[data-presentation="answer"] .main > .governanceBanner,
 .screen[data-presentation="answer"] .main > .screenName,
-.screen[data-presentation="answer"] .main > .answerOnlyPanel,
 .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
   display: block;
-}
-
-.screen[data-presentation="answer"] .main > .answerNav {
-  display: flex;
-}
-
-.screen[data-presentation="answer"] .answerNav {
-  display: flex;
-  order: 1;
 }
 
 .screen[data-presentation="answer"] .listSection[aria-label="Awaiting your answer"] {
@@ -1426,14 +1096,6 @@
 
 .screen[data-presentation="answer"] .governanceBanner {
   order: 5;
-}
-
-.screen[data-presentation="answer"] .answerOnlyPanel[data-answer-panel="capacity"] {
-  order: 3;
-}
-
-.screen[data-presentation="answer"] .answerOnlyPanel[data-answer-panel="history"] {
-  order: 4;
 }
 
 .screen[data-presentation="answer"] .cardList {
@@ -1445,7 +1107,6 @@
   font-size: var(--t-1);
 }
 
-.answerEligibilitySummary,
 .answerIdentityAbsence {
   margin: 0;
 }
@@ -1465,119 +1126,9 @@
   background: var(--danger-soft);
 }
 
-.answerEligibilitySummary {
-  color: var(--accent-ink);
-  font-size: var(--t-1);
-}
-
-.answerEligibilitySummary[data-eligible="false"] {
-  color: var(--danger);
-}
-
 .answerIdentityAbsence {
   color: var(--muted);
   font-size: var(--t-0);
-}
-
-.answerCapacityBody,
-.answerHistoryBody {
-  display: grid;
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.answerCapacityFacts {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  margin: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  overflow: hidden;
-}
-
-.answerCapacityFacts > div {
-  display: grid;
-  min-width: 0;
-  gap: 0.25rem;
-  border-inline-end: 1px solid var(--line);
-  padding: 0.75rem;
-}
-
-.answerCapacityFacts > div:last-child {
-  border-inline-end: 0;
-}
-
-.answerCapacityFacts dt,
-.answerCapacityFacts dd {
-  margin: 0;
-}
-
-.answerCapacityFacts dt {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 700;
-}
-
-.answerCapacityFacts dd {
-  color: var(--ink);
-  font-family: var(--mono);
-  font-size: var(--t-4);
-  font-weight: 750;
-}
-
-.answerCapacityFreshness {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.answerCapacityFreshness > div {
-  display: grid;
-  gap: 0.375rem;
-  border-inline-start: 0.25rem solid var(--accent);
-  background: var(--surface-2);
-  padding: 0.75rem;
-}
-
-.answerCapacityFreshness strong {
-  color: var(--ink);
-  font-size: var(--t-0);
-}
-
-.answerHistoryScope {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-}
-
-.answerHistoryList {
-  display: grid;
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.answerHistoryList li {
-  display: grid;
-  grid-template-columns: minmax(7rem, 0.8fr) minmax(6rem, 0.7fr) minmax(10rem, 1fr) auto;
-  align-items: center;
-  gap: 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 0.75rem;
-  color: var(--ink-soft);
-  font-size: var(--t-0);
-}
-
-.answerHistoryList li strong {
-  color: var(--ink);
-  font-family: var(--mono);
-}
-
-.answerHistoryList time {
-  color: var(--muted);
-  white-space: nowrap;
 }
 
 @media (min-width: 48.001rem) {
@@ -1714,58 +1265,6 @@
     grid-template-columns: 1fr;
   }
 
-  .boardLink {
-    margin: 0;
-    justify-self: start;
-  }
-
-  .answerNav {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .answerStepper {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .answerCapacityFacts,
-  .answerCapacityFreshness {
-    grid-template-columns: 1fr;
-  }
-
-  .screen[data-presentation="answer"] .answerCapacityBody .capacityRow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .screen[data-presentation="answer"] .answerCapacityBody .capacityInput,
-  .screen[data-presentation="answer"] .answerCapacityBody .capacitySubmit {
-    width: 100%;
-  }
-
-  .answerCapacityFacts > div {
-    border-inline-end: 0;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .answerCapacityFacts > div:last-child {
-    border-bottom: 0;
-  }
-
-  .answerHistoryList li {
-    grid-template-columns: 1fr;
-    gap: 0.25rem;
-  }
-
-  .answerHistoryList time {
-    white-space: normal;
-  }
-
-  .answerStepper strong {
-    grid-column: 1 / -1;
-    grid-row: 1;
-  }
-
   .answerFacts {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1842,22 +1341,19 @@
   margin: 0;
 }
 
-.unitFacts,
-.goingOutFacts {
+.unitFacts {
   display: grid;
   gap: 0.35rem;
   margin: 0.9rem 0 0;
 }
 
-.unitFacts > div,
-.goingOutFacts > div {
+.unitFacts > div {
   display: grid;
   grid-template-columns: 7rem minmax(0, 1fr);
   gap: 0.65rem;
 }
 
-.unitFacts dt,
-.goingOutFacts dt {
+.unitFacts dt {
   color: var(--muted);
   font-family: var(--mono);
   font-size: var(--t-0);
@@ -1866,8 +1362,7 @@
   text-transform: uppercase;
 }
 
-.unitFacts dd,
-.goingOutFacts dd {
+.unitFacts dd {
   margin: 0;
   color: var(--ink);
 }
@@ -1889,23 +1384,6 @@
   gap: 0.5rem;
 }
 
-.unitActionLinks .boardLink {
-  display: inline-flex;
-  min-height: 3rem;
-  align-items: center;
-  margin: 0;
-  padding: 0.45rem 0.8rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  background: var(--surface);
-  font-weight: 650;
-}
-
-.unitActionLinks .boardLink:first-child {
-  color: var(--on-accent);
-  background: var(--accent);
-}
-
 .entryHero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1920,28 +1398,11 @@
   gap: 1rem;
 }
 
-.heroFigureValue {
-  font-size: var(--t-6);
-}
-
-.heroCost {
-  max-width: none;
-}
-
-.heroAction {
-  flex-direction: row;
-}
-
 .heroCta {
   min-height: 3rem;
   flex-direction: row;
   padding: 0.45rem 0.8rem;
   white-space: normal;
-}
-
-.heroAvailability {
-  max-width: 13rem;
-  text-align: left;
 }
 
 .bedSection {
@@ -2005,69 +1466,13 @@
   border-right: 0;
 }
 
-.capacityDistribution {
-  display: flex;
-  height: 0.65rem;
-  margin-top: 0.65rem;
-  border-radius: var(--radius-pill, 9999px);
-  overflow: hidden;
-  background: var(--line);
-}
-
-.capacityDistribution > span {
-  min-width: 0;
-}
-
-.capacityDistribution > [data-state="available"] {
-  background: var(--good);
-}
-
-.capacityDistribution > [data-state="held"] {
-  background: var(--warn);
-}
-
-.capacityDistribution > [data-state="blocked"] {
-  background: var(--danger);
-}
-
-.capacityDistribution > [data-state="occupied"] {
-  background: var(--muted);
-}
-
 .bedNote {
   max-width: none;
   padding-bottom: 0.8rem;
 }
 
-.updateDisclosure {
-  margin-bottom: 1rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface-2);
-}
-
-.updateDisclosure > summary {
-  min-height: 3rem;
-  padding: 0.75rem 1rem;
-  color: var(--accent-ink);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.updateDisclosureBody {
-  padding: 0 1rem 1rem;
-  border-top: 1px solid var(--line);
-  background: var(--surface);
-}
-
-.attentionSection,
 .listSection[aria-label="Awaiting your answer"] {
   grid-column: auto;
-}
-
-.screen[data-presentation="overview"] .main > .attentionSection {
-  order: 4;
-  grid-column: 1;
 }
 
 .screen[data-presentation="overview"] .main > .listSection[aria-label="Awaiting your answer"] {
@@ -2075,18 +1480,9 @@
   grid-column: 2;
 }
 
-.dailyReturn {
-  order: 5;
-}
-
 .screen[data-presentation="overview"] .main > .listSection[aria-label="Coming in"] {
   order: 6;
   grid-column: 1;
-}
-
-.screen[data-presentation="overview"] .main > .goingOutSection {
-  order: 6;
-  grid-column: 2;
 }
 
 .attentionList {
@@ -2113,29 +1509,14 @@
   font-size: var(--t-1);
 }
 
-.goingOutFacts {
-  padding: 0 1rem;
-}
-
-.recordLink {
-  display: inline-flex;
-  min-height: 3rem;
-  align-items: center;
-  margin: 0.75rem 1rem 1rem;
-  color: var(--accent-ink);
-  font-weight: 650;
-}
-
 @media (max-width: 62.5rem) {
   .screen[data-presentation="overview"] .main {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .screen[data-presentation="overview"] .main > *,
-  .screen[data-presentation="overview"] .main > .attentionSection,
   .screen[data-presentation="overview"] .main > .listSection[aria-label="Awaiting your answer"],
-  .screen[data-presentation="overview"] .main > .listSection[aria-label="Coming in"],
-  .screen[data-presentation="overview"] .main > .goingOutSection {
+  .screen[data-presentation="overview"] .main > .listSection[aria-label="Coming in"] {
     grid-column: 1;
   }
 
@@ -2151,8 +1532,7 @@
     padding-bottom: 0.75rem;
   }
 
-  .unitActionLinks,
-  .heroAction {
+  .unitActionLinks {
     justify-content: flex-start;
   }
 
@@ -2165,8 +1545,7 @@
     border-bottom: 1px solid var(--line);
   }
 
-  .unitFacts > div,
-  .goingOutFacts > div {
+  .unitFacts > div {
     grid-template-columns: 6.5rem minmax(0, 1fr);
   }
 }
@@ -2176,18 +1555,13 @@
     padding: 1rem;
   }
 
-  .entryHeroFigures,
-  .heroAction {
+  .entryHeroFigures {
     align-items: flex-start;
     flex-direction: column;
   }
 
   .unitActionLinks {
     flex-direction: column;
-  }
-
-  .unitActionLinks .boardLink {
-    width: 100%;
   }
 }
 
@@ -2199,33 +1573,21 @@
   .screen[data-presentation="overview"] .main > * {
     margin-bottom: 0.75rem;
   }
-
-  .updateDisclosure > summary {
-    display: none;
-  }
-
-  .updateDisclosure:not([open]) > .updateDisclosureBody,
-  .updateDisclosureBody {
-    display: block;
-  }
 }
 
 /* Q003: paired overview panels share a desktop height and scroll within their own labelled
  * regions. Ward Answer uses one large decision workspace followed by two equally high evidence
  * panels; navigation, panel headings and answer-step controls stay outside those scrolling bodies. */
 @media (min-width: 62.5625rem) {
-  .screen[data-presentation="overview"] .bedSection,
-  .screen[data-presentation="overview"] .dailyReturn {
+  .screen[data-presentation="overview"] .bedSection {
     max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
   }
 
-  .screen[data-presentation="overview"] .attentionSection,
   .screen[data-presentation="overview"] .listSection[aria-label="Awaiting your answer"],
-  .screen[data-presentation="overview"] .listSection[aria-label="Coming in"],
-  .screen[data-presentation="overview"] .goingOutSection {
+  .screen[data-presentation="overview"] .listSection[aria-label="Coming in"] {
     height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
     min-height: 0;
     overflow-y: auto;
@@ -2233,8 +1595,7 @@
     scrollbar-gutter: stable;
   }
 
-  .screen[data-presentation="overview"] .sectionHeading,
-  .screen[data-presentation="overview"] .dailyReturn :global([data-ward-primitive="panel-header"]) {
+  .screen[data-presentation="overview"] .sectionHeading {
     position: sticky;
     z-index: 1;
     top: 0;
@@ -2249,7 +1610,6 @@
     align-items: start;
   }
 
-  .screen[data-presentation="answer"] .main > .answerNav,
   .screen[data-presentation="answer"] .main > .governanceBanner,
   .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
     grid-column: 1 / -1;
@@ -2263,8 +1623,7 @@
     overflow: hidden;
   }
 
-  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] > .sectionHeading,
-  .screen[data-presentation="answer"] .answerStepper {
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] > .sectionHeading {
     flex: none;
   }
 
@@ -2275,80 +1634,33 @@
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
   }
-
-  .screen[data-presentation="answer"] .main > .answerOnlyPanel {
-    display: flex;
-    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
-    min-height: 0;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .screen[data-presentation="answer"] .main > .answerOnlyPanel > .sectionHeading {
-    flex: none;
-  }
-
-  .screen[data-presentation="answer"] .answerCapacityBody,
-  .screen[data-presentation="answer"] .answerHistoryBody {
-    min-height: 0;
-    flex: 1;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-  }
 }
 
 @media print {
   .screen[data-presentation="overview"] .bedSection,
-  .screen[data-presentation="overview"] .dailyReturn,
-  .screen[data-presentation="overview"] .attentionSection,
   .screen[data-presentation="overview"] .listSection[aria-label="Awaiting your answer"],
   .screen[data-presentation="overview"] .listSection[aria-label="Coming in"],
-  .screen[data-presentation="overview"] .goingOutSection,
-  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"],
-  .screen[data-presentation="answer"] .main > .answerOnlyPanel {
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
     height: auto;
     max-height: none;
     overflow: visible;
   }
 
   .screen[data-presentation="answer"] .main,
-  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"],
-  .screen[data-presentation="answer"] .main > .answerOnlyPanel {
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
     display: block;
   }
 
-  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] > .cardList,
-  .screen[data-presentation="answer"] .answerCapacityBody,
-  .screen[data-presentation="answer"] .answerHistoryBody {
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] > .cardList {
     overflow: visible;
   }
 }
 /* Q004: short operational lists occupy their content height; long bodies remain bounded. */
 @media screen and (min-width: 62.5625rem) {
-  .screen[data-presentation="overview"] .attentionSection,
   .screen[data-presentation="overview"] .listSection[aria-label="Awaiting your answer"],
-  .screen[data-presentation="overview"] .listSection[aria-label="Coming in"],
-  .screen[data-presentation="overview"] .goingOutSection {
+  .screen[data-presentation="overview"] .listSection[aria-label="Coming in"] {
     height: auto;
     max-height: 26rem;
-  }
-  .screen[data-presentation="overview"] .main > .dailyReturn {
-    grid-column: 1;
-    order: 5;
-    max-height: 20rem;
-  }
-  .screen[data-presentation="overview"] .main > .dailyReturn > :global([data-ward-primitive="panel"]) {
-    overflow: visible;
-  }
-  .screen[data-presentation="overview"]
-    .main
-    > .dailyReturn
-    > :global([data-ward-primitive="panel"])
-    > :global([data-ward-primitive="panel-header"]) {
-    position: sticky;
-    z-index: 1;
-    top: 0;
   }
   .screen[data-presentation="overview"] .main > [data-testid="ward-handover-block"] {
     grid-column: 2;
@@ -2365,16 +1677,9 @@
     height: auto;
     min-height: 8rem;
   }
-  .screen[data-presentation="answer"] .main > .answerOnlyPanel {
-    height: auto;
-    max-height: 28rem;
-  }
   .screen[data-presentation="answer"] .answerGates ul {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
-.confirmRows {
-  gap: 0;
 }
 .confirmRow {
   padding: 0.8rem 1rem;
@@ -2384,43 +1689,14 @@
 .confirmRow:last-child {
   border-bottom: 0;
 }
-.confirmRowLabel,
-.confirmRowValue {
-  color: var(--ink);
-}
-.confirmRowMeta {
-  gap: 0.4rem;
-  font-size: var(--t-0);
-}
-.confirmRowButton,
-.confirmRowLink {
-  color: var(--ink);
-  border-color: var(--line-strong);
-  font-size: var(--t-1);
-}
-.confirmRowButton:focus-visible,
-.confirmRowLink:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-}
 .screen[data-presentation="overview"] .unitActionLinks {
   gap: 0.5rem;
-}
-.screen[data-presentation="overview"] .unitActionLinks .boardLink {
-  margin: 0;
-}
-.screen[data-presentation="overview"] .main > [data-testid="ward-handover-block"] .confirmRowButton {
-  margin: 0 1rem 1rem;
 }
 @media screen and (max-width: 62.5rem) {
   .screen[data-presentation="overview"] .main > [data-testid="ward-handover-block"] {
     order: 5;
   }
-  .screen[data-presentation="overview"] .main > .dailyReturn {
-    order: 6;
-  }
-  .screen[data-presentation="overview"] .main > .listSection[aria-label="Coming in"],
-  .screen[data-presentation="overview"] .main > .goingOutSection {
+  .screen[data-presentation="overview"] .main > .listSection[aria-label="Coming in"] {
     order: 7;
   }
 }
@@ -2445,8 +1721,8 @@
     inset 0 0 0 0.5px color-mix(in oklab, var(--ink) 5%, transparent),
     0 1px 1px color-mix(in srgb, var(--ink) 4%, transparent),
     0 22px 48px -30px color-mix(in srgb, var(--ink) 42%, transparent);
-  backdrop-filter: blur(22px) saturate(1.35);
   -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  backdrop-filter: blur(22px) saturate(1.35);
 }
 
 @media (max-width: 40rem) {
@@ -2539,8 +1815,8 @@
     inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
     inset 3px 0 0 var(--warn),
     0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
-  backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
 }
 
 .noticeRow[data-tone="warning"] {
@@ -2564,77 +1840,10 @@
     0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
 }
 
-.noticeClock {
-  flex: none;
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-}
-
-.noticeCopy {
-  margin: 0;
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 13px;
-  line-height: 1.35;
-  color: var(--ink-soft);
-}
-
-.noticeCopy strong {
-  color: var(--ink);
-  font-weight: 700;
-}
-
 @media (max-width: 40rem) {
   .noticeRow {
     flex-wrap: wrap;
   }
-}
-
-.topIdentityBanner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  width: 100%;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--line);
-}
-
-.topIdentityLeft {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.topIdentityBanner .sectionHeading {
-  font-size: var(--t-0);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--accent);
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-  border-radius: 0;
-  border: 0;
-  margin: 0;
-}
-
-.topIdentityBanner .unitName {
-  margin: 0;
-  font-size: var(--t-4);
-  font-weight: 650;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
-}
-
-.topIdentityBanner .unitMeta {
-  font-size: var(--t-1);
 }
 
 .actionBar {
@@ -2840,13 +2049,6 @@
   outline-offset: 2px;
 }
 
-.glanceStrip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-  align-items: stretch;
-}
-
 .glanceCard {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -2918,45 +2120,6 @@
 
 .glanceCard .heroCta span {
   color: inherit !important;
-}
-
-.glanceTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.glanceLbl {
-  font-size: var(--t-0, 12px);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
-
-.glanceVal {
-  font-family: var(--mono, monospace);
-  font-size: var(--t-4, 16px);
-  font-weight: 700;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.glanceVal small {
-  font-size: var(--t-0, 12px);
-  font-weight: 500;
-  color: var(--muted);
-}
-
-.glanceSub {
-  font-size: var(--t-0, 12px);
-  color: var(--ink-soft);
-  min-width: 0;
-  white-space: normal;
-  overflow-wrap: anywhere;
 }
 
 .statusPillBadge {
@@ -3093,79 +2256,6 @@
   display: none !important;
 }
 
-/* ─── Interactive Bed Board Matrix ──────────────────────────── */
-.matrixControls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  background: var(--glass-fill, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
-  border-radius: 0.75rem;
-  box-shadow:
-    var(--lift),
-    inset 0 1px 0 var(--hl);
-  padding: 8px 12px;
-}
-
-.podFilters {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.podFilterBtn {
-  min-height: var(--ward-tap, 48px);
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 14px;
-  border-radius: var(--pill, 9999px);
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  font-size: var(--t-1, 13px);
-  font-weight: 500;
-  color: var(--ink-soft);
-  cursor: pointer;
-  transition: all 0.12s;
-}
-
-.podFilterBtn:hover {
-  background: var(--sunk);
-  color: var(--ink);
-}
-
-.podFilterBtn[aria-pressed="true"] {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border-color: var(--accent);
-  font-weight: 600;
-}
-
-.podSection {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.podTitleBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 4px;
-}
-
-.podTitle {
-  font-family: var(--display, sans-serif);
-  font-size: var(--t-2, 13.5px);
-  font-weight: 700;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .bedMatrixGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -3299,29 +2389,6 @@
   align-items: center;
   gap: 5px;
   flex-wrap: wrap;
-}
-
-.tagChip {
-  font-size: var(--t-0);
-  font-family: var(--mono);
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  color: var(--ink-soft);
-  border: 1px solid var(--line);
-}
-
-.tagChip.special {
-  background: var(--warn-soft);
-  color: var(--warn);
-  font-weight: 700;
-  border-color: var(--warn);
-}
-
-.tagChip.legal {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  font-weight: 600;
 }
 
 /* ─── Telemetry Drawer & Scrim ───────────────────────────────── */
@@ -3512,7 +2579,9 @@
   z-index: 120;
   transform: translateY(120%);
   opacity: 0;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
   display: flex;
   align-items: center;
@@ -3588,51 +2657,6 @@
   overflow: hidden;
 }
 
-/* ─── Tab 1: Worth Your Attention ────────────────────────────── */
-.attnGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 16px;
-  align-items: stretch;
-  min-height: 0;
-}
-
-@media (min-width: 1025px) {
-  .attnGrid > .listSection,
-  .attnGrid > .cardPanel {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    height: auto;
-    overflow: visible;
-  }
-
-  .attnGrid > .listSection > .sectionHeading,
-  .attnGrid > .cardPanel > .panelHead {
-    flex: 0 0 auto;
-  }
-
-  .attnGrid > .listSection > .cardList,
-  .attnGrid > .cardPanel > .panelBody {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: visible;
-  }
-}
-
-@media (max-width: 1024px) {
-  .attnGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .attnGrid > .listSection,
-  .attnGrid > .cardPanel {
-    height: auto;
-    max-height: 34rem;
-    overflow: hidden;
-  }
-}
-
 .queueCard {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -3659,13 +2683,6 @@
   flex-wrap: wrap;
 }
 
-.queueRefId {
-  font-family: var(--mono, monospace);
-  font-size: var(--t-2, 13.5px);
-  font-weight: 700;
-  color: var(--ink);
-}
-
 .queueWait {
   font-family: var(--mono, monospace);
   font-size: var(--t-1, 13px);
@@ -3682,38 +2699,6 @@
 
 .queueWait.warn {
   color: var(--warn);
-}
-
-.queuePatientInfo {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: var(--t-1, 13px);
-  color: var(--ink-soft);
-  flex-wrap: wrap;
-}
-
-.queuePatientInfo b {
-  color: var(--ink);
-  font-size: var(--t-2, 13.5px);
-}
-
-.queueSummary {
-  font-size: var(--t-1, 13px);
-  color: var(--ink-soft);
-  line-height: 1.4;
-  background: var(--surface-2);
-  padding: 8px 10px;
-  border-radius: var(--r2, 6px);
-  border: 1px solid var(--line);
-}
-
-.queueActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  flex-wrap: wrap;
 }
 
 .btnSmPrimary {
@@ -3834,13 +2819,6 @@
   margin: 0;
 }
 
-/* ─── Tab 2: Coming In (Inbound Intake) ───────────────────────── */
-.inboundGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .inboundCard {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -3859,38 +2837,6 @@
 .inboundCard:hover {
   border-color: var(--line-strong);
   box-shadow: var(--lift);
-}
-
-.inboundTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 8px;
-  gap: 8px;
-}
-
-.inboundAlias {
-  font-family: var(--mono, monospace);
-  font-size: var(--t-3, 14px);
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.inboundMetaGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 8px 14px;
-  font-size: var(--t-1, 13px);
-}
-
-.inboundCardActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-  flex-wrap: wrap;
 }
 
 .metaItem {
@@ -3912,213 +2858,11 @@
   color: var(--ink);
 }
 
-.transitBox {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--t-1, 13px);
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.transitEta {
-  font-family: var(--mono, monospace);
-  font-weight: 700;
-  color: var(--good);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ─── Tab 3: On the Way Out (Discharges & Leave) ──────────────── */
-.egressSection {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.egressSectionTitle {
-  font-size: var(--t-1, 13px);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  margin: 0 0 2px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.dischargeRow {
-  display: grid;
-  grid-template-columns: 7.5rem 1.2fr 1fr 1fr auto;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 14px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--good);
-  border-radius: var(--r2, 6px);
-  transition: background 0.12s;
-  box-shadow: var(--lift-sm);
-}
-
-.dischargeRow:hover {
-  background: var(--sunk);
-}
-
-@media (max-width: 900px) {
-  .dischargeRow {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-}
-
-.leaveCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--warn);
-  border-radius: var(--r2, 6px);
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  box-shadow: var(--lift-sm);
-}
-
-.curfewBox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--mono, monospace);
-  font-size: var(--t-1, 13px);
-  background: var(--surface-2);
-  padding: 4px 8px;
-  border-radius: var(--r2, 6px);
-  border: 1px solid var(--line);
-  font-variant-numeric: tabular-nums;
-}
-
-.curfewTime {
-  font-weight: 700;
-  color: var(--warn);
-}
-
-.barrierCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--danger);
-  border-radius: var(--r2, 6px);
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  box-shadow: var(--lift-sm);
-}
-
-/* ─── Tab 5: Today's Return & Shift Log ───────────────────────── */
-.returnCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  box-shadow: var(--lift);
-  overflow: hidden;
-}
-
-.returnQuestionRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--line);
-  gap: 16px;
-  transition: background 0.12s;
-  flex-wrap: wrap;
-}
-
-.returnQuestionRow:hover {
-  background: var(--sunk);
-}
-
 .returnQuestionText {
   display: flex;
   flex-direction: column;
   gap: 2px;
   flex: 1 1 20rem;
-}
-
-.returnQTitle {
-  font-weight: 600;
-  font-size: var(--t-2, 13.5px);
-  color: var(--ink);
-}
-
-.returnQDesc {
-  font-size: var(--t-1, 13px);
-  color: var(--ink-soft);
-}
-
-.returnVerifyChip {
-  font-family: var(--mono, monospace);
-  font-size: var(--t-0, 12px);
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: var(--pill, 9999px);
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  border: 1px solid var(--line);
-  min-height: var(--ward-tap, 48px);
-}
-
-.returnVerifyChip.verified {
-  background: var(--good-soft);
-  color: var(--good);
-  border: 1px solid var(--good);
-}
-
-.returnVerifyChip.isPending {
-  background: var(--warn-soft);
-  color: var(--warn);
-  border: 1px solid var(--warn);
-}
-
-.ledgerFeed {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  background: var(--line);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  overflow: hidden;
-}
-
-.ledgerRow {
-  background: var(--surface);
-  padding: 10px 14px;
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  font-size: var(--t-1, 13px);
-}
-
-.ledgerTime {
-  font-family: var(--mono, monospace);
-  font-size: var(--t-0, 12px);
-  font-weight: 600;
-  color: var(--muted);
-  min-width: 4rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .ledgerText {
@@ -4130,23 +2874,8 @@
   color: var(--accent-ink);
 }
 
-.dotSvc {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  background: var(--svc-south);
-}
-
 .drawer.wide {
   width: min(94vw, 38rem);
-}
-
-.dischargeContinuityGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-  gap: 16px;
-  margin-top: 1rem;
 }
 
 .bedBoardQuickBar {
@@ -4163,119 +2892,8 @@
   box-shadow: var(--lift);
 }
 
-.quickBarStats {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 14px;
-}
-
-.quickBarPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-
-.quickBarPill strong {
-  color: var(--ink);
-  font-family: var(--mono, monospace);
-  font-variant-numeric: tabular-nums;
-}
-
-.quickBarRoster {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.quickBarRoster strong {
-  color: var(--accent);
-}
-
-.statusDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
 .occupiedDot {
   background: var(--ink-soft);
-}
-
-.readyDot {
-  background: var(--good);
-}
-
-.cleaningDot {
-  background: var(--accent);
-}
-
-.speciallingDot {
-  background: var(--warn);
-}
-
-.hduDot {
-  background: var(--danger);
-}
-
-.huddleBriefingCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  padding: 12px 18px;
-  margin-top: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  box-shadow: var(--lift);
-}
-
-.huddleBriefingLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.huddleBriefingRight {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-
-.huddleBadge {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  padding: 3px 8px;
-  border-radius: var(--pill, 9999px);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent);
-}
-
-.auditDisclosure {
-  margin-top: 1rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  padding: 12px 16px;
-}
-
-.auditDisclosure summary {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-  cursor: pointer;
-  user-select: none;
-}
-
-.auditDisclosure[open] summary {
-  margin-bottom: 12px;
 }
 
 /* ─── Suburb Catchment Lookup Overhaul ────────────────────── */
@@ -4458,106 +3076,6 @@
   gap: 8px;
 }
 
-/* ─── Discharges Sub-Tab Navigation ──────────────────────── */
-.dischargeSubNav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border-bottom: 1px solid var(--line);
-  padding: 0 0 10px 0;
-  margin-bottom: 16px;
-  overflow-x: auto;
-}
-
-.dischargeSubTabBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 15px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--pill, 9999px);
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  min-height: 38px;
-  transition: all 0.12s ease;
-  white-space: nowrap;
-}
-
-.dischargeSubTabBtn:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-  border-color: var(--line-strong);
-}
-
-.dischargeSubTabBtn[data-active="true"] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 600;
-}
-
-.dischargeSubTabBadge {
-  font-size: 12px;
-  font-family: var(--mono, monospace);
-  padding: 1px 6px;
-  border-radius: var(--pill, 9999px);
-  background: var(--surface-3);
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.dischargeSubTabBtn[data-active="true"] .dischargeSubTabBadge {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-/* ─── Clinical Readiness Checklist ───────────────────────── */
-.checklistCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
-  padding: 16px 20px;
-  box-shadow: var(--lift);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 1rem;
-}
-
-.checklistGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px;
-}
-
-.checklistItem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  font-size: 12.5px;
-  color: var(--ink);
-}
-
-.checklistCheck {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  background: var(--good-soft);
-  border: 1px solid var(--good);
-  color: var(--good);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
 .visuallyHidden {
   position: absolute !important;
   width: 1px !important;
@@ -4568,144 +3086,6 @@
   clip: rect(0, 0, 0, 0) !important;
   white-space: nowrap !important;
   border: 0 !important;
-}
-
-/* 09:30 Morning Bed Rollup Deadline & Notification Center */
-.morningRollupOverdueBanner {
-  margin: 10px 0 6px;
-  padding: 10px 16px;
-  background: var(--warn-soft);
-  border: 1px solid var(--warn-border);
-  border-radius: var(--r1, 8px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
-}
-
-.morningRollupBannerContent {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1 1 auto;
-}
-
-.morningRollupBannerIcon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--r2, 6px);
-  background: var(--warn-soft);
-  color: var(--warn);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.morningRollupBannerText {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  color: var(--ink);
-}
-
-.morningRollupPill {
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: var(--warn);
-  color: var(--text-inverse);
-  padding: 2px 7px;
-  border-radius: var(--pill, 999px);
-  font-family: var(--mono);
-}
-
-.morningRollupDesc {
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
-.morningRollupBannerText strong {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-}
-
-.morningRollupBannerActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.btnConfirmMorningRollup {
-  background: var(--warn);
-  color: var(--text-inverse);
-  min-height: 34px;
-  padding: 0 14px;
-  font-weight: 600;
-  font-size: 12px;
-  border-radius: 0.4rem;
-  border: 1px solid var(--warn-border);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 35%, transparent);
-  transition: filter 0.14s cubic-bezier(0.23, 1, 0.32, 1);
-  white-space: nowrap;
-}
-
-.btnConfirmMorningRollup:hover {
-  filter: brightness(0.94);
-}
-
-.btnConfirmMorningRollup:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.morningRollupConfirmedBanner {
-  margin: 0.75rem 0;
-  padding: 0.75rem 1.25rem;
-  background: var(--ward-success-soft, var(--good-soft));
-  border: 1px solid var(--ward-success, var(--line));
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 1.25rem;
-  font-size: var(--t-1, 13px);
-  color: var(--ink);
-  box-shadow: var(--lift);
-  flex-wrap: wrap;
-}
-
-.morningRollupConfirmedText {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 0 1 auto;
-}
-
-.morningRollupCheckIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--good);
-  color: var(--surface);
-  font-size: 12px;
-  font-weight: bold;
-  flex-shrink: 0;
 }
 
 .notificationTriggerWrap {
@@ -4769,20 +3149,6 @@
    Tokens only · Anti-cheap-look · Hairline borders · Responsive · Zero raw hex
    ═══════════════════════════════════════════════════════════════════════ */
 
-.censusCommandCard {
-  background: color-mix(in oklab, var(--surface) 72%, transparent);
-  border: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
-  border-radius: 0.75rem;
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 90%, transparent),
-    0 16px 36px -26px color-mix(in srgb, var(--ink) 40%, transparent);
-  backdrop-filter: blur(18px) saturate(1.2);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-
 .commandHeader {
   background: color-mix(in oklab, var(--surface) 28%, transparent);
   border-bottom: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
@@ -4815,213 +3181,6 @@
   color: var(--muted);
 }
 
-.returnStatusChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: var(--pill, 9999px);
-  background: var(--surface-3);
-  color: var(--ink-soft);
-  font-size: var(--t-0, 12px);
-  font-weight: 600;
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  border: 1px solid var(--line);
-}
-
-.returnStatusChipConfirmed {
-  background: var(--good-soft);
-  color: var(--good);
-  border-color: var(--good);
-}
-
-.affirmationBanner {
-  background: var(--good-soft);
-  border-bottom: 1px solid var(--line);
-  padding: 12px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.affirmationLeft {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.affirmationIcon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--good-soft);
-  border: 1px solid var(--good);
-  color: var(--good);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.affirmationText {
-  font-size: var(--t-1, 13px);
-  color: var(--ink);
-}
-
-.affirmationText strong {
-  color: var(--good);
-}
-
-.btnMasterAffirm {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  min-height: var(--ward-tap, 48px);
-  border-radius: var(--r2, 6px);
-  background: var(--good);
-  color: var(--surface);
-  border: 1px solid var(--good);
-  font-size: var(--t-1, 13px);
-  font-weight: 600;
-  cursor: pointer;
-  transition: filter 0.12s ease;
-}
-
-.btnMasterAffirm:hover {
-  filter: brightness(1.08);
-}
-
-.btnMasterAffirm[data-confirmed="true"] {
-  background: var(--surface-3);
-  border-color: var(--line-strong);
-  color: var(--ink-soft);
-}
-
-.censusStepperGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  background: var(--line);
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.censusBox {
-  background: var(--surface);
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.censusBoxHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.censusBoxLabel {
-  font-size: var(--t-2, 14px);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
-.censusBoxDesc {
-  font-size: var(--t-0, 12px);
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-.censusValueRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.stepperUnit {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 4px;
-}
-
-.stepperBtn {
-  width: 38px;
-  height: 38px;
-  min-height: 38px;
-  border-radius: 4px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 700;
-  font-family: var(--mono);
-  transition: background 0.12s ease;
-}
-
-.stepperBtn:hover {
-  background: var(--surface-3);
-}
-
-.stepperDisplay {
-  min-width: 44px;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-}
-
-.censusBoxFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: var(--t-0, 0.75rem);
-  color: var(--muted);
-  border-top: 1px solid var(--line);
-  padding-top: 8px;
-  flex-wrap: wrap;
-}
-
-.btnInlineConfirm {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 14px;
-  min-height: var(--ward-tap, 48px);
-  border-radius: var(--r2, 6px);
-  border: 1px solid var(--line-strong);
-  background: var(--surface-2);
-  color: var(--ink);
-  font-size: var(--t-1, 13px);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.12s ease;
-}
-
-.btnInlineConfirm:hover {
-  background: var(--surface-3);
-}
-
 .capacitySection {
   padding: 16px 18px;
   background: var(--surface);
@@ -5052,41 +3211,6 @@
   color: var(--ink);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-}
-
-.capacityTrack {
-  display: flex;
-  height: 12px;
-  border-radius: var(--pill, 9999px);
-  overflow: hidden;
-  background: var(--sunk);
-  gap: 1px;
-}
-
-.capSeg {
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.capSeg[data-state="available"] {
-  background: var(--good);
-}
-
-.capSeg[data-state="held"],
-.capSeg[data-state="closed"] {
-  background: var(--accent);
-}
-
-.capSeg[data-state="pulled"] {
-  background: var(--warn);
-}
-
-.capSeg[data-state="blocked"] {
-  background: var(--danger);
-}
-
-.capSeg[data-state="occupied"] {
-  background: var(--ink-soft);
 }
 
 .breakdownStatsGrid {
@@ -5167,181 +3291,6 @@
   line-height: var(--ward-leading-body, 1.45);
 }
 
-.constraintsCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
-  padding: 16px 18px;
-  box-shadow: var(--lift);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: var(--ward-space-16, 1rem);
-}
-
-.constraintsHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.constraintsTitle {
-  font-size: var(--t-2, 14px);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.constraintsPillsGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.constraintChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 14px;
-  min-height: var(--ward-tap, 48px);
-  border-radius: var(--pill, 9999px);
-  border: 1px solid var(--line-strong);
-  background: var(--surface-2);
-  color: var(--ink);
-  font-size: var(--t-1, 13px);
-  font-weight: 500;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.12s ease;
-}
-
-.constraintChip:hover {
-  background: var(--surface-3);
-  border-color: var(--ink-soft);
-}
-
-.constraintChip[data-active="true"] {
-  background: transparent;
-  border-color: var(--warn);
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.constraintsFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-top: 1px solid var(--line);
-  padding-top: 10px;
-  font-size: var(--t-0, 12px);
-  color: var(--muted);
-  flex-wrap: wrap;
-}
-
-.pipelineSection {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: var(--ward-space-16, 1rem);
-}
-
-.pipelineHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.pipelineTitle {
-  font-size: var(--t-3, 15px);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.pipelineGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.pipelineColumn {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--lift);
-  overflow: hidden;
-}
-
-.pipelineColHeader {
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.pipelineColTitle {
-  font-size: var(--t-1, 13px);
-  font-weight: 700;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.colCountPill {
-  font-size: var(--t-0, 0.75rem);
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  padding: 1px 7px;
-  border-radius: var(--pill, 9999px);
-  background: var(--surface-3);
-  color: var(--ink-soft);
-}
-
-.pipelineColBody {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 180px;
-}
-
-.pipelineCard {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: all 0.12s ease;
-}
-
-.pipelineCard:hover {
-  border-color: var(--line-strong);
-  box-shadow: var(--lift);
-}
-
-.pipelineCard[data-blocked="true"] {
-  border-left: 3px solid var(--danger);
-}
-
 .cardTopRow {
   display: flex;
   align-items: baseline;
@@ -5408,188 +3357,6 @@
   flex-wrap: wrap;
 }
 
-.btnCardAction {
-  flex: 1 1 80px;
-  min-height: var(--ward-tap, 48px);
-  padding: 6px 12px;
-  border-radius: var(--r2, 6px);
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--t-0, 12px);
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.12s ease;
-}
-
-.btnCardAction:hover {
-  background: var(--surface-3);
-  border-color: var(--ink-soft);
-}
-
-.btnCardActionPrimary {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
-}
-
-.btnCardActionPrimary:hover {
-  filter: brightness(1.08);
-}
-
-.btnCardActionSuccess {
-  background: var(--good);
-  color: var(--surface);
-  border-color: var(--good);
-}
-
-.btnCardActionSuccess:hover {
-  filter: brightness(1.08);
-}
-
-.pipelineEmptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--muted);
-  text-align: center;
-  padding: 24px 12px;
-  font-size: var(--t-0, 12px);
-  font-style: italic;
-}
-
-.leaveSectionCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  padding: 16px 18px;
-  box-shadow: var(--lift);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: var(--ward-space-16, 1rem);
-}
-
-.leaveHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.leaveStatutoryAlert {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--warn);
-  border-radius: var(--r2, 6px);
-  padding: 10px 14px;
-  font-size: var(--t-0, 12px);
-  color: var(--ink);
-}
-
-.leaveStatutoryAlert strong {
-  color: var(--warn);
-}
-
-.leaveCardsList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.leaveItemCard {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.leaveItemInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.leaveItemTitle {
-  font-size: var(--t-1, 13px);
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.leaveItemMeta {
-  font-size: var(--t-0, 12px);
-  color: var(--muted);
-}
-
-.ledgerCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  padding: 16px 18px;
-  box-shadow: var(--lift);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: var(--ward-space-16, 1rem);
-}
-
-.ledgerHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 10px;
-}
-
-.ledgerTitle {
-  font-size: var(--t-2, 14px);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ledgerFeed {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.ledgerRow {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  font-size: var(--t-0, 12px);
-  padding: 4px 0;
-  border-bottom: 1px dashed var(--line);
-}
-
-.ledgerRow:last-child {
-  border-bottom: none;
-}
-
-.ledgerTime {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  color: var(--muted);
-  min-width: 44px;
-}
-
 .ledgerText {
   color: var(--ink);
   flex: 1;
@@ -5599,298 +3366,22 @@
   color: var(--accent-ink);
 }
 
-.protoBanner {
-  text-align: center;
-  font-size: var(--t-0, 0.75rem);
-  color: var(--muted);
-  padding: 2px 0 0;
-  border: 0;
-  margin: 0;
-  background: transparent;
-}
-
 @media (max-width: 1080px) {
   .breakdownStatsGrid {
     grid-template-columns: repeat(4, 1fr);
   }
-  .pipelineGrid {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 768px) {
-  .censusStepperGrid {
-    grid-template-columns: 1fr;
-  }
   .breakdownStatsGrid {
     grid-template-columns: repeat(2, 1fr);
   }
-}
-
-@media (forced-colors: active) {
-  .censusCommandCard,
-  .constraintsCard,
-  .pipelineColumn,
-  .leaveSectionCard,
-  .ledgerCard,
-  .protoBanner {
-    border: 1px solid CanvasText;
-  }
-
-  .btnMasterAffirm,
-  .btnInlineConfirm,
-  .btnCardAction {
-    border: 1px solid Highlight;
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────
-   WARD DAILY SHEET BUTTON & MODAL
-   ───────────────────────────────────────────────────────────── */
-.btnDailySheet {
-  min-height: 2.125rem;
-  padding: 5px 14px;
-  border-radius: 0.4rem;
-  background: var(--ink);
-  color: var(--text-inverse);
-  border: 1px solid var(--ink);
-  font-size: var(--t-1, 13px);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  transition:
-    opacity 0.14s cubic-bezier(0.23, 1, 0.32, 1),
-    box-shadow 0.14s cubic-bezier(0.23, 1, 0.32, 1),
-    transform 0.14s cubic-bezier(0.23, 1, 0.32, 1);
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 28%, transparent);
-  white-space: nowrap;
-}
-
-.btnDailySheet:hover {
-  background: var(--ink);
-  opacity: 0.9;
-  color: var(--text-inverse);
-  transform: translateY(-1px);
-  box-shadow:
-    var(--lift),
-    inset 0 1px 0 var(--hl-on-accent);
-}
-
-.btnDailySheet:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-:global([data-theme="dark"]) .btnDailySheet {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--text-inverse);
-}
-
-.dailySheetModalContent {
-  background: var(--surface);
-  border: 1px solid var(--line-strong, var(--line));
-  border-radius: var(--r1, 10px);
-  box-shadow: var(--lift-lg, var(--lift));
-  width: 100%;
-  max-width: 1280px;
-  max-height: 92vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.dailySheetModalHeader {
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-}
-
-.dailySheetModalTitle {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
-.dailySheetModalSub {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 2px 0 0;
-}
-
-.dailySheetModalActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.dailySheetModalBody {
-  padding: 20px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   ENHANCED PATIENT DOSSIER DRAWER (IMAGE 2 + IMAGE 3 FUSED)
-   ───────────────────────────────────────────────────────────── */
-.dossierHeroCard {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.heroStayRow {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.heroStayDays {
-  font-size: 26px;
-  font-weight: 800;
-  font-family: var(--mono);
-  color: var(--ink);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.heroStayUnit {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--ink-soft);
-}
-
-.heroStayBadge {
-  margin-left: auto;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  padding: 2px 8px;
-  border-radius: var(--pill, 999px);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.dossierPatientName {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
-.dossierChipsWrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.dossierChip {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--pill, 999px);
-  padding: 2px 8px;
-  font-size: var(--wf-fs-12);
-  font-weight: 500;
-  color: var(--ink-soft);
-}
-
-.dossierBarrierAlert {
-  background: var(--warn-soft);
-  border: 1px solid var(--warn-border);
-  color: var(--warn);
-  border-radius: var(--r2, 6px);
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .factGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 14px;
-}
-
-.factItem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.factDt {
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-}
-
-.factDd {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.dossierActionCard {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.dossierActionLabel {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--ink);
-}
-
-.dossierSelect {
-  width: 100%;
-  padding: 6px 10px;
-  border-radius: var(--r2, 6px);
-  border: 1px solid var(--line-strong, var(--line));
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13px;
-}
-
-.btnRecordLeft {
-  width: 100%;
-  padding: 8px;
-  border-radius: var(--r2, 6px);
-  border: none;
-  background: var(--ink);
-  color: var(--surface);
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.btnRecordLeft:hover {
-  opacity: 0.9;
 }
 
 /* v6 ward header (design/pages-v6/Ward.png): the hero band, then one row with the views on the left
@@ -5904,8 +3395,8 @@
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .srOnlyHeading {
@@ -6414,6 +3905,22 @@
   }
 }
 
+/* Audit 11 Oct 2026: iPad portrait folds Notices, Shift brief and Handover into one More menu so
+ * Raise referral is not clipped. Desktop and landscape keep the separate buttons. */
+.toolMore {
+  display: none;
+}
+
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .toolSolo {
+    display: none !important;
+  }
+
+  .toolMore {
+    display: inline-flex;
+  }
+}
+
 /* Phone: Home and Decisions take the first row. The tool row wraps below them with Find on its
  * own full-width line first and the actions after it, so none is hidden off screen. Desktop is
  * unchanged. */
@@ -6468,5 +3975,184 @@
 
   .findBox {
     height: var(--spacing-tap, 3rem);
+  }
+}
+
+/* Phone v10 (11 Oct 2026): the ward's own actions are a row of 44px chips that scrolls sideways
+ * above the tabs (This shift, Ward flow, Shift brief, Handover, Raise referral, Tasks), and the
+ * tabs are one full-width segmented control: Home, Decisions, Bed board. These classes render
+ * only on a phone; the overrides sit under the phone query. */
+.phoneChips {
+  margin: var(--wf-s-1) calc(-1 * var(--wf-s-3)) 0;
+}
+
+.phoneChips > div {
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3);
+}
+
+.phoneChip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-touch);
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  color: var(--wf-ink-1);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.phoneChip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneChip[aria-disabled="true"] {
+  color: var(--wf-ink-3);
+}
+
+.phoneChipCount {
+  min-width: 20px;
+  padding: 2px 6px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  text-align: center;
+  color: var(--wf-ink-2);
+}
+
+.phoneNotificationCenter {
+  position: relative;
+  z-index: 5;
+  margin-top: var(--wf-s-2);
+}
+
+.phoneHeroTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.phoneHeroName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneFindBox {
+  width: 100%;
+  height: var(--wf-touch);
+  border-radius: var(--wf-r-pill);
+}
+
+@media (max-width: 48rem) {
+  .topActionBarWrap {
+    gap: var(--wf-s-3);
+  }
+
+  .tabBarWrap {
+    padding: 0;
+  }
+
+  .tabList {
+    display: flex;
+    flex: 1 1 100%;
+    width: 100%;
+    padding: 3px;
+  }
+
+  .tabList > li {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .tabBtn,
+  .tabBtn:hover,
+  .tabBtn[aria-selected="true"] {
+    justify-content: center;
+    width: 100%;
+    min-height: var(--wf-touch);
+    font-size: var(--wf-fs-14);
+  }
+
+  .phoneHeroTitle .wardSwitch {
+    width: 32px;
+    height: 32px;
+    flex: none;
+  }
+}
+
+/* Phone (v10): the views pin under the stable header on the canvas, full
+   bleed, as on Home. The class renders only on phone. */
+.phoneTabBar {
+  position: sticky;
+  top: var(--wf-header-height, 3.5rem);
+  width: calc(100% + 2 * var(--wf-s-3));
+  max-width: none;
+  z-index: 6;
+  margin: calc(-1 * var(--wf-s-2)) calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-canvas);
+}
+
+/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
+   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
+   tablet keep the toast above. */
+@media (max-width: 48rem) {
+  .actionToast {
+    --toast-bg: light-dark(
+      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
+      color-mix(in srgb, var(--wf-track) 97%, transparent)
+    );
+    --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
+    --toast-ring: light-dark(transparent, var(--wf-line-2));
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 92px;
+    left: 12px;
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    margin: 0 auto;
+    transform: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: var(--toast-bg);
+    box-shadow:
+      0 0 0 1px var(--toast-ring),
+      var(--wf-e2);
+    color: var(--toast-ink);
+    font: 500 var(--wf-fs-13) / 18px var(--wf-font);
+    text-align: left;
+    white-space: normal;
+    z-index: var(--z-toast);
+  }
+
+  .actionToast.show {
+    transform: none;
+  }
+
+  .actionToast > svg {
+    display: none;
+  }
+  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
+  :global(html:has([role="dialog"][aria-modal="true"])) .actionToast {
+    bottom: 136px;
   }
 }

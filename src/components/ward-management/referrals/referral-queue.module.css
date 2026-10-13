@@ -19,3 +19,14 @@
     display: block;
   }
 }
+
+/* v10 phone: the rows sit in one card on the page canvas. */
+@media (max-width: 48rem) {
+  .cards {
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+}

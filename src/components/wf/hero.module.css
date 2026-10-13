@@ -10,6 +10,8 @@
   --wf-info: var(--wf-hero-info);
   --wf-neutral: var(--wf-hero-neutral);
   --wf-focus-ring: var(--wf-hero-ink);
+  /* The hero sets its own focus gap (v9 "Focus"), so the two-tone ring stays dark round its light ring. */
+  --wf-focus-gap: var(--wf-hero-2);
 }
 
 .hero {
@@ -262,11 +264,13 @@
   }
 }
 
-/* Phone layout (8 Oct 2026): title first, then three figures in one row, then the aside
- * (LiveChip, pause, one light button) as a left-aligned row. Figures past the third are left to
- * the larger screen. Desktop and tablet are unchanged: everything here sits under 48rem. */
+/* Phone layout (v10 phone hero, 11 Oct 2026): the eyebrow line carries the Live chip at its right,
+ * then the title and its subtitle, then three figures split by thin hairlines (no boxes), then the
+ * actions as a row of 44px pills. Figures past the third are left to the larger screen. Desktop
+ * and tablet are unchanged: everything here sits under 48rem. */
 @media (max-width: 48rem) {
   .hero {
+    position: relative;
     gap: var(--wf-s-3);
     padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
   }
@@ -277,7 +281,14 @@
   .titleBlock {
     order: 0;
     flex: 1 1 100%;
+    gap: var(--wf-s-3);
     padding: 0;
+  }
+  .eyebrow {
+    display: block;
+    min-height: 28px;
+    line-height: 28px;
+    color: var(--wf-hero-ink-2);
   }
   /* The eyebrow and title always come first on phone: the lead (ring) and every chip row follow. */
   .lead {
@@ -291,10 +302,18 @@
   .barRow {
     order: 1;
   }
-  /* The figure title keeps its line; a long meta drops below it rather than squeezing it. */
+  /* The title keeps its line; its meta is a quiet subtitle under it. */
   .titleLine {
-    flex-wrap: wrap;
-    row-gap: 2px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  .titleMeta {
+    min-width: 0;
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-hero-ink-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .stats,
   .statsEnd {
@@ -304,17 +323,63 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0;
     justify-content: stretch;
-    overflow: hidden;
+    margin: 0 -4px;
+    overflow: visible;
   }
+  /* A figure: value over label, a hairline before every figure but the first. No box. */
   .stat {
-    padding: 0 0 0 var(--wf-s-3);
-    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    position: relative;
+    gap: 3px;
+    min-height: 48px;
+    padding: 6px 10px;
+    border-left: 0;
+    border-radius: 12px;
   }
   .stat:first-child {
-    padding-left: 0;
+    padding-left: 10px;
     border-left: 0;
   }
+  .stat + .stat::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: var(--wf-on-hero-div);
+    pointer-events: none;
+  }
   .stat:nth-child(n + 4) {
+    display: none;
+  }
+  .stat:has(> .statToggle) {
+    padding: 0;
+  }
+  .stats .statToggle {
+    flex: 1 1 auto;
+    gap: 3px;
+    width: 100%;
+    min-height: 48px;
+    margin: 0;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+  }
+  .stats .statToggle:hover {
+    background: transparent;
+  }
+  .stats .statToggle:focus-visible {
+    outline-offset: -2px;
+  }
+  .stats .statToggle[aria-expanded="true"],
+  .stats .statToggle[aria-pressed="true"] {
+    background: var(--wf-on-hero-fill);
+    box-shadow: inset 0 0 0 1px var(--wf-on-hero-line);
+  }
+  /* A pressed figure is its own box, so the hairlines either side of it step away. */
+  .stat:has(> [aria-pressed="true"])::before,
+  .stat:has(> [aria-pressed="true"]) + .stat::before {
     display: none;
   }
 
@@ -323,6 +388,7 @@
   .label {
     display: block;
     max-width: 100%;
+    font-weight: 500;
   }
 
   .label > * {
@@ -334,12 +400,75 @@
     order: 3;
     flex: 1 1 100%;
     min-width: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-start;
+    gap: var(--wf-s-2);
     margin-left: 0;
+  }
+  /* The actions share the row as 48px pills; a round icon button keeps its own width. */
+  .aside > :not([data-wf-live]) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .aside > :is(button, a):not([data-wf-live]) {
+    justify-content: center;
+    min-height: var(--spacing-tap, 3rem);
+    border-radius: var(--wf-r-pill);
+  }
+  .aside > button:not(:has(> :not(svg))) {
+    flex: 0 0 var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    padding: 0;
+  }
+  /* An aside that only held the Live chip leaves no empty row behind. */
+  .aside:not(:has(> :not([data-wf-live]))) {
+    display: contents;
+  }
+  .barRow:has(> .aside:only-child:not(:has(> :not([data-wf-live])))) {
+    display: contents;
   }
   .bar {
     flex: 1 1 100%;
+  }
+
+  /* The Live chip moves to the right end of the eyebrow line, wherever the page put it. */
+  .hero [data-wf-live] {
+    position: absolute;
+    z-index: 1;
+    top: calc(var(--wf-s-3) + 3px);
+    right: max(var(--wf-band-right, 0px), var(--wf-s-4));
+    gap: var(--wf-s-1);
+  }
+  .hero [data-wf-live] > [aria-hidden="true"],
+  .hero [data-wf-live] > button > [aria-hidden="true"] {
+    height: 22px;
+    padding: 0 10px;
+    border-radius: var(--wf-r-pill);
+  }
+  /* The pill with its folded pause (device audit, 11 Oct 2026) keeps a 48px tall hit area. */
+  /* `[aria-pressed]` lifts this over page rules that give every button a 48px min-height. */
+  /* Site review (12 Oct 2026): the button box is 44px tall round the 22px pill, and the negative
+   * block margin keeps the pill on the eyebrow line where it was. */
+  .hero [data-wf-live] > button[aria-pressed] {
+    min-width: 0;
+    min-height: 44px;
+    margin-block: -11px;
+    border-radius: var(--wf-r-pill);
+  }
+  .hero [data-wf-live] > button::after {
+    content: "";
+    position: absolute;
+    inset: -13px -4px;
+  }
+  .hero:has([data-wf-live]) .eyebrow {
+    padding-right: 120px;
+  }
+  .hero:has([data-wf-live] > button) .eyebrow {
+    padding-right: 140px;
+  }
+  .hero:has([data-wf-live]):not(:has(.eyebrow)) .titleBlock {
+    padding-top: 40px;
   }
 }
 
@@ -488,23 +617,65 @@
 }
 
 /*
- * The band (v10 section 7.1, desktop and tablet only). `useWfBandBleed` (band.ts) sets
+ * The band (v10 section 7.1; phone too from 11 Oct 2026). `useWfBandBleed` (band.ts) sets
  * data-band="on" when the page opens on this hero and writes how far the hero sits from the work
  * column's edges and from the header. The hero then runs square to those edges and up to the
  * header, which paints the band's top colour at rest, so the two read as one surface. Its text
  * lines up with the header title and the card edges below. The page rises over its foot with one
- * 22px round lip in the page canvas. Phone never gets data-band, so it keeps its own hero.
+ * 22px round lip in the page canvas. On phone the hero runs edge to edge under the lean bar.
+ */
+.hero[data-band="on"] {
+  position: relative;
+  margin-top: calc(-1 * var(--wf-band-top, 0px));
+  margin-left: calc(-1 * var(--wf-band-left, 0px));
+  margin-right: calc(-1 * var(--wf-band-right, 0px));
+  padding-top: var(--wf-s-3);
+  padding-bottom: calc(var(--wf-s-3) + var(--wf-band-lip));
+  padding-left: max(var(--wf-band-left, 0px), 18px);
+  padding-right: max(var(--wf-band-right, 0px), 16px);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background:
+    radial-gradient(720px 200px at 88% -40%, rgba(122, 170, 220, 0.16), transparent 70%),
+    linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+}
+
+.hero[data-band="on"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: var(--wf-band-lip);
+  border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
+  background: var(--wf-canvas);
+  box-shadow: 0 -1px 0 var(--wf-hero-edge);
+  pointer-events: none;
+}
+
+/*
+ * The server-rendered band (site review B6, 12 Oct 2026). Until `useWfBandBleed` has measured, a
+ * band hero in the work column has no `data-band`. It paints as the band with the page's insets
+ * (16px, or `--wf-band-page-top`/`--wf-band-page-x` where a page container pads differently, as
+ * the mode workspace does), so the first paint is already the band and nothing jumps when the
+ * measure lands. The
+ * measure then sets `data-band="on"` with the real insets, or `"off"` when the page does not open
+ * on the hero. Desktop and tablet only: phone keeps its own measured band below.
  */
 @media (min-width: 48.0625rem) {
-  .hero[data-band="on"] {
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) {
+    --wf-band-top: var(--wf-band-page-top, var(--wf-s-4));
+    --wf-band-left: var(--wf-band-page-x, var(--wf-s-4));
+    --wf-band-right: var(--wf-band-page-x, var(--wf-s-4));
     position: relative;
-    margin-top: calc(-1 * var(--wf-band-top, 0px));
-    margin-left: calc(-1 * var(--wf-band-left, 0px));
-    margin-right: calc(-1 * var(--wf-band-right, 0px));
+    margin-top: calc(-1 * var(--wf-band-top));
+    margin-left: calc(-1 * var(--wf-band-left));
+    margin-right: calc(-1 * var(--wf-band-right));
     padding-top: var(--wf-s-3);
     padding-bottom: calc(var(--wf-s-3) + var(--wf-band-lip));
-    padding-left: max(var(--wf-band-left, 0px), 18px);
-    padding-right: max(var(--wf-band-right, 0px), 16px);
+    padding-left: max(var(--wf-band-left), 18px);
+    padding-right: max(var(--wf-band-right), 16px);
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -513,7 +684,7 @@
       linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
   }
 
-  .hero[data-band="on"]::after {
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
     content: "";
     position: absolute;
     left: 0;
@@ -528,10 +699,44 @@
 }
 
 @media print {
-  .hero[data-band="on"] {
+  .hero[data-band="on"],
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) {
     margin: 0;
   }
-  .hero[data-band="on"]::after {
+  .hero[data-band="on"]::after,
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
     display: none;
+  }
+}
+
+/* Phone band (v10 phone mockup, every page): the hero's text starts 6px under the lean bar, sits on
+ * the 16px phone gutter, and leaves 18px above the page's 22px lip. Phone only. */
+@media (max-width: 48rem) {
+  .hero[data-band="on"] {
+    padding-top: 6px;
+    padding-right: 16px;
+    padding-bottom: calc(18px + var(--wf-band-lip));
+    padding-left: 16px;
+    /* The page's first content sits 2px under the lip, as in the mockup (its column gap is 12px). */
+    margin-bottom: -10px;
+  }
+  /* The Live chip stays centred on the eyebrow line, which now starts 6px down. */
+  .hero[data-band="on"] [data-wf-live] {
+    top: 9px;
+    right: 16px;
+  }
+}
+
+/* Phone (v10 mockup): an action foot (search, movement) has no hairline and its buttons wrap. */
+@media (max-width: 48rem) {
+  .foot[data-foot="actions"] {
+    padding-top: var(--wf-s-1);
+    border-top: 0;
+  }
+
+  .foot[data-foot="actions"] .footMain {
+    flex-wrap: wrap;
+    overflow: visible;
+    white-space: normal;
   }
 }

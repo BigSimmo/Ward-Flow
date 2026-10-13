@@ -690,7 +690,6 @@
     gap: var(--wf-s-2);
   }
 
-  .filterRow:first-child > :nth-child(3),
   .filterRow + .filterRow:not([data-open="true"]) {
     display: none;
   }
@@ -717,20 +716,31 @@
     scrollbar-width: none;
   }
 
+  /* The Filters pill takes the shared phone pill size (`--wf-phone-*`): a 32px face with a
+     transparent 48px hit area. */
   .filtersToggle {
+    position: relative;
     display: inline-flex;
+    align-self: center;
     align-items: center;
-    gap: var(--wf-s-2);
-    min-height: var(--wf-touch, 44px);
-    padding: 0 var(--wf-s-3);
+    gap: var(--wf-phone-pill-gap);
+    height: var(--wf-phone-pill-h);
+    padding: 0 var(--wf-phone-pill-px);
     border: 1px solid var(--wf-line-ctl);
     border-radius: var(--wf-r-pill);
     background: var(--wf-surface);
     color: var(--wf-ink-1);
     font: inherit;
-    font-size: var(--wf-fs-13);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
+  }
+
+  .filtersToggle::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 
   .filtersToggle[aria-expanded="true"] {
@@ -848,4 +858,389 @@
     min-height: var(--wf-touch, 44px);
     max-width: 100%;
   }
+}
+
+/* Phone v10 (11 Oct 2026): the service chips, the search and Filters sit on the canvas, then
+ * Every ward with its count, then one card of wards: each service a quiet header band with its
+ * occupancy, each ward a two line row with its ready figure and occupancy. A tap opens the ward
+ * as a bottom sheet with Enter ward. The phone-only classes render only on a phone. */
+.phoneServiceChips {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.phoneServiceChips > div > div {
+  gap: var(--wf-s-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.phoneServiceChips > div > div > button {
+  flex: none;
+  min-height: var(--wf-touch);
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phoneServiceChips > div > div > button[aria-checked="true"],
+.phoneServiceChips > div > div > button[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.phoneListTitle {
+  margin-right: auto;
+  font-size: var(--wf-fs-15);
+  color: var(--wf-ink-1);
+}
+
+.phoneList {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
+}
+
+.phoneGroup + .phoneGroup {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneGroupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-row-group);
+  margin: 0;
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+.phoneGroupDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-ink-3);
+}
+
+.phoneGroupDot[data-service="North Metro"] {
+  background: var(--wf-svc-north);
+}
+
+.phoneGroupDot[data-service="East Metro"] {
+  background: var(--wf-svc-east);
+}
+
+.phoneGroupDot[data-service="South Metro"] {
+  background: var(--wf-svc-south);
+}
+
+.phoneGroupDot[data-service="WACHS"] {
+  background: var(--wf-svc-wachs);
+}
+
+.phoneGroupDot[data-service="CAHS"] {
+  background: var(--wf-svc-cahs);
+}
+
+.phoneGroupDot[data-service="Private"] {
+  background: var(--wf-svc-private);
+}
+
+.phoneGroupShare {
+  margin-left: auto;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  letter-spacing: 0;
+  color: var(--wf-ink-1);
+}
+
+.phoneRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneRows > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.phoneRowText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.phoneRowName {
+  overflow: hidden;
+  font: 600 var(--wf-fs-14) / 1.25 var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneRowSub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneRowSub > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneRowLock {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.phoneRowFigures {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.phoneRowReady {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 var(--wf-fs-14) / 1.2 var(--wf-mono);
+}
+
+.phoneRowShare {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneRow[data-dim="true"] :is(.phoneRowName, .phoneRowSub, .phoneRowReady, .phoneRowShare) {
+  color: var(--wf-dim);
+}
+
+.phoneSheetFigures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: var(--wf-s-3) 0 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+
+.phoneSheetFigures > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.phoneSheetFigures > div:nth-child(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+
+.phoneSheetFigures > div:nth-child(n + 3) {
+  border-bottom: 0;
+}
+
+.phoneSheetFigures dt {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneSheetFigures dd {
+  margin: 0;
+  font: 600 var(--wf-fs-14) / 1.2 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+.phoneSheetConfirmed {
+  margin: var(--wf-s-2) 0 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneSheet .profileHead,
+.phoneSheet .profileStats {
+  display: none;
+}
+
+.phoneSheet .profileBody {
+  padding: 0;
+}
+
+@media (max-width: 48rem) {
+  .filters {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .filterRow:first-child {
+    row-gap: var(--wf-s-3);
+  }
+
+  .search {
+    height: var(--wf-touch);
+    border-radius: var(--wf-r-pill);
+  }
+
+  .shownCount {
+    justify-content: space-between;
+    padding: 0 var(--wf-s-1);
+  }
+}
+
+/* Phone (v10): the statewide rail is one link row under the list; it opens as a sheet. Both the
+ * row and the sheet render only on phone. */
+.phoneRailLink {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneRailLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneRailLink > svg {
+  flex: none;
+  color: var(--wf-ink-2);
+}
+
+.phoneRailLinkText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneRailLinkText b {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.phoneRailLinkText span {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.phoneRailSheet .rail {
+  gap: var(--wf-s-4);
+}
+
+.phoneRailSheet .railCard {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.phoneRailSheet .railCard:first-child > .serviceHead {
+  display: none;
+}
+
+/* Audit 11 Oct 2026: a filter label stays with its pills when the row wraps. */
+.filterGroup {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+/* Audit 11 Oct 2026: the bed strip key as one line under the filters. */
+.legendLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Audit 11 Oct 2026: the whole card opens the ward. The link stretches over the card; the profile
+ * button sits above it so it stays its own target. */
+.wardCard {
+  position: relative;
+}
+
+.wardCard:hover {
+  border-color: var(--wf-line-ctl);
+}
+
+.cardLink {
+  display: inline-grid;
+  place-items: center;
+  width: var(--wf-h-sm);
+  height: var(--wf-h-sm);
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-3);
+}
+
+.cardLink::after {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--wf-r-lg);
+  content: "";
+}
+
+.cardLink:focus-visible {
+  outline: none;
+}
+
+.cardLink:focus-visible::after {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.wardCard .iconButton {
+  position: relative;
+  z-index: 1;
 }

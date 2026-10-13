@@ -26,6 +26,13 @@ async function gotoCoordinator(page: Page) {
   // before the first interaction. Mirrors `gotoWardFlow` in ui-ward-management.spec.ts (Task 4
   // review Important 6: a retry loop around the click was masking this instead of fixing it).
   await page.waitForLoadState("networkidle");
+  // Network idle does not prove the shell has settled. The server renders the "Data mode" bar above
+  // the app; once hydrated, the header's Prototype pill takes its place and the whole screen moves
+  // up by the bar's height. A queue click issued across that re-render takes the pointerdown on one
+  // row and the pointerup on the grid, so no row is selected (seen 11 Oct 2026, intermittently).
+  // Wait until the pill is in the header and the bar is gone before the first interaction.
+  await expect(page.locator("[data-wf-data-mode-slot]")).not.toBeEmpty({ timeout: 15_000 });
+  await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
 }
 
 /**
@@ -34,6 +41,10 @@ async function gotoCoordinator(page: Page) {
  * inside them; idempotent, so it is safe after every queue selection.
  */
 async function openShortlistSections(shortlist: Locator) {
+  // L3 (site review, 12 Oct 2026): once a ward has accepted, the card leads with the next step and
+  // keeps the bed list behind "Find another bed".
+  const findAnother = shortlist.getByTestId("ward-shortlist-find-another-bed");
+  if ((await findAnother.count()) > 0) await findAnother.click();
   const toggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -41,6 +52,27 @@ async function openShortlistSections(shortlist: Locator) {
   if ((await checks.count()) > 0 && !(await checks.evaluate((element) => (element as HTMLDetailsElement).open))) {
     await checks.locator("summary").click();
   }
+}
+
+/**
+ * Option B (Josh, 13 Oct 2026; D-30): Refer on Home's placement shortlist no longer offers the ward
+ * at once. It opens the one referral slide-out for this person (the referral then reaches the
+ * coordinator queue), clears the Home selection, and is never greyed for the coordinator. This
+ * proves the slide-out opened, closes it untouched, and reselects the movement so the caller can
+ * check that nothing was offered directly.
+ */
+async function expectReferralSheetFromRefer(page: Page, movementId: string) {
+  const sheet = page.getByTestId("ward-bar-referral-sheet");
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole("button", { name: "Close referral side drawer" }).first().click();
+  await expect(sheet).toHaveCount(0);
+  const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
+  await page
+    .getByRole("region", { name: "Priority queue" })
+    .locator(`[data-testid="ward-queue-row-${movementId}"]`)
+    .click();
+  await openShortlistSections(shortlist);
+  return shortlist;
 }
 
 /**
@@ -302,7 +334,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const phoneDrawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await expect(phoneDrawer).toBeVisible();
     await phoneDrawer.locator('[data-testid*="-WF-005"]').first().click();
-    await expect(page.getByTestId("ward-shortlist-refer")).toBeInViewport();
+    // L3: an accepted movement leads with its next step instead of Refer.
+    await expect(
+      page.getByTestId("ward-shortlist-refer").or(page.getByTestId("ward-shortlist-next-step")).first(),
+    ).toBeInViewport();
   });
 
   test("orders by clinical tier first and labels the score as operational, not clinical", async ({ page }) => {
@@ -323,52 +358,33 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(rowCount).toBeGreaterThan(0);
     expect(tiers).toHaveLength(rowCount);
 
-    // Commit bc7cb70fb (owner, 2026-08-30): a flagged-urgent patient outranks every tier, so the
-    // full rendered list is no longer tier-ascending — WF-018 (tier 3, flagged) legitimately
-    // leads unflagged tier-1 patients who have waited hours. The tier ladder still holds among
-    // the UNFLAGGED, narrowed the same way that commit narrowed "every tier 1 above every tier
-    // 2" in tests/ward-priority.test.ts.
-    const unflaggedRows = rows.filter({ hasNot: page.locator('[data-testid^="ward-queue-flag-"]') });
-    const unflaggedTiers = await unflaggedRows
-      .locator("[data-tier]")
-      .evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute("data-tier"))));
-    expect(unflaggedTiers.length, "the fixture must still hold unflagged rows to order").toBeGreaterThan(1);
-    expect(unflaggedTiers).toEqual([...unflaggedTiers].sort((a, b) => a - b));
-
-    // Within a tier, the wait must be non-increasing — the queue's core claim (Task 5 review
-    // Important 2). Item 37 (2026-09-17) changed queueOrder's tie-break inside a tier from
-    // operationalScore to the wait itself, uncapped, so this reads `data-wait` rather than
-    // `data-score` — the same property-off-the-record discipline the original assertion had, now
-    // pointed at the field that actually orders the queue. Inverting the tiebreak comparator in
-    // `queueOrder` must turn this red.
+    // D-32 on Home (decision 4, site review 12 Oct 2026): the flag leads, act-now rows are pinned
+    // under it (`data-pinned`), then every other row is longest wait first with the tier breaking a
+    // tie. So among rows that are neither flagged nor pinned, the wait must be non-increasing.
     const rowKeys = await rows.evaluateAll((nodes) =>
       nodes.map((node) => ({
         tier: Number(node.querySelector("[data-tier]")?.getAttribute("data-tier")),
         wait: Number(node.getAttribute("data-wait")),
+        flagged: node.querySelector('[data-testid^="ward-queue-flag-"]') !== null,
+        pinned: node.getAttribute("data-pinned") === "true",
       })),
     );
-    for (let i = 1; i < rowKeys.length; i++) {
-      const prev = rowKeys[i - 1];
-      const curr = rowKeys[i];
-      if (curr.tier === prev.tier) {
-        expect(
-          curr.wait,
-          `row ${i} (tier ${curr.tier}, wait ${curr.wait}) must not have waited longer than row ${i - 1} (wait ${prev.wait})`,
-        ).toBeLessThanOrEqual(prev.wait);
-      }
+    const rest = rowKeys.filter((row) => !row.flagged && !row.pinned);
+    expect(rest.length, "the fixture must still hold unflagged, unpinned rows to order").toBeGreaterThan(1);
+    for (let i = 1; i < rest.length; i++) {
+      const prev = rest[i - 1];
+      const curr = rest[i];
+      expect(
+        curr.wait,
+        `row ${i} (wait ${curr.wait}) must not have waited longer than row ${i - 1} (wait ${prev.wait})`,
+      ).toBeLessThanOrEqual(prev.wait);
+      if (curr.wait === prev.wait) expect(curr.tier).toBeGreaterThanOrEqual(prev.tier);
     }
 
-    // The score must never read as clinical severity.
-    await expect(queue).toContainText("Operational");
+    // The score must never read as clinical severity, and the "Operational" leftover is gone (U3).
+    await expect(queue).not.toContainText("Operational");
     await expect(queue).not.toContainText("Severity");
     await expect(queue).not.toContainText("Acuity");
-
-    // The rendered score is the derived one, not a constant or a stale placeholder (Task 5
-    // review Important 3) — compare the first row against itself rather than importing the
-    // derivation into this spec.
-    const firstRow = rows.first();
-    const firstRowScore = await firstRow.getAttribute("data-score");
-    await expect(firstRow).toContainText(`Operational ${firstRowScore}`);
 
     // The breach line used to be the row a coordinator must not miss (Task 5 review Important
     // 3, then Task 6A fix round 1, then the removal of the "Bed need confirmed" factor on
@@ -394,7 +410,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(queue).not.toContainText("passed its deadline");
 
     // Selecting a movement drives the rest of the screen.
-    await firstRow.click();
+    await rows.first().click();
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     const selectedId = await queue.locator('[aria-pressed="true"]').getAttribute("data-testid");
     const selectedMovementId = String(selectedId).replace("ward-queue-row-", "");
@@ -551,7 +567,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(shortlist.length).toBeGreaterThan(0);
     expect(shortlist.every((candidate) => !candidate.verdict.eligible)).toBe(true);
 
-    await page.getByRole("region", { name: "Priority queue" }).locator('[data-testid="ward-queue-row-WF-009"]').click();
+    const selectedRow = page.getByRole("region", { name: "Priority queue" }).getByTestId("ward-queue-row-WF-009");
+    await selectedRow.click();
+    await expect(selectedRow).toHaveAttribute("aria-pressed", "true");
 
     // Every routed node is marked not-eligible on the node itself...
     const routed = diagram.locator('[data-routed="true"]');
@@ -573,7 +591,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // (Was: one route connector per shortlisted unit, each marked `data-eligible="false"`.)
 
     // The hub states the true eligible count — zero — never the shortlist size framed as routes.
-    await expect(diagram).toContainText(`no eligible destination; ${shortlist.length} candidates, all excluded`);
+    // Home's bedflow drops the repeated name and sentence-cases the hub line (device audit, 11 Oct 2026).
+    await expect(diagram).toContainText(`No eligible destination; ${shortlist.length} candidates, all excluded`);
   });
 
   test("distinguishes an accepted destination from an outstanding referral, and shows every parallel referral", async ({
@@ -669,7 +688,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // The hub leads with the recorded destination, and never claims the movement is looking for
     // three of them.
-    await expect(diagram).toContainText("accepted destination:");
+    // Home's bedflow drops the repeated name and sentence-cases the hub line (device audit, 11 Oct 2026).
+    await expect(diagram).toContainText("Accepted destination:");
     await expect(diagram).not.toContainText("WF-005 — 3 eligible destinations");
 
     // An outstanding referral is a different recorded fact and gets its own connector too —
@@ -919,8 +939,12 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // the reason stated rather than the control silently vanishing. Nothing has been clicked on
     // this movement yet, so this is really "nothing selected" — the same guard the default-candidate
     // test below exercises directly.
+    // Option B (13 Oct 2026): the coordinator is never blocked, so Refer is not greyed even here;
+    // the reason stays stated (screen-reader text), and Refer opens the referral slide-out rather
+    // than offering a ward.
     const referButton = shortlist.getByTestId("ward-shortlist-refer");
-    await expect(referButton).toHaveAttribute("aria-disabled", "true");
+    await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
+    await expect(shortlist.locator("#ward-shortlist-refer-unavailable")).toContainText(/\S/u);
     await expect(shortlist).not.toContainText("Referred by a human coordinator");
 
     // Selecting WF-017's own eligible candidate makes referring available, and referring
@@ -937,7 +961,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
     await expect(shortlist).not.toContainText("Parallel referral: Dabakarn");
     await referButton.click();
-    await expect(shortlist).toContainText("Parallel referral: Dabakarn");
+    // Option B: Refer writes a referral through the slide-out; it never offers the ward directly.
+    const afterRefer = await expectReferralSheetFromRefer(page, "WF-017");
+    await expect(afterRefer).not.toContainText("Parallel referral: Dabakarn");
   });
 
   /**
@@ -989,38 +1015,41 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       shortlist.locator('[data-testid^="ward-shortlist-candidate-"][aria-pressed="true"]:not([data-live="true"])'),
     ).toHaveCount(0);
 
-    // ...and BOTH halves of the human decision are unavailable, each saying why rather than
-    // silently doing nothing. Override is not a lesser path — the governing rule is "a human
-    // confirms OR overrides, always, with the reason recorded" — so a coordinator blocked from
-    // referring an un-chosen default must not be able to override straight into it.
-    await expect(referButton).toHaveAttribute("aria-disabled", "true");
+    // ...and Override is unavailable, saying why rather than silently doing nothing. Override is
+    // not a lesser path — the governing rule is "a human confirms OR overrides, always, with the
+    // reason recorded" — so it must not override straight into an un-chosen default.
+    //
+    // Option B (13 Oct 2026): Refer is never greyed for the coordinator. It no longer offers any
+    // ward: it opens the referral slide-out, so it cannot refer against a default either. Its
+    // reason with nothing chosen is still stated (screen-reader text).
+    await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
     await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
     await expect(shortlist).toContainText("Choose at least one candidate ward before referring");
     await expect(shortlist).toContainText("Choose at least one candidate ward before overriding");
-    // `force` because Playwright's actionability check already refuses an `aria-disabled` control.
-    // Bypassing it is the stronger proof: even a real activation must record nothing, since the
-    // repo's unavailable-control pattern keeps the button focusable and clickable by design (it is
-    // `aria-disabled` + an inert handler, never native `disabled`, so the stated reason stays
-    // reachable to a keyboard and screen-reader user).
-    await referButton.click({ force: true });
-    await expect(shortlist).not.toContainText("Referred by a human coordinator");
 
     // A forced activation of Override must not even open the reason form — if it opened, the
     // textarea would be addressed to the default unit and one submission would record an override
-    // against a ward nobody picked.
+    // against a ward nobody picked. `force` because Playwright's actionability check already
+    // refuses an `aria-disabled` control.
     await overrideToggle.click({ force: true });
     await expect(overrideToggle).toHaveAttribute("aria-expanded", "false");
     await expect(shortlist.getByLabel(/Reason for overriding/)).toHaveCount(0);
     await expect(shortlist).not.toContainText("Overridden by a human coordinator");
 
-    // Choosing a candidate is what makes both available. Fix round 1: the record below is
-    // `movement.referredUnitIds` itself (the "Parallel referral" badge), never a local
-    // optimistic flag.
+    // Refer with nothing chosen opens the slide-out and records nothing against the default.
+    await referButton.click();
+    await expectReferralSheetFromRefer(page, "WF-017");
+    await expect(shortlist).not.toContainText("Referred by a human coordinator");
+    await expect(shortlist).not.toContainText(`Parallel referral: ${wf017Default.unit.name}`);
+
+    // Choosing a candidate is what makes Override available. Refer still goes through the
+    // slide-out, so the badge (`movement.referredUnitIds`) does not appear from it.
     await shortlist.locator(`[data-testid="ward-shortlist-candidate-${wf017Default.unit.id}"]`).click();
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
     await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
     await referButton.click();
-    await expect(shortlist).toContainText(`Parallel referral: ${wf017Default.unit.name}`);
+    await expectReferralSheetFromRefer(page, "WF-017");
+    await expect(shortlist).not.toContainText(`Parallel referral: ${wf017Default.unit.name}`);
 
     // WF-004 is the worst case the review found: a bed is already held elsewhere, and the default
     // candidate is a different ward entirely. The screen must never assert two destinations for
@@ -1036,10 +1065,13 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await queue.locator('[data-testid="ward-queue-row-WF-004"]').click();
     await openShortlistSections(shortlist);
     await expect(shortlist).toContainText("Accepted destination:");
-    await expect(referButton).toHaveAttribute("aria-disabled", "true");
     await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
-    await referButton.click({ force: true });
     await overrideToggle.click({ force: true });
+    await expect(shortlist).not.toContainText("Overridden by a human coordinator");
+    // Option B: Refer is not greyed and opens the slide-out; it never records a second destination.
+    await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
+    await referButton.click();
+    await expectReferralSheetFromRefer(page, "WF-004");
     await expect(shortlist).not.toContainText("Referred by a human coordinator");
     await expect(shortlist).not.toContainText("Overridden by a human coordinator");
   });
@@ -1060,7 +1092,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // WF-009's default candidate (Dabakarn) fails exactly one of the eleven gates
     // (prior_decline) — enough to prove ordering without depending on how many gates fail.
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    const selectedRow = queue.getByTestId("ward-queue-row-WF-009");
+    await selectedRow.click();
+    await expect(selectedRow).toHaveAttribute("aria-pressed", "true");
     const passFlags = await shortlist
       .locator('[data-testid^="ward-gate-"]')
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-pass")));
@@ -1107,13 +1141,17 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
   test("never labels an ineligible candidate as the suggested destination", async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
+    // The queue is server-rendered before its click handlers and hero geometry settle.
+    await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-009: every one of its three candidates is ineligible, so there is no unit this
     // panel may honestly suggest.
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    const ineligibleRow = queue.locator('[data-testid="ward-queue-row-WF-009"]');
+    await ineligibleRow.click();
+    await expect(ineligibleRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).not.toContainText("Suggested destination");
     await expect(shortlist).toContainText("No eligible destination found yet.");
 
@@ -1121,7 +1159,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // "Suggested destination" must not appear here either. That referral — BTY Adult Secure,
     // selectable via the diagram's shared selection state — passes every gate, so presenting it
     // as fact carries no hidden risk of recommending a failing unit.
-    await queue.locator('[data-testid="ward-queue-row-WF-017"]').click();
+    const referredRow = queue.locator('[data-testid="ward-queue-row-WF-017"]');
+    await referredRow.click();
+    await expect(referredRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).toContainText("Parallel referral: BTY Adult Secure");
     await expect(shortlist).not.toContainText("Suggested destination");
 
@@ -1219,17 +1259,19 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await openShortlistSections(shortlist);
 
-    // Nothing is referable until a human picks a ward.
+    // Option B (13 Oct 2026): Refer is never greyed for the coordinator, and with a ward picked
+    // it opens the referral slide-out for this person (the referral reaches the coordinator queue)
+    // rather than offering the ward at once.
     const refer = shortlist.getByTestId("ward-shortlist-refer");
-    await expect(refer).toHaveAttribute("aria-disabled", "true");
+    await expect(refer).not.toHaveAttribute("aria-disabled", "true");
 
     await shortlist.locator('[data-testid^="ward-shortlist-candidate-"]').first().click();
     await expect(refer).not.toHaveAttribute("aria-disabled", "true");
     await refer.click();
 
-    // The referral is recorded on the screen, and the parallel cap is stated.
-    await expect(shortlist).toContainText(/parallel referral/i);
-    await expect(shortlist).not.toContainText(/Confirm placement/);
+    // The slide-out opened; nothing was offered or confirmed directly.
+    const afterRefer = await expectReferralSheetFromRefer(page, "WF-002");
+    await expect(afterRefer).not.toContainText(/Confirm placement/);
   });
 
   /**
@@ -1260,14 +1302,17 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await openShortlistSections(shortlist);
     await shortlist.locator(`[data-testid="ward-shortlist-candidate-${wf004Default.unit.id}"]`).click();
 
+    // Option B (13 Oct 2026): Refer is never greyed for the coordinator; it opens the referral
+    // slide-out instead of dispatching `REFER_TO_UNITS`. The stated reason still names the
+    // movement's own real stage (screen-reader text), never a generic string.
     const refer = shortlist.getByTestId("ward-shortlist-refer");
-    await expect(refer).toHaveAttribute("aria-disabled", "true");
-    // The stated reason names the movement's own real stage, never a generic string.
-    await expect(refer).toHaveAttribute("title", /bed pulled/i);
+    await expect(refer).not.toHaveAttribute("aria-disabled", "true");
+    await expect(shortlist.locator("#ward-shortlist-refer-unavailable")).toContainText(/bed pulled/i);
 
-    await refer.click({ force: true });
-    await expect(shortlist).not.toContainText("Parallel referral");
-    await expect(shortlist).not.toContainText("Referred by a human coordinator");
+    await refer.click();
+    const afterRefer = await expectReferralSheetFromRefer(page, "WF-004");
+    await expect(afterRefer).not.toContainText("Parallel referral");
+    await expect(afterRefer).not.toContainText("Referred by a human coordinator");
   });
 
   /**

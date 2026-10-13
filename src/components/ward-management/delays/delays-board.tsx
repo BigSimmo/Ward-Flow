@@ -8,6 +8,7 @@
  * Every figure is read from the engine (`delays-board-model.ts`). Selecting, filtering and the
  * graphs are presentation state only; the one write is Escalate, which the screen dispatches.
  */
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import {
   useCallback,
   useEffect,
@@ -19,7 +20,7 @@ import {
   type RefObject,
 } from "react";
 import Link from "next/link";
-import { ChevronDown, Search, X } from "lucide-react";
+import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-react";
 
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
@@ -30,13 +31,25 @@ import {
   type Movement,
   type Unit,
 } from "@/components/ward-management/ward-model";
-import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { legalFormName, legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById } from "@/components/ward-management/ward-sites";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { currentDueSoonThresholds } from "@/components/ward-management/ward-clock";
-import { CheckingFoot, Hero, LiveChip, TierTile, type WfTone } from "@/components/wf";
+import {
+  CheckingFoot,
+  Hero,
+  LiveChip,
+  PhoneSheet,
+  PortraitList,
+  PortraitRail,
+  TierTile,
+  useIsPhone,
+  useIsTabletPortrait,
+  type PortraitGroup,
+  type WfTone,
+} from "@/components/wf";
 import { answerSilenceReminder, isCleared, type DelayCause, type DelayGroup } from "./delays-derivations";
 import { BandBar, Glyph, causeTitle } from "./delays-board-parts";
 import {
@@ -69,13 +82,14 @@ import {
   waitTone,
   type BoardFilters,
   type BoardRow,
-  type WaitThreshold,
 } from "./delays-board-model";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import { createBrowserStore } from "@/lib/client-store-factory";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
 import styles from "./delays-board.module.css";
+import wardPin from "../ward-pinned-switch.module.css";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -85,6 +99,48 @@ const OPEN_BY_DEFAULT: readonly DelayCause[] = [
   "awaiting_coordinator",
 ];
 const GROUP_LIMIT = 5;
+
+/*
+ * Audit A3-14: the board opens on Longest wait (forms due first, then longest wait) and remembers
+ * the viewer's own choice in this browser. Same safe localStorage pattern as the wallboard store:
+ * a blocked or private store never throws, and the server snapshot is the default.
+ */
+const DELAYS_ORDER_STORAGE_KEY = "ward_flow_delays_order";
+const DELAYS_ORDER_CHANGE_EVENT = "ward_flow_delays_order_change";
+let delaysOrderFallback: boolean | undefined;
+
+function readDelaysFlat(): boolean {
+  try {
+    return window.localStorage.getItem(DELAYS_ORDER_STORAGE_KEY) !== "blocker";
+  } catch {
+    return delaysOrderFallback ?? true;
+  }
+}
+
+function writeDelaysFlat(flat: boolean): void {
+  try {
+    window.localStorage.setItem(DELAYS_ORDER_STORAGE_KEY, flat ? "longest" : "blocker");
+  } catch {
+    // Private browsing or a blocked store: the choice lasts for this page only.
+    delaysOrderFallback = flat;
+  }
+  try {
+    window.dispatchEvent(new Event(DELAYS_ORDER_CHANGE_EVENT));
+  } catch {
+    // Nothing else depends on the notification.
+  }
+}
+
+function subscribeDelaysOrder(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(DELAYS_ORDER_CHANGE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(DELAYS_ORDER_CHANGE_EVENT, onChange);
+  };
+}
+
+const useDelaysFlatStore = createBrowserStore(subscribeDelaysOrder, readDelaysFlat, true);
 
 export type DelaysBoardProps = {
   groups: DelayGroup[];
@@ -108,6 +164,17 @@ export type DelaysBoardProps = {
 /** The origin department by name, or a sentence that names the record as the fault (task D1). */
 function originLabel(movement: Movement): string {
   return edById(movement.originEdId)?.name ?? `This movement names ${departmentLabel(movement.originEdId, undefined)}`;
+}
+
+/**
+ * Audit A3-16: a collected patient is on the road, not in the ED. Their row says so; the waiting
+ * count is unchanged until the rule for collected patients is agreed.
+ */
+function transitNote(movement: Movement, now: Instant): string | undefined {
+  const collectedAt = movement.transport?.collectedAt;
+  if (collectedAt === undefined || movement.transport?.cancelledAt !== undefined || movement.stage === "arrived")
+    return undefined;
+  return `In transit since ${formatInstantWithDay(collectedAt, now)}`;
 }
 
 /** Below 64rem the person's panel is a sheet over the table (see delays-board.module.css). */
@@ -135,15 +202,24 @@ function ago(minutes: number): string {
   return minutes < 1 ? "just now" : `${splitDuration(minutes)} ago`;
 }
 
+/** U1 (review 12 Oct 2026): legal status is never cut. A short form chip, the full name as its title. */
 function legalCell(row: BoardRow): ReactNode {
   const form = row.movement.legalForm;
-  if (row.dueIn === undefined || form === undefined) return row.movement.legalStatus;
+  const short = legalStatusShort(row.movement);
+  const full = legalStatusFull(row.movement);
+  if (row.dueIn === undefined || form === undefined)
+    return (
+      <span className={styles.legalChip} title={full}>
+        {short}
+      </span>
+    );
   const tone = row.dueIn < 0 ? "danger" : dueTone(row.dueIn);
   const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
   return (
-    <span className={styles.lg}>
+    <span className={styles.lg} title={`${full}, ${left}`}>
       <Glyph tone={tone} />
-      <span className={styles.ell}>{`Form ${form.code}, ${left}`}</span>
+      <span className={styles.legalChip}>{short}</span>
+      <span className={styles.legalLeft}>{left}</span>
     </span>
   );
 }
@@ -170,6 +246,45 @@ function updateCell(row: BoardRow, now: Instant): ReactNode {
       {ago(row.quiet)}
     </span>
   );
+}
+
+/** v10 phone: the second line leads with the recorded legal time left, or that it was escalated. */
+function phonePrefix(row: BoardRow): ReactNode {
+  const form = row.movement.legalForm;
+  if (form !== undefined && row.dueIn !== undefined) {
+    const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
+    return (
+      <>
+        <Glyph tone={row.dueIn < 0 ? "danger" : dueTone(row.dueIn)} />
+        <b className={styles.phPre}>{`Form ${form.code} ${left}`}</b>
+        {" · "}
+      </>
+    );
+  }
+  // Audit A3-15 (13 Oct 2026): a person on an order always shows their form, before the UMRN,
+  // even with no typed expiry. Voluntary rows stay short.
+  const onOrderForm = form !== undefined && row.movement.legalStatus !== "Voluntary" ? form : undefined;
+  if (row.movement.escalation !== undefined)
+    return (
+      <>
+        <Glyph tone="info" />
+        <b className={styles.phPre}>{onOrderForm ? `Form ${onOrderForm.code} · Escalated` : "Escalated"}</b>
+        {" · "}
+      </>
+    );
+  if (onOrderForm)
+    return (
+      <>
+        <b className={styles.phPre}>{`Form ${onOrderForm.code}, time not written`}</b>
+        {" · "}
+      </>
+    );
+  return null;
+}
+
+/** v10 phone: the right column's second line is how long nothing has been recorded. */
+function phoneUpdate(row: BoardRow): string {
+  return row.activity === undefined ? "no update" : `quiet ${splitDuration(row.quiet)}`;
 }
 
 /** Active time solid, quiet time hatched (amber once quiet 2h or more), on a 24 hour scale. */
@@ -329,6 +444,8 @@ function PersonPanel({
   const lines = wardLines(row, units);
   const candidates = useMemo(() => candidateWards(movement, units, now), [movement, units, now]);
   const [unavailableOpen, setUnavailableOpen] = useState(false);
+  // v10 phone: a journey bar from arrival to now leads the person sheet.
+  const isPhonePanel = useIsPhone();
   const pullHolder = units.find((unit) => unit.id === movement.acceptedUnitId);
   const legalForm = movement.legalForm;
 
@@ -365,6 +482,36 @@ function PersonPanel({
         </button>
       </div>
       <div className={styles.sideB}>
+        {isPhonePanel ? (
+          <div className={styles.phJourney} data-testid={`delays-phone-journey-${movement.id}`}>
+            <div className={styles.phJourneyBar} aria-hidden="true">
+              {row.activity !== undefined && row.waited > 0 ? (
+                <span
+                  className={styles.phJourneyDone}
+                  style={{ flexGrow: Math.max(0, row.waited - row.quiet), flexBasis: 0 }}
+                />
+              ) : null}
+              <span className={styles.phJourneyQuiet} style={{ flexGrow: Math.max(1, row.quiet), flexBasis: 0 }} />
+              <span className={styles.phJourneyNow} />
+            </div>
+            <div className={styles.phJourneyRow}>
+              <span>
+                <b className={styles.num}>{formatInstantWithDay(movement.openedAt, now)}</b>
+                <span className={styles.mute}>Arrived</span>
+              </span>
+              <span className={styles.phJourneyEnd}>
+                <b>
+                  <Glyph tone={row.silent ? "warning" : undefined} /> Now
+                </b>
+                <span className={styles.mute}>
+                  {row.activity === undefined
+                    ? "Nothing since arrival"
+                    : `Last: ${row.activity.what}, ${ago(row.quiet)}`}
+                </span>
+              </span>
+            </div>
+          </div>
+        ) : null}
         <div className={`${styles.inset} ${styles.causeInset}`}>
           <TierTile tier={movement.urgency} label={urgencyTierLabel(movement.urgency)} />
           <div className={styles.grow}>
@@ -588,8 +735,11 @@ function PersonPanel({
               onEscalate(movement);
             }}
             data-testid={`delays-escalate-${movement.id}`}
+            title="Escalate to State bed coordination desk"
           >
-            Escalate to State bed coordination desk
+            {/* Audit 11 Oct 2026: a short label beside Journey; the toast names the desk. */}
+            Escalate
+            <span className="sr-only"> to State bed coordination desk</span>
           </button>
         )}
         <Link className={styles.btn} href={`/mockups/ward-flow/movements/${movement.id}`}>
@@ -610,7 +760,8 @@ function NoStatewideDelays() {
       <Glyph tone="success" />
       <span>
         <b>No statewide delays recorded.</b> This model records delays only against a movement. Ward-wide closures and
-        transport outages are not represented as patient movements yet.
+        transport outages are not represented as patient movements yet, and recording one is not wired in this
+        prototype.
       </span>
     </p>
   );
@@ -663,7 +814,10 @@ function Registers({
   onSilent,
   onPick,
   onNotWired,
+  part = "all",
 }: {
+  /** v10 phone: the registers and the longest quiet list each open in their own sheet. */
+  part?: "all" | "registers" | "quiet";
   escalated: Movement[];
   attention: { movement: Movement; title: string | undefined }[];
   closedToday: Movement[];
@@ -686,7 +840,13 @@ function Registers({
     { id: "resolved", label: "Resolved", count: closedToday.length },
     { id: "system", label: "System", count: 0 },
   ] as const;
-  const quietRows = rows.filter((row) => row.silent).sort((a, b) => b.quiet - a.quiet);
+  // Device audit (11 Oct 2026): the "Waiting on you" group already lists its own people beside this
+  // rail, so Longest quiet names the quiet people under every other blocker instead of repeating them.
+  // "Show all" still filters the table to everyone quiet, and says so.
+  const allQuietRows = rows.filter((row) => row.silent);
+  const quietRows = allQuietRows
+    .filter((row) => row.cause !== "awaiting_coordinator")
+    .sort((a, b) => b.quiet - a.quiet);
   const placedCount = closedToday.filter((movement) => movement.closure?.outcome === "arrived").length;
   const notProceededCount = closedToday.filter((movement) => movement.closure?.outcome === "did_not_proceed").length;
   const onTabKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -713,8 +873,9 @@ function Registers({
       aria-label="Escalations and resolved"
       data-ward-primitive="panel"
       data-wf-rail
+      data-part={part === "all" ? undefined : part}
     >
-      <div className={styles.sideB}>
+      <div className={styles.sideB} hidden={part === "quiet"}>
         <div className={styles.seg} role="tablist" aria-label="Registers" onKeyDown={onTabKey}>
           {tabs.map((entry) => (
             <button
@@ -873,21 +1034,24 @@ function Registers({
               aria-label="Record a service-wide or facility delay. Not wired in this prototype."
               title="Not wired in this prototype."
             >
-              Record hold
+              Record hold (not wired)
             </button>
           </section>
         </div>
       </div>
-      <div className={`${styles.sideB} ${styles.sideSplit}`}>
+      <div className={`${styles.sideB} ${styles.sideSplit}`} hidden={part === "registers"}>
         <div className={styles.sec}>
           <h4 className={styles.h4r}>
             Longest quiet <span className={styles.k}>{quietRows.length}</span>
           </h4>
+          <p className={styles.mute}>Not waiting on you</p>
           {quietRows.length === 0 ? (
             <p className={styles.mute}>
               {rows.length === 0
                 ? "Nobody is waiting."
-                : `Everyone has had something recorded in the last ${hoursWord(SILENT_MINUTES)}.`}
+                : allQuietRows.length > 0
+                  ? "Everyone quiet is waiting on you, in the table."
+                  : `Everyone has had something recorded in the last ${hoursWord(SILENT_MINUTES)}.`}
             </p>
           ) : (
             quietRows.slice(0, 7).map((row) => (
@@ -911,9 +1075,9 @@ function Registers({
             ))
           )}
         </div>
-        {quietRows.length > 0 ? (
+        {allQuietRows.length > 0 ? (
           <button type="button" className={styles.chip} aria-pressed={silentPressed} onClick={onSilent}>
-            {`Show all ${quietRows.length} in the table`}
+            {`Show all ${allQuietRows.length} quiet in the table`}
           </button>
         ) : null}
       </div>
@@ -952,13 +1116,21 @@ export function DelaysBoard({
   // Adjusting state during render is React's pattern for state derived from changed props.
   if (chosenFilters.cause !== null && !rows.some((row) => row.cause === chosenFilters.cause))
     setFilters((current) => ({ ...current, cause: null }));
-  const [flat, setFlat] = useState(false);
+  const flat = useDelaysFlatStore();
+  const setFlat = writeDelaysFlat;
   const [openGroups, setOpenGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [moreGroups, setMoreGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const tableRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const sheet = useSheetLayout();
+  // v10 phone: the registers, the longest quiet list and the graphs sit one tap away as cards.
+  const isPhone = useIsPhone();
+  const isTabletPortrait = useIsTabletPortrait();
+  /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the registers as a slide-over. */
+  const portrait = isTabletPortrait && !isPhone;
+  const [railOpen, setRailOpen] = useState(false);
+  const [phoneSheet, setPhoneSheet] = useState<"registers" | "quiet" | "spread" | null>(null);
 
   const nameOf = useCallback(
     (movement: Movement) => `${patientOf(movement).formalName} ${patientOf(movement).umrn}`,
@@ -1019,7 +1191,7 @@ export function DelaysBoard({
     if (sheet) return;
     window.requestAnimationFrame(() => {
       const button = document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${id}"]`);
-      button?.scrollIntoView({ block: "center", behavior: "smooth" });
+      button?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
       button?.focus({ preventScroll: true });
     });
   };
@@ -1134,17 +1306,28 @@ export function DelaysBoard({
     });
   }
 
+  // Phone: only the first act-now row of yours in reading order carries the red edge, so one row
+  // reads as the next thing to do rather than every urgent row shouting at once.
+  let actRowMarked = false;
   const renderRow = (row: BoardRow) => {
     const { movement } = row;
     const patient = patientOf(movement);
     const isSelected = selectedId === movement.id;
     const ward = wardSummary(row, units);
+    const isActRow =
+      isPhone &&
+      !actRowMarked &&
+      row.owner === "yours" &&
+      (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H);
+    if (isActRow) actRowMarked = true;
     return [
       <tr
         role="row"
         key={movement.id}
         className={styles.r}
+        data-severe={row.severe}
         aria-selected={isSelected}
+        data-act={isActRow ? "true" : undefined}
         data-testid={`delays-row-${movement.id}`}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest("button, a") === null) select(movement.id);
@@ -1162,7 +1345,8 @@ export function DelaysBoard({
           >
             <b className={styles.ellBlock}>{patient.formalName}</b>
             <span className={styles.ellBlock} data-ward-type-floor="delays-profile">
-              {[patient.umrn, originLabel(movement)].filter(Boolean).join(" · ")}
+              {isPhone ? phonePrefix(row) : null}
+              {[patient.umrn, transitNote(movement, now), originLabel(movement)].filter(Boolean).join(" · ")}
             </span>
           </button>
         </td>
@@ -1194,7 +1378,7 @@ export function DelaysBoard({
           {legalCell(row)}
         </td>
         <td role="cell" className={styles.cUpd} data-ward-type-floor="delays-since">
-          {updateCell(row, now)}
+          {isPhone ? phoneUpdate(row) : updateCell(row, now)}
         </td>
       </tr>,
       isSelected ? (
@@ -1252,7 +1436,17 @@ export function DelaysBoard({
             >
               <ChevronDown size={14} aria-hidden="true" className={open ? undefined : styles.folded} />
               <Glyph tone={list[0].severe ? "danger" : undefined} />
-              <span className={styles.gTitle}>{group.title}</span>
+              {/* Audit 11 Oct 2026, phone: a short heading so the bed pull row is not cut short. */}
+              <span className={styles.gTitle} title={group.title}>
+                {isPhone && group.cause === "bed_pull_expired" ? (
+                  <>
+                    <span aria-hidden="true">Bed held past time</span>
+                    <span className="sr-only">{group.title}</span>
+                  </>
+                ) : (
+                  group.title
+                )}
+              </span>
               <span className={styles.k} data-delays-group-count>
                 {list.length}
               </span>
@@ -1262,6 +1456,7 @@ export function DelaysBoard({
                 Longest <span className={styles.num}>{splitDuration(list[0].waited)}</span>
               </span>
               <BandBar bands={bandCounts(list)} className={styles.minibar} />
+              {isPhone ? <GroupTrend rows={list} /> : null}
             </button>
           </td>
         </tr>,
@@ -1373,6 +1568,71 @@ export function DelaysBoard({
       onNotWired={onNotWired}
     />
   );
+  const portraitRow = (row: BoardRow) => {
+    const patient = patientOf(row.movement);
+    const ward = wardSummary(row, units);
+    return {
+      id: row.movement.id,
+      name: patient.formalName,
+      sub: [patient.umrn, transitNote(row.movement, now), originLabel(row.movement)].filter(Boolean).join(" · "),
+      figure: splitDuration(row.waited),
+      figureNote: phoneUpdate(row),
+      tone: waitTone(row.waited),
+      next: flat ? causeTitle(row.cause) : ward.text,
+      actNow:
+        row.owner === "yours" &&
+        (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H),
+      selected: selectedId === row.movement.id,
+    };
+  };
+  const portraitGroups: PortraitGroup[] = flat
+    ? [
+        {
+          id: "flat",
+          title: "Longest wait first",
+          rows: [...shown].sort(byWait).map(portraitRow),
+        },
+      ]
+    : groups.map((group) => {
+        const list = shown.filter((row) => row.cause === group.cause).sort(byWait);
+        return {
+          id: group.cause,
+          title: group.title,
+          tone: list[0]?.severe ? ("danger" as const) : undefined,
+          note: list[0] ? `${ownerName(list[0].owner)} to clear` : undefined,
+          rows: list.map(portraitRow),
+        };
+      });
+  const portraitRail = portrait ? (
+    <PortraitRail
+      title="Registers"
+      summary={`Escalated ${escalated.length} · Attention ${attention.length}`}
+      description="Escalations, attention, resolved today and the longest quiet"
+      open={railOpen}
+      onOpenChange={setRailOpen}
+    >
+      <Registers
+        escalated={escalated}
+        attention={attention}
+        closedToday={closedToday}
+        rows={rows}
+        now={now}
+        units={units}
+        service={service}
+        isOutsideService={isOutsideService}
+        silentPressed={filters.silent}
+        onSilent={() => {
+          set({ silent: !filters.silent });
+          setRailOpen(false);
+        }}
+        onPick={(id) => {
+          setRailOpen(false);
+          reveal(id);
+        }}
+        onNotWired={onNotWired}
+      />
+    </PortraitRail>
+  ) : null;
   const tiles = ownerTiles(rows);
   const cumulative = WAIT_THRESHOLDS.map((limit) => rows.filter((row) => row.waited >= limit).length);
 
@@ -1380,8 +1640,15 @@ export function DelaysBoard({
     <>
       <Hero
         level={1}
-        eyebrow="Delays"
+        eyebrow={isPhone ? `Delays · ${service ?? "Statewide"}` : "Delays"}
         title={`${rows.length} ${rows.length === 1 ? "person" : "people"} waiting`}
+        titleMeta={
+          isPhone ? (
+            <>
+              Prototype data, invented records · <b>{breached}</b> past recorded time
+            </>
+          ) : undefined
+        }
         testId="delays-hero"
         className={styles.delaysHero}
         stats={
@@ -1412,7 +1679,7 @@ export function DelaysBoard({
             )}
             {heroStat(
               dueSoon,
-              `Due within ${urgentMinutes}m`,
+              isPhone ? `Due in ${urgentMinutes}m` : `Due within ${urgentMinutes}m`,
               "danger",
               filters.dueSoon,
               dueSoon > 0 || filters.dueSoon
@@ -1501,15 +1768,32 @@ export function DelaysBoard({
                   <span className={styles.ownName}>{tile.name}</span>
                 </span>
                 <BandBar bands={tile.bands} />
-                <small>
-                  <Glyph tone={tile.sub.count > 0 ? tile.sub.tone : undefined} />
-                  {`${tile.sub.count} ${tile.sub.text}`}
-                </small>
+                {/* Audit 11 Oct 2026, phone: one count per chip; the glyph alone flags the sub fact. */}
+                {isPhone ? (
+                  tile.sub.count > 0 ? (
+                    <small>
+                      <Glyph tone={tile.sub.tone} />
+                      <span className="sr-only">{`${tile.sub.count} ${tile.sub.text}`}</span>
+                    </small>
+                  ) : null
+                ) : (
+                  <small>
+                    <Glyph tone={tile.sub.count > 0 ? tile.sub.tone : undefined} />
+                    <span>
+                      <b className={styles.ownSubCount}>{tile.sub.count}</b>
+                      <span className={styles.ownSubText}>{` ${tile.sub.text}`}</span>
+                    </span>
+                  </small>
+                )}
               </button>
             ))}
           </section>
 
-          <div className={styles.split} data-person-open={selected !== null || undefined}>
+          <div
+            className={styles.split}
+            data-person-open={selected !== null || undefined}
+            data-portrait={portrait ? "slide" : undefined}
+          >
             <section
               ref={tableRef}
               id="delays-table"
@@ -1518,7 +1802,7 @@ export function DelaysBoard({
               data-ward-primitive="panel"
               tabIndex={-1}
             >
-              <div className={styles.chead}>
+              <div className={`${styles.chead} ${wardPin.pinnedSwitch}`}>
                 <h2>{flat ? "Waiting" : "Waiting by blocker"}</h2>
                 <span
                   className={styles.meta}
@@ -1574,24 +1858,19 @@ export function DelaysBoard({
                 </div>
               </div>
               <div className={`${styles.chead} ${styles.fRow}`}>
-                <span className={styles.eyebrow}>Waited</span>
-                <div className={styles.seg} role="group" aria-label="Waited at least">
-                  {WAIT_THRESHOLD_LABELS.map((label, index) => (
-                    <button
-                      key={label}
-                      type="button"
-                      aria-pressed={filters.threshold === index}
-                      disabled={index > 0 && cumulative[index] === 0 && filters.threshold !== index}
-                      onClick={() => {
-                        if (index > 0 && cumulative[index] === 0 && filters.threshold !== index) return;
-                        set({ threshold: filters.threshold === index ? 0 : (index as WaitThreshold) });
-                      }}
-                    >
-                      <Glyph tone={index === 1 ? "warning" : index === 3 ? "danger" : undefined} />
-                      {label} <span className={styles.k}>{cumulative[index]}</span>
-                    </button>
-                  ))}
-                </div>
+                {/* Audit 11 Oct 2026: Over 8h and Over 24h filter from the hero figures, so only the
+                    12h step, which the hero does not carry, stays here as a chip. */}
+                <button
+                  type="button"
+                  className={styles.chip}
+                  aria-pressed={filters.threshold === 2}
+                  disabled={cumulative[2] === 0 && filters.threshold !== 2}
+                  onClick={() => {
+                    set({ threshold: filters.threshold === 2 ? 0 : 2 });
+                  }}
+                >
+                  {WAIT_THRESHOLD_LABELS[2]} <span className={styles.k}>{cumulative[2]}</span>
+                </button>
                 <button
                   type="button"
                   className={styles.chip}
@@ -1640,7 +1919,13 @@ export function DelaysBoard({
                   </button>
                 ) : null}
               </div>
-              <div className={styles.tableWrap}>
+              {portrait ? (
+                <div className={styles.portraitBody}>
+                  <div className={styles.portraitTools}>{portraitRail}</div>
+                  <PortraitList label="Waiting" groups={portraitGroups} onOpen={select} />
+                </div>
+              ) : null}
+              <div className={styles.tableWrap} hidden={portrait}>
                 <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
                   <colgroup>
                     <col className={styles.colP} />
@@ -1696,34 +1981,167 @@ export function DelaysBoard({
                   panelRef={panelRef}
                 />
               </>
-            ) : (
+            ) : isPhone || portrait ? null : (
               registers
             )}
           </div>
 
-          <DelaysBoardGraphs
-            rows={rows}
-            shown={shown}
-            bins={bins}
-            now={now}
-            filters={filters}
-            catchments={boardCatchments(rows)}
-            selectedId={selectedId}
-            onFilters={(patch, toFlat) => {
-              set(patch);
-              if (toFlat) setFlat(true);
-            }}
-            onClear={() => {
-              setFilters(NO_FILTERS);
-            }}
-            onPick={reveal}
-            onToTable={() => {
-              tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-              tableRef.current?.focus({ preventScroll: true });
-            }}
-          />
+          {isPhone ? (
+            <div className={styles.phCards} data-testid="delays-phone-cards">
+              <button type="button" className={styles.phCard} onClick={() => setPhoneSheet("registers")}>
+                <Flag size={16} aria-hidden="true" className={styles.phCardIcon} />
+                <span className={styles.phCardText}>
+                  <span className={styles.phCardTitle}>Registers</span>
+                  <span className={styles.phCardMeta}>
+                    Escalated <b>{escalated.length}</b> · Attention <b>{attention.length}</b> · Resolved{" "}
+                    <b>{closedToday.length}</b>
+                  </span>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" className={styles.phCardIcon} />
+              </button>
+              <button type="button" className={styles.phCard} onClick={() => setPhoneSheet("quiet")}>
+                <Activity size={16} aria-hidden="true" className={styles.phCardIcon} />
+                <span className={styles.phCardText}>
+                  <span className={styles.phCardTitle}>Longest quiet</span>
+                  <span className={styles.phCardMeta}>Who has gone longest with nothing recorded</span>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" className={styles.phCardIcon} />
+              </button>
+              <button type="button" className={styles.phCard} onClick={() => setPhoneSheet("spread")}>
+                <Activity size={16} aria-hidden="true" className={styles.phCardIcon} />
+                <span className={styles.phCardText}>
+                  <span className={styles.phCardTitle}>Wait spread and the hours ahead</span>
+                  <span className={styles.phCardMeta}>Where the waits sit, and who crosses {H8} next</span>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" className={styles.phCardIcon} />
+              </button>
+              <div className={styles.phCard}>
+                <Glyph tone="success" />
+                <span className={styles.phCardText}>
+                  <span className={styles.phCardTitle}>Delays with no named person</span>
+                  <span className={styles.phCardMeta}>None recorded statewide</span>
+                </span>
+                <button
+                  type="button"
+                  className={styles.phCardAction}
+                  onClick={onNotWired}
+                  aria-label="Record a service-wide or facility delay. Not wired in this prototype."
+                  title="Not wired in this prototype."
+                >
+                  Record (not wired)
+                </button>
+              </div>
+              <PhoneSheet
+                open={phoneSheet === "registers" || phoneSheet === "quiet"}
+                onClose={() => setPhoneSheet(null)}
+                title={phoneSheet === "quiet" ? "Longest quiet" : "Registers"}
+                description={
+                  phoneSheet === "quiet"
+                    ? "Who has gone longest with nothing recorded"
+                    : "Escalations, attention and resolved today"
+                }
+                height="tall"
+              >
+                <Registers
+                  escalated={escalated}
+                  attention={attention}
+                  closedToday={closedToday}
+                  rows={rows}
+                  now={now}
+                  units={units}
+                  service={service}
+                  isOutsideService={isOutsideService}
+                  silentPressed={filters.silent}
+                  onSilent={() => {
+                    set({ silent: !filters.silent });
+                    setPhoneSheet(null);
+                  }}
+                  onPick={(id) => {
+                    setPhoneSheet(null);
+                    reveal(id);
+                  }}
+                  onNotWired={onNotWired}
+                  part={phoneSheet === "quiet" ? "quiet" : "registers"}
+                />
+              </PhoneSheet>
+              <PhoneSheet
+                open={phoneSheet === "spread"}
+                onClose={() => setPhoneSheet(null)}
+                title="Wait spread and the hours ahead"
+                description="Dots and columns follow the same filters as the list"
+                height="tall"
+              >
+                <DelaysBoardGraphs
+                  rows={rows}
+                  shown={shown}
+                  bins={bins}
+                  now={now}
+                  filters={filters}
+                  catchments={boardCatchments(rows)}
+                  selectedId={selectedId}
+                  onFilters={(patch, toFlat) => {
+                    set(patch);
+                    if (toFlat) setFlat(true);
+                  }}
+                  onClear={() => {
+                    setFilters(NO_FILTERS);
+                  }}
+                  onPick={(id) => {
+                    setPhoneSheet(null);
+                    reveal(id);
+                  }}
+                  onToTable={() => {
+                    setPhoneSheet(null);
+                    tableRef.current?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
+                  }}
+                />
+              </PhoneSheet>
+            </div>
+          ) : null}
+
+          {isPhone ? null : (
+            <DelaysBoardGraphs
+              rows={rows}
+              shown={shown}
+              bins={bins}
+              now={now}
+              filters={filters}
+              catchments={boardCatchments(rows)}
+              selectedId={selectedId}
+              onFilters={(patch, toFlat) => {
+                set(patch);
+                if (toFlat) setFlat(true);
+              }}
+              onClear={() => {
+                setFilters(NO_FILTERS);
+              }}
+              onPick={reveal}
+              onToTable={() => {
+                tableRef.current?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
+                tableRef.current?.focus({ preventScroll: true });
+              }}
+            />
+          )}
         </>
       )}
     </>
+  );
+}
+
+/**
+ * v10 phone group trend mark: a small bar glyph and "+N", the people in this group whose wait
+ * opened recently (the board's own quiet threshold). A count of recorded arrivals, never a forecast.
+ */
+function GroupTrend({ rows }: { rows: readonly BoardRow[] }) {
+  const joined = rows.filter((row) => row.waited < SILENT_MINUTES).length;
+  return (
+    <span className={styles.phTrend} title={`${joined} joined recently`}>
+      <svg viewBox="0 0 8 12" width="8" height="12" aria-hidden="true">
+        <rect x="0" y="6" width="3" height="6" fill="currentColor" opacity="0.45" />
+        <rect x="5" y="1" width="3" height="11" fill="currentColor" />
+      </svg>
+      <span aria-hidden="true">+{joined}</span>
+      <span className="sr-only">{joined} joined recently</span>
+    </span>
   );
 }

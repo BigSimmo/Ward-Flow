@@ -35,6 +35,11 @@ export type HeroProps = {
   foot?: ReactNode;
   /** Optional foot line, right: freshness or a small link. */
   footAside?: ReactNode;
+  /**
+   * `"actions"` when the foot holds buttons rather than a meta line: on phone it then drops the
+   * hairline and lets the buttons wrap. Defaults to `"line"`; desktop looks the same either way.
+   */
+  footKind?: "line" | "actions";
   /** Heading level of the title. Defaults to 2. */
   level?: 1 | 2;
   /** `data-testid` on the hero section, so a page needs no wrapper element to find it. */
@@ -72,6 +77,7 @@ export function Hero({
   barAside,
   foot,
   footAside,
+  footKind = "line",
   level = 2,
   testId,
   quiet = false,
@@ -88,7 +94,8 @@ export function Hero({
       className={cx(styles.hero, quiet && styles.quiet, className)}
       aria-labelledby={titleId}
       data-testid={testId}
-      data-wf-hero={quiet ? "quiet" : "band"}
+      // A band hero is server-rendered as the band (band.ts, site review B6); `card` opts out.
+      data-wf-hero={quiet ? "quiet" : band ? "band" : "card"}
     >
       <div className={cx(styles.row, styles.firstRow)}>
         {lead ? (
@@ -115,7 +122,7 @@ export function Hero({
         </div>
       ) : null}
       {foot || footAside ? (
-        <div className={cx(styles.row, styles.foot)}>
+        <div className={cx(styles.row, styles.foot)} data-foot={footKind === "actions" ? "actions" : undefined}>
           {foot ? <div className={styles.footMain}>{foot}</div> : null}
           {footAside ? <div className={styles.footAside}>{footAside}</div> : null}
         </div>

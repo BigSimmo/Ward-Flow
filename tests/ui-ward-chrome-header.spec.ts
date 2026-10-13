@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
+import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/ward-management/ward-nav";
 
 /**
  * BROWSER COVERAGE OF THE WARD FLOW SHELL BAR (`WardBar`, `shell/ward-bar.tsx`, mounted with
@@ -188,11 +189,9 @@ function searchPopup(page: Page): Locator {
  * IS DELIBERATELY NOT A ROW HERE.** Every row below is asserted against the SAME default route
  * (`DELAYS_ROUTE`, via `gotoWardChrome(page)`) across several tests in this file — the CONTROL
  * test, the fault-2 open/Escape loop and the tap-target floor test all iterate OPENERS at one
- * route. Delays resolves no primary action at all (`ward-nav.ts`'s `WARD_PRIMARY_ACTIONS` covers
- * only Movements, a Community team and Statistics for these three kinds), so adding that row here
- * would fail all three for a trigger Delays never renders. See the dedicated
- * "item 43: the unwired primary action's popover" suite at the end of this file instead, which
- * visits each kind's own route.
+ * route, and since 11 Oct 2026 no route resolves one of those kinds at all (every coordinator page
+ * carries New referral). See the dedicated "item 43: the unwired primary action's popover" suite
+ * at the end of this file, which pins that and visits the two former routes.
  */
 const OPENERS: ReadonlyArray<readonly [string, string, string]> = [
   ["ward-bar-service-trigger", "ward-bar-service-panel", "the Service selector"],
@@ -202,27 +201,39 @@ const OPENERS: ReadonlyArray<readonly [string, string, string]> = [
 ];
 
 /**
- * Phone (8 Oct 2026, locked lean bar 10 Oct 2026): at 48rem (768px) and below the bar drops
- * Activity and Tools, and its Menu button opens the phone menu, which carries Activity in its dock
- * and Tools as a row. Everything else stays in the bar.
+ * Phone (8 Oct 2026, locked lean bar 10 Oct 2026; device audit option A, 11 Oct 2026): at 48rem
+ * (768px) and below the bar drops Activity, Tasks and Tools. Activity and Tasks open from the dock
+ * on every phone page, and Tools is a row in the phone menu that the bar's Menu button opens.
  */
 const PHONE_BAR_MAX_WIDTH = 768;
-const PHONE_MENU_ROWS: Readonly<Record<string, string>> = {
+const PHONE_DOCK_BUTTONS: Readonly<Record<string, string>> = {
   "ward-bar-activity-trigger": "ward-phone-menu-activity",
+  "ward-bar-tasks-trigger": "ward-phone-menu-tasks",
+};
+const PHONE_MENU_ROWS: Readonly<Record<string, string>> = {
   "ward-bar-tools-trigger": "ward-phone-menu-tools",
 };
 const PHONE_MENU: readonly [string, string, string] = ["ward-bar-phone-menu", "ward-phone-menu", "the phone Menu"];
 
 function barOpeners(width: number): ReadonlyArray<readonly [string, string, string]> {
   return width <= PHONE_BAR_MAX_WIDTH
-    ? [...OPENERS.filter(([testId]) => !(testId in PHONE_MENU_ROWS)), PHONE_MENU]
+    ? [...OPENERS.filter(([testId]) => !(testId in PHONE_MENU_ROWS) && !(testId in PHONE_DOCK_BUTTONS)), PHONE_MENU]
     : OPENERS;
 }
 
 async function openFromBar(page: Page, testId: string, width: number) {
-  const row = width <= PHONE_BAR_MAX_WIDTH ? PHONE_MENU_ROWS[testId] : undefined;
+  const phone = width <= PHONE_BAR_MAX_WIDTH;
+  const dock = phone ? PHONE_DOCK_BUTTONS[testId] : undefined;
+  if (dock) return page.getByTestId(dock).click();
+  const row = phone ? PHONE_MENU_ROWS[testId] : undefined;
   if (!row) return page.getByTestId(testId).click();
-  await page.getByTestId(PHONE_MENU[0]).click();
+  // Retried as one step: a dev-server reload just after load can close the menu before its row is
+  // tapped. What this proves is that the row opens from the menu, not that the first tap wins.
+  const menu = page.getByTestId(PHONE_MENU[1]);
+  await expect(async () => {
+    if (!(await menu.isVisible())) await page.getByTestId(PHONE_MENU[0]).click();
+    await expect(menu).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
   await page.getByTestId(row).click();
 }
 
@@ -253,6 +264,9 @@ test.describe("@mockup Ward shell bar", () => {
   test("opening a person keeps the shared navigation and page design", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto("/mockups/ward-flow/delays", { waitUntil: "networkidle" });
+    // The hero registers its band after hydration. Reading the unhydrated glass
+    // colour compared initial loading with a ready page, rather than the panel swap.
+    await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
     const readChrome = async () => {
       const elements = ["ward-rail", "ward-bar", "ward-delays-page"];
       return Promise.all(
@@ -592,36 +606,43 @@ test.describe("@mockup Ward shell bar", () => {
 
 /**
  * ITEM 43 (build plan A1, owner answers 2026-09-17): the three "not wired" primary-action kinds
- * (`record-decision`, `contact-team`, `export-figures` — `ward-bar.tsx`'s D-16 comment) now open
- * their own popover, headed by the control's own label with the body EXACTLY "Not wired in this
- * prototype." — not only the SR-only announcement `tests/ward-primary-action.dom.test.tsx` and
- * `tests/ward-shell-third-edition.dom.test.tsx`'s offline suites already cover. This is the one
- * browser-level proof that a real click actually reaches the trigger and a real Escape actually
- * closes the popover and returns focus, the same reachability property the rest of this file
- * exists to prove for the bar's other controls (see the file header).
+ * (`record-decision`, `contact-team`, `export-figures` — `ward-bar.tsx`'s D-16 comment) open their
+ * own popover whose body reads exactly "Not wired in this prototype.".
+ *
+ * ⚠️ **RETARGETED, 11 Oct 2026 (device audit item 6, "keep the shell stable").** No route resolves
+ * one of those kinds any more: Movements, a Movement and a Community team now carry New referral in
+ * the header, as Statistics has since v10 (10 Oct 2026). The unwired popover is therefore no longer
+ * reachable from the header on any route, and this browser suite cannot click it. `WardBar` still
+ * renders it for a caller that passes one of those kinds, and
+ * `tests/ward-primary-action.dom.test.tsx`, `tests/ward-shell-third-edition.dom.test.tsx` and
+ * `tests/ward-bar-single-row-stress.dom.test.tsx` keep proving its exact text, Escape and focus
+ * return. What stays here is the browser half: the CONTROL pins that no route resolves an unwired
+ * kind (so re-routing one back reddens this file and the suite must visit it again), and the two
+ * former routes are clicked for real to prove their header primary opens the live New referral
+ * menu and that Escape closes it with focus back on the trigger.
  *
  * The community route uses `COMMUNITY_TEAM_PAGES[0]` — a REAL derived team, never a hand-typed
  * placeholder id that could stop matching `ward-nav.ts`'s `community/[teamId]` route.
  */
-const UNWIRED_PRIMARY_ROUTES: ReadonlyArray<readonly [string, string, string]> = [
+const UNWIRED_PRIMARY_KINDS: ReadonlySet<string> = new Set(["record-decision", "contact-team", "export-figures"]);
+const FORMER_UNWIRED_ROUTES: ReadonlyArray<readonly [string, string, string]> = [
   ["/mockups/ward-flow/movements", "Record a decision", "Movements"],
   [`/mockups/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`, "Contact a team", "a community team"],
-  // v10 (10 Oct 2026): Statistics now carries New referral in the header; Export moved to its hero.
 ];
 
 test.describe("@mockup Ward shell bar — item 43: the unwired primary action's popover", () => {
   test.describe.configure({ timeout: 90_000 });
 
-  // Anti-vacuity: if a route stopped resolving one of these three kinds, every test below would
-  // simply find no trigger and fail loudly at the first `toBeVisible()` — but that failure would
-  // name the wrong thing, so state the premise once, explicitly.
-  test("CONTROL: both routed unwired kinds are still covered by this list", () => {
-    expect(UNWIRED_PRIMARY_ROUTES.length).toBe(2);
-    expect(new Set(UNWIRED_PRIMARY_ROUTES.map(([, label]) => label)).size).toBe(2);
+  test("CONTROL: no route resolves an unwired primary kind, so the header shows none of them", () => {
+    const unwired = WARD_PRIMARY_ACTIONS.filter((entry) => UNWIRED_PRIMARY_KINDS.has(entry.action.kind));
+    expect(unwired.map((entry) => entry.route)).toEqual([]);
+    for (const [route] of FORMER_UNWIRED_ROUTES) {
+      expect(resolveWardPrimaryAction(route)?.kind, `${route} no longer resolves New referral`).toBe("new-referral");
+    }
   });
 
-  for (const [route, label, routeLabel] of UNWIRED_PRIMARY_ROUTES) {
-    test(`on ${routeLabel}, clicking "${label}" shows the visible text exactly "Not wired in this prototype.", and Escape closes it with focus returning to the button`, async ({
+  for (const [route, formerLabel, routeLabel] of FORMER_UNWIRED_ROUTES) {
+    test(`on ${routeLabel}, the header primary is New referral, not "${formerLabel}", and its menu opens and closes on Escape with focus returning to the button`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
@@ -629,22 +650,25 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
 
       const trigger = page.getByTestId("ward-bar-primary-action");
       await expect(trigger, `the primary action is not visible on ${route}`).toBeVisible();
-      await expect(trigger).toHaveText(label);
+      await expect(trigger).toHaveText(/New\s*referral/u);
+      await expect(trigger).not.toHaveText(formerLabel);
 
       const panel = page.getByTestId("ward-bar-primary-panel");
-      await expect(panel, `${label}'s popover must start closed`).toHaveCount(0);
+      await expect(panel, "the New referral menu must start closed").toHaveCount(0);
 
-      // A real click, not a DOM presence check — the same instrument the rest of this file uses
-      // for the identical reason: reachability, not presence, is the property that matters.
-      await trigger.click();
-      await expect(panel, `${label}'s popover did not open after a real click on its trigger`).toBeVisible();
-      await expect(
-        panel.getByText("Not wired in this prototype.", { exact: true }),
-        `${label}'s popover must show the visible text exactly "Not wired in this prototype."`,
-      ).toBeVisible();
+      // A real click, not a DOM presence check: reachability is the property that matters. Retried
+      // as one step, because a dev-server reload just after load can close the menu again.
+      await expect(async () => {
+        if (!(await panel.isVisible())) await trigger.click();
+        await expect(panel, "the New referral menu did not open after a real click on its trigger").toBeVisible({
+          timeout: 2_000,
+        });
+      }).toPass({ timeout: 20_000 });
+      await expect(panel.getByRole("menuitem")).not.toHaveCount(0);
+      await expect(panel.getByText("Not wired in this prototype.", { exact: true })).toHaveCount(0);
 
       await page.keyboard.press("Escape");
-      await expect(panel, `${label}'s popover did not close on Escape`).toHaveCount(0);
+      await expect(panel, "the New referral menu did not close on Escape").toHaveCount(0);
       await expect(trigger, "focus did not return to the trigger after Escape").toBeFocused();
     });
   }
@@ -665,7 +689,8 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await page.keyboard.press("Escape");
   await expect(page.getByTestId(PHONE_MENU[0])).toBeFocused();
 
-  await page.getByTestId("ward-bar-tasks-trigger").click();
+  // Phone (device audit option A, 11 Oct 2026): Tasks opens from the dock, not the bar.
+  await openFromBar(page, "ward-bar-tasks-trigger", 390);
   const tasks = page.getByRole("dialog", { name: "Tasks", exact: true });
   expect(await tasks.locator("li").count()).toBeGreaterThan(0);
   const scroller = tasks.locator('[class*="drawerBody"]');
@@ -677,13 +702,23 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await expect(tasks.getByRole("button", { name: "Close tasks panel" })).toBeInViewport();
   // Stream D (9 Oct 2026): a planned admission row has no movement and opens Capacity, so the
   // journey is checked on the last card still labelled "Open patient", scrolled to like the rest.
-  const lastPatientCard = tasks
-    .locator("li")
-    .filter({ has: page.getByRole("button", { name: "Open patient", exact: true }) })
-    .last();
-  await lastPatientCard.scrollIntoViewIfNeeded();
-  await expect(lastPatientCard).toBeInViewport();
-  await lastPatientCard.getByRole("button", { name: "Open patient", exact: true }).click();
+  // v10 phone Tasks sheet (11 Oct 2026): a row shows its title, person and due time; tapping the
+  // title expands it to its actions, Open among them. Expand from the last row upward until one
+  // offers "Open patient".
+  const rows = tasks.locator("li");
+  let openPatient: Locator | null = null;
+  for (let index = (await rows.count()) - 1; index >= 0 && !openPatient; index -= 1) {
+    const row = rows.nth(index);
+    await row.scrollIntoViewIfNeeded();
+    const title = row.locator("button[aria-expanded]").first();
+    if ((await title.count()) && (await title.getAttribute("aria-expanded")) !== "true") await title.click();
+    const candidate = row.getByRole("button", { name: "Open patient", exact: true });
+    if (await candidate.count()) openPatient = candidate;
+  }
+  expect(openPatient, "no task row offers Open patient").not.toBeNull();
+  await openPatient!.scrollIntoViewIfNeeded();
+  await expect(openPatient!).toBeInViewport();
+  await openPatient!.click();
   // That card may be a move or a carer, PSP and MHAS discharge row (9 Oct 2026), which opens
   // its stay on the discharges board. Either way the task is reachable and the drawer closes.
   await expect(page).toHaveURL(/\/movements\/WF-|\/discharges\?admissionId=/u);
@@ -702,12 +737,18 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
   await expect(page.getByRole("dialog")).toHaveCount(1);
   const sections = referral.getByRole("group", { name: "Referral sections" });
+  // v10 phone (11 Oct 2026): each step opens as a sheet over the step list; closing it returns to
+  // the list, where the next step is chosen. The draft must survive the round trip.
+  const closeStep = referral.getByRole("button", { name: "Close step", exact: true });
   await sections.getByRole("button", { name: "Referral", exact: true }).click();
   await referral.locator("#refDocInput").fill("Synthetic draft clinician");
+  await closeStep.click();
   await sections.getByRole("button", { name: "Wards", exact: true }).click();
   await expect(referral.getByRole("list", { name: "Placement Destination Options" })).toBeVisible();
+  await closeStep.click();
   await sections.getByRole("button", { name: "Referral", exact: true }).click();
   await expect(referral.locator("#refDocInput")).toHaveValue("Synthetic draft clinician");
+  await closeStep.click();
   await sections.getByRole("button", { name: "Wards", exact: true }).click();
   await page.keyboard.press("/");
   await expect(sections.getByRole("button", { name: "Patient", exact: true })).toHaveAttribute("aria-pressed", "true");

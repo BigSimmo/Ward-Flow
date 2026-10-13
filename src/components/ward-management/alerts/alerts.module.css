@@ -76,45 +76,6 @@
   white-space: nowrap;
 }
 
-/* Phone: the conditions sit one tap away in a sheet. */
-.phoneChecking {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-height: var(--wf-touch);
-  padding: 0 var(--wf-s-4);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.phoneChecking:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-.phoneCheckingLabel {
-  color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.phoneCheckingText {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
 /* In the sheet the conditions read on the page surface, one per line. */
 .phoneChecks .checking {
   flex-direction: column;
@@ -436,7 +397,7 @@ button.check[aria-pressed="true"] {
   background: var(--wf-hover);
 }
 
-/* v10: a highlight keeps matching rows solid and dims the rest by colour; no tinted fill. */
+/* v10: highlights dim non-matching rows by colour and retain status treatments. */
 .row[data-dim="true"],
 .row[data-dim="true"] *,
 .card[data-dim="true"],
@@ -444,19 +405,28 @@ button.check[aria-pressed="true"] {
   color: var(--wf-dim);
 }
 
-/* Act now: a thin red full edge, never a fill or stripe. */
+/* Act now: an inset coral marker and subtle tint. */
 .row[data-act] {
-  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: none;
+
+  background: var(--wf-act-tint);
+}
+
+.row[data-act]:hover {
+  background: var(--wf-hover);
 }
 
 .row[data-act][data-selected] {
-  box-shadow:
-    inset 3px 0 0 var(--wf-accent-strong),
-    inset 0 0 0 1px var(--wf-act-edge);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+
+  background: var(--wf-selected);
 }
 
 .card[data-act] {
-  border-color: var(--wf-act-edge);
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
 }
 
 .highlightNote {
@@ -1148,7 +1118,7 @@ button.check[aria-pressed="true"] {
 
 .actionRow {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-2);
 }
 
@@ -1445,13 +1415,510 @@ button.check[aria-pressed="true"] {
   }
 }
 
-/* Phone (v10): the views as a full-width segmented control with 44px touch targets. */
-.phoneTabs {
+/* ---------- Phone (v10), rendered only under 48rem ---------- */
+.phoneHeroActions {
+  display: flex;
+  gap: var(--wf-s-2);
   width: 100%;
 }
 
-.phoneTabs [role="radio"] {
+.phoneHeroActions > * {
+  min-height: 48px;
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneHeroActions > :not(:last-child) {
   flex: 1 1 0;
+}
+
+/* Device audit (11 Oct 2026): the pause control carries its word, not an icon alone. */
+.phoneHeroActions > :last-child {
+  flex: 0 0 auto;
+}
+
+/* The directive line and the one-tap cards: a light row with a chevron. */
+.phoneDirective,
+.phoneCard {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneCard > svg {
+  flex: 0 0 auto;
+  color: var(--wf-ink-2);
+}
+
+.phoneDirective > svg:last-child,
+.phoneCard > svg:last-child {
+  color: var(--wf-ink-3);
+}
+
+.phoneDirective:focus-visible,
+.phoneCard:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneCardText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneCardTitle {
+  overflow: hidden;
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneCardMeta {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneCardMeta b {
+  color: var(--wf-ink-1);
+  font-weight: 700;
+}
+
+.phoneChips {
+  display: flex;
+  gap: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-3)) var(--wf-s-3);
+  padding: 2px var(--wf-s-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.phoneChips::-webkit-scrollbar {
+  display: none;
+}
+
+.phoneChips > * {
+  flex: none;
+  gap: 6px;
+  border-radius: var(--wf-r-pill);
+}
+
+.phoneChips b {
+  margin-right: 6px;
+  font-weight: 600;
+  font-size: var(--wf-fs-13);
+}
+
+/* One inset card: group bands, then rows. */
+.phoneList {
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phoneRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: var(--wf-s-2) 10px;
+  align-items: center;
+  min-height: 72px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  cursor: pointer;
+}
+
+/* Act now: an inset coral marker and subtle tint. */
+.phoneRow[data-act="true"] {
+  box-shadow: none;
+
+  background: var(--wf-act-tint);
+  position: relative;
+}
+
+.phoneRow[data-dim="true"],
+.phoneRow[data-dim="true"] * {
+  color: var(--wf-dim);
+}
+
+.phoneRow[data-selected] {
+  background: var(--wf-surface-2);
+}
+
+.phoneRowGlyph {
+  display: inline-flex;
   justify-content: center;
-  min-height: var(--wf-touch);
+  color: var(--wf-ink-3);
+}
+
+.phoneRowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneRowText .rowOpen {
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+  /* U2 (site review, 12 Oct 2026): the button itself measures 44px tall, not the 20px of its line;
+     the negative margin keeps the row's layout exactly as it was. Phone rows only. */
+  padding-block: 12px;
+  margin-block: -12px;
+}
+
+/* The open button covers the row, so the whole row is the tap target. */
+.phoneRowText .rowOpen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.phoneRowLine {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneRowLine .who {
+  font: inherit;
+}
+
+.phoneRowLine .umrn {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.phoneRowEnd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.phoneRowAge {
+  font: 600 var(--wf-fs-14) / 20px var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+.phoneRowOwner {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  white-space: nowrap;
+}
+
+.phoneNote {
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-align: center;
+}
+
+@media (max-width: 48rem) {
+  /* The views stay under the header while the list scrolls. */
+  .tabsBar {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 3;
+    margin: 0 calc(-1 * var(--wf-s-3)) var(--wf-s-1);
+    padding: var(--wf-s-2) var(--wf-s-3);
+    background: var(--wf-canvas);
+  }
+
+  .phoneList .group + .group .groupHead,
+  .phoneList .groupHead {
+    min-height: 36px;
+    padding: 0 var(--wf-s-3);
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface-2);
+  }
+
+  .phoneList .group:first-child .groupHead {
+    border-top: 0;
+  }
+
+  .phoneList .groupEmpty {
+    padding: var(--wf-s-3);
+  }
+}
+
+/* v10 Alerts, phone (11 Oct 2026): the open alert sheet. Who and how long, the facts as a boxed
+ * two by two grid, the recorded times as a card, the reason, the actions two by two, activity one
+ * tap away, then Patient and the one primary pinned at the foot. These classes render only on phone. */
+.phDetail {
+  gap: var(--wf-s-3);
+}
+
+.phWho {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin-top: calc(-1 * var(--wf-s-2));
+}
+
+.phWhoName {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.phChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.phFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phFacts > div {
+  min-width: 0;
+  padding: 10px var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.phFacts > div:nth-child(-n + 2) {
+  border-top: 0;
+}
+
+.phFacts > div:nth-child(even) {
+  border-left: 1px solid var(--wf-line);
+}
+
+.phFacts dt {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.phFacts dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phBox {
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phBox .detailSection {
+  border-bottom: 0;
+}
+
+.phActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-2);
+}
+
+.phActions > * {
+  min-width: 0;
+}
+
+.phActions button {
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--wf-r-pill);
+}
+
+.phActivity {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.phActivityToggle {
+  min-height: 48px;
+  border: 1px solid var(--wf-line);
+  border-radius: 16px;
+  background: var(--wf-surface);
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.phActivityToggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phFoot {
+  position: sticky;
+  bottom: calc(-1 * var(--wf-s-4));
+  z-index: 2;
+  display: flex;
+  gap: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-4)) calc(-1 * var(--wf-s-4));
+  padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.phFoot > * {
+  min-height: 48px;
+  justify-content: center;
+  border-radius: var(--wf-r-pill);
+}
+
+.phFoot > * {
+  flex: 1 1 auto;
+}
+
+.phFoot > a:first-child:not(:last-child) {
+  flex: 0 0 auto;
+  padding: 0 var(--wf-s-4);
+}
+
+.phFacts > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.phFoot button {
+  width: 100%;
+  min-height: 48px;
+  justify-content: center;
+  border-radius: var(--wf-r-pill);
+}
+
+/* v10 phone alert sheet: the not-wired Escalate (D4) reads as a quiet row, not a dashed button. */
+
+/* Device audit (11 Oct 2026): the actions beyond the primary and Take, behind one disclosure. */
+.moreActions {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.moreActions > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.moreGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+}
+
+.moreGrid > * {
+  min-width: 0;
+}
+
+.moreGrid button {
+  justify-content: center;
+  width: 100%;
+}
+
+@media (max-width: 48rem) {
+  .moreActions > summary {
+    min-height: 48px;
+  }
+
+  .moreGrid button {
+    min-height: 48px;
+  }
+}
+
+/* Device audit (11 Oct 2026): iPad portrait swaps the wrapped Checking strip for a one-tap card. */
+.checkingCardPortrait {
+  display: none;
+}
+
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .checkingFootWide {
+    display: none;
+  }
+
+  .checkingCardPortrait {
+    display: flex;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.row[data-act],
+.card[data-act],
+.phoneRow[data-act="true"] {
+  position: relative;
+}
+
+.row[data-act]::before,
+.card[data-act]::before,
+.phoneRow[data-act="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .row[data-act]::before,
+  .card[data-act]::before,
+  .phoneRow[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
 }

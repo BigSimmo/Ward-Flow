@@ -1,11 +1,24 @@
 "use client";
 
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Phone, Route, Search } from "lucide-react";
 
-import { Button, Icon, Sheet, SrOnly, Segmented, StatusGlyph, TextInput, cx, type WfTone } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  Button,
+  Icon,
+  LiveChip,
+  PhoneHero,
+  Sheet,
+  SrOnly,
+  Segmented,
+  StatusGlyph,
+  TextInput,
+  cx,
+  type WfTone,
+} from "@/components/wf";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
@@ -33,6 +46,8 @@ export type PhonePerson = {
   name: string;
   umrn: string;
   profileHref: string | null;
+  /** Audit A3-18: the short legal status or form, before the UMRN. */
+  legal?: string;
   daysLabel: string;
   offset: number | null;
   status: ReturnStatus;
@@ -50,6 +65,12 @@ const STATUS_TONE: Record<ReturnStatus, WfTone> = {
   agreed: "neutral",
 };
 
+/** v10 phone: the discharge date leads the card ("Due 4 days ago", "Due in 2 days", "Due today"). */
+function dueWords(offset: number | null): string {
+  const short = dischargeShort(offset);
+  return offset === null ? short : `Due ${short.charAt(0).toLowerCase()}${short.slice(1)}`;
+}
+
 function PersonCard({
   person,
   withReason = false,
@@ -57,8 +78,11 @@ function PersonCard({
   testId,
   selected,
   onOpen,
+  showPlan = true,
 }: {
   person: PhonePerson;
+  /** False when every card would read the same plan state ("No plan" eighteen times). */
+  showPlan?: boolean;
   withReason?: boolean;
   first?: boolean;
   testId?: string;
@@ -85,11 +109,21 @@ function PersonCard({
       />
       <span className={styles.pcLine1}>
         <b>{person.name}</b>
-        {overdue ? (
+        {!showPlan ? (
+          // Device audit 11 Oct 2026: with no plan row the card is three lines, and the top line
+          // carries both the discharge date and the days away.
+          <span className={cx(styles.pcDue, !overdue && styles.pcDays)}>
+            {overdue ? <StatusGlyph tone="warning" size={9} /> : null}
+            {dueWords(person.offset)} · {person.daysLabel}
+            <SrOnly> away</SrOnly>
+          </span>
+        ) : overdue ? (
           <span className={styles.pcDue}>
             <StatusGlyph tone="warning" size={9} />
-            {dischargeShort(person.offset)}
+            {dueWords(person.offset)}
           </span>
+        ) : person.offset !== null ? (
+          <span className={styles.pcDue}>{dueWords(person.offset)}</span>
         ) : (
           <span className={styles.pcDays}>
             {person.daysLabel}
@@ -98,6 +132,12 @@ function PersonCard({
         )}
       </span>
       <span className={styles.pcLine2}>
+        {person.legal ? (
+          <>
+            <span className={styles.pcLegal}>{person.legal}</span>
+            <span className={styles.pcDot} aria-hidden="true" />
+          </>
+        ) : null}
         {person.profileHref ? (
           <Link
             href={person.profileHref}
@@ -124,18 +164,16 @@ function PersonCard({
           {entry.unit.name} · {shortSiteName(entry.unit.siteCode)}
         </span>
       )}
-      <span className={styles.pcLine4}>
-        <StatusGlyph tone={STATUS_TONE[person.status]} size={9} />
-        <span>{RETURN_STATUS_SHORT[person.status]}</span>
-        <span className={styles.pcEnd}>
-          {overdue
-            ? `${person.daysLabel} away`
-            : person.offset === null
-              ? "No discharge date"
-              : `Discharge ${dischargeShort(person.offset).toLowerCase()}`}
+      {showPlan ? (
+        <span className={styles.pcLine4}>
+          <StatusGlyph tone={STATUS_TONE[person.status]} size={9} />
+          <span>{RETURN_STATUS_SHORT[person.status]}</span>
+          <span className={styles.pcEnd}>
+            {person.offset === null ? "No discharge date" : `${person.daysLabel} away`}
+          </span>
+          <Icon icon={ChevronRight} size={14} />
         </span>
-        <Icon icon={ChevronRight} size={14} />
-      </span>
+      ) : null}
     </li>
   );
 }
@@ -195,6 +233,7 @@ export function OutOfAreaPhone({
   const [tab, setTab] = useState<PhoneTab>("needs");
   const [mode, setMode] = useState<"peek" | "plan">("peek");
   const byId = new Map(people.map((person) => [person.entry.admission.id, person]));
+  const planVaries = new Set(people.map((person) => person.status)).size > 1;
   const leaving = [...leavingToday]
     .filter((record) => byId.has(record.admissionId))
     .sort((a, b) => a.estimatedAt - b.estimatedAt);
@@ -207,7 +246,17 @@ export function OutOfAreaPhone({
   );
   const more = Math.max(0, people.length - leavingIds.size - ready.length - soon.length);
   const selected = selectedId ? byId.get(selectedId) : undefined;
-  const index = selected ? people.indexOf(selected) : -1;
+  // A3-19: the sheet steps through the list the person was opened from. On Needs you that is its
+  // own order (home today, then date passed, then due soon), so its first card reads 1/6, not
+  // its place in everyone.
+  const needsList = leaving
+    .flatMap((record) => {
+      const person = byId.get(record.admissionId);
+      return person ? [person] : [];
+    })
+    .concat(ready, soon);
+  const stepList = tab === "needs" && selected && needsList.includes(selected) ? needsList : people;
+  const index = selected ? stepList.indexOf(selected) : -1;
   const nextUp = nextUpId ? byId.get(nextUpId) : undefined;
 
   const open = (id: string) => {
@@ -215,7 +264,7 @@ export function OutOfAreaPhone({
     onSelect(id);
   };
   const stepTo = (delta: number) => {
-    const next = people[index + delta];
+    const next = stepList[index + delta];
     if (next) onSelect(next.entry.admission.id);
   };
   const close = () => {
@@ -234,14 +283,14 @@ export function OutOfAreaPhone({
         onClick={() => stepTo(-1)}
       />
       <span className={styles.mono}>
-        {index + 1}/{people.length}
+        {index + 1}/{stepList.length}
       </span>
       <Button
         variant="ghost"
         iconOnly
         icon={ChevronRight}
         aria-label="Next person"
-        disabled={index < 0 || index >= people.length - 1}
+        disabled={index < 0 || index >= stepList.length - 1}
         onClick={() => stepTo(1)}
       />
     </span>
@@ -249,40 +298,40 @@ export function OutOfAreaPhone({
 
   return (
     <div className={styles.phone}>
-      <section className={styles.phoneHero} aria-labelledby="ward-out-of-area-phone-title">
-        <h1 id="ward-out-of-area-phone-title" className="sr-only">
-          Out of area, {totalAway} away from home
-        </h1>
-        <button type="button" className={styles.phoneTile} onClick={() => setTab("all")}>
-          <span className={styles.phoneTileValue}>{totalAway}</span>
-          <span className={styles.phoneTileLabel}>Away from home</span>
-        </button>
-        <button
-          type="button"
-          className={styles.phoneTile}
-          aria-pressed={highlight === "due"}
-          onClick={() => onHighlight("due")}
-        >
-          <span className={styles.phoneTileValue}>{dueCount}</span>
-          <span className={styles.phoneTileLabel}>
-            <StatusGlyph tone="warning" size={9} />
-            Date passed
-          </span>
-        </button>
-        <button
-          type="button"
-          className={styles.phoneTile}
-          aria-pressed={highlight === "noplan"}
-          onClick={() => onHighlight("noplan")}
-        >
-          <span className={styles.phoneTileValue}>{noPlanCount}</span>
-          <span className={styles.phoneTileLabel}>
-            <StatusGlyph tone="closed" size={9} />
-            No plan
-          </span>
-        </button>
-        {since ? <p className={styles.phoneSince}>{since}</p> : null}
-      </section>
+      {/* v10 phone: the standard dark hero, its figures jump or highlight as the tiles did. */}
+      <PhoneHero
+        level={1}
+        eyebrow="Out of area · Statewide"
+        chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
+        title={`${totalAway} away from home`}
+        sub={since}
+        figures={[
+          {
+            id: "home-today",
+            value: leaving.length,
+            label: "Home today",
+            tone: "success",
+            onPress: () => setTab("needs"),
+            actionLabel: `${leaving.length} going home today, show Needs you`,
+          },
+          {
+            id: "date-passed",
+            value: dueCount,
+            label: "Date passed",
+            tone: "warning",
+            onPress: () => onHighlight("due"),
+            pressed: highlight === "due",
+          },
+          {
+            id: "no-plan",
+            value: noPlanCount,
+            label: "No plan",
+            tone: "closed",
+            onPress: () => onHighlight("noplan"),
+            pressed: highlight === "noplan",
+          },
+        ]}
+      />
 
       {/* Phone (v10): Needs you, Everyone and Beds as one 44px segmented control. */}
       <Segmented<PhoneTab>
@@ -337,6 +386,7 @@ export function OutOfAreaPhone({
               <ul className={styles.phoneList}>
                 {ready.map((person, i) => (
                   <PersonCard
+                    showPlan={planVaries}
                     key={person.entry.admission.id}
                     person={person}
                     withReason
@@ -358,6 +408,7 @@ export function OutOfAreaPhone({
               <ul className={styles.phoneList}>
                 {soon.map((person) => (
                   <PersonCard
+                    showPlan={planVaries}
                     key={person.entry.admission.id}
                     person={person}
                     selected={person.entry.admission.id === selectedId}
@@ -400,6 +451,7 @@ export function OutOfAreaPhone({
           <ul className={styles.phoneList} data-testid="ward-out-of-area-cards">
             {people.map((person) => (
               <PersonCard
+                showPlan={planVaries}
                 key={person.entry.admission.id}
                 person={person}
                 testId={`ward-out-of-area-card-${person.entry.admission.id}`}
@@ -515,9 +567,7 @@ export function OutOfAreaPhone({
                     ? "Continue return plan"
                     : "Plan return"}
               </Button>
-              <Button variant="sec" icon={Phone} disabledReason="Not wired in this prototype." reasonDisplay="tooltip">
-                Call ward
-              </Button>
+              <NotWiredButton variant="sec" icon={Phone} label="Call ward" />
             </div>
           </div>
         </Sheet>

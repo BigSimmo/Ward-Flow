@@ -1,5 +1,6 @@
 "use client";
 
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { Field, Select, TextInput } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
@@ -62,8 +63,12 @@ import { parseReleaseDayInstant } from "@/components/ward-management/ward/releas
 import { asAtStamp, WardDailySheet } from "./ward-daily-sheet";
 import { StrandedPrompts } from "./stranded-prompts";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 
 import styles from "./board.module.css";
+import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
+import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
+import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 
 /**
  * The ward board, first pass: one ward's beds on a screen.
@@ -962,12 +967,16 @@ export function WardBoard({
   const now = useWardFlowClock();
   const [blockerDialogItem, setBlockerDialogItem] = useState<ShiftTileItem | null>(null);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(BED_RELEASE_BLOCKERS[0]);
+  // Audit r1 item 4: an arrival with no transport leg and fit to travel open, waiting on a reason.
+  const [arriveCheck, setArriveCheck] = useState<{ movementId: string; who: string } | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<{
     kind: "leaving" | "away_at_ed";
     who: string;
     item?: ShiftTileItem;
     admissionId?: string;
   } | null>(null);
+  // Neither dialog joins the sheet stack, so each holds the page still itself (phone, 12 Oct 2026).
+  useWardPageScrollLock(blockerDialogItem !== null || pendingConfirm !== null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const blockerDialogRef = useRef<HTMLDivElement | null>(null);
   const blockerCloseBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -1101,7 +1110,16 @@ export function WardBoard({
    * half that matters most: the sheet exists to be printed.
    */
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [shiftTab, setShiftTab] = useState<"busy" | "quiet">("busy");
+  // Phone: Needs you opens on its first three items (device audit, 11 Oct 2026).
+  const [shiftExpanded, setShiftExpanded] = useState(false);
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById("ward-board-daily-sheet") || document.getElementById("ward-daily-sheet");
+      target?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [sheetOpen]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   /*
@@ -1124,6 +1142,22 @@ export function WardBoard({
     },
     [rejections.length],
   );
+  const confirmBoardArrival = (movementId: string, who: string, reason?: TransportExceptionReason) => {
+    const movement = movements.find((candidate) => candidate.id === movementId);
+    dispatchAndReport(
+      () =>
+        dispatch({
+          type: "PATIENT_ARRIVED",
+          role: "ward",
+          now,
+          movementId,
+          actingUnitId: unit.id,
+          ...(reason && movement ? { exception: { gaps: arrivalGaps(movement), reason } } : {}),
+        }),
+      `Patient arrived: ${who} confirmed on the ward.`,
+      "Patient arrived: this patient confirmed on the ward.",
+    );
+  };
   useEffect(() => {
     const check = outcomeCheckRef.current;
     if (outcomeToken === 0 || check === null) return;
@@ -1322,13 +1356,13 @@ export function WardBoard({
   const tileMatchesFilter = (tile: Tile, filter: BoardFilter): boolean => {
     const occupant = occupantByKey.get(tile.key);
     switch (filter) {
+      // "Needs a look" is the Ward page's set (device audit, 11 Oct 2026: 9 here against 6 there
+      // for the same ward): a person in a bed past their date, away at an ED, or held up by a
+      // recorded barrier. A closed, out-of-service or pulled bed has its own count and key.
       case "look":
         return (
-          tile.kind === "blocked" ||
-          tile.kind === "closed" ||
-          tile.kind === "waiting" ||
-          (tile.kind === "occupied" &&
-            (tile.pastDate || tile.awayAtEd || (occupant !== undefined && occupant.blockReason !== null)))
+          tile.kind === "occupied" &&
+          (tile.pastDate || tile.awayAtEd || (occupant !== undefined && occupant.blockReason !== null))
         );
       case "ready":
         return tile.kind === "empty";
@@ -1484,7 +1518,9 @@ export function WardBoard({
         selectableKey: occupant.key,
         label: isConfirmed ? "Confirmed discharge" : "Expected discharge",
         tone: "warn",
-        when: "Discharge",
+        // No "when" word: the label already says discharge (device audit, 11 Oct 2026: a lone
+        // mono "Discharge" floated over the buttons on phone).
+        when: "",
         chip: daysPast > 0 ? `${daysPast}d overdue` : "Due today",
         text: `${isConfirmed ? "Confirmed out" : "Expected out"} today, still here.${blockerPhrase}`,
         acts: [
@@ -1635,18 +1671,11 @@ export function WardBoard({
         announceToWardShell("Cannot confirm arrival: no movement matches this patient.");
         return;
       }
-      dispatchAndReport(
-        () =>
-          dispatch({
-            type: "PATIENT_ARRIVED",
-            role: "ward",
-            now,
-            movementId: matchingMovement.id,
-            actingUnitId: unit.id,
-          }),
-        `Patient arrived: ${item.who || nameFor(item.selectableKey)} confirmed on the ward.`,
-        "Patient arrived: this patient confirmed on the ward.",
-      );
+      if (arrivalGaps(matchingMovement).length > 0) {
+        setArriveCheck({ movementId: matchingMovement.id, who: item.who || nameFor(item.selectableKey) });
+        return;
+      }
+      confirmBoardArrival(matchingMovement.id, item.who || nameFor(item.selectableKey));
       return;
     }
     if (word === "Mark them back") {
@@ -1700,11 +1729,9 @@ export function WardBoard({
   };
 
   const shiftDigest =
-    shiftTab === "quiet"
-      ? "A quiet shift, drawn on purpose so the empty state is designed rather than left to look broken."
-      : shiftTiles.length > 0
-        ? `${shiftTiles.length} ${shiftTiles.length === 1 ? "thing needs" : "things need"} you before the handover at 15:30.`
-        : "Nothing needs you before the handover at 15:30.";
+    shiftTiles.length > 0
+      ? `${shiftTiles.length} ${shiftTiles.length === 1 ? "thing needs" : "things need"} you before the handover at 15:30.`
+      : "Nothing needs you before the handover at 15:30.";
 
   return (
     <div className={styles.screen} data-testid="ward-board" data-ward-design="third-edition">
@@ -1816,8 +1843,8 @@ export function WardBoard({
           </dl>
           {pendingPreparation > 0 ? (
             <p className={styles.beingMadeReady} data-testid="ward-board-pending-preparation">
-              {pendingPreparation} of them {pendingPreparation === 1 ? "is" : "are"} still being made ready — the bed
-              stays offered and stays counted, but the ward cannot admit into it yet.
+              {pendingPreparation} of them {pendingPreparation === 1 ? "is" : "are"} still being made ready. It stays
+              counted but is not offered until the ward taps Ready.
             </p>
           ) : null}
           {/* `constraintSentence` returns null — never an empty string — when nothing is
@@ -1889,20 +1916,7 @@ export function WardBoard({
             <button
               type="button"
               className={`${styles.topDailySheetButton}${sheetOpen ? ` ${styles.topDailySheetButtonOpen}` : ""}`}
-              onClick={() => {
-                setSheetOpen((prev) => {
-                  const next = !prev;
-                  if (next) {
-                    setTimeout(() => {
-                      const el =
-                        document.getElementById("ward-board-daily-sheet") ||
-                        document.getElementById("ward-daily-sheet");
-                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }, 60);
-                  }
-                  return next;
-                });
-              }}
+              onClick={() => setSheetOpen((open) => !open)}
               aria-expanded={sheetOpen}
               aria-controls="ward-board-sheet-body"
               data-testid="ward-board-top-sheet-toggle"
@@ -2250,7 +2264,13 @@ export function WardBoard({
               {targets.length > 0 && (
                 <div className={styles.destinations}>
                   <h3 className={styles.destinationsHeading}>Where these beds free up to</h3>
-                  <p className={styles.destinationsIntro}>Expected within {ARROW_HORIZON_DAYS} days, soonest first.</p>
+                  {/* Device audit, 11 Oct 2026: the no-team sentence is said once for the list, not
+                      in bold under every region (owner instruction 2026-09-18 below still holds:
+                      the absence is shown, never a region lookup). */}
+                  <p className={styles.destinationsIntro}>
+                    Expected within {ARROW_HORIZON_DAYS} days, soonest first. No community team is recorded for these
+                    regions.
+                  </p>
                   <ol className={styles.destinationList} data-testid="ward-board-destinations">
                     {targets.map((target) => {
                       return (
@@ -2298,7 +2318,6 @@ export function WardBoard({
                             When a recorded team field exists, read THAT here. Do not reintroduce a
                             region lookup.
                           */}
-                          <p className={styles.destinationTeamAbsent}>No community team is recorded for this region.</p>
                         </li>
                       );
                     })}
@@ -2695,56 +2714,10 @@ export function WardBoard({
             </div>
 
             {selectedTile === null ? (
-              <div className={styles.detailEmptyWrapper}>
-                <div className={styles.detailEmptyCard}>
-                  <div className={styles.detailEmptyIcon} aria-hidden="true">
-                    <svg
-                      width="28"
-                      height="28"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M2 4v16" />
-                      <path d="M2 8h18a2 2 0 0 1 2 2v10" />
-                      <path d="M2 17h20" />
-                      <path d="M6 8v9" />
-                    </svg>
-                  </div>
-                  <div className={styles.detailEmptyTitle}>Bed Inspector & Trajectory</div>
-                  <p className={styles.detailEmpty} data-testid="ward-board-select-hint">
-                    Choose a bed to view its record.
-                  </p>
-                  <div className={styles.detailEmptyGuide}>
-                    <div className={styles.detailEmptyGuideItem}>
-                      <span className={styles.detailEmptyBullet} aria-hidden="true">
-                        ●
-                      </span>
-                      <span>Occupant identity, stay length & trajectory</span>
-                    </div>
-                    <div className={styles.detailEmptyGuideItem}>
-                      <span className={styles.detailEmptyBullet} aria-hidden="true">
-                        ●
-                      </span>
-                      <span>Discharge barriers & expected departure plan</span>
-                    </div>
-                    <div className={styles.detailEmptyGuideItem}>
-                      <span className={styles.detailEmptyBullet} aria-hidden="true">
-                        ●
-                      </span>
-                      <span>Catchment corridor & destination clinic link</span>
-                    </div>
-                  </div>
-                  <div className={styles.detailEmptyStats}>
-                    <span className={styles.detailEmptyBadge}>
-                      {unit.beds} beds · {available} ready now
-                    </span>
-                  </div>
-                </div>
-              </div>
+              // Device audit, 11 Oct 2026: a one-line prompt, not a 360px dashed placeholder.
+              <p className={styles.detailEmpty} data-testid="ward-board-select-hint">
+                Choose a bed to view its record.
+              </p>
             ) : (
               <>
                 {selectedTile.kind === "occupied" || selectedTile.kind === "waiting" ? (
@@ -3132,41 +3105,18 @@ export function WardBoard({
                   {shiftDigest}
                 </span>
               </summary>
-              <div className={styles.shiftTabbar} role="group" aria-label="Which shift is drawn">
-                <button
-                  type="button"
-                  className={`${styles.shiftTabBtn}${shiftTab === "busy" ? ` ${styles.shiftTabBtnActive}` : ""}`}
-                  aria-pressed={shiftTab === "busy"}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShiftTab("busy");
-                  }}
-                >
-                  This shift <span className={styles.shiftTabNum}>{shiftTiles.length}</span>
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.shiftTabBtn}${shiftTab === "quiet" ? ` ${styles.shiftTabBtnActive}` : ""}`}
-                  aria-pressed={shiftTab === "quiet"}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShiftTab("quiet");
-                  }}
-                >
-                  Preview: a quiet shift
-                </button>
-              </div>
-              {shiftTab === "quiet" ? (
-                <p className={styles.workBandEmpty}>
-                  Every bed is accounted for. Nothing on this board needs you before the next handover at 15:30. Absence
-                  here means every bed has been looked at, not that the board is empty.
-                </p>
-              ) : shiftTiles.length === 0 ? (
+              {/* Device audit, 11 Oct 2026: the "Preview: a quiet shift" demo tab is gone from the
+                  interface; the empty state below is the real one. */}
+              {shiftTiles.length === 0 ? (
                 <p className={styles.workBandEmpty}>
                   No bed is out of service or closed; nobody is travelling here or due out today.
                 </p>
               ) : (
-                <div className={styles.shiftGrid} data-testid="ward-board-work-band-list">
+                <div
+                  className={styles.shiftGrid}
+                  data-testid="ward-board-work-band-list"
+                  data-expanded={shiftExpanded ? "true" : undefined}
+                >
                   {shiftTiles.map((item) => (
                     <div key={item.key} className={styles.shiftTile} data-tone={item.tone ?? undefined}>
                       <div className={styles.shiftTop}>
@@ -3182,7 +3132,7 @@ export function WardBoard({
                           {item.label}
                         </button>
                         <span className={styles.shiftTag}>{item.chip}</span>
-                        <span className={styles.shiftWhen}>{item.when}</span>
+                        {item.when ? <span className={styles.shiftWhen}>{item.when}</span> : null}
                       </div>
                       <span className={styles.shiftSub}>{item.text}</span>
                       <div className={styles.shiftRowActs}>
@@ -3202,6 +3152,16 @@ export function WardBoard({
                   ))}
                 </div>
               )}
+              {shiftTiles.length > 3 ? (
+                <button
+                  type="button"
+                  className={styles.shiftMore}
+                  aria-expanded={shiftExpanded}
+                  onClick={() => setShiftExpanded((open) => !open)}
+                >
+                  {shiftExpanded ? "Show fewer" : `Show ${shiftTiles.length - 3} more`}
+                </button>
+              ) : null}
               {blockerDialogItem ? (
                 <div
                   ref={blockerDialogRef}
@@ -3771,6 +3731,22 @@ export function WardBoard({
           </div>
         ) : null}
       </main>
+      <TransportExceptionDialog
+        open={arriveCheck !== null}
+        who={arriveCheck?.who ?? "this patient"}
+        action="Confirm arrival"
+        gaps={(() => {
+          const movement = arriveCheck && movements.find((candidate) => candidate.id === arriveCheck.movementId);
+          return movement ? arrivalGaps(movement) : [];
+        })()}
+        onClose={() => setArriveCheck(null)}
+        onConfirm={(reason) => {
+          const pending = arriveCheck;
+          setArriveCheck(null);
+          if (pending) confirmBoardArrival(pending.movementId, pending.who, reason);
+        }}
+        testId="ward-board-arrive-check"
+      />
       <WardPrototypeFooter />
     </div>
   );

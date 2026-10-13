@@ -54,10 +54,10 @@ describe("CoordinatorScreen", () => {
       </WardFlowProvider>,
     );
 
-    const defaultLabel = `Due within ${dueWindowLabel(DUE_SOON_URGENT_MINUTES)}`;
+    const defaultLabel = `Forms due within ${dueWindowLabel(DUE_SOON_URGENT_MINUTES)}`;
     expect(screen.getByText(defaultLabel)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "save warning times" }));
-    expect(screen.getByText("Due within 1h 30m")).toBeInTheDocument();
+    expect(screen.getByText("Forms due within 1h 30m")).toBeInTheDocument();
     expect(screen.queryByText(defaultLabel)).not.toBeInTheDocument();
     expect(dueWindowLabel(60)).toBe("1h");
     expect(dueWindowLabel(240)).toBe("4h");

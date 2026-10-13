@@ -23,9 +23,10 @@
 // GUARANTEED to sum to `unit.beds` — which this map depends on, because every bed must land in
 // exactly one square. A map built on `NetworkWardRow.ready` could one day draw more squares than a
 // ward has beds, or fewer, the moment a future feed lets `allocatable` exceed `empty`.
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { StatusGlyph, WardCapacityRow, WardCapacityRows } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -619,8 +620,10 @@ function ServiceGroup({
   const totalBeds = group.wards.reduce((sum, w) => sum + w.unit.beds, 0);
   const totalReady = group.wards.reduce((sum, w) => sum + w.ready, 0);
   const totalClosed = group.wards.reduce((sum, w) => sum + w.closed, 0);
-  const totalOccupied = group.wards.reduce((sum, w) => sum + w.occupied, 0);
-  const occPct = totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0;
+  // Occupied or Pulled, one decimal: the one occupancy count (`ward-occupancy.ts`) the rail and
+  // every other page print for the same service (device audit, 11 Oct 2026).
+  const totalInUse = group.wards.reduce((sum, w) => sum + w.occupied + w.pulled, 0);
+  const occPct = totalBeds > 0 ? ((totalInUse / totalBeds) * 100).toFixed(1) : "0.0";
 
   const checkScrollState = useCallback(() => {
     if (layout === "grid") {
@@ -676,9 +679,21 @@ function ServiceGroup({
     };
   }, [checkScrollState]);
 
+  const scrollFrame = useRef(0);
   const handleScroll = () => {
-    checkScrollState();
+    if (!scrollFrame.current) {
+      scrollFrame.current = window.requestAnimationFrame(() => {
+        scrollFrame.current = 0;
+        checkScrollState();
+      });
+    }
   };
+  useEffect(
+    () => () => {
+      if (scrollFrame.current) window.cancelAnimationFrame(scrollFrame.current);
+    },
+    [],
+  );
 
   const handlePrev = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -687,13 +702,13 @@ function ServiceGroup({
     const step = cardStep(el);
     if (el.scrollLeft <= step * 1.2) {
       if (typeof el.scrollTo === "function") {
-        el.scrollTo({ left: 0, behavior: "smooth" });
+        el.scrollTo({ left: 0, behavior: wardScrollBehavior() });
       } else {
         el.scrollLeft = 0;
       }
     } else {
       if (typeof el.scrollBy === "function") {
-        el.scrollBy({ left: -step, behavior: "smooth" });
+        el.scrollBy({ left: -step, behavior: wardScrollBehavior() });
       } else {
         el.scrollLeft = Math.max(0, el.scrollLeft - step);
       }
@@ -713,13 +728,13 @@ function ServiceGroup({
     const maxScroll = el.scrollWidth - el.clientWidth;
     if (el.scrollLeft + step * 1.5 >= maxScroll) {
       if (typeof el.scrollTo === "function") {
-        el.scrollTo({ left: maxScroll, behavior: "smooth" });
+        el.scrollTo({ left: maxScroll, behavior: wardScrollBehavior() });
       } else {
         el.scrollLeft = maxScroll;
       }
     } else {
       if (typeof el.scrollBy === "function") {
-        el.scrollBy({ left: step, behavior: "smooth" });
+        el.scrollBy({ left: step, behavior: wardScrollBehavior() });
       } else {
         el.scrollLeft = Math.min(maxScroll, el.scrollLeft + step);
       }
@@ -831,7 +846,7 @@ function ServiceGroup({
                 { id: "pulled", value: ward.pulled, fill: "data-2", hatch: true, label: "Pulled" },
                 { id: "closed", value: ward.closed, fill: "closed", label: "Closed" },
               ]}
-              percent={ward.unit.beds > 0 ? (ward.occupied / ward.unit.beds) * 100 : null}
+              percent={ward.unit.beds > 0 ? ((ward.occupied + ward.pulled) / ward.unit.beds) * 100 : null}
               alertAt={BED_ALERT_THRESHOLD_PERCENT}
               fit={ward.ready > 0}
               dim={dimmed(ward.unit.id)}
@@ -949,7 +964,16 @@ export function BedMap({
   highlightUnitIds,
   initialLayout = "row",
   initialBedDetail = true,
+  table,
+  onLayoutChange,
 }: {
+  /**
+   * Device audit option A (Capacity, 11 Oct 2026): the page's full ward table, drawn as the map's
+   * Table layout so the page has one bed map rather than a map plus a repeated table. Without it
+   * the Table layout is the map's own ward rows.
+   */
+  table?: ReactNode;
+  onLayoutChange?: (layout: BedMapLayout) => void;
   initialLayout?: BedMapLayout;
   initialBedDetail?: boolean;
   units: Unit[];
@@ -966,7 +990,11 @@ export function BedMap({
    */
   highlightUnitIds?: ReadonlySet<string>;
 }) {
-  const [layout, setLayout] = useState<BedMapLayout>(initialLayout);
+  const [layout, setLayoutState] = useState<BedMapLayout>(initialLayout);
+  const setLayout = (next: BedMapLayout) => {
+    setLayoutState(next);
+    onLayoutChange?.(next);
+  };
   const [bedDetail, setBedDetail] = useState(initialBedDetail);
   const [activeService, setActiveService] = useState<string>();
   const mapRef = useRef<HTMLDivElement>(null);
@@ -1040,18 +1068,22 @@ export function BedMap({
       </div>
       {bedDetail ? <BedMapLegend /> : null}
 
-      <div className={styles.services}>
-        {renderedGroups.map((group) => (
-          <ServiceGroup
-            key={group.service}
-            group={group}
-            layout={layout}
-            selectedUnitId={selectedUnitId}
-            onSelectWard={onSelectWard}
-            highlightUnitIds={highlightUnitIds}
-          />
-        ))}
-      </div>
+      {layout === "table" && table ? (
+        table
+      ) : (
+        <div className={styles.services}>
+          {renderedGroups.map((group) => (
+            <ServiceGroup
+              key={group.service}
+              group={group}
+              layout={layout}
+              selectedUnitId={selectedUnitId}
+              onSelectWard={onSelectWard}
+              highlightUnitIds={highlightUnitIds}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -98,6 +98,43 @@ async function openAllArrivals(page: Page) {
   await expect(page.locator("#tab-coming")).toHaveAttribute("data-active", "true");
 }
 
+/**
+ * Device audit, October 2026: the dev build can still be hydrating a heavy screen after
+ * `networkidle` (measured live on the ED board and the transport officer screen: the control carried
+ * no React props at that instant), and a click before React attaches its listeners changes nothing.
+ * Wait for the control itself to hydrate before the first click on it.
+ */
+async function waitForHydrated(page: Page, testId: string): Promise<void> {
+  await page.waitForFunction((id) => {
+    const control = document.querySelector(`[data-testid="${id}"]`);
+    return control?.isConnected === true && Object.keys(control).some((key) => key.startsWith("__reactProps$"));
+  }, testId);
+}
+
+async function waitForEdRowHydration(page: Page, movementId: string): Promise<void> {
+  await waitForHydrated(page, `ward-ed-unfold-${movementId}`);
+}
+
+/**
+ * ED board A2: the board row is plain text, so the outstanding item (the presentation control that
+ * carries `data-kind`) lives in the patient's side sheet, opened from the row's name. An action's
+ * sub-form opens the same sheet and closes it again on confirm, so wait for that close to finish
+ * before opening it from the name; a visibility check alone races the closing sheet.
+ */
+async function openEdPatientSheet(page: Page, movementId: string): Promise<Locator> {
+  const sheet = page.getByTestId(`ward-ed-phone-sheet-${movementId}`);
+  await expect(sheet).toBeHidden();
+  await page.getByTestId(`ward-ed-row-name-${movementId}`).click();
+  await expect(sheet).toBeVisible();
+  return sheet;
+}
+
+async function closeEdPatientSheet(page: Page, movementId: string): Promise<void> {
+  const sheet = page.getByTestId(`ward-ed-phone-sheet-${movementId}`);
+  if (await sheet.isVisible()) await sheet.getByRole("button", { name: "Close", exact: true }).first().click();
+  await expect(sheet).toBeHidden();
+}
+
 test.describe("@mockup Ward screen", () => {
   test.describe.configure({ timeout: 45_000 });
 
@@ -269,20 +306,44 @@ test.describe("@mockup Transport officer screen", () => {
     const job = page.getByTestId("ward-officer-job-WF-005");
     await expect(job).toContainText(/escort/i);
 
-    // Exactly four actions, pinned and reachable without scrolling. Transport page A (9 Oct 2026):
-    // the job opens as a bottom sheet once chosen, with the four actions pinned to its foot.
+    await waitForHydrated(page, "ward-officer-select-WF-005");
+    // Transport page A (9 Oct 2026): the job opens as a bottom sheet once chosen. Device audit
+    // (11 Oct 2026, `renderPhoneNextStep`): the sheet lists the four stages as Steps and pins ONE
+    // button, the next stage, to its foot instead of four equal pills. The officer's action set is
+    // still the four stages and nothing else; the phone just offers the one that can run next.
     await page.getByTestId("ward-officer-select-WF-005").click();
-    const actions = page.getByTestId("ward-officer-detail").locator('[class*="actionButton"]');
-    await expect(actions).toHaveCount(4);
-    for (const action of await actions.all()) {
-      const box = await action.boundingBox();
-      expect(box!.height).toBeGreaterThanOrEqual(48);
-    }
+    const sheet = page.getByTestId("ward-officer-detail");
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByRole("region", { name: "Steps" }).getByRole("listitem")).toHaveText([
+      /Accepted/,
+      /En route/,
+      /Collected/,
+      /Delivered/,
+    ]);
+    const stageButtons = sheet.locator(
+      '[data-testid$="-WF-005"]:is([data-testid^="ward-officer-accept-"], [data-testid^="ward-officer-enroute-"], [data-testid^="ward-officer-collect-"], [data-testid^="ward-officer-arrive-"])',
+    );
+    // WF-005 is at Accepted in the seed, so the pinned next step is En route.
+    await expect(stageButtons).toHaveCount(1);
+    await expect(stageButtons).toHaveAttribute("data-testid", "ward-officer-enroute-WF-005");
+    await expect(stageButtons).toHaveText("Mark en route");
+    // Pinned and reachable without scrolling, at a full tap height.
+    const box = await stageButtons.boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(48);
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(844);
 
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow).toBeLessThanOrEqual(2);
+
+    // Desktop keeps the four individually gated stage buttons in the job panel.
+    await page.getByTestId("ward-officer-detail-close").click();
+    await page.setViewportSize({ width: 1440, height: 1024 });
+    await page.getByTestId("ward-officer-select-WF-005").click();
+    const actions = page.getByTestId("ward-officer-detail").locator('[class*="actionButton"]');
+    await expect(actions).toHaveText(["Accepted", "En route", "Collected", "Delivered"]);
   });
 
   /**
@@ -386,7 +447,8 @@ test.describe("@mockup Movements — transport panel", () => {
    * The leg words are `LEG_STATE_LABEL` (movements-screen.tsx), not the old tracker's: MERGE 03
    * renamed "Accepted" to "Booked" on screen and dropped "Requested" from the state union
    * entirely (`MovementLegState` excludes it). Asserting the retired words would pin a vocabulary
-   * the product no longer speaks.
+   * the product no longer speaks. Audit round 2 (A4-18, 13 Oct 2026) renamed "Booked" back to
+   * "Accepted", so the leg reads the same word here as on the officer page.
    */
   test("tracks every vehicle by leg and by how long since the last stamp", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
@@ -405,12 +467,12 @@ test.describe("@mockup Movements — transport panel", () => {
     expect(await rows.count()).toBeGreaterThan(0);
 
     // Every row names its leg and its age. The leg is read from the row's accessible name
-    // ("…, <leg> via <provider>"), NOT its text: every card's footer reads "Booked … ago", so a
-    // text match on /Booked|…/ would pass for every row whatever its leg. The age must be a real,
-    // non-negative duration (the footer no longer clamps at zero the way "since booked" did).
+    // ("…, <leg> via <provider>"), NOT its text: every card's footer reads "Accepted … ago" (audit
+    // round 2, A4-18 renamed "Booked" to "Accepted"), so a text match on /Accepted|…/ would pass
+    // for every row whatever its leg. The age must be a real, non-negative duration (the footer no longer clamps at zero the way "since booked" did).
     for (const row of await rows.all()) {
-      await expect(row).toHaveAccessibleName(/, (Booked|En route|Collected|Arrived|Cancelled) via /);
-      await expect(row).toContainText(/Booked \d+(d|h|m)( \d+(h|m))? ago/);
+      await expect(row).toHaveAccessibleName(/, (Accepted|En route|Collected|Arrived|Cancelled) via /);
+      await expect(row).toContainText(/Accepted \d+(d|h|m)( \d+(h|m))? ago/);
     }
   });
 
@@ -449,7 +511,10 @@ test.describe("@mockup Movements — transport panel", () => {
     const dayMetric = (label: RegExp) =>
       page.getByTestId("movements-day-metric").filter({ hasText: label }).locator("strong");
     await expect(dayMetric(/^Transport legs/)).toHaveText("13");
-    await expect(dayMetric(/^No transport leg/)).toHaveText("57");
+    // Audit round 2, A4-18 (13 Oct 2026): "No transport leg" now counts only movements that need a
+    // vehicle (pulled, handover ready or moving) and have none, so 57 became 8. Re-derived from the
+    // seed with the screen's own `withoutTransport` filter, not adjusted by guesswork.
+    await expect(dayMetric(/^No transport leg/)).toHaveText("8");
     await expect(dayMetric(/^Open/)).toHaveText("70");
   });
 });
@@ -627,8 +692,11 @@ test.describe("@mockup Emergency department screen", () => {
     await page.goto("/mockups/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
+    await waitForEdRowHydration(page, "WF-005");
 
-    const outstanding = page.getByTestId("ward-ed-outstanding-WF-005");
+    // ED board A2: the outstanding item is shown in the patient's sheet, not the plain-text row.
+    const sheet = await openEdPatientSheet(page, "WF-005");
+    const outstanding = sheet.getByTestId("ward-ed-outstanding-WF-005");
     await expect(outstanding).toHaveAttribute("data-kind", "transport");
     await expect(outstanding).toContainText(/Accepted/);
   });
@@ -653,6 +721,7 @@ test.describe("@mockup Emergency department screen", () => {
     // not assumed. The other four tests in this describe block are read-only against static
     // server-rendered attributes and do not need it, but this is the one that clicks.
     await page.waitForLoadState("networkidle");
+    await waitForEdRowHydration(page, "WF-016");
 
     const blockedHandover = page.getByTestId("ward-ed-handover-WF-303");
     await expect(blockedHandover).toHaveAttribute("aria-disabled", "true");
@@ -695,7 +764,8 @@ test.describe("@mockup Emergency department screen", () => {
     // state — a fixture defect this ruling corrected — so it is no longer this case's example).
     // Re-measured directly against the live app (see the task report) rather than assumed, after
     // an earlier version of this assertion got it wrong.
-    const outstanding = page.getByTestId("ward-ed-outstanding-WF-016");
+    // ED board A2: read the outstanding item from the patient's sheet.
+    const outstanding = (await openEdPatientSheet(page, "WF-016")).getByTestId("ward-ed-outstanding-WF-016");
     await expect(outstanding).toHaveAttribute("data-kind", "transport");
     await expect(outstanding).toContainText(/Requested/);
   });
@@ -706,6 +776,9 @@ test.describe("@mockup Emergency department screen", () => {
    * a fixture change that removes it fails loudly rather than this count silently reading zero.
    */
   test("flags exactly the one police arrival at peel-ed, and no other patient", async ({ page }) => {
+    // Every peel-ed row opens two surfaces now (sheet, then record), measured at about five seconds
+    // a row against the dev server, so the describe block's 45 seconds no longer covers the walk.
+    test.setTimeout(120_000);
     await page.goto("/mockups/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
@@ -723,8 +796,15 @@ test.describe("@mockup Emergency department screen", () => {
     );
     expect(rowIds).toContain("ward-ed-patient-WF-009");
     for (const id of rowIds) {
+      // ED board A2: the row's name opens the patient's sheet; its "Open patient" opens the full
+      // recorded detail, which is where police presence lives.
       await page.getByTestId(id).locator('button[title^="View patient details"]').click();
-      const record = page.getByRole("dialog");
+      const sheet = page.getByTestId(id.replace("ward-ed-patient-", "ward-ed-phone-sheet-"));
+      await sheet.getByRole("button", { name: "Open patient", exact: true }).click();
+      await expect(sheet).toBeHidden();
+      const record = page.getByRole("dialog").filter({
+        has: page.getByRole("button", { name: "Close patient details" }),
+      });
       await expect(record).toBeVisible();
       await expect(record.getByText("Police presence", { exact: true })).toHaveCount(
         id === "ward-ed-patient-WF-009" ? 1 : 0,
@@ -732,6 +812,7 @@ test.describe("@mockup Emergency department screen", () => {
       if (id === "ward-ed-patient-WF-009")
         await expect(record.getByText("Police in attendance", { exact: true })).toBeVisible();
       await record.getByRole("button", { name: "Close patient details" }).click();
+      await expect(record).toBeHidden();
     }
   });
 
@@ -747,18 +828,16 @@ test.describe("@mockup Emergency department screen", () => {
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByTestId("ward-ed-governance")).toBeVisible();
-    if ((await page.getByTestId("ward-ed-raise-referral-toggle").getAttribute("aria-expanded")) !== "true") {
-      await page.getByTestId("ward-ed-raise-referral-toggle").click();
-    }
-    await expect(page.getByRole("region", { name: "New referral" })).toBeVisible();
+    // Audit round 2 (option B, 13 Oct 2026): Raise referral opens the one shared referral slide-out
+    // rather than an inline ED form, so raising a referral is that slide-out here.
+    await page.getByTestId("ward-ed-raise-referral-toggle").click();
+    const referralSheet = page.getByTestId("ward-bar-referral-sheet");
+    await expect(referralSheet).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
 
     await page.emulateMedia({ forcedColors: "active" });
     await expect(page.getByTestId("ward-ed-governance")).toBeVisible();
-    if ((await page.getByTestId("ward-ed-raise-referral-toggle").getAttribute("aria-expanded")) !== "true") {
-      await page.getByTestId("ward-ed-raise-referral-toggle").click();
-    }
-    await expect(page.getByRole("region", { name: "New referral" })).toBeVisible();
+    await expect(referralSheet).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
 
     await page.emulateMedia({ colorScheme: "light", forcedColors: "none", media: "print" });
@@ -976,6 +1055,9 @@ test.describe("@mockup Role switcher — the loop", () => {
    * sought).
    */
   test("walks WF-315 through all four roles in one browser window without ever reloading", async ({ page }) => {
+    // ED board A2 adds a sheet open and close around each outstanding-item read, and the walk
+    // measured over a minute against a loaded dev server, so give it room beyond the block's 60s.
+    test.setTimeout(150_000);
     await page.setViewportSize({ width: 1440, height: 1024 });
 
     // Fixture assumptions, checked against the real data rather than assumed — if either ever
@@ -1022,6 +1104,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await page.goto("/mockups/ward-flow/ed/arm-ed", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
+    await waitForEdRowHydration(page, "WF-315");
 
     // Since 687f018d6d (24 Sept) every ED row action, the primary one included, sits in a folded
     // "Actions ▾" menu. Unfold it only if folded — the toggle flips, so an unconditional click on
@@ -1038,7 +1121,14 @@ test.describe("@mockup Role switcher — the loop", () => {
     // the movement remains referable. What changes is that the examination is now recorded, so
     // the outstanding item for WF-315 must no longer read "Examination" once this submits. The
     // assertion below is unchanged; only the reason it holds is different.
-    await expect(page.getByTestId("ward-ed-outstanding-WF-315")).not.toHaveAttribute("data-kind", "examination");
+    // ED board A2: the outstanding item is read from the patient's sheet, which is then closed so its
+    // scrim cannot cover the Tools drawer the next step opens.
+    const sheetAfterExamination = await openEdPatientSheet(page, "WF-315");
+    await expect(sheetAfterExamination.getByTestId("ward-ed-outstanding-WF-315")).not.toHaveAttribute(
+      "data-kind",
+      "examination",
+    );
+    await closeEdPatientSheet(page, "WF-315");
 
     // --- Step 2: Coordinator — select WF-315, refer to all three candidates. ---
     await switchTo("Flow coordinator");
@@ -1057,7 +1147,14 @@ test.describe("@mockup Role switcher — the loop", () => {
     // referable in parallel — is unchanged; only which third unit qualifies moved.
     await shortlist.getByTestId("ward-shortlist-candidate-bty-adult-secure").click();
     await shortlist.getByTestId("ward-shortlist-candidate-rgh-adult-secure").click();
-    await shortlist.getByTestId("ward-shortlist-refer").click();
+    // Option B (Josh, 13 Oct 2026; D-30): Home's Refer now opens the referral slide-out (a referral
+    // for the coordinator queue) rather than offering the wards at once. Override still offers the
+    // chosen wards directly, with a reason and a second sign-off, so the loop offers through it.
+    await shortlist.getByTestId("ward-shortlist-override-toggle").click();
+    await shortlist.getByLabel(/Reason for overriding/).selectOption("Clinical urgency outweighs the mismatch");
+    await shortlist.getByTestId("ward-shortlist-override-second-sign-off").check();
+    await shortlist.getByTestId("ward-shortlist-override-sign-off-name").fill("JS");
+    await shortlist.getByRole("button", { name: "Record override" }).click();
     // Three live referrals — exactly why the ward hop below cannot be inferred and must use the
     // picker (addendum R52). Whole-branch review M3: the old regex-based `toContainText` assertion
     // was satisfied by a single "Parallel referral" badge, so it never actually checked the claim
@@ -1133,7 +1230,12 @@ test.describe("@mockup Role switcher — the loop", () => {
 
     if ((await unfoldEd315.getAttribute("aria-expanded")) !== "true") await unfoldEd315.click();
     await handoverButton.click();
-    await expect(page.getByTestId("ward-ed-outstanding-WF-315")).toHaveAttribute("data-kind", "transport");
+    const sheetAfterHandover = await openEdPatientSheet(page, "WF-315");
+    await expect(sheetAfterHandover.getByTestId("ward-ed-outstanding-WF-315")).toHaveAttribute(
+      "data-kind",
+      "transport",
+    );
+    await closeEdPatientSheet(page, "WF-315");
 
     // --- Steps 7-10: Officer — Accepted, En route, Collected, Delivered. ---
     await switchTo("Authorised officer");
@@ -1158,7 +1260,29 @@ test.describe("@mockup Role switcher — the loop", () => {
     // not "Arrived" — the event dispatched is still PATIENT_ARRIVED.
     for (const label of ["Accepted", "En route", "Collected", "Delivered"]) {
       await panel.getByRole("button", { name: label }).click();
+      // Audit fix (13 Oct 2026): WF-315 has no Form 4A or fit to travel recorded, so Collected asks
+      // for a coded reason before it records. The officer is warned, never blocked.
+      if (label === "Collected") {
+        const collectCheck = page.getByTestId("ward-officer-collect-check");
+        await expect(collectCheck).toBeVisible();
+        await page.getByTestId("ward-officer-collect-check-reason").selectOption("paper_sighted");
+        await collectCheck.getByRole("button", { name: "Collected, record reason" }).click();
+      }
     }
+
+    // --- Step 10b: Ward — confirm arrival. Audit round 2 (A4-16, Josh 13 Oct 2026): the officer's
+    // Delivered ends the transport leg only and leaves the movement open; the receiving ward closes
+    // it by confirming arrival. The Patient in focus ward chips show only from a coordinator page,
+    // so the switch goes through the coordinator, as step 4 did. ---
+    await switchTo("Flow coordinator");
+    await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
+    await page.waitForLoadState("networkidle");
+    await switchTo("Dabakarn");
+    await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
+    await page.waitForLoadState("networkidle");
+    await openAllArrivals(page);
+    await page.getByTestId("ward-confirm-arrival-WF-315").click();
+    await expect(page.getByTestId("ward-accepted-WF-315")).toHaveCount(0);
 
     // --- Step 11: Coordinator — the patient has left the system. ---
     await switchTo("Flow coordinator");

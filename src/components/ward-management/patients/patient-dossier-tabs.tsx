@@ -19,7 +19,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Button, Card, CardHead, StatusGlyph, cx, tableClasses, type WfTone } from "@/components/wf";
-import type { Movement } from "../ward-model";
+import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
 import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
 import type { Patient } from "../ward-patients";
 import { edById } from "../ward-sites";
@@ -135,9 +135,15 @@ export function PatientHistoryTab({
   open,
   onBackToNow,
   stays = [],
+  absence,
+  absenceVoluntary = false,
 }: {
   record: PatientNowRecord;
   movement?: Movement;
+  /** S-5: an open absence from the stay's held bed, so its recorded times show in the log. */
+  absence?: LeaveBed["absentWithoutLeave"];
+  /** A3-13: a voluntary patient's absence reads "Not back from leave". */
+  absenceVoluntary?: boolean;
   dayZero: Date;
   unitName: (id: string) => string | undefined;
   /** Ward stays linked to this person, from the adapter (D-14). Newest shown first. */
@@ -166,7 +172,20 @@ export function PatientHistoryTab({
     .sort((a, b) => (recent ? b.year - a.year : a.year - b.year));
   const prior = record.presentations.filter((p) => !p.current);
   // Each event carries its day heading only when the day changes, worked out before render.
-  const events = (movement ? movementEvents(movement, unitName) : []).map((event, i, list) => {
+  const absenceEvents: LogEvent[] = absence
+    ? [
+        {
+          at: absence.since,
+          tone: "danger",
+          text: absenceVoluntary ? "Not back from leave, recorded" : "Absent without leave, recorded",
+        },
+        ...absence.steps.map((done) => ({ at: done.at, tone: "info" as const, text: ABSENCE_STEP_LABELS[done.step] })),
+      ]
+    : [];
+  const logged = [...(movement ? movementEvents(movement, unitName) : []), ...absenceEvents].sort(
+    (a, b) => b.at - a.at,
+  );
+  const events = logged.map((event, i, list) => {
     const day = dayLabel(event.at, dayZero);
     const previous = i > 0 ? dayLabel(list[i - 1]?.at, dayZero) : undefined;
     return { ...event, heading: day !== previous ? day : null };
@@ -506,12 +525,9 @@ export function PatientCommunityTab({
                       <Button size="sm" onClick={onEndCto} disabledReason={endCtoUnavailable} reasonDisplay="tooltip">
                         Record ended
                       </Button>
-                    ) : stayOpen ? (
-                      // The page shows a placement or stay ahead of a CTO, so one recorded now would be hidden.
-                      <Button size="sm" disabledReason="Not while a placement or stay is open" reasonDisplay="tooltip">
-                        Record CTO
-                      </Button>
                     ) : (
+                      // B3 (site review, 12 Oct 2026): the engine records a CTO while a placement or
+                      // stay is open, and this row then shows it, so the action is not greyed for that.
                       <Button
                         size="sm"
                         onClick={onRecordCto}

@@ -72,7 +72,7 @@ import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
-import { hoursText, occupiedBeds } from "./statistics-occupancy";
+import { hoursText, occupancyPercent, occupiedBeds } from "./statistics-occupancy";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
@@ -214,7 +214,9 @@ export function StatisticsScreen({
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
   const occupancy = occupiedBeds(units, sourceAdmissions, sourceBedReleases, leaveBeds);
   const occupiedCount = occupancy.occupied;
-  const occupiedPct = totalBeds > 0 ? Math.round((occupiedCount / totalBeds) * 100) : 0;
+  // L1: the percentage and the count beside it are the one occupancy figure, Occupied + Pulled.
+  const inUseCount = occupancy.inUse;
+  const occupiedPct = occupancyPercent(occupancy);
   const availableNow = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).available, 0);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
   const pendingPreparation = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
@@ -287,7 +289,7 @@ export function StatisticsScreen({
     return units.map((u) => {
       const capInfo = unitCapacity(u, sourceBedReleases);
       const occupancyRate =
-        u.beds > 0 ? occupiedBeds([u], sourceAdmissions, sourceBedReleases, leaveBeds).occupied / u.beds : 0;
+        u.beds > 0 ? occupiedBeds([u], sourceAdmissions, sourceBedReleases, leaveBeds).inUse / u.beds : 0;
       return {
         id: u.id,
         name: u.name,
@@ -419,14 +421,12 @@ export function StatisticsScreen({
   const { view, choose: chooseView } = useStatisticsView();
   const isPhone = useIsPhone();
 
-  const blockedMean = blocked.vocabularySize > 0 ? blocked.totalCount / blocked.vocabularySize : 0;
-
   if (isPhone) {
     return (
       <StatisticsSummaryPhone
         ready={availableNow}
         beingMadeReady={pendingPreparation}
-        occupied={occupiedCount}
+        occupied={inUseCount}
         occupiedPct={occupiedPct}
         waitingInEd={waitingCount}
         endedToday={dischargesCount}
@@ -471,7 +471,8 @@ export function StatisticsScreen({
               ["Beds ready now", availableNow],
               ["Beds", totalBeds],
               ["Occupied", occupiedCount],
-              ["Occupied percent", occupiedPct],
+              ["Beds in use (occupied or pulled)", inUseCount],
+              ["Occupancy percent", occupiedPct],
               ["Being made ready", pendingPreparation],
               ["Admissions ended today", dischargesCount],
               ["Waiting in ED", waitingCount],
@@ -480,7 +481,7 @@ export function StatisticsScreen({
           chips={
             <HeroChips label="Network at a glance">
               <HeroChip value={totalBeds} label="Beds" />
-              <HeroChip value={occupiedCount} label={`${occupiedPct}% occupied`} />
+              <HeroChip value={inUseCount} label={`${occupiedPct}% in use`} />
               <HeroChip value={pendingPreparation} label="Being made ready" />
               <HeroChip
                 value={<span data-testid="ward-statistics-discharges-today-count">{dischargesCount}</span>}
@@ -586,7 +587,8 @@ export function StatisticsScreen({
                         { id: "open", label: "Still open", value: refOpen, fill: "data-3" },
                       ]}
                     />
-                    <div className={styles.tiles} data-testid="ward-statistics-refused-so-far">
+                    {/* Two across so no label is cut (device audit 11 Oct 2026: "Refused so fa..."). */}
+                    <div className={`${styles.tiles} ${styles.tilesTwo}`} data-testid="ward-statistics-refused-so-far">
                       <div className={styles.tile}>
                         <h3 className={styles.srOnly}>Referrals where every ward asked so far has refused</h3>
                         <p className={styles.tileLabel} aria-hidden="true">
@@ -913,7 +915,6 @@ export function StatisticsScreen({
                     labelWidth="10.5rem"
                     axis
                     max={axisMax(blocked.tallies.map((tally) => tally.count))}
-                    mean={blockedMean}
                     rows={blocked.tallies.map((tally) => ({
                       id: tally.reason,
                       label: (
@@ -976,11 +977,6 @@ export function StatisticsScreen({
                         labelWidth="10.5rem"
                         axis
                         max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}
-                        mean={
-                          declinesReadout.value.vocabularySize > 0
-                            ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize
-                            : 0
-                        }
                         rows={declinesReadout.value.tallies.map((tally) => ({
                           id: tally.reason,
                           label: (
@@ -1040,7 +1036,15 @@ export function StatisticsScreen({
                       <dt className={styles.figureLabel}>Longest</dt>
                     </div>
                   </dl>
-                  <ColumnChart label="Pull to arrival, admissions by band" height={110} columns={arrivalBands} />
+                  {/* Device audit 11 Oct 2026: when every measured arrival took the same time the chart is
+                      one bar and looked broken, so it says so instead. */}
+                  {arrivals.shortestMinutes !== null && arrivals.shortestMinutes === arrivals.longestMinutes ? (
+                    <p className={styles.muted} data-testid="ward-statistics-arrival-no-spread">
+                      Every measured arrival took the same time in this synthetic data, so there is no spread to chart.
+                    </p>
+                  ) : (
+                    <ColumnChart label="Pull to arrival, admissions by band" height={110} columns={arrivalBands} />
+                  )}
                   <dl className={styles.tiles}>
                     <div className={styles.tile}>
                       <dt className={styles.tileLabel}>Awaiting</dt>

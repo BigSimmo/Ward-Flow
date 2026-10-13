@@ -253,6 +253,128 @@
   }
 }
 
+/* Phone toast (v10 all-pages mockup, .toast and .frame.phone > .toasts): a dark pill, not glass,
+   left and right 12px and 92px up, text may wrap. The tip colours are the tooltip's own recipe
+   (ui/tooltip.module.css): ink on light, track in dark with the line-2 ring. Desktop and tablet
+   keep the glass card above. A toast that closes itself (Undo or timed) shows no X, as drawn. */
+@media (max-width: 48rem) {
+  .toastRegion {
+    left: 12px;
+    right: 12px;
+    bottom: 92px;
+    padding: 0;
+    align-items: center;
+  }
+
+  /* A page's sticky phone action bar (Patient's "Record search done") sits just above the dock:
+     the toast lifts over it (the bar's 48px button plus its padding) so Undo never covers it. */
+  :global(html:has([data-wf-phone-action-bar])) .toastRegion {
+    bottom: calc(92px + 76px);
+  }
+
+  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
+  :global(html:has([role="dialog"][aria-modal="true"])) .toastRegion {
+    bottom: 136px;
+  }
+
+  .toast {
+    --toast-bg: light-dark(
+      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
+      color-mix(in srgb, var(--wf-track) 97%, transparent)
+    );
+    --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
+    --toast-ring: light-dark(transparent, var(--wf-line-2));
+    gap: 10px;
+    min-height: 44px;
+    max-width: 100%;
+    padding: 0 6px 0 14px;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: var(--toast-bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow:
+      0 0 0 1px var(--toast-ring),
+      var(--wf-e2);
+    color: var(--toast-ink);
+    font-size: var(--wf-fs-13);
+  }
+
+  .toastText {
+    padding: 6px 0;
+  }
+
+  .toastTitle,
+  .toastBody {
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    color: var(--toast-ink);
+  }
+
+  .toastBody {
+    opacity: 0.8;
+  }
+
+  .toastMeta {
+    color: var(--toast-ink);
+    opacity: 0.8;
+  }
+
+  /* Success and info read from the words alone, as drawn; a warning or danger keeps its glyph. */
+  .toast:is([data-tone="success"], [data-tone="info"]) > :first-child:not(.toastText) {
+    display: none;
+  }
+
+  /* Undo and other actions: tip ink on a 14% tint, 28px tall, with a 48px hit area. */
+  .toast .toastAction,
+  .toast .toastClose {
+    height: 28px;
+    min-height: 28px;
+    padding: 0 12px;
+    border-color: transparent;
+    border-radius: var(--wf-r-pill);
+    box-shadow: none;
+    color: var(--toast-ink);
+    background: color-mix(in srgb, var(--toast-ink) 14%, transparent);
+  }
+
+  .toast .toastAction:hover,
+  .toast .toastAction:active {
+    background: color-mix(in srgb, var(--toast-ink) 22%, transparent);
+  }
+
+  .toast .toastClose {
+    width: 28px;
+    min-width: 28px;
+    padding: 0;
+    background: transparent;
+  }
+
+  .toast .toastClose:hover,
+  .toast .toastClose:active {
+    background: color-mix(in srgb, var(--toast-ink) 14%, transparent);
+  }
+
+  .toast .toastAction::after,
+  .toast .toastClose::after {
+    content: "";
+    position: absolute;
+    inset: -10px -4px;
+  }
+
+  .toast[data-auto-dismiss="true"] .toastClose {
+    display: none;
+  }
+
+  .undoBar {
+    left: 14px;
+    right: 14px;
+    background: var(--toast-ink);
+    opacity: 0.5;
+  }
+}
+
 @media (forced-colors: active) {
   .glass {
     border: 1px solid CanvasText;
