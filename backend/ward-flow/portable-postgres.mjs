@@ -50,6 +50,32 @@ export function readDatabaseCA(certificateFile) {
   return ca;
 }
 
+// Read grants outside ward_flow that stock Supabase (and stock PostgreSQL) give PUBLIC, so every role
+// inherits them. System schemas are allowed whole. In extension schemas only the named stock relations
+// are allowed: pg_stat_statements' views and pg_cron's RLS-scoped job tables. Checked against a Supabase
+// PostgreSQL 17 project's PUBLIC ACLs. Any other readable relation outside ward_flow refuses startup,
+// including a new relation that is later added and granted in extensions or cron.
+export const FOREIGN_READ_SCHEMA_ALLOWLIST = Object.freeze(["pg_catalog", "information_schema"]);
+// [schema, relation] pairs, compared as separate names so a dotted schema name can't impersonate one.
+export const FOREIGN_READ_RELATION_ALLOWLIST = Object.freeze(
+  [
+    ["extensions", "pg_stat_statements"],
+    ["extensions", "pg_stat_statements_info"],
+    ["cron", "job"],
+    ["cron", "job_run_details"],
+  ].map((pair) => Object.freeze(pair)),
+);
+// pg_get_expr decompiles the stored policy and its spacing, parentheses and implicit casts are not
+// stable across PostgreSQL majors. Compare a normalised form: drop whitespace and parentheses, then
+// name/text casts, and match case-sensitively. Double quotes and case are KEPT, so a quoted column
+// ("user name") or a user-defined "current_user"() can't pass as the unquoted column username or the
+// CURRENT_USER keyword. Anything that still differs fails closed.
+// Both patterns are valid as JavaScript and PostgreSQL (ARE) regular expressions.
+export const CRON_POLICY_STRIP_PATTERN = "[\\s()]";
+export const CRON_POLICY_CAST_PATTERN = "::(text|name|charactervarying)";
+export const CRON_OWNER_FILTER_FORMS = Object.freeze(["username=CURRENT_USER", "CURRENT_USER=username"]);
+const sqlList = (values) => values.map((value) => `'${value}'`).join(", ");
+
 // One bounded catalogue summary. No payload or credential is read. Missing schema,
 // migrations or permissions fail closed; administrators install migrations separately.
 export const RUNTIME_SUMMARY = `
@@ -73,6 +99,25 @@ SELECT current_user AS role,
     -- No CREATE on any schema (PostgreSQL 14 and earlier grant it on public to PUBLIC).
     AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace s
       WHERE pg_catalog.has_schema_privilege(r.oid, s.oid, 'CREATE')) AS schema_grants,
+  -- No read grant (table, column or sequence) outside ward_flow except the allow-listed schemas and relations.
+  NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname <> 'ward_flow' AND n.nspname <> ALL (ARRAY[${sqlList(FOREIGN_READ_SCHEMA_ALLOWLIST)}]::text[])
+      AND NOT (c.relkind IN ('r', 'v')
+        AND (n.nspname::text, c.relname::text) IN (${FOREIGN_READ_RELATION_ALLOWLIST.map((pair) => `(${sqlList(pair)})`).join(", ")})
+        -- pg_cron's PUBLIC grant is only safe while RLS limits rows to the caller's own jobs: RLS on, and
+        -- every permissive policy that covers SELECT is pg_cron's stock owner filter (username = current_user) (permissive policies
+        -- are OR-combined; restrictive ones only narrow). The role can't bypass RLS (safe_flags).
+        AND (n.nspname <> 'cron' OR (c.relrowsecurity AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policy p
+          WHERE p.polrelid = c.oid AND p.polpermissive AND p.polcmd IN ('*', 'r')
+            AND pg_catalog.regexp_replace(pg_catalog.regexp_replace(
+              COALESCE(pg_catalog.pg_get_expr(p.polqual, p.polrelid), ''),
+              '${CRON_POLICY_STRIP_PATTERN}', '', 'g'), '${CRON_POLICY_CAST_PATTERN}', '', 'g')
+              <> ALL (ARRAY[${sqlList(CRON_OWNER_FILTER_FORMS)}]::text[])))))
+      AND CASE WHEN c.relkind IN ('r', 'p', 'v', 'm', 'f') THEN
+          (pg_catalog.has_table_privilege(r.oid, c.oid, 'SELECT')
+          OR pg_catalog.has_any_column_privilege(r.oid, c.oid, 'SELECT'))
+        WHEN c.relkind = 'S' THEN pg_catalog.has_sequence_privilege(r.oid, c.oid, 'SELECT,USAGE')
+        ELSE false END) AS foreign_reads_denied,
   pg_catalog.has_table_privilege(r.oid, 'ward_flow.migrations', 'SELECT')
     AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspaces', 'SELECT')
     AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspaces', 'INSERT')
@@ -167,6 +212,7 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "no_memberships",
       "no_ownership",
       "schema_grants",
+      "foreign_reads_denied",
       "required_grants",
       "restricted_grants",
       "push_grants",
