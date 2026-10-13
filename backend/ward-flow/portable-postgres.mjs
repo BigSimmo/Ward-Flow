@@ -50,12 +50,19 @@ export function readDatabaseCA(certificateFile) {
   return ca;
 }
 
-// Schemas outside ward_flow where stock Supabase (and stock PostgreSQL) grant PUBLIC read access,
-// so every role inherits it: system catalogues, the information schema, extension views such as
-// extensions.pg_stat_statements, and pg_cron's RLS-scoped job tables. Checked against a Supabase
-// PostgreSQL 17 project's PUBLIC ACLs. Any other readable relation outside ward_flow refuses startup.
-export const FOREIGN_READ_SCHEMA_ALLOWLIST = Object.freeze(["pg_catalog", "information_schema", "extensions", "cron"]);
-const foreignReadAllowlistSql = FOREIGN_READ_SCHEMA_ALLOWLIST.map((schema) => `'${schema}'`).join(", ");
+// Read grants outside ward_flow that stock Supabase (and stock PostgreSQL) give PUBLIC, so every role
+// inherits them. System schemas are allowed whole. In extension schemas only the named stock relations
+// are allowed: pg_stat_statements' views and pg_cron's RLS-scoped job tables. Checked against a Supabase
+// PostgreSQL 17 project's PUBLIC ACLs. Any other readable relation outside ward_flow refuses startup,
+// including a new relation that is later added and granted in extensions or cron.
+export const FOREIGN_READ_SCHEMA_ALLOWLIST = Object.freeze(["pg_catalog", "information_schema"]);
+export const FOREIGN_READ_RELATION_ALLOWLIST = Object.freeze([
+  "extensions.pg_stat_statements",
+  "extensions.pg_stat_statements_info",
+  "cron.job",
+  "cron.job_run_details",
+]);
+const sqlList = (values) => values.map((value) => `'${value}'`).join(", ");
 
 // One bounded catalogue summary. No payload or credential is read. Missing schema,
 // migrations or permissions fail closed; administrators install migrations separately.
@@ -80,9 +87,11 @@ SELECT current_user AS role,
     -- No CREATE on any schema (PostgreSQL 14 and earlier grant it on public to PUBLIC).
     AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace s
       WHERE pg_catalog.has_schema_privilege(r.oid, s.oid, 'CREATE')) AS schema_grants,
-  -- No read grant (table, column or sequence) outside ward_flow except the allow-listed schemas.
+  -- No read grant (table, column or sequence) outside ward_flow except the allow-listed schemas and relations.
   NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-    WHERE n.nspname <> 'ward_flow' AND n.nspname <> ALL (ARRAY[${foreignReadAllowlistSql}]::text[])
+    WHERE n.nspname <> 'ward_flow' AND n.nspname <> ALL (ARRAY[${sqlList(FOREIGN_READ_SCHEMA_ALLOWLIST)}]::text[])
+      AND NOT (c.relkind IN ('r', 'v')
+        AND n.nspname || '.' || c.relname = ANY (ARRAY[${sqlList(FOREIGN_READ_RELATION_ALLOWLIST)}]::text[]))
       AND CASE WHEN c.relkind IN ('r', 'p', 'v', 'm', 'f') THEN
           (pg_catalog.has_table_privilege(r.oid, c.oid, 'SELECT')
           OR pg_catalog.has_any_column_privilege(r.oid, c.oid, 'SELECT'))

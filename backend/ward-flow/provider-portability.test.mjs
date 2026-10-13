@@ -9,6 +9,7 @@ import {
   verifyRuntimeRole,
   RUNTIME_SUMMARY,
   FOREIGN_READ_SCHEMA_ALLOWLIST,
+  FOREIGN_READ_RELATION_ALLOWLIST,
 } from "./portable-postgres.mjs";
 import { readMigrationConfig, migratePortablePostgres } from "./migrate-postgres.mjs";
 import { createSupabasePool, verifySupabaseRuntimeRole } from "./supabase-postgres.mjs";
@@ -427,20 +428,28 @@ test("Azure startup refuses a database without the complete migration 4 ledger",
   );
 });
 
-test("runtime summary refuses read grants outside ward_flow except the stock Supabase schema allow-list", () => {
-  // Schemas with PUBLIC read grants on a stock Supabase PostgreSQL 17 project (pg_class ACLs).
-  for (const schema of ["pg_catalog", "information_schema", "extensions", "cron"])
-    assert.ok(FOREIGN_READ_SCHEMA_ALLOWLIST.includes(schema), schema);
-  for (const schema of ["public", "auth", "storage", "vault", "realtime", "net", "graphql", "supabase_functions"])
+test("runtime summary refuses read grants outside ward_flow except stock Supabase system schemas and relations", () => {
+  // PUBLIC read grants on a stock Supabase PostgreSQL 17 project (pg_class ACLs): system schemas whole,
+  // plus four named extension relations. Anything else, including new relations in extensions or cron, refuses.
+  assert.deepEqual([...FOREIGN_READ_SCHEMA_ALLOWLIST], ["pg_catalog", "information_schema"]);
+  assert.deepEqual(
+    [...FOREIGN_READ_RELATION_ALLOWLIST],
+    ["extensions.pg_stat_statements", "extensions.pg_stat_statements_info", "cron.job", "cron.job_run_details"],
+  );
+  for (const schema of ["public", "auth", "storage", "vault", "extensions", "cron"])
     assert.ok(!FOREIGN_READ_SCHEMA_ALLOWLIST.includes(schema), schema);
-  assert.ok(Object.isFrozen(FOREIGN_READ_SCHEMA_ALLOWLIST));
+  assert.ok(Object.isFrozen(FOREIGN_READ_SCHEMA_ALLOWLIST) && Object.isFrozen(FOREIGN_READ_RELATION_ALLOWLIST));
   const clause = RUNTIME_SUMMARY.slice(
     RUNTIME_SUMMARY.indexOf("-- No read grant"),
     RUNTIME_SUMMARY.indexOf("AS foreign_reads_denied"),
   );
   assert.match(
     clause,
-    /n\.nspname <> 'ward_flow' AND n\.nspname <> ALL \(ARRAY\['pg_catalog', 'information_schema', 'extensions', 'cron'\]::text\[\]\)/,
+    /n\.nspname <> 'ward_flow' AND n\.nspname <> ALL \(ARRAY\['pg_catalog', 'information_schema'\]::text\[\]\)/,
+  );
+  assert.match(
+    clause,
+    /AND NOT \(c\.relkind IN \('r', 'v'\)\s+AND n\.nspname \|\| '\.' \|\| c\.relname = ANY \(ARRAY\['extensions\.pg_stat_statements', 'extensions\.pg_stat_statements_info', 'cron\.job', 'cron\.job_run_details'\]::text\[\]\)\)/,
   );
   assert.match(clause, /has_table_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
   assert.match(clause, /has_any_column_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
