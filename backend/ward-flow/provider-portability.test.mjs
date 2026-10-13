@@ -432,10 +432,9 @@ test("Azure startup refuses a database without the complete migration 4 ledger",
 });
 
 test("pg_cron policy normalisation accepts the stock owner filter in any deparse format and refuses anything wider", () => {
-  // Mirrors the SQL: lower, strip whitespace/parentheses/quotes, then strip name/text casts.
+  // Mirrors the SQL: strip whitespace and parentheses, then name/text casts; quotes and case kept.
   const normalise = (expr) =>
     (expr ?? "")
-      .toLowerCase()
       .replace(new RegExp(CRON_POLICY_STRIP_PATTERN, "g"), "")
       .replace(new RegExp(CRON_POLICY_CAST_PATTERN, "g"), "");
   const accepted = (expr) => CRON_OWNER_FILTER_FORMS.includes(normalise(expr));
@@ -443,7 +442,6 @@ test("pg_cron policy normalisation accepts the stock owner filter in any deparse
     "(username = CURRENT_USER)", // PostgreSQL 16-18 (verified on 18 with PGlite)
     "username = CURRENT_USER",
     "(username = (CURRENT_USER)::text)",
-    '(username = "current_user"())',
     "(CURRENT_USER = username)",
     "(username = (CURRENT_USER)::character varying)",
   ]) {
@@ -453,6 +451,10 @@ test("pg_cron policy normalisation accepts the stock owner filter in any deparse
     "((username = CURRENT_USER) OR true)",
     "(other = CURRENT_USER)",
     "(username = SESSION_USER)",
+    '("user name" = CURRENT_USER)', // a different, quoted column
+    '(username = "current_user"())', // a user-defined function, not the keyword
+    '(username = public."current_user"())',
+    "(Username = current_user)",
     "(username <> CURRENT_USER)",
     "true",
     "",
@@ -503,7 +505,7 @@ test("runtime summary refuses read grants outside ward_flow except stock Supabas
   assert.ok(clause.includes(`'${CRON_POLICY_STRIP_PATTERN}', '', 'g'), '${CRON_POLICY_CAST_PATTERN}', '', 'g')`));
   assert.match(
     clause,
-    /lower\(COALESCE\(pg_catalog\.pg_get_expr\(p\.polqual, p\.polrelid\), ''\)\)[\s\S]*<> ALL \(ARRAY\['username=current_user', 'current_user=username'\]::text\[\]\)\)\)\)\)/,
+    /COALESCE\(pg_catalog\.pg_get_expr\(p\.polqual, p\.polrelid\), ''\),[\s\S]*<> ALL \(ARRAY\['username=CURRENT_USER', 'CURRENT_USER=username'\]::text\[\]\)\)\)\)\)/,
   );
   assert.match(clause, /has_table_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
   assert.match(clause, /has_any_column_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
