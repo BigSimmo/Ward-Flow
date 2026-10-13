@@ -241,8 +241,12 @@ export class SupabaseWardAuth {
         undefined,
         generation,
       );
-      const next = this.readSession(value, session.recovery);
-      await this.verify({ ...next, user: session.user }, generation);
+      const next = { ...this.readSession(value, session.recovery), user: session.user };
+      // Supabase may rotate the refresh token on success; keep it so a transient
+      // verification failure can retry without reusing the consumed token.
+      this.assert(generation);
+      this.save(next);
+      await this.verify(next, generation);
     })();
     this.refreshTask = task;
     try {

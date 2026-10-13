@@ -29,7 +29,7 @@ const CATALOG = `WITH namespace AS (
       k.convalidated AS validated, k.condeferrable AS deferrable, k.condeferred AS deferred,
       pg_catalog.pg_get_constraintdef(k.oid) AS definition
     FROM pg_catalog.pg_constraint k JOIN pg_catalog.pg_class c ON c.oid=k.conrelid
-    JOIN namespace n ON n.oid=c.relnamespace LEFT JOIN pg_catalog.pg_class rc ON rc.oid=k.confrelid
+    JOIN namespace n ON n.oid=c.relnamespace AND k.contype <> 'n' LEFT JOIN pg_catalog.pg_class rc ON rc.oid=k.confrelid
     LEFT JOIN pg_catalog.pg_namespace rn ON rn.oid=rc.relnamespace ORDER BY c.relname, k.conname LIMIT 129
   ) k), '[]'::jsonb) AS constraints,
   coalesce((SELECT jsonb_agg(to_jsonb(f)) FROM (
