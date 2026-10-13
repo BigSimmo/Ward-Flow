@@ -913,6 +913,7 @@ export function PatientSearchPage() {
       <CensusDetail
         row={selectedCensus}
         now={now}
+        onNavigate={closeable ? undefined : () => setDetailsOpen(false)}
         onClose={
           closeable
             ? () => {

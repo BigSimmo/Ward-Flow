@@ -51,12 +51,14 @@ afterEach(() => {
 describe("ward bed drawer history", () => {
   it("closing a drawer this screen pushed goes back over that entry rather than adding another", () => {
     renderWard();
-    openViaUrl("1");
-    expect(drawer()).not.toBeNull();
-    // The entry this screen pushes when it opens a bed carries this marker.
-    window.history.replaceState({ wardBedDrawer: true }, "", window.location.href);
-    const back = vi.spyOn(window.history, "back").mockImplementation(() => {});
     const push = vi.spyOn(window.history, "pushState");
+    fireEvent.click(screen.getAllByRole("button", { name: /^Bed 0?1\b/i })[0]);
+    expect(drawer()).not.toBeNull();
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(window.history.state).toMatchObject({ wardBedDrawer: true });
+    expect(window.location.search).toBe("?bed=1");
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => {});
+    push.mockClear();
     fireEvent.click(screen.getByRole("button", { name: "Close bed drawer" }));
     expect(back).toHaveBeenCalledTimes(1);
     expect(push).not.toHaveBeenCalled();

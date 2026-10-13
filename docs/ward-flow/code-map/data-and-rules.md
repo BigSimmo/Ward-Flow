@@ -1,8 +1,9 @@
 # Data, seeds and domain rules
 
 PR262 review repair, 13 October 2026: `unitCapacity` follows R-B-09's existing
-Ready contract, `min(allocatable, empty)`, as do `openBedsNow`, `capacityBreakdown`
-and the eligibility Ready helper. Nominal bed counts do not silently replace
+Ready contract, `min(allocatable, empty)`, as do `capacityBreakdown` and the
+eligibility Ready helper. `openBedsNow` starts with that count, subtracts
+`bedsPendingPreparation`, and clamps the pullable result to zero. Nominal bed counts do not silently replace
 recorded observations. `tests/ward-ready-observation-boundaries.test.ts` covers
 zero, exact-capacity and conflicting observations above nominal capacity; it
 also verifies that those conflicts do not manufacture physical surge beds.

@@ -3,9 +3,10 @@ import { StrictMode, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Sheet } from "@/components/ui/sheet";
-import { popSheet, pushSheet, SHEET_INERT_MARKER } from "@/components/ui/sheet-focus";
+import { popSheet, pushSheet, SHEET_FOCUS_SETTLE_MS, SHEET_INERT_MARKER } from "@/components/ui/sheet-focus";
 
 afterEach(() => {
+  vi.useRealTimers();
   if (typeof document !== "undefined" && document.body) {
     document.body.style.overflow = "";
   }
@@ -276,23 +277,29 @@ describe("Sheet focus stress", () => {
     };
     greedy.addEventListener("focusout", steal);
 
+    vi.useFakeTimers();
     render(
       <Sheet open onClose={() => {}} title="Contested" portal>
         <p>Body</p>
       </Sheet>,
     );
-    await waitFor(() => {
-      expect(panelOf("Contested")?.contains(document.activeElement)).toBe(true);
-    });
+    await act(async () => vi.advanceTimersByTimeAsync(20));
+    expect(panelOf("Contested")?.contains(document.activeElement)).toBe(true);
 
-    act(() => {
-      greedy.focus();
-    });
-    await waitFor(() => {
-      // The war ends: bounded reclaims, no stack overflow, focus left alone.
+    try {
+      act(() => {
+        greedy.focus();
+        vi.advanceTimersByTime(SHEET_FOCUS_SETTLE_MS + 1);
+      });
+      // Observe the entire opening-focus window, rather than its first bounded count.
       expect(steals).toBeGreaterThan(0);
       expect(steals).toBeLessThan(200);
-    });
+      const settledSteals = steals;
+      act(() => vi.advanceTimersByTime(SHEET_FOCUS_SETTLE_MS));
+      expect(steals).toBe(settledSteals);
+    } finally {
+      vi.useRealTimers();
+    }
     greedy.removeEventListener("focusout", steal);
     background.remove();
   });

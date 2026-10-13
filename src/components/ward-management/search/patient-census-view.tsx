@@ -771,12 +771,13 @@ export type CensusDetailProps = {
   row: CensusRow;
   now: Instant;
   onClose?: () => void;
+  onNavigate?: () => void;
   onCopy: (row: CensusRow) => void;
   copyNote: string | null;
 };
 
 /** The selected person. Every fact is the record's own; a missing one says so. */
-export function CensusDetail({ row, now, onClose, onCopy, copyNote }: CensusDetailProps) {
+export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }: CensusDetailProps) {
   const [previewNote, setPreviewNote] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -835,6 +836,7 @@ export function CensusDetail({ row, now, onClose, onCopy, copyNote }: CensusDeta
           window.sessionStorage.setItem("wardflow:census-bed-opener", row.key);
           // ward-screen.tsx returns to Census on close only for this exact unit and bed.
           window.sessionStorage.setItem("wardflow:census-bed-opener-target", `${row.unitId}:${row.bedNumber}`);
+          onNavigate?.();
         }}
       >
         Ward bed
