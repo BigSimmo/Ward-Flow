@@ -7,7 +7,8 @@ import {
   STAGE_TRANSITION_BLOCKERS,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
-import { handoverSnapshot } from "../src/components/ward-management/ward-derivations";
+import { changeAudit, handoverSnapshot } from "../src/components/ward-management/ward-derivations";
+import { changeReasonLabels } from "../src/components/ward-management/ward-change-reasons";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { logger } from "../src/lib/logger";
 import { CONTINUATION_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
@@ -527,14 +528,40 @@ describe("S2-7: RELEASE_AND_REOPEN_SEARCH from accepted_awaiting_bed (owner ruli
     expect(after.rejections).toHaveLength(0);
     const reopened = after.movements.find((m) => m.id === movement!.id)!;
     expect(reopened.stage).toBe("placement_requested");
-    expect(reopened.unwinds.at(-1)?.kind).toBe("acceptance_withdrawn");
+    expect(reopened.unwinds.at(-1)).toMatchObject({ kind: "acceptance_withdrawn", unitId: acceptedUnitId });
+    const audit = changeAudit(after.movements).find(
+      (entry) => entry.movementId === movement!.id && entry.kind === "acceptance_withdrawn",
+    );
+    expect(audit?.detail).toBe(`Acceptance withdrawn · ${changeReasonLabels.patient_no_longer_coming}`);
     const added = after.notices.slice(before);
     expect(added.some((n) => n.kind === "bed_pull_released")).toBe(false);
     expect(added).toHaveLength(1);
     expect(added[0]).toMatchObject({
-      kind: "ward_request_withdrawn",
+      kind: "acceptance_withdrawn_ward",
       to: { role: "ward", placeId: acceptedUnitId },
       about: { movementId: movement.id, unitId: acceptedUnitId },
     });
+  });
+
+  it("treats a movement stepped back from pulled (bed still reserved) as a bed release", () => {
+    const state = seedWardFlowState();
+    const source = state.movements.find((m) => m.stage === "pulled" && !m.closure && m.admissionId && !m.transport);
+    expect(source).toBeDefined();
+    const steppedBack = { ...source!, stage: "accepted_awaiting_bed" as const };
+    const seeded = { ...state, movements: state.movements.map((m) => (m.id === source!.id ? steppedBack : m)) };
+    const before = seeded.notices.length;
+    const after = wardFlowReducer(seeded, {
+      type: "RELEASE_AND_REOPEN_SEARCH",
+      role: "coordinator",
+      now: NOW + 5,
+      movementId: steppedBack.id,
+      actingUnitId: steppedBack.acceptedUnitId!,
+      reason: "patient_no_longer_coming",
+    });
+    expect(after.rejections).toHaveLength(0);
+    const reopened = after.movements.find((m) => m.id === steppedBack.id)!;
+    expect(reopened.unwinds.at(-1)?.kind).toBe("pull_released");
+    expect(after.admissions.some((a) => a.id === steppedBack.admissionId)).toBe(false);
+    expect(after.notices.slice(before).map((n) => n.kind)).toEqual(["bed_pull_released"]);
   });
 });

@@ -10052,7 +10052,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
       const withoutPhantom = releasePulledBedAndAdmission(state, movement, event.now);
-      const heldBed = movement.stage === "pulled";
+      // A movement stepped back from `pulled` keeps its reserved bed and admission at
+      // `accepted_awaiting_bed`, so the stage alone cannot say whether a bed is being released
+      // (same rule as `releasePulledBedAndAdmission`).
+      const heldBed = movement.stage === "pulled" || movement.admissionId !== undefined;
       const releasedUnitId = movement.acceptedUnitId;
       const updatedMovement: Movement = {
         ...movement,
@@ -10073,6 +10076,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             kind: heldBed ? "pull_released" : "acceptance_withdrawn",
             by: event.role,
             reason: event.reason,
+            // Name the former accepting ward: `acceptedUnitId` is cleared in this same update.
+            ...(releasedUnitId !== undefined ? { unitId: releasedUnitId } : {}),
           },
         ],
         stageChanges: [
@@ -10090,7 +10095,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           makeNotice(
             event.now,
             state.notices.length,
-            "ward_request_withdrawn",
+            "acceptance_withdrawn_ward",
             { role: "ward", placeId: releasedUnitId },
             { movementId: movement.id, unitId: releasedUnitId },
             `The acceptance for ${movement.id} was released and the search reopened (${reasonText}).`,
