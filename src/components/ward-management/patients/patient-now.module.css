@@ -1554,6 +1554,20 @@
   border-color: var(--ink);
   color: var(--surface);
 }
+/* A4-32: a disabled primary reads as disabled, not as a live black button. */
+.ctlPrimary:disabled {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+  filter: none;
+}
+.clearanceReason {
+  margin: 0;
+  align-self: center;
+  color: var(--muted);
+  font-size: var(--wf-fs-12);
+}
 .arrivalDisclosure {
   border-top: 1px solid var(--surface-2);
   background: var(--surface-2);
