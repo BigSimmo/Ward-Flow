@@ -1680,6 +1680,7 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       movementId: string;
+      /** Required for non-coordinators; must match the originating ED or sending admission's unit. */
       actingPlaceId?: string;
     }
   | {

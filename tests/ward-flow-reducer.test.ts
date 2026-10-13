@@ -2122,6 +2122,7 @@ describe("bed release privacy", () => {
       const edSuccess = wardFlowReducer(seeded, {
         type: "WITHDRAW_REFERRAL",
         role: "ed",
+        actingPlaceId: movement.originEdId,
         now: NOW,
         movementId: movement.id,
       });

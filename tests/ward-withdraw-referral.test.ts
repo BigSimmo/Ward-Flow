@@ -48,6 +48,7 @@ describe("a referrer taking its referral back", () => {
     const next = wardFlowReducer(state, {
       type: "WITHDRAW_REFERRAL",
       role: "ed",
+      actingPlaceId: open.originEdId,
       now: NOW,
       movementId: open.id,
     });
@@ -72,7 +73,8 @@ describe("a referrer taking its referral back", () => {
 
     const next = wardFlowReducer(state, {
       type: "WITHDRAW_REFERRAL",
-      role: "community",
+      role: "ed",
+      actingPlaceId: open.originEdId,
       now: NOW,
       movementId: open.id,
     });
@@ -93,6 +95,7 @@ describe("a referrer taking its referral back", () => {
     const next = wardFlowReducer(state, {
       type: "WITHDRAW_REFERRAL",
       role: "ed",
+      actingPlaceId: open.originEdId,
       now: NOW,
       movementId: open.id,
     });
@@ -116,6 +119,7 @@ describe("a referrer taking its referral back", () => {
     const next = wardFlowReducer(state, {
       type: "WITHDRAW_REFERRAL",
       role: "ed",
+      actingPlaceId: open.originEdId,
       now: NOW,
       movementId: open.id,
     });
@@ -171,6 +175,7 @@ describe("a referrer taking its referral back", () => {
       const once = wardFlowReducer(state, {
         type: "WITHDRAW_REFERRAL",
         role: "ed",
+        actingPlaceId: open.originEdId,
         now: NOW,
         movementId: open.id,
       });
@@ -180,6 +185,7 @@ describe("a referrer taking its referral back", () => {
       const twice = wardFlowReducer(once, {
         type: "WITHDRAW_REFERRAL",
         role: "ed",
+        actingPlaceId: open.originEdId,
         now: NOW + 5,
         movementId: open.id,
       });
@@ -353,6 +359,7 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
       const withdrawn = wardFlowReducer(ready, {
         type: "WITHDRAW_REFERRAL",
         role,
+        actingPlaceId: movement(ready, movementId).originEdId,
         now: NOW + 4,
         movementId,
       });
@@ -379,7 +386,13 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
 
       // Applying it a second time is a no-op on the unit — the movement is closed now, so a repeat
       // is refused rather than refunding the bed a second time.
-      const twice = wardFlowReducer(withdrawn, { type: "WITHDRAW_REFERRAL", role, now: NOW + 5, movementId });
+      const twice = wardFlowReducer(withdrawn, {
+        type: "WITHDRAW_REFERRAL",
+        role,
+        actingPlaceId: movement(withdrawn, movementId).originEdId,
+        now: NOW + 5,
+        movementId,
+      });
       expect(twice.rejections.length).toBeGreaterThan(withdrawn.rejections.length);
       expect(twice.units.find((candidate) => candidate.id === unitId)?.allocatable.value).toBe(
         unitAfter.allocatable.value,
@@ -407,7 +420,13 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
     // nothing to refund.
     const seed = seedWardFlowState();
     const { state: accepted, movementId } = accept(seed, anOpenReferralWithCapacity(seed));
-    const next = wardFlowReducer(accepted, { type: "WITHDRAW_REFERRAL", role: "ed", now: NOW + 1, movementId });
+    const next = wardFlowReducer(accepted, {
+      type: "WITHDRAW_REFERRAL",
+      role: "ed",
+      actingPlaceId: accepted.movements.find((movement) => movement.id === movementId)!.originEdId,
+      now: NOW + 1,
+      movementId,
+    });
 
     expect(next.rejections, `ed was refused: ${next.rejections.at(-1)?.reason}`).toHaveLength(0);
     const after = movement(next, movementId);
@@ -419,7 +438,13 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
     const { state: collected, movementId } = acceptPullAndCollect(seedWardFlowState());
 
     for (const role of ["ed", "coordinator"] as const) {
-      const next = wardFlowReducer(collected, { type: "WITHDRAW_REFERRAL", role, now: NOW + 7, movementId });
+      const next = wardFlowReducer(collected, {
+        type: "WITHDRAW_REFERRAL",
+        role,
+        actingPlaceId: movement(collected, movementId).originEdId,
+        now: NOW + 7,
+        movementId,
+      });
       expect(next.rejections, `${role} was not refused`).toHaveLength(1);
       expect(next.rejections[0]?.reason).toMatch(/collected.*STOP_TRANSPORT/i);
       expect(movement(next, movementId).closure).toBeUndefined();
@@ -432,13 +457,14 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
    * the pre-existing `referredUnitIds.length === 0` guard and a wiring mistake there could silently
    * change the pre-acceptance path too.
    */
-  it("before acceptance, every referring role still withdraws exactly as it did before WLQ-38", () => {
+  it("before acceptance, the originating ED still withdraws the referral", () => {
     const state = seedWardFlowState();
     const open = anOpenReferral(state);
 
     const next = wardFlowReducer(state, {
       type: "WITHDRAW_REFERRAL",
-      role: "community",
+      role: "ed",
+      actingPlaceId: open.originEdId,
       now: NOW,
       movementId: open.id,
     });
@@ -450,6 +476,89 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
   });
 
   describe("enforcing referring-site ownership on referral cancellation (WF-A1-02)", () => {
+    describe("sender authorization", () => {
+      it.each([undefined, "", "another-ed"])(
+        "refuses ED withdrawal with place claim %s before and after a pull without releasing anything",
+        (actingPlaceId) => {
+          const seed = seeded();
+          const open = anOpenReferral(seed);
+          const pulled = acceptAndPull(seed);
+          for (const [state, movementId] of [
+            [seed, open.id],
+            [pulled.state, pulled.movementId],
+          ] as const) {
+            const next = wardFlowReducer(state, {
+              type: "WITHDRAW_REFERRAL",
+              role: "ed",
+              actingPlaceId,
+              now: NOW + 10,
+              movementId,
+            });
+            expect(next.rejections).toHaveLength(state.rejections.length + 1);
+            expect(next.movements).toEqual(state.movements);
+            expect(next.admissions).toEqual(state.admissions);
+            expect(next.units).toEqual(state.units);
+            expect(next.notices).toEqual(state.notices);
+          }
+        },
+      );
+
+      it.each([undefined, "", "another-ward"])("refuses a ward claiming %s for a transfer", (actingPlaceId) => {
+        const state = seeded();
+        const open = anOpenReferral(state);
+        const source = state.admissions.find((admission) => admission.state === "occupied")!;
+        const transfer = {
+          ...state,
+          movements: state.movements.map((m) =>
+            m.id === open.id ? { ...m, patientId: source.patientId ?? undefined, sourceAdmissionId: source.id } : m,
+          ),
+        };
+        const next = wardFlowReducer(transfer, {
+          type: "WITHDRAW_REFERRAL",
+          role: "ward",
+          actingPlaceId,
+          now: NOW,
+          movementId: open.id,
+        });
+        expect(next.rejections).toHaveLength(1);
+        expect(next.movements).toEqual(transfer.movements);
+        expect(next.admissions).toEqual(transfer.admissions);
+        expect(next.units).toEqual(transfer.units);
+      });
+
+      it.each(["ward", "ed"] as const)("refuses %s when the sending admission cannot be resolved", (role) => {
+        const state = seeded();
+        const open = anOpenReferral(state);
+        const transfer = {
+          ...state,
+          movements: state.movements.map((m) => (m.id === open.id ? { ...m, sourceAdmissionId: "missing-stay" } : m)),
+        };
+        const next = wardFlowReducer(transfer, {
+          type: "WITHDRAW_REFERRAL",
+          role,
+          actingPlaceId: open.originEdId,
+          now: NOW,
+          movementId: open.id,
+        });
+        expect(next.rejections).toHaveLength(1);
+        expect(next.movements).toEqual(transfer.movements);
+      });
+
+      it("refuses a community caller even when it claims the originating ED", () => {
+        const state = seeded();
+        const open = anOpenReferral(state);
+        const next = wardFlowReducer(state, {
+          type: "WITHDRAW_REFERRAL",
+          role: "community",
+          actingPlaceId: open.originEdId,
+          now: NOW,
+          movementId: open.id,
+        });
+        expect(next.rejections).toHaveLength(1);
+        expect(next.movements).toEqual(state.movements);
+      });
+    });
+
     it("refuses withdrawal when caller.placeId does not match referral origin site and role is not coordinator", () => {
       const state = seedWardFlowState();
       const open = anOpenReferral(state);
@@ -462,7 +571,9 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
       } as never);
 
       expect(refused.rejections).toHaveLength(1);
-      expect(refused.rejections[0]?.reason).toMatch(/is not the referral origin site.*or coordinator/i);
+      expect(refused.rejections[0]?.reason).toMatch(
+        /is not the referral origin site.*only the referrer or the coordinator/i,
+      );
       expect(movement(refused, open.id).closure).toBeUndefined();
     });
 
@@ -513,12 +624,23 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
   it("owner ruling 13 Oct: the sending ward of its own ward-to-ward transfer may withdraw it", () => {
     const state = seeded();
     const open = anOpenReferral(state);
+    const source = state.admissions.find((admission) => admission.state === "occupied")!;
     const transfer = {
       ...state,
-      movements: state.movements.map((m) => (m.id === open.id ? { ...m, sourceAdmissionId: "ADM-SENDING" } : m)),
+      movements: state.movements.map((m) =>
+        m.id === open.id ? { ...m, patientId: source.patientId ?? undefined, sourceAdmissionId: source.id } : m,
+      ),
     };
-    const next = wardFlowReducer(transfer, { type: "WITHDRAW_REFERRAL", role: "ward", now: NOW, movementId: open.id });
+    const next = wardFlowReducer(transfer, {
+      type: "WITHDRAW_REFERRAL",
+      role: "ward",
+      actingPlaceId: source.unitId,
+      now: NOW,
+      movementId: open.id,
+    });
     expect(next.rejections).toHaveLength(0);
     expect(movement(next, open.id).closure?.outcome).toBe("did_not_proceed");
+    expect(next.admissions).toEqual(transfer.admissions);
+    expect(next.units).toEqual(transfer.units);
   });
 });

@@ -422,6 +422,7 @@ describe("Movement.blocker — the staleness that made it wrong on screen", () =
     const withdrawn = wardFlowReducer(seeded, {
       type: "WITHDRAW_REFERRAL",
       role: "ed",
+      actingPlaceId: open.originEdId,
       now: NOW,
       movementId: open.id,
     });

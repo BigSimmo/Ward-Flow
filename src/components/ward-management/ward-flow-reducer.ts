@@ -4401,16 +4401,22 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `movement ${movement.id} has already closed and cannot be withdrawn`);
       }
-      // WF-A1-02: an ED that states which department it is acting as may only withdraw a referral
-      // that began there. The ED screen sends its ED id, so it is compared with movement.originEdId
-      // (an ED id), never with the referral's site code. Other roles carry no place identity yet.
+      // A place claim must match the recorded sender before either closure path can run.
+      // A ward transfer's sourceAdmissionId identifies a stay, not the caller who owns it.
       const caller = event as { role: WardFlowRole; placeId?: string; actingPlaceId?: string };
       const callerPlaceId = caller.placeId ?? caller.actingPlaceId;
-      if (caller.role === "ed" && callerPlaceId !== undefined && callerPlaceId !== movement.originEdId) {
+      const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+      const wardTransfer = movement.sourceAdmissionId !== undefined || referral?.source === "psychiatric_ward";
+      const senderPlaceId = wardTransfer ? movementSourceAdmission(state, movement)?.unitId : movement.originEdId;
+      const senderRole = wardTransfer ? "ward" : "ed";
+      if (
+        event.role !== "coordinator" &&
+        (!callerPlaceId || event.role !== senderRole || callerPlaceId !== senderPlaceId)
+      ) {
         return reject(
           state,
           event,
-          `caller ${callerPlaceId} is not the referral origin site (${movement.originEdId}) or coordinator`,
+          `caller ${callerPlaceId ?? "without a place ID"} is not the referral origin site (${senderPlaceId ?? "not recorded"}) for role ${event.role}; only the referrer or the coordinator may withdraw it`,
         );
       }
 
@@ -4429,15 +4435,6 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
        * would refuse this branch's own happy path with the wrong reason.
        */
       if (movement.acceptedUnitId) {
-        /*
-         * ⚠️ **`ed` IS PERMITTED BY ROLE ALONE, NOT CHECKED AGAINST `movement.originEdId`.** The
-         * referrer for a movement is the emergency department it began in, but this event (like
-         * every other ED-raised event except `RAISE_REFERRAL` itself) carries no acting-ED
-         * identity field to compare — the same absence `EVENT_ROLE.CANCEL_TRANSPORT`'s own comment
-         * already names for `community` ("no event carries which community team is acting", R2, no
-         * viewer identity). Widening this model to let one ED tell itself apart from another is an
-         * owner decision, not an implementer's.
-         */
         if (event.role !== "coordinator" && event.role !== "ed") {
           return reject(
             state,
@@ -4504,18 +4501,6 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             `The referral for ${movement.id} was revoked after being accepted; the patient is no longer coming.`,
           ),
         ]);
-      }
-
-      // Owner ruling 13 Oct 2026: before acceptance only the referring team (or the coordinator)
-      // may withdraw. A ward is the referrer only for its own ward-to-ward transfer
-      // (`sourceAdmissionId` set); a receiving ward is refused.
-      const wardIsReferrer = event.role === "ward" && movement.sourceAdmissionId !== undefined;
-      if (event.role !== "coordinator" && event.role !== "ed" && event.role !== "community" && !wardIsReferrer) {
-        return reject(
-          state,
-          event,
-          `role ${event.role} is not the referring team for movement ${movement.id}; only the referrer or the coordinator may withdraw it`,
-        );
       }
 
       if (movement.referredUnitIds.length === 0) {

@@ -433,8 +433,10 @@ terminal); "open" means no closure yet.
 - **`WITHDRAW_REFERRAL`** — roles: `ed`, `community`, `ward`, `coordinator`. Effect: closes
   movement `did_not_proceed`; if accepted, releases pulled bed, cancels transport, clears
   `acceptedUnitId`; if only referred, clears `referredUnitIds`. Guards: movement exists, open;
-  once accepted, only `coordinator`/`ed` may withdraw and refused if already collected; if not
-  accepted, refused when `referredUnitIds` is empty. Case at `:3403`.
+  non-coordinators must claim a place matching the sending admission's unit as `ward`, or the
+  originating ED as `ed` for a movement without a ward sender. Missing/unresolved sender claims
+  are refused. Once accepted, only `coordinator`/`ed` may withdraw and refused if already
+  collected; if not accepted, refused when `referredUnitIds` is empty. Case at `:3403`.
 - **`RECORD_MOVEMENT_BLOCKER`** — roles: `ed`, `community`, `ward`, `coordinator`, `officer`.
   Effect: sets `movement.blocker` to the given free prose. Guards: movement exists, open; text not
   blank; refused if it is a case-only near-miss of a "nothing is blocking" sentinel (use `CLEAR`
