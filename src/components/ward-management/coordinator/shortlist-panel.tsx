@@ -4,7 +4,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
-import { Fragment, useCallback, useMemo, useState, type Dispatch, type FormEvent } from "react";
+import { Fragment, useCallback, useContext, useMemo, useState, type Dispatch, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
@@ -75,10 +75,12 @@ import {
   type LegalStatus,
   type Movement,
   type Referral,
+  type Rejection,
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { referralSuburbLabel } from "@/components/ward-management/ward-referrals";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { operationalScore, urgencyTierLabel } from "@/components/ward-management/ward-priority";
@@ -409,6 +411,8 @@ function Fact({
  * driven by something other than the gate's own `pass` boolean. Every icon below reads directly
  * off `gate.pass`; nothing else is permitted to decide it (see the report's red/green proof).
  */
+const NO_REJECTIONS: readonly Rejection[] = [];
+
 export function ShortlistPanel({
   movement,
   now,
@@ -429,6 +433,15 @@ export function ShortlistPanel({
   const resolvePatientIdentity = usePatientOf();
   // Phone (v10 Home "Patient open"): a 2x2 facts card and less text. Desktop is unchanged.
   const isPhone = useIsPhone();
+  // S-8: "Accept for this ward" offers Undo on the toast, like the ward's own acceptance. Read
+  // through the context, not `useWardFlow()`, so a direct render without a provider still works.
+  const flowRejections = useContext(WardFlowContext)?.rejections ?? NO_REJECTIONS;
+  const { run: runStep } = useUndoableStep({
+    dispatch,
+    rejections: flowRejections,
+    now,
+    routeRole: "coordinator",
+  });
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   /**
    * ⚠️ EVERY WARD, NOT A FILTERED THREE. This was `eligibleCandidatesAmong(…, PARALLEL_REFERRAL_CAP)`,
@@ -1308,7 +1321,19 @@ export function ShortlistPanel({
                     data-testid={`ward-shortlist-accept-for-ward-${id}`}
                     className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
                     onClick={() =>
-                      dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "coordinator", now, movementId, unitId: id })
+                      runStep(
+                        { type: "ACCEPT_IN_PRINCIPLE", role: "coordinator", now, movementId, unitId: id },
+                        {
+                          success: `Accepted in principle for ${unit.name}.`,
+                          undo: (at) => ({
+                            type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                            role: "coordinator",
+                            now: at,
+                            movementId,
+                          }),
+                          undone: "Acceptance undone. The referral is back with the ward.",
+                        },
+                      )
                     }
                   >
                     Accept for this ward

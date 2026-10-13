@@ -5,6 +5,9 @@ import { WardDecisionsCockpit } from "@/components/ward-management/ward/ward-dec
 import { WardHomeTab } from "@/components/ward-management/ward/ward-home-tab";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { LeaveBed } from "@/components/ward-management/ward-model";
 const unit = unitById("rph-adult-secure")!;
 const props: ComponentProps<typeof WardHomeTab> = {
   unit,
@@ -81,5 +84,44 @@ describe("ward decision demonstration boundaries", () => {
     expect(screen.getByText("Recorded review")).toBeVisible();
     expect(screen.getByText("20m")).toBeVisible();
     expect(screen.getByText("Review time entered by clinician")).toBeVisible();
+  });
+  it("puts this ward's absences on an order in Act now", () => {
+    const absence = {
+      leaveBed: { id: "LB-test", admissionId: "ADM-test", absentWithoutLeave: { since: NOW_ANCHOR - 30 } },
+      admission: { id: "ADM-test" },
+    } as unknown as { leaveBed: LeaveBed & { absentWithoutLeave: { since: number } }; admission: Admission };
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardHomeTab {...props} absencesOnOrder={[absence as never]} />
+      </WardFlowProvider>,
+    );
+    expect(screen.getAllByText("Absent without leave on an order").length).toBeGreaterThan(0);
+  });
+  it("shows a lapsed bed hold ahead of a late ETA on the arrival row", () => {
+    const base = seedWardFlowState().movements[0]!;
+    const movement = {
+      ...base,
+      id: "WF-late-lapsed",
+      stage: "pulled" as const,
+      pullExpiresAt: NOW_ANCHOR - 20,
+      arrivalDetails: { ...base.arrivalDetails, estimatedArrivalAt: NOW_ANCHOR - 10 },
+    } as typeof base;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardHomeTab
+          {...props}
+          accepted={[movement]}
+          flowTab="admissions"
+          resolvePatientIdentity={() => ({
+            displayName: "Synthetic Person",
+            formalName: "Synthetic Person",
+            umrn: "UM000000",
+            initials: "SP",
+          })}
+        />
+      </WardFlowProvider>,
+    );
+    expect(screen.getAllByText(/^Pull expired /u).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/^Late$/u)).not.toBeInTheDocument();
   });
 });

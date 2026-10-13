@@ -119,6 +119,30 @@ describe("stable bed numbers (audit A1-1)", () => {
     expect(withPull.get("d")).toBe(1);
   });
 
+  it("reserves a recorded bed for its stay, so an unrecorded stay is never seated in it", () => {
+    const stays = [
+      { id: "a", state: "occupied", pulledAt: 10, arrivedAt: 20, leftAt: null },
+      { id: "r", state: "occupied", pulledAt: 30, arrivedAt: 40, leftAt: null, bedNumber: 1 },
+    ];
+    // Without the reservation "a" would be seated in bed 1 and later jump when "r" leaves.
+    expect(seatStays(3, stays).get("a")).toBe(2);
+    expect(seatStays(3, stays).get("r")).toBe(1);
+    const afterRecordedLeaves = seatStays(3, [stays[0], { ...stays[1], state: "departed", leftAt: 100 }]);
+    expect(afterRecordedLeaves.get("a")).toBe(2);
+    // A stay moved on the Bed board (recorded bed 3) keeps its replay seat, so nobody else reflows,
+    // and a later unrecorded stay is not seated in bed 3 either.
+    const moved = seatStays(4, [
+      { id: "m", state: "occupied", pulledAt: 10, arrivedAt: 20, leftAt: null, bedNumber: 3 },
+      { id: "b", state: "occupied", pulledAt: 30, arrivedAt: 40, leftAt: null },
+      { id: "n", state: "pulled", pulledAt: 50, arrivedAt: null, leftAt: null },
+    ]);
+    expect([...moved]).toEqual([
+      ["m", 1],
+      ["b", 2],
+      ["n", 4],
+    ]);
+  });
+
   it("lays a seated stay in its seat whatever its tile's place in the state-sorted list", () => {
     const items = [
       { free: true },
