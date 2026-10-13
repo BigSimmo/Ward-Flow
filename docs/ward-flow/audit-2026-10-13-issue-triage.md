@@ -2,7 +2,7 @@
 
 Every issue from the 8 October core-engine review ([`audit-2026-10-08-issue-list.md`](audit-2026-10-08-issue-list.md)), the follow-up honesty and UI audits, and the design and unverified-item lists, re-sorted by **how complex and how risky each fix is**. Synthetic data only. This file records triage; it does not change behaviour.
 
-**Checked against `origin/main` at `30b1803`.** Items fixed by PRs #256 and #257 since the first triage on 11 October are marked fixed and kept for the record. Items marked ✓ were re-read in the code at that commit; the rest carry the evidence level of their source audit.
+**Checked against `origin/main` at `30b1803`.** Items fixed by PRs #256 and #257 since the first triage on 11 October are marked fixed and kept for the record. Items marked ✓ were re-read in the code at that commit; the rest carry the evidence level of their source audit. **#267 merged after that commit** and changed `handover-model.ts`, `delays-derivations.ts`, `discharge-board.tsx` and the community intake; re-check any open item in those areas against current `main` before working on it.
 
 **Evidence key.** ✓ confirmed in code at `30b1803`. R reproduced, C code- or script-confirmed, U unverified (in the 8 October list). – from the follow-up audits, not re-checked. **Reproduce every U and – item before fixing it.**
 
@@ -39,7 +39,7 @@ Every issue from the 8 October core-engine review ([`audit-2026-10-08-issue-list
 
 ## 1. Quick and low risk
 
-Text, markup, config or docs. One file each, no engine logic.
+Text, markup, config or docs, with no engine logic. Most touch one file; A4-5, M-STATUS/M-HOSTING/U11 and M-DEAD span several files (named in each row) and M-DEAD also needs the deletion check.
 
 | ID                              | Fix                                                                                                                                      | Evidence |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------- |
