@@ -14,6 +14,14 @@ export function dateOf(instant: number, dayZero: Date): string {
   return `${WEEKDAYS[date.weekday]} ${date.day} ${MONTHS[date.monthIndex]}`;
 }
 
+/**
+ * True when a planned date's day is before today: the person is still here past it, so the date is
+ * marked (amber dot, "past date") rather than shown as an ordinary date (audit stats-12).
+ */
+export function isPastDate(instant: number, now: number): boolean {
+  return dayOf(instant) < dayOf(now);
+}
+
 /** "in 2d", "today" or "3d ago": how far an instant's day is from today. */
 export function fromToday(instant: number, now: number): string {
   const days = dayOf(instant) - dayOf(now);

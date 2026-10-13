@@ -721,7 +721,8 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
      *
      * Both directions are run over the same synthetic spec, differing only in the id waited for.
      * Real ids on both sides: `ward-live-tracker` is declared solely by the unreachable
-     * `tracker/live-tracker.tsx`, `ward-movements-page` by the screen the redirect lands on.
+     * `tracker/live-tracker.tsx`, `ward-officer-screen` by the screen the redirect lands on (shell-19,
+     * 13 Oct 2026: `/transport` now lands on `/transport/officer`, not Movements).
      */
     const spec = (testId: string) =>
       [
@@ -738,7 +739,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
     ).toHaveLength(1);
 
     expect(
-      analyse([{ path: "synthetic.spec.ts", source: spec("ward-movements-page") }]).map(describeFinding),
+      analyse([{ path: "synthetic.spec.ts", source: spec("ward-officer-screen") }]).map(describeFinding),
       "the detector reported a defect after the navigation was re-anchored on a handle the redirect " +
         "TARGET really renders. It is reddening on the navigation itself rather than on the broken " +
         "expectation, so it would stay red through the repair and get switched off.",
@@ -805,8 +806,8 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
     /*
      * 🔴 **THE ARM THAT WOULD HAVE CAUGHT THE VERY REPAIR THIS GUARD WAS WRITTEN ABOUT.** `origin/main`
      * re-pointed its Movements tests by the panel's accessible NAME, deliberately, so a test-id-only
-     * guard could not have told those from broken ones. Both names below are real:
-     * "Transport right now" is a WardPanel title on MovementsScreen; the other is not.
+     * guard could not have told those from broken ones. Both names below are real: "Next expected
+     * arrival" is a `title=` on the officer screen `/transport` now lands on (shell-19); the other is not.
      */
     const spec = (name: string) =>
       [
@@ -823,8 +824,8 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
     ).toHaveLength(1);
 
     expect(
-      analyse([{ path: "synthetic.spec.ts", source: spec("Transport right now") }]).map(describeFinding),
-      "a wait on a panel name Movements really renders was reported as a defect — `title=` literals " +
+      analyse([{ path: "synthetic.spec.ts", source: spec("Next expected arrival") }]).map(describeFinding),
+      "a wait on a panel name the redirect target really renders was reported as a defect — `title=` literals " +
         "are not reaching the renderable-name set, so every panel-scoped assertion is now accused",
     ).toEqual([]);
   });

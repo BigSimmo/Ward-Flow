@@ -1,7 +1,7 @@
 "use client";
 
 import { Hand, LayoutGrid, List } from "lucide-react";
-import type { CSSProperties } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
 import type { Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone, durMinutes } from "@/components/wf";
@@ -90,10 +90,70 @@ function CellWord({ bed, discreet }: { bed: BedItem; discreet: boolean }) {
   if (discreet) {
     return <span className={styles.cellWord}>{patientInitials(bed.patientAlias ?? "")}</span>;
   }
+  return <CellName surname={occupant.surname} initial={occupant.initial} />;
+}
+
+let measureCanvas: HTMLCanvasElement | null = null;
+
+/** Width of `text` in `font`, or null where the browser cannot measure (tests). */
+function textWidth(text: string, font: string): number | null {
+  measureCanvas ??= document.createElement("canvas");
+  const context = measureCanvas.getContext("2d");
+  if (!context) return null;
+  context.font = font;
+  return context.measureText(text).width;
+}
+
+/**
+ * The longest start of `surname` that fits `room` with an ellipsis, or the whole surname when it
+ * fits. The browser's own ellipsis stops at the last whole letter and leaves the rest of its box
+ * empty, which showed as a gap before ", E" (13 Oct 2026). Cutting the word here ends the box at
+ * the ellipsis instead.
+ */
+export function fitSurname(surname: string, room: number, measure: (text: string) => number): string {
+  if (measure(surname) <= room) return surname;
+  for (let length = surname.length - 1; length > 1; length -= 1) {
+    const candidate = `${surname.slice(0, length).trimEnd()}…`;
+    if (measure(candidate) <= room) return candidate;
+  }
+  return `${surname.charAt(0)}…`;
+}
+
+function CellName({ surname, initial }: { surname: string; initial: string }) {
+  const nameRef = useRef<HTMLSpanElement>(null);
+  const wordRef = useRef<HTMLSpanElement>(null);
+  const initialRef = useRef<HTMLSpanElement>(null);
+  const [fitted, setFitted] = useState<{ surname: string; text: string } | null>(null);
+  const shown = fitted?.surname === surname ? fitted.text : surname;
+  useLayoutEffect(() => {
+    const name = nameRef.current;
+    const word = wordRef.current;
+    const tail = initialRef.current;
+    if (!name || !word || !tail || typeof ResizeObserver !== "function") return;
+    const fit = () => {
+      // The name box fills the free space beside the glyph, so its width does not depend on the
+      // text inside it. Two pixels of slack cover canvas and page measuring apart, so the CSS
+      // ellipsis never cuts a second time.
+      const room = name.clientWidth - tail.offsetWidth - 2;
+      const font = getComputedStyle(word).font;
+      if (room <= 0 || textWidth(surname, font) === null) return;
+      setFitted({ surname, text: fitSurname(surname, room, (text) => textWidth(text, font) ?? 0) });
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(name);
+    void document.fonts?.ready.then(fit);
+    return () => observer.disconnect();
+    // The ", {initial}" tail takes room too, so a new initial is measured again.
+  }, [surname, initial]);
   return (
-    <span className={styles.cellName}>
-      <span className={styles.cellWord}>{occupant.surname}</span>
-      <span className={styles.cellInitial}>, {occupant.initial}</span>
+    <span ref={nameRef} className={styles.cellName}>
+      <span ref={wordRef} className={styles.cellWord}>
+        {shown}
+      </span>
+      <span ref={initialRef} className={styles.cellInitial}>
+        , {initial}
+      </span>
     </span>
   );
 }

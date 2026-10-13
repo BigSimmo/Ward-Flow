@@ -7,8 +7,6 @@ import {
   BusFront,
   ChevronLeft,
   ChevronRight,
-  Monitor,
-  Search,
   FileText,
   History,
   Lock,
@@ -48,7 +46,6 @@ import {
   type ChoiceItem,
 } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   duplicateCandidates,
   GENDERS,
@@ -105,17 +102,6 @@ function answeredDraft(draft: PatientDraft): PatientDraft | undefined {
 
 const UNAVAILABLE_REASON_ID = "ward-add-patient-unavailable-reason";
 const NOT_WIRED = "Not wired in this prototype.";
-/** When a record was added, as the phone list reads it: "Today 09:12", "Yesterday 16:20". */
-function addedWhen(addedAt: number | undefined, now: number): string | undefined {
-  // Seeded records carry no added time; the row then shows the name and UMRN only.
-  if (addedAt === undefined || !Number.isFinite(addedAt)) return undefined;
-  const said = formatInstantWithDay(addedAt, now);
-  const clock = formatInstant(addedAt);
-  if (said === clock) return `Today ${clock}`;
-  if (said === `${clock} yesterday`) return `Yesterday ${clock}`;
-  return said;
-}
-
 /** The phone's "On a larger screen" sheet: what the short phone form leaves out. */
 const LARGER_SCREEN_ROWS: readonly (readonly [string, string])[] = [
   ["Gender, Aboriginal or Torres Strait Islander", "Optional · bed matching"],
@@ -244,14 +230,13 @@ export function AddPatientForm() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const toast = useOptionalToast();
   /*
-   * v10 Add a patient, Phone: "search first as the one primary". The phone opens on Find an
-   * existing patient; "Show the form anyway" gives the short identity form with the same check and
-   * a sticky Add bar. Desktop never reads any of this.
+   * v10 Add a patient, Phone. shell-7 (Josh, 13 Oct 2026): the short identity form and its
+   * duplicate check show straight away; the "needs a larger screen" landing is gone. One quiet row
+   * says address and intake are on a larger screen. Desktop never reads any of this.
    */
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
-  const [phoneForm, setPhoneForm] = useState(() => Boolean(handoff));
-  const [phoneSheet, setPhoneSheet] = useState<"larger" | "recent" | null>(null);
+  const [phoneSheet, setPhoneSheet] = useState<"larger" | null>(null);
   const priorSubmissionRef = useRef<{ patients: typeof patients; rejectionCount: number } | null>(null);
 
   const identityChanged =
@@ -390,8 +375,13 @@ export function AddPatientForm() {
       throw new Error("AddPatientForm: patients grew but no new id was found against the prior snapshot.");
     }
     priorSubmissionRef.current = null;
+    // shell-24 (13 Oct 2026): say the save worked. The toast outlives the page change.
+    toast?.push({
+      tone: "success",
+      title: `${added[0].givenName} ${added[0].familyName} added, ${added[0].umrn}`,
+    });
     router.push(`/mockups/ward-flow/people/${added[0].id}`);
-  }, [patients, rejections, router]);
+  }, [patients, rejections, router, toast]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -539,109 +529,32 @@ export function AddPatientForm() {
       data-ward-design="v6"
       data-ward-rebuilt-screen="add-patient"
     >
-      <main id="main-content" className={styles.main} data-phone-form={isPhone && phoneForm ? "true" : undefined}>
+      <main id="main-content" className={styles.main} data-phone-form={isPhone ? "true" : undefined}>
         {isPhone ? (
           <PhoneHero
             level={1}
-            eyebrow="Patients · larger-screen task"
+            eyebrow="Patients"
             title="Add a patient"
-            sub={phoneForm ? "Identity only · same duplicate check" : "Synthetic records only · search before adding"}
+            sub="Identity only · same duplicate check"
             data-testid="ward-add-patient-phone-hero"
             // Device audit 11 Oct 2026: the landing shows no figures (a "0/4 Required" for a form that is
             // not shown read as a result); the short form shows only its own required count.
-            figures={
-              phoneForm
-                ? [{ id: "required", value: `${answeredCount}/${REQUIRED_FIELDS.length}`, label: "Required" }]
-                : undefined
-            }
+            figures={[{ id: "required", value: `${answeredCount}/${REQUIRED_FIELDS.length}`, label: "Required" }]}
           />
-        ) : null}
-        {isPhone && !phoneForm ? (
-          <div className={styles.phLanding} data-testid="ward-add-patient-phone-landing">
-            <Card className={styles.phBig}>
-              <div className={styles.phBigBody}>
-                <span className={styles.phBigIcon}>
-                  <Icon icon={Monitor} size={20} />
-                </span>
-                <b>Add a patient needs a larger screen</b>
-                <span className={styles.muted}>
-                  Most people are already on record. Search first, then add from a tablet or computer, which also takes
-                  the address, facility, clinical intake and a side-by-side duplicate check.
-                </span>
-              </div>
-              <div className={styles.phBigFoot}>
-                <Link
-                  className={buttonClass({ variant: "pri", className: styles.phBtn })}
-                  href="/mockups/ward-flow/search"
-                >
-                  <Icon icon={Search} size={16} />
-                  Find an existing patient
-                </Link>
-                <Button
-                  className={styles.phBtn}
-                  data-testid="ward-add-patient-phone-show-form"
-                  onClick={() => setPhoneForm(true)}
-                >
-                  Show the form anyway
-                </Button>
-              </div>
-            </Card>
-            <h2 className={styles.phHead}>Recently added</h2>
-            <ul className={styles.phList}>
-              {recentRecords.slice(0, 4).map((p) => (
-                <PhoneListRow
-                  as="li"
-                  key={p.id}
-                  name={`${p.familyName}, ${p.givenName}`}
-                  meta={addedWhen(p.addedAt, now)}
-                  value={
-                    <span className={styles.phUmrn}>
-                      {p.umrn}
-                      <Icon icon={ChevronRight} size={16} />
-                    </span>
-                  }
-                  href={`/mockups/ward-flow/people/${p.id}`}
-                />
-              ))}
-              {recentRecords.length > 4 ? (
-                <li className={styles.phMore}>
-                  <button type="button" onClick={() => setPhoneSheet("recent")}>
-                    Show all {recentRecords.length} recently added
-                  </button>
-                </li>
-              ) : null}
-            </ul>
-            <p className={styles.phNote}>
-              <StatusGlyph tone="neutral" size={9} />
-              Synthetic prototype · invented records only
-            </p>
-          </div>
         ) : null}
         <PhoneSheet
           open={phoneSheet !== null}
           onClose={() => setPhoneSheet(null)}
-          title={phoneSheet === "recent" ? "Recently added" : "On a larger screen"}
-          description={
-            phoneSheet === "recent"
-              ? `${addedToday} today · ${patients.length} records in all`
-              : "Kept off the phone so the form stays short"
-          }
-          height={phoneSheet === "recent" ? "tall" : "content"}
+          title="On a larger screen"
+          description="Kept off the phone so the form stays short"
+          height="content"
           secondary={{ label: "Done", onAction: () => setPhoneSheet(null) }}
           data-testid="ward-add-patient-phone-sheet"
         >
           <ul className={styles.phList}>
-            {phoneSheet === "recent"
-              ? recentRecords.map((p) => (
-                  <PhoneListRow
-                    as="li"
-                    key={p.id}
-                    name={`${p.familyName}, ${p.givenName}`}
-                    value={<span className={styles.mono}>{p.umrn}</span>}
-                    href={`/mockups/ward-flow/people/${p.id}`}
-                  />
-                ))
-              : LARGER_SCREEN_ROWS.map(([name, meta]) => <PhoneListRow as="li" key={name} name={name} meta={meta} />)}
+            {LARGER_SCREEN_ROWS.map(([name, meta]) => (
+              <PhoneListRow as="li" key={name} name={name} meta={meta} />
+            ))}
           </ul>
         </PhoneSheet>
         {isPhone ? null : (
@@ -720,7 +633,7 @@ export function AddPatientForm() {
           />
         )}
 
-        <div className={styles.layout} hidden={isPhone && !phoneForm}>
+        <div className={styles.layout}>
           <form className={styles.form} onSubmit={handleSubmit} data-testid="ward-add-patient-form">
             {carriedSearch && assignedSearch !== carriedSearch ? (
               <Card

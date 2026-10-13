@@ -89,7 +89,21 @@ export type WeeklyReport = {
     rows: { movement: Movement; waitedMinutes: number; stillWaiting: boolean }[];
   };
   outOfArea: { bedDays: number; people: number };
-  delayedDischarge: { bedDays: number; people: number };
+  delayedDischarge: {
+    bedDays: number;
+    people: number;
+    /**
+     * When the latest expected date behind the week's figure was set, if inside the week: the
+     * figure only counts from then, so it reads low (audit stats-11). `null` when the week is fully
+     * covered. Equal to or after the week's counted end means no stay in the week could be measured.
+     */
+    recordedFrom: Instant | null;
+    /**
+     * Stays past their expected date during the week whose date was set at or after the week's
+     * counted end, so they are left out of the figure.
+     */
+    unmeasuredStays: number;
+  };
   declines: { placement: number; referral: number; byReason: ReasonCount[] };
   overrides: { placement: number; referral: number; byReason: ReasonCount[] };
   occupancy: {
@@ -97,7 +111,8 @@ export type WeeklyReport = {
     occupiedBedDays: number;
     /** Occupied bed days over available bed days, whole percent. `null` when no time was counted. */
     averagePercent: number | null;
-    now: { beds: number; occupied: number; pulled: number };
+    /** Right now. `inUse` is Occupied + Pulled, the one occupancy count every page prints. */
+    now: { beds: number; occupied: number; pulled: number; inUse: number };
   };
 };
 
@@ -120,6 +135,44 @@ function tally(reasons: string[]): ReasonCount[] {
   return [...counts.entries()]
     .map(([reason, count]) => ({ reason, count }))
     .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason));
+}
+
+/**
+ * When the week's delayed figure is only partly measured. Only stays that were past their expected
+ * date during the week matter; earlier dates are not kept, so a stay counts from when its current
+ * date was set. Returns the latest such set time inside the week, or `null` when the week is fully
+ * covered. A set time at or after the week's end is returned only when no stay in the week could be
+ * measured, so a date changed later does not hide the stays that were measured. A date with no set
+ * time is treated as always known. Also counts the stays left out because their date was set later.
+ */
+function dischargeDatesRecordedFrom(
+  admissions: readonly Admission[],
+  week: ReportWeek,
+  now: Instant,
+): { recordedFrom: Instant | null; unmeasuredStays: number } {
+  let latestInWeek = -Infinity;
+  let unmeasuredStays = 0;
+  let earliestAfter = Infinity;
+  let measured = false;
+  for (const admission of admissions) {
+    const expected = admission.expectedDischargeAt;
+    if (expected === null || !Number.isFinite(expected) || expected >= week.countedEnd) continue;
+    if (admission.arrivedAt === null || !Number.isFinite(admission.arrivedAt)) continue;
+    const to = admission.leftAt ?? (bedIsOccupied(admission) ? now : admission.arrivedAt);
+    if (overlapMinutes(Math.max(expected, admission.arrivedAt), to, week) <= 0) continue;
+    const setAt = admission.dischargeDateSetAt;
+    if (typeof setAt !== "number" || !Number.isFinite(setAt) || setAt < week.countedEnd) {
+      measured = true;
+      if (typeof setAt === "number" && Number.isFinite(setAt)) latestInWeek = Math.max(latestInWeek, setAt);
+    } else {
+      earliestAfter = Math.min(earliestAfter, setAt);
+      unmeasuredStays += 1;
+    }
+  }
+  if (!measured) {
+    return { recordedFrom: Number.isFinite(earliestAfter) ? (earliestAfter as Instant) : null, unmeasuredStays };
+  }
+  return { recordedFrom: latestInWeek > week.start ? (latestInWeek as Instant) : null, unmeasuredStays };
 }
 
 export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWeek): WeeklyReport {
@@ -228,7 +281,11 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       rows: edRows,
     },
     outOfArea: { bedDays: days(outOfAreaMinutes), people: outOfAreaPeople.size },
-    delayedDischarge: { bedDays: days(delayedMinutes), people: delayedPeople.size },
+    delayedDischarge: {
+      bedDays: days(delayedMinutes),
+      people: delayedPeople.size,
+      ...dischargeDatesRecordedFrom(admissions, week, now),
+    },
     declines: {
       placement: placementDeclines.totalCount + unknownPlacementDeclines,
       referral: referralDeclines.length,
