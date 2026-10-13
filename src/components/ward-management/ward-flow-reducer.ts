@@ -8195,6 +8195,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
               ...m,
               admissionId: undefined,
               acceptedUnitId: undefined,
+              heldBedNumber: undefined,
               referredUnitIds: [],
               withdrawnReferrals: [
                 ...m.withdrawnReferrals,
