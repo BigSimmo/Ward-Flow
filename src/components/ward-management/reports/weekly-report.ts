@@ -3,7 +3,14 @@ import { MINUTES_PER_DAY, perthCalendarDay, type Instant } from "@/components/wa
 import { OUT_OF_AREA_BANDS, travelBand } from "@/components/ward-management/ward-distance";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import {
+  DECLINE_REASONS,
+  type BedRelease,
+  type LeaveBed,
+  type Movement,
+  type Referral,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import { declinesByReason } from "@/components/ward-management/statistics/statistics-derivations";
 import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { reasonLabel } from "./patient-chronology";
@@ -15,6 +22,9 @@ import { reasonLabel } from "./patient-chronology";
  * Every figure counts only what this prototype holds: stays, movements and decisions recorded in
  * the synthetic world. A week before the seed's history began reads as noughts, honestly.
  */
+
+/** How a placement decline whose stored reason is not in DECLINE_REASONS is counted. */
+export const UNKNOWN_DECLINE_REASON_LABEL = "Other / unknown reason";
 
 export type ReportWeek = {
   /** 0 is the last full week, 1 the week before it; -1 is this week so far. */
@@ -177,9 +187,18 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
   }
 
   // Declines and overrides: placement ones on the movement, referral ones on each addressing.
+  // A decline whose reason is outside DECLINE_REASONS (stale or malformed stored data) would make
+  // declinesByReason throw and take the whole report down; count it as "other / unknown" instead.
+  const knownDeclineReasons = new Set<string>(DECLINE_REASONS);
+  let unknownPlacementDeclines = 0;
   const weekMovements = movements.map((movement) => ({
     ...movement,
-    declines: movement.declines.filter((decline) => inWeek(decline.at, week)),
+    declines: movement.declines.filter((decline) => {
+      if (!inWeek(decline.at, week)) return false;
+      if (knownDeclineReasons.has(decline.reason)) return true;
+      unknownPlacementDeclines += 1;
+      return false;
+    }),
   }));
   const placementDeclines = declinesByReason(weekMovements);
   const referralDeclines = referrals.flatMap((referral) =>
@@ -211,10 +230,11 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
     outOfArea: { bedDays: days(outOfAreaMinutes), people: outOfAreaPeople.size },
     delayedDischarge: { bedDays: days(delayedMinutes), people: delayedPeople.size },
     declines: {
-      placement: placementDeclines.totalCount,
+      placement: placementDeclines.totalCount + unknownPlacementDeclines,
       referral: referralDeclines.length,
       byReason: tally([
         ...placementDeclines.tallies.flatMap((entry) => Array<string>(entry.count).fill(reasonLabel(entry.reason))),
+        ...Array<string>(unknownPlacementDeclines).fill(UNKNOWN_DECLINE_REASON_LABEL),
         ...referralDeclines.map((addressing) => reasonLabel(addressing.declineReason)),
       ]),
     },

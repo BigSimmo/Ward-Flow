@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   edWaitEnd,
   reportWeek,
+  UNKNOWN_DECLINE_REASON_LABEL,
   weeklyOperationsReport,
   type WeeklyReportInput,
 } from "@/components/ward-management/reports/weekly-report";
@@ -251,6 +252,26 @@ describe("weeklyOperationsReport", () => {
     expect(report.declines.placement).toBe(2);
     expect(report.declines.byReason).toEqual([{ reason: "No bed available", count: 2 }]);
     expect(report.overrides).toEqual({ placement: 1, referral: 0, byReason: [{ reason, count: 1 }] });
+  });
+
+  it("counts a placement decline with an unknown reason as other/unknown instead of throwing", () => {
+    const f = fixture();
+    const movement = f.movement("WF-U", {
+      openedAt: week.start,
+      declines: [
+        { unitId: f.unit.id, at: week.start + 60, reason: "no_bed" },
+        { unitId: f.unit.id, at: week.start + 90, reason: "retired_reason" as Movement["declines"][number]["reason"] },
+      ],
+    });
+    const report = weeklyOperationsReport(inputOf(f, { movements: [movement] }), week);
+    expect(report.declines.placement).toBe(2);
+    expect(report.declines.byReason).toEqual(
+      expect.arrayContaining([
+        { reason: "No bed available", count: 1 },
+        { reason: UNKNOWN_DECLINE_REASON_LABEL, count: 1 },
+      ]),
+    );
+    expect(report.declines.byReason).toHaveLength(2);
   });
 
   it("runs over the whole seeded world without throwing, with no negative figure", () => {
