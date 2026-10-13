@@ -1154,8 +1154,6 @@ describe("Referral privacy — structural", () => {
     "genderPlacements",
     // Ward-to-ward stepdown transfer: originUnitId identifies the transferring ward.
     "originUnitId",
-    // Referring site origin identifier for cancellation ownership (WF-A1-02)
-    "originSiteId",
   ].sort();
 
   /**
@@ -1351,7 +1349,6 @@ describe("Referral privacy — structural", () => {
       urgency: 2,
       atsCategory: 3,
       originSiteCode: "RPH",
-      originSiteId: "RPH",
       transportNeeded: false,
       ...FIXTURE_HISTORY,
       // A role, never a person — and no note, reason or outcome field exists to populate.

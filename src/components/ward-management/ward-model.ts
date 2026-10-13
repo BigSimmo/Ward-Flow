@@ -2860,8 +2860,6 @@ export type Referral = {
   atsCategory?: AtsCategory;
   /** A synthetic site code (see `wardSites`), never an address. */
   originSiteCode: string;
-  /** Explicit origin site ID if provided by caller or referral context. */
-  originSiteId?: string;
   transportNeeded: boolean;
   /**
    * ⚠️ THE WRITTEN HISTORY — THE ONLY FREE TEXT ON A REFERRAL, AND THE ONLY FIELD HERE THAT
