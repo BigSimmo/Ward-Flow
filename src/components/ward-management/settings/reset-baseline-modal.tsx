@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef } from "react";
-import { AlertTriangle, RotateCcw, X } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
+
+import { StatusGlyph } from "@/components/wf";
 
 import { useWardModalFocus } from "../ward-modal-focus";
 import { defaultWardConfiguration } from "../ward-configuration";
@@ -80,8 +82,8 @@ export function ResetBaselineModal({ isOpen, onClose, onConfirm }: ResetBaseline
       >
         <header className={styles.modalHeader}>
           <div className={styles.resetHeaderMeta}>
-            <div className={styles.dangerBadge}>
-              <AlertTriangle size={14} aria-hidden="true" />
+            <div className={styles.noticeLine}>
+              <StatusGlyph tone="warning" size={10} />
               <span>Saves and records</span>
             </div>
             <h3 id="reset-modal-title" className={styles.modalTitle}>
@@ -117,7 +119,7 @@ export function ResetBaselineModal({ isOpen, onClose, onConfirm }: ResetBaseline
           </button>
           <button
             type="button"
-            className={styles.btnDanger}
+            className={styles.btnPrimary}
             onClick={onConfirm}
             data-testid="confirm-restore-defaults-btn"
           >

@@ -107,11 +107,18 @@ import {
   type ToastInput,
   type WfTone,
 } from "@/components/wf";
-import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
-import { AlertsPane, DataPane, DisplayPane, ProfilePane, type ReferenceTab } from "./settings-panes";
+import {
+  AlertsPane,
+  DataPane,
+  DisplayPane,
+  ProfilePane,
+  THEME_CHOICES,
+  type ReferenceTab,
+  type ThemeChoice,
+} from "./settings-panes";
 import { useDiscreetNamesSetting } from "./discreet-names";
 import { useRowDensity, type RowDensity } from "./row-density";
 import { NOT_WIRED, PreviewTag, RuleRow, ScopeLine, SettingRow } from "./settings-rows";
@@ -163,7 +170,7 @@ function shortDuration(minutes: number): string {
 }
 
 /** The settings a phone shows on its first screen (Find a setting lands there, not in a sheet). */
-const PHONE_QUICK_SETTINGS: ReadonlySet<string> = new Set(["theme", "glare", "density", "buzz"]);
+const PHONE_QUICK_SETTINGS: ReadonlySet<string> = new Set(["theme", "density", "discreet-names", "buzz"]);
 
 function wardsText(count: number): string {
   return `${count} ${count === 1 ? "ward" : "wards"}`;
@@ -315,6 +322,22 @@ export function SettingsScreen() {
       toast?.push({ tone, title: message, duration: 3200 });
     },
     [toast],
+  );
+  // Audit settings-15 (Josh, 13 Oct 2026): Glare is a fourth Theme choice, so Theme never reads Dark
+  // while the page is in Glare's light. One choice, one toast.
+  const theme: ThemeChoice = glare ? "glare" : appearance;
+  const chooseTheme = useCallback(
+    (next: ThemeChoice) => {
+      if (next === "glare") {
+        applyGlare(true);
+      } else {
+        applyGlare(false);
+        applyAppearance(next);
+      }
+      const label = THEME_CHOICES.find((choice) => choice.id === next)?.label ?? "Auto";
+      showToast(`Theme set to ${label}.`);
+    },
+    [showToast],
   );
   // D-16: "<name> is not wired in this prototype." No colon outside a clock time.
   const onPreview = useCallback(
@@ -1110,16 +1133,8 @@ export function SettingsScreen() {
   const displayContent = (
     <>
       <DisplayPane
-        appearance={appearance}
-        onAppearanceChange={(next) => {
-          applyAppearance(next);
-          showToast(`Theme set to ${next === "auto" ? "Auto" : next === "dark" ? "Dark" : "Light"}.`);
-        }}
-        glare={glare}
-        onGlareChange={(next) => {
-          applyGlare(next);
-          showToast(`Glare mode ${next ? "on" : "off"}.`);
-        }}
+        theme={theme}
+        onThemeChange={chooseTheme}
         railOpen={railOpen}
         onRailChange={(open) => {
           setRailOpenPreference(open);
@@ -1274,7 +1289,7 @@ export function SettingsScreen() {
             }
             eyebrow={SETTINGS_DEMO_PROFILE.location}
             chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
-            sub={`${SETTINGS_DEMO_PROFILE.role} · nothing here changes care`}
+            sub={SETTINGS_DEMO_PROFILE.role}
             // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
             // are what this hero is for. The save strip still appears when a rule is unsaved.
             actions={
@@ -1284,7 +1299,7 @@ export function SettingsScreen() {
                 className={styles.phoneGrow}
                 onClick={() => setIsOperatorModalOpen(true)}
               >
-                Switch workstation
+                Go to a desk
               </Button>
             }
           />
@@ -1299,31 +1314,13 @@ export function SettingsScreen() {
             </h2>
             <div className={styles.phoneCard}>
               <SettingRow setting="theme" title="Theme" stacked testId="ward-settings-phone-theme">
-                <Segmented<WardAppearance>
+                <Segmented<ThemeChoice>
                   className={styles.phoneSeg}
                   size="md"
                   label="Theme"
-                  items={[
-                    { id: "auto", label: "Auto" },
-                    { id: "light", label: "Light" },
-                    { id: "dark", label: "Dark" },
-                  ]}
-                  value={appearance}
-                  onChange={(next) => {
-                    applyAppearance(next);
-                    showToast(`Theme set to ${next === "auto" ? "Auto" : next === "dark" ? "Dark" : "Light"}.`);
-                  }}
-                />
-              </SettingRow>
-              <SettingRow setting="glare" title="Glare mode" sub="For bright rooms and windows">
-                <Switch
-                  checked={glare}
-                  onCheckedChange={(next) => {
-                    applyGlare(next);
-                    showToast(`Glare mode ${next ? "on" : "off"}.`);
-                  }}
-                  label={<SrOnly>Glare mode</SrOnly>}
-                  className={styles.phoneSwitch}
+                  items={[...THEME_CHOICES]}
+                  value={theme}
+                  onChange={chooseTheme}
                 />
               </SettingRow>
               <SettingRow setting="density" title="Row density" stacked>
@@ -1473,7 +1470,7 @@ export function SettingsScreen() {
             <>
               {findSetting}
               <Button variant="onHero" size="sm" icon={Layers} onClick={() => setIsOperatorModalOpen(true)}>
-                Switch workstation
+                Go to a desk
               </Button>
               <Button variant="light" size="sm" icon={UserRound} onClick={() => chooseTab("profile")}>
                 Edit profile

@@ -212,7 +212,7 @@ describe("the settings screen's thresholds panel", () => {
     // actually happens and that it is recorded, rather than claiming nothing can change at all.
     // Workspaces rebuild (8 Oct 2026): the editable rules moved to their own tab.
     expect(screen.getByTestId("ward-settings-thresholds").textContent).toMatch(
-      /change only through the Rules tab, and every change is recorded/i,
+      /change only in Rules, and every change is recorded/i,
     );
     expect(within(screen.getByTestId("ward-settings-thresholds")).queryAllByRole("button")).toHaveLength(0);
   });
@@ -263,7 +263,7 @@ describe("settings screen elevations: touch envelopes, focus-visible, and the re
     fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     const callout = screen.getByTestId("ward-settings-thresholds").querySelector('[data-tone="accent"]');
     expect(callout).toBeInTheDocument();
-    expect(callout?.textContent).toContain("Figures here change only through the Rules tab");
+    expect(callout?.textContent).toContain("Figures here change only in Rules");
   });
 });
 

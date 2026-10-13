@@ -212,8 +212,8 @@ describe("Governance v10 pass (10 Oct 2026)", () => {
   });
 });
 
-describe("Governance phone review sheet (device audit 11 Oct 2026)", () => {
-  it("opens with neither answer picked and Record review waiting for a choice", () => {
+describe("Governance phone review sheet (audit settings-4, 13 Oct 2026)", () => {
+  it("records Reviewed in one tap, with no greyed button, then loads the next waiting event", () => {
     const original = window.matchMedia;
     window.matchMedia = ((query: string) => ({
       matches: query === "(max-width: 48rem)",
@@ -232,15 +232,16 @@ describe("Governance phone review sheet (device audit 11 Oct 2026)", () => {
         </WardFlowProvider>,
       );
       fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
-      const decision = screen.getByRole("radiogroup", { name: "Review decision" });
-      for (const radio of within(decision).getAllByRole("radio")) {
-        expect(radio).toHaveAttribute("aria-checked", "false");
-      }
-      const record = screen.getByRole("button", { name: /Record review/ });
-      expect(record).toHaveAttribute("aria-disabled", "true");
-      fireEvent.click(within(decision).getByRole("radio", { name: "Follow-up" }));
-      expect(within(decision).getByRole("radio", { name: "Follow-up" })).toHaveAttribute("aria-checked", "true");
-      expect(screen.getByRole("button", { name: /Record review/ })).not.toHaveAttribute("aria-disabled", "true");
+      const sheet = screen.getByRole("dialog");
+      const firstTitle = within(sheet).getByRole("heading", { level: 2 }).textContent;
+      expect(screen.queryByRole("button", { name: /Record review/ })).not.toBeInTheDocument();
+      const reviewed = within(sheet).getByRole("button", { name: "Reviewed" });
+      expect(reviewed).not.toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(reviewed);
+      expect(screen.getByTestId("ward-governance-phone")).toHaveTextContent("5 to review");
+      // The same sheet now holds the next waiting event.
+      const next = screen.getByRole("dialog");
+      expect(within(next).getByRole("heading", { level: 2 }).textContent).not.toBe(firstTitle);
     } finally {
       window.matchMedia = original;
     }
@@ -304,9 +305,31 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
       const hero = screen.getByTestId("ward-governance-phone");
       expect(hero).toHaveTextContent("6 to review");
       fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
-      fireEvent.click(screen.getByRole("radio", { name: "Follow-up" }));
-      fireEvent.click(screen.getByRole("button", { name: /Record review/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Follow-up" }));
       expect(hero).toHaveTextContent("5 to review · 1 follow-up");
+    });
+  });
+
+  it("names the category and UMRN on each row, filters from the hero, lists reviewed events and opens a site's gaps", () => {
+    withPhone(() => {
+      const list = screen.getByRole("region", { name: "Waiting for review" });
+      expect(list).toHaveTextContent("Legal status · Stale request");
+      expect(list.textContent ?? "").toMatch(/ · UM\d+/);
+      const overrides = screen.getByTestId("wf-phone-hero-figure-override");
+      fireEvent.click(overrides);
+      expect(overrides).toHaveAttribute("aria-pressed", "true");
+      expect(list.querySelectorAll('[data-dim="true"]').length).toBe(3);
+
+      fireEvent.click(screen.getByRole("radio", { name: /^Reviewed/ }));
+      expect(screen.getByRole("region", { name: "Reviewed this session" })).toHaveTextContent(
+        "No event has been reviewed yet.",
+      );
+
+      fireEvent.click(screen.getByRole("radio", { name: /^Gaps/ }));
+      expect(screen.getByRole("region", { name: "Gaps by site" })).toHaveTextContent("A gap is a form step");
+      const firstSite = within(screen.getByRole("region", { name: "Gaps by site" })).getAllByRole("button")[0];
+      fireEvent.click(firstSite);
+      expect(screen.getByRole("dialog")).toHaveTextContent("Patients with a gap");
     });
   });
 

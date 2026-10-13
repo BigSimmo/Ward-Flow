@@ -87,12 +87,12 @@ describe("Settings on a phone", () => {
     const page = screen.getByTestId("ward-settings-screen");
     expect(page).toHaveAttribute("data-ward-design", "v10-phone");
     expect(within(page).getByRole("heading", { level: 1 })).toHaveTextContent("Dr S. Chen");
-    expect(within(page).getByRole("button", { name: /Switch workstation/ })).toBeInTheDocument();
+    expect(within(page).getByRole("button", { name: /Go to a desk/ })).toBeInTheDocument();
     expect(within(page).getByRole("combobox", { name: "Find a setting" })).toBeInTheDocument();
 
     const quick = within(page).getByRole("region", { name: /On this phone/ });
     expect(within(quick).getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
-    expect(within(quick).getByRole("switch", { name: "Glare mode" })).toBeInTheDocument();
+    expect(within(quick).getByRole("radio", { name: "Glare" })).toBeInTheDocument();
     expect(within(quick).getByRole("radiogroup", { name: "Row density" })).toBeInTheDocument();
     expect(within(quick).getByRole("switch", { name: "Buzz sound" })).toBeInTheDocument();
 
@@ -118,5 +118,17 @@ describe("Settings on a phone", () => {
     fireEvent.click(within(bar).getByRole("button", { name: "Save 1 change" }));
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent(String(ED_ACCESS_TARGET_RANGE_MINUTES.min));
     expect(screen.getByTestId("toast-region")).toHaveTextContent("Rule saved and recorded.");
+  });
+
+  // Audit settings-24: the five-column thresholds table is a desk job; the phone says so.
+  it("shows Fixed defaults in the Data sheet and points to a computer for the thresholds table", () => {
+    asPhone();
+    renderSettings();
+    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-data")).getByRole("button"));
+    expect(screen.getByTestId("ward-settings-thresholds-phone")).toHaveTextContent("tablet or computer");
+    expect(screen.queryByRole("region", { name: "Published thresholds" })).toBeNull();
+    const defaults = document.querySelector('[data-setting="fixed-defaults"]');
+    expect(defaults).not.toBeNull();
+    expect(defaults!.closest("[hidden]"), "Fixed defaults are hidden on the phone").toBeNull();
   });
 });
