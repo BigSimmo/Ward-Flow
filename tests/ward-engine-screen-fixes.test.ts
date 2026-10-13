@@ -397,8 +397,8 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
       );
     });
 
-    it("S1-14: ED medical bed release timeout equals 48 hours", () => {
-      expect(ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS).toBe(48);
+    it("S1-14: ED medical bed release timeout equals 24 hours (clinical owner ruling, 14 Oct 2026)", () => {
+      expect(ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS).toBe(24);
     });
 
     it("A1-13: restricts coordinator desk alert acknowledgment to coordinator role", () => {

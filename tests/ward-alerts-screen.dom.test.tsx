@@ -174,6 +174,8 @@ describe("the Alerts screen reports on every condition it watches, firing or not
       countInCategory("bed_pull_expired") +
       countInCategory("destinations_declined") +
       countInCategory("transport_awaiting_departure") +
+      // Clinical owner ruling (14 Oct 2026): no eligible bed notifies the bed coordinator.
+      countInCategory("no_eligible_bed") +
       // Planned admissions past their expected arrival (stream D) also draw a row.
       buildActionInbox([], NOW, allUnits(), { plannedAdmissions: wardPlannedAdmissions }).length +
       // L1 (site review, 12 Oct 2026): the arrival and discharge notification rows the Tasks badge

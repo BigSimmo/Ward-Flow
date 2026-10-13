@@ -14,7 +14,17 @@ import { edById } from "@/components/ward-management/ward-sites";
  */
 
 export type AlertKind =
-  "awol" | "legal" | "declines" | "unsuitable" | "hold" | "transport" | "planned" | "notify" | "target" | "running";
+  | "awol"
+  | "legal"
+  | "declines"
+  | "unsuitable"
+  | "nobed"
+  | "hold"
+  | "transport"
+  | "planned"
+  | "notify"
+  | "target"
+  | "running";
 
 /** The queue's three groups: act now (red), waiting (amber, counted) and running targets (listed, never counted). */
 export type AlertGroup = "act" | "wait" | "running";
@@ -25,6 +35,8 @@ const KIND_PREFIXES: [AlertKind, string][] = [
   ["legal", INBOX_CATEGORIES.legal_timing_breached.idPrefix],
   ["declines", INBOX_CATEGORIES.destinations_declined.idPrefix],
   ["unsuitable", INBOX_CATEGORIES.destination_unlawful.idPrefix],
+  // Clinical owner ruling (14 Oct 2026): no eligible bed anywhere; the bed coordinator is notified.
+  ["nobed", INBOX_CATEGORIES.no_eligible_bed.idPrefix],
   ["hold", INBOX_CATEGORIES.bed_pull_expired.idPrefix],
   ["transport", INBOX_CATEGORIES.transport_awaiting_departure.idPrefix],
   ["planned", INBOX_CATEGORIES.planned_arrival_overdue.idPrefix],
@@ -94,6 +106,7 @@ export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   legal: "Form due time passed",
   declines: "Every ward asked declined",
   unsuitable: "Destination unsuitable",
+  nobed: "No eligible bed",
   hold: "Bed hold expired",
   transport: "Transport not yet left",
   planned: "Planned arrival not recorded",

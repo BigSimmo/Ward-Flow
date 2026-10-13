@@ -535,7 +535,7 @@ export const ED_ACCESS_TARGET_RANGE_MINUTES = { min: 720, max: 2160, step: 120 }
  * Expressed in HOURS because the owner expressed it in hours; converting it to minutes for
  * arithmetic convenience would put a second, unsourced number beside the sourced one.
  */
-export const ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS = 48;
+export const ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS = 24;
 
 /**
  * 🔴 **DELETED 2026-09-17, T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`).**

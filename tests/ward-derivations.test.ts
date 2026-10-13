@@ -304,16 +304,40 @@ describe("buildActionInbox", () => {
       return unit !== undefined && !unit.authorised;
     }).length;
 
+    // Clinical owner ruling (14 Oct 2026): an open, unplaced movement with no eligible ward in its
+    // cohort notifies the bed coordinator. Re-expressed from `eligibility` per unit, not from the
+    // shortlist helper `buildActionInbox` calls.
+    const noEligibleBedCount = wardMovements.filter(
+      (movement) =>
+        isOpen(movement) &&
+        (movement.stage === "placement_requested" || movement.stage === "destination_review") &&
+        movement.acceptedUnitId === undefined &&
+        !allUnits().some(
+          (unit) =>
+            unit.cohort === movement.cohort &&
+            eligibility(movement, unit, NOW_ANCHOR).gates.every(
+              (gate) => gate.pass || gate.gate === "capacity_freshness",
+            ),
+        ),
+    ).length;
+
     const items = buildActionInbox(wardMovements, NOW_ANCHOR, allUnits());
 
     expect(items).toHaveLength(
-      legalCount + declineCount + transportCount + expiredHoldCount + unlawfulDestinationCount,
+      legalCount + declineCount + transportCount + expiredHoldCount + unlawfulDestinationCount + noEligibleBedCount,
     );
 
     // The anti-blindness half. Every id prefix the inbox can emit, listed here so a new category
     // cannot be added without this file being opened — the count above would happily stay right
     // for the four it knows while a fifth went unnoticed, which is exactly what happened.
-    const KNOWN_CATEGORY_PREFIXES = ["legal-", "declines-", "transport-", "bed-pull-", "destination-unlawful-"];
+    const KNOWN_CATEGORY_PREFIXES = [
+      "legal-",
+      "declines-",
+      "transport-",
+      "bed-pull-",
+      "destination-unlawful-",
+      "no-eligible-bed-",
+    ];
     const unrecognised = items.filter((item) => !KNOWN_CATEGORY_PREFIXES.some((prefix) => item.id.startsWith(prefix)));
     expect(
       unrecognised.map((item) => item.id),

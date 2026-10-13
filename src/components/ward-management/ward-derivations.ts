@@ -1358,6 +1358,36 @@ export function buildActionInbox(
     });
   }
 
+  // Clinical owner ruling (14 Oct 2026): no eligible bed keeps the patient on the waitlist with a
+  // visible flag and notifies the bed coordinator. It never drops, closes or releases the movement;
+  // this row only surfaces the fact for the coordinator, like every other category here.
+  const noEligibleBed = movements.filter(
+    (movement) =>
+      isOpen(movement) &&
+      // Only people still waiting for a placement (the waitlist), never a journey already past it.
+      (REFERRABLE_MOVEMENT_STAGES as readonly string[]).includes(movement.stage) &&
+      movement.acceptedUnitId === undefined &&
+      units.length > 0 &&
+      // A ward refused ONLY because its capacity figure is stale is not "no eligible bed": the bed may
+      // well be there. Such a ward keeps the movement off this row, so a stale feed cannot flood the
+      // coordinator with false "nowhere" notices.
+      eligibleCandidatesAmong(movement, units, now, units.length).every((candidate) =>
+        candidate.verdict.gates.some((gate) => !gate.pass && gate.gate !== "capacity_freshness"),
+      ),
+  );
+  for (const movement of noEligibleBed) {
+    items.push({
+      id: `${INBOX_CATEGORIES.no_eligible_bed.idPrefix}${movement.id}`,
+      kind: INBOX_CATEGORIES.no_eligible_bed.kind,
+      tone: "danger",
+      icon: CircleAlert,
+      title: "No eligible bed: bed coordinator notified",
+      detail: `${movement.id} · no ward in the network is currently eligible; patient stays on the waitlist`,
+      owner: "Bed coordinator",
+      movementId: movement.id,
+    });
+  }
+
   // Advisory carer/PSP/MHAS notifications still to record for recent involuntary moves. These are
   // about COMPLETED moves, so they read every movement in `records`, not the caller's open list.
   // Only when the caller passed the notification record fields — `{ plannedAdmissions }` alone is
