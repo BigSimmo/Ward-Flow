@@ -8581,3 +8581,11 @@ Still open after this task, with the reason:
 - Backend, governance and clinical sign-off tasks stay as listed in `docs/ward-flow/reports/remediation-remaining-tasks-2026-10-08.md`.
 
 Evidence: PR #258 passed the repository's Ward Flow required gate on its head `b3e579f` (static checks, eight unit shards, three browser-journey groups, production build, coverage and secret scan), with CodeAnt, CodSpeed and GitGuardian also passing. The follow-up was first checked locally on Node 22; the search, preview and community suites were then re-run on Node 24 (19 files pass). Hosted CI remains the authoritative check.
+
+## WF-ISSUE-REGISTER-2026-10-13 — every open audit issue is now in the register
+
+Owner request (13 October 2026): put all remaining issues in the ledger. The full register is [`ward-flow/audit-2026-10-13-issue-triage.md`](ward-flow/audit-2026-10-13-issue-triage.md); this entry points to it and records what was added. Documentation only. No tests, lint, build or provider call was run, and nothing was compared with the hosted site.
+
+- Group 7 of the register lists the items the first triage missed: Capacity request revision (CAP-REV), SPEC-005 queue ordering, the retired `ward-chrome-header` module, five remaining `.btnPrimary` modules, the code-map route drift (eight unmapped routes), the unrefreshed expected-reds check, the five routes the audit never walked, Statistics Samples, the design "Later" items, the 39 remaining backend, governance and clinical tasks, and the unproven hosted deployment.
+- It also records what #258 and #270 settled, so those items are not worked twice.
+- The `WF-HONESTY-2026-10-13` entry above stays as the record of that task. Where the two differ, the register is the later source.
