@@ -1258,7 +1258,9 @@ function NetworkRow({
 }) {
   const { refreshRequests } = useWardFlow();
   // From the shared record, so a demo reset clears it and a request made from the ward sidebar shows here too.
-  const asked = refreshRequests.some((request) => request.unitId === row.unit.id);
+  // A request stays outstanding only until the ward next confirms its capacity.
+  const latestRequest = refreshRequests.filter((request) => request.unitId === row.unit.id).at(-1);
+  const asked = latestRequest !== undefined && latestRequest.at > row.unit.allocatable.confirmedAt;
   const site = siteByCode(row.unit.siteCode);
   /*
    * Wards are always named, never shown as a bare code. The unresolved sentence comes from

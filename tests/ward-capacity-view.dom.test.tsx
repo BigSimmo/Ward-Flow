@@ -134,6 +134,30 @@ function excludedBeyondTodayCount(): number {
   return Number(screen.getByTestId("ward-capacity-excluded-beyond-today").textContent?.match(/\d+/)?.[0]);
 }
 
+function ConfirmCapacityProbe({ unitId, now }: { unitId: string; now: number }) {
+  const { dispatch, units } = useWardFlow();
+  const unit = units.find((candidate) => candidate.id === unitId)!;
+  return (
+    <button
+      type="button"
+      data-testid="test-confirm-capacity"
+      onClick={() =>
+        dispatch({
+          type: "CONFIRM_CAPACITY",
+          role: "ward",
+          now,
+          unitId,
+          actingUnitId: unitId,
+          value: unit.allocatable.value,
+          expectedRevision: unit.allocatable.revision ?? 0,
+        })
+      }
+    >
+      confirm
+    </button>
+  );
+}
+
 function RefreshRequestsProbe() {
   const { refreshRequests } = useWardFlow();
   return <div data-testid="test-refresh-requests-count">{refreshRequests.length}</div>;
@@ -322,6 +346,21 @@ describe("ward capacity headline (Task 7)", () => {
       "asking a ward to restate its numbers moved a figure on its row; this control records that " +
         "somebody asked and must change nothing else",
     ).toBe(readyBefore);
+  });
+
+  it("lets the coordinator ask again once the ward has confirmed its capacity", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CapacityScreen />
+        <ConfirmCapacityProbe unitId="rph-adult-secure" now={NOW_ANCHOR + 5} />
+      </WardFlowProvider>,
+    );
+    showWardTable();
+    const refreshButton = screen.getByTestId("ward-capacity-refresh-rph-adult-secure");
+    fireEvent.click(refreshButton);
+    expect(refreshButton).toBeDisabled();
+    fireEvent.click(screen.getByTestId("test-confirm-capacity"));
+    expect(screen.getByTestId("ward-capacity-refresh-rph-adult-secure")).toBeEnabled();
   });
 
   /*
