@@ -1,5 +1,6 @@
 "use client";
 
+import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
@@ -997,16 +998,13 @@ export function CommunityScreen({
     return (
       <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
         <main id="main-content" className={styles.main}>
-          <h1 className={styles.notFoundHeading}>Community team not found</h1>
-          <p className={styles.notFoundBody} data-testid="ward-community-unresolved">
-            No community team matches &ldquo;{teamId}&rdquo;. This never falls back to a different team — showing one
-            area&apos;s patients under another area&apos;s name is the worst answer this screen could give.
-          </p>
-          <p style={{ marginTop: "1rem" }}>
-            <Link href="/mockups/ward-flow" className={styles.backLink}>
-              Return to Dashboard
-            </Link>
-          </p>
+          <WardNotFoundBody
+            title="Community team not found"
+            testId="ward-community-unresolved"
+            list={{ href: "/mockups/ward-flow/community", label: "All community teams" }}
+          >
+            No community team matches &ldquo;{teamId}&rdquo;. It never falls back to a different team.
+          </WardNotFoundBody>
         </main>
       </div>
     );

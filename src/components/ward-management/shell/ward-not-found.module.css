@@ -1,0 +1,32 @@
+/* shell-12: the one not-found pattern. Tokens only. */
+.body {
+  display: grid;
+  gap: var(--wf-s-2);
+  max-width: 40rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--wf-ink-1);
+}
+
+.sentence {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--wf-ink-2);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ward-tap, 3rem);
+}
