@@ -419,5 +419,3 @@ az(
 console.log(
   "Ward Flow database migration, managed-identity grants and shared backend settings applied. Deploy the backend package and rebuild the frontend with the prepared public settings, then run the authenticated smoke test.",
 );
-
-);
