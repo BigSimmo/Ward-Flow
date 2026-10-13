@@ -1,18 +1,13 @@
 # Ward Flow — the task ledger
 
-> **Current task navigation — 6 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The [3 October pathway audit](ward-flow/reports/wa-health-pathway-audit-2026-10-03.md) is a later audit than the September record below, covering its own scope. The October 2026 entries (§7.70 through §7.76) record PRs #37 through #80 landed on `origin/main` at commit `1695b40`.
+> **Current task navigation — 13 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.77) record PRs landed on `origin/main` up through commit `0ddcf956` (PRs #258 / #260).
 
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
 
-> 🟢 **STATUS AS OF 6 OCTOBER 2026, ESTATE RESOLUTION & ELEVATION: read this first.** The latest session closeout,
-> 100% clean test suite verification proof (over 10,400 tests across five parallel shards, 0 failing, whole-tree lint clean), and verified
-> visual/structural elevations are tracked through **§7.70 ("WF-BANNER-20261005: Universal Curved Synthetic Prototype Banner & Symmetrical Master Search Hub")**,
-> **§7.71 ("WF-FLIGHT-DECK-20261005 / WF-59: Unified Patient Now Flight Deck, 7-Stage Live Journey Stepper & 5-Tab Dossier")**,
-> **§7.72 ("WF-HANDOVER-20261005: Handover Command Horizon 3-Tier Flight Deck, Shift Switcher & High-Contrast Print")**,
-> **§7.73 ("WF-ED-PSYCHIATRY-20261005: Individual Emergency Department Psychiatry Screen Polish & Typography")**,
-> **§7.74 ("WF-STATISTICS-20261005: Estate-Wide Seven-Screen Statistics Dashboard Polish & Structure Preservation")**,
-> **§7.75 ("WF-CI-PERF-20261005: Unit Test Shard Rebalancing from CI Durations, Next.js Build Cache, Playwright Cache & Full-Tree Linting")**, and
-> **§7.76 ("WF-ESTATE-PERFECTION-20261006: WF-51 Zero-Gap Copy Fix, WF-60 Demonstration Script & Decisions D-30–D-36")** at the end of this file.
+> 🟢 **STATUS AS OF 13 OCTOBER 2026, ESTATE RECONCILIATION & SAFETY REMEDIATION: read this first.** The latest session closeout,
+> landed estate baseline across PRs #246–#260 on `origin/main` (`0ddcf956`), clinical safety remediations (AUD-01, AUD-02, AUD-04, AUD-05, WF-09A),
+> and workspace worktree hygiene are tracked in **§7.77 ("Reconciliation & Safety Fixes (13 October 2026)")** at the end of this file.
+> Prior elevations are tracked through **§7.70–§7.76**.
 > Broader task state remains tracked across §7.8 to §7.69.
 >
 > - Everything between here and **"👑 AUTHORITATIVE WARD FLOW MASTER LEDGER"** is the 30 August record.
@@ -20,7 +15,7 @@
 >   current.
 > - Where the 13 September master ledger marks a family `Unassigned / Untriaged`, and where §6 says a
 >   ruling was "executed", §7 replaces them.
-> - The comprehensive multi-agent estate audit was reconciled on 6 October 2026 across PRs #1–#78.
+> - Estate baseline reconciled on 13 October 2026 across PRs #1–#260.
 
 ## ⚠️ WHAT THIS IS NOT — read this before editing anything
 
@@ -8581,3 +8576,35 @@ Still open after this task, with the reason:
 - Backend, governance and clinical sign-off tasks stay as listed in `docs/ward-flow/reports/remediation-remaining-tasks-2026-10-08.md`.
 
 Evidence: PR #258 passed the repository's Ward Flow required gate on its head `b3e579f` (static checks, eight unit shards, three browser-journey groups, production build, coverage and secret scan), with CodeAnt, CodSpeed and GitGuardian also passing. The follow-up was first checked locally on Node 22; the search, preview and community suites were then re-run on Node 24 (19 files pass). Hosted CI remains the authoritative check.
+
+## §7.77 — Estate Reconciliation & Safety Remediation (13 October 2026)
+
+Historical reconciliation snapshot: `0ddcf95612e77b0b7bc91a1b1f0c93caff285aae` (the merge of PR #258), rather than the current `origin/main` ref. The entries below describe that snapshot. This PR subsequently incorporated main checkpoint `686531e3fd1ab18a44b79a7a12cfb8c539d6c50b` (PR #277); fetch and verify the ref again for later reconciliation.
+Branch: `feat/task-ledger-safety-fixes`.
+
+### 1. Landed Estate Baseline (PRs #246 – #260)
+
+- **PR #248 / #250 / #252**: Comprehensive scroll geometry, responsive phone layout elevations, 56px header tokenization, reduced-motion compliance, mobile device audit fixes.
+- **PR #253**: Header tap hit-testing, elimination of layout jump, mobile phone Services navigation link, stabilized phone dock and search.
+- **PR #254**: Hidden search filter accessibility, governance notice exclusion from sequential Tab order.
+- **PR #255**: Phone bottom dock refinement (compact 48px touch targets grouped around action trigger in landscape).
+- **PR #256**: 12 October site review audit remediation.
+- **PR #257 / #258 / #259 / #260**: Phone search flash elimination, phone action bar flush seating against bottom dock, shared capacity update requests, terminology refinement ("Filter" vs "Search").
+
+### 2. Immediate Clinical & Safety Remediations
+
+- **AUD-01 (movement drawer scope)**: At PR263 checkpoint `387168b7`, `rg -n -F '9431 3333' src/components/ward-management/movements/movement-drawer.tsx` found no matches. The same search over `src` found one retained public reference entry: `publishedPhone: "08 9431 3333"` in `src/components/ward-management/reference/ward-reference-teams.ts`. This records removal from the movement drawer, not removal from all source files or verification that a published reference number has been call-tested.
+- **AUD-02 (Scripts Drive Casing Guard)**: Patched `scripts/guard-push.mjs` and `scripts/check-ward-data.mjs` with case-insensitive `isDirectInvocation` on Windows (`win32`), preventing CLI entry point mismatches caused by drive letter casing (`D:` vs `d:`). Covered by `tests/ward-script-direct-invocation.test.ts`.
+- **AUD-04 (WardDailySheet Epoch-0 Bug)**: Resolved fallback clock in `src/components/ward-management/board/ward-daily-sheet.tsx`. When `now` prop is omitted or invalid, the component uses a finite provider value from `useWardFlowClock(WARD_ADMISSIONS_ANCHOR)` or falls back to the deterministic `WARD_ADMISSIONS_ANCHOR`, preventing accidental epoch-0 (1970) calculations in `daysInBed`, `stayBand`, and discharge projections. Precedence: a finite explicit `now` prop, then a finite provider clock, then the anchor. Finite explicit and provider Instants, including zero and negative values, remain valid. Covered by `tests/ward-daily-sheet-provider-clock.dom.test.tsx`.
+- **AUD-05 (In-Transit Bed Expiry Alarm)**: Corrected phantom property check in `src/components/ward-management/ward-referrals.ts`. The nonexistent `movement.transport.stage` read never matched; the rule now also checks the real `transport.enRouteAt` and `transport.arrivedAt` on `TransportJob` (ignoring a job with `cancelledAt`), eliminating false-positive bed hold expiry alarms for patients actively en route or arrived; a cancelled job still alarms. Covered by `tests/ward-bed-hold-expiry-in-transit.test.ts`.
+- **WF-09A (Involuntary Patient Badge Display)**: Corrected legal status presentation in `src/components/ward-management/movements/movement-drawer.tsx`. When `movement.legalForm` is omitted, the badge now renders `` `${movement.legalStatus} · No legal form recorded` `` (e.g., "Involuntary inpatient · No legal form recorded"), keeping both the legal status and the missing-form disclosure, with a neutral document icon instead of the reassuring shield. Covered by `tests/ward-movement-legal-absence.dom.test.tsx`.
+- **Workspace Hygiene**: Ran `git worktree prune` across the repository, safely clearing 30 ghost worktree references (dropping from 68 to 38) and releasing the stale local `main` lock.
+
+### 3. Open Estate Tasks Summary (Post-PR #260)
+
+1. **AUD-03 (Bed-Hold Countdown Inaccuracy)**: Unit tests for hold expiry arithmetic (`bedHoldExpiryAlert`).
+2. **AUD-06 (Multi-Ward Rapid Click Stale Reducer Actions)**: Reducer action serialization under rapid ward switching.
+3. **WF-09 (Gender Match Validation)**: Ensure incoming bed assignments respect ward sex mix.
+4. **WF-23 (Discharge Block Reason Mandatory Selector)**: Clinician reason requirement prior to discharge delay unblocking.
+5. **WF-33 / WF-29 / WF-57 (Azure Shared PostgreSQL / Authentication)**: Connect shared PostgreSQL backend once Azure Entra credentials / network permissions are provisioned.
+6. **WF-58 (Offline Emergency Downtime Pack PDF Export)**: PDF downtime printable packet compilation.

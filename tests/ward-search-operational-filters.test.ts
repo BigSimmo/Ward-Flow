@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Movement } from "@/components/ward-management/ward-model";
+import type { Movement, ReferralSource } from "@/components/ward-management/ward-model";
+import { allEmergencyDepartments, wardSites } from "@/components/ward-management/ward-sites";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { matchesSetting } from "@/components/ward-management/search/search-filters";
 import {
@@ -13,6 +14,31 @@ const booked = seed.movements.find(
   (m) => m.transport && m.transport.collectedAt === undefined && m.stage === "handover_ready",
 )!;
 const result = (movement: Movement) => ({ kind: "movement" as const, movement });
+
+describe("referral ED origin evidence", () => {
+  const edSite = allEmergencyDepartments()[0].siteCode;
+  const nonEdSite = wardSites.find((site) => !site.emergencyDepartment)!.code;
+  const referralResult = (source: ReferralSource, originSiteCode = edSite) => ({
+    kind: "referral" as const,
+    referral: { ...seed.referrals[0], source, originSiteCode },
+  });
+
+  it("includes an explicitly recorded ED medical referral from an ED-bearing site", () => {
+    expect(seed.referrals.length).toBeGreaterThan(0);
+    expect(matchesSetting(referralResult("ed_medical"), "ed")).toBe(true);
+  });
+
+  it.each(["community", "crisis_service", "ambulance", "gp", "psychiatric_ward", "inter_hospital"] as const)(
+    "does not infer ED origin for %s from hospital affiliation",
+    (source) => {
+      expect(matchesSetting(referralResult(source), "ed")).toBe(false);
+    },
+  );
+
+  it.each([nonEdSite, "unknown", "FSH-CMHT"])("requires a configured ED at recorded origin %s", (origin) => {
+    expect(matchesSetting(referralResult("ed_medical", origin), "ed")).toBe(false);
+  });
+});
 
 describe("search operational projections and location filters", () => {
   it("reads configured services and represents an unknown source without guessing", () => {

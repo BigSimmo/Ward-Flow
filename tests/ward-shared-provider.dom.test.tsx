@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WardSharedConnection } from "../src/components/ward-management/ward-shared-access";
+import {
+  WardDataModeSlot,
+  useWardDataMode,
+  type WardSharedConnection,
+} from "../src/components/ward-management/ward-shared-access";
 import { WardFlowProvider, useWardFlow } from "../src/components/ward-management/ward-flow-provider";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { AlertsScreen } from "../src/components/ward-management/alerts/alerts-screen";
@@ -23,6 +27,15 @@ function Probe() {
       </button>
     </>
   );
+}
+function DataModeDetail() {
+  return <p data-testid="data-mode-detail">{useWardDataMode()?.detail ?? "no data mode"}</p>;
+}
+/** No standalone data-mode bar: without a header slot nothing is drawn, but the mode is still published. */
+function expectNoStandaloneDataModeControl() {
+  expect(screen.queryByRole("button", { name: /^Data mode: Prototype/ })).toBeNull();
+  expect(screen.queryByRole("group", { name: "Data mode controls" })).toBeNull();
+  expect(screen.queryByText("Data mode: Prototype")).toBeNull();
 }
 function connection(): WardSharedConnection {
   const state = JSON.parse(JSON.stringify(seedWardFlowStateAt(0)));
@@ -103,9 +116,11 @@ describe("shared provider boundary", () => {
     render(
       <WardFlowProvider>
         <Probe />
+        <DataModeDetail />
       </WardFlowProvider>,
     );
-    expect(screen.getByText(/Local demonstration/)).toBeInTheDocument();
+    expectNoStandaloneDataModeControl();
+    expect(screen.getByTestId("data-mode-detail")).toHaveTextContent("Invented records · Local demonstration");
     expect(screen.queryByText("45")).toBeNull();
     expect(screen.getByRole("status").textContent).toBe(String(seedWardFlowStateAt(0).configuration.pullHoldMinutes));
     fireEvent.click(screen.getByRole("button", { name: "Advance" }));
@@ -115,9 +130,12 @@ describe("shared provider boundary", () => {
     render(
       <WardFlowProvider initialNow={642}>
         <Probe />
+        <WardDataModeSlot />
       </WardFlowProvider>,
     );
-    expect(screen.getByText(/Local demonstration/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Data mode: Prototype. Invented records · Local demonstration" }),
+    ).toBeInTheDocument();
     expect(screen.queryByText("45")).toBeNull();
     expect(screen.getByRole("status").textContent).toBe(String(seedWardFlowStateAt(0).configuration.pullHoldMinutes));
     fireEvent.click(screen.getByRole("button", { name: "Advance" }));
@@ -127,11 +145,18 @@ describe("shared provider boundary", () => {
     render(
       <WardFlowProvider>
         <Probe />
+        <WardDataModeSlot />
       </WardFlowProvider>,
     );
     const draft = screen.getByRole("textbox");
     fireEvent.change(draft, { target: { value: "keep prototype draft" } });
-    expect(screen.getByText("Data mode: Prototype")).toBeInTheDocument();
+    // Exactly one data-mode control, in the header slot; it opens to explain the mode.
+    const pill = screen.getByRole("button", { name: /^Data mode: Prototype/ });
+    expect(screen.getAllByRole("button", { name: /^Data mode: Prototype/ })).toHaveLength(1);
+    expect(screen.queryByText("Data mode: Prototype")).toBeNull();
+    fireEvent.click(pill);
+    expect(pill).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("region", { name: "Ward Flow data mode" })).toHaveTextContent("Data mode: Prototype");
     fireEvent.click(screen.getByRole("button", { name: "Hospital records (unavailable)" }));
     expect(screen.getByRole("heading", { name: "Hospital records are not connected" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();
