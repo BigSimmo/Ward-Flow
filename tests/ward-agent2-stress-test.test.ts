@@ -47,11 +47,12 @@ describe("Agent 2 Stress Test Suite", () => {
       allocatable: { value: 2, source: "ward", confirmedAt: 0, staleAfterMinutes: 60 },
     };
     const capInc = unitCapacity(inconsistentZero, []);
-    // Empty capacity is clamped to the physical bed total, so this inconsistent feed has no capacity.
-    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBe(0);
-    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBeLessThanOrEqual(
-      inconsistentZero.beds,
-    );
+    // R-B-09 preserves Ready = min(allocatable, empty), even when nominal beds disagree.
+    // These recorded observations report 2 Ready; they do not establish physical surge capacity.
+    expect(capInc.available).toBe(2);
+    expect(capInc.surge).toBe(0);
+    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBe(2);
+    expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBeGreaterThan(inconsistentZero.beds);
   });
 
   it("Scenario 2: blocked beds when empty.value === unit.beds", () => {
