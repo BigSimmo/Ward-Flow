@@ -2427,6 +2427,25 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
   return appendAudit(state, next, event, decision);
 }
 
+/**
+ * The single writer for a referrer's own withdrawal (`WITHDRAW_REFERRAL` before acceptance and the
+ * `RECORD_REFERRER_WITHDRAWAL` cascade): every live ward request is recorded as `referrer_withdrew`
+ * and the movement no longer names an accepting or reviewing ward.
+ */
+function withdrawAllLiveRequestsForReferrer(
+  movement: Movement,
+  now: Instant,
+): Pick<Movement, "acceptedUnitId" | "referredUnitIds" | "withdrawnReferrals"> {
+  return {
+    acceptedUnitId: undefined,
+    referredUnitIds: [],
+    withdrawnReferrals: [
+      ...movement.withdrawnReferrals,
+      ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, reason: "referrer_withdrew" as const })),
+    ],
+  };
+}
+
 function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decision: AuditDecision): WardFlowState {
   // 1. Role check first, before the event's payload is inspected at all.
   const permittedRoles = EVENT_ROLE[event.type] ?? [];
@@ -4447,6 +4466,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
         const revokedByCoordinator = event.role === "coordinator";
         const acceptingUnitId = movement.acceptedUnitId;
+        const liveTransport =
+          movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
+        const hadLiveTransport = liveTransport !== undefined;
         const revoked: Movement = {
           ...movement,
           admissionId: undefined,
@@ -4458,10 +4480,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           // branch already holds `TransportJob.cancelledAt` to (see that field's own doc comment):
           // a closing event that left a live job behind would be the phantom job `orphanedTransport`
           // (`ward-derivations.ts`) assumes can never happen once `movement.closure` is set.
-          transport:
-            movement.transport && movement.transport.cancelledAt === undefined
-              ? { ...movement.transport, cancelledAt: event.now }
-              : movement.transport,
+          transport: liveTransport ? { ...liveTransport, cancelledAt: event.now } : movement.transport,
           closure: {
             at: event.now,
             outcome: "did_not_proceed",
@@ -4480,32 +4499,43 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // a ward that believed it was getting this patient must be told it is not. `acceptingUnitId`
         // is guaranteed to resolve — it is `movement.acceptedUnitId`, read before this handler's own
         // writes touched it.
-        return appendNotices(next, [
+        let noticeCount = state.notices.length;
+        const notices: Notice[] = [
           makeNotice(
             event.now,
-            state.notices.length,
+            noticeCount++,
             "referral_revoked_ward",
             { role: "ward", placeId: acceptingUnitId },
             { movementId: movement.id, unitId: acceptingUnitId },
             `The referral for ${movement.id} was revoked after being accepted; the patient is no longer coming.`,
           ),
-        ]);
+        ];
+        if (hadLiveTransport) {
+          notices.push(
+            makeNotice(
+              event.now,
+              noticeCount++,
+              "transport_cancelled_officer",
+              { role: "officer" },
+              { movementId: movement.id, unitId: acceptingUnitId },
+              `Transport for ${movement.id} was cancelled: referral was revoked by ${revokedByCoordinator ? "coordinator" : "referrer"}.`,
+            ),
+          );
+        }
+        return appendNotices(next, notices);
       }
 
       if (movement.referredUnitIds.length === 0) {
         return reject(state, event, `movement ${movement.id} holds no live referral to withdraw`);
       }
 
-      const withdrawn = movement.referredUnitIds.map((unitId) => ({
-        unitId,
-        at: event.now,
-        reason: "referrer_withdrew" as const,
-      }));
+      const liveTransport =
+        movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
+      const hadLiveTransport = liveTransport !== undefined;
       const updated: Movement = {
         ...movement,
-        acceptedUnitId: undefined,
-        referredUnitIds: [],
-        withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawn],
+        ...withdrawAllLiveRequestsForReferrer(movement, event.now),
+        transport: liveTransport ? { ...liveTransport, cancelledAt: event.now } : movement.transport,
         closure: {
           at: event.now,
           outcome: "did_not_proceed",
@@ -4515,7 +4545,34 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // it would keep a withdrawn patient looking like a live obstruction.
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
       };
-      return replaceMovement(state, movement.id, updated);
+      const next = replaceMovement(state, movement.id, updated);
+      {
+        let noticeCount = state.notices.length;
+        const wardNotices = movement.referredUnitIds.map((unitId) =>
+          makeNotice(
+            event.now,
+            noticeCount++,
+            "ward_request_withdrawn",
+            { role: "ward", placeId: unitId },
+            { movementId: movement.id, unitId },
+            `The referral for ${movement.id} was withdrawn by the ${event.role === "coordinator" ? "coordinator" : "referrer"}.`,
+          ),
+        );
+        if (hadLiveTransport) {
+          wardNotices.push(
+            makeNotice(
+              event.now,
+              noticeCount++,
+              "transport_cancelled_officer",
+              { role: "officer" },
+              { movementId: movement.id },
+              `Transport for ${movement.id} was cancelled: referral was withdrawn by the ${event.role === "coordinator" ? "coordinator" : "referrer"}.`,
+            ),
+          );
+        }
+        return appendNotices(next, wardNotices);
+      }
+      return next;
     }
 
     case "WITHDRAW_WARD_REQUEST": {
@@ -8141,6 +8198,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           ? {
               ...m,
               admissionId: undefined,
+              ...withdrawAllLiveRequestsForReferrer(m, event.now),
               transport:
                 m.transport && m.transport.cancelledAt === undefined
                   ? { ...m.transport, cancelledAt: event.now }
@@ -8154,13 +8212,56 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             }
           : m,
       );
-      return {
-        ...stateAfterReleases,
-        movements: nextMovements,
-        referrals: stateAfterReleases.referrals.map((candidate) =>
-          candidate.id === referral.id ? { ...candidate, destinations } : candidate,
-        ),
-      };
+      let cascadeNoticeCount = stateAfterReleases.notices.length;
+      const cascadeNotices: Notice[] = [];
+      for (const m of linkedOpenMovements) {
+        if (m.transport && m.transport.cancelledAt === undefined) {
+          cascadeNotices.push(
+            makeNotice(
+              event.now,
+              cascadeNoticeCount++,
+              "transport_cancelled_officer",
+              { role: "officer" },
+              { movementId: m.id },
+              `Transport for ${m.id} was cancelled: referral was recorded as withdrawn by its referrer.`,
+            ),
+          );
+        }
+        if (m.acceptedUnitId) {
+          cascadeNotices.push(
+            makeNotice(
+              event.now,
+              cascadeNoticeCount++,
+              "referral_revoked_ward",
+              { role: "ward", placeId: m.acceptedUnitId },
+              { movementId: m.id, unitId: m.acceptedUnitId },
+              `The referral for ${m.id} was withdrawn by its referrer; the patient is no longer coming.`,
+            ),
+          );
+        }
+        for (const unitId of m.referredUnitIds) {
+          cascadeNotices.push(
+            makeNotice(
+              event.now,
+              cascadeNoticeCount++,
+              "ward_request_withdrawn",
+              { role: "ward", placeId: unitId },
+              { movementId: m.id, unitId },
+              `The referral for ${m.id} was withdrawn by its referrer.`,
+            ),
+          );
+        }
+      }
+      return appendNotices(
+        {
+          ...stateAfterReleases,
+          movements: nextMovements,
+          referrals: stateAfterReleases.referrals.map((candidate) =>
+            candidate.id === referral.id ? { ...candidate, destinations } : candidate,
+          ),
+        },
+        cascadeNotices,
+      );
     }
 
     /**
@@ -9947,6 +10048,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
       const withoutPhantom = releasePulledBedAndAdmission(state, movement, event.now);
+      // A movement stepped back from `pulled` keeps its reserved bed and admission at
+      // `accepted_awaiting_bed`, so the stage alone cannot say whether a bed is being released
+      // (same rule as `releasePulledBedAndAdmission`).
+      const heldBed = movement.stage === "pulled" || movement.admissionId !== undefined;
+      const releasedUnitId = movement.acceptedUnitId;
       const updatedMovement: Movement = {
         ...movement,
         stage: "placement_requested",
@@ -9958,21 +10064,48 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         referredUnitIds: [],
         transport: undefined,
         blocker: STAGE_TRANSITION_BLOCKERS.wardRequestWithdrawn,
-        unwinds: [...movement.unwinds, { at: event.now, kind: "pull_released", by: event.role, reason: event.reason }],
+        unwinds: [
+          ...movement.unwinds,
+          // From accepted_awaiting_bed no bed was ever held: this undoes the ward's acceptance, not a pull.
+          {
+            at: event.now,
+            kind: heldBed ? "pull_released" : "acceptance_withdrawn",
+            by: event.role,
+            reason: event.reason,
+            // Name the former accepting ward: `acceptedUnitId` is cleared in this same update.
+            ...(releasedUnitId !== undefined ? { unitId: releasedUnitId } : {}),
+          },
+        ],
         stageChanges: [
           ...movement.stageChanges,
           { at: event.now, from: movement.stage, to: "placement_requested", by: event.role, reason: event.reason },
         ],
       };
       const next = replaceMovement(withoutPhantom, movement.id, updatedMovement);
+      const reasonText = event.reason.replace(/_/g, " ");
+      if (!heldBed) {
+        // No bed was held, so there is no bed release to announce. The accepting ward is told its
+        // acceptance was released when someone else (the coordinator) made that call.
+        if (event.role === "ward" || releasedUnitId === undefined) return next;
+        return appendNotices(next, [
+          makeNotice(
+            event.now,
+            state.notices.length,
+            "acceptance_withdrawn_ward",
+            { role: "ward", placeId: releasedUnitId },
+            { movementId: movement.id, unitId: releasedUnitId },
+            `The acceptance for ${movement.id} was released and the search reopened (${reasonText}).`,
+          ),
+        ]);
+      }
       return appendNotices(next, [
         makeNotice(
           event.now,
           state.notices.length,
           "bed_pull_released",
           { role: "ed", placeId: movement.originEdId },
-          { movementId: movement.id, unitId: event.actingUnitId },
-          `Bed released and search reopened for ${movement.id} (${event.reason.replace(/_/g, " ")}).`,
+          { movementId: movement.id, unitId: releasedUnitId },
+          `Bed released and search reopened for ${movement.id} (${reasonText}).`,
         ),
       ]);
     }

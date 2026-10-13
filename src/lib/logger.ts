@@ -78,10 +78,10 @@ function emit(level: LogLevel, message: string, context?: Record<string, unknown
   if (LEVEL_RANK[level] < LEVEL_RANK[activeLevel()]) return;
   const redacted = context ? redactLogContext(context) : undefined;
   const line = JSON.stringify({
+    ...(redacted ?? {}),
     level,
     message,
     timestamp: new Date().toISOString(),
-    ...(redacted ?? {}),
   });
   if (level === "error") console.error(line);
   else if (level === "warn") console.warn(line);
