@@ -87,7 +87,7 @@ export function WardBroadcastBanner({ currentUnitId }: WardBroadcastBannerProps)
   const routeDesk = currentUnitId ?? currentDeskId(pathname);
   const desk = { role, id: role === "coordinator" ? COORDINATOR_DESK_ACKNOWLEDGER_ID : routeDesk };
 
-  const entries = bannerEntriesForDesk(broadcastAlerts, movements, desk, now);
+  const entries = bannerEntriesForDesk(broadcastAlerts, movements, desk, now, units);
   const top = entries[0];
   useActNowNotice(top, desk.id);
 

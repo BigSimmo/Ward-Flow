@@ -111,11 +111,18 @@ export function bannerEntriesForDesk(
   movements: readonly Movement[],
   desk: AlertDesk,
   now: Instant,
+  units?: readonly Unit[],
 ): BannerEntry[] {
   const entries: BannerEntry[] = [];
   for (const alert of alerts) {
     if (!isAlertLive(alert, movements, now)) continue;
-    const asks = alertAsksDesk(alert, desk);
+    // A directive asks only the desks its target covers, the same desks its "x of N" counts.
+    const asks =
+      alertAsksDesk(alert, desk) &&
+      (broadcastKind(alert) !== "directive" ||
+        desk.role === "coordinator" ||
+        units === undefined ||
+        (desk.id !== null && directiveDesks(alert, units).includes(desk.id)));
     const needsAnswer = asks && desk.id !== null && !deskHasAnswered(alert, desk.id);
     if (broadcastKind(alert) === "pull_now") {
       if (desk.role === "coordinator") {

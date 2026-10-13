@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   bannerEntriesForDesk,
   directiveAcknowledgements,
+  directiveDesks,
   replyBoard,
   wardsInBroadcastScope,
 } from "../src/components/ward-management/alerts/global-alert-view";
@@ -267,6 +268,21 @@ describe("Directive acknowledgements (remaining-pages audit ops-11, ops-13)", ()
     expect(bannerEntriesForDesk([alert], [], desk, NOW)[0].needsAnswer).toBe(false);
     const ward = { role: "ward", id: "rph-adult-secure" };
     expect(bannerEntriesForDesk([alert], [], ward, NOW)[0].needsAnswer).toBe(true);
+  });
+
+  it("asks only the desks a scoped directive counts", () => {
+    const state = directive("metro_adult");
+    const alert = state.broadcastAlerts[0];
+    const asked = new Set(directiveDesks(alert, state.units));
+    const outside = state.units.find((unit) => !asked.has(unit.id));
+    const inside = state.units.find((unit) => asked.has(unit.id));
+    expect(outside && inside).toBeTruthy();
+    const entry = (id: string) => bannerEntriesForDesk([alert], [], { role: "ward", id }, NOW, state.units)[0];
+    expect(entry(inside!.id).needsAnswer).toBe(true);
+    expect(entry(outside!.id).needsAnswer).toBe(false);
+    expect(bannerEntriesForDesk([alert], [], { role: "ed", id: "fsh-ed" }, NOW, state.units)[0].needsAnswer).toBe(
+      false,
+    );
   });
 });
 
