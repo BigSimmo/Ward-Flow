@@ -89,9 +89,10 @@ describe("a referrer taking its referral back", () => {
     const state = seeded();
     const open = anOpenReferral(state);
 
+    // Owner ruling 13 Oct 2026: the referring team withdraws; a receiving ward cannot.
     const next = wardFlowReducer(state, {
       type: "WITHDRAW_REFERRAL",
-      role: "ward",
+      role: "ed",
       now: NOW,
       movementId: open.id,
     });
@@ -498,5 +499,26 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
       expect(accepted.rejections).toHaveLength(0);
       expect(movement(accepted, open.id).closure?.outcome).toBe("did_not_proceed");
     });
+  });
+
+  it("owner ruling 13 Oct: a receiving ward cannot withdraw an unaccepted referral", () => {
+    const state = seeded();
+    const open = anOpenReferral(state);
+    const next = wardFlowReducer(state, { type: "WITHDRAW_REFERRAL", role: "ward", now: NOW, movementId: open.id });
+    expect(next.rejections).toHaveLength(1);
+    expect(next.rejections[0]?.reason).toContain("only the referrer or the coordinator may withdraw");
+    expect(movement(next, open.id).closure).toBeUndefined();
+  });
+
+  it("owner ruling 13 Oct: the sending ward of its own ward-to-ward transfer may withdraw it", () => {
+    const state = seeded();
+    const open = anOpenReferral(state);
+    const transfer = {
+      ...state,
+      movements: state.movements.map((m) => (m.id === open.id ? { ...m, sourceAdmissionId: "ADM-SENDING" } : m)),
+    };
+    const next = wardFlowReducer(transfer, { type: "WITHDRAW_REFERRAL", role: "ward", now: NOW, movementId: open.id });
+    expect(next.rejections).toHaveLength(0);
+    expect(movement(next, open.id).closure?.outcome).toBe("did_not_proceed");
   });
 });

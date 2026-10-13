@@ -4506,10 +4506,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ]);
       }
 
-      // Before acceptance, every role permitted by EVENT_ROLE may withdraw the referral they can
-      // raise. The coordinator/ED restriction above applies only to accepted referrals.
-      if (event.role !== "coordinator" && event.role !== "ed" && event.role !== "community" && event.role !== "ward") {
-        return reject(state, event, `role ${event.role} may not withdraw an active referral`);
+      // Owner ruling 13 Oct 2026: before acceptance only the referring team (or the coordinator)
+      // may withdraw. A ward is the referrer only for its own ward-to-ward transfer
+      // (`sourceAdmissionId` set); a receiving ward is refused.
+      const wardIsReferrer = event.role === "ward" && movement.sourceAdmissionId !== undefined;
+      if (event.role !== "coordinator" && event.role !== "ed" && event.role !== "community" && !wardIsReferrer) {
+        return reject(
+          state,
+          event,
+          `role ${event.role} is not the referring team for movement ${movement.id}; only the referrer or the coordinator may withdraw it`,
+        );
       }
 
       if (movement.referredUnitIds.length === 0) {
