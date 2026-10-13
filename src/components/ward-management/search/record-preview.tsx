@@ -323,7 +323,7 @@ export function RecordPreview({
       recordOpenedAt = linkedMovement.openedAt;
     } else if (
       referral &&
-      referralState(referral) !== "queued" &&
+      !referrals.some((candidate) => candidate.patientId === patient.id && referralState(candidate) === "queued") &&
       !movements.some((movement) => movement.patientId === patient.id && isOpen(movement))
     ) {
       // Same rule as the search row: no open movement and no queued referral means Past.

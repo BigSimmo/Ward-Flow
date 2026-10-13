@@ -77,4 +77,22 @@ describe("a declined referral with nothing open reads as Past, like the search r
     expect(screen.getByText("REFERRAL DECLINED · NO DESTINATION ACCEPTED")).toBeInTheDocument();
     expect(screen.queryByText("QUEUED REFERRAL · AWAITING ACCEPTANCE")).not.toBeInTheDocument();
   });
+
+  it("does not mark the person Past while a newer referral for them is still queued", () => {
+    const queuedSeed = seed.referrals.find((r) => referralState(r) === "queued");
+    expect(queuedSeed).toBeDefined();
+    const queued = { ...queuedSeed!, patientId: patient!.id };
+    render(
+      <RecordPreview
+        selection={{ kind: "person", patient: patient! }}
+        referrals={[declined!, queued]}
+        movements={[]}
+        patients={[patient!]}
+        units={allUnits()}
+        now={NOW_ANCHOR}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.queryByText("Not on this board now")).not.toBeInTheDocument();
+  });
 });
