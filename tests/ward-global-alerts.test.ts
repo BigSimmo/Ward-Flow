@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { bannerEntriesForDesk, replyBoard } from "../src/components/ward-management/alerts/global-alert-view";
+import {
+  bannerEntriesForDesk,
+  directiveAcknowledgements,
+  replyBoard,
+  wardsInBroadcastScope,
+} from "../src/components/ward-management/alerts/global-alert-view";
 import {
   COORDINATOR_DESK_ACKNOWLEDGER_ID,
   PULL_NOW_ANSWER_MINUTES,
@@ -219,5 +224,47 @@ describe("Bed call replies", () => {
     const answered = reply(directive, { answer: "cannot" });
     expect(answered.broadcastAlerts[0].replies ?? []).toHaveLength(0);
     expect(lastRefusal(answered)).toMatch(/acknowledged, not answered/);
+  });
+});
+
+describe("Directive acknowledgements (remaining-pages audit ops-11, ops-13)", () => {
+  const directive = (targetScope: "all" | "metro_adult") =>
+    wardFlowReducer(seedWardFlowState(), {
+      type: "DISPATCH_BROADCAST_ALERT",
+      role: "coordinator",
+      now: NOW,
+      title: "Demo: long ED waits",
+      message: "Review long ED waits.",
+      severity: "warning",
+      category: "capacity_gridlock",
+      targetScope,
+      targetScopeLabel: "Target",
+      durationMinutes: 120,
+      dispatchedByName: "Desk",
+    });
+
+  it("counts against the wards the target covers, as a bed call to the same target does", () => {
+    const state = directive("metro_adult");
+    const alert = state.broadcastAlerts[0];
+    const covered = wardsInBroadcastScope(state.units, "metro_adult");
+    expect(covered.length).toBeGreaterThan(0);
+    expect(covered.length).toBeLessThan(state.units.length);
+    expect(directiveAcknowledgements(alert, state.units)).toEqual({ acknowledged: 0, of: covered.length });
+    const acked = wardFlowReducer(state, {
+      type: "ACKNOWLEDGE_BROADCAST_ALERT",
+      role: "ward",
+      now: NOW,
+      alertId: alert.id,
+      unitId: covered[0],
+    });
+    expect(directiveAcknowledgements(acked.broadcastAlerts[0], acked.units).acknowledged).toBe(1);
+  });
+
+  it("never asks the coordinator desk to acknowledge a directive the coordinator sent", () => {
+    const alert = directive("all").broadcastAlerts[0];
+    const desk = { role: "coordinator", id: COORDINATOR_DESK_ACKNOWLEDGER_ID };
+    expect(bannerEntriesForDesk([alert], [], desk, NOW)[0].needsAnswer).toBe(false);
+    const ward = { role: "ward", id: "rph-adult-secure" };
+    expect(bannerEntriesForDesk([alert], [], ward, NOW)[0].needsAnswer).toBe(true);
   });
 });

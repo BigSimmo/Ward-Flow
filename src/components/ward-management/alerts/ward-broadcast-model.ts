@@ -310,7 +310,12 @@ export function alertAsksDesk(alert: BroadcastAlert, desk: { role: string; id: s
     return desk.role === "ward" && (alert.targetUnitIds === undefined || alert.targetUnitIds.includes(desk.id));
   }
   // The coordinator desk acknowledges as COORDINATOR_DESK_ACKNOWLEDGER_ID (owner ruling 2026-09-25).
-  return desk.role === "ward" || desk.role === "ed" || desk.role === "coordinator";
+  // Ops-13 (13 Oct 2026): the coordinator desk is never asked to acknowledge a directive it sent.
+  return (
+    desk.role === "ward" ||
+    desk.role === "ed" ||
+    (desk.role === "coordinator" && alert.dispatchedByRole !== "coordinator")
+  );
 }
 
 /** Whether this desk has already answered (a reply, or an acknowledgement for a directive). */

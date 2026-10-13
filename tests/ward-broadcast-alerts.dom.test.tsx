@@ -10,13 +10,18 @@ import { afterEach, describe, expect, it } from "vitest";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
 
-function renderAlertsScreen() {
+function renderAlertsScreen(wardDeskId?: string) {
   return render(
     <WardFlowProvider initialNow={NOW}>
+      {wardDeskId ? (
+        <div data-testid="ward-desk">
+          <WardBroadcastBanner currentUnitId={wardDeskId} />
+        </div>
+      ) : null}
       {/* Mounted exactly as the real app mounts it — src/app/mockups/ward-flow/layout.tsx
           passes no `currentUnitId`, so acknowledging here sends
           COORDINATOR_DESK_ACKNOWLEDGER_ID, the one non-unit sender
@@ -91,8 +96,11 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
     // Active directive card rendered in Alerts view
     expect(screen.getByLabelText("Active Statewide Directive")).toBeInTheDocument();
-    // 0 of 22 units have acknowledged immediately after initial broadcast dispatch
-    expect(screen.getByText("0 of 22 units acknowledged")).toBeInTheDocument();
+    // Ops-11 (13 Oct 2026): nobody has acknowledged yet, counted against the desks the directive
+    // asked: every ward and every ED desk for the all-units target, never the coordinator desk.
+    expect(
+      screen.getByText(`0 of ${allUnits().length + allEmergencyDepartments().length} units acknowledged`),
+    ).toBeInTheDocument();
 
     // Global broadcast banner rendered
     const banner = screen.getByTestId("ward-broadcast-banner");
@@ -100,8 +108,9 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     expect(banner).toHaveTextContent(/Critical Directive/i);
   });
 
-  it("allows unit acknowledgement via global banner (as coordinator-desk) and standing down the directive", () => {
-    renderAlertsScreen();
+  it("does not ask the coordinator to acknowledge their own directive; a ward acknowledges, then it is stood down", () => {
+    const ward = allUnits()[0];
+    renderAlertsScreen(ward.id);
 
     // Dispatch alert first
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
@@ -111,19 +120,17 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     // Before ack: nobody has acknowledged yet.
     expect(screen.getByText(/^0 of \d+ units acknowledged$/i)).toBeInTheDocument();
 
-    // Global banner acknowledge button
-    const banner = screen.getByTestId("ward-broadcast-banner");
-    const ackBtn = within(banner).getByRole("button", { name: /^Acknowledge$/i });
-    expect(ackBtn).toBeInTheDocument();
-    fireEvent.click(ackBtn);
+    // Ops-13 (13 Oct 2026): the coordinator sent it, so their banner shows the count and no
+    // Acknowledge button.
+    const desks = screen.getAllByTestId("ward-broadcast-banner");
+    const wardBanner = within(screen.getByTestId("ward-desk")).getByTestId("ward-broadcast-banner");
+    const coordinatorBanner = desks.find((banner) => banner !== wardBanner)!;
+    expect(within(coordinatorBanner).queryByRole("button", { name: /^Acknowledge$/i })).toBeNull();
+    expect(coordinatorBanner).toHaveTextContent(/0 of \d+ acknowledged/);
 
-    // After ack, span changes to confirmed
-    expect(within(banner).getByText("Acknowledged")).toBeInTheDocument();
-
-    // The acknowledgement was genuinely recorded (not silently refused): the count rose by one.
-    // The banner is mounted with no currentUnitId (as the real app mounts it), so the only
-    // unitId it can have sent is COORDINATOR_DESK_ACKNOWLEDGER_ID -- proving the reducer
-    // accepted that sender rather than refusing it as an unrecognised unit.
+    // The ward is asked, and its acknowledgement is recorded: the count rises by one.
+    fireEvent.click(within(wardBanner).getByRole("button", { name: /^Acknowledge$/i }));
+    expect(within(wardBanner).getByText("Acknowledged")).toBeInTheDocument();
     expect(screen.getByText(/^1 of \d+ units acknowledged$/i)).toBeInTheDocument();
 
     // Stand down directive from alerts screen

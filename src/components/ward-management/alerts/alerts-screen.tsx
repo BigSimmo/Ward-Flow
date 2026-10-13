@@ -57,7 +57,7 @@ import {
   broadcastKind,
   type BroadcastKind,
 } from "./ward-broadcast-model";
-import { isAlertLive } from "./global-alert-view";
+import { directiveAcknowledgements, isAlertLive } from "./global-alert-view";
 import { PullNowCard, ReplyBoardList } from "./global-alert-panels";
 
 import {
@@ -356,6 +356,8 @@ function AlertsWorkspace() {
     broadcastRefused || (actionResult !== undefined && !actionResult.accepted && !broadcastRequest);
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
+  // Ops-11: acknowledgements count against the wards the directive's target covers, as the banner does.
+  const broadcastAcks = activeBroadcast ? directiveAcknowledgements(activeBroadcast, units) : undefined;
   const livePullNows = (broadcastAlerts ?? []).filter(
     (alert) => broadcastKind(alert) === "pull_now" && isAlertLive(alert, movements, now),
   );
@@ -1289,8 +1291,8 @@ function AlertsWorkspace() {
                 <span className={styles.phoneCardText}>
                   <span className={styles.phoneCardTitle}>{activeBroadcast.title}</span>
                   <span className={styles.phoneCardMeta}>
-                    <b className={styles.mono}>{activeBroadcast.acknowledgedUnits.length}</b> of{" "}
-                    <span className={styles.mono}>{units.length}</span> answered · ends{" "}
+                    <b className={styles.mono}>{broadcastAcks?.acknowledged}</b> of{" "}
+                    <span className={styles.mono}>{broadcastAcks?.of}</span> answered · ends{" "}
                     <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
                   </span>
                 </span>
@@ -1392,7 +1394,7 @@ function AlertsWorkspace() {
                       ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
                       <span className={styles.deskOnly}>
                         {" "}
-                        · <span className={styles.mono}>{activeBroadcast.acknowledgedUnits.length}</span> acknowledged
+                        · <span className={styles.mono}>{broadcastAcks?.acknowledged}</span> acknowledged
                       </span>
                     </span>
                   </button>
@@ -1633,7 +1635,7 @@ function AlertsWorkspace() {
                             <dt>Acknowledged</dt>
                             <dd>
                               <span>
-                                {activeBroadcast.acknowledgedUnits.length} of {units.length} units acknowledged
+                                {broadcastAcks?.acknowledged} of {broadcastAcks?.of} units acknowledged
                               </span>
                             </dd>
                           </div>

@@ -5,8 +5,8 @@
  * here is stored: overdue, live and the reply board are all derived from the alert and the movement.
  */
 import type { Instant } from "@/components/ward-management/ward-clock";
-import type { Movement } from "@/components/ward-management/ward-model";
-import { edById } from "@/components/ward-management/ward-sites";
+import type { Movement, Unit } from "@/components/ward-management/ward-model";
+import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
 import {
   alertAsksDesk,
   broadcastKind,
@@ -17,7 +17,52 @@ import {
   pullNowStillWaiting,
   type BroadcastAlert,
   type BroadcastReply,
+  type BroadcastTargetScope,
 } from "./ward-broadcast-model";
+
+const METRO_SERVICES = ["East Metro", "North Metro", "South Metro"];
+
+/**
+ * The wards a broadcast's chosen target covers. ED liaison names no ward, so it covers none. A bed
+ * call asks these wards; a directive counts its acknowledgements against them.
+ */
+export function wardsInBroadcastScope(units: readonly Unit[], scope: BroadcastTargetScope): string[] {
+  return units
+    .filter((unit) => {
+      const service = siteByCode(unit.siteCode)?.service ?? "";
+      if (scope === "all") return true;
+      if (scope === "metro_adult") return unit.cohort === "Adult" && METRO_SERVICES.includes(service);
+      if (scope === "forensic") return unit.forensic;
+      if (scope === "adolescent") return unit.cohort === "Youth";
+      if (scope === "older_adult") return unit.cohort === "Older adult";
+      if (scope === "regional_wachs") return service === "WACHS";
+      return false;
+    })
+    .map((unit) => unit.id);
+}
+
+/**
+ * The desks a directive asks to acknowledge (ops-11, 13 Oct 2026): the wards its target covers,
+ * plus every ED desk when the target is every unit or ED liaison. The coordinator desk sends
+ * directives and is never counted.
+ */
+export function directiveDesks(alert: BroadcastAlert, units: readonly Unit[]): string[] {
+  const wards = wardsInBroadcastScope(units, alert.targetScope);
+  const eds =
+    alert.targetScope === "all" || alert.targetScope === "ed_liaison"
+      ? allEmergencyDepartments().map((ed) => ed.id)
+      : [];
+  return [...wards, ...eds];
+}
+
+/** A directive's acknowledgements against the desks it asked, so nine wards read "of 9". */
+export function directiveAcknowledgements(
+  alert: BroadcastAlert,
+  units: readonly Unit[],
+): { acknowledged: number; of: number } {
+  const asked = new Set(directiveDesks(alert, units));
+  return { acknowledged: alert.acknowledgedUnits.filter((id) => asked.has(id)).length, of: asked.size };
+}
 
 export type AlertDesk = { role: string; id: string | null };
 

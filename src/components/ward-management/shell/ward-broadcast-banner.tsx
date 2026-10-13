@@ -22,6 +22,7 @@ import {
 import {
   bannerEntriesForDesk,
   deskName,
+  directiveAcknowledgements,
   replyBoard,
   type BannerEntry,
   type BannerTone,
@@ -31,7 +32,11 @@ import { useActNowNotificationPreference } from "@/components/ward-management/sh
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { REFERRAL_DECLINE_REASONS, type ReferralDeclineReason } from "@/components/ward-management/ward-model";
+import {
+  REFERRAL_DECLINE_REASONS,
+  type ReferralDeclineReason,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import styles from "./ward-broadcast-banner.module.css";
@@ -118,7 +123,7 @@ function BannerBody({
   more: number;
   desk: { role: string; id: string | null };
   now: Instant;
-  units: readonly { id: string; name: string }[];
+  units: readonly Unit[];
   lookup: Lookup;
   onDispatch: ReturnType<typeof useWardFlow>["dispatch"];
 }) {
@@ -156,6 +161,7 @@ function BannerBody({
   const subject = kind === "pull_now" ? resolveAlertSubject(movement, alert.movementId, lookup, units) : undefined;
   const myReply = desk.id ? latestReplies(alert).get(desk.id) : undefined;
   const board = kind === "directive" ? undefined : replyBoard(alert, units);
+  const acks = kind === "directive" ? directiveAcknowledgements(alert, units) : undefined;
   const showAnswers = (needsAnswer || changing) && kind !== "directive";
 
   return (
@@ -213,11 +219,11 @@ function BannerBody({
               {board.answered} of {board.rows.length} answered
               {kind === "bed_call" ? `, ${board.bedsOffered} beds offered` : ""}
             </span>
-          ) : (
-            <span className={styles.count} title={`${alert.acknowledgedUnits.length} units confirmed receipt`}>
-              {alert.acknowledgedUnits.length} of {units.length} acknowledged
+          ) : acks ? (
+            <span className={styles.count} title={`${acks.acknowledged} units confirmed receipt`}>
+              {acks.acknowledged} of {acks.of} acknowledged
             </span>
-          )}
+          ) : null}
 
           {kind === "directive" && desk.id ? (
             needsAnswer ? (
