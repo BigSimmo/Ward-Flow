@@ -102,6 +102,11 @@ describe("Community team on a phone", () => {
   it("an intake referral waits as a person row whose sheet declines only with a reason", () => {
     renderTeam();
     fireEvent.click(screen.getByRole("button", { name: "Intake referral" }));
+    // A2-12: an intake names its person, or describes one not yet identified.
+    fireEvent.click(screen.getByTestId("ward-community-intake-unidentified"));
+    fireEvent.change(screen.getByTestId("ward-community-intake-description"), {
+      target: { value: "Adult man, about 30, at the drop-in centre" },
+    });
     for (const id of [
       "ward-community-intake-age-band",
       "ward-community-intake-home-region",

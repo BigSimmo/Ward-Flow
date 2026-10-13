@@ -2295,6 +2295,16 @@ button.searchBox:hover {
   gap: 1rem;
 }
 
+/* A2-12: the "Unidentified" choice beside the name or UMRN field; a 28px target. */
+.intakeCheck {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 28px;
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
 .intakeField {
   display: flex;
   flex-direction: column;
