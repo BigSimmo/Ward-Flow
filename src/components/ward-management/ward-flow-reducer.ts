@@ -5492,6 +5492,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         (movement.transportNeed?.needed ?? movement.transport?.needed) === false &&
         !liveTransportJob &&
         movement.transport?.collectedAt === undefined;
+      // Audit r1 item 4: arrival with no transport leg and fit to travel open records why.
+      const arrivalException =
+        event.exception === undefined
+          ? undefined
+          : transportExceptionRecord(event.exception, event.now, event.role, "arrived");
+      if (typeof arrivalException === "string") return reject(state, event, `PATIENT_ARRIVED ${arrivalException}`);
       if (noTransportNeeded) {
         if (movement.stage !== "pulled" && movement.stage !== "handover_ready") {
           return reject(
@@ -5667,6 +5673,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           movement.transport === undefined || noTransportNeeded
             ? movement.transport
             : { ...movement.transport, arrivedAt: movement.transport.arrivedAt ?? event.now },
+        ...(arrivalException ? { arrivalException } : {}),
         closure: {
           at: event.now,
           outcome: "arrived",

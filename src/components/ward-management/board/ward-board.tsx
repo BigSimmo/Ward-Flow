@@ -66,6 +66,9 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 
 import styles from "./board.module.css";
+import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
+import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
+import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 
 /**
  * The ward board, first pass: one ward's beds on a screen.
@@ -964,6 +967,8 @@ export function WardBoard({
   const now = useWardFlowClock();
   const [blockerDialogItem, setBlockerDialogItem] = useState<ShiftTileItem | null>(null);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(BED_RELEASE_BLOCKERS[0]);
+  // Audit r1 item 4: an arrival with no transport leg and fit to travel open, waiting on a reason.
+  const [arriveCheck, setArriveCheck] = useState<{ movementId: string; who: string } | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<{
     kind: "leaving" | "away_at_ed";
     who: string;
@@ -1137,6 +1142,22 @@ export function WardBoard({
     },
     [rejections.length],
   );
+  const confirmBoardArrival = (movementId: string, who: string, reason?: TransportExceptionReason) => {
+    const movement = movements.find((candidate) => candidate.id === movementId);
+    dispatchAndReport(
+      () =>
+        dispatch({
+          type: "PATIENT_ARRIVED",
+          role: "ward",
+          now,
+          movementId,
+          actingUnitId: unit.id,
+          ...(reason && movement ? { exception: { gaps: arrivalGaps(movement), reason } } : {}),
+        }),
+      `Patient arrived: ${who} confirmed on the ward.`,
+      "Patient arrived: this patient confirmed on the ward.",
+    );
+  };
   useEffect(() => {
     const check = outcomeCheckRef.current;
     if (outcomeToken === 0 || check === null) return;
@@ -1650,18 +1671,11 @@ export function WardBoard({
         announceToWardShell("Cannot confirm arrival: no movement matches this patient.");
         return;
       }
-      dispatchAndReport(
-        () =>
-          dispatch({
-            type: "PATIENT_ARRIVED",
-            role: "ward",
-            now,
-            movementId: matchingMovement.id,
-            actingUnitId: unit.id,
-          }),
-        `Patient arrived: ${item.who || nameFor(item.selectableKey)} confirmed on the ward.`,
-        "Patient arrived: this patient confirmed on the ward.",
-      );
+      if (arrivalGaps(matchingMovement).length > 0) {
+        setArriveCheck({ movementId: matchingMovement.id, who: item.who || nameFor(item.selectableKey) });
+        return;
+      }
+      confirmBoardArrival(matchingMovement.id, item.who || nameFor(item.selectableKey));
       return;
     }
     if (word === "Mark them back") {
@@ -3716,6 +3730,22 @@ export function WardBoard({
           </div>
         ) : null}
       </main>
+      <TransportExceptionDialog
+        open={arriveCheck !== null}
+        who={arriveCheck?.who ?? "this patient"}
+        action="Confirm arrival"
+        gaps={(() => {
+          const movement = arriveCheck && movements.find((candidate) => candidate.id === arriveCheck.movementId);
+          return movement ? arrivalGaps(movement) : [];
+        })()}
+        onClose={() => setArriveCheck(null)}
+        onConfirm={(reason) => {
+          const pending = arriveCheck;
+          setArriveCheck(null);
+          if (pending) confirmBoardArrival(pending.movementId, pending.who, reason);
+        }}
+        testId="ward-board-arrive-check"
+      />
       <WardPrototypeFooter />
     </div>
   );

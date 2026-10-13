@@ -36,7 +36,7 @@ import type {
   TransportLegalStatus,
 } from "@/components/ward-management/ward-model";
 import {
-  ABSENCE_STEPS,
+  absenceStepsFor,
   ABSENCE_STEP_LABELS,
   TRANSPORT_PROVIDERS,
   ARRIVAL_MODE_LABELS,
@@ -435,13 +435,13 @@ export function PatientNowScreen({
     const absence = mode === "awol" ? stayLeaveBed?.absentWithoutLeave : undefined;
     if (absence) {
       // The missing person summary is the absence record only: when, where the bed is held, the steps.
-      const steps = ABSENCE_STEPS.map((step) => {
+      const steps = absenceStepsFor(voluntaryNow).map((step) => {
         const at = absence.steps.find((done) => done.step === step)?.at;
         return `${ABSENCE_STEP_LABELS[step]}: ${at === undefined ? "not recorded" : `done ${clock(at)}`}`;
       });
       const text = [
         `Ward Flow missing person summary — ${displayName}`,
-        `Absent without leave, recorded ${clock(absence.since)}`,
+        `${voluntaryNow ? "Not back from leave" : "Absent without leave"}, recorded ${clock(absence.since)}`,
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
         ...steps,
       ].join("\n");
@@ -1794,7 +1794,8 @@ export function PatientNowScreen({
                             },
                             {
                               key: "steps",
-                              value: `${stayLeaveBed.absentWithoutLeave.steps.length}/${ABSENCE_STEPS.length}`,
+                              // A3-13: the same step list the status card counts.
+                              value: `${absenceStepsFor(voluntaryNow).filter((step) => stayLeaveBed.absentWithoutLeave!.steps.some((done) => done.step === step)).length}/${absenceStepsFor(voluntaryNow).length}`,
                               label: "Steps done",
                             },
                             { key: "legal", ...phoneLegal },
