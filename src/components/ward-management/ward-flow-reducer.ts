@@ -4447,12 +4447,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ]);
       }
 
-      if (event.role !== "coordinator" && event.role !== "ed") {
-        return reject(
-          state,
-          event,
-          `only the referrer or the coordinator may withdraw an active referral for movement ${movement.id}`,
-        );
+      // Before acceptance, every role permitted by EVENT_ROLE may withdraw the referral they can
+      // raise. The coordinator/ED restriction above applies only to accepted referrals.
+      if (event.role !== "coordinator" && event.role !== "ed" && event.role !== "community" && event.role !== "ward") {
+        return reject(state, event, `role ${event.role} may not withdraw an active referral`);
       }
 
       if (movement.referredUnitIds.length === 0) {
@@ -5938,6 +5936,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // would describe an obstruction to something that is no longer happening.
       if (movement.closure) {
         return reject(state, event, `cannot record a blocker for a closed movement (${movement.closure.reason})`);
+      }
+      const examinationOutcome = movement.examination?.outcome;
+      const examinationRevokedHoldingBed =
+        (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
+        movement.admissionId !== undefined;
+      const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+      if (examinationRevokedHoldingBed || awaitingRelease) {
+        return reject(
+          state,
+          event,
+          `cannot replace statutory hold on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
+        );
       }
       const blocker = event.blocker.trim();
       if (blocker.length === 0) {
@@ -9921,7 +9931,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         makeNotice(
           event.now,
           state.notices.length,
-          bedHeld ? "bed_pull_released" : "referral_declined",
+          bedHeld ? "bed_pull_released" : "acceptance_withdrawn_referrer",
           { role: "ed", placeId: movement.originEdId },
           { movementId: movement.id, unitId: previousUnitId },
           bedHeld
@@ -9929,7 +9939,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             : `Acceptance withdrawn and search reopened for ${movement.id} (${event.reason.replace(/_/g, " ")}).`,
         ),
       ];
-      if (previousUnitId) {
+      if (previousUnitId && event.role === "coordinator") {
         notices.push(
           makeNotice(
             event.now,

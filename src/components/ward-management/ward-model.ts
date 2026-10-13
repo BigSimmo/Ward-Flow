@@ -628,6 +628,8 @@ export type Unit = {
    */
   lockedBeds: number;
   beds: number;
+  /** Whether the ward is closed to new allocations while retaining its physical bed count. */
+  isClosed?: boolean;
   /** Physically empty beds, per the feed. */
   empty: CapacityFigure;
   /** Beds the ward says it can actually allocate. Never greater than `empty` in practice. */
@@ -3112,6 +3114,8 @@ export type NoticeKind =
   // through two different records, and each event raises at most one notice, so the two can never
   // collide under the id rule.
   | "referral_declined"
+  // WITHDRAW_REFERRAL after acceptance has been undone by the coordinator or referrer.
+  | "acceptance_withdrawn_referrer"
   // ACCEPT_IN_PRINCIPLE — told to the referrer.
   | "accepted_in_principle"
   // ACCEPT_REFERRAL, the referrer's half — "the answer to the question they asked".
