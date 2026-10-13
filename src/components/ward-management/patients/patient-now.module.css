@@ -851,7 +851,7 @@
   /* Audit A4-5: the booking sheet portals outside the page's token scope, where --accent is not
      defined, so this read as white on nothing. Fall back to the shared primary's tokens. */
   background: var(--accent, var(--wf-pri-2));
-  color: var(--wf-on-accent, #ffffff);
+  color: var(--wf-on-accent);
   border: none;
   cursor: pointer;
   transition: opacity 0.12s ease;
@@ -953,7 +953,7 @@
   padding: 4px 8px;
   border: 1px solid var(--line-strong, var(--wf-line-2));
   border-radius: var(--r2);
-  background: var(--surface, var(--wf-surface-1));
+  background: var(--surface, var(--wf-surface));
   color: var(--ink, var(--wf-ink-1));
   font-family: inherit;
   font-size: var(--t-0);
