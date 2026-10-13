@@ -87,7 +87,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     // Success toast shown
-    expect(screen.getByText(/recorded for the prototype \(nothing is sent\)\./i)).toBeInTheDocument();
+    expect(screen.getByText(/shown in this prototype only; no external notifications are sent\./i)).toBeInTheDocument();
 
     // Active directive card rendered in Alerts view
     expect(screen.getByLabelText("Active Statewide Directive")).toBeInTheDocument();
