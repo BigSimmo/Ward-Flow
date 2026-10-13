@@ -414,3 +414,15 @@ test("runtime summary refuses UPDATE on the audit and push ID sequences", () => 
   );
   assert.match(RUNTIME_SUMMARY, /AS sequence_restricted/);
 });
+
+test("Azure startup refuses a database without the complete migration 4 ledger", async () => {
+  const { verifyAzureMigrations } = await import("./postgres.mjs");
+  const pool = (versions) => ({ query: async () => ({ rows: [{ versions }] }) });
+  await verifyAzureMigrations(pool([1, 2, 3, 4]));
+  for (const versions of [null, [], [1, 2], [1, 2, 3], [1, 2, 4], [1, 2, 3, "4"], [1, 2, 3, 4, 5]])
+    await assert.rejects(verifyAzureMigrations(pool(versions)), /Unsafe or unprepared Azure/);
+  await assert.rejects(
+    verifyAzureMigrations({ query: async () => Promise.reject(new Error("offline")) }),
+    /verification unavailable/,
+  );
+});

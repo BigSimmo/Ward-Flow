@@ -10,6 +10,7 @@ async function azureFactories() {
     createStore,
     createAuthenticator,
     createPool: async (config) => (await import("./postgres.mjs")).createPostgresPool(config),
+    verifyPool: async (pool) => (await import("./postgres.mjs")).verifyAzureMigrations(pool),
   };
 }
 
