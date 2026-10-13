@@ -4508,6 +4508,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ]);
       }
 
+      // Before acceptance, every role permitted by EVENT_ROLE may withdraw the referral they can
+      // raise. The coordinator/ED restriction above applies only to accepted referrals.
+      if (event.role !== "coordinator" && event.role !== "ed" && event.role !== "community" && event.role !== "ward") {
+        return reject(state, event, `role ${event.role} may not withdraw an active referral`);
+      }
+
       if (movement.referredUnitIds.length === 0) {
         return reject(state, event, `movement ${movement.id} holds no live referral to withdraw`);
       }
@@ -6035,6 +6041,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot record a blocker for a closed movement (${movement.closure.reason})`);
       }
+      const examinationOutcome = movement.examination?.outcome;
+      const examinationRevokedHoldingBed =
+        (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
+        movement.admissionId !== undefined;
+      const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+      if (examinationRevokedHoldingBed || awaitingRelease) {
+        return reject(
+          state,
+          event,
+          `cannot replace statutory hold on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
+        );
+      }
       const blocker = event.blocker.trim();
       if (blocker.length === 0) {
         return reject(state, event, `RECORD_MOVEMENT_BLOCKER blocker must say something — a blank is not a statement`);
@@ -6100,8 +6118,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot clear the blocker on a closed movement (${movement.closure.reason})`);
       }
-      if (movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease) {
-        return reject(state, event, "cannot clear statutory examination revoked blocker");
+      const examinationOutcome = movement.examination?.outcome;
+      const examinationRevokedHoldingBed =
+        (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
+        movement.admissionId !== undefined;
+      const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+      if (examinationRevokedHoldingBed || awaitingRelease) {
+        return reject(
+          state,
+          event,
+          `cannot clear statutory examination revoked blocker on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
+        );
       }
       // Refused rather than accepted as a no-op, the same discipline as the flag pair above: a
       // control that reports success for an act that changed nothing is the untruth this prototype
@@ -9231,6 +9258,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot step back a closed movement (${movement.closure.reason})`);
       }
+      if (!MOVEMENT_STAGES.includes(event.to)) {
+        return reject(state, event, `STEP_BACK_STAGE target must be chosen from MOVEMENT_STAGES`);
+      }
       const fromIndex = MOVEMENT_STAGES.indexOf(movement.stage);
       const toIndex = MOVEMENT_STAGES.indexOf(event.to);
       if (toIndex >= fromIndex) {
@@ -9977,7 +10007,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `RELEASE_AND_REOPEN_SEARCH was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is at ${movement.acceptedUnitId}`,
         );
       }
+      const bedHeld = movement.stage === "pulled" || movement.admissionId !== undefined;
       const withoutPhantom = releasePulledBedAndAdmission(state, movement, event.now);
+      const previousUnitId = movement.acceptedUnitId;
       const updatedMovement: Movement = {
         ...movement,
         stage: "placement_requested",
@@ -9990,23 +10022,49 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         referredUnitIds: [],
         transport: undefined,
         blocker: STAGE_TRANSITION_BLOCKERS.wardRequestWithdrawn,
-        unwinds: [...movement.unwinds, { at: event.now, kind: "pull_released", by: event.role, reason: event.reason }],
+        unwinds: [
+          ...movement.unwinds,
+          bedHeld
+            ? { at: event.now, kind: "pull_released", by: event.role, reason: event.reason }
+            : {
+                at: event.now,
+                kind: "acceptance_withdrawn",
+                by: event.role,
+                reason: event.reason,
+                unitId: previousUnitId,
+              },
+        ],
         stageChanges: [
           ...movement.stageChanges,
           { at: event.now, from: movement.stage, to: "placement_requested", by: event.role, reason: event.reason },
         ],
       };
       const next = replaceMovement(withoutPhantom, movement.id, updatedMovement);
-      return appendNotices(next, [
+      const notices = [
         makeNotice(
           event.now,
           state.notices.length,
-          "bed_pull_released",
+          bedHeld ? "bed_pull_released" : "acceptance_withdrawn_referrer",
           { role: "ed", placeId: movement.originEdId },
-          { movementId: movement.id, unitId: event.actingUnitId },
-          `Bed released and search reopened for ${movement.id} (${event.reason.replace(/_/g, " ")}).`,
+          { movementId: movement.id, unitId: previousUnitId },
+          bedHeld
+            ? `Bed released and search reopened for ${movement.id} (${event.reason.replace(/_/g, " ")}).`
+            : `Acceptance withdrawn and search reopened for ${movement.id} (${event.reason.replace(/_/g, " ")}).`,
         ),
-      ]);
+      ];
+      if (previousUnitId && event.role === "coordinator") {
+        notices.push(
+          makeNotice(
+            event.now,
+            state.notices.length + 1,
+            "acceptance_withdrawn_ward",
+            { role: "ward", placeId: previousUnitId },
+            { movementId: movement.id, unitId: previousUnitId },
+            `The coordinator reopened placement search for ${movement.id}; the ward is no longer expected to admit this patient.`,
+          ),
+        );
+      }
+      return appendNotices(next, notices);
     }
 
     case "CLEAR_EXPECT_FLAG": {

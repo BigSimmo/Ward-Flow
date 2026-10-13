@@ -346,7 +346,7 @@ export function networkWardRows(
     const states = bedStates(unit, admissions ?? [], releases ?? [], leave ?? []);
     return {
       unit,
-      ready: lockedBedsFree(unit) + openBedsFree(unit),
+      ready: cap.available,
       lockedReady: lockedBedsFree(unit),
       freeing: releases === undefined ? undefined : (freeingByUnit.get(unit.id) ?? 0),
       dischargesDueToday:

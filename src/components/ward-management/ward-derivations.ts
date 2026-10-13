@@ -16,6 +16,7 @@ import { CalendarClock, CircleAlert, Truck } from "lucide-react";
 
 import { plannedAdmissionIsOverdue, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
+import { boundedBedAvailability } from "@/components/ward-management/ward-bed-availability";
 import {
   clockState,
   formatElapsed,
@@ -579,9 +580,8 @@ export function transportLeg(transport: TransportJob | undefined): TransportLeg 
  * at all (`tests/ward-capacity-reconciliation.test.ts`, `tests/ward-model.test.ts`).
  */
 export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
-  const rawAvailable = Math.min(unit.allocatable.value, unit.empty.value);
-  let held = Math.max(unit.empty.value - rawAvailable, 0);
-  const notEmpty = Math.max(unit.beds - unit.empty.value, 0);
+  const { effectiveEmpty, available, held } = boundedBedAvailability(unit);
+  const notEmpty = Math.max(unit.beds - effectiveEmpty, 0);
   // Owner ruling 2026-09-25: out-of-service beds are not recorded anywhere in the model
   // (`Unit.blocked` is a typed count, not a record), so none is ever subtracted here and screens
   // say "Not recorded" where they used to print this count. Kept as a field so every consumer's
@@ -591,12 +591,6 @@ export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
   // Physical overflow beds are not recorded. A gender-count disagreement cannot prove surge.
   // Actual arrivals with a conflicting empty observation are separately disclosed below.
   const surge = Math.max(0, occupied - unit.beds);
-
-  let available = Math.min(rawAvailable, Math.max(0, unit.beds - occupied - held));
-  if (unit.isClosed || unit.beds === 0) {
-    held += available;
-    available = 0;
-  }
 
   return {
     available,
