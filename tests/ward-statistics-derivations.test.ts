@@ -592,7 +592,7 @@ describe("refusedAndNothingPending — a refusal on record and nothing pending, 
    */
   it("counts a movement with a refusal on record and no ward currently deciding", () => {
     const result = refusedAndNothingPending(
-      [movement({ id: "WF-A", referredUnitIds: [], declines: [decline("unit-1", "no_bed")] })],
+      [movement({ id: "WF-A", referredUnitIds: [], declines: [decline("unit-1", "acuity_mix")] })],
       [],
       0,
     );
@@ -611,7 +611,7 @@ describe("refusedAndNothingPending — a refusal on record and nothing pending, 
     const declinedThenReferredOnward = movement({
       id: "WF-B",
       referredUnitIds: ["unit-4"],
-      declines: [decline("unit-1", "no_bed"), decline("unit-2", "no_bed"), decline("unit-3", "no_bed")],
+      declines: [decline("unit-1", "acuity_mix"), decline("unit-2", "acuity_mix"), decline("unit-3", "acuity_mix")],
     });
 
     const result = refusedAndNothingPending([declinedThenReferredOnward], [], 0);
@@ -641,7 +641,7 @@ describe("refusedAndNothingPending — a refusal on record and nothing pending, 
     const alsoEscalated = movement({
       id: "WF-D",
       referredUnitIds: [],
-      declines: [decline("unit-1", "no_bed")],
+      declines: [decline("unit-1", "acuity_mix")],
       escalation: { at: 0, triedUnitIds: ["unit-1"], contact: "State bed coordination" },
     });
 

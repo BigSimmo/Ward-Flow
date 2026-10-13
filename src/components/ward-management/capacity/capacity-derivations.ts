@@ -21,6 +21,7 @@ import { bedIsOccupied, remainingSpeciallingCapacity } from "@/components/ward-m
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { movementHoldsBedByStage } from "@/components/ward-management/ward-movement-bed-hold";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import type {
   Cohort,
@@ -106,7 +107,10 @@ export function bedKindGaps(movements: Movement[], units: Unit[], now: Instant):
   // read a clock, and neither does this function.
   void now;
 
-  const open = movements.filter(isOpen);
+  // A3-1 (12 Oct 2026 review): a patient whose bed is already pulled (or who is on the way to it)
+  // is no longer waiting, and that bed has already left supply. Counting them as waiting as well
+  // counted one bed twice and overstated the shortfall.
+  const open = movements.filter((movement) => isOpen(movement) && !movementHoldsBedByStage(movement));
 
   return ROWS.map(({ id, need, who }) => {
     const waiting = open.filter((movement) => bedKindOfMovement(movement.cohort, movement.security) === id).length;
@@ -130,8 +134,8 @@ export function bedKindTotals(rows: BedKindGap[]): { waiting: number; bedsThatFi
 
 export type NetworkWardRow = {
   unit: Unit;
-  /** Beds free and usable now — `lockedBedsFree(unit) + openBedsFree(unit)`, which the two
-   *  functions' own clamping keeps equal to `unit.allocatable.value` in every case. */
+  /** Beds free and usable now — the Ready box of `bedStates()`, so it never exceeds the beds that
+   *  are physically empty (A3-14, 12 Oct 2026: it used to read raw `allocatable`). */
   ready: number;
   /** Of `ready`, how many are locked. */
   lockedReady: number;
@@ -330,25 +334,35 @@ export function networkWardRows(
   admissions?: Admission[],
   leave?: LeaveBed[],
 ): NetworkWardRow[] {
-  const freeingByUnit = new Map<string, number>();
-  for (const release of releases ?? []) {
-    // ⚠️ "discharged", NOT "released". The third bed state was RENAMED on 2026-08-30 because
-    // "released" reads as release from detention. BED_RELEASE_STATES is ["expected", "confirmed",
-    // "discharged"] — there is no "released" and no "cancelled", and I wrote both before checking.
-    // A discharged bed is already free and already counted in `ready`; counting it again here
-    // would double-count the same bed on the same row.
-    if (release.state === "discharged") continue;
-    if (dayOf(release.expectedAt) !== dayOf(now)) continue;
-    freeingByUnit.set(release.unitId, (freeingByUnit.get(release.unitId) ?? 0) + 1);
-  }
   return units.map((unit) => {
     const cap = unitCapacity(unit, []);
     const states = bedStates(unit, admissions ?? [], releases ?? [], leave ?? []);
+    // A3-15 (12 Oct 2026 review): "Freeing" is Confirmed plus Expected, so it uses the same
+    // `releaseBand` day rule as the rest of the row (overdue and tomorrow included). A discharged
+    // release is already free and counted in Ready, and `capacityBreakdown` skips it too.
+    const breakdown = releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now);
+    // A3-14: Ready is the ruled box from `bedStates`, never raw `allocatable`, so Ready, Pulled,
+    // Closed and Occupied cannot add up to more than the ward's beds when a ward confirms more
+    // allocatable beds than are physically empty.
+    const ready = states.ready;
+    // A3-13: `sexMix` counts only Female and Male occupants; a person recorded outside both buckets
+    // (in neither bucket) is in a bed all the same, so they are added back before comparing.
+    const unbucketedOccupants = (admissions ?? []).filter(
+      (admission) =>
+        admission.unitId === unit.id &&
+        admission.state === "occupied" &&
+        // `mixSexOf`'s rule (`ward-eligibility.ts`), restated because this module never imports
+        // eligibility: a person is bucketed by a female or male gender, else by recorded sex.
+        admission.gender !== "Female" &&
+        admission.gender !== "Male" &&
+        admission.sex !== "Female" &&
+        admission.sex !== "Male",
+    ).length;
     return {
       unit,
-      ready: lockedBedsFree(unit) + openBedsFree(unit),
-      lockedReady: lockedBedsFree(unit),
-      freeing: releases === undefined ? undefined : (freeingByUnit.get(unit.id) ?? 0),
+      ready,
+      lockedReady: Math.min(lockedBedsFree(unit), ready),
+      freeing: breakdown === undefined ? undefined : breakdown.confirmedToday + breakdown.expectedToday,
       dischargesDueToday:
         admissions === undefined
           ? undefined
@@ -387,7 +401,7 @@ export function networkWardRows(
       arrivalCapacityConflicts: unit.arrivalCapacityConflicts?.length ?? 0,
       reservationReleaseCapacityConflicts: unit.reservationReleaseCapacityConflicts?.length ?? 0,
       bedRecordsMidUpdate:
-        Object.values(unit.sexMix).reduce((sum, count) => sum + count, 0) !==
+        Object.values(unit.sexMix).reduce((sum, count) => sum + count, 0) + unbucketedOccupants !==
         unitCapacity(unit, [...(releases ?? [])]).occupied,
       // `admissions === undefined` is "nobody told this screen", never "nobody is being specialled".
       // See the field's own note: `remainingSpeciallingCapacity(unit, [])` returns FULL capacity.
@@ -463,9 +477,9 @@ export function countCellText(value: number): string {
  * 🔴 **THE RELEASES THIS BOARD DOES NOT SHOW, COUNTED — because dropping them in silence is the
  * one thing the retired capacity board's own test forbade.**
  *
- * `networkWardRows` above counts a release into `freeing` only when `dayOf(release.expectedAt)`
- * is today. A bed genuinely expected to free the day after tomorrow is therefore left out of every
- * figure on this screen, correctly — "freeing today" must not quietly include tomorrow — **but
+ * `networkWardRows` above counts a release into `freeing` only inside `releaseBand`'s horizon
+ * (A3-15, 12 Oct 2026: the same rule as Confirmed and Expected). A bed genuinely expected to free
+ * the day after tomorrow is therefore left out of every figure on this screen, correctly — **but
  * being left out of a figure is not the same as being unmentioned.** The board this screen replaced
  * surfaced the excluded count, and `ward-capacity-view.dom.test.tsx` pinned the rule in as many
  * words: *"a release beyond the horizon must be counted and shown, never quietly omitted."* That

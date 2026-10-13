@@ -65,6 +65,10 @@ import {
   leaveBedNeedsOpenWarning as leaveBedNeedsOpenWarningClock,
 } from "@/components/ward-management/ward-legal-clock";
 import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-flow-reducer";
+import {
+  movementHoldsBedByStage,
+  stoppedTransportBedOutstanding,
+} from "@/components/ward-management/ward-movement-bed-hold";
 
 /** UI-only role concept; not part of the domain model. */
 export type WardRole = "flow" | "ed" | "ward";
@@ -265,18 +269,33 @@ export function isOpen(movement: Movement): boolean {
 export function examinationRevokedWhileBedHeld(movement: Movement): boolean {
   const outcome = movement.examination?.outcome;
   if (outcome !== "community_order" && outcome !== "revoked") return false;
-  // S2-2 (owner decision, 12 October 2026): an OPEN movement holds its bed by stage — `pulled`,
-  // `handover_ready` or `moving` — even with no `admissionId` (a seeded journey), so the flag
-  // cannot be lifted by anything but a real release. A closed movement keeps the record-based rule.
-  if (movement.closure === undefined) {
-    return (
-      movement.stage === "pulled" ||
-      movement.stage === "handover_ready" ||
-      movement.stage === "moving" ||
-      movement.admissionId !== undefined
-    );
-  }
-  return movement.admissionId !== undefined;
+  // 12 Oct 2026 review: a seeded journey authored at a bed-holding stage carries no `admissionId`
+  // yet still holds its bed (S2-1), so the stage answers for an open journey too — the same rule
+  // the reducer's `movementHoldsBedByStage` applies. A closed journey is held only by its link.
+  return movement.admissionId !== undefined || (movement.closure === undefined && movementHoldsBedByStage(movement));
+}
+
+/**
+ * Whether a recorded decline is a genuine refusal. A ward answering "no bed yet" is waitlisted
+ * (`WAITLIST_INSTEAD_OF_DECLINE_REASONS`): the reducer writes that answer into `declines` too but
+ * keeps the ward's referral live, so it is not a refusal (12 Oct 2026 review, A3-6).
+ */
+export function isGenuineDecline(decline: Decline): boolean {
+  return !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason);
+}
+
+/** The distinct wards that have genuinely refused this movement, waitlist answers excluded. */
+export function declinedUnitIds(movement: Movement): string[] {
+  return [...new Set(movement.declines.filter(isGenuineDecline).map((decline) => decline.unitId))];
+}
+
+/**
+ * The pull deadline that still means something. Once the patient has been collected the bed is
+ * no longer waiting to be moved into, so a passed `pullExpiresAt` (which the reducer leaves set
+ * through handover and transport) must not read as an expired pull (12 Oct 2026 review, A3-2).
+ */
+export function livePullExpiresAt(movement: Movement): Instant | undefined {
+  return movement.transport?.collectedAt === undefined ? movement.pullExpiresAt : undefined;
 }
 
 /**
@@ -1310,8 +1329,12 @@ export function buildActionInbox(
   // entirely — a movement declined by three wards and then accepted by a fourth kept warning the
   // coordinator that destinations had declined it, past the point where that fact still needed
   // acting on. A ward already accepted is not a movement to widen the search for.
+  //
+  // 12 Oct 2026 review (A3-6): counted as DISTINCT wards that genuinely refused. A waitlist answer
+  // ("no bed yet") is written into `declines` too, and one ward answering twice is one ward, so
+  // counting entries told the coordinator three destinations had declined when none had.
   const heavilyDeclined = movements.filter(
-    (movement) => movement.declines.length >= PARALLEL_REFERRAL_CAP && movement.acceptedUnitId === undefined,
+    (movement) => declinedUnitIds(movement).length >= PARALLEL_REFERRAL_CAP && movement.acceptedUnitId === undefined,
   );
   for (const movement of heavilyDeclined) {
     items.push({
@@ -1320,7 +1343,7 @@ export function buildActionInbox(
       tone: "danger",
       icon: CircleAlert,
       title: "Multiple destinations declined",
-      detail: `${movement.id} · ${movement.declines.length} destinations have declined`,
+      detail: `${movement.id} · ${declinedUnitIds(movement).length} destinations have declined`,
       owner: movement.owner,
       movementId: movement.id,
     });
@@ -1533,6 +1556,31 @@ export function allDeclines(movements: Movement[]): DeclineEntry[] {
   return movements.flatMap((movement) => movement.declines.map((decline) => ({ movement, decline })));
 }
 
+/**
+ * Whether every ward asked in the current round of referrals genuinely declined (A3-9). The round
+ * starts at the latest reopening of the search — an acceptance withdrawn or a pulled bed released
+ * to reopen it — because the owner's WF-R2 ruling is that a refusal after a withdrawn acceptance
+ * puts the movement back in front of a network that has refused it again. Within that round each
+ * ward's latest ending decides: a genuine decline counts; a withdrawal of that ward's request does
+ * not, and one such ward is enough to make "declined by all" untrue.
+ */
+export function declinedByEveryReferredWard(movement: Movement): boolean {
+  const roundStart = movement.unwinds
+    .filter((unwind) => unwind.kind === "acceptance_withdrawn" || unwind.kind === "pull_released")
+    .reduce((latest, unwind) => Math.max(latest, unwind.at), -Infinity);
+  const endings = [
+    ...movement.declines
+      .filter((decline) => isGenuineDecline(decline) && decline.at >= roundStart)
+      .map((decline) => ({ unitId: decline.unitId, at: decline.at, declined: true })),
+    ...movement.withdrawnReferrals
+      .filter((withdrawal) => withdrawal.at >= roundStart)
+      .map((withdrawal) => ({ unitId: withdrawal.unitId, at: withdrawal.at, declined: false })),
+  ].sort((a, b) => a.at - b.at);
+  const latestByUnit = new Map<string, boolean>();
+  for (const ending of endings) latestByUnit.set(ending.unitId, ending.declined);
+  return latestByUnit.size > 0 && [...latestByUnit.values()].every((declined) => declined);
+}
+
 export function handoverSnapshot(movements: Movement[], units: Unit[], now: Instant): HandoverSnapshot {
   const open = movements.filter(isOpen);
 
@@ -1540,11 +1588,21 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
     .sort((a, b) => now - b.openedAt - (now - a.openedAt))
     .map((movement) => ({ movement }));
 
-  const pulledBeds = open
-    .filter((movement) => movement.pullExpiresAt !== undefined)
+  // A3-10: a journey `STOP_TRANSPORT` closed still holds its bed until `RELEASE_HELD_BED`, so it
+  // stays on this list for the incoming coordinator to release. A3-2: a collected patient's pull
+  // deadline no longer applies, so it never reads as expired.
+  const pulledBeds = movements
+    .filter(
+      (movement) =>
+        (isOpen(movement) && movement.pullExpiresAt !== undefined) || stoppedTransportBedOutstanding(movement),
+    )
     .map((movement) => {
-      const pullExpiresAt = movement.pullExpiresAt as Instant;
-      return { movement, unit: destinationUnit(movement, units), expired: pullExpiresAt <= now };
+      const pullExpiresAt = livePullExpiresAt(movement);
+      return {
+        movement,
+        unit: destinationUnit(movement, units),
+        expired: pullExpiresAt !== undefined && pullExpiresAt <= now,
+      };
     });
 
   const inTransit = open
@@ -1569,7 +1627,9 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
   const declinedByAll: { movement: Movement; kind: "declined_by_all" }[] = [];
   const acceptanceWithdrawn: { movement: Movement; kind: "acceptance_withdrawn" }[] = [];
   for (const movement of stranded) {
-    const latestDeclineAt = movement.declines.reduce((latest, decline) => Math.max(latest, decline.at), -Infinity);
+    const latestDeclineAt = movement.declines
+      .filter(isGenuineDecline)
+      .reduce((latest, decline) => Math.max(latest, decline.at), -Infinity);
     const latestWithdrawalAt = movement.unwinds
       .filter((unwind) => unwind.kind === "acceptance_withdrawn")
       .reduce((latest, unwind) => Math.max(latest, unwind.at), -Infinity);
@@ -1578,7 +1638,9 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
     // back in front of a network that has since refused it again.
     if (latestWithdrawalAt > latestDeclineAt) {
       acceptanceWithdrawn.push({ movement, kind: "acceptance_withdrawn" });
-    } else {
+    } else if (declinedByEveryReferredWard(movement)) {
+      // 12 Oct 2026 review (A3-9): only when every ward asked actually said no. A ward the
+      // coordinator withdrew, or a bed released to reopen the search, is not a refusal.
       declinedByAll.push({ movement, kind: "declined_by_all" });
     }
   }
@@ -1647,8 +1709,12 @@ export function escalationBoard(movements: Movement[], units: Unit[], now: Insta
   // exact mistake (counting `eligibleCandidatesAmong(...).length` instead of filtering to
   // `.verdict.eligible`) produced a false "nowhereEligible is empty on the standard night" claim
   // in an earlier draft of this task's own brief — see tests/ward-scenarios.test.ts's comment.
+  //
+  // 12 Oct 2026 review (A3-3): a patient a ward has already accepted (accepted, pulled, moving)
+  // has a bed. Their own pull fails their ward's bed gate, which used to list them here.
   const nowhereEligible = open.filter(
     (movement) =>
+      movement.acceptedUnitId === undefined &&
       eligibleCandidatesAmong(movement, units, now, units.length).filter((candidate) => candidate.verdict.eligible)
         .length === 0,
   );

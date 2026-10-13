@@ -422,8 +422,10 @@ export function bedsBeingPrepared(bedReleases: BedRelease[]): number {
  */
 export type RefusedAndNothingPending = {
   /**
-   * Open movements the shared derivation classes `"declined_by_all"`: at least one unit has
-   * refused, no unit is currently holding a live referral, and no unit has accepted (WF-23 — an
+   * Open movements the shared derivation classes `"declined_by_all"`: every ward asked in the
+   * current round genuinely refused (A3-9, 12 Oct 2026 — a withdrawn ward request, a released pull
+   * or a waitlist answer is not a refusal), no unit is currently holding a live referral, and no
+   * unit has accepted (WF-23 — an
    * `ACCEPT_IN_PRINCIPLE` also empties the live referral list, so that third condition is what
    * keeps an accepted movement with an earlier decline out of this count). A floor — see
    * `escalatedCount`.
