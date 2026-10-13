@@ -197,6 +197,30 @@ function fixture(version = 4) {
   return catalog;
 }
 
+function withPostgresTextDeparse(catalog) {
+  const castTextLiterals = (value) => value.replace(/'(?:''|[^'])*'/g, "$&::text");
+  for (const object of catalog.objects) {
+    for (const field of object.columns ?? []) {
+      if (field.default_value?.startsWith("'")) field.default_value = castTextLiterals(field.default_value);
+    }
+    if (object.kind === "i") object.definition = castTextLiterals(object.definition);
+  }
+  for (const constraint of catalog.constraints) {
+    if (constraint.type !== "c") continue;
+    constraint.definition = castTextLiterals(constraint.definition)
+      .replace(/^CHECK \(/, "CHECK ((")
+      .replace(/\)$/, "))");
+  }
+  catalog.constraints.find((c) => c.table_name === "audit" && c.definition.includes("outcome")).definition =
+    "CHECK ((outcome = ANY (ARRAY['accepted'::text, 'denied'::text, 'stale'::text])))";
+  catalog.constraints.find((c) => c.table_name === "workspaces" && c.definition.includes("octet_length")).definition =
+    "CHECK ((octet_length((payload)::text) <= 8388608))";
+  catalog.constraints.find(
+    (c) => c.table_name === "push_subscriptions" && c.definition.includes("endpoint"),
+  ).definition = "CHECK (((endpoint ~~ 'https://%'::text) AND (length(endpoint) <= 2048)))";
+  return catalog;
+}
+
 function pool(catalog, versions = [1, 2, 3, 4]) {
   const queries = [];
   return {
@@ -228,6 +252,40 @@ for (const version of [1, 2, 3, 4])
     assert.equal(db.queries.length, 2);
     assert.match(db.queries[1], /LIMIT 5$/);
   });
+
+test("PostgreSQL text-literal casts in defaults, checks and index predicates permit the known schema", async () => {
+  const catalog = withPostgresTextDeparse(fixture());
+  assert.equal(catalog.objects.find((o) => o.name === "audit").columns[3].default_value, "'coordinator'::text");
+  assert.match(
+    catalog.constraints.find((c) => c.definition.includes("ARRAY['accepted'"))?.definition ?? "",
+    /ARRAY\['accepted'::text, 'denied'::text, 'stale'::text\]/,
+  );
+  assert.match(
+    catalog.objects.find((o) => o.name === "push_deliveries_pending").definition,
+    /status = 'pending'::text/,
+  );
+  await verifyPostgresNamespace(pool(catalog));
+});
+
+test("text casts on columns and other literal casts remain subject to exact schema checks", async () => {
+  for (const alter of [
+    (catalog) => {
+      catalog.objects.find((o) => o.name === "audit").columns[3].default_value = "'coordinator'::varchar";
+    },
+    (catalog) => {
+      catalog.constraints.find((c) => c.definition.includes("actor_role")).definition =
+        "CHECK ((actor_role = 'coordinator'::varchar))";
+    },
+    (catalog) => {
+      catalog.constraints.find((c) => c.definition.includes("octet_length")).definition =
+        "CHECK ((octet_length(payload::jsonb) <= 8388608))";
+    },
+  ]) {
+    const catalog = withPostgresTextDeparse(fixture());
+    alter(catalog);
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+});
 
 test("reserved empty namespace and wrong migration-table shape refuse before reading versions", async () => {
   for (const alter of [

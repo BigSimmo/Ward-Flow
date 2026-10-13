@@ -72,7 +72,10 @@ function normalise(value) {
 }
 
 function expression(value) {
-  return normalise(value).replace(/'(?:''|[^'])*'|[()]/g, (token) => (token.startsWith("'") ? token : ""));
+  // pg_get_expr/pg_get_constraintdef add explicit text casts to string literals.
+  // Only erase that known no-op cast; casts on columns or to other types still matter.
+  const deparsed = typeof value === "string" ? value.replace(/('(?:''|[^'])*')\s*::\s*text\b/g, "$1") : value;
+  return normalise(deparsed).replace(/'(?:''|[^'])*'|[()]/g, (token) => (token.startsWith("'") ? token : ""));
 }
 
 const tableColumns = {
