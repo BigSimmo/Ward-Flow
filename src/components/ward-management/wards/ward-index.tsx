@@ -1,5 +1,6 @@
 "use client";
 
+import { setServiceScope, useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, Info, LayoutGrid, List, Lock, Search, SlidersHorizontal } from "lucide-react";
@@ -19,7 +20,6 @@ import {
   OccupancyRing,
   PhoneSheet,
   Popover,
-  ScrollRow,
   Segmented,
   SrOnly,
   StatusGlyph,
@@ -383,7 +383,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const units = unitsOverride ?? liveUnits;
   const { now, paused, togglePause } = usePageLive();
 
-  const [service, setService] = useState<ServiceFilter>("all");
+  const [pickedService, setPickedService] = useState<ServiceFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [cohort, setCohort] = useState<CohortFilter>("all");
   const [order, setOrder] = useState<OrderBy>("service");
@@ -392,6 +392,14 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const searchRef = useRef<HTMLInputElement>(null);
   // Phone (v10): one list of wards; a tap opens the ward's card as a bottom sheet.
   const isPhone = useIsPhone();
+  // shell-15 (Josh, 13 Oct 2026): on a phone the header's service is the one service control, so
+  // the page follows it and draws no region chips of its own. Desktop keeps its own chips.
+  const headerService = useServiceScope();
+  const service: ServiceFilter = isPhone ? (headerService ?? "all") : pickedService;
+  const setService = (next: ServiceFilter) => {
+    if (isPhone) setServiceScope(next === "all" ? null : next);
+    else setPickedService(next);
+  };
   const [phoneWardId, setPhoneWardId] = useState<string | null>(null);
   const [phoneRailOpen, setPhoneRailOpen] = useState(false);
 
@@ -492,7 +500,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
 
   const isFiltered = service !== "all" || status !== "all" || cohort !== "all" || query !== "";
   const resetFilters = () => {
-    setService("all");
+    setPickedService("all");
     setStatus("all");
     setCohort("all");
     setQuery("");
@@ -712,17 +720,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
 
         <section className={styles.filters} aria-label="Ward filters">
           <div className={styles.filterRow}>
-            {isPhone ? (
-              <ScrollRow className={styles.phoneServiceChips}>
-                <Segmented
-                  label="Health service"
-                  items={serviceItems}
-                  value={service}
-                  onChange={setService}
-                  size="md"
-                />
-              </ScrollRow>
-            ) : (
+            {isPhone ? null : (
               <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
             )}
             <TextInput
@@ -828,11 +826,15 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                   highlighted. All wards stay.
                 </span>
                 {lit.length === 0 ? <span>No match.</span> : null}
-                <Button variant="ghost" size="sm" onClick={resetFilters}>
-                  Reset filters
-                </Button>
+                {/* On a phone the service is the header's own choice, so Reset never offers to undo it. */}
+                {isPhone && status === "all" && cohort === "all" && query === "" ? null : (
+                  <Button variant="ghost" size="sm" onClick={resetFilters}>
+                    Reset filters
+                  </Button>
+                )}
               </>
-            ) : (
+            ) : isPhone ? null : (
+              // shell-15: the phone shows no "22 of 22" while nothing is filtered.
               <span>
                 <b className={styles.num}>{placed.length}</b> of <b className={styles.num}>{placed.length}</b> wards
               </span>
