@@ -57,10 +57,20 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, mkdtempSync, readFileSync, rmdirSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmdirSync,
+  rmSync,
+  symlinkSync,
+  unlinkSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 const ZERO_SHA = "0000000000000000000000000000000000000000";
 const MAIN_REMOTE_REF = "refs/remotes/origin/main";
@@ -1836,7 +1846,25 @@ function selfTest() {
 }
 
 // Only run as a CLI when invoked directly — importing (tests) must not exit.
-const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+export function isDirectInvocation(
+  argv1,
+  moduleUrl,
+  { resolveRealPath = realpathSync, platform = process.platform } = {},
+) {
+  if (!argv1) return false;
+  const real = (p) => {
+    try {
+      return resolveRealPath(p);
+    } catch {
+      return p;
+    }
+  };
+  const invoked = real(path.resolve(argv1));
+  const self = real(fileURLToPath(moduleUrl));
+  return platform === "win32" ? invoked.toLowerCase() === self.toLowerCase() : invoked === self;
+}
+
+const invokedDirectly = isDirectInvocation(process.argv[1], import.meta.url);
 if (invokedDirectly) {
   main();
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  useEffect,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -774,13 +775,25 @@ export type CensusDetailProps = {
   row: CensusRow;
   now: Instant;
   onClose?: () => void;
+  onNavigate?: () => void;
   onCopy: (row: CensusRow) => void;
   copyNote: string | null;
 };
 
 /** The selected person. Every fact is the record's own; a missing one says so. */
-export function CensusDetail({ row, now, onClose, onCopy, copyNote }: CensusDetailProps) {
+export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }: CensusDetailProps) {
   const [previewNote, setPreviewNote] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.sessionStorage.getItem("wardflow:census-bed-opener") !== row.key) return;
+    const link = Array.from(document.querySelectorAll<HTMLElement>("[data-census-bed-link]")).find(
+      (element) => element.dataset.censusBedLink === row.key,
+    );
+    if (link) {
+      link.focus({ preventScroll: true });
+      window.sessionStorage.removeItem("wardflow:census-bed-opener");
+    }
+  }, [row.key]);
   const quiet = row.group === "off";
   const facts: [string, string, string][] =
     row.kind === "admission" && row.group === "ward"
@@ -817,6 +830,20 @@ export function CensusDetail({ row, now, onClose, onCopy, copyNote }: CensusDeta
     ) : row.kind === "referral" ? (
       <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals">
         Referral
+      </Link>
+    ) : row.kind === "admission" && row.unitId && row.bedNumber !== undefined ? (
+      <Link
+        className={buttonClass({ size: "sm" })}
+        data-census-bed-link={row.key}
+        href={`/mockups/ward-flow/ward/${encodeURIComponent(row.unitId)}?bed=${row.bedNumber}`}
+        onClick={() => {
+          window.sessionStorage.setItem("wardflow:census-bed-opener", row.key);
+          // ward-screen.tsx returns to Census on close only for this exact unit and bed.
+          window.sessionStorage.setItem("wardflow:census-bed-opener-target", `${row.unitId}:${row.bedNumber}`);
+          onNavigate?.();
+        }}
+      >
+        Ward bed
       </Link>
     ) : quiet ? (
       <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals/new">

@@ -46,7 +46,7 @@ export function wardTransferNeedsCoordinator(
   destinationUnitId: string,
   units: readonly Pick<Unit, "id" | "siteCode">[],
 ): boolean {
-  if (referral.source !== "psychiatric_ward") return false;
+  if (referral.source !== "psychiatric_ward" && referral.source !== "inter_hospital") return false;
   const originSite = units.find((unit) => unit.id === referral.originUnitId)?.siteCode;
   const destinationSite = units.find((unit) => unit.id === destinationUnitId)?.siteCode;
   return originSite === undefined || destinationSite === undefined || originSite !== destinationSite;
@@ -1491,9 +1491,17 @@ export function isBedHoldExpired(
   if (pulledAt === undefined || pulledAt === null || !Number.isFinite(pulledAt)) {
     return false;
   }
-  // If transport is already dispatched/in-transit, hold is not expired/stalled
-  const transportStage = (movement.transport as { stage?: string } | undefined)?.stage;
+  // If transport is already dispatched/in-transit or arrived, hold is not expired/stalled
+  const transport = movement.transport;
+  const transportStage = (transport as { stage?: string } | undefined)?.stage;
   if (transportStage === "in_transit" || transportStage === "arrived") {
+    return false;
+  }
+  if (
+    transport &&
+    (transport.cancelledAt === undefined || transport.cancelledAt === null) &&
+    (transport.enRouteAt !== undefined || transport.arrivedAt !== undefined)
+  ) {
     return false;
   }
   return now - pulledAt >= thresholdMinutes;

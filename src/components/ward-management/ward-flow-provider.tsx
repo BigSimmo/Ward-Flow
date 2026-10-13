@@ -216,10 +216,15 @@ export const WardFlowContext = createContext<WardFlowContextValue | null>(null);
 export const WardFlowClockContext = createContext<Instant | null>(null);
 export const WardClockContext = createContext<Instant | null>(null);
 
-export function useWardClock(): Instant {
-  const now = useContext(WardClockContext);
-  if (now === null) throw new Error("useWardClock must be used within WardFlowProvider");
-  return now;
+export function useWardClock(fallback?: Instant): Instant {
+  const clock = useContext(WardClockContext);
+  const flowClock = useContext(WardFlowClockContext);
+  const wardFlow = useContext(WardFlowContext);
+  if (clock !== null) return clock;
+  if (flowClock !== null) return flowClock;
+  if (wardFlow) return wardFlow.now;
+  if (fallback !== undefined) return fallback;
+  throw new Error("useWardClock must be used within WardFlowProvider.");
 }
 
 const EMPTY_ARRAY = Object.freeze([]) as never[];
@@ -820,6 +825,37 @@ function WardFlowWorld({
   }, [now]);
 
   const [, setTick] = useState(0);
+  useEffect(() => {
+    if (initialNow !== undefined) return; // pinned: never tick in a test
+    let timeoutTimer: NodeJS.Timeout | null = null;
+
+    const scheduleNextTick = () => {
+      const nowMs = Date.now();
+      const remainder = nowMs % 30_000;
+      // Schedule against the upcoming 30s mark (:00 and :30), ensuring clean top-of-minute flips
+      const delay = remainder === 0 ? 30_000 : 30_000 - remainder;
+      timeoutTimer = setTimeout(() => {
+        setTick((tick) => tick + 1);
+        scheduleNextTick();
+      }, delay);
+    };
+
+    scheduleNextTick();
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        setTick((tick) => tick + 1);
+        if (timeoutTimer) clearTimeout(timeoutTimer);
+        scheduleNextTick();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [initialNow, mountedAtAbsolute]);
   useEffect(() => {
     if (!shared.enabled) return;
     if (!shared.snapshot) {

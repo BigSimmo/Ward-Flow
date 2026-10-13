@@ -21,6 +21,10 @@ phone containment; local remediation preserves these changes. Service identity's
 screen-reader content now has its own positioned containing block. The remaining
 historical map below retains old file counts and line references.
 
+Ward bed drawer Close preserves the matching Census return and opener-focus contract.
+Move bed and Place someone here dismiss locally and remain on this ward's bed board;
+`tests/ward-screen-bed-drawer-history.dom.test.tsx` covers both paths and ordinary Close.
+
 The originating ED's expanded record composes `EdMedicalPlacementControls`, with explicit
 confirmation, cancellation and actual reducer outcome/refusal feedback. Compact clearance
 pickers remain unsaved layout drafts and cannot substitute for that clinician record.
@@ -490,6 +494,9 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   `PresenceFilter`/`LegalFilter` types, `QUICK_CHIPS`, and the `matches*` predicate family
   (`matchesService`, `matchesSetting`, `matchesPresence`, `matchesLegal`, `matchesWait`,
   `matchesQuickChip`) plus `waitedHours`, `isQuickChipQuery`.
+  The referral ED setting requires recorded `ed_medical` source and an ED-bearing origin
+  site. Other referring channels do not establish physical location; focused cases in
+  `tests/ward-search-operational-filters.test.ts` preserve that boundary.
 - **`search-refusals.ts`** (37 lines) — `SearchRefusal`, `refusalFor`, `NOTHING_FOUND`,
   `RESULTS_FOOTER`. Fixed refusal wording ("no risk score, no acuity score, no best match") pinned
   verbatim by `tests/ward-search-refusals.test.ts` per its own comment — a reworded refusal is a

@@ -76,7 +76,10 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save booking" }));
     expect(screen.getByTestId("live-cad")).toHaveTextContent("CAD-SYNTHETIC-42");
     fireEvent.click(screen.getByRole("button", { name: "Mark handover ready · sending team" }));
-    expect(screen.getByRole("button", { name: "Mark moving · patient collected" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Mark moving · patient collected" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     fireEvent.click(screen.getByRole("button", { name: "Provider accepted job" }));
     fireEvent.click(screen.getByRole("button", { name: "Vehicle en route" }));
     fireEvent.click(screen.getByRole("button", { name: "Mark moving · patient collected" }));

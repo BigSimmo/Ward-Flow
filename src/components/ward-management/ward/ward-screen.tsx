@@ -4,9 +4,9 @@ import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-fo
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { WardReferralInbox } from "../referrals/ward-referral-inbox";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { hasOpenSheet } from "@/components/ui/sheet-focus";
 import {
   ArrowLeftRight,
   Bell,
@@ -125,17 +125,9 @@ import {
   UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
 
-const WardDailySheetDialog = dynamic(
-  () => import("@/components/ward-management/board/ward-daily-sheet").then((m) => m.WardDailySheetDialog),
-  { ssr: false },
-);
-const WardBedDossierDrawer = dynamic(() => import("./ward-bed-dossier-drawer").then((m) => m.WardBedDossierDrawer), {
-  ssr: false,
-});
-const WardNotificationCenter = dynamic(
-  () => import("./ward-notification-center").then((m) => m.WardNotificationCenter),
-  { ssr: false },
-);
+import { WardDailySheetDialog } from "@/components/ward-management/board/ward-daily-sheet";
+import { WardBedDossierDrawer } from "./ward-bed-dossier-drawer";
+import { WardNotificationCenter } from "./ward-notification-center";
 import { WardAnswerView } from "./ward-answer-view";
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
@@ -177,9 +169,38 @@ function wardHandoverHref(unitId: string): string {
   return `/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unitId }))}`;
 }
 
+/** Set by the Census "Ward bed" link (patient-census-view.tsx): the exact `unit:bed` it opened. */
+const CENSUS_BED_OPENER_TARGET = "wardflow:census-bed-opener-target";
+const censusBedOpenerTarget = (unitId: string, bed: number) => `${unitId}:${bed}`;
+
+/** history.state key marking the entry this screen pushed when a bed drawer opened. */
+const WARD_BED_DRAWER_ENTRY = "wardBedDrawer";
+
+/**
+ * history.state without Next.js's own entries. Next's patched history methods skip syncing
+ * `useSearchParams` and the router's URL for state carrying `__NA`, so writing it back would leave
+ * the router on a stale `?bed=`; Next re-adds its entries itself when it sees our write.
+ */
+function ownHistoryState(state: unknown): Record<string, unknown> {
+  if (!state || typeof state !== "object") return {};
+  const own = { ...(state as Record<string, unknown>) };
+  delete own.__NA;
+  delete own.__PRIVATE_NEXTJS_INTERNALS_TREE;
+  return own;
+}
+
 function useOptionalRouter(): ReturnType<typeof useRouter> | null {
   try {
     return useRouter();
+  } catch {
+    return null;
+  }
+}
+
+/** The search params, or null where the screen renders outside the app router. */
+function useOptionalSearchParams(): ReturnType<typeof useSearchParams> | null {
+  try {
+    return useSearchParams();
   } catch {
     return null;
   }
@@ -272,22 +293,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   } = useWardFlow();
   const now = useWardFlowClock();
 
-  useEffect(() => {
-    if (typeof window === "undefined" || !("requestIdleCallback" in window)) return;
-    const handle = (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(
-      () => {
-        import("@/components/ward-management/board/ward-daily-sheet");
-        import("./ward-bed-dossier-drawer");
-        import("./ward-notification-center");
-        import("./ward-answer-view");
-      },
-    );
-    return () => {
-      if ("cancelIdleCallback" in window) {
-        (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(handle);
-      }
-    };
-  }, []);
   // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
   // listed cross-role pair in `ward-role-permissions.ts`.
   const raiseReferralGate = useRoleGate()("RECEIVE_REFERRAL");
@@ -365,7 +370,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [flowTab, setFlowTab] = useState<WardFlowTab>("referrals");
   const [shiftView, setShiftView] = useState<WardShiftView>("todo");
   const router = useOptionalRouter();
-  const [selectedBed, setSelectedBed] = useState<number | null>(null);
+  const searchParams = useOptionalSearchParams();
+  const bedParam = searchParams?.get("bed");
+  const parsedBed =
+    bedParam !== null && bedParam !== undefined && /^\d+$/.test(bedParam) ? Number.parseInt(bedParam, 10) : null;
+  const [selectedBed, setSelectedBed] = useState<number | null>(parsedBed);
+  // Bumped when a `?bed=` naming no bed on this ward is refused, so the URL sync below drops it.
+  const [refusedBedParam, setRefusedBedParam] = useState(0);
+  const [prevBedParam, setPrevBedParam] = useState<string | null | undefined>(bedParam);
+  if (prevBedParam !== bedParam) {
+    setPrevBedParam(bedParam);
+    setSelectedBed(parsedBed);
+  }
   // v10 pass 3, Bed board: who is picked up, what the board says and the bed placed last.
   const [boardPick, setBoardPick] = useState<BoardPick | null>(null);
   const [boardSay, setBoardSay] = useState("");
@@ -395,6 +411,46 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setDestinationBed(selectedBed);
     setDrawerLeavingDestination("discharged-to-the-community");
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const bed = params.get("bed");
+      if (bed !== null && /^\d+$/.test(bed)) {
+        setSelectedBed(Number.parseInt(bed, 10));
+      } else {
+        setSelectedBed(null);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const current = url.searchParams.get("bed");
+    const next = selectedBed !== null ? String(selectedBed) : null;
+    if (current === next) return;
+
+    const state = ownHistoryState(window.history.state);
+    if (next !== null) {
+      url.searchParams.set("bed", next);
+      // Only opening a drawer creates a navigation point, marked so closing can return through it.
+      // Normalisation and bed-to-bed movement replace the current URL (keeping the marker) so Back
+      // never reopens a closed/visited bed.
+      if (current === null) window.history.pushState({ ...state, [WARD_BED_DRAWER_ENTRY]: true }, "", url.toString());
+      else window.history.replaceState(state, "", url.toString());
+    } else if (state[WARD_BED_DRAWER_ENTRY]) {
+      // This screen pushed the drawer's entry: step back over it rather than adding another ward
+      // entry, so one Back after closing leaves the ward instead of reopening the bed.
+      window.history.back();
+    } else {
+      url.searchParams.delete("bed");
+      window.history.replaceState(state, "", url.toString());
+    }
+  }, [selectedBed, refusedBedParam]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -582,20 +638,35 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
-  const closeBedDrawer = useCallback(() => {
-    if (selectedBed !== null) {
-      const bedNum = selectedBed;
-      setSelectedBed(null);
-      // The drawer hands focus back to whatever opened it (a tile, a list row, a Ward flow row).
-      // Only when that is gone does focus fall back to the bed's own tile, if it is still drawn.
-      setTimeout(() => {
-        const active = document.activeElement;
-        if (active instanceof HTMLElement && active !== document.body && active.isConnected) return;
-        const tile = bedTriggerRefs.current.get(bedNum);
-        if (tile?.isConnected) tile.focus();
-      }, 0);
-    }
-  }, [selectedBed]);
+  const closeBedDrawer = useCallback(
+    (returnToCensus = true) => {
+      if (selectedBed !== null) {
+        if (typeof window !== "undefined") {
+          // Return to Census only for the exact bed its link opened, and only with a router to go
+          // back through; a stale or unrelated marker is dropped and the drawer closes normally.
+          const target = window.sessionStorage.getItem(CENSUS_BED_OPENER_TARGET);
+          const fromCensus = target !== null && target === censusBedOpenerTarget(unitId, selectedBed);
+          window.sessionStorage.removeItem(CENSUS_BED_OPENER_TARGET);
+          if (fromCensus && router && returnToCensus) {
+            router.back();
+            return;
+          }
+          if (target !== null) window.sessionStorage.removeItem("wardflow:census-bed-opener");
+        }
+        const bedNum = selectedBed;
+        setSelectedBed(null);
+        // The drawer hands focus back to whatever opened it (a tile, a list row, a Ward flow row).
+        // Only when that is gone does focus fall back to the bed's own tile, if it is still drawn.
+        setTimeout(() => {
+          const active = document.activeElement;
+          if (active instanceof HTMLElement && active !== document.body && active.isConnected) return;
+          const tile = bedTriggerRefs.current.get(bedNum);
+          if (tile?.isConnected) tile.focus();
+        }, 0);
+      }
+    },
+    [selectedBed, router, unitId],
+  );
 
   // Focus goes back to whichever control opened the modal (the header button or the home tab's),
   // and falls back to the header button only when that control is gone.
@@ -616,17 +687,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        if (selectedBed !== null) {
-          closeBedDrawer();
+        if (hasOpenSheet()) return;
+        if (notificationCenterOpen) {
+          setNotificationCenterOpen(false);
+        } else if (confirmNumbersOpen) {
+          closeCapacityModal();
+        } else if (dailySheetOpen) {
+          setDailySheetOpen(false);
         } else if (boardPick !== null) {
           setBoardPick(null);
           setBoardSay("Put down. Nothing changed.");
-        } else if (dailySheetOpen) {
-          setDailySheetOpen(false);
-        } else if (confirmNumbersOpen) {
-          closeCapacityModal();
-        } else if (notificationCenterOpen) {
-          setNotificationCenterOpen(false);
+        } else if (selectedBed !== null) {
+          closeBedDrawer();
         }
       }
     }
@@ -1396,6 +1468,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       };
     })
     .sort((left, right) => left.bedNumber - right.bedNumber);
+  // A `?bed=` from a stale or edited URL that names no bed on this ward opens nothing; clearing it
+  // here (a render-phase update, like the bed-param sync above) also drops it from the URL.
+  if (selectedBed !== null && !bedsList.some((bed) => bed.bedNumber === selectedBed)) {
+    setSelectedBed(null);
+    setRefusedBedParam((count) => count + 1);
+  }
 
   // Bed board: the referrals waiting for this ward that it can place, straight from the inbox,
   // then (v10 pass 3) the people the coordinator referred here, placed with ACCEPT_IN_PRINCIPLE.
@@ -1444,7 +1522,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const stayId = bed.stayAdmissionId;
     if (!stayId) return;
     const fromBed = Number(bed.bedNumber);
-    closeBedDrawer();
+    closeBedDrawer(false);
     setActiveTab("board");
     pickOnBoard({
       kind: "stay",
@@ -3001,7 +3079,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   onKeyDown={handleBedDrawerKeyDown}
                   onMove={selectedBedItem?.stayAdmissionId ? () => moveStayOnBoard(selectedBed) : undefined}
                   onOpenBoard={() => {
-                    closeBedDrawer();
+                    closeBedDrawer(false);
                     setActiveTab("board");
                   }}
                 />

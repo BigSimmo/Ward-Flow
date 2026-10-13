@@ -23,6 +23,7 @@ import Link from "next/link";
 import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-react";
 
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { hasOpenSheet } from "@/components/ui/sheet-focus";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -1214,6 +1215,7 @@ export function DelaysBoard({
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      if (hasOpenSheet()) return;
       if (selectedId !== null) {
         event.preventDefault();
         close();

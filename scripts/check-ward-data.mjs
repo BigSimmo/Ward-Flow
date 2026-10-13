@@ -34,7 +34,7 @@
  * Run it with:  node scripts/check-ward-data.mjs
  * Exit code 0 = everything adds up. Exit code 1 = at least one problem, all of them printed.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -941,8 +941,26 @@ async function run() {
   console.log(report);
 }
 
+export function isDirectInvocation(
+  argv1,
+  moduleUrl,
+  { resolveRealPath = realpathSync, platform = process.platform } = {},
+) {
+  if (!argv1) return false;
+  const real = (p) => {
+    try {
+      return resolveRealPath(p);
+    } catch {
+      return p;
+    }
+  };
+  const invoked = real(resolve(argv1));
+  const self = real(fileURLToPath(moduleUrl));
+  return platform === "win32" ? invoked.toLowerCase() === self.toLowerCase() : invoked === self;
+}
+
 const TSX_FLAG = "WARD_DATA_CHECK_UNDER_TSX";
-const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+const isMain = isDirectInvocation(process.argv[1], import.meta.url);
 
 if (isMain) {
   if (process.env[TSX_FLAG] === "1") {

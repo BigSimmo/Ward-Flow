@@ -299,7 +299,14 @@ const PILL_TONE: Record<Exclude<HandoverPill, "new">, "danger" | "warning" | "ne
   mov: "info",
 };
 
-const GROUP_TONE = { act: "danger", due: "warning", bed: "neutral", acc: "neutral", mov: "info" } as const;
+const GROUP_TONE = {
+  act: "danger",
+  due: "warning",
+  rel: "warning",
+  bed: "neutral",
+  acc: "neutral",
+  mov: "info",
+} as const;
 
 const KEYS: [string, string][] = [
   ["J K", "Step through patients"],
@@ -412,7 +419,7 @@ export function HandoverPage() {
         .filter((movement) => isOpen(movement) || isStoppedTransportAwaitingRelease(movement))
         .map((movement) => ({
           ...toHandoverRow(movement, units, patients, referrals),
-          actNow: isStoppedTransportAwaitingRelease(movement) ? undefined : actNowMovementIds.has(movement.id),
+          actNow: actNowMovementIds.has(movement.id),
         })),
     [movements, units, patients, referrals, actNowMovementIds],
   );

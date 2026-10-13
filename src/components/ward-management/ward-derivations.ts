@@ -12,8 +12,7 @@ import {
   SUITABILITY_GATES,
 } from "@/components/ward-management/ward-flow-reducer";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
-import type { LucideIcon } from "lucide-react";
-import { CalendarClock, CircleAlert, Truck } from "lucide-react";
+import { CalendarClock, CircleAlert, Truck, type LucideIcon } from "lucide-react";
 
 import { plannedAdmissionIsOverdue, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
@@ -1928,7 +1927,13 @@ export function changeAudit(movements: Movement[]): ChangeAuditEntry[] {
          * being true the honest outcome is the fact without the reason — which is what this falls
          * back to.
          */
-        const stepBackLabel = stepBackReasonLabels[unwind.reason as StepBackReason] as string | undefined;
+        // `RELEASE_AND_REOPEN_SEARCH` from `accepted_awaiting_bed` writes an "acceptance_withdrawn"
+        // entry carrying a `ReleasePullReason`, so fall back to that label list before the bare fact.
+        const stepBackLabel =
+          (stepBackReasonLabels[unwind.reason as StepBackReason] as string | undefined) ??
+          (unwind.kind === "acceptance_withdrawn"
+            ? (changeReasonLabels[unwind.reason as ReleasePullReason] as string | undefined)
+            : undefined);
         const fact = unwind.kind === "stage_corrected" ? "Stage corrected" : "Acceptance withdrawn";
         entries.push({
           at: unwind.at,

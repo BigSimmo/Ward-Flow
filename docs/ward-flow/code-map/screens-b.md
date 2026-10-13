@@ -345,6 +345,13 @@ search/preview screen. **Reads:** its own `hub-derivations.ts`, plus
 
 ## `movements/`
 
+PR263 review repair, 13 October 2026: the movement drawer preserves the recorded legal
+status alongside explicit missing-form wording on phone and desktop. Its neutral document
+icon describes a record without certifying legal validity. Synthetic regressions in
+`tests/ward-movement-legal-absence.dom.test.tsx` cover all four statuses without a form
+and preserve a recorded form's title and typed expiry. This local repair does not establish
+browser readiness or resolve the separate transport-feed keyboard-scroll failure.
+
 **Route:** `/movements` (MERGE 03, folding a former `movements` and `transport` screen — see
 `movements-derivations.ts` header) and `/movements/[movementId]` (the patient movement workspace,
 renders `WardMovementNotFound`/`WardPatientWorkspace` from `ward-management-console.tsx`, not a
