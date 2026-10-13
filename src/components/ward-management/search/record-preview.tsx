@@ -321,6 +321,21 @@ export function RecordPreview({
       legalStatus = movementLegalStatus(linkedMovement);
       urgency = `Tier ${linkedMovement.urgency}`;
       recordOpenedAt = linkedMovement.openedAt;
+    } else if (
+      referral &&
+      referralState(referral) !== "queued" &&
+      !movements.some((movement) => movement.patientId === patient.id && isOpen(movement))
+    ) {
+      // Same rule as the search row: no open movement and no queued referral means Past.
+      const declined = referralState(referral) === "declined";
+      presenceStatus = "past";
+      bannerTitle = "Not on this board now";
+      bannerTag = declined ? "Referral declined" : "Referral closed";
+      disposition = declined ? "Declined" : NOT_RECORDED;
+      targetWard = "Not admitted";
+      currentStage = declined ? "Declined" : "No open movement";
+      originSite = referral.originSiteCode;
+      urgency = `Tier ${referral.urgency}`;
     } else if (referral) {
       const isComm = isCommunityReferral(referral);
       if (isComm) {
@@ -331,16 +346,6 @@ export function RecordPreview({
         targetWard = "Not admitted";
         currentStage = "Outpatient";
         originSite = referral.originSiteCode;
-        urgency = `Tier ${referral.urgency}`;
-      } else if (referralState(referral) === "declined") {
-        // Every destination declined and no movement is open: match the search row's Past status.
-        presenceStatus = "past";
-        bannerTitle = "Not on this board now";
-        bannerTag = "Referral declined";
-        disposition = "Declined";
-        targetWard = "Not admitted";
-        currentStage = "Declined";
-        originSite = `${referral.originSiteCode} ED`;
         urgency = `Tier ${referral.urgency}`;
       } else {
         presenceStatus = "live";
@@ -689,8 +694,13 @@ export function RecordPreview({
     const linkedMovement = linkedOpenMovementFor(referral, movements);
 
     const isComm = isCommunityReferral(referral);
-    const presenceStatus = isComm ? "community" : "live";
-    const bannerTitle = isComm ? "NOT IN HOSPITAL · COMMUNITY REFERRAL" : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
+    const declined = referralState(referral) === "declined" && !linkedMovement;
+    const presenceStatus = declined ? "past" : isComm ? "community" : "live";
+    const bannerTitle = declined
+      ? "REFERRAL DECLINED · NO DESTINATION ACCEPTED"
+      : isComm
+        ? "NOT IN HOSPITAL · COMMUNITY REFERRAL"
+        : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
     const bannerTag = isComm ? "Community Referral" : "Acute Referral";
     const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : `Referral ${referral.id}`;
     const subjectSubtitle = linkedPatient
