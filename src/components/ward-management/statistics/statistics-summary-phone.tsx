@@ -144,7 +144,7 @@ export function StatisticsSummaryPhone({
           title={`${ready} ${ready === 1 ? "bed" : "beds"} ready now`}
           sub={`Prototype, invented records${beingMadeReady > 0 ? ` · ${beingMadeReady} being made ready` : ""}`}
           figures={[
-            { id: "occupied", value: occupied, label: `${occupiedPct}% in use` },
+            { id: "occupied", value: occupied, label: `${occupiedPct.toFixed(1)}% in use` },
             { id: "ed", value: waitingInEd, label: "Waiting in ED" },
             { id: "ended", value: endedToday, label: "Ended today" },
           ]}

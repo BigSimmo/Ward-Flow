@@ -828,7 +828,8 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
                 <th scope="col" className={styles.num}>
                   <span className={compare.pinName}>
                     <span>Network</span>
-                    <span className={styles.code}>per ward</span>
+                    {/* The mean of the wards' own figures, not the network's one figure (audit stats-20). */}
+                    <span className={styles.code}>mean of wards</span>
                   </span>
                 </th>
               </tr>

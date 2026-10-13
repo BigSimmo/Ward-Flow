@@ -204,12 +204,12 @@ export function StatisticsServicesIndexScreen() {
                 meta={
                   entry.beds === 0
                     ? "No inpatient beds"
-                    : `${entry.inUse} of ${entry.beds} in use · ${entry.over === 0 ? "none" : entry.over} over ${BED_ALERT_THRESHOLD_PERCENT}%`
+                    : `${entry.inUse} of ${entry.beds} in use · ${entry.over} over ${BED_ALERT_THRESHOLD_PERCENT}%`
                 }
                 value={
                   <span className={phone.flagged}>
                     {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                    {entry.departments === 0 ? "none" : entry.waiting}
+                    {entry.waiting}
                   </span>
                 }
                 time="in ED"

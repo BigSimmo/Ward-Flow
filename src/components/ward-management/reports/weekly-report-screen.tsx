@@ -18,7 +18,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { edById } from "@/components/ward-management/ward-sites";
+import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
 import { StatCard, StatisticsHero, useStatisticsLive } from "@/components/ward-management/statistics/statistics-hero";
 import { hoursText } from "@/components/ward-management/statistics/statistics-occupancy";
@@ -37,6 +37,8 @@ import styles from "./reports.module.css";
 
 /** The out of area bands, in the words the rest of the app uses for them. */
 const OUT_OF_AREA_META = OUT_OF_AREA_BANDS.map((band) => TRAVEL_BAND_LABELS[band]).join(" or ");
+/** The same bands in the few words a phone card's aside holds without clipping (audit stats-14). */
+const OUT_OF_AREA_PHONE_META = "3h+ from home, or air only";
 
 /** Offsets offered in the week picker: this week so far, the last full week, then seven before it. */
 const WEEK_OFFSETS = [-1, 0, 1, 2, 3, 4, 5, 6, 7] as const;
@@ -206,7 +208,7 @@ export function WeeklyReportScreen() {
                 ]}
               />
             </PhoneCard>
-            <PhoneCard icon={Hospital} title="Out of area" aside={OUT_OF_AREA_META}>
+            <PhoneCard icon={Hospital} title="Out of area" aside={OUT_OF_AREA_PHONE_META}>
               <PhoneFacts
                 flush
                 facts={[
@@ -272,7 +274,7 @@ export function WeeklyReportScreen() {
                         key={row.movement.id}
                         as="li"
                         name={row.movement.id}
-                        meta={`${edById(row.movement.originEdId)?.name ?? row.movement.originEdId}${row.stillWaiting ? " · still waiting" : ""}`}
+                        meta={`${edShortName(edById(row.movement.originEdId)) || row.movement.originEdId}${row.stillWaiting ? " · still waiting" : ""}`}
                         value={
                           <span className={phone.flagged}>
                             {/* One tone rule with the ED page: red at the long-wait line, amber before. */}

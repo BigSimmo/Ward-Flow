@@ -260,12 +260,13 @@ export function StatisticsWardScreen({
       }}
       phone={{
         eyebrow: site?.name ?? "Hospital not recorded",
-        sub: `${cohortLabel} · ${unit.beds} beds${averageStay === null ? "" : ` · average stay ${averageStay}d`}`,
+        // The % sits in the sub line so the hero label never clips (audit stats-15).
+        sub: `${cohortLabel} · ${occupancyPct}% of ${unit.beds} beds in use${averageStay === null ? "" : ` · average stay ${averageStay}d`}`,
         stats: (
           <>
             <HeroStat
               value={wardOccupancy.inUse}
-              label={`In use, ${occupancyPct}%`}
+              label="In use"
               tone={occupancyPct >= BED_ALERT_THRESHOLD_PERCENT ? "warning" : undefined}
             />
             <HeroStat value={capacity.available} label="Ready" />

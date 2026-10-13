@@ -11,12 +11,16 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { shortWardLabels } from "@/components/ward-management/statistics/statistics-compare-screen";
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
+import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistics/statistics-eds-index";
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { STATISTICS_OVERVIEW_HREF } from "@/components/ward-management/statistics/statistics-sections";
+import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
+import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, allEmergencyDepartments, allUnits } from "@/components/ward-management/ward-sites";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
@@ -105,5 +109,45 @@ describe("Compare chart ward labels (stats-13)", () => {
       if (label !== unit.name) expect(label).toMatch(new RegExp(`^${unit.siteCode} (Adult|Secure|Older|Youth)$`, "u"));
     }
     expect(values.filter((value, index) => value === units[index]!.name).length).toBeLessThan(units.length / 2);
+  });
+});
+
+/*
+ * Batch 4 polish (audit 13 Oct 2026): stats-14 short Weekly copy, stats-15 ward hero label,
+ * stats-19 no EDs sparkline on phone, stats-20 one precision for the network figure, stats-21 one
+ * form for a nought.
+ */
+describe("Statistics phone polish (batch 4)", () => {
+  it("keeps Weekly's out-of-area aside and ED names short (stats-14)", () => {
+    asPhone();
+    renderInProvider(<WeeklyReportScreen />);
+    const body = screen.getByTestId("ward-weekly-phone");
+    expect(body).toHaveTextContent("3h+ from home, or air only");
+    expect(body.textContent).not.toMatch(/Emergency Department/u);
+  });
+
+  it("labels the ward hero figure In use and moves the % to the sub line (stats-15)", () => {
+    asPhone();
+    renderInProvider(<StatisticsWardScreen unitId="rph-adult-secure" />);
+    expect(screen.getAllByText("In use").length).toBeGreaterThan(0);
+    expect(screen.getByText(/\d+% of \d+ beds in use/u)).toBeInTheDocument();
+  });
+
+  it("draws no trend line on the EDs phone rows (stats-19)", () => {
+    asPhone();
+    renderInProvider(<StatisticsEdsIndexScreen />);
+    expect(screen.queryAllByTestId("ward-statistics-eds-phone-spark")).toHaveLength(0);
+  });
+
+  it("prints the network figure to one decimal place on the hub (stats-20)", () => {
+    asPhone();
+    renderInProvider(<StatisticsScreen />);
+    expect(screen.getByText(/^\d+\.\d% in use$/u)).toBeInTheDocument();
+  });
+
+  it("writes a nought as 0, never none, on the Services phone list (stats-21)", () => {
+    asPhone();
+    renderInProvider(<StatisticsServicesIndexScreen />);
+    expect(screen.getByTestId("ward-statistics-services-phone").textContent).not.toMatch(/\bnone\b/u);
   });
 });
