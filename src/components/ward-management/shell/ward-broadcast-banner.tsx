@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Check, ChevronRight } from "lucide-react";
-import { Button, StatusGlyph, buttonClass, durMinutes, type WfTone } from "@/components/wf";
+import { Button, StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
   BED_CALL_MAX_BEDS,
@@ -131,6 +131,7 @@ function BannerBody({
   const kind = broadcastKind(alert);
   const [choosing, setChoosing] = useState<BroadcastAnswer | null>(null);
   const [changing, setChanging] = useState(false);
+  const isPhone = useIsPhone();
   const isRed = tone === "act_now";
   const actingRole = desk.role === "coordinator" ? "coordinator" : desk.role === "ed" ? "ed" : "ward";
 
@@ -163,6 +164,55 @@ function BannerBody({
   const board = kind === "directive" ? undefined : replyBoard(alert, units);
   const acks = kind === "directive" ? directiveAcknowledgements(alert, units) : undefined;
   const showAnswers = (needsAnswer || changing) && kind !== "directive";
+  const headline = subject ? subject.displayName : alert.title;
+  const countText = board
+    ? `${board.answered} of ${board.rows.length} answered`
+    : acks
+      ? `${acks.acknowledged} of ${acks.of} acknowledged`
+      : null;
+
+  /*
+   * Phone (ops-10, 13 Oct 2026): one line, glyph, kind, title and the answered count, that opens
+   * Alerts. The answer buttons follow only for a desk that must answer, so the coordinator and an
+   * answered desk keep most of the screen for the page beneath.
+   */
+  if (isPhone) {
+    return (
+      <section
+        className={styles.banner}
+        data-tone={tone}
+        data-kind={kind}
+        data-severity={alert.severity}
+        data-layout="phone-line"
+        data-testid="ward-broadcast-banner"
+        role={isRed || alert.severity === "critical" ? "alert" : "status"}
+        aria-live={isRed ? "assertive" : "polite"}
+        aria-atomic="true"
+        aria-label={`${kindLabel(alert)}: ${headline}`}
+      >
+        <span className="sr-only">These counts are invented figures.</span>
+        <Link href={WARD_ALERTS_HREF} className={styles.phoneLine}>
+          <StatusGlyph tone={TONE_GLYPH[tone]} size={12} />
+          <span className={styles.kind}>{kindLabel(alert)}</span>
+          <strong className={styles.headline}>{headline}</strong>
+          {countText ? <span className={styles.count}>{countText}</span> : null}
+          {more > 0 ? <span className={styles.count}>{more} more</span> : null}
+          <span className="sr-only">, open Alerts</span>
+          <ChevronRight size={14} aria-hidden="true" />
+        </Link>
+        {kind === "directive" && desk.id && needsAnswer ? (
+          <div className={styles.answers}>
+            <Button size="sm" icon={Check} onClick={acknowledge} title="Acknowledge this directive for your desk">
+              Acknowledge
+            </Button>
+          </div>
+        ) : null}
+        {showAnswers ? (
+          <AnswerRow kind={kind} choosing={choosing} setChoosing={setChoosing} reply={reply} now={now} />
+        ) : null}
+      </section>
+    );
+  }
 
   return (
     <section
