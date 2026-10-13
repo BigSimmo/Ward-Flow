@@ -2,6 +2,7 @@ import { Pool } from "pg";
 import { readFileSync } from "node:fs";
 import { X509Certificate } from "node:crypto";
 import { validateSupabaseDatabaseUrl } from "./supabase-config.mjs";
+import { verifyRuntimeRole } from "./portable-postgres.mjs";
 
 export function createSupabasePool(config, dependencies = {}) {
   const PoolClass = dependencies.Pool ?? Pool;
@@ -23,7 +24,12 @@ export function createSupabasePool(config, dependencies = {}) {
   return pool;
 }
 
-export async function verifySupabaseRuntimeRole(pool) {
-  const { rows } = await pool.query("SELECT current_user AS role");
-  if (rows[0]?.role !== "wardflow_backend") throw new Error("Unapproved database runtime role");
+export async function verifySupabaseRuntimeRole(pool, config = {}) {
+  return verifyRuntimeRole(
+    pool,
+    "wardflow_backend",
+    config.pushEnabled,
+    "Supabase database runtime verification unavailable",
+    "Unsafe or unprepared Supabase database runtime",
+  );
 }

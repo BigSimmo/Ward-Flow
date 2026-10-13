@@ -46,7 +46,7 @@ function createVerifiedPool(config, dependencies, runtime) {
 
 // One bounded catalogue summary. No payload or credential is read. Missing schema,
 // migrations or permissions fail closed; administrators install migrations separately.
-const RUNTIME_SUMMARY = `
+export const RUNTIME_SUMMARY = `
 WITH runtime AS (SELECT * FROM pg_catalog.pg_roles WHERE rolname = current_user),
 browser_roles AS (SELECT oid FROM pg_catalog.pg_roles WHERE rolname IN ('anon', 'authenticated'))
 SELECT current_user AS role,
@@ -128,16 +128,14 @@ SELECT current_user AS role,
   ) AS guards_valid
 FROM runtime r`;
 
-export async function verifyPortableRuntimeRole(pool, config) {
-  const connectionString = validatePortablePostgresUrl(config.connectionString);
-  const expectedRole = decodeURIComponent(new URL(connectionString).username);
+export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavailableMessage, unsafeMessage) {
   let row;
   try {
-    const { rows } = await pool.query(RUNTIME_SUMMARY, [config.pushEnabled === true]);
+    const { rows } = await pool.query(RUNTIME_SUMMARY, [pushEnabled === true]);
     if (rows.length !== 1) throw new Error();
     row = rows[0];
   } catch {
-    throw new Error("Portable database runtime verification unavailable");
+    throw new Error(unavailableMessage);
   }
   if (
     row.role !== expectedRole ||
@@ -157,5 +155,17 @@ export async function verifyPortableRuntimeRole(pool, config) {
     row.versions.length !== 4 ||
     !row.versions.every((version, index) => version === index + 1)
   )
-    throw new Error("Unsafe or unprepared portable database runtime");
+    throw new Error(unsafeMessage);
+}
+
+export async function verifyPortableRuntimeRole(pool, config) {
+  const connectionString = validatePortablePostgresUrl(config.connectionString);
+  const expectedRole = decodeURIComponent(new URL(connectionString).username);
+  return verifyRuntimeRole(
+    pool,
+    expectedRole,
+    config.pushEnabled,
+    "Portable database runtime verification unavailable",
+    "Unsafe or unprepared portable database runtime",
+  );
 }
