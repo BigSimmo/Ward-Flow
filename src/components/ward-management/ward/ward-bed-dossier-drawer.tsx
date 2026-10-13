@@ -747,6 +747,13 @@ function PhoneBedSheet({
   const sub = [bedItem?.umrn, bedItem?.podLabel ?? bedItem?.designation].filter(Boolean).join(" · ");
   const admissionId = bedItem?.admissionId;
   const canMove = Boolean(onMove && bedItem?.stayAdmissionId);
+  // A1-13 (audit round 2): the filled button follows the stay. Leaving means Record that they have
+  // left; held up means Update blocker; a settled stay has no primary step.
+  const heldUpNow = Boolean(bedItem?.blockReason);
+  const leavingNow =
+    isOccupied &&
+    !heldUpNow &&
+    (bedItem?.dischargeConfirmed === true || (bedItem?.expectedDays != null && bedItem.expectedDays <= 0));
   const toggleBlocker = () => {
     const opening = !quickBlockerOpen;
     setQuickBlockerOpen(opening);
@@ -889,7 +896,7 @@ function PhoneBedSheet({
           <div className={styles.phoneMore}>
             {isOccupied && admissionId ? (
               <Button
-                variant="sec"
+                variant={leavingNow ? "pri" : "sec"}
                 className={styles.pill}
                 onClick={() => {
                   onRecordLeft(admissionId, occupantAlias, drawerLeavingDestination);
@@ -945,7 +952,7 @@ function PhoneBedSheet({
             ) : null}
             {admissionId ? (
               <Button
-                variant="pri"
+                variant={heldUpNow ? "pri" : "sec"}
                 size="lg"
                 className={styles.pill}
                 aria-expanded={quickBlockerOpen}

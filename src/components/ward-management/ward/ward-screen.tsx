@@ -678,9 +678,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const priorRejectionCountRef = useRef(rejections.length);
   const [checkToken, setCheckToken] = useState(0);
   const [lastActionRejection, setLastActionRejection] = useState<Rejection | undefined>(undefined);
+  // A1-8 (audit round 2): an accept from the Ward flow list offers Undo on its toast, as the Ward
+  // answer view and the Bed board already do. Set by the accept, read once by the check below.
+  const acceptUndoRef = useRef<{ movementId: string; unitId: string } | null>(null);
 
   useEffect(() => {
     if (checkToken === 0) return;
+    const acceptUndo = acceptUndoRef.current;
+    acceptUndoRef.current = null;
     if (rejections.length > priorRejectionCountRef.current) {
       const newest = rejections[rejections.length - 1];
       setLastActionRejection(
@@ -688,8 +693,40 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       );
     } else {
       setLastActionRejection(undefined);
+      if (acceptUndo && toast) {
+        const success = "Accepted in principle.";
+        const undoLimit = roleLimitReason(routeRole, "UNDO_ACCEPT_IN_PRINCIPLE");
+        toast.push({
+          tone: "success",
+          title: success,
+          ...(undoLimit
+            ? { body: `Undo: ${undoLimit}` }
+            : {
+                undo: {
+                  durationMs: UNDO_TOAST_MS,
+                  onUndo: () => {
+                    boardCheckRef.current = {
+                      prior: rejectionCountRef.current,
+                      bed: 0,
+                      success: "Acceptance undone. The referral is back with this ward.",
+                    };
+                    dispatch({
+                      type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                      role: "ward",
+                      now: nowRef.current,
+                      movementId: acceptUndo.movementId,
+                      actingUnitId: acceptUndo.unitId,
+                    });
+                    setBoardToken((token) => token + 1);
+                  },
+                },
+              }),
+        });
+      }
     }
     priorRejectionCountRef.current = rejections.length;
+    // `toast`, `routeRole` and `dispatch` are stable for the screen's life; the token drives this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, checkToken]);
 
   if (!unit) {
@@ -703,7 +740,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           </p>
           <div>
             <Link href="/mockups/ward-flow/wards" className={styles.notFoundAction}>
-              &larr; View all 23 available wards
+              &larr; View all {units.length} available wards
             </Link>
           </div>
         </main>
@@ -825,10 +862,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     unitRefreshRequests.length > 0 ? unitRefreshRequests[unitRefreshRequests.length - 1] : undefined;
 
   // Awaiting an answer: this unit holds a live referral and nothing has been decided yet.
-  const incoming = movements.filter(
-    (movement) =>
-      isOpen(movement) && movement.stage === "destination_review" && movement.referredUnitIds.includes(unit.id),
-  );
+  // A1-9 (audit round 2): longest wait first, as the Referrals board orders its queue.
+  const incoming = movements
+    .filter(
+      (movement) =>
+        isOpen(movement) && movement.stage === "destination_review" && movement.referredUnitIds.includes(unit.id),
+    )
+    .sort((left, right) => left.openedAt - right.openedAt);
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
   const visibleIncoming =
     presentation === "answer" ? incoming.slice(activeAnswerIndex, activeAnswerIndex + 1) : incoming;
@@ -1401,6 +1441,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const targetUnit = units.find((u) => u.id === unitId);
     if (!targetUnit) return;
     priorRejectionCountRef.current = rejections.length;
+    acceptUndoRef.current = { movementId, unitId };
     dispatch({
       type: "ACCEPT_IN_PRINCIPLE",
       role: "ward",
@@ -2393,6 +2434,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               openCapacityModal();
             }}
             onOpenArrival={openArrival}
+            onPullPatient={handlePullPatient}
             onOpenDischarges={openDischargesTab}
             bedsList={bedsList}
             onSelectBed={(bedNumber) => {

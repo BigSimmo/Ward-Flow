@@ -221,7 +221,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           </p>
           <div>
             <Link href="/mockups/ward-flow/wards" className={styles.backLink}>
-              &larr; View all 23 available wards
+              &larr; View all {units.length} available wards
             </Link>
           </div>
         </main>
@@ -244,10 +244,15 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   // reading a bare "ready" count and being refused at the moment of pulling a patient.
   const pendingPreparation = bedsPendingPreparation(currentUnit.id, bedReleases);
 
-  const incoming = movements.filter(
-    (movement) =>
-      isOpen(movement) && movement.stage === "destination_review" && movement.referredUnitIds.includes(currentUnit.id),
-  );
+  // A1-9 (audit round 2): longest wait first, as the Referrals board orders its queue.
+  const incoming = movements
+    .filter(
+      (movement) =>
+        isOpen(movement) &&
+        movement.stage === "destination_review" &&
+        movement.referredUnitIds.includes(currentUnit.id),
+    )
+    .sort((left, right) => left.openedAt - right.openedAt);
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
   const activeMovement = incoming[activeAnswerIndex];
 

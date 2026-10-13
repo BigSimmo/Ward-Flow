@@ -40,7 +40,7 @@ function wardSafeRejectionReason(reason: string): string {
   return reason;
 }
 
-function pullBlockedReason(movement: Movement, unit: Unit, who?: string): string | undefined {
+export function pullBlockedReason(movement: Movement, unit: Unit, who?: string): string | undefined {
   if (movement.acceptedUnitId !== unit.id) {
     return `${who ?? "This patient"} was accepted at a different unit, not ${unit.name}.`;
   }
