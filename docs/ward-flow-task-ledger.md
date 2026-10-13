@@ -8592,7 +8592,7 @@ Owner request (13 October 2026): put all remaining issues in the ledger. The ful
 
 ## WF-AUDIT-TRIAGE-20261013 — external audit headline findings, verified against `main` (13 October 2026)
 
-Source: an external multi-agent audit (Antigravity, 52 batches, 355 findings, "84/100"). Claude Code checked only its 11 headline findings against `origin/main` at `812048e`. Several of the audit's line numbers did not match `main` and two of its script paths do not exist, so it may have run on a local checkout with uncommitted work. **The other 344 findings are unverified; check each against the code before acting.** Of these 11: 3 real, 1 probably real, the rest wrong, overstated or without effect.
+Source: an external multi-agent audit (Antigravity, 52 batches, 355 findings, "84/100"). Claude Code checked only its 11 headline findings against `origin/main` at `812048e`. Several of the audit's line numbers did not match `main` and two of its script paths do not exist, so it may have run on a local checkout with uncommitted work. **The other 344 findings are unverified; check each against the code before acting.** Of these 11: 4 real (items 1, 2, 4, 5), 1 overstated but fixed (item 3), 1 probably real (item 6), and the rest unproven, misframed or not real.
 
 Fixed in branch `claude/audit-verified-fixes-20261013` (items 1–3), with regression tests that fail on the old code:
 
