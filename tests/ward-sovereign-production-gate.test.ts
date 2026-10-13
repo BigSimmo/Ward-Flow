@@ -24,6 +24,13 @@ describe("/sovereign production gate", () => {
     expect(notFound).toHaveBeenCalledTimes(1);
   });
 
+  it("answers not found when NODE_ENV is unset", () => {
+    vi.stubEnv("NODE_ENV", undefined);
+    vi.stubEnv("WARD_FLOW_SHOWCASE", "");
+    expect(() => SovereignShowcasePage()).toThrow("NEXT_NOT_FOUND");
+    expect(notFound).toHaveBeenCalledTimes(1);
+  });
+
   it("renders in the offline test build, which alone sets WARD_FLOW_SHOWCASE", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("WARD_FLOW_SHOWCASE", "1");

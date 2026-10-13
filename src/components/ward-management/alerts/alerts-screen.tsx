@@ -1415,10 +1415,11 @@ function AlertsWorkspace() {
                   variant="onHero"
                   size="sm"
                   icon={ChevronRight}
-                  aria-label={`Next alert, ${openCount} open`}
+                  aria-label={`Next alert, ${nextQueue.length} in turn`}
                   onClick={handleNext}
                 >
-                  Next of <span className={styles.mono}>{openCount}</span>
+                  {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
+                  Next of <span className={styles.mono}>{nextQueue.length}</span>
                 </Button>
                 <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
                   Copy for handover

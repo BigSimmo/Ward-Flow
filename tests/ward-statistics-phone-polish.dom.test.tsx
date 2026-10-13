@@ -151,7 +151,7 @@ describe("Statistics phone polish (batch 4)", () => {
   it("writes a nought as 0, never none, on the Services phone list (stats-21)", () => {
     asPhone();
     renderInProvider(<StatisticsServicesIndexScreen />);
-    expect(screen.getByTestId("ward-statistics-services-phone").textContent).not.toMatch(/\bnone\b/u);
+    expect(screen.getByTestId("ward-statistics-services-phone").textContent).not.toMatch(/\bnone\b/iu);
   });
 });
 

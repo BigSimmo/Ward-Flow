@@ -1,6 +1,6 @@
 "use client";
 
-import { lockPageScroll } from "@/components/ui/sheet-focus";
+import { hasOpenSheet, lockPageScroll } from "@/components/ui/sheet-focus";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -855,6 +855,9 @@ export function WardGlobalSearch({
       const slashShortcut = event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey;
       const commandShortcut = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey) && !event.altKey;
       if (!slashShortcut && !commandShortcut) return;
+      // An open sheet keeps its own keys: the phone referral's "/" opens its patient step. Search
+      // stays live over that sheet (shell, `headerLiveOverSheet`) for a tap, not for the shortcut.
+      if (event.defaultPrevented || hasOpenSheet()) return;
       const target = event.target as HTMLElement | null;
       if (
         target &&

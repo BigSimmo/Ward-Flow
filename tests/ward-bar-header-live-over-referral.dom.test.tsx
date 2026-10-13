@@ -57,6 +57,10 @@ describe("phone header stays live over the New referral sheet", () => {
     expect(search.closest("[inert]"), "Search sits inside an inert container").toBeNull();
     // The rest of the page behind the sheet is still inert.
     expect(document.querySelector("[data-sheet-inert]")).not.toBeNull();
+    // The "/" shortcut belongs to the open referral (its patient step), not the live Search.
+    (document.activeElement as HTMLElement | null)?.blur();
+    fireEvent.keyDown(document.body, { key: "/" });
+    expect(search).not.toHaveFocus();
 
     fireEvent.click(menu);
     expect(await screen.findByTestId("ward-phone-menu")).toBeInTheDocument();

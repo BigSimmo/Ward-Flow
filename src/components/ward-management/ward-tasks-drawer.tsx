@@ -274,9 +274,18 @@ export function WardTasksDrawer({
 
   /** Calling is not wired: the number is copied and the toast says so. */
   function callNumber(row: CallRow) {
-    if (!row.number) return;
-    void navigator.clipboard?.writeText(row.number).catch(() => undefined);
-    toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." });
+    const number = row.number;
+    if (!number) return;
+    const failed = () =>
+      toast?.push({ tone: "warning", title: "Number not copied", body: `Copy it by hand: ${number}` });
+    // Says copied only once the clipboard has taken it.
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+      failed();
+      return;
+    }
+    navigator.clipboard
+      .writeText(number)
+      .then(() => toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." }), failed);
   }
 
   function renderCallRow(row: CallRow, onCall: (from: HTMLElement) => void) {

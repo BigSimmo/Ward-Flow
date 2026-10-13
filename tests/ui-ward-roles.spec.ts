@@ -17,6 +17,20 @@ async function openShortlistSections(shortlist: Locator) {
   }
 }
 
+/**
+ * shell-10 (13 Oct 2026) added a route `loading.tsx`, so every Ward Flow page now streams behind a
+ * Suspense boundary: the server parks the page in a hidden `S:` copy and an inline script swaps it
+ * in on a timer. A test that has paused the browser clock stops that timer, leaving the hidden copy
+ * (and every duplicated id) in place. Step the paused clock until the swap has happened.
+ */
+async function settleStreamUnderPausedClock(page: Page): Promise<void> {
+  const staged = page.locator('div[hidden][id^="S:"]');
+  await expect(async () => {
+    await page.clock.runFor(100);
+    await expect(staged).toHaveCount(0, { timeout: 500 });
+  }).toPass({ timeout: 15_000 });
+}
+
 async function gotoWard(page: Page, unitId: string): Promise<Locator> {
   await page.goto(`/mockups/ward-flow/ward/${unitId}`, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle");
@@ -206,7 +220,11 @@ test.describe("@mockup Ward screen", () => {
     // still exactly 10:00:00.
     await page.clock.install({ time: new Date("2026-08-26T09:59:00Z") });
     await page.clock.pauseAt(new Date("2026-08-26T10:00:00Z"));
-    const wardScreen = await gotoWard(page, "rph-adult-secure");
+    await page.goto("/mockups/ward-flow/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
+    await settleStreamUnderPausedClock(page);
+    await page.waitForLoadState("networkidle");
+    const wardScreen = page.locator('[data-testid="ward-unit-screen"]:visible');
+    await expect(wardScreen).toHaveCount(1, { timeout: 15_000 });
 
     await openAllArrivals(page);
     const card = wardScreen.getByTestId("ward-accepted-WF-003");
@@ -673,6 +691,7 @@ test.describe("@mockup Emergency department screen", () => {
     await page.clock.install({ time: new Date("2026-08-26T09:59:00Z") });
     await page.clock.pauseAt(new Date("2026-08-26T10:00:00Z"));
     await page.goto("/mockups/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
+    await settleStreamUnderPausedClock(page);
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -1245,7 +1264,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await closeEdPatientSheet(page, "WF-315");
 
     // --- Steps 7-10: Officer — Accepted, En route, Collected, Delivered. ---
-    await switchTo("Authorised officer");
+    await switchTo("Transport officer");
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
