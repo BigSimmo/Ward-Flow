@@ -123,6 +123,7 @@ describe("read-only report screens", () => {
     }
   });
 
+  // Renders every synthetic patient's chronology in turn; slower CI runners need the headroom.
   it("lists patients Family, Given in family-name order, and groups each board day once (ops-24, ops-18)", () => {
     route.pathname = "/mockups/ward-flow/reports/chronology";
     inProvider(<PatientChronologyScreen />);
@@ -136,16 +137,15 @@ describe("read-only report screens", () => {
     let headings = 0;
     for (const option of options) {
       fireEvent.change(picker, { target: { value: option.value } });
-      const days = screen
-        .queryAllByRole("rowheader")
-        .concat(screen.queryAllByRole("columnheader"))
-        .filter((cell) => cell.getAttribute("scope") === "rowgroup")
-        .map((cell) => cell.firstElementChild?.firstChild?.textContent ?? "");
+      // A plain selector, not *ByRole: role queries over every patient's table took minutes in CI.
+      const days = Array.from(document.querySelectorAll('[scope="rowgroup"]')).map(
+        (cell) => cell.firstElementChild?.firstChild?.textContent ?? "",
+      );
       expect(new Set(days).size, `${option.value}: ${days.join(" | ")}`).toBe(days.length);
       headings += days.length;
     }
     expect(headings).toBeGreaterThan(options.length);
-  });
+  }, 90_000);
 
   it("asks for a patient before showing any chronology", () => {
     inProvider(<PatientChronologyScreen />);

@@ -88,6 +88,11 @@ export type WeeklyReport = {
      * covered. Equal to or after the week's counted end means no stay in the week could be measured.
      */
     recordedFrom: Instant | null;
+    /**
+     * Stays past their expected date during the week whose date was set at or after the week's
+     * counted end, so they are left out of the figure.
+     */
+    unmeasuredStays: number;
   };
   declines: { placement: number; referral: number; byReason: ReasonCount[] };
   overrides: { placement: number; referral: number; byReason: ReasonCount[] };
@@ -128,10 +133,15 @@ function tally(reasons: string[]): ReasonCount[] {
  * date was set. Returns the latest such set time inside the week, or `null` when the week is fully
  * covered. A set time at or after the week's end is returned only when no stay in the week could be
  * measured, so a date changed later does not hide the stays that were measured. A date with no set
- * time is treated as always known.
+ * time is treated as always known. Also counts the stays left out because their date was set later.
  */
-function dischargeDatesRecordedFrom(admissions: readonly Admission[], week: ReportWeek, now: Instant): Instant | null {
+function dischargeDatesRecordedFrom(
+  admissions: readonly Admission[],
+  week: ReportWeek,
+  now: Instant,
+): { recordedFrom: Instant | null; unmeasuredStays: number } {
   let latestInWeek = -Infinity;
+  let unmeasuredStays = 0;
   let earliestAfter = Infinity;
   let measured = false;
   for (const admission of admissions) {
@@ -146,10 +156,13 @@ function dischargeDatesRecordedFrom(admissions: readonly Admission[], week: Repo
       if (typeof setAt === "number" && Number.isFinite(setAt)) latestInWeek = Math.max(latestInWeek, setAt);
     } else {
       earliestAfter = Math.min(earliestAfter, setAt);
+      unmeasuredStays += 1;
     }
   }
-  if (!measured) return Number.isFinite(earliestAfter) ? (earliestAfter as Instant) : null;
-  return latestInWeek > week.start ? (latestInWeek as Instant) : null;
+  if (!measured) {
+    return { recordedFrom: Number.isFinite(earliestAfter) ? (earliestAfter as Instant) : null, unmeasuredStays };
+  }
+  return { recordedFrom: latestInWeek > week.start ? (latestInWeek as Instant) : null, unmeasuredStays };
 }
 
 export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWeek): WeeklyReport {
@@ -252,7 +265,7 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
     delayedDischarge: {
       bedDays: days(delayedMinutes),
       people: delayedPeople.size,
-      recordedFrom: dischargeDatesRecordedFrom(admissions, week, now),
+      ...dischargeDatesRecordedFrom(admissions, week, now),
     },
     declines: {
       placement: placementDeclines.totalCount,

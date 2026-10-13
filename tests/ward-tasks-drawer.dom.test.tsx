@@ -213,12 +213,16 @@ describe("task workspace state filters and actions", () => {
     expect(stateFilter.parentElement).not.toHaveTextContent(String(items.length));
   });
 
-  it("records the escalation to a pick when its Call is pressed (ops-6)", () => {
+  it("fills in a pick when its Call is pressed, and records only on Record escalation (ops-6)", () => {
     const { drawer, dispatch } = renderDrawer({ records: seed });
     const item = items.find((item) => item.title === "Multiple destinations declined")!;
     const card = within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!;
     fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
     fireEvent.click(within(card).getByRole("button", { name: /^Call State bed desk, / }));
+    // Calling copies a mock number only: nobody has confirmed the call, so nothing is recorded yet.
+    expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "RECORD_ESCALATION" }));
+    expect(within(card).getByRole("textbox")).toHaveValue("State bed desk");
+    fireEvent.click(within(card).getByRole("button", { name: "Record escalation" }));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "RECORD_ESCALATION", movementId: item.movementId, contact: "State bed desk" }),
     );

@@ -215,4 +215,25 @@ describe("settings screen configuration draft", () => {
     // Save + Restore + Undo: three recorded configuration changes, so the audit keeps all of them.
     expect(Number(screen.getByTestId("probe-audit-count").textContent)).toBe(beforeAuditCount + 3);
   });
+
+  it("gives unsaved rule edits back on Undo after a restore, without saving them", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    const saved = screen.getByTestId("probe-ed-target").textContent;
+    setEdToMinimum();
+    expect(screen.getByRole("button", { name: /^Save 1 change$/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Restore all defaults" }).at(-1)!);
+    const restored = within(screen.getByTestId("toast-region")).getByText("Defaults restored and recorded.");
+    fireEvent.click(
+      within(restored.closest<HTMLElement>('[data-testid="toast"]')!).getByRole("button", { name: "Undo" }),
+    );
+
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    // The unsaved edit is back as a draft; the saved rules are the ones from before the restore.
+    expect(screen.getByRole("button", { name: /^Save 1 change$/ })).toBeInTheDocument();
+    expect(screen.getByTestId("probe-ed-target").textContent).toBe(saved);
+  });
 });

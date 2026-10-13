@@ -553,6 +553,8 @@ export function SettingsScreen() {
     // can. Undo puts the rules back with a second recorded save, so the audit keeps both.
     const before = {
       configuration,
+      // The draft as it stands, unsaved edits included, so Undo gives those back too.
+      draft,
       buzz: audioBuzz,
       appearance,
       glare,
@@ -574,7 +576,7 @@ export function SettingsScreen() {
         durationMs: UNDO_TOAST_MS,
         onUndo: () => {
           dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: before.configuration });
-          setDraft({ ...before.configuration });
+          setDraft({ ...before.draft });
           setAudioBuzz(before.buzz);
           setAudioBuzzPreference(before.buzz);
           applyAppearance(before.appearance);

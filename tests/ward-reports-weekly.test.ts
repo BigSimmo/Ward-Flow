@@ -148,7 +148,7 @@ describe("weeklyOperationsReport", () => {
     });
     const report = weeklyOperationsReport(inputOf(f, { admissions: [far, near] }), week);
     expect(report.outOfArea).toEqual({ bedDays: 7, people: 1 });
-    expect(report.delayedDischarge).toEqual({ bedDays: 1.5, people: 1, recordedFrom: null });
+    expect(report.delayedDischarge).toEqual({ bedDays: 1.5, people: 1, recordedFrom: null, unmeasuredStays: 0 });
     expect(report.occupancy.occupiedBedDays).toBe(7 + 3.5);
     expect(report.occupancy.averagePercent).toBe(Math.round(((7 + 3.5) / (f.unit.beds * 7)) * 100));
     expect(report.occupancy.now).toEqual(occupiedBeds([f.unit], [far, near], [], []));
@@ -209,6 +209,7 @@ describe("weeklyOperationsReport", () => {
       bedDays: 2,
       people: 1,
       recordedFrom: week.start + 5 * DAY,
+      unmeasuredStays: 0,
     });
     // Set after the week ended: that week is not measured against it at all, and says so rather
     // than reading as a real nought.
@@ -217,6 +218,7 @@ describe("weeklyOperationsReport", () => {
       bedDays: 0,
       people: 0,
       recordedFrom: week.end + DAY,
+      unmeasuredStays: 1,
     });
     // Set before the week began: the week is fully measured.
     const earlier = { ...stay, dischargeDateSetAt: week.start - DAY };
@@ -235,6 +237,11 @@ describe("weeklyOperationsReport", () => {
       weeklyOperationsReport(inputOf(f, { admissions: [earlier, later, notYetDue] }), week).delayedDischarge
         .recordedFrom,
     ).toBe(null);
+    // ...but the stay left out is counted, so the screen can say the figure is incomplete.
+    expect(
+      weeklyOperationsReport(inputOf(f, { admissions: [earlier, later, notYetDue] }), week).delayedDischarge
+        .unmeasuredStays,
+    ).toBe(1);
   });
 
   it("counts an over-target wait only in the week its target crossing falls in", () => {

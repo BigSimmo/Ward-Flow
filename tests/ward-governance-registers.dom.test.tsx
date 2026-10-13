@@ -310,6 +310,16 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
     });
   });
 
+  it("announces the phone review only once the reducer has confirmed it", () => {
+    withPhone(() => {
+      fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Follow-up" }));
+      const live = Array.from(document.querySelectorAll('p[aria-live="polite"]')).map((node) => node.textContent);
+      expect(live).toContain("Follow-up required recorded.");
+      expect(live).not.toContain("Recording review…");
+    });
+  });
+
   it("names the category and UMRN on each row, filters from the hero, lists reviewed events and opens a site's gaps", () => {
     withPhone(() => {
       const list = screen.getByRole("region", { name: "Waiting for review" });

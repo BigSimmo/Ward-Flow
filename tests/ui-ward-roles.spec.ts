@@ -168,19 +168,22 @@ test.describe("@mockup Ward screen", () => {
 
   /**
    * Addendum R40 (Global Constraint): an id `unitById` cannot resolve must render an explicit
-   * empty state naming the id — never a substituted unit, never `?? allUnits()[0]`. This id is
+   * empty state (since shell-12 it quotes no id) — never a substituted unit, never `?? allUnits()[0]`. This id is
    * checked against the real fixture below to prove it genuinely resolves to nothing, so the test
    * cannot silently start passing against a real unit if the fixture ever grows an id like this.
    */
-  test("names an unresolved unit id rather than substituting a different ward", async ({ page }) => {
+  test("shows a plain not-found for an unresolved unit id rather than substituting a different ward", async ({
+    page,
+  }) => {
     const bogusUnitId = "nonexistent-unit-does-not-exist";
     expect(unitById(bogusUnitId), "fixture assumption: this id resolves to no real unit").toBeUndefined();
 
     await page.goto(`/mockups/ward-flow/ward/${bogusUnitId}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
 
-    // Names the id, in real visible text — never a generic "not found" with the id swallowed.
-    await expect(page.getByTestId("ward-unit-screen")).toContainText(bogusUnitId);
+    // Not-found pages quote no ids (shell-12, 13 Oct 2026): the plain sentence, never the id.
+    await expect(page.getByTestId("ward-unit-screen")).toContainText("No ward matches this link.");
+    await expect(page.getByTestId("ward-unit-screen")).not.toContainText(bogusUnitId);
     // And never a substituted unit: no unit card is rendered at all for this route.
     await expect(page.locator('[data-testid^="ward-unit-card-"]')).toHaveCount(0);
     await expect(page.getByTestId("ward-unit-beds")).toHaveCount(0);
@@ -626,11 +629,13 @@ test.describe("@mockup Emergency department screen", () => {
 
   /**
    * Addendum R40 (Global Constraint), the same rule `ward-screen.tsx`'s unresolved-unit test
-   * proves: an id `edById` cannot resolve must render an explicit empty state naming the id —
-   * never a substituted department. Checked against the real fixture first so this test cannot
+   * proves: an id `edById` cannot resolve must render an explicit empty state (since shell-12 it
+   * quotes no id) — never a substituted department. Checked against the real fixture first so this test cannot
    * silently start passing against a real department if one is ever added with this id.
    */
-  test("names an unresolved emergency department id rather than substituting a different one", async ({ page }) => {
+  test("shows a plain not-found for an unresolved emergency department id rather than substituting a different one", async ({
+    page,
+  }) => {
     const bogusEdId = "nonexistent-ed-does-not-exist";
     expect(edById(bogusEdId), "fixture assumption: this id resolves to no real department").toBeUndefined();
 
@@ -638,7 +643,9 @@ test.describe("@mockup Emergency department screen", () => {
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    await expect(page.getByTestId("ward-ed-screen")).toContainText(bogusEdId);
+    // Not-found pages quote no ids (shell-12, 13 Oct 2026): the plain sentence, never the id.
+    await expect(page.getByTestId("ward-ed-screen")).toContainText("No emergency department matches this link.");
+    await expect(page.getByTestId("ward-ed-screen")).not.toContainText(bogusEdId);
     await expect(page.locator('[data-testid^="ward-ed-card-"]')).toHaveCount(0);
     await expect(page.locator('[data-testid^="ward-ed-patient-"]')).toHaveCount(0);
   });

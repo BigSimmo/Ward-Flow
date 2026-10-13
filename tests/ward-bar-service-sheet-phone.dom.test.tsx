@@ -66,6 +66,23 @@ describe("phone service sheet is a real popup", () => {
     // The phone sheet owns a history entry, so it closes on the Back that follows.
     await waitFor(() => expect(screen.queryByTestId("ward-bar-service-panel")).toBeNull());
     expect(screen.getByTestId("page-behind").closest("[inert]")).toBeNull();
+    // Focus goes back to the Service button once the sheet has gone and the page is live again.
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId("ward-bar-service-trigger")));
+  });
+
+  it("keeps Tab and Shift+Tab inside the phone sheet", () => {
+    installMatchMediaStub(true);
+    renderBar();
+    fireEvent.click(screen.getByTestId("ward-bar-service-trigger"));
+    const panel = screen.getByTestId("ward-bar-service-panel");
+    const buttons = Array.from(panel.querySelectorAll<HTMLElement>("button"));
+    // jsdom lays nothing out, so give the buttons a box for the trap's visibility filter.
+    for (const button of buttons) button.getClientRects = () => [{}] as unknown as DOMRectList;
+    buttons.at(-1)!.focus();
+    fireEvent.keyDown(document.activeElement!, { key: "Tab" });
+    expect(document.activeElement).toBe(buttons[0]);
+    fireEvent.keyDown(document.activeElement!, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(buttons.at(-1));
   });
 
   it("stays a menu on desktop, with the page behind left alone", () => {

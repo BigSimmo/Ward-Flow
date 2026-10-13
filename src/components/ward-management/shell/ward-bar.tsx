@@ -31,7 +31,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
-import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
+import { canRestoreFocusTo, isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import {
   StatusGlyph,
   WF_BAND_SCROLLED_PX,
@@ -1141,9 +1141,39 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   useEffect(() => {
     if (!isPhone || openPanel !== "service") return;
     const sheetId = "ward-bar-service-sheet";
-    pushSheet(sheetId, servicePanelRef.current);
-    servicePanelRef.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
-    return () => popSheet(sheetId);
+    const panel = servicePanelRef.current;
+    const trigger = serviceTriggerRef.current;
+    pushSheet(sheetId, panel);
+    panel?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
+    // Tab and Shift+Tab stay inside the sheet, as Sheet's own trap does.
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Tab" || !panel || !isTopmostSheet(sheetId)) return;
+      const focusable = Array.from(
+        panel.querySelectorAll<HTMLElement>('a[href], button:not([disabled]):not([tabindex="-1"])'),
+      ).filter((element) => element.getClientRects().length > 0);
+      if (focusable.length === 0) return;
+      const index = focusable.indexOf(document.activeElement as HTMLElement);
+      const next =
+        index === -1
+          ? event.shiftKey
+            ? focusable.length - 1
+            : 0
+          : (index + (event.shiftKey ? -1 : 1) + focusable.length) % focusable.length;
+      event.preventDefault();
+      focusable[next].focus();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      popSheet(sheetId);
+      // Back to the Service button once the sheet is gone and the page is no longer inert, however
+      // it closed (scrim, Escape or a choice), unless focus has already moved somewhere real.
+      window.requestAnimationFrame(() => {
+        const active = document.activeElement;
+        const lost = active === null || active === document.body || !active.isConnected || panel?.contains(active);
+        if (lost && trigger?.isConnected && canRestoreFocusTo(trigger)) trigger.focus();
+      });
+    };
   }, [isPhone, openPanel]);
 
   // The one Escape order — see the file header for the full reasoning behind each branch. The

@@ -57,7 +57,7 @@ import {
   broadcastKind,
   type BroadcastKind,
 } from "./ward-broadcast-model";
-import { broadcastScopeCount, directiveAcknowledgements, isAlertLive } from "./global-alert-view";
+import { broadcastScopeCount, directiveAcknowledgements, isAlertLive, replyBoard } from "./global-alert-view";
 import { PullNowCard, ReplyBoardList } from "./global-alert-panels";
 
 import {
@@ -356,7 +356,14 @@ function AlertsWorkspace() {
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
   // Ops-11: acknowledgements count against the wards the directive's target covers, as the banner does.
-  const broadcastAcks = activeBroadcast ? directiveAcknowledgements(activeBroadcast, units) : undefined;
+  // A bed call is answered by the wards it asked, never ED desks, so it counts replies as the banner does.
+  const broadcastBoard =
+    activeBroadcast && broadcastKind(activeBroadcast) !== "directive" ? replyBoard(activeBroadcast, units) : undefined;
+  const broadcastAcks = !activeBroadcast
+    ? undefined
+    : broadcastBoard
+      ? { acknowledged: broadcastBoard.answered, of: broadcastBoard.rows.length }
+      : directiveAcknowledgements(activeBroadcast, units);
   const livePullNows = (broadcastAlerts ?? []).filter(
     (alert) => broadcastKind(alert) === "pull_now" && isAlertLive(alert, movements, now),
   );

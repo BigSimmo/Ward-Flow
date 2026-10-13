@@ -144,7 +144,8 @@ function CellName({ surname, initial }: { surname: string; initial: string }) {
     observer.observe(name);
     void document.fonts?.ready.then(fit);
     return () => observer.disconnect();
-  }, [surname]);
+    // The ", {initial}" tail takes room too, so a new initial is measured again.
+  }, [surname, initial]);
   return (
     <span ref={nameRef} className={styles.cellName}>
       <span ref={wordRef} className={styles.cellWord}>

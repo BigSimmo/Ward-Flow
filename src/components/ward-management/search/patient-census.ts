@@ -218,7 +218,7 @@ export function buildCensus(state: {
       patientRecordId: patient?.id ?? null,
       communityTeam: patient?.catchmentCommunityTeam ?? null,
       confidential: Boolean((patient as { confidential?: boolean } | undefined)?.confidential),
-      searchText: foldPatientSearchText(`${info.displayName} ${info.umrn}`),
+      searchText: foldPatientSearchText(`${info.displayName} ${info.formalName} ${info.umrn}`),
     };
   };
   const legalOnRecord = (subject: Admission) => resolve(subject).patient?.legalStatus;

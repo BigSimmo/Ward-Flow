@@ -503,16 +503,13 @@ export function WardTasksDrawer({
             </button>
           ))}
         </div>
-        {/* Ops-6: each pick's number, with Call. Calling copies the number and records the
-            escalation to that contact. */}
+        {/* Ops-6: each pick's number, with Call. Calling only copies the number and fills in that
+            contact; nothing is recorded until Record escalation is pressed. */}
         <ul className={styles.callList} aria-label="Escalation contacts, mock numbers">
           {callRows(escalationTargets(movement), now).map((row) =>
-            renderCallRow(row, (from) => {
+            renderCallRow(row, () => {
               callNumber(row);
-              recordEscalation(row.name);
-              focusTrigger(from);
-              setEscalating(null);
-              setContact("");
+              setContact(row.name);
             }),
           )}
         </ul>

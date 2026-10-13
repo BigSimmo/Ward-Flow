@@ -1022,6 +1022,12 @@ function GovernanceSession({
     );
     if (confirmed && nextWaiting) setSelection(nextWaiting);
     else if (confirmed) setPhoneSheet(false);
+    // Announce only the settled outcome, never before the review is confirmed.
+    setAnnouncement(
+      confirmed && pending
+        ? `${reviewLabels[pending.decision]} recorded.`
+        : "Review not recorded. The record may have changed; select it again.",
+    );
   }
 
   function changeTab(next: GovernanceTab) {
@@ -1049,8 +1055,8 @@ function GovernanceSession({
     choose(list[next] ?? null);
   }
 
-  function recordReview(decision: AuditReview["decision"]) {
-    if (!api || !canReview || !selected || selected.generation !== api.worldGeneration) return;
+  function recordReview(decision: AuditReview["decision"]): boolean {
+    if (!api || !canReview || !selected || selected.generation !== api.worldGeneration) return false;
     const count = history.length;
     setPending({
       eventId: selected.id,
@@ -1069,6 +1075,7 @@ function GovernanceSession({
       expectedReviewCount: count,
       decision,
     });
+    return true;
   }
 
   function closeEndorse() {
@@ -1224,9 +1231,9 @@ function GovernanceSession({
   };
   const phoneReviewReason = !reviewGate.allowed ? reviewGate.reason : !canReview ? "Recording review…" : undefined;
   const recordPhoneReview = (decision: AuditReview["decision"]) => {
+    if (!recordReview(decision)) return;
     setPhoneAdvance(true);
-    recordReview(decision);
-    setAnnouncement(`${reviewLabels[decision]} recorded.`);
+    setAnnouncement("Recording review…");
   };
   // v10 phone row: the action, the person, then the outcome and who; the clock time and how long
   // ago at the end. The whole row opens the review sheet, so it carries no separate button.

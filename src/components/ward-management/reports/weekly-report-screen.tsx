@@ -121,12 +121,21 @@ export function WeeklyReportScreen() {
   // Expected dates set after the week began leave the week only partly measured (audit stats-11).
   const delayedFrom = report.delayedDischarge.recordedFrom;
   const delayedUnknown = delayedFrom !== null && delayedFrom >= week.countedEnd;
-  const delayedNote =
+  const delayedUnmeasured = report.delayedDischarge.unmeasuredStays;
+  const delayedSkipped =
+    !delayedUnknown && delayedUnmeasured > 0
+      ? `${delayedUnmeasured} ${delayedUnmeasured === 1 ? "stay" : "stays"} not counted: ${
+          delayedUnmeasured === 1 ? "its date was" : "their dates were"
+        } changed after this week.`
+      : null;
+  const delayedFromNote =
     delayedFrom === null
       ? null
       : delayedUnknown
         ? "Not enough history. No expected date held for this week."
         : `Counted from ${dateOf(delayedFrom, dayZero)}, when the latest date was set`;
+  const delayedNote =
+    delayedFromNote && delayedSkipped ? `${delayedFromNote}. ${delayedSkipped}` : (delayedFromNote ?? delayedSkipped);
   const delayedDays = delayedUnknown ? "Not known" : report.delayedDischarge.bedDays;
   const delayedPeople = delayedUnknown ? "Not known" : report.delayedDischarge.people;
 
@@ -168,10 +177,7 @@ export function WeeklyReportScreen() {
             <>
               <HeroStat value={report.edWaits.count} label={`ED waits ${targetText}`} />
               <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
-              <HeroStat
-                value={delayedUnknown ? "Not known" : report.delayedDischarge.bedDays}
-                label="Delayed discharge days"
-              />
+              <HeroStat value={delayedDays} label="Delayed discharge days" />
               <HeroStat value={occupancyText} label="Average occupancy" />
             </>
           }

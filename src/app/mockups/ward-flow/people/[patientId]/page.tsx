@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
-import { PersonByUmrn } from "@/components/ward-management/patients/person-by-umrn";
 import { UMRN_IN_ADDRESS } from "@/components/ward-management/ward-patients";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
@@ -32,16 +31,16 @@ export default async function WardPersonPage({
   } catch {
     return <WardMovementNotFound requestedId={patientId} reason="not-a-person-id" />;
   }
-  const isUmrn = UMRN_IN_ADDRESS.test(id);
-  if (!isUmrn && !id.startsWith("PT-") && !id.startsWith("WF-")) {
+  // D-39: patient links go by person ID, never UMRN, so a UMRN in the address is not resolved. It
+  // gets the plain not-found, which quotes nothing back (the UMRN is not passed on).
+  if (UMRN_IN_ADDRESS.test(id)) return <WardMovementNotFound requestedId="" reason="not-a-person-id" />;
+  if (!id.startsWith("PT-") && !id.startsWith("WF-")) {
     return <WardMovementNotFound requestedId={id} reason="not-a-person-id" />;
   }
   const governed = query?.view === "governed" || query?.view === "legacy";
-  if (governed && !isUmrn) {
+  if (governed) {
     return <PersonScreen patientId={id as PatientId} />;
   }
-  // shell-6: a UMRN in the address opens that person, or says no one has it.
-  if (isUmrn) return <PersonByUmrn umrn={id} governed={governed} />;
   return (
     <PatientNowScreen
       patientId={id.startsWith("PT-") ? id : undefined}
