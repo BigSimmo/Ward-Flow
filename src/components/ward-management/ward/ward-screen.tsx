@@ -132,7 +132,10 @@ const WardNotificationCenter = dynamic(
   () => import("./ward-notification-center").then((m) => m.WardNotificationCenter),
   { ssr: false },
 );
-const WardAnswerView = dynamic(() => import("./ward-answer-view").then((m) => m.WardAnswerView), { ssr: false });
+const WardAnswerView = dynamic(() => import("./ward-answer-view").then((m) => m.WardAnswerView), {
+  ssr: false,
+  loading: () => <p role="status">Loading ward answer…</p>,
+});
 const WardDecisionsCockpit = dynamic(() => import("./ward-decisions-cockpit").then((m) => m.WardDecisionsCockpit), {
   ssr: false,
 });
@@ -951,8 +954,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // closes and the bed shows as occupied in the grid above, not as a card here. Also includes
   // stopped transport movements awaiting release so the held bed remains visible to the ward.
   const accepted = movements.filter(
-    (movement) =>
-      (isOpen(movement) || isStoppedTransportAwaitingRelease(movement)) && movement.acceptedUnitId === unit.id,
+    (movement) => isOpen(movement) && movement.acceptedUnitId === unit.id,
+  );
+  const heldAfterStop = movements.filter(
+    (movement) => isStoppedTransportAwaitingRelease(movement) && movement.acceptedUnitId === unit.id,
   );
   const recentAnswers = movements
     .flatMap((movement) => {
@@ -2808,6 +2813,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             unit={unit}
             onPullPatient={handlePullPatient}
             accepted={accepted}
+            heldAfterStop={heldAfterStop}
             now={now}
             resolvePatientIdentity={resolvePatientIdentity}
             releaseOpenFor={releaseOpenFor}
