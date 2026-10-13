@@ -814,11 +814,6 @@ function WardFlowWorld({
       ? shared.snapshot.now
       : NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + Math.max(0, elapsed) + state.clockOffsetMinutes;
 
-  const nowRef = useRef(now);
-  useEffect(() => {
-    nowRef.current = now;
-  }, [now]);
-
   const [, setTick] = useState(0);
   useEffect(() => {
     if (!shared.enabled) return;
@@ -1013,12 +1008,12 @@ function WardFlowWorld({
   // memo on every render regardless of whether anything the memo actually reads had changed.
   const resetDemoState = useCallback(() => {
     if (!shared.enabled) clearWardFlowDemoState();
-    dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
-  }, [dispatch, shared.enabled]);
+    dispatch({ type: "RESET_SCENARIO", role: "demo", now: now });
+  }, [dispatch, now, shared.enabled]);
 
   const saveScenarioFile = useCallback(
-    () => buildScenarioFile(state, nowRef.current, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
-    [state],
+    () => buildScenarioFile(state, now, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
+    [now, state],
   );
 
   const loadScenarioFile = useCallback(
@@ -1066,7 +1061,7 @@ function WardFlowWorld({
           dispatch({
             type: "RECORD_LEAVING",
             role: "ward",
-            now: nowRef.current,
+            now: now,
             admissionId,
             actingUnitId,
             leavingDestination,
@@ -1076,7 +1071,7 @@ function WardFlowWorld({
         dispatch({
           type: "RECORD_PATIENT_DISCHARGE",
           role: "ward",
-          now: nowRef.current,
+          now: now,
           admissionId,
           actingUnitId,
           leavingDestination,
@@ -1101,7 +1096,7 @@ function WardFlowWorld({
         dispatch({
           ...declaredActor,
           type: "OPEN_DISCHARGE_RECORD",
-          now: nowRef.current,
+          now: now,
           admissionId,
           expectedGeneration: handle.generation,
           requestId: handle.requestId,
