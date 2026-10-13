@@ -499,8 +499,8 @@ function DataModeRow({ onClose }: { onClose: () => void }) {
 }
 
 /**
- * Audit round 2 (S-34): the who-you-are row opens the Switch workstation drawer itself. It used to
- * go to Settings, where a second Switch workstation button opened the same drawer.
+ * Audit round 2 (S-34): the who-you-are row opens the Go to a desk drawer itself. It used to
+ * go to Settings, where a second button opened the same drawer.
  */
 function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => void }) {
   return (
