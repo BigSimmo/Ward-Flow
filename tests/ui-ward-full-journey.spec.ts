@@ -296,6 +296,8 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     );
 
     await page.getByTestId("ward-ed-raise-referral-toggle").click();
+    // A2-1 (audit 13 Oct 2026): the form starts from a person.
+    await page.getByTestId("ward-ed-referral-unidentified").check();
     await page.getByTestId("ward-ed-referral-cohort").selectOption("Adult");
     await page.getByTestId("ward-ed-referral-security").selectOption("Open");
     await page.getByTestId("ward-ed-referral-sex").selectOption("Male");

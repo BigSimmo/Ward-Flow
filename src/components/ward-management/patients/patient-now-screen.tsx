@@ -765,6 +765,7 @@ export function PatientNowScreen({
     wardRejection?.attempted === "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT" ? wardRejection.reason : undefined;
   const wardRefusal = edReturnRefusal ? undefined : wardRejection?.reason;
 
+  const acceptedWardFor = acceptedWardReferralFor(livePatient?.id, referrals, units);
   const statusContext: PatientStatusContext = {
     movement: liveMovement,
     admission: resolved.liveAdmission,
@@ -776,7 +777,12 @@ export function PatientNowScreen({
       (acceptingUnit ?? stayUnit) !== undefined
         ? `/mockups/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
         : undefined,
-    acceptedReferral: acceptedWardReferralFor(livePatient?.id, referrals, units),
+    acceptedReferral: acceptedWardFor
+      ? {
+          unitName: acceptedWardFor.unitName,
+          boardHref: `/mockups/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}`,
+        }
+      : undefined,
     transportHref:
       liveMovement && !pathname.includes(`/movements/${encodeURIComponent(liveMovement.id)}`)
         ? `/mockups/ward-flow/movements/${encodeURIComponent(liveMovement.id)}`
