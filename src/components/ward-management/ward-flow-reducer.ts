@@ -6045,18 +6045,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot record a blocker for a closed movement (${movement.closure.reason})`);
       }
-      const examinationOutcome = movement.examination?.outcome;
-      const examinationRevokedHoldingBed =
-        (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
-        movement.admissionId !== undefined;
-      const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
-      if (examinationRevokedHoldingBed || awaitingRelease) {
-        return reject(
-          state,
-          event,
-          `cannot replace statutory hold on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
-        );
-      }
+      // Owner ruling 13 Oct 2026: a new blocker is accepted while an examination-revoked hold
+      // stands. The hold is not lost: `examinationRevokedWhileBedHeld` is derived from the records
+      // (never from this prose), so the ED, movement console and officer screens keep warning.
       const blocker = event.blocker.trim();
       if (blocker.length === 0) {
         return reject(state, event, `RECORD_MOVEMENT_BLOCKER blocker must say something — a blank is not a statement`);
