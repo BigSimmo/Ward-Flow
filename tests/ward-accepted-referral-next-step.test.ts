@@ -43,11 +43,7 @@ function referral(state: "queued" | "accepted", patientId = "PT-1"): Referral {
 
 describe("an accepted ward referral", () => {
   it("names the accepting ward and its board", () => {
-    expect(acceptedWardOf(referral("accepted"), units)).toEqual({
-      unitId: "dab-adult",
-      unitName: "Dabakarn",
-      boardHref: "/mockups/ward-flow/board/dab-adult",
-    });
+    expect(acceptedWardOf(referral("accepted"), units)).toEqual({ unitId: "dab-adult", unitName: "Dabakarn" });
     expect(acceptedWardOf(referral("queued"), units)).toBeUndefined();
   });
 
