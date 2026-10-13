@@ -5,7 +5,7 @@ import { BedDouble, CalendarDays, Clock, DoorOpen, Eye, Scale, Stethoscope, Truc
 import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
-  ABSENCE_STEPS,
+  absenceStepsFor,
   ABSENCE_STEP_BAR_LABELS,
   ABSENCE_STEP_LABELS,
   type AbsenceStep,
@@ -637,7 +637,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
     // A3-13: a voluntary patient is not on an order, so no return order is asked for (A3-2's step
     // is for a person on one); the other missing person steps are the same.
     const voluntary = /^voluntary\b/i.test(legalValue(movement, patient).trim());
-    const steps = voluntary ? ABSENCE_STEPS.filter((step) => step !== "return_order_made") : ABSENCE_STEPS;
+    const steps = absenceStepsFor(voluntary);
     const rows: StatusRow[] = steps.map((step) => {
       const at = absence.steps.find((done) => done.step === step)?.at;
       return {

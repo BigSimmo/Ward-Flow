@@ -509,6 +509,8 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       actingUnitId?: string;
+      /** Audit r1 item 4: arrived with no transport leg and fit to travel not recorded, and why. */
+      exception?: TransportExceptionInput;
     }
   | {
       /**
