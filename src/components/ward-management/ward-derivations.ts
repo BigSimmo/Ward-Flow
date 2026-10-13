@@ -16,7 +16,7 @@ import { CalendarClock, CircleAlert, Truck } from "lucide-react";
 
 import { plannedAdmissionIsOverdue, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
-import { boundedBedAvailability } from "@/components/ward-management/ward-bed-availability";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import {
   clockState,
   formatElapsed,

@@ -1,6 +1,9 @@
 import { dayOf, MINUTES_PER_DAY, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { EVENING_SHIFT_END_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+
+export { boundedBedAvailability };
 
 /**
  * Every figure the capacity board shows, derived in one place so no screen computes its own
@@ -21,17 +24,6 @@ import { EVENING_SHIFT_END_MINUTES } from "@/components/ward-management/ward-ope
 
 const MIDDAY_MINUTES = 12 * 60; // 720
 const LATE_AFTERNOON_MINUTES = 16 * 60; // 960
-
-/** Reconcile reported empty/allocatable counts with the unit's physical bed count. */
-export function boundedBedAvailability(unit: Unit): { effectiveEmpty: number; available: number; held: number } {
-  const isClosed = Boolean(unit.isClosed) || unit.beds === 0;
-  const effectiveEmpty = Math.min(Math.max(0, unit.empty.value), unit.beds);
-  // Ruling R-B-09 (owner ruling 13 Oct 2026): the ONE home of Ready. Closed beds remain physically
-  // empty and are counted as held; they are simply not offered.
-  const available = isClosed ? 0 : Math.max(0, Math.min(unit.allocatable.value, effectiveEmpty));
-  const held = Math.max(effectiveEmpty - available, 0);
-  return { effectiveEmpty, available, held };
-}
 
 /**
  * The evening shift ends at 23:00 (the one shift pattern, `SHIFT_PATTERN`). Named once here rather than repeated as a literal anywhere a

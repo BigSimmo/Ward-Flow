@@ -1,4 +1,4 @@
-import { boundedBedAvailability } from "@/components/ward-management/ward-bed-availability";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
   designationSummary,
