@@ -16,6 +16,7 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { perthCalendarDay } from "@/components/ward-management/ward-clock";
+import { EdInboxReferralFixture, openRaiseIntoMovementForm } from "./helpers/ed-raise-into-movement";
 
 /**
  * T3 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answers 1 and 5: the
@@ -72,6 +73,7 @@ const REQUIRED = [
 function renderEdScreen() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <EdInboxReferralFixture edId="jhc-ed" />
       <EdScreen edId="jhc-ed" />
       <LastMovementProbe />
     </WardFlowProvider>,
@@ -79,7 +81,7 @@ function renderEdScreen() {
 }
 
 function openReferralForm() {
-  fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
+  openRaiseIntoMovementForm();
 }
 
 function fillRequiredFields() {

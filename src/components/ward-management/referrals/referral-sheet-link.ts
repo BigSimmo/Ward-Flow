@@ -1,3 +1,4 @@
+import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { REFERRAL_SOURCES, type ReferralSource } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
@@ -7,7 +8,8 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
  * Referrals board with the slide-out open, and any link to it opens the slide-out in place.
  *
  * This module turns such a link into what the slide-out opens with. It reads the same query
- * `raiseReferralHref` (`shell/ward-facade.ts`) writes, and nothing else.
+ * `raiseReferralHref` (`shell/ward-facade.ts`) writes, and nothing else. `teamId` is read only as
+ * a key into the community team pages, and only the team's NAME reaches the slide-out.
  */
 export const REFERRAL_SHEET_PATH = "/mockups/ward-flow/referrals/new";
 
@@ -28,6 +30,10 @@ export type ReferralSheetRequest = {
   readonly personId?: string;
   /** A `wardSites` code, resolved from `originEdId`. */
   readonly originSiteCode?: string;
+  /** The referring community team's name, resolved from `teamId` against the team pages. */
+  readonly sendingTeam?: string;
+  /** Wards chosen before the slide-out opened, from `units`. The slide-out keeps only wards it lists. */
+  readonly unitIds?: readonly string[];
 };
 
 const DESTINATIONS: readonly ReferralSheetDestination[] = ["ward", "community", "ed"];
@@ -49,11 +55,19 @@ export function referralSheetRequestFromSearch(params: URLSearchParams): Referra
   const personId = params.get("patientId")?.trim() || undefined;
   const edId = params.get("originEdId")?.trim() ?? "";
   const originSiteCode = edId ? allEmergencyDepartments().find((ed) => ed.id === edId)?.siteCode : undefined;
+  const teamId = params.get("teamId")?.trim() ?? "";
+  const sendingTeam = teamId ? communityTeamById(teamId)?.name : undefined;
+  const unitIds = (params.get("units") ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
   return {
     category: categoryForSource(source),
     ...(destination ? { destination } : {}),
     ...(personId ? { personId } : {}),
     ...(originSiteCode ? { originSiteCode } : {}),
+    ...(sendingTeam ? { sendingTeam } : {}),
+    ...(unitIds.length ? { unitIds } : {}),
   };
 }
 

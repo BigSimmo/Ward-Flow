@@ -188,6 +188,10 @@ type WardReferralDrawerProps = {
   initialPatientId?: string;
   /** A `wardSites` code from a Refer link, for the referring site. */
   initialOriginSiteCode?: string;
+  /** The referring community team's name, when the slide-out is opened from that team's page. */
+  initialSendingTeam?: string;
+  /** Wards chosen before opening (Home's shortlist), preselected on the Wards step. */
+  initialUnitIds?: readonly string[];
   /**
    * Filled with the slide-out's own close, which asks before discarding a draft. The sheet around
    * it calls this for Escape and its backdrop so those ask too.
@@ -632,6 +636,8 @@ export function WardReferralDrawer(props: WardReferralDrawerProps) {
     props.initialDestination,
     props.initialPatientId,
     props.initialOriginSiteCode,
+    props.initialSendingTeam,
+    props.initialUnitIds?.join(","),
     round,
   ].join("|");
   return (
@@ -681,6 +687,8 @@ type KeptDraft = {
   clearanceChecks: ClearanceChecklist;
   communityNeeds: CommunityNeeds;
   edNeeds: EdNeeds;
+  /** "Unidentified, describe": a short description when no person on file can be named. */
+  unidentified?: string | null;
 };
 
 type CommunityNeeds = Omit<Extract<ReferralNeeds, { kind: "community" }>, "kind">;
@@ -713,6 +721,8 @@ function WardReferralDrawerContent({
   initialDestination,
   initialPatientId,
   initialOriginSiteCode,
+  initialSendingTeam,
+  initialUnitIds,
   closeRequestRef,
   view,
   onViewChange,
@@ -764,6 +774,9 @@ function WardReferralDrawerContent({
       : null;
   // Another person's kept draft stays as it was: this sheet does not autosave over it.
   const keepsAnotherPersonsDraft = storedDraft !== null && kept === null;
+  // Option B (Josh, 13 Oct 2026): opened from a place that names the person (ED, a community team,
+  // Home), the record answers step 1 where it can, so the sheet opens on Referral with step 1 done.
+  const fromEntryPoint = kept === null && prefillKey !== null;
   const initialPatientKey =
     kept?.activePatientKey ??
     prefillKey ??
@@ -775,10 +788,11 @@ function WardReferralDrawerContent({
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<DrawerSection>(kept?.activeSection ?? "patient");
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
-  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>(kept?.selectedUnitIds ?? []);
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>(
+    kept?.selectedUnitIds ?? [...(initialUnitIds ?? [])],
+  );
   const [selectedRecipient, setSelectedRecipient] = useState(kept?.selectedRecipient ?? "");
   const [ageBand, setAgeBand] = useState<Cohort | "">(kept?.ageBand ?? "");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -833,9 +847,15 @@ function WardReferralDrawerContent({
   const arrivalRole = initialCategory === "community" ? "community" : initialCategory === "ed" ? "ed" : "ward";
   const [documentation, setDocumentation] = useState<DocumentationDraft>(kept?.documentation ?? EMPTY_DOCUMENTATION);
   const isMedicalCleared = documentation.medical === "yes";
-  const [contact, setContact] = useState<ReferralContact>(
-    kept?.contact ?? { name: "", email: "", phone: "", role: "", location: "" },
-  );
+  // Opened from an entry point, the referrer's own details come from their profile when one is set.
+  const [contact, setContact] = useState<ReferralContact>(() => {
+    if (kept?.contact) return kept.contact;
+    if ((initialPatientId || initialOriginSiteCode || initialSendingTeam) && myProfile.status === "available") {
+      const { name, role, phone, email, location } = myProfile.profile;
+      return { name, role, phone, email, location };
+    }
+    return { name: "", email: "", phone: "", role: "", location: "" };
+  });
   const initialLookup = lookupCatchment(defaultPatient.suburb);
   const initialTeams = catchmentRoutingDestinations(initialLookup);
   const [catchmentSuburb, setCatchmentSuburb] = useState(kept?.catchmentSuburb ?? defaultPatient.suburb);
@@ -843,20 +863,30 @@ function WardReferralDrawerContent({
     kept?.catchmentTeam ?? (initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment),
   );
   const [catchmentService, setCatchmentService] = useState<HealthService | "">(kept?.catchmentService ?? "");
-  const [catchmentConfirmed, setCatchmentConfirmed] = useState(kept?.catchmentConfirmed ?? false);
+  // From an entry point, a catchment the suburb lookup or the record names counts as confirmed;
+  // Change on the catchment card reopens it.
+  const [catchmentConfirmed, setCatchmentConfirmed] = useState(
+    kept?.catchmentConfirmed ??
+      (fromEntryPoint && !!(initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment)?.trim()),
+  );
   const [catchmentEditing, setCatchmentEditing] = useState(false);
   const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? liveMovement?.homeRegion ?? "");
+  const [activeSection, setActiveSection] = useState<DrawerSection>(
+    kept?.activeSection ?? (catchmentConfirmed && !!homeRegion && !!liveMovement?.cohort ? "referral" : "patient"),
+  );
+  const [unidentified, setUnidentified] = useState<string | null>(kept?.unidentified ?? null);
   // What a menu or link asks for wins over a kept draft; the draft fills in everything else.
   // L6 (review 12 Oct 2026): a person already in an ED is referred from that ED by default.
   const liveOriginSite = liveMovement ? edById(liveMovement.originEdId)?.siteCode : undefined;
   const [sourceKind, setSourceKind] = useState<"community" | "ed">(
-    (initialOriginSiteCode ? undefined : kept?.sourceKind) ??
+    (initialSendingTeam ? "community" : undefined) ??
+      (initialOriginSiteCode ? undefined : kept?.sourceKind) ??
       (liveOriginSite || initialCategory === "ed" ? "ed" : "community"),
   );
   const [originSiteCode, setOriginSiteCode] = useState(
     initialOriginSiteCode ?? kept?.originSiteCode ?? liveOriginSite ?? "",
   );
-  const [sendingTeam, setSendingTeam] = useState(kept?.sendingTeam ?? "");
+  const [sendingTeam, setSendingTeam] = useState(initialSendingTeam ?? kept?.sendingTeam ?? "");
   const [referralSex, setReferralSex] = useState<RecordedSex>(
     kept?.referralSex ?? RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ?? "Not recorded",
   );
@@ -924,6 +954,7 @@ function WardReferralDrawerContent({
     clearanceChecks,
     communityNeeds,
     edNeeds,
+    unidentified,
   };
   // What the draft looked like on opening. A restored draft is never clean, so closing it asks again.
   const [openingDraft] = useState(() => (kept ? "" : JSON.stringify(draftNow)));
@@ -980,6 +1011,15 @@ function WardReferralDrawerContent({
   useEffect(() => {
     if (guardOpen) guardKeepRef.current?.focus();
   }, [guardOpen]);
+  // Opened from an entry point with step 1 nearly answered, focus goes to what is still unanswered.
+  useEffect(() => {
+    if (!fromEntryPoint || activeSection !== "patient" || isPhone) return;
+    const frame = requestAnimationFrame(() => {
+      if (!homeRegion) document.getElementById(`${sectionId}-region`)?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Once, on opening.
+  }, []);
   function discardAndClose() {
     stopDraftAutosave();
     discardReferralDraft();
@@ -1033,6 +1073,7 @@ function WardReferralDrawerContent({
     if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
     setAgeBand("");
+    setUnidentified(null);
     setNewPatientOpen(false);
     setSearchQuery("");
     setIsSearchOpen(false);
@@ -1205,7 +1246,9 @@ function WardReferralDrawerContent({
         : [];
 
   function patientError() {
-    if (!patientRecord) return "Find a registered patient, or add a new patient.";
+    if (!patientRecord && unidentified === null)
+      return "Find a registered patient, add a new patient, or choose Unidentified, describe.";
+    if (!patientRecord && !unidentified?.trim()) return "Describe the unidentified person.";
     if (!effectiveCohort) return "Choose the age band.";
     if (!catchmentConfirmed || !catchmentTeam.trim()) return "Confirm the patient's catchment before continuing.";
     if (!homeRegion) return "Choose the patient's home region.";
@@ -1225,9 +1268,12 @@ function WardReferralDrawerContent({
     !!originSiteCode &&
     wardSites.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment));
   const needed: Record<DrawerSection, number> = {
-    patient: [!patientRecord, !effectiveCohort, !catchmentConfirmed || !catchmentTeam.trim(), !homeRegion].filter(
-      Boolean,
-    ).length,
+    patient: [
+      !patientRecord && !unidentified?.trim(),
+      !effectiveCohort,
+      !catchmentConfirmed || !catchmentTeam.trim(),
+      !homeRegion,
+    ].filter(Boolean).length,
     referral: [
       !originValid,
       sourceKind === "community" && !sendingTeam.trim(),
@@ -1353,7 +1399,7 @@ function WardReferralDrawerContent({
       urgency: tier,
       ...(atsCategory === undefined ? {} : { atsCategory }),
       transportNeeded: destType === "ward" && transport !== "carer",
-      history: clinicalSummary,
+      history: unidentifiedHistory,
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
       intake,
     });
@@ -1401,6 +1447,11 @@ function WardReferralDrawerContent({
   const contactErrors = attempted.contact ? contactFieldErrors(contact) : {};
   const contactNeeded = Object.keys(contactFieldErrors(contact)).length;
   const patientShowErrors = attempted.patient && activeSection === "patient";
+  // No "Unknown Patient" referral: with no person on file, the referrer describes who it is for.
+  const unidentifiedName = !patientRecord && unidentified?.trim() ? `Unidentified, ${unidentified.trim()}` : "";
+  const unidentifiedHistory = unidentifiedName
+    ? `${unidentifiedName}${clinicalSummary ? `\n${clinicalSummary}` : ""}`
+    : clinicalSummary;
   // The sender's own submission, read back from the created referral.
   const sentDetails = sentReferralId ? referrals.find((referral) => referral.id === sentReferralId)?.intake : undefined;
 
@@ -1444,8 +1495,8 @@ function WardReferralDrawerContent({
     { label: "Refer to", value: destination.label, state: "done" },
     {
       label: "Patient",
-      value: patientRecord ? currentPatient.name : "Needed",
-      state: patientRecord ? "done" : "needed",
+      value: patientRecord ? currentPatient.name : unidentifiedName || "Needed",
+      state: patientRecord || unidentifiedName ? "done" : "needed",
     },
     {
       label: "Catchment",
@@ -1480,7 +1531,7 @@ function WardReferralDrawerContent({
   const draftNeeds = needsFor(destType, communityNeeds, edNeeds);
   const letterInput: ReferralTextInput = {
     destinationPhrase: destination.phrase,
-    patientName: patientRecord ? currentPatient.name : "",
+    patientName: patientRecord ? currentPatient.name : unidentifiedName,
     umrn: patientRecord ? currentPatient.umrn : "",
     ageSex: patientRecord ? ageSexLabel(currentPatient) : "",
     suburb: catchmentSuburb,
@@ -1489,7 +1540,7 @@ function WardReferralDrawerContent({
     urgency: tier === undefined ? "" : tierLabel,
     legalStatus,
     reason: doctorNote,
-    history: clinicalSummary,
+    history: unidentifiedHistory,
     risks: recordedFlags.map((key) => RISK_FLAG_LABELS[key]),
     clearance: clearance.label,
     clearanceChecklist: destType === "ward" ? clearanceChecklistWords(clearanceChecks) : "",
@@ -2324,101 +2375,139 @@ function WardReferralDrawerContent({
                           </div>
                         </form>
                       ) : null}
-                      <div className={styles.patientSearchWrap}>
-                        <Search className={styles.patientSearchIcon} aria-hidden="true" />
-                        <input
-                          ref={searchInputRef}
-                          type="search"
-                          id={searchId}
-                          className={styles.patientSearchInput}
-                          aria-label="Find a patient"
-                          placeholder="Find a patient by name or UMRN"
-                          value={searchQuery}
-                          onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setIsSearchOpen(true);
-                          }}
-                          onFocus={() => {
-                            if (searchQuery.trim().length > 0) setIsSearchOpen(true);
-                          }}
-                          autoComplete="off"
-                          spellCheck="false"
-                          data-gramm="false"
-                          data-enable-grammarly="false"
-                        />
-                        {searchQuery ? (
+                      {fromEntryPoint && patientRecord && !isSearchOpen && !searchQuery ? null : (
+                        <div className={styles.patientSearchWrap}>
+                          <Search className={styles.patientSearchIcon} aria-hidden="true" />
+                          <input
+                            ref={searchInputRef}
+                            type="search"
+                            id={searchId}
+                            className={styles.patientSearchInput}
+                            aria-label="Find a patient"
+                            placeholder="Find a patient by name or UMRN"
+                            value={searchQuery}
+                            onChange={(e) => {
+                              setSearchQuery(e.target.value);
+                              setIsSearchOpen(true);
+                            }}
+                            onFocus={() => {
+                              if (searchQuery.trim().length > 0) setIsSearchOpen(true);
+                            }}
+                            autoComplete="off"
+                            spellCheck="false"
+                            data-gramm="false"
+                            data-enable-grammarly="false"
+                          />
+                          {searchQuery ? (
+                            <button
+                              type="button"
+                              className={styles.patientSearchClear}
+                              onClick={() => {
+                                setSearchQuery("");
+                                setIsSearchOpen(false);
+                              }}
+                              aria-label="Clear search input"
+                            >
+                              <X aria-hidden="true" />
+                            </button>
+                          ) : null}
+                          {isPhone ? null : <kbd className={styles.kbd}>/</kbd>}
+
+                          {isSearchOpen && filteredPatients.length > 0 ? (
+                            <div className={styles.patientSearchResults} role="listbox" aria-label="Matching patients">
+                              {filteredPatients.map((p) => (
+                                <button
+                                  key={p.id}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={activePatientKey === p.id}
+                                  className={styles.patientSearchResultItem}
+                                  data-active={activePatientKey === p.id}
+                                  onClick={() => handleSelectPatient(p.id)}
+                                >
+                                  <span className={styles.resultAvatar} aria-hidden="true">
+                                    {p.initials}
+                                  </span>
+                                  <span className={styles.resultText}>
+                                    <span className={styles.searchResultName}>
+                                      {p.name} ({ageSexLabel(p)})
+                                    </span>
+                                    <span className={styles.searchResultMeta}>
+                                      <span className={styles.mono}>{p.umrn}</span> · {p.origin.split("·")[0].trim()}
+                                    </span>
+                                  </span>
+                                  <span className={styles.searchResultBadge}>{p.legalStatus.split("·")[0].trim()}</span>
+                                  {activePatientKey === p.id ? <StatusGlyph tone="success" size={10} /> : null}
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
+
+                      {patientRecord ? (
+                        <div className={styles.patientIdentity}>
+                          <span className={styles.patientAvatar} aria-hidden="true">
+                            {currentPatient.initials}
+                          </span>
+                          <div className={styles.patientIdentityText}>
+                            <p className={styles.patientName}>
+                              {currentPatient.name} ({ageSexLabel(currentPatient)})
+                            </p>
+                            <p className={styles.patientSub}>
+                              {isPhone ? null : "UMRN "}
+                              <span className={styles.mono}>{currentPatient.umrn}</span> · DOB{" "}
+                              {formatDob(currentPatient.dob)} · Medicare {currentPatient.medicare}
+                            </p>
+                            <ReadmissionFlag flag={readmissionFlag} testId="ward-referral-readmission" />
+                          </div>
                           <button
                             type="button"
-                            className={styles.patientSearchClear}
+                            className={styles.btn}
+                            aria-label="Change patient"
                             onClick={() => {
                               setSearchQuery("");
-                              setIsSearchOpen(false);
+                              setIsSearchOpen(true);
+                              requestAnimationFrame(() => searchInputRef.current?.focus());
                             }}
-                            aria-label="Clear search input"
                           >
-                            <X aria-hidden="true" />
+                            Change
                           </button>
-                        ) : null}
-                        {isPhone ? null : <kbd className={styles.kbd}>/</kbd>}
-
-                        {isSearchOpen && filteredPatients.length > 0 ? (
-                          <div className={styles.patientSearchResults} role="listbox" aria-label="Matching patients">
-                            {filteredPatients.map((p) => (
-                              <button
-                                key={p.id}
-                                type="button"
-                                role="option"
-                                aria-selected={activePatientKey === p.id}
-                                className={styles.patientSearchResultItem}
-                                data-active={activePatientKey === p.id}
-                                onClick={() => handleSelectPatient(p.id)}
-                              >
-                                <span className={styles.resultAvatar} aria-hidden="true">
-                                  {p.initials}
-                                </span>
-                                <span className={styles.resultText}>
-                                  <span className={styles.searchResultName}>
-                                    {p.name} ({ageSexLabel(p)})
-                                  </span>
-                                  <span className={styles.searchResultMeta}>
-                                    <span className={styles.mono}>{p.umrn}</span> · {p.origin.split("·")[0].trim()}
-                                  </span>
-                                </span>
-                                <span className={styles.searchResultBadge}>{p.legalStatus.split("·")[0].trim()}</span>
-                                {activePatientKey === p.id ? <StatusGlyph tone="success" size={10} /> : null}
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className={styles.patientIdentity}>
-                        <span className={styles.patientAvatar} aria-hidden="true">
-                          {currentPatient.initials}
-                        </span>
-                        <div className={styles.patientIdentityText}>
-                          <p className={styles.patientName}>
-                            {currentPatient.name} ({ageSexLabel(currentPatient)})
-                          </p>
-                          <p className={styles.patientSub}>
-                            {isPhone ? null : "UMRN "}
-                            <span className={styles.mono}>{currentPatient.umrn}</span> · DOB{" "}
-                            {formatDob(currentPatient.dob)} · Medicare {currentPatient.medicare}
-                          </p>
-                          <ReadmissionFlag flag={readmissionFlag} testId="ward-referral-readmission" />
                         </div>
-                        <button
-                          type="button"
-                          className={styles.btn}
-                          onClick={() => {
-                            setSearchQuery("");
-                            setIsSearchOpen(true);
-                            searchInputRef.current?.focus();
-                          }}
-                        >
-                          Switch
-                        </button>
-                      </div>
+                      ) : unidentified === null ? (
+                        <div className={styles.confirmRow}>
+                          <button
+                            type="button"
+                            className={styles.btn}
+                            data-testid="ward-referral-unidentified"
+                            onClick={() => setUnidentified("")}
+                          >
+                            Unidentified, describe
+                          </button>
+                        </div>
+                      ) : (
+                        <div className={styles.fieldGrid}>
+                          <Field
+                            label="Describe the person"
+                            htmlFor={`${sectionId}-unidentified`}
+                            required
+                            hint="no name on file"
+                            error={patientShowErrors && !unidentified.trim() ? "Describe the person" : null}
+                            wide
+                          >
+                            <input
+                              id={`${sectionId}-unidentified`}
+                              className={styles.fieldInput}
+                              data-testid="ward-referral-unidentified-description"
+                              value={unidentified}
+                              maxLength={120}
+                              autoComplete="off"
+                              placeholder="For example, man about 30, brought in by police"
+                              onChange={(e) => setUnidentified(e.target.value)}
+                            />
+                          </Field>
+                        </div>
+                      )}
 
                       {alreadyOpen ? (
                         <div className={styles.suggestion} data-testid="ward-referral-already-open">
@@ -2443,7 +2532,7 @@ function WardReferralDrawerContent({
                           </Link>
                         </div>
                       ) : null}
-                      {!liveMovement && patientRecord ? (
+                      {!liveMovement && (patientRecord || unidentified !== null) ? (
                         <div className={styles.fieldGrid}>
                           <Field
                             label="Age band"
@@ -2650,7 +2739,9 @@ function WardReferralDrawerContent({
                               aria-invalid={patientShowErrors && !homeRegion ? true : undefined}
                               onChange={(e) => {
                                 setHomeRegion(e.target.value as HomeRegion);
-                                setCatchmentConfirmed(false);
+                                // The region is its own answer; a team already confirmed stays so,
+                                // so choosing it does not ask for the catchment a second time.
+                                if (!catchmentTeam.trim()) setCatchmentConfirmed(false);
                               }}
                             >
                               <option value="">Choose region</option>

@@ -37,6 +37,8 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
+import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
@@ -416,20 +418,21 @@ export function CoordinatorScreen() {
   }
 
   /*
-   * Refer from the phone patient sheet (v10 Home phone "Refer to <ward>"): the same
-   * `REFER_TO_UNITS` the panel would dispatch, run through the Undo step so the toast says Offered
-   * with Undo, as the bedflow Offer does. The sheet closes so the toast is not under its footer.
+   * Option B (Josh, 13 Oct 2026; D-30): Refer on Home's placement shortlist writes a referral, not an
+   * instant offer to the ward. It opens the one referral slide-out for this person, from their ED,
+   * with the wards already picked here preselected, so the referral reaches the coordinator queue
+   * and Referrals like any other. The sheet closes so the slide-out is not under it.
    */
-  function referFromSheet(movement: Movement, unitIds: string[], unitNames: string[]) {
-    const who = patientOf(movement);
-    const names = unitNames.join(", ");
-    runStep(
-      { type: "REFER_TO_UNITS", role: "coordinator", now: liveNow, movementId: movement.id, unitIds },
-      {
-        success: `Offered ${names} to ${who.umrn}`,
-        undo: (at) => ({ type: "UNDO_REFER_TO_UNITS", role: "coordinator", now: at, movementId: movement.id }),
-        undone: `Offer withdrawn. ${names} ${unitNames.length === 1 ? "is" : "are"} no longer asked.`,
-      },
+  function referFromSheet(movement: Movement, unitIds: string[]) {
+    const personId = patientOf(movement).patient?.id;
+    openReferralSheet(
+      raiseReferralHref({
+        ...(personId ? { patientId: personId } : {}),
+        source: "ed_medical",
+        refer: "ward",
+        originEdId: movement.originEdId,
+        unitIds,
+      }),
     );
     closeShortlist();
   }
@@ -669,11 +672,7 @@ export function CoordinatorScreen() {
                 dispatch={dispatch}
                 parallelReferralCap={configuration.parallelReferralCap}
                 pullHoldMinutes={configuration.pullHoldMinutes}
-                onRefer={
-                  isPhone && panelMovement
-                    ? (unitIds, unitNames) => referFromSheet(panelMovement, unitIds, unitNames)
-                    : undefined
-                }
+                onRefer={panelMovement ? (unitIds) => referFromSheet(panelMovement, unitIds) : undefined}
               />
             )}
           </aside>
