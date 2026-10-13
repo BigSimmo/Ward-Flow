@@ -80,7 +80,12 @@ import { allUnits } from "@/components/ward-management/ward-sites";
 // reason.
 const NL = String.fromCharCode(10);
 
-const READY_EXPRESSION = "Math.min(unit.allocatable.value, unit.empty.value)";
+// Owner ruling 13 Oct 2026 (R-B-09 unified): the four copies became ONE, in
+// `boundedBedAvailability` (ward-bed-availability.ts), which `unitCapacity`, `openBedsNow`,
+// `capacityBreakdown` and `ward-eligibility.ts`'s `readyBedsNow` all call. The census now pins that
+// single home, and the old four-copy expression must not come back anywhere as executable code.
+const READY_EXPRESSION = "Math.min(unit.allocatable.value, effectiveEmpty)";
+const RETIRED_READY_EXPRESSION = "Math.min(unit.allocatable.value, unit.empty.value)";
 
 /** Every line in tracked source containing the ruled expression, discovered rather than listed. */
 function readyOccurrences() {
@@ -101,7 +106,21 @@ describe("the ruled Ready expression has exactly the sanctioned homes", () => {
     expect(
       readyOccurrences().length,
       "the Ready expression was not found anywhere in tracked source — reworded, or this search is broken",
-    ).toBeGreaterThan(3);
+    ).toBeGreaterThan(0);
+  });
+
+  it("the retired four-copy expression has no executable home left", () => {
+    const retired = execFileSync("git", ["ls-files", "src"], { encoding: "utf8" })
+      .split(NL)
+      .filter((file) => /\.tsx?$/u.test(file))
+      .flatMap((file) =>
+        readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
+          .split(NL)
+          .map((line, index) => ({ file, line: line.trim(), number: index + 1 }))
+          .filter((row) => row.line.includes(RETIRED_READY_EXPRESSION) && /^const\s+\w+\s*=/u.test(row.line)),
+      )
+      .map((row) => `${row.file}:${row.number}`);
+    expect(retired, "a second Ready arithmetic has come back; call boundedBedAvailability instead").toEqual([]);
   });
 
   it("no NEW executable copy has appeared", () => {
@@ -120,110 +139,8 @@ describe("the ruled Ready expression has exactly the sanctioned homes", () => {
         "fifth, call an existing helper instead. If you are moving or changing one, change all " +
         "four and update this list, because nothing else compares them.",
     ).toEqual([
-      // 168/180 -> 169/181, 26 Sept 2026: engine constants 47a7f575e7 added one import line at the top
-      // of ward-bed-availability.ts. VERIFIED a move and not a new copy: the file still holds exactly
-      // two matches, the same lines in `openBedsNow` and `capacityBreakdown`.
-      "src/components/ward-management/ward-bed-availability.ts:169",
-      "src/components/ward-management/ward-bed-availability.ts:181",
-      // 514 -> 515 on 2026-09-09: the origin/main fold (1d85db58e7) added three imports at the top of
-      // ward-derivations.ts. VERIFIED a move and not a fifth copy — same `available` line inside the
-      // same `unitCapacity` function, and that file still holds exactly one match. The guard fired
-      // correctly; only the coordinate aged.
-      // 515 -> 521 on 2026-09-11: a six-line dated CORRECTION was inserted into
-      // `referralForMovement`'s doc comment above this function - the stale claim that
-      // `Admission.referralId` "already manufactures" a join, one of fifteen such claims corrected
-      // that night. VERIFIED a move and not a fifth copy by the guard's own two tests: same
-      // `available` line inside the same `unitCapacity` function (now declared at :520), and that
-      // file still holds EXACTLY ONE match. The guard fired correctly; only the coordinate aged.
-      //
-      // 🔴 THIRD TIME THIS COORDINATE HAS AGED, and all three for the same reason: lines were
-      // added ABOVE it by work that never touched it. Two folds and now a comment correction.
-      // ⚠️ This list pins a MECHANISM (a file:line) to defend a PROPERTY (there are exactly four
-      // implementations). A line number is a different number in every tree and after every edit,
-      // so this guard reddens on correct work by construction - which is the shape that teaches
-      // people its refusals are noise. ✅ Recorded, NOT redesigned here: replacing the
-      // coordinate with a stable anchor (the enclosing function name plus the file's match COUNT)
-      // is a change to what this guard proves, and that is a ruling rather than a repair.
-      // 521 -> 514 on 2026-09-12: O-16.8 moved `stageCopy` OUT of ward-derivations.ts into its own
-      // module, so the reducer could import the labels without closing a cycle. Seven lines left
-      // the file ABOVE this function. VERIFIED a move and not a fifth copy by the guard's own two
-      // tests: the file still holds EXACTLY ONE match, and it is the same `available` line inside
-      // the same `unitCapacity`. The guard fired correctly; only the coordinate aged.
-      //
-      // 🔴 FOURTH TIME, AND THE FIRST BY SUBTRACTION. The three before it were lines ADDED above;
-      // this one is lines REMOVED. ⚠️ So the coordinate is not monotonic — it has now been 514,
-      // 515, 521 and 514 again, and this trail cannot be read as a history of the file growing.
-      // A reader reconciling 514 here against 514 in the first entry is looking at two different
-      // trees, not a mistake.
-      //
-      // 514 -> 529, 17 Sept 2026 audit fix line: comments added above `unitCapacity` by the folded
-      // fixes. VERIFIED a move: same `available = Math.min(unit.allocatable.value, unit.empty.value)`
-      // line inside the same `unitCapacity`, and the file still holds exactly one match.
-      // 529 -> 557, same day: the withdrawn-acceptance and service fixes added lines above it.
-      // VERIFIED the same move by the same two checks.
-      // 557 -> 568, 17 Sept 2026 (census/pin fold): further comment lines landed above
-      // `unitCapacity` from the same day's folds. VERIFIED a move and not a fifth copy — the file
-      // still holds exactly one match, and it is the same
-      // `available = Math.min(unit.allocatable.value, unit.empty.value)` line inside the same
-      // `unitCapacity` function.
-      // 568 -> 569, 17 Sept 2026 (T2r fix round, finding 5, data-substantive pass): a one-line
-      // shift above this function. VERIFIED a move and not a fifth copy — the file still holds
-      // exactly one match, and it is the same
-      // `available = Math.min(unit.allocatable.value, unit.empty.value)` line inside the same
-      // `unitCapacity` function.
-      // 569 -> 580, 25 Sept 2026 (capacity regression fix 84d308c6c5): the unreviewed batch
-      // 5d7f438126 rewrote `unitCapacity` and REMOVED this expression, leaving three homes; the fix
-      // restored the ruled line verbatim. The coordinate was ALREADY 580 on 5d7f438126's parent, so
-      // this pin had aged before that batch, by lines landed above the function in some earlier
-      // commit. VERIFIED the file holds exactly one match, inside `unitCapacity`.
-      // 580 -> 581, 26 Sept 2026 (demo-final-v3): "CAHS" joined `wardServiceOrder` above this
-      // function (owner ruling 2A, Perth Children's under CAHS). VERIFIED a move and not a fifth
-      // copy: the file still holds exactly one match, the same `available` line inside `unitCapacity`.
-      // 581 -> 579, 4 Oct 2026 (PR #37 whole-tree lint): two unused ward-legal-clock imports were
-      // removed at the top of ward-derivations.ts. VERIFIED a move and not a fifth copy: the guard's
-      // received list still holds exactly one ward-derivations.ts match, the same `available` line.
-      // 579 -> 580, 9 Oct 2026 (PR #159, carer/PSP/MHAS tasks): one import
-      // (`supportNotificationInboxItems`) was added at the top of ward-derivations.ts. VERIFIED a
-      // move and not a fifth copy: the file still holds exactly one match, the same `available`
-      // line inside `unitCapacity`.
-      // 580 -> 582, 9 Oct 2026 (PR #164 planned admissions, merged after #159): two imports for
-      // planned-admission overdue inbox rows landed at the top of ward-derivations.ts. VERIFIED a move and not a
-      // fifth copy: the file still holds exactly one match, the same `available` line inside
-      // `unitCapacity`.
-      "src/components/ward-management/ward-derivations.ts:582",
-      // 424 -> 426, owner ruling 2026-09-09/2026-09-10 (sex and gender split, P1 #BAY1TY): the
-      // gender gate task added two imports (`Patient`, `OverrideReason`) to the top of
-      // ward-eligibility.ts for the new standalone `genderEligibility` function. VERIFIED a move
-      // and not a fifth copy — same `availableNow` line inside the same `referralEligibility`
-      // function, and that file still holds exactly one match. The guard fired correctly; only
-      // the coordinate aged.
-      // 426 -> 478, 17 Sept 2026 (census/pin fold): the T15/T12/legal folds landed doc comments and
-      // new gates above the eligibility check. VERIFIED a move and not a fifth copy — the file
-      // still holds exactly one match, and it is the same `availableNow` line inside the same
-      // eligibility computation.
-      // 478 -> 510, 17 Sept 2026 (gender review round 2 fold): the RAISE_REFERRAL gender/diagnosis
-      // checks landed further doc comments and gates above the eligibility check. VERIFIED a move
-      // and not a fifth copy — the file still holds exactly one match, and it is the same
-      // `availableNow = Math.min(unit.allocatable.value, unit.empty.value)` line inside the same
-      // eligibility computation.
-      // 510 -> 539, 17 Sept 2026 (audit fix round, round-2 fold): the D15 doc comment above
-      // `referralEligibility` grew (the `availableNow` vs. `allocatable.value` explanation, and
-      // the note on why this is computed inline rather than via `capacityBreakdown`). VERIFIED a
-      // move and not a fifth copy — the file still holds exactly one match, and it is the same
-      // `availableNow = Math.min(unit.allocatable.value, unit.empty.value)` line inside the same
-      // `referralEligibility` function.
-      // 539 -> 541, 25 Sept 2026: the unreviewed batch 5d7f438126 added two lines above the
-      // eligibility check. VERIFIED a move and not a fifth copy — the file still holds exactly one
-      // EXECUTABLE match (plus its one prose mention), the same `availableNow` line.
-      // 541 -> 592, 26 Sept 2026: the recorded sex and gender identity work (9d54ec7317,
-      // f2778f950d, since folded) added lines above it. VERIFIED a move and not a
-      // fifth copy — still exactly one executable match, the same `availableNow` line in
-      // `referralEligibility`, now at 592 on the line e33b20d1d1.
-      // 592 -> 160, 26 Sept 2026 (Fix 2): the movement path's `sex_mix` gate now needs Ready too, so
-      // the one line moved into a small `readyBedsNow(unit)` helper above `eligibility()`, and both
-      // `eligibility()` and `referralEligibility()` call it. Still exactly one executable copy in the
-      // file (plus its one prose mention); a second inline copy is what this guard refused.
-      "src/components/ward-management/ward-eligibility.ts:164",
+      // Owner ruling 13 Oct 2026: the single sanctioned home. Any second assignment is refused.
+      "src/components/ward-management/ward-bed-availability.ts:31",
     ]);
   });
 });

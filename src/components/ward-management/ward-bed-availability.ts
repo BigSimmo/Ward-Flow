@@ -26,8 +26,9 @@ const LATE_AFTERNOON_MINUTES = 16 * 60; // 960
 export function boundedBedAvailability(unit: Unit): { effectiveEmpty: number; available: number; held: number } {
   const isClosed = Boolean(unit.isClosed) || unit.beds === 0;
   const effectiveEmpty = Math.min(Math.max(0, unit.empty.value), unit.beds);
+  // Ruling R-B-09 (owner ruling 13 Oct 2026): the ONE home of Ready. Closed beds remain physically
+  // empty and are counted as held; they are simply not offered.
   const available = isClosed ? 0 : Math.max(0, Math.min(unit.allocatable.value, effectiveEmpty));
-  // Closed beds remain physically empty and belong in the Closed state; they are simply not offered.
   const held = Math.max(effectiveEmpty - available, 0);
   return { effectiveEmpty, available, held };
 }

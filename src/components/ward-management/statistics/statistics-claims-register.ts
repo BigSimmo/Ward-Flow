@@ -225,6 +225,7 @@ const WARD_ADMISSIONS = "src/components/ward-management/ward-admissions.ts";
 const WARD_REDUCER = "src/components/ward-management/ward-flow-reducer.ts";
 const WARD_STATISTICS = "src/components/ward-management/ward-statistics.ts";
 const WARD_DERIVATIONS = "src/components/ward-management/ward-derivations.ts";
+const WARD_BED_AVAILABILITY = "src/components/ward-management/ward-bed-availability.ts";
 const WARD_REFERRALS = "src/components/ward-management/ward-referrals.ts";
 const WARD_SITES = "src/components/ward-management/ward-sites.ts";
 const WARD_TEAMS = "src/components/ward-management/ward-teams.ts";
@@ -488,9 +489,12 @@ const UNIT_CAPACITY_COUNTS =
  * and the claim's evidence goes with it. A citation of the field `Unit.held` would NOT do: that
  * field is authored and read by nothing, so it can change freely without the derived figure moving.
  */
+// Owner ruling 13 Oct 2026 (R-B-09 unified): the arithmetic now lives once, in
+// `boundedBedAvailability`; it still reads only the unit's aggregate counts (empty, allocatable,
+// beds, closed), never a per-bed or per-request field.
 const HELD_IS_DERIVED_FROM_TWO_AGGREGATES =
-  "const available = Math.min(unit.allocatable.value, unit.empty.value); " +
-  "const held = Math.max(unit.empty.value - available, 0);";
+  "const available = isClosed ? 0 : Math.max(0, Math.min(unit.allocatable.value, effectiveEmpty)); " +
+  "const held = Math.max(effectiveEmpty - available, 0);";
 
 /**
  * The whole movement-decline vocabulary, cited as one array literal — the strongest shape available
@@ -920,13 +924,13 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     claim:
       "The ward-side readiness gap is DERIVED from `empty` and `allocatable` alone — no per-bed or per-request " +
       "field enters it, so it can name neither a bed nor a request.",
-    sourceFile: WARD_DERIVATIONS,
+    sourceFile: WARD_BED_AVAILABILITY,
     evidence: HELD_IS_DERIVED_FROM_TWO_AGGREGATES,
     falsifiedBy: {
       change:
         "The readiness gap starts reading a per-bed field, so it is no longer derived from the two aggregate counts " +
         "alone and could name a bed.",
-      find: "const held = Math.max(unit.empty.value - available, 0);",
+      find: "const held = Math.max(effectiveEmpty - available, 0);",
       replaceWith: "const held = unit.emptyBedIds.filter((id) => !unit.offeredBedIds.includes(id)).length;",
     },
   },
