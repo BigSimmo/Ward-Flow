@@ -1171,9 +1171,7 @@ function WardFlowWorld({
         }),
       patients: state.patients,
       admissions: state.admissions,
-      get now() {
-        return nowRef.current;
-      },
+      now,
       dayZero,
       scenario: state.scenario,
       configuration: state.configuration,
@@ -1210,6 +1208,7 @@ function WardFlowWorld({
       resetDemoState,
       saveScenarioFile,
       loadScenarioFile,
+      now,
     ],
   );
 
