@@ -15,7 +15,6 @@ import { toHandoverRow, dueParts, dueShort, isActNow } from "../src/components/w
 import { type Movement } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { logger } from "../src/lib/logger";
-import { CONTINUATION_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
 import { auditSubject, AUDITABLE_FORM_CODES } from "../src/components/ward-management/ward-audit";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 
@@ -341,6 +340,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       const stoppedMv = state.movements.find((m) => m.id === movementId)!;
       expect(stoppedMv.closure?.outcome).toBe("did_not_proceed");
       expect(stoppedMv.blocker).toBe(STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease);
+      expect(isStoppedTransportAwaitingRelease(stoppedMv)).toBe(true);
 
       // Verify handover derivation surfaces stopped movement awaiting release in placementGoneWrong
       const snapshot = handoverSnapshot(state.movements, state.units, NOW + 25);
@@ -365,6 +365,9 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         movementId,
       });
       expect(state.rejections).toHaveLength(0);
+
+      const releasedMv = state.movements.find((m) => m.id === movementId)!;
+      expect(isStoppedTransportAwaitingRelease(releasedMv)).toBe(false);
 
       const unitAfter = state.units.find((u) => u.id === acceptingUnitId)!;
       expect(unitAfter.allocatable.value).toBe(unitBefore.allocatable.value + 1);
