@@ -753,6 +753,7 @@ function subjectId(event: WardFlowEvent): string {
       return event.admissionId;
     // v10 pass 3: a step undo is filed against the subject it names; a handover sign-off has none.
     case "UNDO_REPATRIATION":
+    case "UNDO_DEPARTURE":
     case "UNDO_ED_STEP":
     case "UNDO_SUPPORT_NOTIFICATION":
       return undoStepSubjectId(event);
@@ -2299,6 +2300,7 @@ const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_HANDOVER_SIGN_OFF: "There is no handover sign-off to undo",
   UNDO_ED_STEP: "There is no ED step on this patient to undo",
   UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
+  UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
 };
 
 /**
@@ -2343,7 +2345,11 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
     (!safeCounter(state.auditSequence) || state.auditSequence >= Number.MAX_SAFE_INTEGER)
   )
     return state;
-  if (protectedEvent) return advanceResourceRevisions(state, reduceRecordEvent(state, event));
+  if (protectedEvent) {
+    const recorded = advanceResourceRevisions(state, reduceRecordEvent(state, event));
+    // Audit A1-12: a recorded discharge ("Has left") keeps what it changed, so its toast can undo it.
+    return event.type === "RECORD_PATIENT_DISCHARGE" ? withStepUndo(state, recorded, event) : recorded;
+  }
   if (
     (event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO") &&
     (!safeCounter(state.worldGeneration) || state.worldGeneration >= Number.MAX_SAFE_INTEGER)
@@ -2565,7 +2571,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "UNDO_REPATRIATION":
     case "UNDO_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
-    case "UNDO_TRANSPORT_STEP": {
+    case "UNDO_TRANSPORT_STEP":
+    case "UNDO_DEPARTURE": {
       // v10 pass 3: takes back the newest step of this kind on this subject, exactly (`ward-undo.ts`).
       const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
       if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);
