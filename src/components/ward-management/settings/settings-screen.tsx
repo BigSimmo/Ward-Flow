@@ -269,6 +269,8 @@ function readTabFromHash(): SettingsTab | null {
 export function maskDiagnosticPatient<
   T extends {
     id?: string;
+    gender?: string;
+    addedAt?: string | number;
     umrn?: string;
     mrn?: string;
     givenName?: string;
@@ -279,14 +281,9 @@ export function maskDiagnosticPatient<
   },
 >(patient: T): T {
   return {
-    ...patient,
-    givenName: patient.givenName ? "[MASKED]" : patient.givenName,
-    familyName: patient.familyName ? "[MASKED]" : patient.familyName,
-    preferredName: patient.preferredName ? "[MASKED]" : undefined,
-    displayName: patient.displayName ? "[MASKED]" : patient.displayName,
-    name: patient.name ? "[MASKED]" : patient.name,
-    umrn: patient.umrn ? String(patient.umrn).replace(/\d/g, "*") : patient.umrn,
-    mrn: patient.mrn ? String(patient.mrn).replace(/\d/g, "*") : patient.mrn,
+    ...(patient.id !== undefined ? { id: patient.id } : {}),
+    ...(patient.gender !== undefined ? { gender: patient.gender } : {}),
+    ...(patient.addedAt !== undefined ? { addedAt: patient.addedAt } : {}),
   } as T;
 }
 
@@ -297,15 +294,11 @@ export function maskDiagnosticMovement<
     patientUmrn?: string;
     patientMrn?: string;
     mrn?: string;
+    [key: string]: unknown;
   },
 >(movement: T): T {
-  return {
-    ...movement,
-    ...(movement.patientName !== undefined ? { patientName: "[MASKED]" } : {}),
-    ...(movement.patientUmrn !== undefined ? { patientUmrn: String(movement.patientUmrn).replace(/\d/g, "*") } : {}),
-    ...(movement.patientMrn !== undefined ? { patientMrn: String(movement.patientMrn).replace(/\d/g, "*") } : {}),
-    ...(movement.mrn !== undefined ? { mrn: String(movement.mrn).replace(/\d/g, "*") } : {}),
-  } as T;
+  const allowed = ["id", "stage", "originEdId", "acceptedUnitId", "admissionId", "openedAt", "acceptedAt", "pulledAt", "arrivedAt"] as const;
+  return Object.fromEntries(allowed.flatMap((key) => (movement[key] !== undefined ? [[key, movement[key]]] : []))) as T;
 }
 
 export type DiagnosticPatientInput = {
@@ -349,9 +342,10 @@ export async function copySettingsDiagnostics(state: {
   };
 
   const text = JSON.stringify(payload, null, 2);
-  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
+  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+    throw new Error("Clipboard is unavailable");
   }
+  await navigator.clipboard.writeText(text);
   return text;
 }
 
