@@ -101,6 +101,10 @@ import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
+import { WardBedBoard } from "./ward-bed-board";
+import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
+import { WardDischargesMatrix } from "./ward-discharges-matrix";
+import { WardBedsMatrix, type BedItem } from "./ward-beds-matrix";
 import type { WaitingReferral } from "./ward-bed-board";
 import {
   bedFits,
@@ -112,7 +116,7 @@ import {
 } from "./ward-bed-board-logic";
 import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
 import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
-import type { BedItem } from "./ward-beds-matrix";
+
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import {
@@ -139,15 +143,8 @@ const WardAnswerView = dynamic(() => import("./ward-answer-view").then((m) => m.
 });
 const WardDecisionsCockpit = dynamic(() => import("./ward-decisions-cockpit").then((m) => m.WardDecisionsCockpit), {
   ssr: false,
+  loading: () => <p role="status">Loading decisions…</p>,
 });
-const WardArrivalsCorridor = dynamic(() => import("./ward-arrivals-corridor").then((m) => m.WardArrivalsCorridor), {
-  ssr: false,
-});
-const WardDischargesMatrix = dynamic(() => import("./ward-discharges-matrix").then((m) => m.WardDischargesMatrix), {
-  ssr: false,
-});
-const WardBedsMatrix = dynamic(() => import("./ward-beds-matrix").then((m) => m.WardBedsMatrix), { ssr: false });
-const WardBedBoard = dynamic(() => import("./ward-bed-board").then((m) => m.WardBedBoard), { ssr: false });
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
 type BoardCheck = {
@@ -2764,7 +2761,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           aria-labelledby="tabBtn-return"
           data-active={activeTab === "return"}
         >
-          <WardDecisionsCockpit
+          {activeTab === "return" ? (
+            <WardDecisionsCockpit
             unit={unit}
             rollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
             rollupConfirmed={isRollupConfirmedToday}
@@ -2780,7 +2778,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               freeBy: capacity.available + readyByShiftEnd,
               byLabel: formatInstantWithDay(dayShiftEndInstant(now), now),
             }}
-          />
+            />
+          ) : null}
           {/* U3: the page's prototype footer below carries this safety line; it is not repeated here. */}
         </section>
 
@@ -2805,8 +2804,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             </button>
             <h2 className={styles.subViewTitle}>All arrivals</h2>
           </div>
-          <WardArrivalsCorridor
-            unit={unit}
+          {activeTab === "coming" ? (
+            <WardArrivalsCorridor
+              unit={unit}
             onPullPatient={handlePullPatient}
             accepted={accepted}
             heldAfterStop={heldAfterStop}
@@ -2822,8 +2822,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             setCheckToken={setCheckToken}
             priorRejectionCountRef={priorRejectionCountRef}
             rejections={rejections}
-            overrideReasonForm={overrideReasonForm}
-          />
+              overrideReasonForm={overrideReasonForm}
+            />
+          ) : null}
         </section>
 
         {/* ───────── TAB 3: ON THE WAY OUT ───────── */}
@@ -2847,16 +2848,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             </button>
             <h2 className={styles.subViewTitle}>All discharges</h2>
           </div>
-          <WardDischargesMatrix
-            unit={unit}
+          {activeTab === "out" ? (
+            <WardDischargesMatrix
+              unit={unit}
             releasesCountedToday={releasesCountedToday}
             unitLeaveBeds={unitLeaveBeds}
             blockedReleases={blockedReleases}
             now={now}
             confirmBedRelease={confirmBedRelease}
             clearBedReleaseBlock={clearBedReleaseBlock}
-            endLeaveBed={endLeaveBed}
-          />
+              endLeaveBed={endLeaveBed}
+            />
+          ) : null}
         </section>
 
         {/* ───────── TAB 4: BED BOARD & ROSTER ───────── */}
@@ -2880,15 +2883,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             </button>
             <h2 className={styles.subViewTitle}>Full bed list</h2>
           </div>
-          <WardBedsMatrix
-            unit={unit}
+          {activeTab === "beds" ? (
+            <WardBedsMatrix
+              unit={unit}
             bedsList={bedsList}
             selectedBed={selectedBed}
             setSelectedBed={setSelectedBed}
             selectedPod={selectedPod}
             setSelectedPod={setSelectedPod}
-            isMixed={isMixed}
-          />
+              isMixed={isMixed}
+            />
+          ) : null}
         </section>
 
         {/* ───────── BED TELEMETRY & CLINICAL DOSSIER DRAWER ───────── */}
