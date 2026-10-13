@@ -1859,3 +1859,21 @@ fieldset.formRow {
       0 var(--wf-s-2) 0 var(--wf-canvas);
   }
 }
+
+/* Audit A3-18: the legal status or form before the UMRN, on one line. */
+.legalUmrn {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.pcLegal {
+  flex: none;
+  white-space: nowrap;
+}
+
+.legalNeed {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}

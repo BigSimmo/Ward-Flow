@@ -31,6 +31,24 @@ export function discardReferralDraft(): void {
   keptAtMs = null;
 }
 
+/**
+ * A2-6 (audit 13 Oct 2026): the referrer's own contact details from the last referral sent in this
+ * tab, so the next referral starts with them filled in. Tab memory only, like the draft (D-18).
+ */
+let lastReferrer: unknown = null;
+
+export function rememberReferrerContact<T>(contact: T): void {
+  lastReferrer = contact;
+}
+
+export function readLastReferrerContact<T>(): T | null {
+  return (lastReferrer as T | null) ?? null;
+}
+
+export function forgetReferrerContact(): void {
+  lastReferrer = null;
+}
+
 /** How long after the last keystroke the draft is kept. */
 export const REFERRAL_DRAFT_AUTOSAVE_MS = 800;
 

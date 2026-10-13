@@ -159,7 +159,15 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
       const due = dueParts(row, ctx.now);
       return due ? (
         <span className={styles.two}>
-          <b className={`${styles.mono} ${styles.nowrap}`}>{due.when}</b>
+          <b className={`${styles.mono} ${styles.nowrap}`}>
+            {/* Audit A4-3: a hold ending within the hour carries the amber at-risk dot. */}
+            {due.atRisk ? (
+              <>
+                <StatusGlyph tone="warning" size={8} />{" "}
+              </>
+            ) : null}
+            {due.when}
+          </b>
           <span className={`${styles.sub} ${styles.trunc}`}>{due.what}</span>
         </span>
       ) : (

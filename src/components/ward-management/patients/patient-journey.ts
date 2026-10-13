@@ -12,7 +12,8 @@ import type { Movement } from "@/components/ward-management/ward-model";
 export function patientJourneyStages(movement: Movement, now: Instant): JourneyStage[] {
   const transport = movement.transport;
   const departed = transport?.collectedAt ?? movement.leftDepartmentAt;
-  const arrived = transport?.arrivedAt;
+  // Audit S-28 (13 Oct 2026): an arrival recorded without a transport job still ends the journey.
+  const arrived = transport?.arrivedAt ?? (movement.closure?.outcome === "arrived" ? movement.closure.at : undefined);
   const points: { id: string; label: string; at: Instant | undefined; quiet?: boolean }[] = [
     {
       id: "ed",

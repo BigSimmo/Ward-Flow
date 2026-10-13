@@ -22,8 +22,9 @@ import type { LegalClockAgeBand, LegalClockRegion } from "@/components/ward-mana
 import type { Movement } from "@/components/ward-management/ward-model";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 
-import { actPeriodCountdownText, actPeriodReading } from "./act-periods-demo";
-import { isLegalDeadlineBreached, legalDeadlineText } from "./legal-forms-derivations";
+import { actPeriodLineText, actPeriodReading } from "./act-periods-demo";
+import { formProgression } from "./legal-form-progression";
+import { currentLegalDueAt, isLegalDeadlineBreached, legalDeadlineText } from "./legal-forms-derivations";
 import {
   STANDING_TONE,
   clockStanding,
@@ -69,7 +70,7 @@ export const RING_LABEL: Record<RingState, string> = {
   soon: "Within window",
   running: "Later",
   demo: "Demo period only",
-  unwritten: "No expiry typed",
+  unwritten: "Time not written",
 };
 
 /**
@@ -87,7 +88,7 @@ export function ClockRail({
   onSelect: (movement: Movement) => void;
 }) {
   const marks: TimeRailMark[] = movements
-    .filter((movement) => movement.legalForm?.dueAt !== undefined)
+    .filter((movement) => currentLegalDueAt(movement) !== undefined)
     .map((movement) => ({
       id: movement.id,
       at: movement.legalForm!.dueAt!,
@@ -304,7 +305,9 @@ export function FocusPanel({
   };
 
   const elapsed = elapsedFraction(movement, now);
-  const remaining = legalForm?.dueAt !== undefined ? minutesUntil(legalForm.dueAt, now) : undefined;
+  // Audit S-6: a form ended by the examination or arrival keeps its typed expiry as history only.
+  const dueAt = currentLegalDueAt(movement);
+  const remaining = dueAt !== undefined ? minutesUntil(dueAt, now) : undefined;
 
   return (
     <section className={styles.panel} aria-label={`Form for ${name}`} data-testid="ward-legal-selected">
@@ -329,11 +332,11 @@ export function FocusPanel({
               <span className={styles.clockWord}>
                 {remaining < 0 ? "since the typed expiry" : "until the typed expiry"}
               </span>
-              <span className={cx(styles.mono, styles.clockAt)}>{formatInstantWithDay(legalForm!.dueAt!, now)}</span>
+              <span className={cx(styles.mono, styles.clockAt)}>{formatInstantWithDay(dueAt!, now)}</span>
             </>
           ) : (
             <>
-              <span className={styles.clockBig}>{standingWord(standing)}</span>
+              <span className={styles.clockBig}>{formProgression(movement) ? "Ended" : standingWord(standing)}</span>
               <span className={styles.clockWord}>{legalDeadlineText(movement, now)}</span>
             </>
           )}
@@ -344,15 +347,14 @@ export function FocusPanel({
               <span style={{ width: `${Math.round(elapsed * 100)}%` }} />
             </span>
             <span className={styles.srOnly}>
-              {remaining < 0 ? "Expired" : "Expires"} {formatInstantWithDay(legalForm!.dueAt!, now)}, typed from the
-              form
+              {remaining < 0 ? "Expired" : "Expires"} {formatInstantWithDay(dueAt!, now)}, typed from the form
             </span>
           </>
         ) : null}
       </div>
       {reading ? (
         <p className={styles.demoNote} data-testid="ward-legal-act-period">
-          {reading.text} {actPeriodCountdownText(reading, now)}
+          {actPeriodLineText(reading, movement, now)}
         </p>
       ) : null}
 

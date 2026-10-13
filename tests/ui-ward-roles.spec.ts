@@ -1251,6 +1251,14 @@ test.describe("@mockup Role switcher — the loop", () => {
     // not "Arrived" — the event dispatched is still PATIENT_ARRIVED.
     for (const label of ["Accepted", "En route", "Collected", "Delivered"]) {
       await panel.getByRole("button", { name: label }).click();
+      // Audit fix (13 Oct 2026): WF-315 has no Form 4A or fit to travel recorded, so Collected asks
+      // for a coded reason before it records. The officer is warned, never blocked.
+      if (label === "Collected") {
+        const collectCheck = page.getByTestId("ward-officer-collect-check");
+        await expect(collectCheck).toBeVisible();
+        await page.getByTestId("ward-officer-collect-check-reason").selectOption("paper_sighted");
+        await collectCheck.getByRole("button", { name: "Collected, record reason" }).click();
+      }
     }
 
     // --- Step 11: Coordinator — the patient has left the system. ---

@@ -12,6 +12,8 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {
   restrictionNotice,
   eligibilityWarning,
@@ -71,13 +73,26 @@ export function wardActNowCount({
   incoming,
   heldUp,
   rollupOverdue,
+  lapsedHolds = 0,
+  absences = 0,
 }: {
   alerts: number;
   incoming: number;
   heldUp: number;
   rollupOverdue: boolean;
+  /** Audit A1-3: pulled beds whose hold has lapsed (one Act now row for all of them). */
+  lapsedHolds?: number;
+  /** Audit A3-1: this ward's absences on an order (`absentOnOrder`), one Act now row each. */
+  absences?: number;
 }): number {
-  return alerts + (incoming > 0 ? 1 : 0) + (heldUp > 0 ? 1 : 0) + (rollupOverdue ? 1 : 0);
+  return (
+    absences +
+    alerts +
+    (incoming > 0 ? 1 : 0) +
+    (heldUp > 0 ? 1 : 0) +
+    (rollupOverdue ? 1 : 0) +
+    (lapsedHolds > 0 ? 1 : 0)
+  );
 }
 
 function wardSafeRejectionReason(reason: string): string {
@@ -134,6 +149,8 @@ interface WardHomeTabProps {
   onOpenDischarges?: () => void;
   /** The ward's beds, as the bed board draws them. Drives Every bed and Length of stay. */
   bedsList?: BedItem[];
+  /** Audit A3-1: this ward's absences on an order, from `absentOnOrder` (one Act now row each). */
+  absencesOnOrder?: ReturnType<typeof absentOnOrder>;
   /** Opens the bed's dossier. */
   onSelectBed?: (bedNumber: number) => void;
   /** The ward figures section, shown as the foot of Every bed. */
@@ -211,6 +228,7 @@ export function WardHomeTab({
   onOpenDischarges,
   onOpenDecisions,
   bedsList,
+  absencesOnOrder = [],
   onSelectBed,
   figures,
   bedFilter: bedFilterProp,
@@ -406,39 +424,45 @@ export function WardHomeTab({
               ? "Closed"
               : "Occupied";
     const days = typeof bed.stayDays === "number" ? `${bed.stayDays}d` : "";
-    const note = awayAtEd
-      ? `Away at an ED ${bed.awayAtEdHours}h`
-      : bed.blockReason
-        ? `Held up, ${String(bed.blockReason)}`
-        : bed.pastDate
-          ? "Past expected date"
-          : bed.dischargeBarrier
-            ? String(bed.dischargeBarrier)
-            : leaving
-              ? bed.dischargeConfirmed
-                ? "Discharge confirmed"
-                : "Expected out today"
-              : bed.isSpecialling
-                ? "1:1 specialling"
-                : free
-                  ? "Free to offer"
-                  : stateWord;
+    // Audit A1-3: every pulled bed shows its hold time, from the one bed-hold rule.
+    const hold = bed.status === "incoming" ? (bed.bedHold ?? null) : null;
+    const note = hold
+      ? hold.label
+      : awayAtEd
+        ? `Away at an ED ${bed.awayAtEdHours}h`
+        : bed.blockReason
+          ? `Held up, ${String(bed.blockReason)}`
+          : bed.pastDate
+            ? "Past expected date"
+            : bed.dischargeBarrier
+              ? String(bed.dischargeBarrier)
+              : leaving
+                ? bed.dischargeConfirmed
+                  ? "Discharge confirmed"
+                  : "Expected out today"
+                : bed.isSpecialling
+                  ? "1:1 specialling"
+                  : free
+                    ? "Free to offer"
+                    : stateWord;
     // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
     // list view and the bed panel.
-    const tileNote = awayAtEd
-      ? `At ED ${bed.awayAtEdHours}h`
-      : bed.blockReason
-        ? "Held up"
-        : bed.pastDate
-          ? "Past date"
-          : bed.dischargeBarrier
-            ? "Barrier"
-            : leaving
-              ? bed.dischargeConfirmed
-                ? "Confirmed out"
-                : "Due out"
-              : note;
+    const tileNote = hold
+      ? hold.short
+      : awayAtEd
+        ? `At ED ${bed.awayAtEdHours}h`
+        : bed.blockReason
+          ? "Held up"
+          : bed.pastDate
+            ? "Past date"
+            : bed.dischargeBarrier
+              ? "Barrier"
+              : leaving
+                ? bed.dischargeConfirmed
+                  ? "Confirmed out"
+                  : "Due out"
+                : note;
     const glyph = bedGlyphTone(bed);
     const number = String(bed.bedNumber).padStart(2, "0");
     const name = free ? "Free to offer" : (bed.patientAlias ?? stateWord);
@@ -520,6 +544,13 @@ export function WardHomeTab({
         return true;
       });
     const groups: { id: string; title: string; tone: WfTone | null; rows: typeof bedRows }[] = [
+      // Audit A3-1: absent without leave is its own red group at the top, never under On leave.
+      {
+        id: "awol",
+        title: "Absent without leave",
+        tone: "danger",
+        rows: take((row) => row.bed.statusText === "Absent without leave"),
+      },
       { id: "act", title: "Act now", tone: "danger", rows: take((row) => row.glyph === "danger") },
       { id: "risk", title: "At risk", tone: "warning", rows: take((row) => row.glyph === "warning") },
       // Beds due out today that are not already listed under Act now or At risk, so the heading
@@ -551,12 +582,16 @@ export function WardHomeTab({
   const expectedRows: FlowRow[] = accepted.map((movement, index): FlowRow => {
     const eta = movement.arrivalDetails?.estimatedArrivalAt;
     const late = eta !== undefined && eta < now;
+    // Audit A1-3: a pulled arrival names its hold, from the one bed-hold rule.
+    const hold = movement.stage === "pulled" ? bedHold(movement.pullExpiresAt, now) : null;
     return {
       key: movement.id,
       title: resolvePatientIdentity(movement).displayName,
       when: eta === undefined ? undefined : `${late ? "Due" : "ETA"} ${formatInstantWithDay(eta, now)}`,
-      detail: late ? "Late" : stageCopy[movement.stage].label,
-      tone: late ? "warning" : "info",
+      // A lapsed hold outranks a late ETA (the coral overdue); the ETA stays in `when` as "Due".
+      detail:
+        hold?.state === "lapsed" ? hold.label : late ? "Late" : hold ? hold.label : stageCopy[movement.stage].label,
+      tone: hold?.state === "lapsed" ? "danger" : late ? "warning" : hold?.state === "at-risk" ? "warning" : "info",
       action: "Open",
       primary: index === 0,
       run: () => onOpenArrival?.(movement.id),
@@ -614,6 +649,17 @@ export function WardHomeTab({
     tick?: keyof typeof localChecks;
   };
   const actNow: TodoRow[] = [
+    // Audit A3-1: absent without leave on an order is the most urgent row, as on the task list.
+    ...absencesOnOrder.map(({ leaveBed, admission }): TodoRow => {
+      const bed = bedByAdmission(admission.id);
+      return {
+        key: `absent-${admission.id}`,
+        title: "Absent without leave on an order",
+        detail: `${bed?.bedLabel ?? "A bed"} missing since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}, order stays in force`,
+        tone: "danger",
+        action: bed ? { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) } : undefined,
+      };
+    }),
     ...liveFormAlerts.map((alert): TodoRow => ({
       key: alert.key,
       title: alert.title,
@@ -650,6 +696,23 @@ export function WardHomeTab({
       meta: String(heldUp.length),
       tone: "danger",
       action: { label: "Review", run: () => onOpenDischarges?.() },
+    });
+  }
+  // Audit A1-3: a lapsed bed hold is act now on its ward, the same rule Handover and Tasks use.
+  const lapsedHolds = (bedsList ?? []).filter((bed) => bed.status === "incoming" && bed.bedHold?.state === "lapsed");
+  if (lapsedHolds.length > 0) {
+    actNow.push({
+      key: "holds",
+      title: lapsedHolds.length === 1 ? "Bed pull expired" : "Bed pulls expired",
+      detail: lapsedHolds
+        .map(
+          (bed) =>
+            `${bed.bedLabel}${bed.patientAlias ? ` ${bed.patientAlias}` : ""}, ${bed.bedHold!.short.toLowerCase()}`,
+        )
+        .join("; "),
+      meta: String(lapsedHolds.length),
+      tone: "danger",
+      action: { label: "Move or release", run: () => onSelectBed?.(Number(lapsedHolds[0]!.bedNumber)) },
     });
   }
   if (morningRollupOverdue && !morningRollupConfirmed) {
