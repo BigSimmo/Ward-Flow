@@ -52,9 +52,9 @@ describe("the transport page names itself the same way everywhere a user can hea
    * announces must match the name the navigation gives. Transport content now lives on Movements,
    * so that is where the property is checked.
    */
-  it("sends /transport to /movements, so nobody can land on a page with a name nobody maintains", () => {
-    expect(page).toContain("redirect(");
-    expect(page).toContain("/mockups/ward-flow/movements");
+  // shell-19 (13 Oct 2026): Menu's "Transport" opens the officer page, so /transport goes there too.
+  it("sends /transport to /transport/officer, the page Menu calls Transport", () => {
+    expect(page).toContain('redirect("/mockups/ward-flow/transport/officer")');
   });
 
   it("⚠️ HEADS THE MERGED PAGE Movements — the name a screen reader gets, matching the nav label", () => {
