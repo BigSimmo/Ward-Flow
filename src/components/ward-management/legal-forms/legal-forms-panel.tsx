@@ -22,7 +22,7 @@ import type { LegalClockAgeBand, LegalClockRegion } from "@/components/ward-mana
 import type { Movement } from "@/components/ward-management/ward-model";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 
-import { actPeriodCountdownText, actPeriodReading } from "./act-periods-demo";
+import { actPeriodLineText, actPeriodReading } from "./act-periods-demo";
 import { isLegalDeadlineBreached, legalDeadlineText } from "./legal-forms-derivations";
 import {
   STANDING_TONE,
@@ -69,7 +69,7 @@ export const RING_LABEL: Record<RingState, string> = {
   soon: "Within window",
   running: "Later",
   demo: "Demo period only",
-  unwritten: "No expiry typed",
+  unwritten: "Time not written",
 };
 
 /**
@@ -352,7 +352,7 @@ export function FocusPanel({
       </div>
       {reading ? (
         <p className={styles.demoNote} data-testid="ward-legal-act-period">
-          {reading.text} {actPeriodCountdownText(reading, now)}
+          {actPeriodLineText(reading, movement, now)}
         </p>
       ) : null}
 
