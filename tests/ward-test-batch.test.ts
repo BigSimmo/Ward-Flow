@@ -120,6 +120,23 @@ describe("evidence safety", () => {
     expect(reusableReceipt(receipt, "changed", root, {})).toBe(false);
     expect(reusableReceipt(receipt, "same", root, { CI: "true" })).toBe(false);
     expect(reusableReceipt({ ...receipt, status: "failed" }, "same", root, {})).toBe(false);
+    expect(reusableReceipt(null, "same", root, {})).toBe(false);
+    expect(
+      reusableReceipt(
+        { ...receipt, artifacts: { ...receipt.artifacts, log: { file: null, hash: receipt.artifacts.log.hash } } },
+        "same",
+        root,
+        {},
+      ),
+    ).toBe(false);
+    expect(
+      reusableReceipt(
+        { ...receipt, artifacts: { ...receipt.artifacts, log: { file: "../run.log", hash: receipt.artifacts.log.hash } } },
+        "same",
+        root,
+        {},
+      ),
+    ).toBe(false);
     writeFileSync(path.join(root, "run.log"), "modified");
     expect(reusableReceipt(receipt, "same", root, {})).toBe(false);
   });

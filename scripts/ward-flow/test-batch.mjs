@@ -159,11 +159,20 @@ export function inputIdentity(root, batch, environment, dependencies = null) {
 
 export function reusableReceipt(receipt, identity, evidenceRoot, environment) {
   if (environment.CI) return false;
+  if (!receipt || typeof receipt !== "object" || Array.isArray(receipt)) return false;
   if (receipt.status !== "passed") return false;
   if (receipt.identity !== identity) return false;
+  if (!receipt.artifacts || typeof receipt.artifacts !== "object" || Array.isArray(receipt.artifacts)) return false;
   return ["testReport", "log"].every((key) => {
-    const entry = receipt.artifacts?.[key];
-    if (!entry || path.basename(entry.file) !== entry.file) return false;
+    const entry = receipt.artifacts[key];
+    if (
+      !entry ||
+      typeof entry !== "object" ||
+      typeof entry.file !== "string" ||
+      typeof entry.hash !== "string" ||
+      path.basename(entry.file) !== entry.file
+    )
+      return false;
     const file = path.join(evidenceRoot, entry.file);
     return existsSync(file) && digest(readFileSync(file)) === entry.hash;
   });
