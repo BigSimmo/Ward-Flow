@@ -280,11 +280,14 @@ const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wa
 /** What the service choice narrows, named from `SERVICE_SCOPED_SCREENS` so it cannot drift (D-e).
  *  Screen readers only: the painted note and its "scopes the lists" hint were removed at the
  *  owner's request (9 Oct 2026). */
-const SERVICE_SCOPE_NOTE = `One service, or all of them. ${
+const SERVICE_SCOPED_SCREEN_LIST =
   SERVICE_SCOPED_SCREENS.length > 1
     ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
-    : SERVICE_SCOPED_SCREENS.join(", ")
-} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not. Each count is the people waiting in that service's emergency departments; a narrowed list also shows people referred to its wards.`;
+    : SERVICE_SCOPED_SCREENS.join(", ");
+/** The painted sheet line (shell-1, 13 Oct 2026): it used to promise "What every page and count
+ *  shows", which most pages do not honour. It now names only the screens that read the choice. */
+const SERVICE_SCOPE_SHEET_LINE = `Narrows the ${SERVICE_SCOPED_SCREEN_LIST} lists`;
+const SERVICE_SCOPE_NOTE = `One service, or all of them. ${SERVICE_SCOPED_SCREEN_LIST} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not. Each count is the people waiting in that service's emergency departments; a narrowed list also shows people referred to its wards.`;
 
 /** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (D-16) — named
  *  in one place so the three "not wired" primary-action kinds and any future caller share the
@@ -1311,7 +1314,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               <p className={styles.popoverHead}>Service</p>
               {/* Phone (v10 service sheet): the quiet line under the title. */}
               <p className={styles.serviceSheetNote} aria-hidden="true">
-                What every page and count shows
+                {SERVICE_SCOPE_SHEET_LINE}
               </p>
               <p className="sr-only">{SERVICE_SCOPE_NOTE}</p>
               <button
