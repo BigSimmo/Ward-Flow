@@ -1,7 +1,7 @@
 "use client";
 
 import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
-import { ToastDeviceSaveContext } from "@/components/ui/toast";
+import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
