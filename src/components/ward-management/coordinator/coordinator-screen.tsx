@@ -239,6 +239,7 @@ export function CoordinatorScreen() {
             referrals,
             supportNotifications,
             plannedAdmissions,
+            leaveBeds,
           },
           now,
         ).map((item) => item.movementId),
@@ -253,6 +254,7 @@ export function CoordinatorScreen() {
       referrals,
       supportNotifications,
       plannedAdmissions,
+      leaveBeds,
       now,
     ],
   );
@@ -409,6 +411,7 @@ export function CoordinatorScreen() {
           referrals,
           supportNotifications,
           plannedAdmissions,
+          leaveBeds,
         },
         now,
       ).map((item) => {
@@ -429,6 +432,7 @@ export function CoordinatorScreen() {
       referrals,
       supportNotifications,
       plannedAdmissions,
+      leaveBeds,
       now,
     ],
   );

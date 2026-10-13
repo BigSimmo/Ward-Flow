@@ -190,6 +190,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   UNDO_ED_STEP: { category: "patient", plainWording: "Emergency department step undone" },
   UNDO_TRANSPORT_STEP: { category: "both", plainWording: "Transport step undone" },
   UNDO_DEPARTURE: { category: "neither", plainWording: "Departure undone" },
+  UNDO_ABSENT_WITHOUT_LEAVE: { category: "patient", plainWording: "Absent without leave record undone" },
 
   // 2.9 World and admin
   ADVANCE_CLOCK: { category: "neither", plainWording: "Operational demonstration clock advanced" },

@@ -295,6 +295,7 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "UNDO_ED_STEP",
   "UNDO_TRANSPORT_STEP",
   "UNDO_DEPARTURE",
+  "UNDO_ABSENT_WITHOUT_LEAVE",
 ] as const satisfies readonly WardFlowEvent["type"][];
 
 /** Runtime form of the tuple above — an O(1)-lookup `Set`, used by the reducer wrapper and by the

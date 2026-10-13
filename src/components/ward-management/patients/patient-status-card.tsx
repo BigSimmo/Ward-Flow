@@ -6,6 +6,7 @@ import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   ABSENCE_STEPS,
+  ABSENCE_STEP_BAR_LABELS,
   ABSENCE_STEP_LABELS,
   type AbsenceStep,
   type LeaveBed,
@@ -49,6 +50,8 @@ export type StatusAction =
       event?: WardFlowEventType;
       /** A correction to something already recorded (Update booking): never the card's one primary. */
       secondary?: boolean;
+      /** The words when pinned in the phone bar, away from its row ("Record search done"). */
+      pinnedLabel?: string;
     }
   | { kind: "unavailable"; label: string; reason: string };
 
@@ -643,6 +646,8 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
                 kind: "button",
                 label: "Record",
                 ariaLabel: `Record ${ABSENCE_STEP_LABELS[step]}`,
+                // Audit A3-11: pinned alone in the phone bar, the button names its step.
+                pinnedLabel: ABSENCE_STEP_BAR_LABELS[step],
                 onClick: () => {
                   ctx.onAbsenceStep(step);
                 },
@@ -948,7 +953,16 @@ export function PatientStatusCard({
       {isPhone && (pinned || barLead || barMain) ? (
         <div className={styles.phBar} data-testid="ward-patient-phone-action-bar">
           {barLead ? <span className={styles.phLead}>{barLead}</span> : null}
-          {pinned ? <CellAction action={pinned} primary /> : barMain}
+          {pinned ? (
+            <CellAction
+              action={
+                pinned.kind === "button" && pinned.pinnedLabel ? { ...pinned, label: pinned.pinnedLabel } : pinned
+              }
+              primary
+            />
+          ) : (
+            barMain
+          )}
         </div>
       ) : null}
     </>

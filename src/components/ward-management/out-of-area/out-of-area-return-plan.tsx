@@ -42,7 +42,14 @@ import {
 } from "./out-of-area-model";
 import styles from "./out-of-area-board.module.css";
 
-export type PlanPatient = { displayName: string; umrn: string; profileHref: string | null };
+export type PlanPatient = {
+  displayName: string;
+  umrn: string;
+  profileHref: string | null;
+  /** Audit A3-18: the short legal word ("Form 6A", "Voluntary"), and whether they are on an order. */
+  legal?: string;
+  onOrder?: boolean;
+};
 
 const WA_SERVICE_ORDER = ["North Metro", "South Metro", "East Metro", "WACHS", "CAHS", "Private"] as const;
 
@@ -229,6 +236,10 @@ export function ReturnPlan({
             </dd>
           </div>
           <div>
+            <dt>Legal</dt>
+            <dd data-testid="ward-out-of-area-plan-legal">{patient.legal ?? "Not recorded"}</dd>
+          </div>
+          <div>
             <dt>Discharge</dt>
             <dd className={overdue ? styles.inkWarning : undefined}>
               {overdue ? <StatusGlyph tone="warning" size={9} /> : null}
@@ -406,6 +417,11 @@ export function ReturnPlan({
                 options={TRANSPORT_LEGAL_STATUSES.map((status) => ({ value: status, label: LEGAL_LABELS[status] }))}
                 onChange={(transportLegalStatus) => onDraft({ transportLegalStatus })}
               />
+              {patient.onOrder ? (
+                <p className={styles.legalNeed} data-testid="ward-out-of-area-plan-needs-form">
+                  On an order: needs Form 4C, transfer order
+                </p>
+              ) : null}
             </section>
 
             <section className={styles.planStep} aria-label="Step 3, dispatch">

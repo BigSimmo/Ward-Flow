@@ -708,6 +708,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         referrals,
         supportNotifications,
         plannedAdmissions,
+        leaveBeds,
       },
       now,
     );
@@ -723,6 +724,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     supportNotifications,
     configuration,
     inboxSnoozes,
+    leaveBeds,
   ]);
   // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
   const tasksActiveCount = useMemo(

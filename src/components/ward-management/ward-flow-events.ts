@@ -2418,6 +2418,17 @@ export type WardFlowEvent =
       admissionId: string;
       /** A ward undoing its own recorded departure names itself. */
       actingUnitId?: string;
+    }
+  | {
+      /** Takes back the newest `RECORD_ABSENT_WITHOUT_LEAVE` on this stay (audit A3-10, 13 Oct 2026). */
+      type: "UNDO_ABSENT_WITHOUT_LEAVE";
+      role: WardFlowRole;
+      now: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
+      admissionId: string;
+      /** A ward undoing its own record names itself. */
+      actingUnitId?: string;
     };
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
@@ -2957,4 +2968,5 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
   UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
   UNDO_DEPARTURE: ["ward", "coordinator"],
+  UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
 };

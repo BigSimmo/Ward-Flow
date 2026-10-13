@@ -72,6 +72,8 @@ export const UNDO_STEP_ACTIONS = {
   UNDO_TRANSPORT_STEP: ["TRANSPORT_ACCEPTED", "TRANSPORT_EN_ROUTE", "PATIENT_COLLECTED", "PATIENT_ARRIVED"],
   // Audit A1-12 / A4-24 (13 Oct 2026): "Has left" is reversible from its toast, like Move bed.
   UNDO_DEPARTURE: ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE"],
+  // Audit A3-10 (13 Oct 2026): Mark absent starts the police steps on one tap, so it offers Undo.
+  UNDO_ABSENT_WITHOUT_LEAVE: ["RECORD_ABSENT_WITHOUT_LEAVE"],
 } as const;
 export type UndoStepType = keyof typeof UNDO_STEP_ACTIONS;
 export type UndoableStepAction = (typeof UNDO_STEP_ACTIONS)[UndoStepType][number];

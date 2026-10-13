@@ -156,6 +156,8 @@ type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
 export function bedGlyphTone(bed: BedItem): WfTone | null {
   if (bed.status === "ready") return "success";
   if (bed.status === "closed") return "closed";
+  // Audit A3-1 (13 Oct 2026): a missing person is act now, never a neutral "On leave".
+  if (bed.status === "leave" && bed.statusText === "Absent without leave") return "danger";
   if (bed.blockReason) return "danger";
   if (bed.awayAtEdHours != null || bed.pastDate || bed.dischargeBarrier) return "warning";
   const leaving = bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0);

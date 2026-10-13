@@ -53,6 +53,7 @@ import {
   legalFormRowClassification,
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
+import { orderByActPeriodShare } from "./act-periods-demo";
 import { FocusPanel, SummaryPanel, type FocusTab } from "./legal-forms-panel";
 import {
   ExtendSheet,
@@ -169,27 +170,12 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const isTabletPortrait = useIsTabletPortrait();
   // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
   const [allCodes, setAllCodes] = useState(false);
-  // Device audit 11 Oct 2026: "No expiry typed" folds after 5 on a phone and 10 elsewhere.
-  const [allNoDeadline, setAllNoDeadline] = useState(false);
-
   const openMovements = movements.filter(isOpen);
   const withDeadline = legalFormGroupRows(movements, now, "with-deadline");
-  const noDeadline = legalFormGroupRows(movements, now, "no-deadline");
-  const noDeadlineCap = isPhone ? 5 : 10;
-  // A highlight or a chosen row past the fold opens the whole group, so nothing marked is hidden.
-  const noDeadlineOpen =
-    allNoDeadline ||
-    highlight !== null ||
-    noDeadline.findIndex((movement) => movement.id === selectedId) >= noDeadlineCap;
-  const noDeadlineShown = noDeadlineOpen ? noDeadline : noDeadline.slice(0, noDeadlineCap);
-  const showAllNoDeadline =
-    noDeadline.length > noDeadlineShown.length ? (
-      <div className={styles.showAll}>
-        <Button variant="ghost" size="sm" onClick={() => setAllNoDeadline(true)}>
-          Show all {noDeadline.length}
-        </Button>
-      </div>
-    ) : null;
+  // Audit A3-6 (13 Oct 2026): "Time not written" holds forms that do carry Act periods, so it is
+  // never folded and runs by share of the demo Act period used, counted from arrival in ED. It
+  // replaces the 11 Oct fold after 5 on a phone and 10 elsewhere.
+  const noDeadline = orderByActPeriodShare(legalFormGroupRows(movements, now, "no-deadline"), now, dayZero);
   const rows = [...withDeadline, ...noDeadline];
   const voluntary = openMovements.length - rows.length;
   const breakdown = legalFormBreakdown(rows, now);
@@ -683,7 +669,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               figures={[
                 { id: "act", value: actNow, label: "Act now", tone: "danger" },
                 { id: "soon", value: reminders.withinSoon, label: `Within ${reminders.soonHours}h`, tone: "warning" },
-                { id: "none", value: noDeadline.length, label: "No expiry", tone: "closed" },
+                { id: "none", value: noDeadline.length, label: "Time not written", tone: "closed" },
               ]}
               actions={
                 <>
@@ -755,16 +741,15 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                         ))}
                       </ul>
                       <div className={styles.groupHead}>
-                        <span>No expiry typed</span>
+                        <span>Time not written</span>
                         <span className={styles.groupCount}>{noDeadline.length}</span>
-                        <span className={styles.groupOrder}>longest in ED</span>
+                        <span className={styles.groupOrder}>most period used</span>
                       </div>
                       <ul className={styles.phoneList}>
-                        {noDeadlineShown.map((movement) => (
+                        {noDeadline.map((movement) => (
                           <PhoneFormRow key={movement.id} {...rowProps(movement)} />
                         ))}
                       </ul>
-                      {showAllNoDeadline}
                     </>
                   )}
                 </section>
@@ -859,7 +844,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                     <HeroStat
                       inline
                       value={noDeadline.length}
-                      label="No expiry typed"
+                      label="Time not written"
                       tone="neutral"
                       pressed={highlight?.kind === "none"}
                       onToggle={() => toggleHighlight({ kind: "none" })}
@@ -962,19 +947,18 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                             </p>
                           )}
                           <div className={styles.groupHead}>
-                            <span>No expiry typed</span>
+                            <span>Time not written</span>
                             <span className={styles.groupCount}>{noDeadline.length}</span>
-                            <span className={styles.groupOrder}>longest in ED first</span>
+                            <span className={styles.groupOrder}>most of the period used first</span>
                             <span className={styles.srOnly}>Forms with no deadline recorded</span>
                           </div>
                           {noDeadline.length > 0 ? (
                             <>
                               <ul className={styles.rowList}>
-                                {noDeadlineShown.map((movement) => (
+                                {noDeadline.map((movement) => (
                                   <FormRow key={movement.id} {...rowProps(movement)} />
                                 ))}
                               </ul>
-                              {showAllNoDeadline}
                             </>
                           ) : (
                             <p className={styles.absent} data-testid="ward-legal-forms-none-without-deadline">

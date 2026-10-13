@@ -2006,6 +2006,9 @@ export type LeaveBed = {
 export const ABSENCE_STEPS = [
   "searched",
   "psychiatrist_told",
+  // Audit A3-2 (13 Oct 2026): the psychiatrist's apprehension and return order. Neutral wording on
+  // purpose: the MHA 2014 form number is added only after an MHA adviser confirms it.
+  "return_order_made",
   "description_recorded",
   "police_notified",
   "next_of_kin_told",
@@ -2015,9 +2018,20 @@ export type AbsenceStep = (typeof ABSENCE_STEPS)[number];
 export const ABSENCE_STEP_LABELS: Record<AbsenceStep, string> = {
   searched: "Ward and grounds searched",
   psychiatrist_told: "Treating psychiatrist told",
+  return_order_made: "Return order made",
   description_recorded: "Description recorded",
   police_notified: "Police notified",
   next_of_kin_told: "Next of kin told",
+};
+
+/** The phone's pinned button for each step, so a bare "Record" never stands alone (audit A3-11). */
+export const ABSENCE_STEP_BAR_LABELS: Record<AbsenceStep, string> = {
+  searched: "Record search done",
+  psychiatrist_told: "Record psychiatrist told",
+  return_order_made: "Record return order",
+  description_recorded: "Record description",
+  police_notified: "Record police notified",
+  next_of_kin_told: "Record next of kin told",
 };
 
 /**
