@@ -433,9 +433,15 @@ test("runtime summary refuses read grants outside ward_flow except stock Supabas
   // plus four named extension relations. Anything else, including new relations in extensions or cron, refuses.
   assert.deepEqual([...FOREIGN_READ_SCHEMA_ALLOWLIST], ["pg_catalog", "information_schema"]);
   assert.deepEqual(
-    [...FOREIGN_READ_RELATION_ALLOWLIST],
-    ["extensions.pg_stat_statements", "extensions.pg_stat_statements_info", "cron.job", "cron.job_run_details"],
+    FOREIGN_READ_RELATION_ALLOWLIST.map((pair) => [...pair]),
+    [
+      ["extensions", "pg_stat_statements"],
+      ["extensions", "pg_stat_statements_info"],
+      ["cron", "job"],
+      ["cron", "job_run_details"],
+    ],
   );
+  assert.ok(FOREIGN_READ_RELATION_ALLOWLIST.every((pair) => Object.isFrozen(pair)));
   for (const schema of ["public", "auth", "storage", "vault", "extensions", "cron"])
     assert.ok(!FOREIGN_READ_SCHEMA_ALLOWLIST.includes(schema), schema);
   assert.ok(Object.isFrozen(FOREIGN_READ_SCHEMA_ALLOWLIST) && Object.isFrozen(FOREIGN_READ_RELATION_ALLOWLIST));
@@ -449,8 +455,11 @@ test("runtime summary refuses read grants outside ward_flow except stock Supabas
   );
   assert.match(
     clause,
-    /AND NOT \(c\.relkind IN \('r', 'v'\)\s+AND n\.nspname \|\| '\.' \|\| c\.relname = ANY \(ARRAY\['extensions\.pg_stat_statements', 'extensions\.pg_stat_statements_info', 'cron\.job', 'cron\.job_run_details'\]::text\[\]\)\)/,
+    /AND NOT \(c\.relkind IN \('r', 'v'\)\s+AND \(n\.nspname::text, c\.relname::text\) IN \(\('extensions', 'pg_stat_statements'\), \('extensions', 'pg_stat_statements_info'\), \('cron', 'job'\), \('cron', 'job_run_details'\)\)\)/,
   );
+  // Schema and relation are compared separately: a quoted schema "extensions.pg_stat" with a table
+  // "statements" must not match extensions.pg_stat_statements through string concatenation.
+  assert.doesNotMatch(clause, /\|\|/);
   assert.match(clause, /has_table_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
   assert.match(clause, /has_any_column_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
   assert.match(clause, /c\.relkind IN \('r', 'p', 'v', 'm', 'f'\)/);

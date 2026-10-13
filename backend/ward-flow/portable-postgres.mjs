@@ -56,12 +56,15 @@ export function readDatabaseCA(certificateFile) {
 // PostgreSQL 17 project's PUBLIC ACLs. Any other readable relation outside ward_flow refuses startup,
 // including a new relation that is later added and granted in extensions or cron.
 export const FOREIGN_READ_SCHEMA_ALLOWLIST = Object.freeze(["pg_catalog", "information_schema"]);
-export const FOREIGN_READ_RELATION_ALLOWLIST = Object.freeze([
-  "extensions.pg_stat_statements",
-  "extensions.pg_stat_statements_info",
-  "cron.job",
-  "cron.job_run_details",
-]);
+// [schema, relation] pairs, compared as separate names so a dotted schema name can't impersonate one.
+export const FOREIGN_READ_RELATION_ALLOWLIST = Object.freeze(
+  [
+    ["extensions", "pg_stat_statements"],
+    ["extensions", "pg_stat_statements_info"],
+    ["cron", "job"],
+    ["cron", "job_run_details"],
+  ].map((pair) => Object.freeze(pair)),
+);
 const sqlList = (values) => values.map((value) => `'${value}'`).join(", ");
 
 // One bounded catalogue summary. No payload or credential is read. Missing schema,
@@ -91,7 +94,7 @@ SELECT current_user AS role,
   NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
     WHERE n.nspname <> 'ward_flow' AND n.nspname <> ALL (ARRAY[${sqlList(FOREIGN_READ_SCHEMA_ALLOWLIST)}]::text[])
       AND NOT (c.relkind IN ('r', 'v')
-        AND n.nspname || '.' || c.relname = ANY (ARRAY[${sqlList(FOREIGN_READ_RELATION_ALLOWLIST)}]::text[]))
+        AND (n.nspname::text, c.relname::text) IN (${FOREIGN_READ_RELATION_ALLOWLIST.map((pair) => `(${sqlList(pair)})`).join(", ")}))
       AND CASE WHEN c.relkind IN ('r', 'p', 'v', 'm', 'f') THEN
           (pg_catalog.has_table_privilege(r.oid, c.oid, 'SELECT')
           OR pg_catalog.has_any_column_privilege(r.oid, c.oid, 'SELECT'))
