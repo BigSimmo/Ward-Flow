@@ -203,7 +203,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
     case "hold":
       return { kind: "release", label: "Release bed" };
     case "transport":
-      return { kind: "link", label: "Open transport", href: "/mockups/ward-flow/transport" };
+      return { kind: "link", label: "Chase transport", href: "/mockups/ward-flow/transport" };
     case "planned":
       return { kind: "link", label: "Open bookings", href: item.href ?? "/mockups/ward-flow/capacity" };
     case "notify":

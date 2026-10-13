@@ -23,6 +23,7 @@ import {
   isAlertActive,
   latestReplies,
   PULL_NOW_LIVE_STAGES,
+  pullNowWards,
   pullNowStillWaiting,
   type BroadcastAlert,
   type BroadcastReply,
@@ -215,10 +216,7 @@ export function reduceBroadcastAlertEvent(
       }
       // The accepting ward, else every ward still considering the referral. D-30 is kept by the
       // role table: only the coordinator raises this, for any hospital's patient.
-      const declined = new Set(movement.declines.map((decline) => decline.unitId));
-      const targetUnitIds = movement.acceptedUnitId
-        ? [movement.acceptedUnitId]
-        : movement.referredUnitIds.filter((unitId) => !declined.has(unitId) && findUnit(state, unitId));
+      const targetUnitIds = pullNowWards(movement, (unitId) => Boolean(findUnit(state, unitId)));
       if (targetUnitIds.length === 0) {
         return reject(state, event, "RAISE_PULL_NOW has no ward to ask, refer the patient to wards first");
       }

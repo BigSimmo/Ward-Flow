@@ -11,6 +11,7 @@ import {
   PULL_NOW_ANSWER_MINUTES,
   getActiveBroadcastAlert,
   isPullNowOverdue,
+  pullNowOffered,
 } from "../src/components/ward-management/alerts/ward-broadcast-model";
 import type { Instant } from "../src/components/ward-management/ward-clock";
 import { RELEASE_PULL_REASONS } from "../src/components/ward-management/ward-change-reasons";
@@ -266,5 +267,23 @@ describe("Directive acknowledgements (remaining-pages audit ops-11, ops-13)", ()
     expect(bannerEntriesForDesk([alert], [], desk, NOW)[0].needsAnswer).toBe(false);
     const ward = { role: "ward", id: "rph-adult-secure" };
     expect(bannerEntriesForDesk([alert], [], ward, NOW)[0].needsAnswer).toBe(true);
+  });
+});
+
+describe("Pull now is offered only where it is accepted (remaining-pages audit ops-4)", () => {
+  it("matches RAISE_PULL_NOW on every seeded movement, and is not offered on a lapsed pull", () => {
+    const state = seedWardFlowState();
+    let offered = 0;
+    for (const movement of state.movements) {
+      const accepted = raise(state, movement.id).broadcastAlerts.length > state.broadcastAlerts.length;
+      expect(
+        pullNowOffered(movement, (id) => state.units.some((unit) => unit.id === id)),
+        movement.id,
+      ).toBe(accepted);
+      if (accepted) offered += 1;
+    }
+    expect(offered, "some seeded movements can still be pulled").toBeGreaterThan(0);
+    const lapsed = state.movements.find((movement) => movement.stage === "pulled");
+    expect(lapsed && pullNowOffered(lapsed)).toBe(false);
   });
 });
