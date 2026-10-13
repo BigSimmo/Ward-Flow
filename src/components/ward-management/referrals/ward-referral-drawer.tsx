@@ -860,7 +860,8 @@ function WardReferralDrawerContent({
   const isMedicalCleared = documentation.medical === "yes";
   const [contact, setContact] = useState<ReferralContact>(
     // A2-6: the details last sent in this tab fill in, so the referrer types them once.
-    kept?.contact ?? readLastReferrerContact<ReferralContact>() ?? { name: "", email: "", phone: "", role: "", location: "" },
+    kept?.contact ??
+      readLastReferrerContact<ReferralContact>() ?? { name: "", email: "", phone: "", role: "", location: "" },
   );
   const initialLookup = lookupCatchment(defaultPatient.suburb);
   const initialTeams = catchmentRoutingDestinations(initialLookup);
@@ -3198,11 +3199,7 @@ function WardReferralDrawerContent({
                       </div>
                     </section>
                   )}
-                  <DocumentationPanel
-                    key={activePatientKey}
-                    draft={documentation}
-                    onChange={setDocumentation}
-                  />
+                  <DocumentationPanel key={activePatientKey} draft={documentation} onChange={setDocumentation} />
                 </div>
 
                 <div

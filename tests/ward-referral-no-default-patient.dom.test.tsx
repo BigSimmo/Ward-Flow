@@ -54,7 +54,13 @@ describe("referrer details are asked once", () => {
   });
 
   it("keeps the last sent details for the next referral in this tab only", () => {
-    const contact = { name: "Sam Test", email: "sam@example.org", phone: "0400000000", role: "Registrar", location: "Peel ED" };
+    const contact = {
+      name: "Sam Test",
+      email: "sam@example.org",
+      phone: "0400000000",
+      role: "Registrar",
+      location: "Peel ED",
+    };
     expect(readLastReferrerContact()).toBeNull();
     rememberReferrerContact(contact);
     expect(readLastReferrerContact()).toEqual(contact);
