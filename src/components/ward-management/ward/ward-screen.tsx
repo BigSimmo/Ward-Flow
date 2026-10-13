@@ -98,6 +98,7 @@ import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management
 import { WardDecisionsCockpit, openDecisionCount } from "./ward-decisions-cockpit";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
+import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
 import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
 import { WardDischargesMatrix } from "./ward-discharges-matrix";
@@ -379,7 +380,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       reason !== undefined && check.codes.length > 0 && !reason.includes(check.who)
         ? `${check.who}: ${reason}`
         : reason;
-    setToastMessage(namedReason !== undefined ? `Not recorded: ${namedReason}. Nothing was changed.` : check.success);
+    // A1-18 (audit 13 Oct 2026): a departure recorded offline says it has not gone anywhere.
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    setToastMessage(
+      namedReason !== undefined
+        ? `Not recorded: ${namedReason}. Nothing was changed.`
+        : offline
+          ? `${check.success} ${WARD_OFFLINE_SAVED_NOTE}`
+          : check.success,
+    );
   }, [dischargeToken, rejections]);
 
   // The outcome of a Bed board place or undo: a refusal says why on the board; a placement offers

@@ -1,4 +1,5 @@
 "use client";
+import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { queueWaitThresholds } from "@/components/ward-management/coordinator/priority-queue";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 
@@ -1837,9 +1838,8 @@ export function EdScreen({ edId }: EdScreenProps) {
   // classification (e.g. "Voluntary"), not a form under section — `!!m.legalStatus` counted every
   // voluntary patient as "under a form", which none of them are.
   const underFormCount = patients.filter((m) => !!m.legalForm && !isEdInitiatedWithdrawal(m)).length;
-  const noDestCount = patients.filter(
-    (m) => !m.acceptedUnitId && m.referredUnitIds.length === 0 && !m.edOutcome && !isEdInitiatedWithdrawal(m),
-  ).length;
+  // S-19 (audit 13 Oct 2026): one rule with the hero's "No bed yet" (`edHasNoBedYet`).
+  const noDestCount = patients.filter(edHasNoBedYet).length;
   // F7 (Opus adversarial review, 2026-09-17): this used to count `closure?.outcome ===
   // "did_not_proceed"`, which matches EVERY reason a journey closed without an admission —
   // including a community referral (`edOutcome: "for_community_follow_up"`) — not specifically a
@@ -1853,8 +1853,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   const matchesBoardFilter = (m: Movement) => {
     if (boardFilter === "not_reviewed") return !m.examination && !m.edOutcome && !isEdInitiatedWithdrawal(m);
     if (boardFilter === "under_form") return !!m.legalForm && !isEdInitiatedWithdrawal(m);
-    if (boardFilter === "no_destination")
-      return !m.acceptedUnitId && m.referredUnitIds.length === 0 && !m.edOutcome && !isEdInitiatedWithdrawal(m);
+    if (boardFilter === "no_destination") return edHasNoBedYet(m);
     if (boardFilter === "discharge") return m.edOutcome === "for_discharge";
     if (boardFilter === "withdrawn") return isEdInitiatedWithdrawal(m);
     return true;
@@ -1868,8 +1867,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   const heroHighlightMatch: Record<string, (m: Movement) => boolean> = {
     past: (m) => now - m.openedAt >= accessTarget,
     severe: (m) => now - m.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
-    no_bed: (m) =>
-      (m.stage === "placement_requested" || m.stage === "destination_review") && !isEdInitiatedWithdrawal(m),
+    no_bed: edHasNoBedYet,
     under_form: (m) => !!m.legalForm && !isEdInitiatedWithdrawal(m),
   };
   const boardMatchCount = patients.filter((m) => matchesBoardFilter(m) && matchesPatientQuery(m)).length;
@@ -3326,7 +3324,7 @@ export function EdScreen({ edId }: EdScreenProps) {
               aria-pressed={boardFilter === "no_destination"}
               onClick={() => setBoardFilter("no_destination")}
             >
-              No destination{" "}
+              No bed yet{" "}
               <span className={styles.c} data-zero={noDestCount === 0 ? "true" : undefined}>
                 {noDestCount}
               </span>

@@ -1504,7 +1504,8 @@ export function OfficerScreen() {
           level={1}
           className={styles.dispatchHero}
           eyebrow="Transport dispatch"
-          title={`${inCustody} on board`}
+          // S-17 (audit 13 Oct 2026): the on-board figure is a part of the jobs count, so it says so.
+          title={`${inCustody} of ${jobs.length} ${jobs.length === 1 ? "job" : "jobs"} on board`}
           aside={isPhone ? <LiveChip state="live" onHero /> : heroTools}
           barAside={isPhone ? heroTools : undefined}
           bar={
