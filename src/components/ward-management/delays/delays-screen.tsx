@@ -56,6 +56,10 @@ function subscribeToLocation(listener: () => void) {
   window.addEventListener("popstate", listener);
   return () => window.removeEventListener("popstate", listener);
 }
+/** shell-9: `?show=severe` from the Menu's Delays row. */
+function readSevereFromLocation() {
+  return new URLSearchParams(window.location.search).get("show") === "severe";
+}
 function readAliasFromLocation() {
   return parseDelaysAliasFrom(new URLSearchParams(window.location.search).get("from"));
 }
@@ -68,6 +72,7 @@ function readAliasFromLocation() {
 export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
   const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
   const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
+  const showSevere = useSyncExternalStore(subscribeToLocation, readSevereFromLocation, () => false);
   const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
@@ -203,6 +208,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             showNotice("Not wired in this prototype.");
           }}
           banner={banner}
+          initialSevere={showSevere}
           empty={
             open.length === 0 ? (
               <p className={styles.absent} data-testid="ward-delays-nobody-waiting">

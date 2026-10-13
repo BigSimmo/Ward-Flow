@@ -86,7 +86,7 @@ describe("the rail's chosen-service word (item 52)", () => {
       "href",
       "/mockups/ward-flow/statistics",
     );
-    expect(within(navigation).getByRole("link", { name: "Legal" })).toHaveAttribute(
+    expect(within(navigation).getByRole("link", { name: "Legal forms" })).toHaveAttribute(
       "href",
       "/mockups/ward-flow/legal-forms",
     );

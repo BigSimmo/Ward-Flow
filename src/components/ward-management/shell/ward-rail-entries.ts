@@ -39,8 +39,9 @@ export const RAIL_GROUPS = [
     label: "Where",
     entries: [
       ["hub", "Places"],
-      ["ed", "Emergency"],
-      ["wards", "Wards"],
+      // shell-18 (Josh, 13 Oct 2026): one name per page, the same in Menu, header and h1.
+      ["ed", "All EDs"],
+      ["wards", "All wards"],
       ["community", "Community"],
       ["officer", "Transport"],
     ],
@@ -60,7 +61,7 @@ export const RAIL_GROUPS = [
     entries: [
       ["governance", "Governance"],
       ["statistics", "Statistics"],
-      ["legal-forms", "Legal"],
+      ["legal-forms", "Legal forms"],
       ["out-of-area", "Out of area"],
       ["alerts", "Alerts"],
       ["on-call", "On-call"],

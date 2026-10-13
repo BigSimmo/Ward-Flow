@@ -173,8 +173,9 @@ test.describe("@mockup Ward patient search", () => {
 
     const rows = censusRows(page);
     await expect(rows, "exactly the two Marrow* patients, nobody else").toHaveCount(2);
-    const row1 = rows.filter({ hasText: "Ines Marrowby" });
-    const row2 = rows.filter({ hasText: "Devan Marrowbee" });
+    // The census names people surname first (formal name), as the rest of Ward Flow lists do.
+    const row1 = rows.filter({ hasText: "Marrowby, Ines" });
+    const row2 = rows.filter({ hasText: "Marrowbee, Devan" });
     await expect(row1).toBeVisible();
     await expect(row2).toBeVisible();
 

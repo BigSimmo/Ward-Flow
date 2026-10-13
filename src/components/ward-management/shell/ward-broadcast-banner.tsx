@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ExternalLink } from "lucide-react";
-import { Button, StatusGlyph, buttonClass, durMinutes, type WfTone } from "@/components/wf";
+import { Check, ChevronRight } from "lucide-react";
+import { Button, StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
   BED_CALL_MAX_BEDS,
@@ -22,6 +22,7 @@ import {
 import {
   bannerEntriesForDesk,
   deskName,
+  directiveAcknowledgements,
   replyBoard,
   type BannerEntry,
   type BannerTone,
@@ -31,7 +32,11 @@ import { useActNowNotificationPreference } from "@/components/ward-management/sh
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { REFERRAL_DECLINE_REASONS, type ReferralDeclineReason } from "@/components/ward-management/ward-model";
+import {
+  REFERRAL_DECLINE_REASONS,
+  type ReferralDeclineReason,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import styles from "./ward-broadcast-banner.module.css";
@@ -82,7 +87,7 @@ export function WardBroadcastBanner({ currentUnitId }: WardBroadcastBannerProps)
   const routeDesk = currentUnitId ?? currentDeskId(pathname);
   const desk = { role, id: role === "coordinator" ? COORDINATOR_DESK_ACKNOWLEDGER_ID : routeDesk };
 
-  const entries = bannerEntriesForDesk(broadcastAlerts, movements, desk, now);
+  const entries = bannerEntriesForDesk(broadcastAlerts, movements, desk, now, units);
   const top = entries[0];
   useActNowNotice(top, desk.id);
 
@@ -118,7 +123,7 @@ function BannerBody({
   more: number;
   desk: { role: string; id: string | null };
   now: Instant;
-  units: readonly { id: string; name: string }[];
+  units: readonly Unit[];
   lookup: Lookup;
   onDispatch: ReturnType<typeof useWardFlow>["dispatch"];
 }) {
@@ -126,6 +131,7 @@ function BannerBody({
   const kind = broadcastKind(alert);
   const [choosing, setChoosing] = useState<BroadcastAnswer | null>(null);
   const [changing, setChanging] = useState(false);
+  const isPhone = useIsPhone();
   const isRed = tone === "act_now";
   const actingRole = desk.role === "coordinator" ? "coordinator" : desk.role === "ed" ? "ed" : "ward";
 
@@ -156,7 +162,57 @@ function BannerBody({
   const subject = kind === "pull_now" ? resolveAlertSubject(movement, alert.movementId, lookup, units) : undefined;
   const myReply = desk.id ? latestReplies(alert).get(desk.id) : undefined;
   const board = kind === "directive" ? undefined : replyBoard(alert, units);
+  const acks = kind === "directive" ? directiveAcknowledgements(alert, units) : undefined;
   const showAnswers = (needsAnswer || changing) && kind !== "directive";
+  const headline = subject ? subject.displayName : alert.title;
+  const countText = board
+    ? `${board.answered} of ${board.rows.length} answered`
+    : acks
+      ? `${acks.acknowledged} of ${acks.of} acknowledged`
+      : null;
+
+  /*
+   * Phone (ops-10, 13 Oct 2026): one line, glyph, kind, title and the answered count, that opens
+   * Alerts. The answer buttons follow only for a desk that must answer, so the coordinator and an
+   * answered desk keep most of the screen for the page beneath.
+   */
+  if (isPhone) {
+    return (
+      <section
+        className={styles.banner}
+        data-tone={tone}
+        data-kind={kind}
+        data-severity={alert.severity}
+        data-layout="phone-line"
+        data-testid="ward-broadcast-banner"
+        role={isRed || alert.severity === "critical" ? "alert" : "status"}
+        aria-live={isRed ? "assertive" : "polite"}
+        aria-atomic="true"
+        aria-label={`${kindLabel(alert)}: ${headline}`}
+      >
+        <span className="sr-only">These counts are invented figures.</span>
+        <Link href={WARD_ALERTS_HREF} className={styles.phoneLine}>
+          <StatusGlyph tone={TONE_GLYPH[tone]} size={12} />
+          <span className={styles.kind}>{kindLabel(alert)}</span>
+          <strong className={styles.headline}>{headline}</strong>
+          {countText ? <span className={styles.count}>{countText}</span> : null}
+          {more > 0 ? <span className={styles.count}>{more} more</span> : null}
+          <span className="sr-only">, open Alerts</span>
+          <ChevronRight size={14} aria-hidden="true" />
+        </Link>
+        {kind === "directive" && desk.id && needsAnswer ? (
+          <div className={styles.answers}>
+            <Button size="sm" icon={Check} onClick={acknowledge} title="Acknowledge this directive for your desk">
+              Acknowledge
+            </Button>
+          </div>
+        ) : null}
+        {showAnswers ? (
+          <AnswerRow kind={kind} choosing={choosing} setChoosing={setChoosing} reply={reply} now={now} />
+        ) : null}
+      </section>
+    );
+  }
 
   return (
     <section
@@ -213,11 +269,11 @@ function BannerBody({
               {board.answered} of {board.rows.length} answered
               {kind === "bed_call" ? `, ${board.bedsOffered} beds offered` : ""}
             </span>
-          ) : (
-            <span className={styles.count} title={`${alert.acknowledgedUnits.length} units confirmed receipt`}>
-              {alert.acknowledgedUnits.length} of {units.length} acknowledged
+          ) : acks ? (
+            <span className={styles.count} title={`${acks.acknowledged} units confirmed receipt`}>
+              {acks.acknowledged} of {acks.of} acknowledged
             </span>
-          )}
+          ) : null}
 
           {kind === "directive" && desk.id ? (
             needsAnswer ? (
@@ -250,7 +306,7 @@ function BannerBody({
 
           <Link href={WARD_ALERTS_HREF} className={buttonClass({ size: "sm", variant: "ghost" })}>
             {more > 0 ? `Alerts, ${more} more` : "Alerts"}
-            <ExternalLink size={14} aria-hidden="true" />
+            <ChevronRight size={14} aria-hidden="true" />
           </Link>
         </div>
       </div>

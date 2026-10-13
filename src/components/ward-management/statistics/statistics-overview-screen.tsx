@@ -225,7 +225,7 @@ export function StatisticsOverviewScreen() {
             name: row.unit.name,
             code: row.unit.siteCode,
             service: row.service as HealthService,
-            occupied: row.states.occupied,
+            inUse: row.states.occupied + row.states.pulled,
             beds: row.unit.beds,
             ready: row.states.ready,
             rate: row.rate,
@@ -615,7 +615,8 @@ type OverviewPhoneWard = {
   name: string;
   code: string;
   service: HealthService;
-  occupied: number;
+  /** Occupied + Pulled, the count the % beside it is taken from. */
+  inUse: number;
   beds: number;
   ready: number;
   rate: number;
@@ -675,8 +676,7 @@ function OverviewPhone({
             name={ward.name}
             meta={
               <span className={phone.dotName}>
-                <ServiceDot service={ward.service} />
-                {`${ward.code} · ${ward.occupied} of ${ward.beds} · ${ward.ready} ready`}
+                {`${ward.code} · ${ward.inUse} of ${ward.beds} · ${ward.ready} ready`}
               </span>
             }
             value={
@@ -685,7 +685,7 @@ function OverviewPhone({
                 {ward.rate}%
               </span>
             }
-            time="occupied"
+            time="in use"
             href={wardStatisticsHref(ward.id)}
           />
         ))}

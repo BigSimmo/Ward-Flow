@@ -1,5 +1,5 @@
 // tests/ward-settings-configuration.dom.test.tsx
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -172,5 +172,68 @@ describe("settings screen configuration draft", () => {
     );
     // Save (accepted) + Reset (accepted) = two recorded configuration audit events.
     expect(Number(screen.getByTestId("probe-audit-count").textContent)).toBe(beforeAuditCount + 2);
+  });
+
+  // Audit settings-25 and settings-28: a draft says its effect is "if saved", and the Changed word
+  // reads the saved value as the row shows it, not raw minutes.
+  it("labels a draft ED count as if saved and reads the saved value in hours", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    setEdToMinimum();
+    const row = screen.getByTestId("ward-settings-screen").querySelector<HTMLElement>('[data-setting="ed-target"]')!;
+    expect(row).toHaveTextContent(/over if saved/);
+    expect(row).toHaveTextContent("saved value 24h");
+    expect(row).not.toHaveTextContent("saved value 1440");
+  });
+
+  it("names every value a restore resets and offers Undo, which puts the saved rules back on the record", () => {
+    renderSettings();
+    const beforeAuditCount = Number(screen.getByTestId("probe-audit-count").textContent);
+    // The open area is remembered per browser; the previous case left it on Data and about.
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    setEdToMinimum();
+    fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
+    expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
+
+    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
+    const modal = screen.getByTestId("ward-reset-baseline-modal");
+    expect(modal).toHaveTextContent("all nine rules");
+    for (const name of ["Referral decision", "Transfer acceptance", "Transport booked", "Glare"]) {
+      expect(modal, name).toHaveTextContent(name);
+    }
+    expect(modal).not.toHaveTextContent("six coordination rules");
+    fireEvent.click(screen.getAllByRole("button", { name: "Restore all defaults" }).at(-1)!);
+    expect(screen.getByTestId("probe-ed-target").textContent).toBe(
+      String(defaultWardConfiguration().edAccessTargetMinutes),
+    );
+
+    const restored = within(screen.getByTestId("toast-region")).getByText("Defaults restored and recorded.");
+    const restoredToast = restored.closest<HTMLElement>('[data-testid="toast"]')!;
+    fireEvent.click(within(restoredToast).getByRole("button", { name: "Undo" }));
+    expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
+    // Save + Restore + Undo: three recorded configuration changes, so the audit keeps all of them.
+    expect(Number(screen.getByTestId("probe-audit-count").textContent)).toBe(beforeAuditCount + 3);
+  });
+
+  it("gives unsaved rule edits back on Undo after a restore, without saving them", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    const saved = screen.getByTestId("probe-ed-target").textContent;
+    setEdToMinimum();
+    expect(screen.getByRole("button", { name: /^Save 1 change$/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Restore all defaults" }).at(-1)!);
+    const restored = within(screen.getByTestId("toast-region")).getByText("Defaults restored and recorded.");
+    fireEvent.click(
+      within(restored.closest<HTMLElement>('[data-testid="toast"]')!).getByRole("button", { name: "Undo" }),
+    );
+
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    // The unsaved edit is back as a draft; the saved rules are the ones from before the restore.
+    expect(screen.getByRole("button", { name: /^Save 1 change$/ })).toBeInTheDocument();
+    expect(screen.getByTestId("probe-ed-target").textContent).toBe(saved);
   });
 });
