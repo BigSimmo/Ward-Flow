@@ -276,7 +276,6 @@ export function pullHasLapsed(row: HandoverRow, now: Instant): boolean {
 }
 
 export function isActNow(row: HandoverRow, now: Instant): boolean {
-  if (isStoppedAwaitingRelease(row)) return true;
   if (row.actNow !== undefined) return row.actNow || row.urgent;
   return row.urgent || pullHasLapsed(row, now) || (row.formDueAt !== undefined && row.formDueAt <= now);
 }
