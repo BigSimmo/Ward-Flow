@@ -410,7 +410,7 @@ export function WardHomeTab({
     releasesDueByShiftEnd(bedReleases, unit.id, now).map((release) => release.admissionId),
   );
   const bedRows = (bedsList ?? []).map((bed) => {
-    const free = bed.status === "ready";
+    const free = bed.status === "ready" && !bed.preparing;
     const readyByShiftEnd = free || (bed.admissionId !== undefined && freeingByShiftEnd.has(bed.admissionId));
     const leaving = !free && (bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0));
     const awayAtEd = bed.awayAtEdHours != null;
@@ -418,7 +418,9 @@ export function WardHomeTab({
       !free && (bed.pastDate === true || awayAtEd || Boolean(bed.dischargeBarrier) || Boolean(bed.blockReason));
     const stateWord =
       bed.status === "ready"
-        ? "Ready"
+        ? bed.preparing
+          ? "Making ready"
+          : "Ready"
         : bed.status === "leave"
           ? bed.statusText === "Absent without leave"
             ? "Absent without leave"
