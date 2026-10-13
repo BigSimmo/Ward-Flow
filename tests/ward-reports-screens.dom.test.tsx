@@ -158,6 +158,9 @@ describe("read-only report screens", () => {
     );
     try {
       inProvider(<DowntimePackScreen />);
+      // Ops-20: the counts sit once, in the section control, never repeated as hero figures.
+      expect(screen.queryByText("Still in ED")).toBeNull();
+      expect(screen.getByRole("radiogroup", { name: "Downtime pack section" })).toBeTruthy();
       const printPack = within(screen.getByTestId("ward-downtime-print-pack"));
       const pack = lastDowntimePack();
       expect(pack).not.toBeNull();

@@ -556,11 +556,8 @@ export function DowntimePackScreen() {
               eyebrow="Downtime pack"
               title={`Frozen at ${frozenAt}`}
               sub={`${reportDay(pack.generatedAt, dayZero)} · does not update while open`}
-              figures={[
-                { id: "ready", value: totals.ready, label: "Beds ready" },
-                { id: "ed", value: totals.ed, label: "Still in ED" },
-                { id: "moves", value: totals.moves, label: "Moves" },
-              ]}
+              // Ops-20 (13 Oct 2026): the counts sit once, in the section control below; the hero
+              // keeps the frozen time and the actions.
               actions={
                 <>
                   {snapshotButton("onHero")}
