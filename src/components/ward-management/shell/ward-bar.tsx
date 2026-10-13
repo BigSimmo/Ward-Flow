@@ -460,7 +460,10 @@ function PhoneMenuEntry({
   roleCategory,
   onOpenDrawer,
   onOpenReferral,
+  liveOverSheet,
 }: {
+  /** Keeps Menu tappable while a sheet sits below the bar (see `headerLiveOverSheet`). */
+  liveOverSheet: boolean;
   menuRef: RefObject<HTMLButtonElement | null>;
   tasksCount: number;
   activityUnread: number;
@@ -478,6 +481,7 @@ function PhoneMenuEntry({
         aria-haspopup="dialog"
         aria-controls="ward-phone-menu"
         data-testid="ward-bar-phone-menu"
+        data-sheet-inert-skip={liveOverSheet ? "" : undefined}
         onClick={(event) => openWardMenu(event.currentTarget)}
       >
         <MenuIcon aria-hidden="true" strokeWidth={1.75} />
@@ -735,6 +739,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [tasksItems, inboxSnoozes, now],
   );
   const tasksActiveCount = tasksActiveItems.length;
+  /*
+   * Josh (13 Oct 2026, iPhone): the phone New referral sheet starts under the bar, so the bar stays
+   * on screen, but the sheet inerted the whole page and Menu and Search could not be tapped. While
+   * that sheet is open on a phone, Menu and Search opt out of the sheet's background inert; Menu
+   * opens its own sheet on top and the referral, with everything typed, stays open beneath.
+   */
+  const headerLiveOverSheet = isPhone && openPanel === "referral";
   /**
    * The Service selector's own "{n} waiting" counts. L1 (site review, 12 Oct 2026): this used to
    * count every open movement that touched a service (origin ED or any ward asked), so a person
@@ -1230,6 +1241,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         roleCategory={roleCategory}
         onOpenDrawer={openPopover}
         onOpenReferral={openReferral}
+        liveOverSheet={headerLiveOverSheet}
       />
       {/* Device audit (11 Oct 2026): on the phone the whole title block is the service control's
           tap target, not only the 91 x 18 service line. A tap on the title forwards to the service
@@ -1376,6 +1388,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       <div className={styles.centerGroup}>
         <div
           className={styles.searchWrap}
+          data-sheet-inert-skip={headerLiveOverSheet ? "" : undefined}
           onFocusCapture={() =>
             setOpenPanel((current) => (current === "service" || current === "primary" ? null : current))
           }
@@ -1387,6 +1400,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             units={units}
             // shell-4: the same active list the Tasks badge counts, so "3 of N" agrees with it.
             tasks={tasksActiveItems}
+            aboveSheets={headerLiveOverSheet}
             onSeeAllTasks={() => openPopover("tasks")}
             plannedAdmissions={plannedAdmissions}
             now={now}

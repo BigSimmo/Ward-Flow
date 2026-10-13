@@ -163,6 +163,8 @@ export type WardGlobalSearchProps = {
    * means no "Needs you now" group, never an ungated network list.
    */
   tasks?: readonly InboxItem[];
+  /** Lifts the palette above open sheets, for a header that stays live over a sheet below it. */
+  aboveSheets?: boolean;
   /** Opens the full Tasks list (the header's drawer). Absent means no "See all tasks" control. */
   onSeeAllTasks?: () => void;
   /** Booked planned admissions, so search finds the same overdue rows the task count holds. */
@@ -571,6 +573,7 @@ export function WardGlobalSearch({
   referrals,
   units,
   tasks,
+  aboveSheets = false,
   onSeeAllTasks,
   plannedAdmissions,
   now,
@@ -989,6 +992,7 @@ export function WardGlobalSearch({
     <>
       <div
         className={styles.scrim}
+        data-above-sheets={aboveSheets || undefined}
         style={{ top }}
         aria-hidden="true"
         data-testid="ward-global-search-scrim"
@@ -997,6 +1001,7 @@ export function WardGlobalSearch({
       <div
         ref={paletteRef}
         className={styles.popup}
+        data-above-sheets={aboveSheets || undefined}
         // The floating palette sits 8px under the bar. The phone sheet starts at the bottom of the
         // open field, which ward-bar.module.css paints from the top of the screen (under the status
         // bar) to the bar's bottom edge, so the two meet with no gap and no overlap.
