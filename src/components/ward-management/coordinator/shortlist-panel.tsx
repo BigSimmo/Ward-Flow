@@ -91,7 +91,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./coordinator.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
+import { FIT_LABEL, fitGroups, fitKind, type FitKind } from "./home-fit";
 import { TIER_TARGETS_NOTE, queueWaitThresholds } from "./priority-queue";
 
 /**
@@ -442,7 +442,7 @@ export function ShortlistPanel({
   const offerable = useMemo(() => shortlist.filter((c) => c.availability !== "unavailable"), [shortlist]);
   /** FitHighlight groups (v10 Home): fits with a bed, fits with no bed now, needs review, and what
    *  no reason can buy (collapsed behind a disclosure that states its count). */
-  const groups = useMemo(() => fitGroups(shortlist), [shortlist]);
+  const groups = useMemo(() => fitGroups(shortlist, movement), [shortlist, movement]);
   const [unavailableOpen, setUnavailableOpen] = useState(false);
   const [candidatesOpen, setCandidatesOpen] = useState(true);
 
@@ -461,8 +461,10 @@ export function ShortlistPanel({
   // now" after it confirmed zero allocatable beds on its own screen.
   const activeUnit = useMemo(() => {
     if (selectedUnitId) return units.find((unit) => unit.id === selectedUnitId);
-    return shortlist[0]?.unit;
-  }, [selectedUnitId, shortlist, units]);
+    // Audit A1-20: once a destination is accepted, explain that ward's gates, not the list's first.
+    const accepted = movement?.acceptedUnitId ? units.find((unit) => unit.id === movement.acceptedUnitId) : undefined;
+    return accepted ?? shortlist[0]?.unit;
+  }, [selectedUnitId, shortlist, units, movement?.acceptedUnitId]);
 
   const activeVerdict = useMemo(() => {
     if (!movement || !activeUnit) return undefined;
@@ -711,7 +713,11 @@ export function ShortlistPanel({
   const recordedDestination = destinationUnit(movement, units);
   const hasRecordedReferral =
     recordedDestination !== undefined || Boolean(movement.acceptedUnitId) || movement.referredUnitIds.length > 0;
-  const topEligible = shortlist.find((candidate) => candidate.verdict.eligible);
+  // Audit S-21: suggest an eligible ward that is not a Review (a voluntary patient's locked ward)
+  // first; the locked ward is suggested only when nothing else is eligible.
+  const topEligible =
+    shortlist.find((candidate) => candidate.verdict.eligible && fitKind(candidate, movement) !== "review") ??
+    shortlist.find((candidate) => candidate.verdict.eligible);
   const topEligibleNotice = topEligible ? restrictionNotice(movement, topEligible.unit) : undefined;
 
   // Whole-branch review Critical 2, carried forward into Task 5's Refer/Override. The old Confirm

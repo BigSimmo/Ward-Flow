@@ -117,7 +117,7 @@ export function HomeBedflow({
   // three the routed shortlist keeps. Green where a bed is ready, amber where the ward fits but has
   // no bed now. Placement counts the same groups, so the two columns agree.
   const fitGroupsForMovement = useMemo(
-    () => (movement ? fitGroups(shortlistCandidates(movement, units, now)) : undefined),
+    () => (movement ? fitGroups(shortlistCandidates(movement, units, now), movement) : undefined),
     [movement, units, now],
   );
   const fitByUnitId = useMemo(() => {
@@ -199,7 +199,8 @@ export function HomeBedflow({
     const isReferred = !isAccepted && (movement?.referredUnitIds.includes(unit.id) ?? false);
     const notice =
       movement !== undefined && (candidate || isAccepted || isReferred) ? restrictionNotice(movement, unit) : undefined;
-    const fit = candidate?.verdict.eligible === true;
+    // Audit S-21: a voluntary patient's locked ward reads Review, not fit (`home-fit.ts`).
+    const fit = candidate?.verdict.eligible === true && notice?.level !== "voluntary_on_locked";
     const optionFit = fitByUnitId.get(unit.id);
     const dim = movement !== undefined && !candidate && !optionFit && !isAccepted && !isReferred;
     const selected = selectedUnitId === unit.id;

@@ -86,6 +86,7 @@ import {
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import { createBrowserStore } from "@/lib/client-store-factory";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
 import styles from "./delays-board.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
@@ -98,6 +99,48 @@ const OPEN_BY_DEFAULT: readonly DelayCause[] = [
   "awaiting_coordinator",
 ];
 const GROUP_LIMIT = 5;
+
+/*
+ * Audit A3-14: the board opens on Longest wait (forms due first, then longest wait) and remembers
+ * the viewer's own choice in this browser. Same safe localStorage pattern as the wallboard store:
+ * a blocked or private store never throws, and the server snapshot is the default.
+ */
+const DELAYS_ORDER_STORAGE_KEY = "ward_flow_delays_order";
+const DELAYS_ORDER_CHANGE_EVENT = "ward_flow_delays_order_change";
+let delaysOrderFallback: boolean | undefined;
+
+function readDelaysFlat(): boolean {
+  try {
+    return window.localStorage.getItem(DELAYS_ORDER_STORAGE_KEY) !== "blocker";
+  } catch {
+    return delaysOrderFallback ?? true;
+  }
+}
+
+function writeDelaysFlat(flat: boolean): void {
+  try {
+    window.localStorage.setItem(DELAYS_ORDER_STORAGE_KEY, flat ? "longest" : "blocker");
+  } catch {
+    // Private browsing or a blocked store: the choice lasts for this page only.
+    delaysOrderFallback = flat;
+  }
+  try {
+    window.dispatchEvent(new Event(DELAYS_ORDER_CHANGE_EVENT));
+  } catch {
+    // Nothing else depends on the notification.
+  }
+}
+
+function subscribeDelaysOrder(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(DELAYS_ORDER_CHANGE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(DELAYS_ORDER_CHANGE_EVENT, onChange);
+  };
+}
+
+const useDelaysFlatStore = createBrowserStore(subscribeDelaysOrder, readDelaysFlat, true);
 
 export type DelaysBoardProps = {
   groups: DelayGroup[];
@@ -121,6 +164,17 @@ export type DelaysBoardProps = {
 /** The origin department by name, or a sentence that names the record as the fault (task D1). */
 function originLabel(movement: Movement): string {
   return edById(movement.originEdId)?.name ?? `This movement names ${departmentLabel(movement.originEdId, undefined)}`;
+}
+
+/**
+ * Audit A3-16: a collected patient is on the road, not in the ED. Their row says so; the waiting
+ * count is unchanged until the rule for collected patients is agreed.
+ */
+function transitNote(movement: Movement, now: Instant): string | undefined {
+  const collectedAt = movement.transport?.collectedAt;
+  if (collectedAt === undefined || movement.transport?.cancelledAt !== undefined || movement.stage === "arrived")
+    return undefined;
+  return `In transit since ${formatInstantWithDay(collectedAt, now)}`;
 }
 
 /** Below 64rem the person's panel is a sheet over the table (see delays-board.module.css). */
@@ -1052,7 +1106,8 @@ export function DelaysBoard({
   // Adjusting state during render is React's pattern for state derived from changed props.
   if (chosenFilters.cause !== null && !rows.some((row) => row.cause === chosenFilters.cause))
     setFilters((current) => ({ ...current, cause: null }));
-  const [flat, setFlat] = useState(false);
+  const flat = useDelaysFlatStore();
+  const setFlat = writeDelaysFlat;
   const [openGroups, setOpenGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [moreGroups, setMoreGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -1260,6 +1315,7 @@ export function DelaysBoard({
         role="row"
         key={movement.id}
         className={styles.r}
+        data-severe={row.severe}
         aria-selected={isSelected}
         data-act={isActRow ? "true" : undefined}
         data-testid={`delays-row-${movement.id}`}
@@ -1280,7 +1336,7 @@ export function DelaysBoard({
             <b className={styles.ellBlock}>{patient.formalName}</b>
             <span className={styles.ellBlock} data-ward-type-floor="delays-profile">
               {isPhone ? phonePrefix(row) : null}
-              {[patient.umrn, originLabel(movement)].filter(Boolean).join(" · ")}
+              {[patient.umrn, transitNote(movement, now), originLabel(movement)].filter(Boolean).join(" · ")}
             </span>
           </button>
         </td>
@@ -1508,7 +1564,7 @@ export function DelaysBoard({
     return {
       id: row.movement.id,
       name: patient.formalName,
-      sub: [patient.umrn, originLabel(row.movement)].filter(Boolean).join(" · "),
+      sub: [patient.umrn, transitNote(row.movement, now), originLabel(row.movement)].filter(Boolean).join(" · "),
       figure: splitDuration(row.waited),
       figureNote: phoneUpdate(row),
       tone: waitTone(row.waited),
