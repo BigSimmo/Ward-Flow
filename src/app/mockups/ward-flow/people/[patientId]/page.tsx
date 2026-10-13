@@ -32,16 +32,16 @@ export default async function WardPersonPage({
   } catch {
     return <WardMovementNotFound requestedId={patientId} reason="not-a-person-id" />;
   }
-  // shell-6: a UMRN in the address opens that person, or says no one has it.
-  if (UMRN_IN_ADDRESS.test(id)) {
-    return <PersonByUmrn umrn={id} governed={query?.view === "governed" || query?.view === "legacy"} />;
-  }
-  if (!id.startsWith("PT-") && !id.startsWith("WF-")) {
+  const isUmrn = UMRN_IN_ADDRESS.test(id);
+  if (!isUmrn && !id.startsWith("PT-") && !id.startsWith("WF-")) {
     return <WardMovementNotFound requestedId={id} reason="not-a-person-id" />;
   }
-  if (query?.view === "governed" || query?.view === "legacy") {
+  const governed = query?.view === "governed" || query?.view === "legacy";
+  if (governed && !isUmrn) {
     return <PersonScreen patientId={id as PatientId} />;
   }
+  // shell-6: a UMRN in the address opens that person, or says no one has it.
+  if (isUmrn) return <PersonByUmrn umrn={id} governed={governed} />;
   return (
     <PatientNowScreen
       patientId={id.startsWith("PT-") ? id : undefined}
