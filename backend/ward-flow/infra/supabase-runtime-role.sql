@@ -19,7 +19,9 @@ DO $$ BEGIN
     RAISE EXCEPTION 'Runtime role has unexpected membership; inspect before applying grants';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspowner = 'wardflow_backend'::regrole)
-    OR EXISTS (SELECT 1 FROM pg_class WHERE relowner = 'wardflow_backend'::regrole) THEN
+    OR EXISTS (SELECT 1 FROM pg_class WHERE relowner = 'wardflow_backend'::regrole)
+    OR EXISTS (SELECT 1 FROM pg_proc WHERE proowner = 'wardflow_backend'::regrole)
+    OR EXISTS (SELECT 1 FROM pg_database WHERE datname = current_database() AND datdba = 'wardflow_backend'::regrole) THEN
     RAISE EXCEPTION 'Runtime role owns database objects; inspect before applying grants';
   END IF;
 END $$;
@@ -29,6 +31,7 @@ DO $$ DECLARE column_grant record; browser_role text; BEGIN
       JOIN pg_attribute a ON a.attrelid=c.oid
     WHERE n.nspname='ward_flow' AND c.relkind='r' AND a.attnum>0 AND NOT a.attisdropped AND a.attacl IS NOT NULL
   LOOP
+    EXECUTE format('REVOKE ALL (%I) ON TABLE ward_flow.%I FROM PUBLIC, wardflow_backend', column_grant.attname, column_grant.relname);
     FOR browser_role IN SELECT rolname FROM pg_roles WHERE rolname IN ('anon','authenticated') LOOP
       EXECUTE format('REVOKE ALL (%I) ON TABLE ward_flow.%I FROM %I', column_grant.attname, column_grant.relname, browser_role);
     END LOOP;
