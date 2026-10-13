@@ -138,14 +138,6 @@ export const isMovementWithdrawable = movementWithdrawable;
  * control the reducer would refuse.
  */
 export function referralWithdrawable(referral: Referral, movements?: readonly Movement[]): boolean {
-  if ((referral as { stage?: string }).stage !== undefined) {
-    if ((NON_WITHDRAWABLE_STAGES as readonly string[]).includes((referral as { stage?: string }).stage!)) {
-      return false;
-    }
-  }
-  if ((referral as { closure?: unknown }).closure !== undefined) return false;
-  if ((referral as { transport?: { collectedAt?: unknown } }).transport?.collectedAt !== undefined) return false;
-
   if (movements) {
     const linkedMovements = movements.filter((m) => m.referralId === referral.id && !m.closure);
     if (linkedMovements.some((m) => !movementWithdrawable(m))) {

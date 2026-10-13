@@ -404,16 +404,13 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
   if (transport?.acceptedAt !== undefined)
     candidates.push({ at: transport.acceptedAt, what: "transport accepted the job" });
   if (movement.acceptedAt !== undefined) {
-    candidates.push({ at: movement.acceptedAt, what: "referral accepted" });
-  }
-  const pullRequestedAt = (movement as { pullRequestedAt?: Instant }).pullRequestedAt;
-  if (pullRequestedAt !== undefined) {
-    candidates.push({ at: pullRequestedAt, what: "bed pull requested" });
+    // Same wording as the Delays board's own acceptance line, so the two never disagree.
+    candidates.push({ at: movement.acceptedAt, what: "a ward accepted" });
   }
   if (movement.referredAt !== undefined) {
     candidates.push({ at: movement.referredAt, what: "referral raised" });
   }
-  if (movement.formedAt !== undefined && (pullRequestedAt === undefined || movement.formedAt <= pullRequestedAt)) {
+  if (movement.formedAt !== undefined) {
     candidates.push({ at: movement.formedAt, what: "the legal form was raised" });
   }
   if (movement.examination !== undefined) {
@@ -425,7 +422,7 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
       what: movement.closure.outcome === "arrived" ? "the patient arrived" : "the movement closed without an admission",
     });
   }
-  if (movement.referralAbsence !== undefined && movement.acceptedAt === undefined && pullRequestedAt === undefined) {
+  if (movement.referralAbsence !== undefined && movement.acceptedAt === undefined) {
     candidates.push({
       at: movement.referralAbsence.at,
       what:
@@ -445,9 +442,7 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
   const known = candidates.filter((candidate) => candidate.at <= now);
   // The floor. `openedAt` is required, never optional, so this candidate always exists — see the
   // doc comment above for why that makes `undefined` unreachable rather than a real branch.
-  const floorAt =
-    pullRequestedAt !== undefined && movement.openedAt > pullRequestedAt ? pullRequestedAt : movement.openedAt;
-  known.push({ at: floorAt, what: "the journey opened" });
+  known.push({ at: movement.openedAt, what: "the journey opened" });
   return pickLatest(known);
 }
 
@@ -634,14 +629,13 @@ export function answerSilenceReminder(movement: Movement, referrals: Referral[],
     return silentCommunityReminder(referral.raisedAt, now);
   }
   if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
-    const wardDestinations = referral?.destinations.filter(
-      (d) => d.destination.kind === "psychiatric_ward" && d.referredAt !== undefined,
-    );
-    const latestReferredAt =
-      wardDestinations && wardDestinations.length > 0
-        ? Math.max(...wardDestinations.map((d) => d.referredAt!))
-        : movement.referredAt;
-    return silentWardReminder(latestReferredAt, now);
+    // Only destinations still awaiting an answer count, and the OLDEST silent one drives the
+    // reminder, so an answered, withdrawn or newer arm can never reset an older silence.
+    const silentWardTimes = (referral?.destinations ?? [])
+      .filter((d) => d.destination.kind === "psychiatric_ward" && d.referredAt !== undefined && isAwaitingAnswer(d))
+      .map((d) => d.referredAt!);
+    const referredAt = silentWardTimes.length > 0 ? Math.min(...silentWardTimes) : movement.referredAt;
+    return silentWardReminder(referredAt, now);
   }
   return undefined;
 }

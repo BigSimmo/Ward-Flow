@@ -140,10 +140,7 @@ export function reduceBroadcastAlertEvent(
       // (`src/app/mockups/ward-flow/layout.tsx`) passes no `currentUnitId`, so it always
       // acknowledges as `COORDINATOR_DESK_ACKNOWLEDGER_ID` — the one non-unit sender this
       // refusal exempts. Every other unrecognised unitId is still refused.
-      if (
-        (event.unitId === COORDINATOR_DESK_ACKNOWLEDGER_ID || event.unitId === "COORDINATOR_DESK") &&
-        event.role !== "coordinator"
-      ) {
+      if (event.unitId === COORDINATOR_DESK_ACKNOWLEDGER_ID && event.role !== "coordinator") {
         return reject(
           state,
           event,

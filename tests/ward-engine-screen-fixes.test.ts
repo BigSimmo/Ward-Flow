@@ -11,6 +11,8 @@ import { causeOf, lastRecordedActivity } from "../src/components/ward-management
 import { allDeclines } from "../src/components/ward-management/ward-derivations";
 import { isMovementWithdrawable } from "../src/components/ward-management/ward-referrals";
 import { EVENT_ROLE } from "../src/components/ward-management/ward-flow-events";
+import { CROSS_ROLE_ALLOWED } from "../src/components/ward-management/ward-role-permissions";
+import { COORDINATOR_DESK_ACKNOWLEDGER_ID } from "../src/components/ward-management/alerts/ward-broadcast-model";
 import { ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS } from "../src/components/ward-management/ward-model";
 import { reduceBroadcastEvent } from "../src/components/ward-management/alerts/ward-broadcast-reducer";
 import { captureAuditEvent } from "../src/components/ward-management/ward-audit";
@@ -156,7 +158,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
       expect(cause).toBe("awaiting_coordinator");
     });
 
-    it("A3-11: includes acceptedAt and pullRequestedAt in lastRecordedActivity", () => {
+    it("A3-11: includes acceptedAt in lastRecordedActivity", () => {
       const state = seedWardFlowState();
       const mov = {
         ...state.movements[0],
@@ -167,13 +169,16 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
         referralAbsence: undefined,
         formedAt: undefined,
         acceptedAt: NOW - 500,
-        pullRequestedAt: NOW - 200,
+        transport: undefined,
+        examination: undefined,
+        closure: undefined,
+        stageChanges: [],
       } as unknown as Movement;
 
       const activity = lastRecordedActivity(mov, NOW);
       expect(activity).toBeDefined();
-      expect(activity?.at).toBe(NOW - 200);
-      expect(activity?.what).toBe("bed pull requested");
+      expect(activity?.at).toBe(NOW - 500);
+      expect(activity?.what).toBe("a ward accepted");
     });
 
     it("A3-12: routes revoked-examination hold delay items to coordinator", () => {
@@ -225,8 +230,13 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
   });
 
   describe("Stream 4: Event Scoping, Model Constants, Broadcast Alerts", () => {
-    it("A1-7: includes 'ward' in RECEIVE_REFERRAL allowed roles", () => {
-      expect(EVENT_ROLE.RECEIVE_REFERRAL).toContain("ward");
+    it("A1-7: the ward screen raises referrals through the cross-role allowance, not EVENT_ROLE", () => {
+      // A ward-to-ward referral is dispatched as community with source psychiatric_ward; adding
+      // `ward` to EVENT_ROLE would let a ward caller file referrals under any source.
+      expect(EVENT_ROLE.RECEIVE_REFERRAL).not.toContain("ward");
+      expect(CROSS_ROLE_ALLOWED.some((pair) => pair.routeRole === "ward" && pair.event === "RECEIVE_REFERRAL")).toBe(
+        true,
+      );
     });
 
     it("S1-14: ED medical bed release timeout equals 48 hours", () => {
@@ -260,7 +270,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
       const result = reduceBroadcastEvent(alertState, {
         type: "ACKNOWLEDGE_BROADCAST_ALERT",
         alertId: "BCAST-1",
-        unitId: "COORDINATOR_DESK",
+        unitId: COORDINATOR_DESK_ACKNOWLEDGER_ID,
         role: "ward", // Non-coordinator attempting coordinator desk ack
         now: NOW,
       });

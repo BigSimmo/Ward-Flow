@@ -10256,15 +10256,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // Phone-log only. Never mints a transport job and never claims a booking went through.
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
-      if (
-        admission.state === "departed" ||
-        admission.leftAt !== null ||
-        (admission as { dischargedAt?: unknown }).dischargedAt !== undefined
-      ) {
+      if (admission.state === "departed" || admission.leftAt !== null) {
         return reject(state, event, `cannot initiate repatriation for discharged admission ${admission.id}`);
       }
+      // An ordinary admission keeps its source movement, which PATIENT_ARRIVED closes as "arrived";
+      // only a journey that ended any other way blocks repatriation.
       const movement = state.movements.find((m) => m.id === admission.movementId);
-      if (movement?.closure) {
+      if (movement?.closure && movement.closure.outcome !== "arrived") {
         return reject(state, event, `cannot initiate repatriation for closed movement ${movement.id}`);
       }
       const existing = Array.isArray(state.repatriations) ? state.repatriations : [];
