@@ -36,7 +36,7 @@ import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formTitleForCode } from "@/lib/form-register";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
   arrivalEtaLabel,
   arrivalModeLabel,
@@ -828,7 +828,15 @@ function WardReferralDrawerContent({
       : undefined;
   const movementCohort = liveMovement?.cohort;
   const effectiveCohort: Cohort | "" = movementCohort ?? ageBand;
-  const arrivalRole = initialCategory === "community" ? "community" : initialCategory === "ed" ? "ed" : "ward";
+  // The arrival plan is set as the route's own role, not the referral's source category: a
+  // coordinator page acts as the coordinator, and a ward page acts as that ward (A1-8). The modal's
+  // own role gate still disables it for a route whose role may not set it.
+  const routeRole = useRouteRole();
+  const arrivalRole =
+    routeRole === "ed" ? "ed" : routeRole === "community" ? "community" : routeRole === "ward" ? "ward" : "coordinator";
+  // A ward may set the plan only for a move into its own ward, so the card is offered only then.
+  const arrivalPlanOffered =
+    arrivalRole !== "ward" || (actingUnitId !== undefined && actingUnitId === liveMovement?.acceptedUnitId);
   const [documentation, setDocumentation] = useState<DocumentationDraft>(kept?.documentation ?? EMPTY_DOCUMENTATION);
   const isMedicalCleared = documentation.medical === "yes";
   const [contact, setContact] = useState<ReferralContact>(
@@ -3444,7 +3452,7 @@ function WardReferralDrawerContent({
                             />
                           </Field>
                         </div>
-                        {liveMovement && canSetArrivalPlan(liveMovement) ? (
+                        {liveMovement && canSetArrivalPlan(liveMovement) && arrivalPlanOffered ? (
                           <div className={styles.suggestion} data-testid="ward-referral-arrival-plan-card">
                             <StatusGlyph tone="info" size={9} />
                             <span className={styles.suggestionText}>

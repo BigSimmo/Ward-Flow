@@ -190,7 +190,9 @@ export function createHandler({
       if (body.expectedRevision === 0 && countSessions) {
         const after = await countSessions(owner, MAX_SESSIONS_PER_OWNER + 1);
         if (after > MAX_SESSIONS_PER_OWNER) {
-          await store.delete(owner, sessionId, revision);
+          // A delete that did not land leaves a snapshot over the cap: report the save as unconfirmed.
+          if ((await store.delete(owner, sessionId, revision)) !== "deleted")
+            return respond(503, { error: "Storage unavailable; changes were not confirmed" }, "storage_unavailable");
           return respond(
             409,
             { error: `This account already has ${MAX_SESSIONS_PER_OWNER} sessions; no new session was created` },

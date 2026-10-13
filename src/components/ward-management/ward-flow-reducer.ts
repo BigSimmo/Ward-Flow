@@ -4108,7 +4108,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ...movement,
         // S1-5: the same tidy-up every other pre-arrival closure does — live requests withdrawn and
         // recorded, the accepting ward cleared — so no reader keeps showing this movement inbound.
-        ...closedMovementReferralFields(movement, event.now, "ed_outcome_recorded"),
+        ...closedMovementReferralFields(movement, event.now, "examination_outcome_recorded"),
         examination: { at: event.now, outcome: event.outcome },
         supersededExaminations,
         transport:

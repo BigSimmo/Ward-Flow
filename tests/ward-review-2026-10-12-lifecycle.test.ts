@@ -234,6 +234,7 @@ describe("review 2026-10-08 lifecycle fixes", () => {
     const m = mv(h, movement.id);
     expect(m.referredUnitIds).toEqual([]);
     expect((m.withdrawnReferrals ?? []).map((w) => w.unitId).sort()).toEqual(["arm-adult-open", "scgh-adult-open"]);
+    expect((m.withdrawnReferrals ?? []).every((w) => w.reason === "examination_outcome_recorded")).toBe(true);
   });
 
   it("S1-6: no override is recorded for a ward that needed none", () => {

@@ -318,6 +318,9 @@ export const WITHDRAWAL_REASONS = [
   "referrer_withdrew",
   "coordinator_withdrew",
   "ed_outcome_recorded",
+  // Qodo on #268: an examination outcome that ends the bed search (revoked, community order) is
+  // its own cause, not the department recording an ED outcome.
+  "examination_outcome_recorded",
 ] as const;
 export type WithdrawalReason = (typeof WITHDRAWAL_REASONS)[number];
 
@@ -353,6 +356,7 @@ export const withdrawalReasonLabels: Record<WithdrawalReason, string> = {
   // or whether they were discharged — `RECORD_ED_OUTCOME`'s own outcome field (for discharge / for
   // community follow-up) is a separate, clinical fact this ward-facing label does not carry.
   ed_outcome_recorded: "Withdrawn — the department recorded an outcome for this patient.",
+  examination_outcome_recorded: "Withdrawn — an examination outcome ended the search for a bed.",
 };
 
 /**
@@ -675,10 +679,7 @@ export const wardIntakeConstraintLabels: Record<WardIntakeConstraint, string> = 
  * Maintained in an isolated taxonomy to preserve strict test pins on BED_RELEASE_BLOCKERS (length 9)
  * and changeReasonLabels (18 entries).
  */
-export const DISCHARGE_DELAY_REASONS = [
-  "sat_hearing",
-  "public_guardian",
-] as const;
+export const DISCHARGE_DELAY_REASONS = ["sat_hearing", "public_guardian"] as const;
 
 export type DischargeDelayReason = (typeof DISCHARGE_DELAY_REASONS)[number];
 

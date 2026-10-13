@@ -900,7 +900,7 @@ test("A4-8: a new session is refused once the owner reaches the session cap", as
       save: async () => 1,
       delete: async (...args) => {
         deleted.push(args);
-        return 2;
+        return "deleted";
       },
     },
     authenticate: async () => environment.WARD_ALLOWED_OBJECT_ID,
