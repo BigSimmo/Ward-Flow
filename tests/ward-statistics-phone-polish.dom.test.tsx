@@ -13,7 +13,10 @@ vi.mock("next/link", () => ({
 
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade";
-import { shortWardLabels } from "@/components/ward-management/statistics/statistics-compare-screen";
+import {
+  StatisticsCompareScreen,
+  shortWardLabels,
+} from "@/components/ward-management/statistics/statistics-compare-screen";
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
 import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistics/statistics-eds-index";
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
@@ -149,5 +152,36 @@ describe("Statistics phone polish (batch 4)", () => {
     asPhone();
     renderInProvider(<StatisticsServicesIndexScreen />);
     expect(screen.getByTestId("ward-statistics-services-phone").textContent).not.toMatch(/\bnone\b/u);
+  });
+});
+
+/*
+ * stats-7 (batch 5): Compare on a phone compares two chosen wards, with every measure's full label
+ * and the network mean of wards, and keeps the choice after the sheet closes.
+ */
+describe("Compare two wards on a phone (stats-7)", () => {
+  it("keeps two chosen wards across close and reopen, and lists every measure in full", () => {
+    asPhone();
+    renderInProvider(<StatisticsCompareScreen />);
+    const [first, second] = allUnits();
+
+    fireEvent.click(screen.getByTestId("ward-statistics-compare-phone-pinned"));
+    fireEvent.change(screen.getByTestId("ward-statistics-compare-pair-a"), { target: { value: first!.id } });
+    fireEvent.change(screen.getByTestId("ward-statistics-compare-pair-b"), { target: { value: second!.id } });
+    const pair = screen.getByTestId("ward-statistics-compare-pair");
+    for (const label of ["Average stay", "Blockers", "Over 3 months", "Occupancy", "Ready now", "Awaiting answer"]) {
+      expect(pair).toHaveTextContent(label);
+    }
+    expect(within(pair).queryByRole("heading", { name: "Pinned wards" })).toBeNull();
+
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close" }));
+    const labels = shortWardLabels(allUnits());
+    expect(screen.getByTestId("ward-statistics-compare-phone-pinned")).toHaveTextContent(
+      `${labels.get(first!.id)} and ${labels.get(second!.id)} against the network`,
+    );
+
+    fireEvent.click(screen.getByTestId("ward-statistics-compare-phone-pinned"));
+    expect(screen.getByTestId("ward-statistics-compare-pair-a")).toHaveValue(first!.id);
+    expect(screen.getByTestId("ward-statistics-compare-pair-b")).toHaveValue(second!.id);
   });
 });

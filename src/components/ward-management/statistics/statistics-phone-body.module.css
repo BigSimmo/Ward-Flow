@@ -508,6 +508,69 @@
   }
 }
 
+/* Compare two wards on a phone (audit stats-7): two pickers, then one measure per line with its full
+   label and three values side by side (ward A, ward B, network mean of wards). */
+.pair {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.pairPickers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.pairField {
+  min-width: 0;
+}
+
+.pairHead,
+.pairValues {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.pairHead {
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.pairList {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  list-style: none;
+}
+
+.pairRow {
+  display: grid;
+  gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.pairRow + .pairRow {
+  border-top: 1px solid var(--wf-line);
+}
+
+.pairLabel {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.pairValues {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / 1.25 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 /* A row outside the chosen highlight stays in the list, in quieter ink (dim by colour, never hidden). */
 .dim {
   color: var(--wf-ink-3);
