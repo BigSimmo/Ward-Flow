@@ -42,7 +42,15 @@ export function executeAz(call) {
   if (!Number.isSafeInteger(timeout) || timeout <= 0 || timeout > 600_000)
     throw new RangeError("Azure CLI timeout must be between 1 and 600000 milliseconds");
   return new Promise((resolve) => {
-    const child = spawn(call.command, call.args, { ...options, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+    // On POSIX the child leads its own process group so a stop reaches every descendant: the packaged
+    // `az` is a bash wrapper whose Python child would otherwise keep stdout/stderr open after a kill.
+    const posix = process.platform !== "win32";
+    const child = spawn(call.command, call.args, {
+      ...options,
+      detached: posix,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
     const stdout = [],
       stderr = [];
     let outBytes = 0,
@@ -54,10 +62,12 @@ export function executeAz(call) {
       exited = false,
       stopping = false,
       cleanupPending = false,
-      treeTermination;
+      treeTermination,
+      drainTimer;
     const finish = () => {
       if (!closed || cleanupPending) return;
       clearTimeout(timer);
+      clearTimeout(drainTimer);
       resolve({
         pid: child.pid,
         status,
@@ -87,8 +97,22 @@ export function executeAz(call) {
         unconfirmed();
         return;
       }
-      if (process.platform !== "win32") {
-        if (!child.kill(killSignal)) unconfirmed();
+      if (posix) {
+        try {
+          process.kill(-child.pid, killSignal);
+        } catch {
+          unconfirmed();
+          return;
+        }
+        // The whole group was signalled. If an orphaned descendant still holds the pipes, settle
+        // after a short grace period rather than waiting on `close` indefinitely.
+        drainTimer = setTimeout(() => {
+          if (closed) return;
+          child.stdout.destroy();
+          child.stderr.destroy();
+          closed = true;
+          finish();
+        }, 2_000);
         return;
       }
       cleanupPending = true;

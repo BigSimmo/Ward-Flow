@@ -136,6 +136,18 @@ if (mode === "provision" && !server) {
     serverName,
   ]);
   await writeFile(settingsPath, `${JSON.stringify(config, null, 2)}\n`);
+} else if (mode === "provision" && server && !requireExistingDatabase && !config.functionSubnetId) {
+  // A run that timed out locally after Azure finished the deployment has created the server but never
+  // saved the Function subnet. Recover it from that succeeded deployment instead of stopping later.
+  const previous = priorDeployment(
+    await az(["deployment", "group", "list", "--resource-group", config.resourceGroup], true, "array"),
+    "wardflow-shared-database",
+  );
+  if (previous) {
+    config.serverName ||= server.name;
+    config.functionSubnetId = previous.properties.outputs.functionSubnetId.value;
+    await writeFile(settingsPath, `${JSON.stringify(config, null, 2)}\n`);
+  }
 }
 if (server) {
   const location = server.location.toLowerCase().replaceAll(" ", "");

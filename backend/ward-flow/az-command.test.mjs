@@ -47,6 +47,29 @@ test("a hanging local child times out after receiving correctly quoted Node argu
   );
 });
 
+test(
+  "on POSIX a timeout stops descendants that inherit stdout and stderr",
+  { skip: process.platform === "win32" },
+  async () => {
+    const { options } = azInvocation(["account", "show"], "linux");
+    const started = performance.now();
+    // The wrapper spawns a grandchild that keeps the inherited pipes open, like az's bash wrapper
+    // launching Python without exec. Killing only the wrapper would leave `close` pending.
+    const grandchild = "setInterval(() => {}, 1000)";
+    const result = await executeAz({
+      command: process.execPath,
+      args: [
+        "-e",
+        `require("node:child_process").spawn(process.execPath, ["-e", ${JSON.stringify(grandchild)}], { stdio: "inherit" });process.stdout.write("started");setInterval(() => {}, 1000)`,
+      ],
+      options: { ...options, timeout: 3_000 },
+    });
+    assert.equal(result.stdout, "started");
+    assert.equal(result.error?.code, "ETIMEDOUT");
+    assert.ok(performance.now() - started < 15_000, "inherited pipes must not hold the caller");
+  },
+);
+
 test("process failure paths are explicit and do not expose provider output", () => {
   for (const [failure, reason] of [
     [{ error: { code: "ETIMEDOUT" } }, /timed out/],
