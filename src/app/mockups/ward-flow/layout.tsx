@@ -118,39 +118,43 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
   const phone = guessPhoneFromRequest(requestHeaders.get("user-agent"), requestHeaders.get("sec-ch-ua-mobile"));
   return (
     <WfServerPhoneProvider phone={phone}>
-    <WardFlowProvider>
-      {/* Remembers a header tap made before the app is ready, for the header to press once it is
+      <WardFlowProvider>
+        {/* Remembers a header tap made before the app is ready, for the header to press once it is
           (ward-early-tap.ts). It sits ahead of the header so it runs before the header is drawn. */}
-      <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }} />
-      {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }} />
+        {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
           any page without each screen mounting its own region. */}
-      <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
-        <WardAccessibility />
-        <WardRowDensity />
-        <WardLiveRegion />
-        <WardActNowNotifier />
-        <WardOfflineLinks />
-        <div className={styles.shellRow}>
-          <WardRail />
-          {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
+        <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
+          <WardAccessibility />
+          <WardRowDensity />
+          <WardLiveRegion />
+          <WardActNowNotifier />
+          <WardOfflineLinks />
+          <div className={styles.shellRow}>
+            <WardRail />
+            {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
               so the sidebar does not fold and slide the page once the app loads. */}
-          <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }} />
-          <div className={styles.shellContent} data-wf-scroller="">
-            <WardBarMount />
-            {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
+            <script
+              nonce={nonce}
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }}
+            />
+            <div className={styles.shellContent} data-wf-scroller="">
+              <WardBarMount />
+              {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
                 ready. Hidden once the header is ready (`data-wf-bar-ready`, ward-early-tap.ts). */}
-            <p className={styles.loadingNote} role="status" data-testid="ward-loading-note">
-              Loading, not live yet. Taps work once this goes.
-            </p>
-            <WardBroadcastBanner />
-            <WardOfflineBanner />
-            <WardDemoNotSavedNote />
-            <WardPhoneDesktopOnly />
-            <WardGround>{children}</WardGround>
+              <p className={styles.loadingNote} role="status" data-testid="ward-loading-note">
+                Loading, not live yet. Taps work once this goes.
+              </p>
+              <WardBroadcastBanner />
+              <WardOfflineBanner />
+              <WardDemoNotSavedNote />
+              <WardPhoneDesktopOnly />
+              <WardGround>{children}</WardGround>
+            </div>
           </div>
-        </div>
-      </ToastProvider>
-    </WardFlowProvider>
+        </ToastProvider>
+      </WardFlowProvider>
     </WfServerPhoneProvider>
   );
 }

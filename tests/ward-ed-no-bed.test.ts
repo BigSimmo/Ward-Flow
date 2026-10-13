@@ -11,6 +11,8 @@ describe("edHasNoBedYet (S-19)", () => {
     expect(edHasNoBedYet({ ...base, stage: "accepted_awaiting_bed" } as Movement)).toBe(false);
     expect(edHasNoBedYet({ ...base, acceptedUnitId: "u1" } as Movement)).toBe(false);
     expect(edHasNoBedYet({ ...base, edOutcome: "for_discharge" } as Movement)).toBe(false);
-    expect(edHasNoBedYet({ ...base, closure: { reason: "The referrer withdrew the referral" } } as Movement)).toBe(false);
+    expect(edHasNoBedYet({ ...base, closure: { reason: "The referrer withdrew the referral" } } as Movement)).toBe(
+      false,
+    );
   });
 });

@@ -414,7 +414,6 @@ const useSplitDetailLayout = createBrowserStore<boolean>(
   false,
 );
 
-
 type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "community" | "refused";
 const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed", "community", "refused"];
 type InspectorTab = "place" | "patient" | "timeline";

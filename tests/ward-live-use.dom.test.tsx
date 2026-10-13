@@ -4,10 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ToastProvider, useToast } from "@/components/ui/toast";
 import { LiveChip, WfServerPhoneProvider, guessPhoneFromRequest, useIsPhone } from "@/components/wf";
-import {
-  WARD_OFFLINE_LINK_NOTICE,
-  WardOfflineLinks,
-} from "@/components/ward-management/shell/ward-offline-links";
+import { WARD_OFFLINE_LINK_NOTICE, WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 
 /*

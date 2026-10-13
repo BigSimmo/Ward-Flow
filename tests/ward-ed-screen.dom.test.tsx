@@ -1256,7 +1256,9 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No bed yet' ex
   it("drops a freshly raised, unreviewed, destination-less patient out of both chips once its outcome is recorded", () => {
     renderEd();
     const notReviewedBefore = screen.getByRole("button", { name: /Not reviewed/ }).textContent;
-    const noDestBefore = within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ }).textContent;
+    const noDestBefore = within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", {
+      name: /No bed yet/,
+    }).textContent;
 
     fireEvent.click(screen.getByTestId("ward-ed-raise-referral-toggle"));
     fillRequiredReferralFields();
@@ -1267,7 +1269,10 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No bed yet' ex
     // Freshly raised: no examination, no destination — counted in both chips, proving the walk is
     // real before the fix under test can be observed at all.
     expect(screen.getByRole("button", { name: /Not reviewed/ }).textContent).not.toBe(notReviewedBefore);
-    expect(within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ }).textContent).not.toBe(noDestBefore);
+    expect(
+      within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ })
+        .textContent,
+    ).not.toBe(noDestBefore);
 
     fireEvent.click(screen.getByTestId(`ward-ed-outcome-toggle-${id}`));
     fireEvent.click(screen.getByTestId(`ward-ed-outcome-discharge-${id}`));
@@ -1277,7 +1282,8 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No bed yet' ex
       "P3-1: a settled ED outcome is not an unreviewed patient",
     ).toBe(notReviewedBefore);
     expect(
-      within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ }).textContent,
+      within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: /No bed yet/ })
+        .textContent,
       "P3-1: a settled ED outcome is not a destination-less patient",
     ).toBe(noDestBefore);
   });

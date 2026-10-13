@@ -3187,8 +3187,8 @@ function WardReferralDrawerContent({
                       <CardHead icon={Stethoscope} title="Medical clearance checklist">
                         <span className={styles.chip}>
                           {/* A2-9: recorded for the letter, not counted in the items left. */}
-                          Optional · <span className={styles.mono}>{checksDone ?? 0}</span> of{" "}
-                          {CLEARANCE_CHECKS.length} done
+                          Optional · <span className={styles.mono}>{checksDone ?? 0}</span> of {CLEARANCE_CHECKS.length}{" "}
+                          done
                         </span>
                       </CardHead>
                       <div className={styles.cardBody} data-tight="true">
