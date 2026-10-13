@@ -1029,7 +1029,7 @@ export function PatientSearchPage() {
               Your default, not a legal limit
             </span>
 
-            <div aria-label="Quick queries">
+            <div role="group" aria-label="Quick queries">
               {QUICK_CHIPS.map((chip) => {
                 const isActive = text === chip.query;
                 return (

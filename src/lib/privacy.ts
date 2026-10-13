@@ -39,6 +39,13 @@ export function redactLogValue(value: unknown): unknown {
       // Redact common secret/token formats, including modern Supabase keys like sb_secret_ and sb_publishable_
       .replace(/\b(?:sk|pk|sbp|sb_secret_|sb_publishable_|eyJ)[A-Za-z0-9._-]{8,}\b/g, "[secret]")
       .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, "[email]")
+      // Redact health record identifiers (UMRN/MRN), Medicare numbers, and Australian phone numbers (A4-10)
+      .replace(/\b(?:UMRN|MRN|UR[N#]?)\s*[:#]?\s*\d{6,9}\b/gi, "[record-id]")
+      .replace(/\b[2-6]\d{3}[ -]?\d{5}[ -]?\d\b/g, "[medicare]")
+      .replace(
+        /\b(?:\+?61\s*4\d{2}[ -]?\d{3}[ -]?\d{3}|04\d{2}[ -]?\d{3}[ -]?\d{3}|\(?08\)?\s*\d{4}[ -]?\d{4})\b/g,
+        "[phone]",
+      )
       .slice(0, 500)
   );
 }

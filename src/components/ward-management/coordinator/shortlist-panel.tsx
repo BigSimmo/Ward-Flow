@@ -618,6 +618,8 @@ export function ShortlistPanel({
     setCancelTransportReason(undefined);
     setWithdrawUnitId(undefined);
     setWithdrawReason("");
+    setGenderPlacementReason("");
+    setGenderPlacementChecked(false);
   }
 
   if (!movement) {

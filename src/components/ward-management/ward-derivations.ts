@@ -579,9 +579,11 @@ export function transportLeg(transport: TransportJob | undefined): TransportLeg 
  * at all (`tests/ward-capacity-reconciliation.test.ts`, `tests/ward-model.test.ts`).
  */
 export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
-  const available = Math.min(unit.allocatable.value, unit.empty.value);
-  const held = Math.max(unit.empty.value - available, 0);
-  const notEmpty = Math.max(unit.beds - unit.empty.value, 0);
+  const isClosed = Boolean((unit as { isClosed?: boolean }).isClosed) || unit.beds === 0;
+  const effectiveEmpty = isClosed ? 0 : Math.min(Math.max(0, unit.empty.value), unit.beds);
+  const available = isClosed ? 0 : Math.max(0, Math.min(unit.allocatable.value, effectiveEmpty));
+  const held = isClosed ? 0 : Math.max(effectiveEmpty - available, 0);
+  const notEmpty = Math.max(unit.beds - effectiveEmpty, 0);
   // Owner ruling 2026-09-25: out-of-service beds are not recorded anywhere in the model
   // (`Unit.blocked` is a typed count, not a record), so none is ever subtracted here and screens
   // say "Not recorded" where they used to print this count. Kept as a field so every consumer's

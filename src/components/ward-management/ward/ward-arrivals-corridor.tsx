@@ -286,6 +286,13 @@ export function WardArrivalsCorridor({
                                   onPullPatient(movement.id, unit.id);
                                 } else {
                                   priorRejectionCountRef.current = rejections.length;
+                                  dispatch({
+                                    type: "PULL_PATIENT",
+                                    role: "ward",
+                                    now,
+                                    movementId: movement.id,
+                                    unitId: unit.id,
+                                  });
                                   setCheckToken((t) => t + 1);
                                 }
                               }
