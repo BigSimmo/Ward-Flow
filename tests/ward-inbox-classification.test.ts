@@ -7,6 +7,7 @@ import {
   DECISION_TARGET_STEPS,
   decisionTargetInboxItems,
 } from "../src/components/ward-management/ward-decision-targets";
+import { absenceInboxItems } from "../src/components/ward-management/ward-absence-tasks";
 import { buildActionInbox, type InboxItem } from "../src/components/ward-management/ward-derivations";
 import {
   INBOX_CATEGORIES,
@@ -23,6 +24,9 @@ const NOW = NOW_ANCHOR;
 const DERIVATIONS = "src/components/ward-management/ward-derivations.ts";
 
 const KINDS: readonly InboxItemKind[] = ["fact", "commitment"];
+
+/** Audit A3-1: emitted by `absenceInboxItems` (via `taskItems`), not by `buildActionInbox`. */
+const ABSENCE_CATEGORIES = 1;
 
 /**
  * A real, valid, open fixture movement to spread from — same template and the same `Object.assign`
@@ -105,7 +109,34 @@ function allInboxRows(movements: Movement[]): InboxItem[] {
       plannedAdmissions: seedWardFlowState().plannedAdmissions,
     }),
     ...decisionTargetInboxItems(movements, NOW, defaultWardConfiguration()),
+    // Audit A3-1 (13 Oct 2026): absent without leave on an order, from the stay's held bed.
+    ...absenceInboxItems(absenceOnOrderRecords(), NOW),
   ];
+}
+
+/** One occupied stay of a person on an order, recorded absent without leave. */
+function absenceOnOrderRecords() {
+  const seed = seedWardFlowState();
+  const stay = seed.admissions.find((admission) => admission.state === "occupied")!;
+  const patient = seed.patients.find((candidate) => candidate.id === stay.patientId);
+  return {
+    leaveBeds: [
+      {
+        id: "LB-T01",
+        unitId: stay.unitId,
+        admissionId: stay.id,
+        expectedReturn: NOW + 60,
+        confirmedAt: NOW - 30,
+        confirmedBy: "Ward",
+        absentWithoutLeave: { since: NOW - 30, steps: [] },
+      },
+    ],
+    admissions: [{ ...stay, movementId: null }],
+    movements: [],
+    patients: patient ? [{ ...patient, legalStatus: "Involuntary inpatient" }] : [],
+    referrals: seed.referrals,
+    units: allUnits(),
+  };
 }
 
 /**
@@ -226,7 +257,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     expect(
       pushes.length + delegated,
       "buildActionInbox emits a number of categories that INBOX_CATEGORIES does not account for",
-    ).toBe(Object.keys(INBOX_CATEGORIES).length - targetCategories.length);
+    ).toBe(Object.keys(INBOX_CATEGORIES).length - targetCategories.length - ABSENCE_CATEGORIES);
   });
 
   /**

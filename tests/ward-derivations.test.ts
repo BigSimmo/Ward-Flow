@@ -535,7 +535,10 @@ describe("unitCapacity clamping and closed unit protection", () => {
     const closedUnit = { ...baseUnit, isClosed: true } as unknown as typeof baseUnit & { isClosed?: boolean };
     const closedCap = unitCapacity(closedUnit, []);
     expect(closedCap.available).toBe(0);
-    expect(closedCap.held).toBe(0);
+    // A closed ward's empty beds are still physically empty: they move from available to held
+    // (not offered) so the five-state grid still partitions unit.beds exactly.
+    expect(closedCap.held).toBe(Math.min(Math.max(0, baseUnit.empty.value), baseUnit.beds));
+    expect(closedCap.available + closedCap.held + closedCap.blocked + closedCap.occupied).toBe(baseUnit.beds);
 
     const overEmptyUnit = {
       ...baseUnit,

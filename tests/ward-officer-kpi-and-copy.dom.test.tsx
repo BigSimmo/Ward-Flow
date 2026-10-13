@@ -106,7 +106,8 @@ describe("officer screen KPI captions match their populations", () => {
     // v6: the on-board count is the hero title ("8 on board").
     const title = screen.getByRole("heading", { level: 1 });
     // 6 → 8: the 17 Sept sample-data addition, WF-026/WF-031 (collected-not-arrived).
-    expect(title.textContent).toBe("8 on board");
+    // S-17 (audit 13 Oct 2026): named as a part of the 13 jobs, so it agrees with the Jobs count.
+    expect(title.textContent).toBe("8 of 13 jobs on board");
   });
 });
 
@@ -178,10 +179,20 @@ describe("officer screen's empty state names both exclusions isOfficerJob applie
       if (selectButton) fireEvent.click(selectButton);
     }
 
+    // Audit A4-11 / S-2 (13 Oct 2026): Collected with no Form 4A or no fit to travel asks for a
+    // recorded reason first; it never blocks. Answer it the way an officer would.
+    function confirmCollectCheckIfAsked() {
+      const reason = screen.queryByTestId("ward-officer-collect-check-reason");
+      if (!reason) return;
+      fireEvent.change(reason.querySelector("select") ?? reason, { target: { value: "paper_sighted" } });
+      fireEvent.click(screen.getByRole("button", { name: "Collected, record reason" }));
+    }
+
     for (const id of acceptedOnly) {
       selectIfNeeded(id);
       fireEvent.click(screen.getByTestId(`ward-officer-enroute-${id}`));
       fireEvent.click(screen.getByTestId(`ward-officer-collect-${id}`));
+      confirmCollectCheckIfAsked();
       fireEvent.click(screen.getByTestId(`ward-officer-arrive-${id}`));
     }
     for (const id of collectedOnly) {

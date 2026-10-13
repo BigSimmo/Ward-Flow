@@ -583,7 +583,13 @@ export function HandoverPage() {
       () => announceToWardShell("Copy was blocked by the browser."),
     );
   }, [sinceItems, newSince, now, scopeLabel]);
-  const staleWards = wards.filter((ward) => wardIsStale(ward, now));
+  // Audit S-31: a ward is stale on the sign-off when either its feed or its ward-confirmed count is
+  // past that figure's own limit, the rule the Wards page counts by (allocatable), so sign-off can
+  // never say every feed is current while Wards shows a stale ward.
+  const staleWards = wards.filter(
+    (ward) =>
+      wardIsStale(ward, now) || now - ward.unit.allocatable.confirmedAt > ward.unit.allocatable.staleAfterMinutes,
+  );
   const outsideAct = outside.filter((row) => isActNow(row, now));
 
   /* columns */
@@ -638,7 +644,8 @@ export function HandoverPage() {
     const recorded = recordHandoverSignOff(
       (event) =>
         runStep(event, {
-          success: `Signed off as flow coordinator at ${formatInstantWithDay(now, now)}. Recorded in History.`,
+          // Audit S-31: one short toast; the panel's own line carries the time and the record.
+          success: "Handover signed off.",
           undo: (at) => ({ type: "UNDO_HANDOVER_SIGN_OFF", role: "coordinator", now: at }),
           undone: "Sign-off undone.",
         }),
@@ -681,12 +688,12 @@ export function HandoverPage() {
   }, [groups, scopeLabel, shiftLine, now, rows.length]);
   const copyIsbar = useCallback(
     (row: HandoverRow) => {
-      void navigator.clipboard?.writeText(isbarText(row, now)).then(
+      void navigator.clipboard?.writeText(isbarText(row, now, readyBeds)).then(
         () => announceToWardShell(`ISBAR for ${row.name} copied.`),
         () => announceToWardShell("Copy was blocked by the browser."),
       );
     },
-    [now],
+    [now, readyBeds],
   );
 
   /* keyboard */
@@ -741,7 +748,10 @@ export function HandoverPage() {
       ? {
           id: "feeds",
           done: false,
-          text: `${staleWards.length} ward feed${staleWards.length === 1 ? "" : "s"} older than 15 minutes`,
+          text:
+            staleWards.length === 1
+              ? `${staleWards[0]!.name} counts are stale`
+              : `${staleWards.length} wards with stale counts: ${staleWards.map((ward) => ward.name).join(", ")}`,
           // The phone keeps its own Beds tab and has no print sheet, so these links are desktop only.
           action: isPhoneWidth
             ? undefined

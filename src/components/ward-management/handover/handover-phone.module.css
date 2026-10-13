@@ -400,6 +400,11 @@
   text-overflow: ellipsis;
 }
 
+.prowUmrn {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .prowNext {
   display: flex;
   align-items: center;

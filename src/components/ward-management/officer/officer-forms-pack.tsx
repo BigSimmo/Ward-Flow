@@ -10,6 +10,12 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import type { Movement, MovementUploadedForm } from "@/components/ward-management/ward-model";
 import { formTitleForCode } from "@/lib/form-register";
+import {
+  PACK_SLOT_PATTERN,
+  packForm,
+  packRequirement,
+  type PackSlotKey,
+} from "@/components/ward-management/ward-transport-checks";
 
 import styles from "./officer.module.css";
 
@@ -20,7 +26,7 @@ import styles from "./officer.module.css";
  * Uploading reuses `UPLOAD_PATIENT_FORM`: the file name and size are recorded, never its contents.
  * Sending the pack to a transport officer has no event yet, so it is a Preview control.
  */
-export type PackSlotKey = "legal" | "order" | "risk";
+export type { PackSlotKey };
 
 type PackSlot = { key: PackSlotKey; label: string; codes: string[]; hint: string };
 
@@ -30,33 +36,34 @@ export const PACK_SLOTS: PackSlot[] = [
   { key: "risk", label: "Risk assessment", codes: [], hint: "Signed risk assessment" },
 ];
 
-const SLOT_PATTERN: Record<PackSlotKey, RegExp> = {
-  legal: /\bForm\s*(1A|1B|3D)\b/i,
-  order: /\bForm\s*4A\b/i,
-  risk: /\brisk assessment\b/i,
-};
+const SLOT_PATTERN = PACK_SLOT_PATTERN;
 
-/** The latest recorded form that fills a slot, if any. */
-export function packForm(movement: Movement, key: PackSlotKey): MovementUploadedForm | undefined {
-  const forms = movement.uploadedForms ?? [];
-  for (let index = forms.length - 1; index >= 0; index -= 1) {
-    if (SLOT_PATTERN[key].test(forms[index]!.formName)) return forms[index];
-  }
-  return undefined;
-}
+/** The latest recorded form that fills a slot, if any (`ward-transport-checks.ts`). */
+export { packForm };
 
 export function packCount(movement: Movement): number {
   return PACK_SLOTS.filter((slot) => packForm(movement, slot.key) !== undefined).length;
 }
 
-/** Josh, 9 Oct 2026: a voluntary transfer needs no forms. An unrecorded status still needs the pack. */
+/**
+ * Josh, 9 Oct 2026: a voluntary transfer needs no forms. An unrecorded status still needs the pack.
+ * Audit A4-12: read from Legal now first, then the booking (`packRequirement`).
+ */
 export function packRequired(movement: Movement): boolean {
-  return movement.transport?.transportLegalStatus !== "voluntary";
+  return packRequirement(movement) !== "not_required";
 }
 
-/** A required pack with at least one slot still empty. */
+/** A required pack with at least one slot still empty (includes a job with no status recorded). */
 export function packOutstanding(movement: Movement): boolean {
   return packRequired(movement) && packCount(movement) < PACK_SLOTS.length;
+}
+
+/**
+ * Audit A4-12: the hero's "Need forms" counts only jobs whose recorded status truly needs the pack.
+ * A job with no status recorded anywhere is counted apart, never hidden.
+ */
+export function packNeedsForms(movement: Movement): boolean {
+  return packRequirement(movement) === "required" && packCount(movement) < PACK_SLOTS.length;
 }
 
 function formNameFor(slot: PackSlot, code: string | undefined): string {
@@ -87,6 +94,7 @@ export function FormsPack({ movement, now, who }: { movement: Movement; now: Ins
       <div className={styles.sectionHead}>
         <h3 className={styles.sectionTitle}>Forms pack</h3>
         <span className={styles.sectionNote}>
+          {packRequirement(movement) === "unknown" ? "Legal status not recorded · " : null}
           {done === PACK_SLOTS.length ? (
             <>
               <StatusGlyph tone="success" size={9} /> Complete

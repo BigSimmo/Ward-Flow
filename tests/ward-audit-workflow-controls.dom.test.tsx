@@ -293,7 +293,7 @@ describe("referral evidence is visible and honestly qualified", () => {
 
 describe("optional clinician-recorded ATS remains distinct from Ward Flow urgency", () => {
   it("offers ATS on the referral slide-out without changing the selected urgency", () => {
-    wrap(<WardReferralDrawer onClose={() => {}} />);
+    wrap(<WardReferralDrawer onClose={() => {}} initialPatientId="PT-023" />);
     fireEvent.click(
       within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Referral" }),
     );

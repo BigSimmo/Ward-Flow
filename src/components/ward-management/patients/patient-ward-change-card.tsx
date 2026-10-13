@@ -69,6 +69,7 @@ export function PatientWardChangeCard({
   refusal,
   roleLimit,
   dischargeInBar = false,
+  leaveLegal,
 }: {
   now: Instant;
   dayZero: Date;
@@ -83,6 +84,12 @@ export function PatientWardChangeCard({
   roleLimit: (eventType: WardFlowEventType) => string | undefined;
   /** v10 phone: the discharge date is the pinned bar's primary, so the chip row leaves it out. */
   dischargeInBar?: boolean;
+  /**
+   * Audit S-32 (13 Oct 2026): the legal form and status shown in the leave sheet, and whether the
+   * person is on an order (then the sheet says leave needs the psychiatrist's authority). A prompt,
+   * never a block: the ward or coordinator still records the leave.
+   */
+  leaveLegal?: { form: string; onOrder: boolean };
 }) {
   const [time, setTime] = useState("");
   const [day, setDay] = useState(0);
@@ -170,6 +177,12 @@ export function PatientWardChangeCard({
         setTime("");
       }}
     >
+      {form === "leave" && leaveLegal ? (
+        <p className={styles.legalLine} data-testid="ward-patient-leave-legal">
+          <span>{leaveLegal.form}</span>
+          {leaveLegal.onOrder ? <span>On an order: leave needs the treating psychiatrist&apos;s authority</span> : null}
+        </p>
+      ) : null}
       {form === "leave" && isPhone ? <span className={styles.phFieldLabel}>Kind of leave</span> : null}
       {form === "leave" ? (
         <div className={styles.kindRow} role="group" aria-label="Kind of leave">

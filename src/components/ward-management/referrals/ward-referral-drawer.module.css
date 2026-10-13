@@ -3302,3 +3302,9 @@ details.refCard > summary {
     margin-left: 19px;
   }
 }
+
+/* A2-3: with no patient chosen, the identity card and priority grid stay out of the way. */
+.patientIdentity[hidden],
+.priorityGrid[hidden] {
+  display: none;
+}

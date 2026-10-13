@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { createContext, createElement, useCallback, useContext, useSyncExternalStore, type ReactNode } from "react";
 
 /** The phone range (v10): phone rules live under this query, desktop and tablet above it. */
 export const WF_PHONE_QUERY = "(max-width: 48rem)";
@@ -14,10 +14,25 @@ function canMatch(): boolean {
 }
 
 /**
- * Whether a CSS media query matches, kept live. False on the server and on first paint, so the
- * desktop tree is the hydration default. Pass a constant query string.
+ * A1-17 (audit 13 Oct 2026, slow signal): the server's guess that this request comes from a phone,
+ * read from the request (`guessPhoneFromRequest`). Without it the server always drew the desktop
+ * tree, so on a slow phone the first paint was a different layout for many seconds until the
+ * page's code loaded. The guess is only the first-paint and hydration value of the phone query;
+ * the browser's own media query takes over as soon as the page is running.
+ */
+const WfServerPhoneContext = createContext(false);
+
+export function WfServerPhoneProvider({ phone, children }: { phone: boolean; children: ReactNode }) {
+  return createElement(WfServerPhoneContext.Provider, { value: phone }, children);
+}
+
+/**
+ * Whether a CSS media query matches, kept live. On the server and on first paint the phone query
+ * reads the server's guess (`WfServerPhoneProvider`, false when none is given) and every other query
+ * reads false, so the tree drawn by the server is the tree hydrated. Pass a constant query string.
  */
 export function useMediaQuery(query: string): boolean {
+  const serverPhone = useContext(WfServerPhoneContext);
   const subscribe = useCallback(
     (notify: () => void) => {
       if (!canMatch()) return () => undefined;
@@ -28,7 +43,8 @@ export function useMediaQuery(query: string): boolean {
     [query],
   );
   const snapshot = useCallback(() => canMatch() && window.matchMedia(query).matches, [query]);
-  return useSyncExternalStore(subscribe, snapshot, () => false);
+  const serverSnapshot = useCallback(() => query === WF_PHONE_QUERY && serverPhone, [query, serverPhone]);
+  return useSyncExternalStore(subscribe, snapshot, serverSnapshot);
 }
 
 /**

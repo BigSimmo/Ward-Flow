@@ -180,9 +180,15 @@ export function WardArrivalsCorridor({
                         {movement.legalStatus}
                       </span>
                     ) : null}
-                    {movement.security === "Secure" ? (
+                    {/* Audit A1-5: only an observation level somebody recorded, never one read from
+                        the bed's security. */}
+                    {movement.specialling ? (
                       <span className={styles.statusTag} data-type="acuity">
-                        HDU / Close Observation
+                        1:1 specialling
+                      </span>
+                    ) : movement.highAcuity ? (
+                      <span className={styles.statusTag} data-type="acuity">
+                        High-acuity nursing
                       </span>
                     ) : null}
                     <span className={styles.statusTag} data-type="mode">
@@ -286,13 +292,6 @@ export function WardArrivalsCorridor({
                                   onPullPatient(movement.id, unit.id);
                                 } else {
                                   priorRejectionCountRef.current = rejections.length;
-                                  dispatch({
-                                    type: "PULL_PATIENT",
-                                    role: "ward",
-                                    now,
-                                    movementId: movement.id,
-                                    unitId: unit.id,
-                                  });
                                   setCheckToken((t) => t + 1);
                                 }
                               }
