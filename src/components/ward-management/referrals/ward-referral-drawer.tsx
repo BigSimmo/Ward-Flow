@@ -104,7 +104,9 @@ import {
   keepReferralDraft,
   readKeptReferralDraft,
   readKeptReferralDraftAt,
+  readLastReferrerContact,
   referralDraftAgeText,
+  rememberReferrerContact,
   useReferralDraftAutosave,
 } from "./referral-draft-store";
 import { referralIsbarText, referralLetterText, type ReferralTextInput } from "./referral-letter";
@@ -857,7 +859,8 @@ function WardReferralDrawerContent({
   const [documentation, setDocumentation] = useState<DocumentationDraft>(kept?.documentation ?? EMPTY_DOCUMENTATION);
   const isMedicalCleared = documentation.medical === "yes";
   const [contact, setContact] = useState<ReferralContact>(
-    kept?.contact ?? { name: "", email: "", phone: "", role: "", location: "" },
+    // A2-6: the details last sent in this tab fill in, so the referrer types them once.
+    kept?.contact ?? readLastReferrerContact<ReferralContact>() ?? { name: "", email: "", phone: "", role: "", location: "" },
   );
   const initialLookup = lookupCatchment(defaultPatient.suburb);
   const initialTeams = catchmentRoutingDestinations(initialLookup);
@@ -1397,6 +1400,7 @@ function WardReferralDrawerContent({
     if (created) {
       stopDraftAutosave();
       discardReferralDraft();
+      rememberReferrerContact(submitted.intake.referrer);
       setSentReferralId(created.id);
       setSentAt(now);
       setSendPending(false);
@@ -3198,8 +3202,6 @@ function WardReferralDrawerContent({
                     key={activePatientKey}
                     draft={documentation}
                     onChange={setDocumentation}
-                    referrerName={contact.name}
-                    onReferrerNameChange={(name) => setContact((current) => ({ ...current, name }))}
                   />
                 </div>
 

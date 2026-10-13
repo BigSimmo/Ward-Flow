@@ -2,6 +2,11 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
+import {
+  forgetReferrerContact,
+  readLastReferrerContact,
+  rememberReferrerContact,
+} from "@/components/ward-management/referrals/referral-draft-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -32,5 +37,26 @@ describe("New referral with no named person", () => {
       </WardFlowProvider>,
     );
     expect(screen.queryByTestId("ward-referral-no-patient")).toBeNull();
+  });
+});
+
+/** A2-6 (audit 13 Oct 2026): the referrer's name was asked in step 3 and again before sending. */
+describe("referrer details are asked once", () => {
+  afterEach(forgetReferrerContact);
+
+  it("has no separate Referrer name field in the steps", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardReferralDrawer onClose={() => {}} initialPatientId="PT-023" />
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByLabelText("Referrer name")).toBeNull();
+  });
+
+  it("keeps the last sent details for the next referral in this tab only", () => {
+    const contact = { name: "Sam Test", email: "sam@example.org", phone: "0400000000", role: "Registrar", location: "Peel ED" };
+    expect(readLastReferrerContact()).toBeNull();
+    rememberReferrerContact(contact);
+    expect(readLastReferrerContact()).toEqual(contact);
   });
 });
