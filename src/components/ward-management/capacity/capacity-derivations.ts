@@ -339,6 +339,17 @@ export function networkWardRows(
   admissions?: Admission[],
   leave?: LeaveBed[],
 ): NetworkWardRow[] {
+  const inputs = { now, releases, admissions, leave, freeingByUnit: releasesFreeingToday(releases, now) };
+  return units.map((unit) => networkWardRow(unit, inputs));
+}
+type NetworkWardInputs = {
+  now: Instant;
+  releases?: BedRelease[];
+  admissions?: Admission[];
+  leave?: LeaveBed[];
+  freeingByUnit: Map<string, number>;
+};
+function releasesFreeingToday(releases: BedRelease[] | undefined, now: Instant): Map<string, number> {
   const freeingByUnit = new Map<string, number>();
   for (const release of releases ?? []) {
     // ⚠️ "discharged", NOT "released". The third bed state was RENAMED on 2026-08-30 because
@@ -350,62 +361,75 @@ export function networkWardRows(
     if (dayOf(release.expectedAt) !== dayOf(now)) continue;
     freeingByUnit.set(release.unitId, (freeingByUnit.get(release.unitId) ?? 0) + 1);
   }
-  return units.map((unit) => {
-    const cap = unitCapacity(unit, []);
-    const states = bedStates(unit, admissions ?? [], releases ?? [], leave ?? []);
-    return {
-      unit,
-      ready: cap.available,
-      lockedReady: Math.min(lockedBedsFree(unit), cap.available),
-      freeing: releases === undefined ? undefined : (freeingByUnit.get(unit.id) ?? 0),
-      dischargesDueToday:
-        admissions === undefined
-          ? undefined
-          : admissions.filter(
-              (admission) =>
-                admission.unitId === unit.id &&
-                bedIsOccupied(admission) &&
-                admission.expectedDischargeAt !== null &&
-                dayOf(admission.expectedDischargeAt) === dayOf(now),
-            ).length,
-      // 🔴 ALL FIVE FROM THE CANONICAL DERIVATIONS, NEVER COUNTED HERE — see the row type's note.
-      confirmed:
-        releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).confirmedToday,
-      expected: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).expectedToday,
-      blocked: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).blockedToday,
-      // WLQ-10: unscoped by day, deliberately — see the field's own doc comment on `NetworkWardRow`.
-      oldestBlockedSince: releases === undefined ? undefined : oldestBlockedSince(unit.id, releases),
-      excludedBeyondToday:
-        releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).excludedBeyondToday,
-      // The four ruled boxes come from `bedStates`, never counted here. Unlike the release figures
-      // above they are ALWAYS a number: Closed and Occupied read the `Unit`, and Pulled reads the
-      // admissions (0 without them — see the field's note on `NetworkWardRow`).
-      pulled: states.pulled,
-      closed: states.closed,
-      occupied: states.occupied,
-      onLeave: states.onLeave,
-      surge: ("surge" in cap ? (cap as { surge?: number }).surge : undefined) ?? Math.max(0, cap.occupied - unit.beds),
-      // `bedsPendingPreparation` is the reducer's OWN helper — the same function whose result gates
-      // PULL_PATIENT — so the screen and the refusal cannot disagree about which beds are still
-      // being made ready.
-      pendingPreparation: releases === undefined ? undefined : bedsPendingPreparation(unit.id, releases),
-      confirmedAt: unit.allocatable.confirmedAt,
-      // `releases ?? []` only because `unitCapacity` takes them for its `potential` field, which this
-      // never reads; `occupied` is derived from `beds`, `empty` and `blocked` alone, so the answer is
-      // the same whether or not a caller supplied releases.
-      arrivalCapacityConflicts: unit.arrivalCapacityConflicts?.length ?? 0,
-      reservationReleaseCapacityConflicts: unit.reservationReleaseCapacityConflicts?.length ?? 0,
-      bedRecordsMidUpdate:
-        Object.values(unit.sexMix).reduce((sum, count) => sum + count, 0) !==
-        unitCapacity(unit, [...(releases ?? [])]).occupied,
-      // `admissions === undefined` is "nobody told this screen", never "nobody is being specialled".
-      // See the field's own note: `remainingSpeciallingCapacity(unit, [])` returns FULL capacity.
-      speciallingFree: admissions === undefined ? undefined : remainingSpeciallingCapacity(unit, admissions),
-      speciallingStaffable: Number.isFinite(unit.speciallingCapacity)
-        ? Math.max(0, Math.floor(unit.speciallingCapacity))
-        : 0,
-    };
-  });
+  return freeingByUnit;
+}
+function dischargesDueToday(unitId: string, admissions: Admission[] | undefined, now: Instant): number | undefined {
+  return admissions === undefined
+    ? undefined
+    : admissions.filter(
+        (admission) =>
+          admission.unitId === unitId &&
+          bedIsOccupied(admission) &&
+          admission.expectedDischargeAt !== null &&
+          dayOf(admission.expectedDischargeAt) === dayOf(now),
+      ).length;
+}
+function wardReleaseFigures(unit: Unit, { now, releases, leave }: NetworkWardInputs) {
+  return {
+    // 🔴 ALL FIVE FROM THE CANONICAL DERIVATIONS, NEVER COUNTED HERE — see the row type's note.
+    confirmed: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).confirmedToday,
+    expected: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).expectedToday,
+    blocked: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).blockedToday,
+    // WLQ-10: unscoped by day, deliberately — see the field's own doc comment on `NetworkWardRow`.
+    oldestBlockedSince: releases === undefined ? undefined : oldestBlockedSince(unit.id, releases),
+    excludedBeyondToday:
+      releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).excludedBeyondToday,
+  };
+}
+function wardSurge(unit: Unit, cap: ReturnType<typeof unitCapacity>): number {
+  return ("surge" in cap ? (cap as { surge?: number }).surge : undefined) ?? Math.max(0, cap.occupied - unit.beds);
+}
+function staffableSpecialling(unit: Unit): number {
+  return Number.isFinite(unit.speciallingCapacity) ? Math.max(0, Math.floor(unit.speciallingCapacity)) : 0;
+}
+function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
+  const { now, releases, admissions, leave, freeingByUnit } = inputs;
+
+  const cap = unitCapacity(unit, []);
+  const states = bedStates(unit, admissions ?? [], releases ?? [], leave ?? []);
+  return {
+    unit,
+    ready: cap.available,
+    lockedReady: Math.min(lockedBedsFree(unit), cap.available),
+    freeing: releases === undefined ? undefined : (freeingByUnit.get(unit.id) ?? 0),
+    dischargesDueToday: dischargesDueToday(unit.id, admissions, now),
+    ...wardReleaseFigures(unit, inputs),
+    // The four ruled boxes come from `bedStates`, never counted here. Unlike the release figures
+    // above they are ALWAYS a number: Closed and Occupied read the `Unit`, and Pulled reads the
+    // admissions (0 without them — see the field's note on `NetworkWardRow`).
+    pulled: states.pulled,
+    closed: states.closed,
+    occupied: states.occupied,
+    onLeave: states.onLeave,
+    surge: wardSurge(unit, cap),
+    // `bedsPendingPreparation` is the reducer's OWN helper — the same function whose result gates
+    // PULL_PATIENT — so the screen and the refusal cannot disagree about which beds are still
+    // being made ready.
+    pendingPreparation: releases === undefined ? undefined : bedsPendingPreparation(unit.id, releases),
+    confirmedAt: unit.allocatable.confirmedAt,
+    // `releases ?? []` only because `unitCapacity` takes them for its `potential` field, which this
+    // never reads; `occupied` is derived from `beds`, `empty` and `blocked` alone, so the answer is
+    // the same whether or not a caller supplied releases.
+    arrivalCapacityConflicts: unit.arrivalCapacityConflicts?.length ?? 0,
+    reservationReleaseCapacityConflicts: unit.reservationReleaseCapacityConflicts?.length ?? 0,
+    bedRecordsMidUpdate:
+      Object.values(unit.sexMix).reduce((sum, count) => sum + count, 0) !==
+      unitCapacity(unit, [...(releases ?? [])]).occupied,
+    // `admissions === undefined` is "nobody told this screen", never "nobody is being specialled".
+    // See the field's own note: `remainingSpeciallingCapacity(unit, [])` returns FULL capacity.
+    speciallingFree: admissions === undefined ? undefined : remainingSpeciallingCapacity(unit, admissions),
+    speciallingStaffable: staffableSpecialling(unit),
+  };
 }
 
 /**
