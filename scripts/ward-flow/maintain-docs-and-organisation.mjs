@@ -325,6 +325,7 @@ function runNodeCommand(root, label, args) {
 export const WRITE_GENERATOR_STEPS = [
   { label: "owner-rulings-index", args: ["scripts/ward-flow/owner-rulings-index.mjs"] },
   { label: "screen-map", args: ["scripts/ward-flow/screen-map.mjs", "--write"] },
+  { label: "mockup-manifest", args: ["scripts/ward-flow/mockup-manifest.mjs", "--write"] },
   { label: "screen-verification", args: ["scripts/ward-flow/screen-verification.mjs", "--write"] },
   { label: "rules-index", args: ["scripts/ward-flow/rules-index.mjs", "--write"] },
   {
@@ -338,6 +339,7 @@ export const WRITE_GENERATOR_STEPS = [
 export const CHECK_INDEX_STEPS = [
   { label: "owner-rulings-index --check", args: ["scripts/ward-flow/owner-rulings-index.mjs", "--check"] },
   { label: "screen-map --check", args: ["scripts/ward-flow/screen-map.mjs", "--check"] },
+  { label: "mockup-manifest --check", args: ["scripts/ward-flow/mockup-manifest.mjs", "--check"] },
   { label: "screen-verification --check", args: ["scripts/ward-flow/screen-verification.mjs", "--check"] },
   { label: "rules-index --check", args: ["scripts/ward-flow/rules-index.mjs", "--check"] },
   { label: "update-docs-inventory --check", args: ["scripts/update-docs-inventory.mjs", "--check"] },
@@ -404,13 +406,7 @@ export function runCheckMode({ root = DEFAULT_ROOT } = {}) {
 export function runWriteMode({ root = DEFAULT_ROOT } = {}) {
   const packManifestUpdate = checkOrUpdatePackManifest({ root, write: true });
   const generatorRuns = WRITE_GENERATOR_STEPS.map((step) =>
-    runNodeCommand(
-      root,
-      step.label,
-      step.label === "organisation"
-        ? [...step.args, "--root", root]
-        : step.args,
-    ),
+    runNodeCommand(root, step.label, step.label === "organisation" ? [...step.args, "--root", root] : step.args),
   );
   const verification = runCheckMode({ root });
 

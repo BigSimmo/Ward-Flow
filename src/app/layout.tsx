@@ -40,6 +40,7 @@ const geistMono = localFont({
   // Fallback font metrics and tabular feature declarations prevent late reflow
   // across tabular figures, bed numbers, and timestamps when the font swaps in.
   preload: false,
+  adjustFontFallback: false,
   fallback: [
     "ui-monospace",
     "SFMono-Regular",

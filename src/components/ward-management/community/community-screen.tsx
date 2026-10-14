@@ -978,6 +978,11 @@ export function CommunityScreen({
       estimatedAt,
     });
     closeTransportBook();
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>(`[data-testid="ward-community-cancel-transport-${movementId}"]`)?.focus();
+      });
+    }
   }
 
   function submitCancelTransport(movementId: string) {
@@ -991,6 +996,11 @@ export function CommunityScreen({
       reason: cancelTransportReason,
     });
     closeTransportCancel();
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>(`[data-testid="ward-community-book-transport-${movementId}"]`)?.focus();
+      });
+    }
   }
 
   const source = admissions ?? liveAdmissions;

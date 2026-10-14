@@ -359,7 +359,10 @@ export function HandoverPage() {
   const [scopeValue, setScopeValue] = useState<string>(() => {
     const requested = searchParams?.get("scope")?.trim();
     if (requested === undefined || requested.length === 0) return NETWORK_SCOPE_VALUE;
-    return handoverScopeValue(parseHandoverScope(requested));
+    // A link naming a ward, ED or team that does not exist falls back to the whole network: a
+    // quiet empty sheet is the dangerous direction on a handover.
+    const parsed = parseHandoverScope(requested);
+    return handoverScopeLabel(parsed, units) === undefined ? NETWORK_SCOPE_VALUE : handoverScopeValue(parsed);
   });
   const scope = useMemo(() => parseHandoverScope(scopeValue), [scopeValue]);
   const scopeLabel = handoverScopeLabel(scope, units) ?? "Whole network";

@@ -121,13 +121,14 @@ describe("ward-docs-maintain-pipeline", () => {
       expect(WRITE_GENERATOR_STEPS.map((s) => s.label)).toEqual([
         "owner-rulings-index",
         "screen-map",
+        "mockup-manifest",
         "screen-verification",
         "rules-index",
         "organisation",
         "update-docs-inventory",
         "generate-site-map",
       ]);
-      expect(CHECK_INDEX_STEPS.length).toBe(6);
+      expect(CHECK_INDEX_STEPS.length).toBe(7);
       expect(CHECK_INTEGRITY_GATE_STEPS.length).toBe(7);
     });
 

@@ -10,7 +10,7 @@
  * - Community Teams (`COMMUNITY_TEAM_PAGES` from `community/community-derivations.ts`) - name
  * - Legal Forms (`SELECTABLE_LEGAL_FORMS` from `ward-legal-forms.ts`) - code, official title via `legalFormName`
  * - Core Views/Tools (`CORE_SEARCH_VIEWS`) - navigation routes and tool pages
- * - Action Inbox Tasks (`buildActionInbox(movements.filter(isOpen), now ?? NOW_ANCHOR, units)`) - task summary, title, keyword "task"
+ * - Action Inbox Tasks (`buildActionInbox(movements.filter(isOpen), now ?? 0, units)`) - task summary, title, keyword "task"
  *
  * STANDARD §8.6 ENFORCEMENT:
  * - Unranked candidate discipline: within a group, a prefix or word-start match is listed before a

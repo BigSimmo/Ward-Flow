@@ -51,6 +51,7 @@ import {
   type ChronologyRow,
   type ChronologySource,
 } from "./patient-chronology";
+import { calendarDateOf } from "@/components/ward-management/ward-clock";
 import { reportDay, reportMoment } from "./report-parts";
 import phone from "./patient-chronology-phone.module.css";
 import styles from "./reports.module.css";
@@ -105,7 +106,10 @@ function dayGroups(rows: readonly ChronologyRow[], dayZero: Date) {
     // Ops-18 (13 Oct 2026): keyed by the board-clock day it is labelled with, never the device's
     // time zone, so one Perth day is one group on any device and the server and browser agree.
     const label = at === null ? "No time recorded" : reportDay(at, dayZero);
-    const key = at === null ? "none" : label;
+    // Grouped by the full Perth calendar date: the label carries no year, so two rows a year apart
+    // on the same weekday, day and month must not share a heading.
+    const key =
+      at === null ? "none" : calendarDateOf(at, dayZero).toLocaleDateString("en-CA", { timeZone: "Australia/Perth" });
     const last = groups[groups.length - 1];
     if (last && last.key === key) last.rows.push(row);
     else groups.push({ key, label, rows: [row] });

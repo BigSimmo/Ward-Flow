@@ -243,6 +243,9 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     ).toHaveCount(0, { timeout: 15_000 });
     // The board settles its layout just after it first paints, which can drop a click made in
     // that moment; choose the tile until the board shows it chosen.
+    // While the page streams in, the board can briefly exist twice (the streamed copy and the
+    // swapped-in one); wait for the stream to settle on one before the strict lookup.
+    await expect(page.getByTestId("ward-board")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-board")).toBeVisible({ timeout: 15_000 });
     const tile = page.locator(`#ward-board-tile-${release.admissionId}`);
     await expect(async () => {

@@ -95,6 +95,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", () => ({
   // Screens read the ticking clock separately from the world snapshot; the mock world carries
   // `now` on the same object `useWardFlow` returns, so the clock hook reads it from there.
   useWardFlowClock: () => (world.current as { now: number } | null)?.now ?? 0,
+  useWardClock: () => (world.current as { now: number } | null)?.now ?? 0,
   WardFlowContext: createContext(null),
 }));
 
