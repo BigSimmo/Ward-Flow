@@ -1988,6 +1988,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function handleConfirmBedsAndMorningRollup() {
     if (!unit) return;
     const parsed = Number(capacityValue);
+    if (capacityValue.trim() === "" || !Number.isInteger(parsed) || parsed < 0 || parsed > unit.beds) {
+      setToastMessage(`Enter a whole number from 0 to ${unit.beds} beds.`);
+      return;
+    }
+    if (capacityRevision !== (unit.allocatable.revision ?? 0)) {
+      setToastMessage("Capacity has changed. Refresh the current bed count before confirming.");
+      return;
+    }
     if (Number.isFinite(parsed) && parsed >= 0) {
       dispatch({
         type: "CONFIRM_CAPACITY",
@@ -3274,7 +3282,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   onRecordLeft={(admissionId, who) => {
                     handleDrawerRecordLeft(admissionId, who);
                   }}
-                  onUpdateBlocker={(admissionId, blocker) => {
+                  onUpdateBlocker={routeRole === "ward" ? (admissionId, blocker) => {
                     const pendingRelease = pendingBedReleases.find((r) => r.admissionId === admissionId);
                     if (blocker === null) {
                       if (pendingRelease && pendingRelease.blocker !== null) {
@@ -3306,7 +3314,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                         unitId,
                         actingUnitId: unitId,
                         admissionId,
-                        waitingOn: "Nothing outstanding",
+                        waitingOn: "Not recorded",
                         expectedAt: now,
                         blocker: blocker as BedReleaseBlocker,
                       });
