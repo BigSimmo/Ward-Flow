@@ -761,7 +761,7 @@
 .body button,
 .body select {
   border-radius: var(--wf-r-sm);
-  min-height: 2.75rem;
+  min-height: 3rem;
 }
 
 @media (max-width: 48rem), (pointer: coarse) {
@@ -923,14 +923,14 @@
 /* Touch targets: 44px minimum on touch devices and desktop */
 .allocationButtonTouch,
 .shortlistOverrideButton {
-  min-height: 2.75rem;
+  min-height: 3rem;
   touch-action: manipulation;
 }
 
 @media (pointer: coarse) {
   .allocationButtonTouch,
   .shortlistOverrideButton {
-    min-height: 2.75rem;
+    min-height: 3rem;
   }
 }
 
