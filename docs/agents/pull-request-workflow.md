@@ -170,13 +170,12 @@ Bundle only when every item being combined is:
 Bundling saves PR/CI-invocation count, not verification rigor — every bundled item still gets the smallest correct gate run against it before joining the PR.
 
 <!-- END:pull-request-workflow -->
-<!-- docs-script-refs:historical-end -->
 
-## Ledger PRs: keep them off the snapshot, and what the governance gate really catches
+## Ledger PRs: keep them off the snapshot, and what the governance gate really catches (Historical PsychSift record)
 
-The outstanding-issues inbox/ledger/snapshot workflow this section documented was retired on the
+The outstanding-issues inbox/ledger/snapshot workflow, `.github/pull_request_template.md`, and `scripts/pr-policy.mjs` documented below were retired on the
 Ward Flow line on 26 September 2026 at Josh's request; the PsychSift version remains on
-`origin/main`.
+that repository's `origin/main` (see Prototype Operating Mode §1 in [`AGENTS.md`](../../AGENTS.md)).
 
 **When a PR genuinely is clinical-risk, the checklist is matched literally.**
 `governanceItemSatisfied` compares with exact string equality
@@ -198,3 +197,5 @@ node -e "import('./scripts/pr-policy.mjs').then(m=>{
 Expect `ok: true` with empty `errors` before pushing. Note separately that marking a PR ready for
 review escalates CI to the full heavy set — build and all browser shards — even for a diff with no
 executable file in it, and that it buys no CodeRabbit review (see the correction above).
+
+<!-- docs-script-refs:historical-end -->

@@ -1,8 +1,12 @@
 # Ward Flow design system v8
 
+> [!NOTE]
+> **SUPERSEDED — Historical Revision**
+> This earlier design-system revision (v8 / v8.1 / v8.2) is retained for provenance only and has been superseded by [`design/v9/design-system-v9.md`](../v9/design-system-v9.md) and the current rendered application on `main` (see [`AGENTS.md`](../../AGENTS.md), owner rulings of 2 & 5 October 2026).
+
 Synthetic prototype, not a medical device. v8 builds on v7.1 (`../v7/`, kept unchanged for provenance). The values live only in [`ward-flow-v8.css`](ward-flow-v8.css). [`ward-flow-design-system-v8.html`](ward-flow-design-system-v8.html) is the live board, drawn by that same sheet, with Review, Foundations, Controls, Ward page and Patterns tabs, day and night, desktop and phone.
 
-**Status.** This is the standard, not the build. Nothing in `src/` changes until Josh says build. When he does, the sheet is ported into `src/components/wf` CSS Modules and React components, per the 5 October React direction in `AGENTS.md`. The board is the reference drawing, not a second UI.
+**Status.** Superseded by [`design/v9/design-system-v9.md`](../v9/design-system-v9.md) (10 October 2026). Kept unchanged in `design/v8/` for historical provenance; current shared primitives and tokens live in `src/components/wf/` and `src/app/ward-flow-v9-tokens.css` per the 5 October 2026 React direction in `AGENTS.md`.
 
 **v8.1 (9 October 2026).** Josh found the system was making pages boring and alike. Thirteen of the sixteen rules only took things away, and every audit scored compliance, so pages lost their colour, focus and character. v8.1 adds rules 17 to 21 and amends rules 3, 6 and 16 so that each page can have a focal element, spend a small colour budget and carry a part of its own. Section 14 explains each change. Josh chose this on 9 October after an expression test of the Ward page drawn both ways.
 

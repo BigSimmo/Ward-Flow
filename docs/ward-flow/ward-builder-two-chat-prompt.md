@@ -1,5 +1,11 @@
 # Ward Builder Two — the prompt to start the chat with
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 > SUPERSEDED on 2026-09-28 by [`docs/ward-flow/HOW-WE-WORK.md`](HOW-WE-WORK.md) and repository [`AGENTS.md`](../../AGENTS.md). Historical prompt for former Database worktree setup; do not follow.
 
 Open a new Claude Code chat **in `D:/Worktrees/Database/ward-builder-two`** and paste everything
@@ -73,3 +79,5 @@ that makes another chat's work wrong, and before you would need to touch a path 
 message to ask whether somebody is finished — read `now.md` or the git log.
 
 Start by reading your assignment and `now.md`, adding your row to `now.md`, then beginning half one.
+
+<!-- docs-script-refs:historical-end -->

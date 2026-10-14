@@ -3,7 +3,7 @@
 **Document Version:** 1.0.0  
 **Status:** DRAFT / PROTOTYPE GOVERNANCE BASELINE  
 **Policy Alignment:** WA Aboriginal Health and Wellbeing Framework 2015–2030; NSQHS Standards (Aboriginal & Torres Strait Islander User Guide)  
-**Authority Reference:** Owner Ruling R2-6 (*Aboriginal cultural safety review deferred by the owner; remains a mandatory gate before real-patient clinical use; closed to further builder questioning*)
+**Authority Reference:** Owner Ruling R2-6 (_Aboriginal cultural safety review deferred by the owner; remains a mandatory gate before real-patient clinical use; closed to further builder questioning_)
 
 ---
 
@@ -20,8 +20,8 @@ Within mental health bed flow and involuntary patient coordination, historical a
 To prevent harm during engineering and design demonstration:
 
 1. **Non-Stigmatising Synthetic Cohorts:** Synthetic patient records representing Aboriginal patients must never embody harmful deficit narratives, exaggerated stereotypes, or clichéd presentations. Clinical details must reflect authentic, diverse healthcare presentations.
-2. **Name & Identity Collision Prevention:** All synthetic surnames and family names are actively screened against known Perth and regional community registries to ensure zero collision with living individuals or recently deceased persons.
-3. **Catchment Honesty:** Patient residential catchments and regional kinship boundaries must respect Western Australian geography under the S2015 tables without inventing fictitious tribal associations.
+2. **Name & Identity Collision Prevention:** Synthetic patient names in `src/lib/ward-flow/ward-patients-seed.ts` (`src/components/ward-management/ward-patients-seed.ts`) use a curated static list of uncommon synthetic surnames and are checked by unit tests against a banned list of common Western Australian surnames and real-patient identifier patterns (`UM1xxxxx` synthetic range only).
+3. **Catchment Honesty:** Patient residential catchments and regional kinship boundaries must respect Western Australian geography under the WA Health Aboriginal Identification Policy / Standard S2015 tables without inventing fictitious tribal associations.
 
 ---
 
@@ -44,9 +44,10 @@ When handling patient placements in live clinical practice (future phase):
 > However, **this review remains an absolute, non-bypassable pre-condition before Ward Flow can ever be introduced to a clinical environment.**
 
 ### Required Community Stakeholders for Final Sign-Off:
+
 1. **Derbarl Yerrigan Health Service** (Metropolitan Perth consultation).
 2. **WA Country Health Service (WACHS) Aboriginal Health Strategy Directorate** (Regional patient flow & repatriation).
 3. **Aboriginal Health Council of Western Australia (AHCWA)** (Statewide peak body review).
 4. **Independent Aboriginal Lived Experience Advisory Panel** (Consumer rights & cultural dignity).
 
-Signed approvals from designated cultural representatives must be filed in `docs/ward-flow/governance/approvals/cultural-safety/` prior to production release.
+Signed approvals from designated cultural representatives must be filed at `docs/ward-flow/governance/approvals/aboriginal-cultural-safety-signed.json` prior to any real-patient production release. Under Prototype Operating Mode (`AGENTS.md`, 3 October 2026), JSON sign-off files are non-blocking reference records for the synthetic prototype.

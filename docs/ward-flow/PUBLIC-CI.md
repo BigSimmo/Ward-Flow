@@ -12,9 +12,12 @@ PR skips a job only when its changes cannot affect it (see [Scope by change](#sc
 
 | Job                                | Runners | What it runs                                                                                                                                                                                             | Typical time |
 | ---------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `Ward Flow main reuse check`       | 1       | On `main` pushes (`reuse` job): checks via `scripts/ward-ci-public/main-reuse.mjs` whether the exact tree already passed unit shards, browser journeys, coverage, and build on its merged PR head.       | seconds      |
 | `Ward Flow static checks`          | 1       | CI contracts, document links, screen record, dependency review, changed-file checks, the PR's related tests, backend tests, reference data, legal wording, and one type check of source and route types. | 1 to 2 min   |
+| `Ward Flow secret scan`            | 1       | Full-history `gitleaks` scan (`secret-scan` job) using a pinned, checksum-verified binary and `.gitleaksignore`.                                                                                         | under 1 min  |
 | `Ward Flow unit shard 1` to `8`    | 8       | The reconciled offline unit population, split into eight disjoint, cost-balanced shards (`WARD_GATE_SHARD=i/8`). Together they run every file once.                                                      | 2 to 3 min   |
 | `Ward Flow browser journeys 1`–`3` | 3       | The Ward browser journeys, split into three duration-balanced groups of spec files (`WARD_JOURNEY_GROUP=i/3`), each on its own server and runner.                                                        | about 3 min  |
+| `Ward Flow production build`       | 1       | Full production Next.js webpack build (`build` job, Node `24.19.0` matching Railway) without `WARD_GATE_BUILD`, verifying full build and type checks.                                                    | 2 to 3 min   |
 | `Ward Flow coverage`               | 1       | Merges the eight unit shards' coverage blob reports and applies the `vitest.config.mts` thresholds to the whole suite. Starts when the shards finish.                                                    | about 1 min  |
 | `Ward Flow required`               | 1       | Passes only when every job succeeds (see [Main pushes](#main-pushes) for the one reuse case). This is the check the default-branch ruleset requires.                                                     | seconds      |
 
@@ -87,8 +90,7 @@ about ten seconds:
 
 - **Prettier** on each changed file. Older unformatted files elsewhere never block an unrelated PR.
 - **ESLint, errors only**, on changed source and script files. Warnings are reported locally, not gated.
-- **Test-deletion guard** (`scripts/check-diff-integrity.mjs`): fails when a PR removes or guts tests
-  without an approved entry in `diff-integrity.json`.
+- **Test-deletion guard** (`scripts/check-diff-integrity.mjs`): fails on truncation artefacts and unreadable before-state; test-count floor reductions without an entry in `diff-integrity.json` are advisory by default (Prototype Operating Mode §3) and hard-fail when `DIFF_INTEGRITY_STRICT=1` is set.
 
 Run it locally with `node scripts/ward-ci-public/changed-checks.mjs --base origin/main`.
 

@@ -1,5 +1,11 @@
 # PsychSift design system — Hazard 1–2 fix guide
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](../ward-flow/README.md), [`docs/ward-flow/STATUS.md`](../ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 Single appendix for the closed Hazard 1–2 sweep. **Rules and roles stay in SPEC / TOKENS /
 GATES; this file only records dispositions.** A Documented row is not a licence to change
 product UI, `globals.css`, or `ckb-v2-tokens.css`.
@@ -93,3 +99,5 @@ capture · `npm run ensure` unless a visual defect is proven.
 - Mockup `--text-soft` still blocks alias deletion.
 - Mockup `min-h-11` must stay mockup-only.
 - AnswerCard visual baselines: future captures must include `frame="bare"` (live `answer-result-surface`) and `frame="raised"` (default/preview). No committed screenshots this sweep.
+
+<!-- docs-script-refs:historical-end -->

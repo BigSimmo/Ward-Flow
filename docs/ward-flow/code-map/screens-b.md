@@ -69,11 +69,7 @@ repo-wide guards.
   inline in that one function rather than split into sub-components.
 - **`src/components/ward-management/board/board.module.css`** (4847 lines) — styles for both
   `ward-board.tsx` and `ward-daily-sheet.tsx`.
-- **`src/components/ward-management/board/ward-bed-board.tsx`** (2 lines) — `export * from
-"./ward-board"` plus `WardBoard` re-exported as `WardBedBoard` and as the default export. ⚠️
-  **UNREACHABLE.** `docs/ward-flow/SCREEN-MAP.md`'s generated check lists it under "a screen
-  component nothing imports"; the live route (`board/[unitId]/page.tsx`) imports `WardBoard`
-  directly from `ward-board.tsx`, never through this shim.
+- **`src/components/ward-management/board/ward-bed-board.tsx`** (removed) — former 2-line re-export shim (`WardBedBoard`); deleted during the October 2026 cleanup pass. The live route (`board/[unitId]/page.tsx`) imports `WardBoard` directly from `src/components/ward-management/board/ward-board.tsx`.
 - **`src/components/ward-management/board/ward-daily-sheet.tsx`** (603 lines) — the printable daily
   sheet embedded in the board (who came in, who is going, who is 1:1). Exports
   `dailySheetGroups`, `asAtStamp`, and the `WardDailySheet` component.
@@ -702,9 +698,9 @@ from the separate `ward/` folder — the two are easy to conflate by name), plus
 2. **The `/governance` route does not render the file in `governance/`.** It renders `GovernanceView`
    /`GovernanceWorkbench` from `ward-management-modes.tsx` / `governance-registers` instead. A
    search for "governance" that stops at the folder name will edit the wrong file.
-3. **`board/ward-bed-board.tsx` is a two-line re-export shim that nothing imports.** The live route
-   (`board/[unitId]/page.tsx`) imports `WardBoard` from `ward-board.tsx` directly. Confirmed on the
-   generated unreachable list, not just inferred from the small file size.
+3. **`board/ward-bed-board.tsx` was a two-line re-export shim that nothing imported and has been
+   removed.** The live route (`board/[unitId]/page.tsx`) imports `WardBoard` from `ward-board.tsx`
+   directly.
 4. **`wards/ward-overview.module.css` has no companion component and no importer anywhere in
    `src/`.** It is the only fully orphaned CSS module found in this pass — worth checking before
    assuming every `.module.css` here is load-bearing.

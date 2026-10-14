@@ -1,5 +1,11 @@
 # Ward Flow Phase 8 — decisions taken during the autonomous session
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../AGENTS.md), [`docs/ward-flow/README.md`](ward-flow/README.md), [`docs/ward-flow/STATUS.md`](ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../design/v9/design-system-v9.md). Active owner rulings are maintained in [`docs/ward-flow/decisions.md`](ward-flow/decisions.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **Written 2026-08-28**, while the product owner was away and had authorised decisions to be made on
 his behalf, "grounded in the current repository". This file records what was decided, by whom, on
 what grounds, and what it costs to reverse. It is the companion to
@@ -360,3 +366,5 @@ Reversal is cheap in code and expensive in judgement, and the second is the reas
 - **What is NOT recoverable by reverting.** The tests that pinned the referral-side behaviour were
   deleted with their subject rather than weakened (thirteen assertions, each verified at review as
   having a genuinely absent subject). A reversal re-authors them; it does not restore them.
+
+<!-- docs-script-refs:historical-end -->

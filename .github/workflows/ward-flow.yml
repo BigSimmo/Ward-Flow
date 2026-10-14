@@ -213,7 +213,7 @@ jobs:
         if: ${{ !cancelled() && steps.plan.outputs.unit == 'true' }}
         run: npm ci --ignore-scripts
       # Each shard also records V8 coverage for its own files into a Vitest blob report. The coverage
-      # job merges the five blobs and applies the vitest.config.mts thresholds to the whole suite, so
+      # job merges the eight unit coverage blobs and applies the vitest.config.mts thresholds to the whole suite, so
       # the unit suite runs once instead of a second time in a single coverage job.
       - name: Run reconciled unit suite shard
         id: shard
@@ -391,7 +391,7 @@ jobs:
     # Enforces the vitest.config.mts coverage thresholds over the whole unit suite. On 4 October 2026
     # a local run met them (all files 61.59% statements, 62.64% branches, 67.14% functions, 62.62%
     # lines, plus the scoped core thresholds). The unit shards record coverage for their own files;
-    # this job merges all five blob reports and judges the merged result against the same thresholds
+    # this job merges all eight unit coverage blobs and judges the merged result against the same thresholds
     # (this job never sets the shard coverage directory, so the config keeps them). A missing shard blob
     # fails the job rather than quietly lowering the percentage.
     name: Ward Flow coverage

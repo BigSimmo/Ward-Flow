@@ -1,5 +1,11 @@
 # Design-token drift measurement — 2026-09-02
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](../ward-flow/README.md), [`docs/ward-flow/STATUS.md`](../ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 Two drifts away from the shared design-token contract had never been counted. This is the first
 measurement of both, done by seven parallel read-only audits (six splitting `src/components` by
 subdirectory to classify every inline `style={{ }}`, one auditing the 16 registered-but-unimported
@@ -218,3 +224,5 @@ beyond "did the literal, obvious count grow." Recommended next hardening, in the
 order: extend the detector to variable-typed `style=` props (or accept the miss and rely on a real
 ESLint no-restricted-syntax rule instead of a line-grep), and generate `registeredComponentCount`
 by walking `src/components/ui/**` exports rather than trusting a hand-maintained registry list.
+
+<!-- docs-script-refs:historical-end -->

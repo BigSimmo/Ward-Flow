@@ -1,5 +1,11 @@
 # Ward Flow — test baseline, 25 September 2026
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 The known starting point for the ward tests. Every later change can be measured against this:
 after a change, **any failing file not listed below is a new break.** Nothing was fixed in this run.
 
@@ -162,3 +168,5 @@ One check of the file-organisation tool fails with a bare `STACK_TRACE_ERROR`. N
 Run `npm run check:ward-expected-reds` from a clean checkout of the ward line. It runs the same 648
 files but prints only the failing file names, not the per-test counts above. Record any new
 measurement in [`STATUS.md`](STATUS.md) with the commit it ran on.
+
+<!-- docs-script-refs:historical-end -->

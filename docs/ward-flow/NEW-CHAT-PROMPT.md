@@ -1,5 +1,11 @@
 # Starting a new AI chat on Ward Flow
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 > **Historical archive — do not copy any prompt below.** These prompts name the old
 > `D:\Worktrees\Database\ward-lead` checkout and prohibit GitHub use. Both directions are obsolete
 > for the current `BigSimmo/Ward-Flow` project. Start a new task from this repository's
@@ -219,3 +225,5 @@ Confirm the remote is `BigSimmo/Ward-Flow` and the branch is based on its `main`
 
 Start by summarizing your understanding of the current system state, confirming you have reviewed `docs/ward-flow/handovers/WARD-FLOW-HANDOVER-2026-09-14.md` and `docs/ward-flow/PROJECT-ISSUES.md`, and outlining your proposed plan for ISSUE-P0-01. Do not touch code until we align.
 ```
+
+<!-- docs-script-refs:historical-end -->

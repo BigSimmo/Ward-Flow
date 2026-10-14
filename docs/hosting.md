@@ -10,11 +10,9 @@ Owner-approved setup record, 27 September 2026. Clarified 2 October 2026.
 
 - Host the synthetic prototype on Railway in its own **Ward Flow** project.
 - Connect only `BigSimmo/Ward-Flow`, branch `main`.
-- Do not connect Ward Flow to Supabase or reuse PsychSift's database, services or credentials.
-- Azure is the owner's chosen backend platform. No Azure backend was created by this hosting task;
-  later work is described in [the backend guide](../backend/ward-flow/README.md). The guide does not establish
-  current provider state or UI integration.
-- The current browser-local state is not a shared database. There is no production identity or access-control system for real patients; use invented data only.
+- **Ward Flow must never connect to PsychSift's Supabase or Railway resources**, database, services or credentials.
+- For Ward Flow's optional shared prototype workspace (`backend/ward-flow/` and `/api/ward-flow/shared/*`), it uses either its **dedicated Ward Flow synthetic-only Supabase project (`zakzoemeedfepxcstsou`)** or its **dedicated Ward Flow Azure Functions / PostgreSQL backend**, operating exclusively on 100% synthetic data. No shared backend was created by this initial Railway hosting task; the backend presets are described in [the backend guide](../backend/ward-flow/README.md) and [Supabase/Azure presets](../backend/ward-flow/SETUP-SUPABASE.md). Those guides do not establish current hosted provider state.
+- The default browser-local state is not a shared database. There is no production identity or access-control system for real patients; use invented data only.
 - Historical local-only and PsychSift hosting instructions in the imported documents describe the original source checkout. They do not authorise deploying this repository into PsychSift.
 
 ## Railway target
@@ -67,4 +65,4 @@ regression passing. Broad gates were not repeated after this final fix at the ow
 
 The record reports hosted compilation and TypeScript checks passed during setup on 27 September 2026. This historical evidence does not verify the current head, behaviour suite, browser journeys or clinical governance.
 
-Dependency audit, 4 October 2026: `npm audit --omit=dev` reports 0 vulnerabilities in both the root package and `backend/`. The earlier high-severity advisory for transitive `sharp` is resolved: `sharp` is pinned through an override at 0.35.4. One development-only advisory remains in the full tree, `braces` (GHSA-vfj7-8cjw-p6xm, via `micromatch`); its fix needs a semver-major dependency change and is deferred. This is a local audit result, not a hosted or production-readiness verdict.
+Dependency audit, 4 October 2026: `npm audit --omit=dev` reports 0 vulnerabilities in both the root package and `backend/`. The earlier high-severity advisory for transitive `sharp` is resolved: `sharp` is pinned through an override at 0.35.5. One development-only advisory remains in the full tree, `braces` (GHSA-vfj7-8cjw-p6xm, via `micromatch`); its fix needs a semver-major dependency change and is deferred. This is a local audit result, not a hosted or production-readiness verdict.

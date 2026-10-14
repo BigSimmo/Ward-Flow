@@ -29,20 +29,21 @@ health service. It is a prototype.
 
 ## 2. Finding your way: the side rail
 
-The rail on the left has four groups:
+The rail on the left (`shell-18` in `src/components/ward-management/ward-rail-entries.ts`) has four groups:
 
-- **Operations:** Command, Movement, Capacity, Delays, Network.
-- **Service Hubs:** Search Hub, ED Hub, Ward Hub, Community Hub, Transport Hub.
-- **Care Coordination:** Patients, Make Referrals, Referral Board, Handover, Discharges.
-- **Oversight:** Governance, Statistics, Legal, Out of area, Alerts, On-call.
+- **Now:** `Coordinator`, `Capacity`, `Waiting`.
+- **Where:** `EDs`, `Wards`, `Community`, `Out of Area`.
+- **Work:** `Referrals`, `In Transit`, `Discharges`, `Handover`.
+- **Oversight:** `Officer`, `Statistics`, `Governance`, `Legal Forms`, `Settings`.
 
 Two numbers on the rail are worth knowing:
 
-- **The Delays badge** reads "N at a time limit or with nowhere to go". It counts only the most
+- **The Waiting / Delays badge** reads "N at a time limit or with nowhere to go". It counts only the most
   serious delays: a recorded form time that has passed or is running out, and a patient with no
-  suitable bed anywhere. The Delays screen's own "Attention" tab counts more, so the two numbers can
-  differ. That is expected.
+  suitable bed anywhere.
 - **Occupancy** for each site and service. _(not yet checked on screen)_
+
+In the top bar, the simulation status chip reads **Demo** (never `'Live'`), with controls labelled **"Pause demo updates"** and **"Resume demo updates"** (per PR #258).
 
 ---
 
@@ -68,8 +69,7 @@ The app records one of four legal statuses, in these words:
 - "Detained awaiting examination"
 - "Involuntary inpatient"
 
-The app does not name forms by number, quote the Act's sections, or work out when an order ends. If a
-form's due time has been typed in, it shows that time with "Not legally checked".
+Operational screens display the clinician-recorded form number and paper expiry (`src/lib/form-register.ts`) with the notice "Not legally checked", while statutory periods are demonstrated in the isolated `/mockups/ward-flow/legal-forms` reference view (`D-29`). Main operational screens never auto-calculate statutory deadlines.
 
 The app will not let you discharge a patient recorded as involuntary or detained awaiting examination
 until their legal status is changed. _(not yet checked on screen)_
@@ -88,8 +88,7 @@ A movement goes through these stages, in the app's words:
 6. "Moving"
 7. "Arrived"
 
-Wherever a movement is linked to a patient record, the screen shows the patient's name with their
-code, for example "Name (WF-…)". A movement with no linked record shows its code alone.
+Wherever a movement is linked to a patient record, screens display the patient's name with their synthetic `UM1xxxxx` UMRN—for example `"Name (UM100001)"` per `D-39`—whereas `WF-…` is the internal journey/movement ID and is never shown as a patient identifier on screen.
 
 ### Referrals
 
@@ -154,10 +153,10 @@ An out-of-service bed says its reason is not recorded.
 Every transfer in progress, by stage. Open one to see the whole movement, with the patient's name at
 the top.
 
-### Delays
+### Waiting / Delays
 
-What is holding patients up. The tabs are "Escalations", "Attention" and "Resolved today". Waits over
-24 hours are grouped as "Over 24 hours" in a neutral colour: 24 hours describes the wait, not a limit. _(not yet checked on screen)_ The causes, in the
+What is holding patients up (`D-41`). Rather than separate Delays tabs, the screen presents a **unified Waiting table** with filter chips (such as escalations, attention items, and waits over 24 hours) and a **right-hand detail rail** for inspecting and acting on the selected patient's delay. Waits over
+24 hours are grouped as "Over 24 hours" in a neutral colour: 24 hours describes the wait, not a limit. The causes, in the
 app's words:
 
 - "Form due time already passed"
@@ -175,8 +174,7 @@ app's words:
 All wards lists each ward with its security label, taken from how its beds are set: "All open",
 "All locked" or "N locked, M open". Forensic wards read "Forensic Secure".
 
-On a ward's bed board, each bed shows as "Occupied", "Held", "Ready", "Out of service" or
-"Empty, waiting". The side panel names the patient in the bed. Beds on leave are linked to the
+On a ward's bed board, each bed uses the `R-B-05` 4-state partition: **`Ready`**, **`Pulled`**, **`Closed`**, or **`Occupied`**. The side panel names the patient in the bed. Beds on leave are linked to the
 patient's stay. If the app refuses a board action, the message says why and that nothing was
 changed; it never claims success. _(not yet checked on screen)_
 
@@ -210,8 +208,7 @@ word "breach".
 Settings also lets you change the two warnings before a recorded legal due time: "First warning
 before a legal due time" (1 hour by default) and "Second warning before a legal due time" (3 hours
 by default). Each is labelled "Your default, not a legal limit." They only change when a typed due
-time is shown as due soon; the app still works out no legal time itself. _(not yet checked on
-screen)_
+time is shown as due soon; operational screens still display only the clinician-recorded form number and paper expiry (`form-register.ts`), while statutory periods are demonstrated solely in `/mockups/ward-flow/legal-forms` (`D-29`).
 
 ---
 
@@ -231,10 +228,10 @@ This follows Josh's ruling that only typed text locks saving.
 ## 9. Words the app uses
 
 - **Not recorded:** nobody has entered this. The app does not guess.
-- **Not legally checked:** a time someone typed, not checked against the Act. Do not rely on it.
-- **Held:** a bed kept for a named, accepted patient.
-- **Ready:** a bed the ward has confirmed is clean and staffed for an admission.
-- **Out of service:** a bed that cannot be filled.
-- **Pulled bed:** a bed taken for one accepted patient, from pull until arrival or release.
+- **Not legally checked:** a time someone typed from the paper form (`form-register.ts`), not checked against the Act. Statutory period reference tables live only on `/mockups/ward-flow/legal-forms` (`D-29`).
+- **Ready (`R-B-05`):** a bed the ward has confirmed is clean and staffed for an admission.
+- **Pulled (`R-B-05`):** a bed taken and held for one named, accepted patient, from pull until arrival or release.
+- **Closed (`R-B-05`):** a bed that is out of service / closed and cannot be allocated.
+- **Occupied (`R-B-05`):** a bed with an admitted inpatient currently in it.
 
 ---

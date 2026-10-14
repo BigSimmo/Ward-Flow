@@ -75,7 +75,7 @@ Back to [the code map index](README.md).
 
 ## `coordinator/` — 9 files, 9,518 lines
 
-- **Route:** `/` (`src/app/mockups/ward-flow/page.tsx` imports `CoordinatorScreen`).
+- **Routes:** `/` (`src/app/mockups/ward-flow/page.tsx` imports `CoordinatorScreen`) and `/command` (`src/app/mockups/ward-flow/command/page.tsx` redirects to `/mockups/ward-flow`).
 - **Mockup:** `command-third-edition.html` (SCREEN-MAP.md row for `coordinator/`).
 - **Reducer events dispatched:** `CANCEL_TRANSPORT`, `CHANGE_LEGAL_STATUS`, `CHANGE_URGENCY`,
   `RECORD_ESCALATION`, `REFER_TO_UNITS`, `RELEASE_PULL`, `WITHDRAW_WARD_REQUEST` (7 types, 9
@@ -137,7 +137,7 @@ derivation; it is not a newly recorded bed assignment. `ward-ed-polished.dom.tes
 selection and draft isolation. The historical file totals and outline below retain their dated
 baseline.
 
-- **Route:** `/ed/[edId]` (`src/app/mockups/ward-flow/ed/[edId]/page.tsx` imports `EdScreen`).
+- **Routes:** `/ed` (`src/app/mockups/ward-flow/ed/page.tsx` imports `EdIndex` from `ed-index.tsx`) and `/ed/[edId]` (`src/app/mockups/ward-flow/ed/[edId]/page.tsx` imports `EdScreen`).
 - **Mockup:** `emergency-department-third-edition.html` (SCREEN-MAP.md row for `ed/`).
 - **Reducer events dispatched:** `BOOK_TRANSPORT`, `CHANGE_LEGAL_STATUS`, `CHANGE_URGENCY`,
   `CORRECT_LEGAL_FORM_RECEIPT`, `DECLINE_REFERRAL`, `HANDOVER_READY`, `RAISE_REFERRAL`,
@@ -160,6 +160,7 @@ baseline.
 
 ### Files
 
+- **`ed-index.tsx`** — `EdIndex`, the `/ed` index route component listing emergency departments across the network.
 - **`ed-home-derivations.ts`** (248 lines) — pure ED-summary functions: `isDetainedUnderTheAct`,
   `elapsedOpenMinutes`, `edOpenSummaries`, `edHomeSummaries`, `edHomeTotals`, `worstEdSummary`,
   `groupByHealthService`, `ofPopulation`. **Not itself unreachable** — `coordinator/pressure-strip.tsx`
@@ -509,19 +510,24 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   (`ward-chrome-search.tsx`, `ward-global-search.tsx`, `ward-nav.ts`) — reaches across patients,
   movements, wards, EDs and community teams in one pass; not used by `/search` itself.
 
-## `statistics/` — 36 files, 23,701 lines
+## `statistics/` — 40 files (12 routes)
 
 - **Routes:** `/statistics` (`statistics-screen.tsx`), `/statistics/overview`
   (`statistics-overview-screen.tsx`), `/statistics/compare` (`statistics-compare-screen.tsx`),
-  `/statistics/ward/[unitId]` (`statistics-ward-screen.tsx`), `/statistics/ed/[edId]`
-  (`statistics-ed-screen.tsx`), `/statistics/service/[serviceId]` (`statistics-service-screen.tsx`),
-  `/statistics/community/[teamId]` (`statistics-community-screen.tsx`) — 7 routes into one folder,
-  the most of any screen folder.
+  `/statistics/wards` (`statistics-wards-index.tsx`), `/statistics/ward/[unitId]`
+  (`statistics-ward-screen.tsx`), `/statistics/eds` (`statistics-eds-index.tsx`),
+  `/statistics/ed/[edId]` (`statistics-ed-screen.tsx`), `/statistics/services`
+  (`statistics-services-index.tsx`), `/statistics/service/[serviceId]`
+  (`statistics-service-screen.tsx`), `/statistics/teams` (`statistics-teams-index.tsx`),
+  `/statistics/community/[teamId]` (`statistics-community-screen.tsx`), plus `/statistics/weekly`
+  (rendered by `reports/weekly-report-screen.tsx`) — **12 routes** under `/statistics`, the most of
+  any route prefix.
 - **Mockups:** `statistics-third-edition.html` (`/statistics`),
   `statistics-overview-third-edition.html`, `statistics-compare-third-edition.html`,
   `statistics-ward-third-edition.html`, `statistics-emergency-department-third-edition.html`,
   `statistics-service-third-edition.html`, `statistics-community-third-edition.html` — one drawing
-  per route, all present (SCREEN-MAP.md).
+  per core statistics route (SCREEN-MAP.md), plus the four entity index routes (`/statistics/wards`,
+  `/statistics/eds`, `/statistics/teams`, `/statistics/services`) and `/statistics/weekly`.
 - **Reducer events dispatched:** none — statistics is entirely read-only (0 `dispatch(` sites; no
   screen in this folder writes state).
 - **Main derivations/selectors read:** `ward-derivations.ts`, `ward-admissions.ts`,
@@ -588,6 +594,8 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   `CoordinatorAccessDisclaimer`. The two sentences every statistics page states before anything
   else: figures are invented, and the coordinator-only framing is an intention, not an access
   control.
+- **`statistics-eds-index.tsx`** — `StatisticsEdsIndex`, the `/statistics/eds` index route component
+  linking to each emergency department's statistics view.
 - **`statistics-ed-screen.tsx`** (1,806 lines) — `StatisticsEdScreen`, the `/statistics/ed/[edId]`
   route component. Module helpers: `waitDotColor` (40), `makeSplinePath` (106) for the inline SVG
   wait-time chart.
@@ -624,12 +632,16 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   constant, `StatisticsSectionId`/`StatisticsSection` types, `STATISTICS_SECTIONS`,
   `statisticsSectionById`. Its header states this exists so the section list is written down
   exactly once, read by the hub, each section's own header and the tests that check they agree.
+- **`statistics-services-index.tsx`** — `StatisticsServicesIndex`, the `/statistics/services` index
+  route component linking to each health service's statistics view.
 - **`statistics-service-screen.module.css`** (157 lines) — styles specific to
   `statistics-service-screen.tsx`.
 - **`statistics-service-screen.tsx`** (1,199 lines) — `StatisticsServiceScreen`, the
   `/statistics/service/[serviceId]` route component.
 - **`statistics-service-third-edition.module.css`** (509 lines) — page-specific styles for the
   service statistics screen.
+- **`statistics-teams-index.tsx`** — `StatisticsTeamsIndex`, the `/statistics/teams` index route
+  component linking to each community team's statistics view.
 - **`statistics-third-edition.module.css`** (733 lines) — shared third-edition styles used by both
   `statistics-compare-screen.tsx` and `statistics-overview-screen.tsx`.
 - **`statistics-v4.module.css`** (904 lines) — a fourth styling layer, imported only by
@@ -647,6 +659,8 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   header states the drawing's implied total (received = accepted + declined + still-open) is wrong
   for two reasons, only one of which is the prototype's no-history limit — so this file deliberately
   reports three figures with **no** total.
+- **`statistics-wards-index.tsx`** — `StatisticsWardsIndex`, the `/statistics/wards` index route
+  component linking to each inpatient unit's statistics view.
 - **`statistics-ward-screen.tsx`** (2,504 lines) — `StatisticsWardScreen`, the
   `/statistics/ward/[unitId]` route component and the folder's second-largest file. One helper,
   `getCatmullRomSpline` (19), builds the spline paths for several inline SVG charts: a length-of-
@@ -657,6 +671,18 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 - **`statistics.module.css`** (911 lines) — the base statistics stylesheet, imported by
   `statistics-demonstration-chart.tsx`, `statistics-ed-screen.tsx`, `statistics-primitives.tsx` and
   `statistics-screen.tsx`.
+
+## `reports/` — 3 screen components
+
+- **Routes:** `/reports/chronology` (`patient-chronology-screen.tsx`), `/reports/downtime`
+  (`downtime-pack-screen.tsx`), and `/statistics/weekly` (`weekly-report-screen.tsx`).
+- **Files:**
+  - **`patient-chronology-screen.tsx`** — `PatientChronologyScreen`, the `/reports/chronology`
+    route component rendering the printable patient chronology and movement timeline.
+  - **`downtime-pack-screen.tsx`** — `DowntimePackScreen`, the `/reports/downtime` route component
+    rendering the printable offline/downtime operational pack.
+  - **`weekly-report-screen.tsx`** — `WeeklyReportScreen`, the `/statistics/weekly` route component
+    rendering the weekly executive and operational summary report.
 
 ---
 

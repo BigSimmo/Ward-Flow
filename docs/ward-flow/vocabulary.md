@@ -1,5 +1,16 @@
 # Ward Flow vocabulary — every fixed list in the model
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+>
+> **Reconciliation with active rulings (`D-39` and `R-B-05`):**
+>
+> - **Patient identifiers (`D-39` in [`decisions.md`](decisions.md)):** User-facing screens display synthetic WA Health UMRNs (`[A-Z]\d{7}` formatted via `formatUmrnDisplay`) rather than raw internal `WF-…` referral IDs, which remain internal engine/audit keys.
+> - **Bed states (`R-B-05` in [`RULES.md`](RULES.md) and [`decisions.md`](decisions.md) `D-03`):** The live engine uses 4 operational bed states (`ready`, `being_made_ready`, `pulled`, `occupied`) plus closed beds styled with `--wf-data-closed` in [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **Measured at `8caab9d3d`.** Every list below is read from the code, not recalled. Written for the
 owner on 2026-09-01, before changing the bed-readiness rule, because he asked to see the vocabulary
 before any of it moved.
@@ -119,3 +130,5 @@ the CNS — that is an operational control, not a modelled one.
 - **Transport providers** 🏷️ — Ambulance service, Patient transport service, Ward escort.
 - **Follow-up** ⚙️ — `arranged`, `not_arranged`. **There is deliberately no "not recorded"** — that is
   `null` on the field, because "nobody asserted anything" is not a fact anyone establishes.
+
+<!-- docs-script-refs:historical-end -->

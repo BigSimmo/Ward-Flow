@@ -1,70 +1,51 @@
 # Ward Flow — status
 
-**Source baseline audited 8 October 2026:** dedicated `BigSimmo/Ward-Flow` main
-`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` (PR #121). Main has moved on since (checked
-13 October 2026 at `30b1803`, PR #264), including the v10 design system, phone layouts and the
-13 October honesty pass (PR #258). This page
-describes the audited baseline and the local remediation programme; it is not a statement about
-later commits or the hosted site. A later local change,
-publication and deployment each require separate evidence.
+**Current baseline (14 October 2026):** dedicated `BigSimmo/Ward-Flow` `main` (incorporating the v10 design system, phone layouts, the 13 October honesty pass in PR #258, PR #264 at `30b1803`, and the 14 October documentation and contract alignment pass). Earlier audit baselines (`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` on 8 October 2026 and `0bbcd341d08ad1b2e0c67a77a9cab84367e03769` across PRs #121–#131) and their local verification receipts (`3d01bf9` at 936 files / 10,881 tests, and `8682118` across 325 regression tests, production build, and 12 Chromium journey checks) are preserved in the [8 October remediation receipt](reports/remediation-2026-10-08.md) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78). Local checks, hosted CI, and deployment each require separate evidence.
 
 Synthetic data only. Do not enter real patient information. Ward Flow is not
 approved for clinical deployment.
-
-**Remediation integration update:** canonical main was freshly fetched and verified at
-`0bbcd341d08ad1b2e0c67a77a9cab84367e03769` (including PRs #131 and #130). Its intervening eight PRs
-are preserved in local branch `codex/audit-remediation-20261008`. Five original
-phone-layout findings were already fixed by that newer main. Local domain,
-workflow, snapshot and documentation corrections are recorded in the dated
-[remediation receipt](reports/remediation-2026-10-08.md). Main and local verification
-have separate evidence; the earlier CI result below does not verify the later tree.
-
-**Completed local verification:** the remediation source at `3d01bf9` passed
-936 files / 10,881 tests (9 files / 146 tests skipped), whole-source lint and type
-checking. After preserving the newer main, candidate `8682118` passed all 325
-tests in 29 affected/regression files, whole-source lint, an all-route production
-build with its normal full type check, and 12 selected Chromium browser checks,
-including the complete referral-to-discharge journey. Ten additional bounded
-Settings checks passed. These are local synthetic results; no full-suite rerun,
-hosted CI, shared-user operation or clinical approval is claimed for `8682118`.
 
 ## Current state
 
 The Next.js application is an interactive browser prototype with a shared in-tab
 reducer, synthetic records, scoped role simulation, local scenario import/export,
-and extensive unit/browser checks. Different users do not share an authoritative
-board. The separate Azure Functions backend stores owner-private demonstration
-snapshots; it is not connected to the screens and is not a service-scoped clinical
-backend. A PostgreSQL schema proposal does not establish a deployed database.
+and extensive unit/browser checks. It runs standalone in-browser by default and
+includes an opt-in shared workspace integration (`/api/ward-flow/shared/state`,
+`/api/ward-flow/shared/events`, `use-ward-supabase-shared.ts`, `ward-shared-client.ts`,
+and Web Push notifications in `WardFlowProvider`) backed by Ward Flow's dedicated
+synthetic Supabase project (`zakzoemeedfepxcstsou`) or the separate Azure Functions /
+PostgreSQL demonstration backend (`backend/ward-flow/`). Neither backend is approved
+for real patient data or clinical deployment.
 
-The audit's clean exact-lock run passed **916 test files and 10,688 tests**, with
-**9 files / 146 tests skipped**. The separate backend mock suite passed 24 tests.
-Latest main CI passed, using successful identical-tree PR #121 application checks.
-These dated results are a baseline, not a pass for untested remediation changes.
-Local desktop/phone inspection covered 46 routes and identified supported defects,
-including arrival/held-bed integrity, misleading community actions and phone
-overflow. An all-green baseline does not mean every workflow is complete.
+The 8 October clean exact-lock baseline passed **916 test files and 10,688 tests**
+(9 files / 146 tests skipped, plus 24 backend mock tests; expanded to 936 files /
+10,881 tests during remediation). The estate now spans **52 total routes** (**50
+Next.js page routes under `/mockups/ward-flow/*`**, including **12 Statistics routes**,
+plus `/mockups/ward-flow-sign-in` and the `/mockups/ward-flow-digest` route handler,
+with `/` and `/ward-flow` entry points redirecting to `/mockups/ward-flow`). Note that
+`"v10 sections 8 to 14"` in `src/components/wf/v10-parts.tsx` implements Sections 8–14
+of [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
 
-The audit verified the named Ward Railway frontend deployment against this main
-SHA. It did not verify Azure's current host configuration, storage recovery,
+The 8 October audit verified the named Ward Railway frontend deployment against that
+baseline SHA. It did not verify Azure's current host configuration, storage recovery,
 Sentry setup or approved patient-data processing. Provider health is separate
 from end-to-end application verification.
 
 ## What is built
 
-**Screens** (routes under `src/app/mockups/ward-flow/`; engine and components under
-`src/components/ward-management/`):
+**Screens** (**50 page routes** under `src/app/mockups/ward-flow/`, plus `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest` = **52 total routes**; engine and components under
+`src/components/ward-management/` and `src/components/wf/`):
 
-| Area                   | Screens                                                                                                                                                        |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Coordinator day        | Home and master hub, coordinator Command horizon ("Since you last looked"), queue, referrals, movements, transport, delays runway, discharges                  |
-| Beds and wards         | Bed board (with stranded prompts), ward view, wards directory, capacity (with bed-meeting sheet and tomorrow's forecast), network view, shortlist, out-of-area |
-| Pressure and safety    | ED pressure strip, individual ED psychiatry hub, alerts centre, escalation, exceptions, governance                                                             |
-| People and directories | Patient search (Floating Glass Command Horizon), unified Patient Now flight deck, people, community directory, on-call directory                               |
-| Records and reports    | Handover (Command Horizon flight deck and print), legal forms (with MHA expiry reminders), statistics dashboards and charts (with CSV export)                  |
-| Other                  | Settings, compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner, showcase                               |
+| Area                   | Screens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Coordinator day        | Home and master hub (`/` and `/command`), coordinator Command horizon ("Since you last looked"), queue, referrals (`/referrals`, `/referrals/new`), movements (`/movements`, `/movements/[movementId]`), transport (`/transport`, `/transport/officer`), delays runway, discharges                                                                                                                                                                                                                                                   |
+| Beds and wards         | Bed board (`/board/[unitId]` with stranded prompts), ward view (`/ward/[unitId]`, `/ward/[unitId]/answer`), wards directory (`/wards`), capacity (with bed-meeting sheet and tomorrow's forecast), network view (`/network`, `/constellation`), shortlist, out-of-area                                                                                                                                                                                                                                                               |
+| Pressure and safety    | ED psychiatry directory (`/ed`), individual ED psychiatry hub (`/ed/[edId]`), alerts centre (`/alerts`), escalation (`/escalation`), exceptions (`/exceptions`), governance (`/governance`)                                                                                                                                                                                                                                                                                                                                          |
+| People and directories | Patient search (`/search` Floating Glass Command Horizon), unified Patient Now flight deck (`/people/[patientId]`), add patient (`/people/new`), community directory (`/community`, `/community/[teamId]`), on-call directory (`/on-call`)                                                                                                                                                                                                                                                                                           |
+| Records and reports    | Handover (`/handover` Command Horizon flight deck and print), legal forms (`/legal-forms` with MHA expiry reminders), patient chronology (`/reports/chronology`), downtime pack (`/reports/downtime`), **12 Statistics routes** (`/statistics`, `/statistics/overview`, `/statistics/compare`, `/statistics/weekly`, `/statistics/wards`, `/statistics/ward/[unitId]`, `/statistics/eds`, `/statistics/ed/[edId]`, `/statistics/teams`, `/statistics/community/[teamId]`, `/statistics/services`, `/statistics/service/[serviceId]`) |
+| Other                  | Settings (`/settings`), sign-in (`/mockups/ward-flow-sign-in`), digest (`/mockups/ward-flow-digest`), compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner, showcase (`/sovereign`)                                                                                                                                                                                                                                                                                          |
 
-**Dated work summary (27 September to 6 October; not a fresh verification claim):**
+**Dated work summary (27 September to 14 October; not a fresh verification claim):**
 
 - **Patient flight deck & search (#66, #69):** Unified Patient Now flight deck consolidating patient dossier and transit operations into a 3-column brief with live journey tracking (`usePatientNow`, #69); Direction 3 Floating Glass Command Horizon for patient search console (#66); perfected referral detail inspector with a 4-column demographic strip, live ready badge, and clear placement rationale (#66).
 - **Handover Command Horizon & print (#42, #72):** 3-tier flight deck and shift switcher, rapid snapshot sections, KPI tiles (caseload, vacancies, form expiries, 1:1s), and verified table sheet (#42, #72); dedicated print stylesheet with `CanvasText` and D7 landmark compliance (#72); restored legal notice HUD tag (#42).
@@ -76,24 +57,19 @@ from end-to-end application verification.
 - **Universal prototype banner & estate anchoring (#46, #65, #66):** Universal curved synthetic prototype banner anchored at the bottom of every page across the estate (#46, #65, #66); symmetrical search hub headers, resolved search hub spacing, and 48px touch targets at 375px (#66).
 - **Referrals self-withdrawal & MHA reminders (#49, #52):** Referring ED or community teams can self-withdraw their own referrals before allocation (#49); synthetic MHA statutory reminders warning of approaching form expiry before typed authorizations lapse (#52).
 - **Coordinator Command Horizon (#53):** "Since you last looked" delta stream on the coordinator Command screen highlighting movements since last check (#53).
-- **Screen polish across the estate (#12, #15, #16, #17, #19, #24–#29, #33, #41, #57, #62, #71, #74):** Design refinements across all main screens, community directory (#24), out-of-area (#25), on-call (#26, #29), alerts (#27), individual ED psychiatry screen (#71), and all seven Statistics dashboards (#33, #74); All Wards directory styling without census box highlight (#62); ward screen action bar, tabs, telemetry ribbon, beds matrix, shift coordinator log, and `WardBedDossierDrawer` (#57, #67); elimination of the 1-second ward layout remount on load (#41).
+- **Screen polish & v10 primitives across the estate (#12, #15, #16, #17, #19, #24–#29, #33, #41, #57, #62, #71, #74, PRs #258–#264):** Design refinements across all main screens, community directory (#24), out-of-area (#25), on-call (#26, #29), alerts (#27), individual ED psychiatry screen (#71), and all **12 Statistics routes** (7 detail/overview dashboards plus 4 directory indexes and weekly report, #33, #74); All Wards directory styling without census box highlight (#62); ward screen action bar, tabs, telemetry ribbon, beds matrix, shift coordinator log, and `WardBedDossierDrawer` (#57, #67); shared v10 primitive library in `src/components/wf/` (`v10-parts.tsx` implementing Sections 8–14 of `design/v9/design-system-v9.md`, plus `v10-pass2.tsx` and `v10-pass4.tsx`); elimination of the 1-second ward layout remount on load (#41).
 - **Safety, persistence and scenarios (#2, #20, #22, #32, #34, #35, #41, #50):** Patient safety and statutory capacity fixes (#2); legal wording and simulation fixes (#20); WA ward disposition and care-journey wiring (#22); unsaved clinical text guard (#32, #34); session adoption action replay and day restart synchronization (#41); demo scenario save and load to local files from the demo menu (#50); spreadsheet formula neutralizing in CSV exports (#35).
 - **Accessibility (#8, #27, #34, #66, #68, #70):** Keyboard, tablet and phone ergonomics (#8), keyboard navigation in alerts (#27), dialog and drawer focus trapping (#34, #70), 48px touch targets on mobile viewports (#66).
 - **Checks, CI & operations (#1, #3, #9–#11, #13, #14, #23, #30, #31, #36, #37, #40, #44, #51, #59, #60, #63, #75–#78):** Automated GitHub CI on push to `main` with Gitleaks secret scanning and production build verification (#37); whole-tree ESLint fixes and PR enforcement (#40, #77); unit test shard balancing by measured CI runtime (#44, #78); coverage recording across shards with identical PR verdict reuse on `main` (#75); Playwright Chromium caching and Next.js build cache from `main` (#76, #77); Railway healthcheck diagnostics, cloud agent Node 24 setup, and recovery documentation (#7, #59, #60, #63); archival of 53 historical docs to `docs/archive/` (#51); removal of PsychSift leftovers (#36, #40).
-- **Backend (not connected to the screens):** a synthetic Azure session service (#5) and a cloud
-  scenario vault with a synthetic-data guard (#32). See [the backend guide](../../backend/ward-flow/README.md).
+- **Shared workspace & backend integration:** opt-in shared workspace sync (`/api/ward-flow/shared/state`, `/api/ward-flow/shared/events`, `use-ward-supabase-shared.ts`, `ward-shared-client.ts`, and Web Push notifications in `WardFlowProvider`) backed by Ward Flow's dedicated synthetic Supabase project (`zakzoemeedfepxcstsou`), alongside the synthetic Azure session service (#5) and cloud scenario vault with a synthetic-data guard (#32) in `backend/ward-flow/`. See [the backend guide](../../backend/ward-flow/README.md).
 - **Rules:** owner-approved prototype operating mode recorded in `AGENTS.md` on 3 October (#32).
 
 ## Remaining work and local remediation
 
-The [remediation checkpoint](reports/remediation-2026-10-08.md) records actual fixes
-and checks against the audit's stable task IDs. Confirmed source defects are being
-fixed locally; publication, deployment and hosted validation remain separate.
+The [remediation checkpoint](reports/remediation-2026-10-08.md) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78) record actual fixes
+and checks against stable task IDs. Confirmed source defects are fixed locally; publication, deployment and hosted validation remain separate.
 
-- **Shared synthetic operation:** configured staff sign-in, trusted service/role
-  membership, authoritative shared commands, cross-user synchronisation and
-  authenticated action history still require implementation and agreed boundaries.
-  Existing snapshot CAS prevents blind overwrite, but does not supply those features.
+- **Shared synthetic operation hardening:** while opt-in shared state/event sync (`use-ward-supabase-shared.ts`, `/api/ward-flow/shared/*`) is wired for synthetic demonstration, production-grade staff sign-in, trusted service/role membership, and multi-site clinical governance boundaries remain outside prototype scope.
 - **Persistence privacy:** D-18 intentionally stops browser session persistence
   after a typed-text event. Saving a JSON scenario is an explicit file action;
   it is not automatic shared persistence. Do not restore typed drafts to browser

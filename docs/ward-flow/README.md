@@ -1,6 +1,6 @@
 # Ward Flow — start here
 
-**This is the only entry point.** Any other file that says "start here" is historical and carries a
+**This is the Ward Flow product and design entry point** (alongside [`AGENTS.md`](../../AGENTS.md) as the repository-level instruction root). Any other Ward Flow document that says "start here" is historical and carries a
 banner pointing back to this one. Updated 28 September 2026 for the dedicated repository.
 
 ## What Ward Flow is
@@ -155,7 +155,7 @@ Existing generated-document checks and relevant behaviour tests remain separate 
 ## The four documents
 
 1. [`../task-receipts.md`](../task-receipts.md) — current task identity, acceptance evidence and handoff; [`STATUS.md`](STATUS.md) gives the current summary, then historical context.
-2. [`HOW-WE-WORK.md`](HOW-WE-WORK.md) — how any AI builder picks up, builds, tests, commits and hands back work.
+2. [`HOW-WE-WORK.md`](HOW-WE-WORK.md) — detailed operational handbook for how any AI builder picks up, builds, tests, commits and hands back work (governed by [`AGENTS.md`](../../AGENTS.md)).
 3. [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) — **the ledger**: every Ward Flow task and its state.
 4. [`OWNER-RULINGS.md`](OWNER-RULINGS.md) — generated index of the owner's rulings. Open the source file before relying on one.
 

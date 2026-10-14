@@ -16,7 +16,7 @@ they differ, they win.
 - **New events** go in `EVENT_ROLE` (`ward-flow-events.ts`) and `tests/ward-event-permissions.test.ts`.
 - **Privacy wording.** Never say something is not stored, private or anonymised unless a test proves
   it. No patient names or typed text in URLs, logs, screenshots, commit messages or memory.
-- **Design tokens only, no hex.** Tap targets 48px via `var(--ward-tap)` or `var(--spacing-tap, 3rem)`.
+- **Design tokens only, no hex.** V9/v10 screens and the shared [`src/components/wf/`](../wf/) kit use `--wf-*` tokens from [`src/app/ward-flow-v9-tokens.css`](../../app/ward-flow-v9-tokens.css) (`--wf-row-default: 44px`, `--wf-row-touch: 52px`, `--wf-target: 28px`, per [`design/v9/design-system-v9.md`](../../../design/v9/design-system-v9.md)); legacy `--ward-*` surfaces (`src/app/ward-flow-v6-tokens.css`) use `var(--ward-tap)` / `var(--spacing-tap, 3rem)` (48px).
   Preserve the current accepted app's appearance. Historical accent and typography prescriptions
   do not authorise restyling it. Keep status understandable and controls accessible.
 - **Design comes from the latest accepted Ward Flow app**, not the drawings in

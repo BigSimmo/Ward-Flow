@@ -1341,7 +1341,7 @@ before checking.** **It measured the LABEL and was about to conclude about the C
 ## 👑 AUTHORITATIVE WARD FLOW MASTER LEDGER — RECONCILED 2026-09-13
 
 **Evidence Cut-off:** 13 September 2026, 22:11 AWST  
-**Master Sources:** [`C:\\Users\\joshs\\OneDrive\\Ward_Flow_Master_2026-09-13.md`](file:///C:/Users/joshs/OneDrive/Ward_Flow_Master_2026-09-13.md) (Version 1.0, 65 pages), [`Ward_Flow_Master_Tracker.xlsx`](file:///C:/Users/joshs/OneDrive/Ward_Flow_Master_Tracker.xlsx), and live worktree `codex/task-ward-flow-live-state-20260831` at commit `1ef9ed3975078b789e9b5d70b3f000c64edc3809`.
+**Master Sources:** `C:\Users\joshs\OneDrive\Ward_Flow_Master_2026-09-13.md` (Version 1.0, 65 pages), `C:\Users\joshs\OneDrive\Ward_Flow_Master_Tracker.xlsx` (`Ward_Flow_Master_Tracker.xlsx`), and live worktree `codex/task-ward-flow-live-state-20260831` at commit `1ef9ed3975078b789e9b5d70b3f000c64edc3809`.
 
 ### VERIFICATION SUMMARY AT A GLANCE
 
@@ -7808,7 +7808,7 @@ All active background subagents have been cleanly stopped (`kill_all`) to preven
 
 ---
 
-## §7.69 · Estate-Wide Review & Hardening of Alert Behaviours Across Ward Flow and System Surfaces
+## §7.69b · Estate-Wide Review & Hardening of Alert Behaviours Across Ward Flow and System Surfaces
 
 **Audit & Alignment Completed: 25 September 2026**
 
@@ -7850,7 +7850,7 @@ Comprehensive review and verification of alerts throughout the project to ensure
 
 ---
 
-## §7.70 · Full-Estate 41-Route and Interactive Component Audit Closeout
+## §7.70b · Full-Estate 41-Route and Interactive Component Audit Closeout
 
 **Audit & Alignment Completed: 25 September 2026**
 
@@ -8104,7 +8104,7 @@ evidence is under `.local/drawers/live/` in `/workspace/Ward-Flow-live`.
 
 ---
 
-## §7.70 · WF-BANNER-20261005 — Universal Curved Synthetic Prototype Banner & Symmetrical Master Search Hub (PR #65, PR #66)
+## §7.70c · WF-BANNER-20261005 — Universal Curved Synthetic Prototype Banner & Symmetrical Master Search Hub (PR #65, PR #66)
 
 Completed implementation and estate-wide integration of the universal curved prototype banner, symmetrical master search hub, and associated screen polish. PR #65 (`2683a5f`) unified the bottom prototype banner across all 40+ estate screens; PR #66 (`5f6c8e1`, task branch `feat/curved-synthetic-prototype-banner` based on verified main `9da4193` / `2683a5f`) deployed the curved banner styling, symmetrical search hub header, Direction 3 Floating Glass Command Horizon, live Discharges board overhaul, Ward Bed Dossier drawer extraction, and Referral Detail inspector.
 
@@ -8731,7 +8731,7 @@ The active open backlog categorized by complexity and risk:
 - **TASK-L1-10 (M-STATUS / M-HOSTING)**: Reconcile stale commits, deployment claims, and test counts in `docs/ward-flow/STATUS.md` and `docs/hosting.md`.
 - **TASK-L1-11 (M-CODEMAP)**: Refresh `code-map/shell-and-shared.md` to index all 50 mockup page entry points (currently documents 42).
 - **TASK-L1-12 (M-TOKENS)**: Consolidate duplicate local `.btnPrimary` definitions across five CSS modules into shared design tokens.
-- **TASK-L1-13 (M-DEAD)**: Remove retired `ward-chrome-header.tsx`, `governance-screen.tsx`, and unused Postgres fixtures (requires owner approval gate).
+- **TASK-L1-13 (M-DEAD)**: Remove retired `ward-chrome-header.tsx`, `governance-screen.tsx`, and unused Postgres fixtures (requires owner approval gate; note that `eventCarriesFreeText()` (`D-18`) is implemented and active in `src/lib/ward-flow/ward-state-context.tsx:91`).
 
 #### Category 2: Remaining Contained Engine & Derivation Fixes (Moderate Risk)
 

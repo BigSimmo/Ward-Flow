@@ -1,5 +1,11 @@
 # Spec — the referral destination type, and the guard widening it requires
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../AGENTS.md), [`docs/ward-flow/README.md`](ward-flow/README.md), [`docs/ward-flow/STATUS.md`](ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 Written 2026-08-30 by 🟣 WARD Referrals. **A specification, not an edit.** `ward-model.ts` and
 `ward-flow-reducer.ts` belong to the untangle session while Task 17 is in flight; this is handed
 over so the widening is done deliberately by whoever compiles against it.
@@ -616,3 +622,5 @@ Per option, at the point of selection:
 
 **And what the referrer is NOT shown: anything that ranks the patient.** Options are ordered by
 facts about beds and services. Nothing on this screen scores a person.
+
+<!-- docs-script-refs:historical-end -->

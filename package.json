@@ -126,7 +126,10 @@
     "format:all": "prettier --write .",
     "check:ward-policy-contracts": "node scripts/ward-ci-public/check-policy-contracts.mjs",
     "check:ward-backend": "npm --prefix backend/ward-flow test",
-    "docs:check-links": "node scripts/check-maintained-doc-links.mjs"
+    "docs:check-links": "node scripts/check-maintained-doc-links.mjs",
+    "docs:maintain": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --write",
+    "docs:maintain:check": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --check",
+    "ward:classify": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify"
   },
   "dependencies": {
     "@azure/msal-browser": "^5.25.0",

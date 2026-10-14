@@ -97,3 +97,76 @@ export const PAIRS = [
 
 /** Superseded drawings — named so they are never treated as current. */
 export const SUPERSEDED = ["patient-search-console.html", "patient-search-working.html"];
+
+/**
+ * Complete 52-route roster mapping every commissioned Ward Flow route (50 under
+ * `/mockups/ward-flow/**` plus `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest`)
+ * to its screen folder and current React component file relative to
+ * `src/components/ward-management/` (`null` for server redirect stubs and the HTML digest route handler).
+ */
+export const ROUTE_COMPONENTS = [
+  { route: "/", folder: "coordinator", react: "coordinator/coordinator-screen.tsx" },
+  { route: "/alerts", folder: "alerts", react: "alerts/alerts-screen.tsx" },
+  { route: "/board/[unitId]", folder: "board", react: "board/ward-board.tsx" },
+  { route: "/capacity", folder: "capacity", react: "capacity/capacity-screen.tsx" },
+  { route: "/command", folder: "coordinator", react: null },
+  { route: "/community", folder: "community", react: "community/community-index.tsx" },
+  { route: "/community/[teamId]", folder: "community", react: "community/community-screen.tsx" },
+  { route: "/constellation", folder: "network", react: null },
+  { route: "/delays", folder: "delays", react: "delays/delays-screen.tsx" },
+  { route: "/discharges", folder: "discharges", react: "discharges/discharge-board.tsx" },
+  { route: "/ed", folder: "ed", react: "ed/ed-index.tsx" },
+  { route: "/ed/[edId]", folder: "ed", react: "ed/ed-screen.tsx" },
+  { route: "/escalation", folder: "delays", react: null },
+  { route: "/exceptions", folder: "delays", react: null },
+  { route: "/governance", folder: "governance", react: "ward-management-modes.tsx" },
+  { route: "/handover", folder: "handover", react: "handover/handover-page.tsx" },
+  { route: "/hub", folder: "hub", react: "hub/hub-screen.tsx" },
+  { route: "/legal-forms", folder: "legal-forms", react: "legal-forms/legal-forms-screen.tsx" },
+  { route: "/movements", folder: "movements", react: "movements/movements-screen.tsx" },
+  { route: "/movements/[movementId]", folder: "patients", react: "patients/patient-now-screen.tsx" },
+  { route: "/network", folder: "network", react: "ward-management-modes.tsx" },
+  { route: "/on-call", folder: "on-call", react: "on-call/on-call-screen.tsx" },
+  { route: "/out-of-area", folder: "out-of-area", react: "out-of-area/out-of-area-board.tsx" },
+  { route: "/people/[patientId]", folder: "patients", react: "patients/patient-now-screen.tsx" },
+  { route: "/people/new", folder: "patients", react: "patients/add-patient.tsx" },
+  { route: "/queue", folder: "delays", react: null },
+  { route: "/referrals", folder: "referrals", react: "referrals/referral-board.tsx" },
+  { route: "/referrals/new", folder: "referrals", react: "referrals/referral-board.tsx" },
+  { route: "/reports/chronology", folder: "reports", react: "reports/patient-chronology-screen.tsx" },
+  { route: "/reports/downtime", folder: "reports", react: "reports/downtime-pack-screen.tsx" },
+  { route: "/search", folder: "search", react: "search/patient-search.tsx" },
+  { route: "/settings", folder: "settings", react: "settings/settings-screen.tsx" },
+  { route: "/sovereign", folder: "sovereign", react: "sovereign/sovereign-showcase-screen.tsx" },
+  { route: "/statistics", folder: "statistics", react: "statistics/statistics-screen.tsx" },
+  {
+    route: "/statistics/community/[teamId]",
+    folder: "statistics",
+    react: "statistics/statistics-community-screen.tsx",
+  },
+  { route: "/statistics/compare", folder: "statistics", react: "statistics/statistics-compare-screen.tsx" },
+  { route: "/statistics/ed/[edId]", folder: "statistics", react: "statistics/statistics-ed-screen.tsx" },
+  { route: "/statistics/eds", folder: "statistics", react: "statistics/statistics-eds-index.tsx" },
+  { route: "/statistics/overview", folder: "statistics", react: "statistics/statistics-overview-screen.tsx" },
+  {
+    route: "/statistics/service/[serviceId]",
+    folder: "statistics",
+    react: "statistics/statistics-service-screen.tsx",
+  },
+  { route: "/statistics/services", folder: "statistics", react: "statistics/statistics-services-index.tsx" },
+  { route: "/statistics/teams", folder: "statistics", react: "statistics/statistics-teams-index.tsx" },
+  { route: "/statistics/ward/[unitId]", folder: "statistics", react: "statistics/statistics-ward-screen.tsx" },
+  { route: "/statistics/wards", folder: "statistics", react: "statistics/statistics-wards-index.tsx" },
+  { route: "/statistics/weekly", folder: "reports", react: "reports/weekly-report-screen.tsx" },
+  { route: "/transport", folder: "movements", react: null },
+  { route: "/transport/officer", folder: "officer", react: "officer/officer-screen.tsx" },
+  { route: "/ward/[unitId]", folder: "ward", react: "ward/ward-screen.tsx" },
+  { route: "/ward/[unitId]/answer", folder: "ward", react: "ward/ward-screen.tsx" },
+  { route: "/wards", folder: "wards", react: "wards/ward-index.tsx" },
+  {
+    route: "/mockups/ward-flow-sign-in",
+    folder: "../ward-flow-sign-in",
+    react: "../ward-flow-sign-in/ward-flow-sign-in-screen.tsx",
+  },
+  { route: "/mockups/ward-flow-digest", folder: null, react: null },
+];

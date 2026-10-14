@@ -552,3 +552,81 @@ is inferred.
 - **Why:** The mockup's narrowing is the approved behaviour. The hazard behind the September ruling
   (a filtered-out patient looking like a placed one) is closed by the stated hidden count, which
   `tests/ward-delays-screen.dom.test.tsx` guards.
+
+## D-42. 12px typography floor with no uppercase exception reaffirmed in Design System v9 (9–10 October 2026)
+
+- **Date:** 9–10 October 2026 (`2026-10-10`). **Decided by:** Josh (`design/v9/design-system-v9.md` §4 & §14, reaffirming O-15.1).
+- **Decision:** The 12px minimum font-size floor holds across all Ward Flow surfaces with no uppercase exception. Five page type steps are used (`20px`, `15px`, `14px`, `13px`, `12px`, plus `28px` for sign-in and print only); `11px` and `16px` steps are retired (`--wf-fs-11` aliases `12px` and `--wf-fs-16` aliases `15px`). This supersedes D-28 item 4's temporary 10px–11px uppercase micro-typography exemption.
+- **Why:** Sub-12px uppercase eyebrows, counts, tier pills and chart ticks failed readability on ward monitors and contradicted ruling O-15.1.
+
+## D-43. Colour lives in glyphs and the hero; red means act now with a thin 1px edge, never a fill (9 October 2026)
+
+- **Date:** 9 October 2026 (`2026-10-09`). **Decided by:** Josh (`design/v9/design-system-v9.md` §1, §3 & §14).
+- **Decision:** Semantic tone lives in status glyphs, the hero band, and a thin `1px` edge (`--wf-act-edge` via `.edge-act`) on act-now items. Red (`--wf-danger`) means "act now" and nothing else. Cards, rows and tiles take no tinted fill (except a free or fit bed, which keeps its soft fit tint), and standalone status words use their `-ink` token partner.
+- **Why:** Full-card tinted washes and competing red badges diluted urgency cues and made normal operational rows look like clinical alarms.
+
+## D-44. Compact sizing, white cards and smaller text retained over expression-test card tints (9 October 2026)
+
+- **Date:** 9 October 2026 (`2026-10-09`). **Decided by:** Josh (`design/v8/design-system-v8.md` v8.2 & `design/v9/design-system-v9.md` §14).
+- **Decision:** After comparing the v8.1 expression test against the earlier Ward page, Ward Flow retains the compact scale, white/surface cards, smaller text (`13px` body, `14px` card titles, `15px` mono figures) and compact hero chips, while retiring v8.1 card tints and 40px hero figures.
+- **Why:** Compact white cards keep high-density clinical lists calm and scannable while preserving the shift timeline and dedicated phone design.
+
+## D-45. Phone is its own 390×844 design, never a desktop reflow (9 October 2026)
+
+- **Date:** 9 October 2026 (`2026-10-09`). **Decided by:** Josh (`design/v9/design-system-v9.md` §7 & §14).
+- **Decision:** Phone (`390×844`, below `--wf-bp-narrow` `48rem`) is a dedicated mobile design—priority list, cards with one action, bottom sheets, a sticky `44px` bottom bar and a segmented control—never a squashed desktop multi-column reflow. Names render at `14px`, meta at `12px`, rows tap as a whole, row actions are at least `36px`, and phone bars use solid surfaces rather than glass blur.
+- **Why:** Clinicians walking the ward on a phone need immediate priority triage and thumb-reachable bottom sheets rather than stacked desktop tables.
+
+## D-46. Every page has a focal part, a part of its own, a page-specific hero and command-bar action rules (9 October 2026)
+
+- **Date:** 9 October 2026 (`2026-10-09`). **Decided by:** Josh (`design/v9/design-system-v9.md` §1, §7, §9 & §14).
+- **Decision:** Every page answers one question in 5 seconds: its focal part sits in the first screen with the most space, its hero title states the answer in five words or fewer (e.g. "Short 26 beds"), and each page carries a signature part of its own (such as the shift timeline on Ward Hub). The page owns its top command-bar action, the hero holds facts and at most one primary action on the left with page-specific actions on the right, and each area has at most one primary button.
+- **Why:** Uniform template pages without a focal component or clear action hierarchy made every screen look identical and hid the primary shift task.
+
+## D-47. Glass stays about 80% opaque with the top sheen kept (10 October 2026)
+
+- **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh ("keep the Apple shine at 80% opacity", `design/v9/design-system-v9.md` §3 & §14).
+- **Decision:** Chrome and overlay glass stays largely opaque at about 80% (`80%` day / `78%` night for `.glass.bar`, `84%` / `82%` for `.glass` popovers and palette, `88%` / `86%` for `.glass.sheet`), keeping the cool day tint (`rgba(244,247,250)`), `1px` bright top edge, top sheen gradient and `saturate(1.4)`. Never use glass on data tables or cards; reduced transparency and unsupported browsers fall back to solid `--wf-raised`.
+- **Why:** Overly transparent glass lost legibility over busy clinical tables by day, whereas 80% opacity with the top sheen preserves depth and 4.6:1+ contrast.
+
+## D-48. Figures stay in Geist Mono with tabular digits while chart axes use Geist Sans (10 October 2026)
+
+- **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh ("keeps the control room feel", `design/v9/design-system-v9.md` §4 & §14).
+- **Decision:** All operational figures—counts, percentages, durations (`.num`), hero chips, stat values, clock times, UMRNs and record IDs—render in `Geist Mono` with `tabular-nums`. Chart axes and tick labels use `Geist Sans` so charts read quietly, while chart data values stay in mono.
+- **Why:** Tabular monospace digits give the bed-coordination board its control-room alignment and scannability without cluttering chart axis labels.
+
+## D-49. Ward Flow 44px default row target (dense 36px, touch 52px) vs retired 48px PsychSift tap knob (10 October 2026)
+
+- **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh (`design/v9/design-system-v9.md` §5 & §14).
+- **Decision:** Ward Flow rows, beds, controls and card heads bind to `data-density` on the shell (`--wf-row`): `44px` default, `36px` `dense` (long lists on large desktop screens), and `52px` `touch` (ward touchscreens and coarse pointers). Desktop pointer targets are at least `28px` (`--wf-target`) and reach `44px` on touch/phone via hit area. The `48px` `--spacing-tap` knob in `docs/design-system/DECISIONS.md` (C2) belongs exclusively to the retired PsychSift design system and does not govern Ward Flow.
+- **Why:** Reconciles the Ward Flow density scale (`36px` / `44px` / `52px`) against legacy PsychSift documentation so agents do not apply PsychSift's 48px tap rule to Ward Flow rows.
+
+## D-50. Neutral T1 urgency pill vs Form 1A amber statutory warning badge (10 October 2026)
+
+- **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh (`design/v9/design-system-v9.md` §10 & §14).
+- **Decision:** The `T1` clinical urgency tier pill (`.tier`, `TierTile`) renders in neutral monospace styling rather than a red or coloured fill, because red is reserved strictly for "act now" glyphs and thin edges. By contrast, Mental Health Act statutory form expiry/assessment badges (such as a `Form 1A` approaching its recorded assessment window) carry the amber warning tone/glyph when due soon, never a red fill on a static tier label.
+- **Why:** Keeps triage tier classification (`T1`–`T3`) visually distinct from time-critical statutory form warnings (`Form 1A`) and "act now" clinical alerts.
+
+## D-51. Delays filters hide rows with a stated hidden count while other queues highlight by default (10 October 2026)
+
+- **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh (`design/v9/design-system-v9.md` §9 & §14, harmonising D-41).
+- **Decision:** Across queues of 100 rows or fewer, filter chips (`HighlightPills`) highlight matching rows by default and dim non-matching rows with `--wf-dim` (`data-dim`, stating `"N of M highlighted, all rows stay"` with `Clear`). By explicit owner exception (D-41), the Delays board filters continue to hide non-matching rows and state the hidden count with `"Show everyone"`.
+- **Why:** Preserves context on standard queues so waiting patients never vanish silently, while honouring the approved Delays board narrowing contract.
+
+## D-52. 10 October page review rulings: time-axis overdue zone, 15px/20px strip figures, 8px people pips and incremental shared parts (10 October 2026)
+
+- **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh (`design/v9/design-system-v9.md` §3, §4, §5, §10 & §14).
+- **Decision:** From the 10 October page review: (1) `--wf-overdue-zone` (danger tone at 6% day / 8% night) tints the overdue region on time axes only, never cards, rows or tiles; (2) queues highlight by default (see D-51); (3) figures in strips and tiles use `15px` mono, with `20px` reserved for titles and at most one focal strip per page; (4) people pips use `8px` glyphs only when accompanied by their numeric figure; and (5) remaining shared parts (`ViewSwitch`, `WardCapacityRow`, `GroupHead`, `NeedsYou`, `KeyHints`, `RecordCard`, `RailSummary`) are built incrementally when each page is next touched.
+- **Why:** Settles the pending page-review questions from the v8/v9 transition so screen migrations have one unambiguous specification.
+
+## D-53. Elevate design language and Glare mode adopted for Design System v9 (10 October 2026)
+
+- **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh ("Go ahead with all your recommendations", `design/v9/design-system-v9.md` §§9–14).
+- **Decision:** The Elevate recommendations are adopted into Design System v9 and implemented in `src/app/ward-flow-v9-tokens.css` and `src/components/wf/v10-parts.tsx`: one action blue (`--wf-accent` `light-dark(#245a8c, #8cbcf0)`), a fixed top-right radial light on the hero, visible day glass, quiet slate (`--wf-data-closed`) with a dashed edge for closed beds (never gold), the Section 12 Elevate parts (`QuietUnits`, `MixedAnswer`, `FadeHairline`, `PressureArc`, `FigureRoll`, `AllClear`, `BedPlan`, `RowSpark`, `DeltaTwins`, `JourneyRibbon`, `SinceYouLooked`, `CommandPalette`, `UndoHairline`), and Glare mode (`data-mode="glare"` via `clinical-kb-glare` for ward PCs near windows).
+- **Why:** Unifies the v9 token layer, Elevate shared components, and bright-ward readability mode into one standard.
+
+## D-54. Tier time thresholds remain synthetic demo values requiring clinical sign-off (10 October 2026)
+
+- **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh (`design/v9/design-system-v9.md` §14).
+- **Decision:** Urgency tier (`T1`–`T3`) time thresholds and target lines in the demonstration prototype remain synthetic placeholder values and require formal clinical governance sign-off before any real-patient or live operational use (consistent with D-4, D-22 and D-36).
+- **Why:** Prevents synthetic demonstration wait thresholds from being mistaken for ratified WA Health clinical policy.
