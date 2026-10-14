@@ -1,3 +1,7 @@
+import { createHash } from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CHECK_INDEX_STEPS,
@@ -101,6 +105,16 @@ describe("ward-docs-maintain-pipeline", () => {
   });
 
   describe("CLI flag parsing and pipeline step definitions", () => {
+    it("requires a directory operand for --root and preserves following options", () => {
+      for (const argv of [["--root"], ["--root", ""], ["--root", "--json"], ["--root", "--write"]]) {
+        expect(() => parseArgs(argv)).toThrow("--root requires a directory");
+      }
+      expect(parseArgs(["--root", "docs", "--json"])).toMatchObject({
+        root: path.resolve("docs"),
+        json: true,
+      });
+    });
+
     it("parses --check, --write, --classify, and --json flags accurately", () => {
       expect(parseArgs([])).toMatchObject({ mode: "check", json: false });
       expect(parseArgs(["--check", "--json"])).toMatchObject({ mode: "check", json: true });
@@ -142,6 +156,44 @@ describe("ward-docs-maintain-pipeline", () => {
       expect(typeof result.ok).toBe("boolean");
       expect(result.updated).toBe(false);
       expect(Array.isArray(result.mismatches)).toBe(true);
+    });
+  });
+
+  describe("manifest write outcomes", () => {
+    it.each(["repairable", "missing", "mixed"])("reports unresolved files for a %s manifest", (scenario) => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "ward-manifest-"));
+      try {
+        const refDir = path.join(root, "docs/ward-flow/reference-data");
+        fs.mkdirSync(refDir, { recursive: true });
+        const raw = Buffer.from("synthetic fixture\n");
+        const files: Record<string, { bytes: number; sha256: string }> = {};
+        if (scenario !== "missing") {
+          fs.writeFileSync(path.join(refDir, "present.txt"), raw);
+          files["present.txt"] = { bytes: 0, sha256: "stale" };
+        }
+        if (scenario !== "repairable") {
+          files["missing.txt"] = { bytes: 0, sha256: "stale" };
+        }
+        const manifestPath = path.join(refDir, "pack_manifest.json");
+        fs.writeFileSync(manifestPath, JSON.stringify({ files }));
+
+        const result = checkOrUpdatePackManifest({ root, write: true });
+        expect(result.ok).toBe(scenario === "repairable");
+        expect(result.updated).toBe(scenario !== "missing");
+        expect(result.mismatches).toHaveLength(scenario === "mixed" ? 2 : 1);
+        if (scenario !== "repairable") {
+          expect(result.mismatches).toContainEqual({ file: "missing.txt", reason: "missing on disk" });
+        }
+        if (scenario !== "missing") {
+          expect(JSON.parse(fs.readFileSync(manifestPath, "utf8")).files["present.txt"]).toEqual({
+            bytes: raw.length,
+            sha256: createHash("sha256").update(raw).digest("hex"),
+          });
+        }
+        expect(checkOrUpdatePackManifest({ root }).ok).toBe(scenario === "repairable");
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+      }
     });
   });
 });

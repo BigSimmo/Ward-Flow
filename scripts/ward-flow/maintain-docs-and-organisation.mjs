@@ -296,7 +296,7 @@ export function checkOrUpdatePackManifest({ root = DEFAULT_ROOT, write = false }
 
   if (write && changed) {
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n", "utf8");
-    return { ok: true, updated: true, mismatches };
+    return { ok: mismatches.every((mismatch) => mismatch.reason === undefined), updated: true, mismatches };
   }
 
   return {
@@ -440,7 +440,10 @@ export function parseArgs(argv = process.argv.slice(2)) {
       }
       mode = requestedMode;
       explicitMode = true;
-    } else if (arg === "--root" && argv[i + 1]) {
+    } else if (arg === "--root") {
+      if (!argv[i + 1] || argv[i + 1].startsWith("--")) {
+        throw new Error("--root requires a directory");
+      }
       root = path.resolve(argv[++i]);
     } else if (arg === "--classify") {
       if (explicitMode && mode !== "classify") {

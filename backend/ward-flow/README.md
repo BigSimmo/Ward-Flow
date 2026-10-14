@@ -39,7 +39,7 @@ The shared synthetic workspace supports independent database (`WARD_DATABASE_PRO
   - `migrations/001-shared-workspace.sql` — `ward_flow` schema, `migrations`, `workspaces`, `commands`, and append-only `audit` tables (`001`–`004` also correspond to `004_ward_flow_shared_workspace.sql` in earlier notes)
   - `migrations/002-workspace-data-mode.sql` — `data_mode` (`prototype` | `live`) column and reclassification-prevention trigger
   - `migrations/003-push-subscriptions.sql` — `push_subscriptions`, `push_baselines`, and `push_deliveries` tables for Web Push alerts
-  - `migrations/004-trigger-search-path.sql` — hardens `search_path = pg_catalog` on `ward_flow` trigger functions (`schema.sql` at the package root is unapplied historical Blob-era scaffolding)
+  - `migrations/004-trigger-search-path.sql` — hardens `search_path = pg_catalog, ward_flow` on `ward_flow` trigger functions (`schema.sql` at the package root is unapplied historical Blob-era scaffolding)
 - **Infrastructure templates (`infra/`):**
   - `infra/azure-settings.example.json`, `infra/database.bicep`, `infra/frontend.env.example`
   - `infra/postgres-settings.example.env`, `infra/postgres-runtime-role.sql`

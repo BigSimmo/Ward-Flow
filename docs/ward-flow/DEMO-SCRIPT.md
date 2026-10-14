@@ -319,7 +319,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 - **Presenter Spoken Dialogue:**
   > "A quick word on session persistence and clinical privacy: when a coordinator performs **structured actions**—such as holding a bed, toggling a bed state, or assigning a structured blocker or step—and refreshes the tab (`F5`), Ward Flow restores that structured state from `sessionStorage`.
   >
-  > Equally important is Owner Ruling **`D-18`** (`eventCarriesFreeText()`): if anyone types into a **free-text note field**, Ward Flow intentionally wipes `sessionStorage` and disables browser persistence for the remainder of that session as a strict privacy safeguard against leaving free-text notes in shared workstation browser storage.
+  > Equally important is Owner Ruling **`D-18`** (`eventCarriesFreeText()`): dispatching **any event that can carry typed free text**, whether the event is accepted or refused, makes Ward Flow intentionally wipe `sessionStorage` and disable browser persistence for the remainder of that session as a strict privacy safeguard against leaving free-text notes in shared workstation browser storage.
   >
   > Now, Callum’s transport vehicle has arrived at Dabakarn. Let us move to the inpatient unit for receiving and handover."
 - **Presenter Action:** Close the movement cockpit and navigate to `/mockups/ward-flow/handover`.

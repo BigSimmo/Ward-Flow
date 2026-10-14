@@ -42,13 +42,13 @@ This task integrates canonical main and locally tested remediation. As of 14 Oct
 `src/components/ward-management/ward-flow-events.ts` and `EVENT_ROLE` define **127**
 `WardFlowEvent` variants (the 97 baseline variants from the 25 September 2026 extraction
 pass catalogued in §2 below, minus the removed `OVERRIDE_LEGAL_MISMATCH`, plus 31 variants
-added across the October passes including `RECORD_ADMISSION_FOLLOW_UP`,
-`RECORD_ADMISSION_CARE`, `UPDATE_EXPECTED_DISCHARGE`, `RECORD_ED_MEDICAL_DETERIORATION`,
+added across the October passes: 18 named variants (`RECORD_ADMISSION_FOLLOW_UP`,
+`RECORD_ADMISSION_CARE`, `RECORD_ED_MEDICAL_DETERIORATION`,
 `RECORD_ABSENT_WITHOUT_LEAVE`, `RECORD_ABSENCE_STEP`, `RECORD_COMMUNITY_TREATMENT_ORDER`,
 `END_COMMUNITY_TREATMENT_ORDER`, `TAKE_INBOX_ITEM_OWNERSHIP`, `SNOOZE_INBOX_ITEM`,
 `UNSNOOZE_INBOX_ITEM`, `RAISE_PULL_NOW`, `REPLY_BROADCAST_ALERT`,
 `BOOK_PLANNED_ADMISSION`, `CHANGE_PLANNED_ADMISSION`, `CANCEL_PLANNED_ADMISSION`,
-`CONVERT_PLANNED_ADMISSION`, `RECORD_SUPPORT_NOTIFICATION`, `PLACE_IN_BED`, and 15
+`CONVERT_PLANNED_ADMISSION`, `RECORD_SUPPORT_NOTIFICATION`, `PLACE_IN_BED`) and 13
 `UNDO_*` events). All events retain role, audit/history, stage and
 persistence classifications. D-34 is an explicit originating-ED, pre-collection action:
 release the held admission, cancel uncollected transport, clear placement acceptance and
@@ -232,7 +232,7 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
 ## 2. Event catalogue
 
 **127 event types on disk as of 14 October 2026; 97 baseline event types catalogued below**
-(`grep -c '^\s*case "[A-Z_]+":' ` on `reduceClinicalEvent`'s switch at the 25 September 2026
+(`grep -Ec '^[[:space:]]*case "[A-Z_]+":'` on `reduceClinicalEvent`'s switch at the 25 September 2026
 baseline, matching `EVENT_ROLE`'s 97 baseline keys — see the 8–14 October header above for the
 31 variants added since and the removal of `OVERRIDE_LEGAL_MISMATCH`). Grouped by domain
 below. Each line: **role list** (from `EVENT_ROLE`), **effect** on success, **main guards**, and

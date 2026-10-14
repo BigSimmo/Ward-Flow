@@ -37,7 +37,7 @@ Record a reviewed effective-privilege report. `infra/verify-reader.sql` provides
 
 Use the exact server hostname, database `wardflow_dev`, verified database login and a trusted CA certificate bundle with hostname verification. On the approved host, acquire the reader's short-lived Entra token at runtime. Do not print, paste, persist or commit it. Do not reuse the administrator's CLI login. Microsoft's token resource is `oss-rdbms`.
 
-For an approved host that already has Azure CLI and `psql`, the following PowerShell example obtains the token into memory, runs only the fixed check file and clears it afterwards. Fill the five non-secret placeholders locally; `APPROVED_SERVER_HOSTNAME` is the `wardflow-dev-aue` flexible server's `.postgres.database.azure.com` name. Use the approved reader's isolated CLI profile; Azure CLI must already be signed in as that identity. An Azure login must not change MFA or Security Defaults.
+For an approved host that already has Azure CLI and `psql`, the PowerShell example after the POSIX example below obtains the token into memory, runs only the fixed check file and clears it afterwards. Fill the five non-secret placeholders locally; `APPROVED_SERVER_HOSTNAME` is the `wardflow-dev-aue` flexible server's `.postgres.database.azure.com` name. Use the approved reader's isolated CLI profile; Azure CLI must already be signed in as that identity. An Azure login must not change MFA or Security Defaults.
 
 Start the dedicated shell from the Ward Flow repository root on the approved host so the repo-root-relative SQL file path resolves directly. For POSIX shells with a pre-populated connection URI:
 
