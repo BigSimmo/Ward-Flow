@@ -445,6 +445,9 @@ export type WardFlowEvent =
        * bed a current stay or another accepted movement on the unit already holds.
        */
       bedNumber?: number;
+      /** B1: a ward answering names itself; refused when it answers for another ward. The
+       *  coordinator acts for any ward and sends none. */
+      actingUnitId?: string;
     }
   | {
       type: "PULL_PATIENT";
@@ -465,6 +468,9 @@ export type WardFlowEvent =
        */
       numConsulted?: true;
       patientId?: PatientId;
+      /** B1: a ward pulling names itself; refused when it pulls for another ward. The
+       *  coordinator acts for any ward and sends none. */
+      actingUnitId?: string;
     }
   | {
       type: "DECLINE";
@@ -474,6 +480,9 @@ export type WardFlowEvent =
       unitId: string;
       /** From `DECLINE_REASONS`, and nothing beside it — see `Decline`'s own doc comment (PD-6). */
       reason: DeclineReason;
+      /** B1: a ward declining names itself; refused when it declines for another ward. The
+       *  coordinator acts for any ward and sends none. */
+      actingUnitId?: string;
     }
   | {
       type: "HANDOVER_READY";
@@ -2917,7 +2926,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
   RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator", "ward", "community"],
   UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
-  RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward", "community"],
+  RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator"],
   RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
   RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
   EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],

@@ -61,6 +61,7 @@ export function pullBlockedReason(movement: Movement, unit: Unit, who?: string):
 interface WardArrivalsCorridorProps {
   unit: Unit;
   accepted: Movement[];
+  heldAfterStop?: Movement[];
   now: Instant;
   resolvePatientIdentity: (movementOrAdmission: Parameters<typeof resolveSubjectPatient>[0]) => ResolvedPatientInfo;
   releaseOpenFor: string | null | undefined;
@@ -82,6 +83,7 @@ interface WardArrivalsCorridorProps {
 export function WardArrivalsCorridor({
   unit,
   accepted,
+  heldAfterStop = [],
   now,
   resolvePatientIdentity,
   releaseOpenFor,
@@ -470,6 +472,40 @@ export function WardArrivalsCorridor({
           })}
         </div>
       )}
+
+      {heldAfterStop.length > 0 ? (
+        <div aria-label="Stopped transports awaiting bed release" style={{ marginTop: "16px" }}>
+          <h3>Transport stopped — release held bed</h3>
+          {heldAfterStop.map((movement) => (
+            <article key={movement.id} className={styles.inboundCard} data-state="warn">
+              <div className={styles.patientMeta}>
+                <strong>{resolvePatientIdentity(movement).displayName}</strong>
+                <p>Transport stopped after collection. The bed remains held until released.</p>
+              </div>
+              <div className={styles.corridorActions}>
+                <button
+                  type="button"
+                  className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
+                  data-testid={`ward-release-stopped-bed-${movement.id}`}
+                  onClick={() => {
+                    priorRejectionCountRef.current = rejections.length;
+                    dispatch({
+                      type: "RELEASE_HELD_BED",
+                      role: "ward",
+                      now,
+                      movementId: movement.id,
+                      actingUnitId: unit.id,
+                    });
+                    setCheckToken((t) => t + 1);
+                  }}
+                >
+                  Release held bed
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
 
       {/* Explains the ruled four bed boxes (`ward-bed-states.ts`), Closed by contrast with the PULL */}
       <div className={styles.explanationNote}>

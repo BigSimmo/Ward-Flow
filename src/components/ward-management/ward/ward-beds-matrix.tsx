@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext, useMemo, useState } from "react";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
@@ -169,6 +169,134 @@ export function bedGlyphTone(bed: BedItem): WfTone | null {
   return bed.status === "leave" ? "neutral" : null;
 }
 
+interface WardBedCardProps {
+  bed: BedItem;
+  isSelected: boolean;
+  onSelect: (bed: BedItem) => void;
+}
+
+function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): boolean {
+  if (prev.isSelected !== next.isSelected) return false;
+  if (prev.onSelect !== next.onSelect) return false;
+  const p = prev.bed;
+  const n = next.bed;
+  return (
+    p.bedNumber === n.bedNumber &&
+    p.bedLabel === n.bedLabel &&
+    p.status === n.status &&
+    p.statusText === n.statusText &&
+    p.patientAlias === n.patientAlias &&
+    p.stayDays === n.stayDays &&
+    p.expectedDays === n.expectedDays &&
+    p.departureExpectedAt === n.departureExpectedAt &&
+    p.isClosed === n.isClosed &&
+    p.isPulled === n.isPulled &&
+    p.pastDate === n.pastDate &&
+    p.admissionId === n.admissionId &&
+    p.awayAtEdHours === n.awayAtEdHours &&
+    p.blockReason === n.blockReason &&
+    p.isSpecialling === n.isSpecialling &&
+    p.isHdu === n.isHdu &&
+    p.age === n.age &&
+    p.sex === n.sex &&
+    p.legalStatusLabel === n.legalStatusLabel &&
+    p.tentativeDiagnosis === n.tentativeDiagnosis &&
+    p.notes === n.notes &&
+    p.isPlannedAdmission === n.isPlannedAdmission &&
+    p.isLeave === n.isLeave
+  );
+}
+
+const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect }: WardBedCardProps) {
+  const stayDaysNum = typeof bed.stayDays === "number" ? bed.stayDays : null;
+  const isPastDate = bed.pastDate === true;
+  const isReady = bed.status === "ready";
+  const isClosed = bed.status === "closed" || bed.isClosed === true;
+  const isPulled = bed.status === "incoming" || bed.isPulled === true;
+  const isAwayAtEd = bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined;
+  const signal = bed.patientAlias || isAwayAtEd ? cardSignal(bed, isPastDate, isAwayAtEd) : null;
+
+  // Color tint band class based on stay duration
+  let bandClass = "";
+  if (stayDaysNum !== null && !isReady) {
+    if (stayDaysNum < 14) bandClass = styles.band1;
+    else if (stayDaysNum < 30) bandClass = styles.band2;
+    else if (stayDaysNum < 90) bandClass = styles.band3;
+    else bandClass = styles.band4;
+  }
+
+  const cardClasses = [
+    styles.bedCard,
+    bandClass,
+    isPastDate ? styles.pastDate : "",
+    isSelected ? styles.selected : "",
+    isReady ? styles.ready : "",
+    isClosed ? styles.closed : "",
+    isPulled ? styles.pulled : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const handleClick = useCallback(() => {
+    onSelect(bed);
+  }, [onSelect, bed]);
+
+  return (
+    <button
+      type="button"
+      className={cardClasses}
+      data-testid={`ward-bed-card-${bed.bedNumber}`}
+      data-admission-id={bed.admissionId}
+      data-state={bed.status as string}
+      onClick={handleClick}
+      aria-label={formatBedAriaLabel(bed)}
+    >
+      <div className={styles.bedTopRow}>
+        {bed.patientAlias && !isPulled ? (
+          <span className={styles.bedPatientName}>{bed.patientAlias}</span>
+        ) : (
+          <span className={styles.bedStatePill}>
+            {isReady ? "Ready" : isClosed ? "Closed" : isPulled ? "Pulled" : bed.statusText}
+          </span>
+        )}
+        {stayDaysNum !== null && !isReady ? <span className={styles.bedDaysVal}>{stayDaysNum}d</span> : null}
+      </div>
+
+      {bed.patientAlias ? (
+        <div className={styles.bedCardBody}>
+          {isPulled ? <div className={styles.bedPatientName}>{bed.patientAlias}</div> : null}
+          {cardMetaLine(bed) ? <div className={styles.bedPatientSub}>{cardMetaLine(bed)}</div> : null}
+        </div>
+      ) : isReady ? (
+        <div className={styles.bedCardBody}>
+          <div className={styles.bedPatientName}>Offered</div>
+          <div className={styles.bedPatientSub}>Ready; cleaning completion not recorded</div>
+        </div>
+      ) : isClosed ? (
+        <div className={styles.bedCardBody}>
+          <div className={styles.bedPatientName}>Not offered</div>
+        </div>
+      ) : isPulled ? (
+        <div className={styles.bedCardBody}>
+          <div className={styles.bedPatientName}>Given away</div>
+        </div>
+      ) : (
+        <div className={styles.bedCardBody}>
+          <div className={styles.bedPatientSub}>{isAwayAtEd ? "Bed held" : "Empty"}</div>
+        </div>
+      )}
+
+      {signal ? (
+        <div className={styles.bedBottomTags}>
+          <span className={isPastDate ? styles.badgePastDate : isAwayAtEd ? styles.badgeAtEd : styles.bedCardChip}>
+            {signal}
+          </span>
+        </div>
+      ) : null}
+    </button>
+  );
+}, areBedCardPropsEqual);
+
 export function WardBedsMatrix({
   unit,
   bedsList,
@@ -250,9 +378,12 @@ export function WardBedsMatrix({
     });
   }, [filteredBeds, sortBy]);
 
-  const handleBedClick = (bed: BedItem) => {
-    setSelectedBed(typeof bed.bedNumber === "number" ? bed.bedNumber : Number(bed.bedNumber) || null);
-  };
+  const handleBedClick = useCallback(
+    (bed: BedItem) => {
+      setSelectedBed(typeof bed.bedNumber === "number" ? bed.bedNumber : Number(bed.bedNumber) || null);
+    },
+    [setSelectedBed],
+  );
 
   // Group beds into Bays (4 beds per bay) for scannable layout and test contract compatibility
   const bays = useMemo(() => {
@@ -596,101 +727,14 @@ export function WardBedsMatrix({
               </div>
             ) : null}
             <div className={styles.bayBedsGrid}>
-              {bay.beds.map((bed) => {
-                const stayDaysNum = typeof bed.stayDays === "number" ? bed.stayDays : null;
-                const isPastDate = bed.pastDate === true;
-                const isSelected = selectedBed === bed.bedNumber;
-                const isReady = bed.status === "ready";
-                const isClosed = bed.status === "closed" || bed.isClosed === true;
-                const isPulled = bed.status === "incoming" || bed.isPulled === true;
-                const isAwayAtEd = bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined;
-                const signal = bed.patientAlias || isAwayAtEd ? cardSignal(bed, isPastDate, isAwayAtEd) : null;
-
-                // Color tint band class based on stay duration
-                let bandClass = "";
-                if (stayDaysNum !== null && !isReady) {
-                  if (stayDaysNum < 14) bandClass = styles.band1;
-                  else if (stayDaysNum < 30) bandClass = styles.band2;
-                  else if (stayDaysNum < 90) bandClass = styles.band3;
-                  else bandClass = styles.band4;
-                }
-
-                const cardClasses = [
-                  styles.bedCard,
-                  bandClass,
-                  isPastDate ? styles.pastDate : "",
-                  isSelected ? styles.selected : "",
-                  isReady ? styles.ready : "",
-                  isClosed ? styles.closed : "",
-                  isPulled ? styles.pulled : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ");
-
-                return (
-                  <button
-                    type="button"
-                    key={bed.bedNumber}
-                    className={cardClasses}
-                    data-testid={`ward-bed-card-${bed.bedNumber}`}
-                    data-admission-id={bed.admissionId}
-                    data-state={bed.status}
-                    onClick={() => {
-                      handleBedClick(bed);
-                    }}
-                    aria-label={formatBedAriaLabel(bed)}
-                  >
-                    <div className={styles.bedTopRow}>
-                      {bed.patientAlias && !isPulled ? (
-                        <span className={styles.bedPatientName}>{bed.patientAlias}</span>
-                      ) : (
-                        <span className={styles.bedStatePill}>
-                          {isReady ? "Ready" : isClosed ? "Closed" : isPulled ? "Pulled" : bed.statusText}
-                        </span>
-                      )}
-                      {stayDaysNum !== null && !isReady ? (
-                        <span className={styles.bedDaysVal}>{stayDaysNum}d</span>
-                      ) : null}
-                    </div>
-
-                    {bed.patientAlias ? (
-                      <div className={styles.bedCardBody}>
-                        {isPulled ? <div className={styles.bedPatientName}>{bed.patientAlias}</div> : null}
-                        {cardMetaLine(bed) ? <div className={styles.bedPatientSub}>{cardMetaLine(bed)}</div> : null}
-                      </div>
-                    ) : isReady ? (
-                      <div className={styles.bedCardBody}>
-                        <div className={styles.bedPatientName}>Offered</div>
-                        <div className={styles.bedPatientSub}>Ready; cleaning completion not recorded</div>
-                      </div>
-                    ) : isClosed ? (
-                      <div className={styles.bedCardBody}>
-                        <div className={styles.bedPatientName}>Not offered</div>
-                      </div>
-                    ) : isPulled ? (
-                      <div className={styles.bedCardBody}>
-                        <div className={styles.bedPatientName}>Given away</div>
-                      </div>
-                    ) : (
-                      <div className={styles.bedCardBody}>
-                        <div className={styles.bedPatientSub}>{isAwayAtEd ? "Bed held" : "Empty"}</div>
-                      </div>
-                    )}
-
-                    {signal ? (
-                      <div className={styles.bedBottomTags}>
-                        <span
-                          className={
-                            isPastDate ? styles.badgePastDate : isAwayAtEd ? styles.badgeAtEd : styles.bedCardChip
-                          }
-                        >
-                          {signal}
-                        </span>
-                      </div>
-                    ) : null}
-                  </button>
-                );
-              })}
+              {bay.beds.map((bed) => (
+                <WardBedCard
+                  key={bed.bedNumber}
+                  bed={bed}
+                  isSelected={selectedBed === bed.bedNumber}
+                  onSelect={handleBedClick}
+                />
+              ))}
             </div>
           </div>
         ))}

@@ -92,8 +92,11 @@ describe("the referral inbox answers as the route's role (B1)", () => {
     pathname = `/mockups/ward-flow/ward/${ELSEWHERE.id}`;
     const inbox = setup("psychiatric_ward");
     const accept = inbox.getByRole("button", { name: "Accept referral" });
-    expect(accept).toBeDisabled();
+    expect(accept).not.toBeDisabled();
+    expect(accept).toHaveAttribute("aria-disabled", "true");
     expect(accept).toHaveAccessibleDescription("Coordinator accepts transfers from another hospital");
+    fireEvent.click(accept);
+    expect(screen.getByTestId("decided")).toHaveTextContent("queued|");
   });
 
   it("lets the ward answer its own referral, recorded as the ward", () => {
@@ -109,7 +112,11 @@ describe("the referral inbox answers as the route's role (B1)", () => {
     expect(inbox.getByRole("button", { name: "Accept referral" })).toHaveAccessibleDescription(
       `${ELSEWHERE.name} or coordinator only`,
     );
-    expect(inbox.getByRole("button", { name: "Waitlist" })).toBeDisabled();
+    const waitlist = inbox.getByRole("button", { name: "Waitlist" });
+    expect(waitlist).not.toBeDisabled();
+    expect(waitlist).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(waitlist);
+    expect(screen.getByTestId("decided")).toHaveTextContent("queued|");
   });
 
   it("lets the coordinator accept a gender placement once it records the reason and the ward check", () => {

@@ -2,7 +2,7 @@
 
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
+import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
@@ -947,6 +947,11 @@ export function CommunityScreen({
     setTransportCancelFor(undefined);
     setCancelTransportReason(undefined);
   }
+
+  const transportBookDialogRef = useRef<HTMLDivElement | null>(null);
+  const transportCancelDialogRef = useRef<HTMLDivElement | null>(null);
+  useWardModalFocus(transportBookFor !== undefined, transportBookDialogRef, closeTransportBook);
+  useWardModalFocus(transportCancelFor !== undefined, transportCancelDialogRef, closeTransportCancel);
 
   function submitBookTransport(movementId: string) {
     const { provider, escortRequired, cadNumber, transportLegalStatus, estimatedTime, estimatedDay } = transportDraft;
@@ -4318,6 +4323,7 @@ export function CommunityScreen({
         {transportBookFor !== undefined ? (
           <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportBook}>
             <div
+              ref={transportBookDialogRef}
               className={styles.modalDialog}
               role="dialog"
               aria-modal="true"
@@ -4515,6 +4521,7 @@ export function CommunityScreen({
         {transportCancelFor !== undefined ? (
           <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportCancel}>
             <div
+              ref={transportCancelDialogRef}
               className={styles.modalDialog}
               role="dialog"
               aria-modal="true"

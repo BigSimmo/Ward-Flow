@@ -1579,7 +1579,7 @@
   color: var(--surface);
 }
 /* A4-32: a disabled primary reads as disabled, not as a live black button. */
-.ctlPrimary:disabled {
+.ctlPrimary:is(:disabled, [aria-disabled="true"]) {
   background: var(--surface-2);
   border-color: var(--line);
   color: var(--muted);

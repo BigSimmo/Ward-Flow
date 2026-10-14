@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { PublicClientApplication, type AccountInfo } from "@azure/msal-browser";
+import type { PublicClientApplication, AccountInfo } from "@azure/msal-browser";
 import { SharedWorkspaceClient, type SharedView } from "./ward-shared-client";
 import {
   PhonePushAccessContext,
@@ -100,6 +100,7 @@ function useWardEntraShared(enabled: boolean): WardSharedConnection {
           !scope.endsWith("/WardFlow.Access")
         )
           throw new Error("Missing shared configuration");
+        const { PublicClientApplication } = await import("@azure/msal-browser");
         const instance = new PublicClientApplication({
           auth: { clientId, authority: `https://login.microsoftonline.com/${tenant}`, redirectUri },
           cache: { cacheLocation: "sessionStorage" },

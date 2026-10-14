@@ -36,7 +36,7 @@ import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import { edHref, unitHref } from "@/components/ward-management/shell/ward-facade";
@@ -93,18 +93,9 @@ function useSafePathname(): string {
  * what that role can do; Open desk (or a double click) navigates to that role's own home.
  */
 export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSwitcherModalProps) {
-  const {
-    movements,
-    units,
-    bedReleases,
-    admissions,
-    leaveBeds,
-    patients,
-    referrals,
-    focusMovementId,
-    configuration,
-    now,
-  } = useWardFlow();
+  const { movements, units, bedReleases, admissions, leaveBeds, patients, referrals, focusMovementId, configuration } =
+    useWardFlow();
+  const now = useWardFlowClock();
   const router = useRouter();
   const pathname = useSafePathname();
   const searchRef = useRef<HTMLInputElement>(null);

@@ -64,13 +64,24 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
 
       expect(nonReadyBeds.length).toBeGreaterThan(0);
       for (const nonReadyBed of nonReadyBeds) {
-        expect(nonReadyBed).toBeDisabled();
+        expect(nonReadyBed).not.toBeDisabled();
+        expect(nonReadyBed).toHaveAttribute("aria-disabled", "true");
+        expect(nonReadyBed).toHaveAttribute("aria-describedby", `ward-answer-bed-reason-${unit.id}`);
       }
+
+      // Clicking a non-ready bed must not open the modal (guarded by ignoreUnavailableActivation)
+      fireEvent.click(nonReadyBeds[0]);
+      expect(screen.queryByRole("dialog", { name: /accept/i })).not.toBeInTheDocument();
 
       // Clicking a vacant bed with an active incoming referral triggers accept in principle modal
       const firstReady = readyBeds[0];
       fireEvent.click(firstReady);
       expect(screen.getByRole("dialog", { name: /accept/i })).toBeInTheDocument();
+
+      // Pressing Escape dismisses the modal and restores focus to the opener
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(screen.queryByRole("dialog", { name: /accept/i })).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(firstReady);
     });
   });
 

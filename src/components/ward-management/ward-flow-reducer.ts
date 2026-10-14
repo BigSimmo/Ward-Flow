@@ -1257,6 +1257,18 @@ function wardActingUnitRefusal(
   return `${event.type} was raised acting as unit ${event.actingUnitId} but answers for ${answering ?? "no named ward"}; a ward answers only its own referrals`;
 }
 
+/**
+ * A1-1, A1-3, S2-11: a ward caller answering/pulling/declining a movement names itself with
+ * `actingUnitId`, and is refused when the unit it answers for is not its own.
+ */
+function wardActingMovementRefusal(
+  event: Extract<WardFlowEvent, { type: "ACCEPT_IN_PRINCIPLE" | "PULL_PATIENT" | "DECLINE" }>,
+): string | undefined {
+  if (event.role !== "ward" || event.actingUnitId === undefined) return undefined;
+  if (event.unitId === event.actingUnitId) return undefined;
+  return `${event.type} was raised acting as unit ${event.actingUnitId} but answers for ${event.unitId}; a ward answers only its own referrals`;
+}
+
 function referralAcceptanceRefusal(
   event: OverridableWardFlowEvent,
   referral: Referral,
@@ -1685,15 +1697,28 @@ function departAdmission(
   // Item 11 / WFA-003: `PULL_PATIENT` decrements `allocatableLocked` when the bed taken was locked;
   // departure must restore it. `RELEASE_BED` never touches that field, so the restore runs on both
   // branches — including when empty/allocatable were already raised by a prior release.
-  const arrivalAwaitingCapacity =
-    unit.arrivalCapacityConflicts?.some((entry) => entry.admissionId === admission.id) ?? false;
-  const remainingArrivalConflicts = unit.arrivalCapacityConflicts?.filter(
-    (entry) => entry.admissionId !== admission.id,
-  );
+  //
+  // S2-3: When a ward took an arrival while full (unit.empty.value <= 0), it logged an entry in
+  // arrivalCapacityConflicts. A departure from this unit resolves one over-capacity arrival
+  // (either specifically for this admission if it was the over-capacity arrival, or the earliest
+  // pending conflict for the unit), so empty/allocatable beds do not falsely increment above true capacity.
+  const admittingMovement = state.movements.find((m) => m.admissionId === admission.id);
+  const matchingConflictIndex =
+    unit.arrivalCapacityConflicts?.findIndex(
+      (entry) =>
+        entry.admissionId === admission.id ||
+        (admittingMovement?.id !== undefined && entry.movementId === admittingMovement.id),
+    ) ?? -1;
+  const conflictToResolveIndex =
+    matchingConflictIndex >= 0 ? matchingConflictIndex : (unit.arrivalCapacityConflicts?.length ?? 0) > 0 ? 0 : -1;
+  const arrivalAwaitingCapacity = conflictToResolveIndex >= 0;
+  const remainingArrivalConflicts =
+    conflictToResolveIndex >= 0 && unit.arrivalCapacityConflicts
+      ? unit.arrivalCapacityConflicts.filter((_, idx) => idx !== conflictToResolveIndex)
+      : unit.arrivalCapacityConflicts;
   const restoreLocked = !arrivalAwaitingCapacity && admission.bedKind === "locked" ? 1 : 0;
   // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
   // An admission carries only `sex`, so the gender comes from the movement that admitted it.
-  const admittingMovement = state.movements.find((m) => m.admissionId === admission.id);
   const leaverSex = mixSexOf(admission.gender ?? admittingMovement?.gender, admission.sex);
   // Audit A1-11 (13 Oct 2026): a departure moves the figures but never stamps them as confirmed;
   // only the ward's own Confirm numbers (`CONFIRM_CAPACITY`) sets `confirmedAt`.
@@ -2435,13 +2460,15 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
 function withdrawAllLiveRequestsForReferrer(
   movement: Movement,
   now: Instant,
+  /** Who ended the referral. A coordinator withdrawing it is recorded as such, not as the referrer. */
+  reason: "referrer_withdrew" | "coordinator_withdrew" = "referrer_withdrew",
 ): Pick<Movement, "acceptedUnitId" | "referredUnitIds" | "withdrawnReferrals"> {
   return {
     acceptedUnitId: undefined,
     referredUnitIds: [],
     withdrawnReferrals: [
       ...movement.withdrawnReferrals,
-      ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, reason: "referrer_withdrew" as const })),
+      ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, reason })),
     ],
   };
 }
@@ -3979,16 +4006,22 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // and `state.dischargeRevisions` — this movement's own `admissionId` is still cleared below
       // whenever the helper would have released (any pre-collection hold, including a stage
       // correction back past `pulled` that left `admissionId` standing — WFA-004).
+      // S1-5: Check whether a bed was actually held so the notice does not falsely claim a bed was released.
+      const bedWasHeld = movementHoldsBedByStage(movement);
       const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const acceptingUnitId = movement.acceptedUnitId;
+      const hadLiveTransportJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
+      const withdrawnLiveRequests = movement.referredUnitIds.map((unitId) => ({
+        unitId,
+        at: event.now,
+        reason: "ed_outcome_recorded" as const,
+      }));
       const updated: Movement = {
         ...movement,
         examination: { at: event.now, outcome: event.outcome },
         supersededExaminations,
         examRevoked: event.outcome === "revoked" ? true : movement.examRevoked,
-        transport:
-          movement.transport && movement.transport.cancelledAt === undefined
-            ? { ...movement.transport, cancelledAt: event.now }
-            : movement.transport,
+        transport: hadLiveTransportJob ? { ...movement.transport!, cancelledAt: event.now } : movement.transport,
         closure: { at: event.now, outcome: "did_not_proceed", reason: `examination outcome ${event.outcome}` },
         // Same reasoning as `WITHDRAW_REFERRAL`'s own closure: the movement is over, so nothing is
         // holding it up.
@@ -3998,23 +4031,54 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // about. Cleared whenever we are on this auto-release branch (post-collection retains
         // above); stage alone must not keep a stale join after a step-back.
         admissionId: undefined,
+        // S1-5: Clear acceptedUnitId and referredUnitIds so the closed movement does not linger as live.
+        acceptedUnitId: undefined,
+        referredUnitIds: [],
+        withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
       };
       const next = replaceMovement(withoutPulledBed, movement.id, updated);
-      // Item 48, Q3 (owner, 2026-09-17): the accepting ward's other branch — the bed has already
-      // been given back by `releasePulledBedAndAdmission` above, so the sentence says so, rather
-      // than reusing the "stays held" wording the `transportAlreadyCommitted` branch above sends.
-      // Same "revoked" only, same "no accepting ward, no notice" guard as that branch.
-      if (event.outcome !== "revoked" || movement.acceptedUnitId === undefined) return next;
-      return appendNotices(next, [
-        makeNotice(
-          event.now,
-          state.notices.length,
-          "examination_revoked_ward",
-          { role: "ward", placeId: movement.acceptedUnitId },
-          { movementId: movement.id, unitId: movement.acceptedUnitId },
-          `The examination for ${movement.id} was revoked. The patient is not coming and the bed has been released.`,
-        ),
-      ]);
+      const outcomeNotices: Notice[] = [];
+      let noticeCount = withoutPulledBed.notices.length;
+      if (acceptingUnitId !== undefined && event.outcome === "revoked") {
+        outcomeNotices.push(
+          makeNotice(
+            event.now,
+            noticeCount++,
+            "examination_revoked_ward",
+            { role: "ward", placeId: acceptingUnitId },
+            { movementId: movement.id, unitId: acceptingUnitId },
+            bedWasHeld
+              ? `The examination for ${movement.id} was revoked. The patient is not coming and the bed has been released.`
+              : `The examination for ${movement.id} was revoked. The patient is not coming.`,
+          ),
+        );
+      }
+      if (hadLiveTransportJob) {
+        outcomeNotices.push(
+          makeNotice(
+            event.now,
+            noticeCount++,
+            "transport_cancelled_officer",
+            { role: "officer" },
+            { movementId: movement.id },
+            `Transport for ${movement.id} was cancelled (examination outcome ${event.outcome}); no bed is held and nothing has been rebooked.`,
+          ),
+        );
+      }
+      for (const unitId of movement.referredUnitIds) {
+        if (unitId === acceptingUnitId) continue;
+        outcomeNotices.push(
+          makeNotice(
+            event.now,
+            noticeCount++,
+            "ward_request_withdrawn",
+            { role: "ward", placeId: unitId },
+            { movementId: movement.id, unitId },
+            `The request for ${movement.id} was withdrawn: examination outcome ${event.outcome}.`,
+          ),
+        );
+      }
+      return appendNotices(next, outcomeNotices);
     }
 
     case "REFER_TO_UNITS": {
@@ -4256,6 +4320,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "ACCEPT_IN_PRINCIPLE": {
+      const actingRefusal = wardActingMovementRefusal(event);
+      if (actingRefusal) return reject(state, event, actingRefusal);
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) {
@@ -4559,45 +4625,50 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const hadLiveTransport = liveTransport !== undefined;
       const updated: Movement = {
         ...movement,
-        ...withdrawAllLiveRequestsForReferrer(movement, event.now),
+        ...withdrawAllLiveRequestsForReferrer(
+          movement,
+          event.now,
+          event.role === "coordinator" ? "coordinator_withdrew" : "referrer_withdrew",
+        ),
         transport: liveTransport ? { ...liveTransport, cancelledAt: event.now } : movement.transport,
         closure: {
           at: event.now,
           outcome: "did_not_proceed",
-          reason: "The referrer withdrew the referral",
+          reason:
+            event.role === "coordinator"
+              ? "The coordinator withdrew the referral"
+              : "The referrer withdrew the referral",
         },
         // Nothing is blocking a movement that is over. Left saying "Awaiting destination response"
         // it would keep a withdrawn patient looking like a live obstruction.
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
       };
       const next = replaceMovement(state, movement.id, updated);
-      {
-        let noticeCount = state.notices.length;
-        const wardNotices = movement.referredUnitIds.map((unitId) =>
+      let noticeCount = state.notices.length;
+      const actorLabel = event.role === "coordinator" ? "coordinator" : "referrer";
+      const wardNotices = movement.referredUnitIds.map((unitId) =>
+        makeNotice(
+          event.now,
+          noticeCount++,
+          "ward_request_withdrawn",
+          { role: "ward", placeId: unitId },
+          { movementId: movement.id, unitId },
+          `The referral for ${movement.id} was withdrawn by the ${actorLabel}.`,
+        ),
+      );
+      if (hadLiveTransport) {
+        wardNotices.push(
           makeNotice(
             event.now,
             noticeCount++,
-            "ward_request_withdrawn",
-            { role: "ward", placeId: unitId },
-            { movementId: movement.id, unitId },
-            `The referral for ${movement.id} was withdrawn by the ${event.role === "coordinator" ? "coordinator" : "referrer"}.`,
+            "transport_cancelled_officer",
+            { role: "officer" },
+            { movementId: movement.id },
+            `Transport for ${movement.id} was cancelled: referral was withdrawn by the ${actorLabel}.`,
           ),
         );
-        if (hadLiveTransport) {
-          wardNotices.push(
-            makeNotice(
-              event.now,
-              noticeCount++,
-              "transport_cancelled_officer",
-              { role: "officer" },
-              { movementId: movement.id },
-              `Transport for ${movement.id} was cancelled: referral was withdrawn by the ${event.role === "coordinator" ? "coordinator" : "referrer"}.`,
-            ),
-          );
-        }
-        return appendNotices(next, wardNotices);
       }
-      return next;
+      return appendNotices(next, wardNotices);
     }
 
     case "WITHDRAW_WARD_REQUEST": {
@@ -4655,6 +4726,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "PULL_PATIENT": {
+      const actingRefusal = wardActingMovementRefusal(event);
+      if (actingRefusal) return reject(state, event, actingRefusal);
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) {
@@ -5170,6 +5243,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "DECLINE": {
+      const actingRefusal = wardActingMovementRefusal(event);
+      if (actingRefusal) return reject(state, event, actingRefusal);
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) {
@@ -5739,7 +5814,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
                 ...(unit.arrivalCapacityConflicts ?? []),
                 {
                   movementId: movement.id,
-                  ...(movement.admissionId === undefined ? {} : { admissionId: movement.admissionId }),
+                  ...((movement.admissionId ?? linkedAdmission?.id) === undefined
+                    ? {}
+                    : { admissionId: movement.admissionId ?? linkedAdmission?.id }),
                   at: event.now,
                 },
               ],
@@ -8252,6 +8329,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           ? {
               ...m,
               admissionId: undefined,
+              heldBedNumber: undefined,
               ...withdrawAllLiveRequestsForReferrer(m, event.now),
               transport:
                 m.transport && m.transport.cancelledAt === undefined
@@ -9879,6 +9957,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "RECORD_LEGAL_FORM_WRITTEN": {
+      if (event.role !== "ed" && event.role !== "coordinator") {
+        return reject(
+          state,
+          event,
+          `${event.role} cannot record a written legal form; only ed and coordinator may record written forms`,
+        );
+      }
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) {
@@ -9910,6 +9995,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         movement.legalClock !== undefined && movement.legalForm?.dueAt === movement.legalClock.expiresAt
           ? undefined
           : movement.legalForm?.dueAt;
+      // A1-5: A written form expiry cannot shorten an existing recorded expiry on the same form.
+      if (
+        movement.legalForm?.code === event.formCode &&
+        currentPaperExpiry !== undefined &&
+        event.paperExpiresAt !== undefined &&
+        event.paperExpiresAt < currentPaperExpiry
+      ) {
+        return reject(state, event, "A written form expiry cannot shorten an existing recorded expiry.");
+      }
       const dueAt = event.paperExpiresAt ?? (sameFormTimeEdit ? currentPaperExpiry : undefined);
       const updated: Movement = {
         ...movement,

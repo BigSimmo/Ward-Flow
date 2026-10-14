@@ -45,6 +45,7 @@ import { designationSummary } from "@/components/ward-management/ward-bed-design
 import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
   isOpen,
+  isStoppedTransportAwaitingRelease,
   overridesAgainstUnit,
   stageCopy,
   unitCapacity,
@@ -86,28 +87,24 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
-import { WardDailySheetDialog } from "@/components/ward-management/board/ward-daily-sheet";
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { WardNotificationCenter } from "./ward-notification-center";
 
-import { handoverScopeValue } from "@/components/ward-management/handover/handover-page";
+import { handoverScopeValue } from "@/components/ward-management/handover/handover-scope";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { WardAnswerView } from "./ward-answer-view";
 import styles from "./ward.module.css";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WardDecisionsCockpit, openDecisionCount } from "./ward-decisions-cockpit";
+import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
+import { WardDischargesMatrix } from "./ward-discharges-matrix";
+import { WardBedsMatrix, type BedItem } from "./ward-beds-matrix";
+import { WardBedBoard, type WaitingReferral } from "./ward-bed-board";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
-import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
-import { WardDischargesMatrix } from "./ward-discharges-matrix";
-import { WardBedsMatrix } from "./ward-beds-matrix";
-import { WardBedDossierDrawer } from "./ward-bed-dossier-drawer";
-import { WardBedBoard, type WaitingReferral } from "./ward-bed-board";
 import {
   bedFits,
   bedNumberLabel,
@@ -118,7 +115,7 @@ import {
 } from "./ward-bed-board-logic";
 import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
 import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
-import type { BedItem } from "./ward-beds-matrix";
+
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import {
@@ -127,6 +124,11 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
   UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
+
+import { WardDailySheetDialog } from "@/components/ward-management/board/ward-daily-sheet";
+import { WardBedDossierDrawer } from "./ward-bed-dossier-drawer";
+import { WardNotificationCenter } from "./ward-notification-center";
+import { WardAnswerView } from "./ward-answer-view";
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
 type BoardCheck = {
@@ -290,6 +292,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     patients,
   } = useWardFlow();
   const now = useWardFlowClock();
+
   // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
   // listed cross-role pair in `ward-role-permissions.ts`.
   const raiseReferralGate = useRoleGate()("RECEIVE_REFERRAL");
@@ -842,7 +845,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (rejections.length > priorRejectionCountRef.current) {
       const newest = rejections[rejections.length - 1];
       setLastActionRejection(
-        newest.attempted === "ACCEPT_IN_PRINCIPLE" || newest.attempted === "PULL_PATIENT" ? newest : undefined,
+        newest.attempted === "ACCEPT_IN_PRINCIPLE" ||
+          newest.attempted === "PULL_PATIENT" ||
+          newest.attempted === "RELEASE_HELD_BED"
+          ? newest
+          : undefined,
       );
     } else {
       setLastActionRejection(undefined);
@@ -1024,8 +1031,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     presentation === "answer" ? incoming.slice(activeAnswerIndex, activeAnswerIndex + 1) : incoming;
   // Accepted, pulled, or en route: this unit is the recorded destination, at any stage from
   // acceptance through transport. `isOpen` excludes `arrived` — once a patient arrives the record
-  // closes and the bed shows as occupied in the grid above, not as a card here.
+  // closes and the bed shows as occupied in the grid above, not as a card here. Also includes
+  // stopped transport movements awaiting release so the held bed remains visible to the ward.
   const accepted = movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id);
+  const heldAfterStop = movements.filter(
+    (movement) => isStoppedTransportAwaitingRelease(movement) && movement.acceptedUnitId === unit.id,
+  );
   const recentAnswers = movements
     .flatMap((movement) => {
       const wardAnswers: Array<{
@@ -1567,6 +1578,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId: pick.movementId,
         unitId: boardUnitId,
+        actingUnitId: boardUnitId,
         bedNumber,
       });
     } else {
@@ -1623,7 +1635,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!declineReason) return;
-    dispatch({ type: "DECLINE", role: "ward", now, movementId, unitId: wardUnitId, reason: declineReason });
+    dispatch({
+      type: "DECLINE",
+      role: "ward",
+      now,
+      movementId,
+      unitId: wardUnitId,
+      actingUnitId: wardUnitId,
+      reason: declineReason,
+    });
     setDeclineOpenFor(undefined);
     setDeclineReason(undefined);
   }
@@ -1646,6 +1666,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       now,
       movementId,
       unitId,
+      actingUnitId: unitId,
     });
     setCheckToken((token) => token + 1);
   }
@@ -1660,6 +1681,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       now,
       movementId,
       unitId,
+      actingUnitId: unitId,
     });
     setCheckToken((t) => t + 1);
   }
@@ -1690,6 +1712,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId,
         unitId: wardUnitId,
+        actingUnitId: wardUnitId,
         overrideReason,
       });
     } else {
@@ -1699,6 +1722,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId,
         unitId: wardUnitId,
+        actingUnitId: wardUnitId,
         overrideReason,
         // Absent, never `false`, when this refusal is not the one the tick answers — see
         // `Override.numConsulted`'s own doc comment on that discipline.
@@ -2886,6 +2910,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             unit={unit}
             onPullPatient={handlePullPatient}
             accepted={accepted}
+            heldAfterStop={heldAfterStop}
             now={now}
             resolvePatientIdentity={resolvePatientIdentity}
             releaseOpenFor={releaseOpenFor}

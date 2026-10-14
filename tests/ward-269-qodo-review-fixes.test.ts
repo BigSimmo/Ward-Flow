@@ -88,4 +88,47 @@ describe("#269 qodo review, 13 Oct 2026", () => {
       expect(byWard.rejections).toEqual(state.rejections);
     });
   });
+
+  describe("who a withdrawal is recorded as", () => {
+    function openReferral() {
+      const state = seedWardFlowState();
+      const open = state.movements.find(
+        (m) => m.referralId && m.referredUnitIds.length > 0 && !m.acceptedUnitId && !m.closure && !m.sourceAdmissionId,
+      )!;
+      return { state, open };
+    }
+
+    it("records a coordinator's withdrawal against every live ward request as the coordinator's", () => {
+      const { state, open } = openReferral();
+      const next = wardFlowReducer(state, {
+        type: "WITHDRAW_REFERRAL",
+        role: "coordinator",
+        now: NOW,
+        movementId: open.id,
+      });
+      expect(next.rejections).toEqual(state.rejections);
+      const added = next.movements
+        .find((m) => m.id === open.id)!
+        .withdrawnReferrals.slice(open.withdrawnReferrals.length);
+      expect(added.map((entry) => entry.unitId)).toEqual(open.referredUnitIds);
+      expect(added.every((entry) => entry.reason === "coordinator_withdrew")).toBe(true);
+    });
+
+    it("still records the referrer's own withdrawal as the referrer's", () => {
+      const { state, open } = openReferral();
+      const next = wardFlowReducer(state, {
+        type: "WITHDRAW_REFERRAL",
+        role: "ed",
+        actingPlaceId: open.originEdId,
+        now: NOW,
+        movementId: open.id,
+      });
+      expect(next.rejections).toEqual(state.rejections);
+      const added = next.movements
+        .find((m) => m.id === open.id)!
+        .withdrawnReferrals.slice(open.withdrawnReferrals.length);
+      expect(added.length).toBeGreaterThan(0);
+      expect(added.every((entry) => entry.reason === "referrer_withdrew")).toBe(true);
+    });
+  });
 });

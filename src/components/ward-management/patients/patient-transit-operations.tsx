@@ -28,6 +28,7 @@ import {
 } from "../ward-change-reasons";
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useUndoableStep } from "../use-undoable-step";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps, collectionGaps } from "@/components/ward-management/ward-transport-checks";
@@ -330,10 +331,15 @@ export function PatientTransitOperations({
                   <button
                     type="button"
                     className={styles.secondary}
-                    disabled={!verdict.eligible || !gate("ACCEPT_IN_PRINCIPLE", unit.id).allowed}
+                    aria-disabled={
+                      !verdict.eligible || !gate("ACCEPT_IN_PRINCIPLE", unit.id).allowed ? "true" : undefined
+                    }
                     aria-describedby={gate("ACCEPT_IN_PRINCIPLE", unit.id).buttonProps["aria-describedby"]}
-                    onClick={() => {
-                      if (!gate("ACCEPT_IN_PRINCIPLE", unit.id).allowed) return;
+                    onClick={(e) => {
+                      if (!verdict.eligible || !gate("ACCEPT_IN_PRINCIPLE", unit.id).allowed) {
+                        ignoreUnavailableActivation(e);
+                        return;
+                      }
                       setOverrideUnitId(unit.id);
                       noteAttempt();
                       dispatch({
@@ -598,10 +604,13 @@ export function PatientTransitOperations({
               <button
                 type="button"
                 className={styles.secondary}
-                disabled={job.acceptedAt !== undefined || !acceptedGate.allowed}
+                aria-disabled={job.acceptedAt !== undefined || !acceptedGate.allowed ? "true" : undefined}
                 aria-describedby={acceptedGate.buttonProps["aria-describedby"]}
-                onClick={() => {
-                  if (!acceptedGate.allowed) return;
+                onClick={(e) => {
+                  if (job.acceptedAt !== undefined || !acceptedGate.allowed) {
+                    ignoreUnavailableActivation(e);
+                    return;
+                  }
                   noteAttempt();
                   dispatch({ type: "TRANSPORT_ACCEPTED", role: routeRole, now, movementId: movement.id });
                 }}
@@ -611,10 +620,17 @@ export function PatientTransitOperations({
               <button
                 type="button"
                 className={styles.secondary}
-                disabled={job.acceptedAt === undefined || job.enRouteAt !== undefined || !enRouteGate.allowed}
+                aria-disabled={
+                  job.acceptedAt === undefined || job.enRouteAt !== undefined || !enRouteGate.allowed
+                    ? "true"
+                    : undefined
+                }
                 aria-describedby={enRouteGate.buttonProps["aria-describedby"]}
-                onClick={() => {
-                  if (!enRouteGate.allowed) return;
+                onClick={(e) => {
+                  if (job.acceptedAt === undefined || job.enRouteAt !== undefined || !enRouteGate.allowed) {
+                    ignoreUnavailableActivation(e);
+                    return;
+                  }
                   noteAttempt();
                   dispatch({ type: "TRANSPORT_EN_ROUTE", role: routeRole, now, movementId: movement.id });
                 }}
@@ -624,10 +640,13 @@ export function PatientTransitOperations({
               <button
                 type="button"
                 className={styles.primary}
-                disabled={job.enRouteAt === undefined || !collectedGate.allowed}
+                aria-disabled={job.enRouteAt === undefined || !collectedGate.allowed ? "true" : undefined}
                 aria-describedby={collectedGate.buttonProps["aria-describedby"]}
-                onClick={() => {
-                  if (!collectedGate.allowed) return;
+                onClick={(e) => {
+                  if (job.enRouteAt === undefined || !collectedGate.allowed) {
+                    ignoreUnavailableActivation(e);
+                    return;
+                  }
                   // Audit S-2 / A4-11: no Form 4A or no fit to travel warns and records a reason.
                   if (collectionGaps(movement).length > 0) {
                     setCollectCheck(true);

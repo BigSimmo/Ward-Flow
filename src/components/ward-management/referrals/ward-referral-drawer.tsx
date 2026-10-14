@@ -33,6 +33,7 @@ import Link from "next/link";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formTitleForCode } from "@/lib/form-register";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -3947,8 +3948,9 @@ function WardReferralDrawerContent({
                       className={styles.btnCancelReferral}
                       data-testid="ward-referral-send-locked"
                       title={phNeedsLine}
-                      disabled
+                      aria-disabled="true"
                       aria-describedby={`${sectionId}-send-waits`}
+                      onClick={ignoreUnavailableActivation}
                     >
                       <Lock aria-hidden="true" />
                       Send
@@ -3958,28 +3960,39 @@ function WardReferralDrawerContent({
                     </span>
                   </>
                 ) : null}
-                <button
-                  className={styles.btnSendReferral}
-                  onClick={
-                    confirmationOpen
-                      ? undefined
-                      : activeSection === "placement"
-                        ? handleDispatch
-                        : () => goNext(activeSection)
-                  }
-                  type={confirmationOpen ? "submit" : "button"}
-                  form={confirmationOpen ? "referralConfirmForm" : undefined}
-                  disabled={sendPending || (confirmationOpen && !sendGate.allowed)}
-                  aria-describedby={confirmationOpen ? sendGate.buttonProps["aria-describedby"] : undefined}
-                >
-                  {sendPending
-                    ? "Sending…"
-                    : confirmationOpen
-                      ? "Confirm and send"
-                      : activeSection === "placement"
-                        ? "Send referral"
-                        : `Next, ${sectionLabel(SECTION_IDS[SECTION_IDS.indexOf(activeSection) + 1]!, destType).toLowerCase()}`}
-                </button>
+                {confirmationOpen && !sendGate.allowed ? (
+                  <button
+                    type="button"
+                    className={styles.btnSendReferral}
+                    aria-disabled="true"
+                    aria-describedby={sendGate.buttonProps["aria-describedby"]}
+                    onClick={ignoreUnavailableActivation}
+                  >
+                    Confirm and send
+                  </button>
+                ) : (
+                  <button
+                    className={styles.btnSendReferral}
+                    onClick={
+                      confirmationOpen
+                        ? undefined
+                        : activeSection === "placement"
+                          ? handleDispatch
+                          : () => goNext(activeSection)
+                    }
+                    type={confirmationOpen ? "submit" : "button"}
+                    form={confirmationOpen ? "referralConfirmForm" : undefined}
+                    disabled={sendPending}
+                  >
+                    {sendPending
+                      ? "Sending…"
+                      : confirmationOpen
+                        ? "Confirm and send"
+                        : activeSection === "placement"
+                          ? "Send referral"
+                          : `Next, ${sectionLabel(SECTION_IDS[SECTION_IDS.indexOf(activeSection) + 1]!, destType).toLowerCase()}`}
+                  </button>
+                )}
                 {confirmationOpen ? sendGate.note : null}
               </>
             )}
