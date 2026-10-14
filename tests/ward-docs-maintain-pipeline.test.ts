@@ -192,7 +192,7 @@ describe("ward-docs-maintain-pipeline", () => {
         }
         expect(checkOrUpdatePackManifest({ root }).ok).toBe(scenario === "repairable");
       } finally {
-        fs.rmSync(root, { recursive: true, force: true });
+        fs.rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
       }
     });
   });
