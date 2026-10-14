@@ -1072,7 +1072,7 @@ function WardReferralDrawerContent({
     initialKeptJson: initialKept?.json ?? null,
   });
   useDirtyStateGuard({
-    isDirty: !sentReferralId && (dirty || draftKeptAt !== null || storedDraft !== null),
+    isDirty: !sentReferralId && (dirty || draftKeptAt !== null),
   });
   const requestClose = useCallback(() => {
     if (guardOpen) setGuardOpen(false);
@@ -2047,10 +2047,6 @@ function WardReferralDrawerContent({
                       className={styles.fastTrackBtn}
                       data-testid="ward-referral-jump-clearance"
                       onClick={() => {
-                        if (catchmentTeam.trim()) {
-                          setCatchmentConfirmed(true);
-                          setCatchmentEditing(false);
-                        }
                         if (isPhone) phOpenStep("documentation");
                         else selectSection("documentation");
                       }}
@@ -2062,10 +2058,6 @@ function WardReferralDrawerContent({
                       className={styles.fastTrackBtn}
                       data-testid="ward-referral-jump-placement"
                       onClick={() => {
-                        if (catchmentTeam.trim()) {
-                          setCatchmentConfirmed(true);
-                          setCatchmentEditing(false);
-                        }
                         if (isPhone) phOpenStep("placement");
                         else selectSection("placement");
                       }}
@@ -4135,6 +4127,26 @@ function WardReferralDrawerContent({
                   className={styles.btnSendReferral}
                   onClick={() => setGuardOpen(false)}
                 >
+                  Keep editing
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {liveMovement ? (
+        <ArrivalTimeModal
+          isOpen={arrivalPlanOpen}
+          onClose={() => setArrivalPlanOpen(false)}
+          movement={liveMovement}
+          role={arrivalRole}
+        />
+      ) : null}
+    </>
+  );
+}
+            >
                   Keep editing
                 </button>
               </div>
