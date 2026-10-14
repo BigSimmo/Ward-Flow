@@ -2,7 +2,7 @@
 <html lang="en-AU">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
     <title>WA mental health pathways · Ward Flow</title>
     <style>
@@ -1240,7 +1240,7 @@
         min-height: 280px;
         max-height: none;
         cursor: grab;
-        touch-action: pan-x pan-y;
+        touch-action: pan-x pan-y pinch-zoom;
       }
       .master-viewport.panning {
         cursor: grabbing;
@@ -1389,6 +1389,391 @@
           height: calc(100dvh - 240px);
         }
       }
+      .phone-bar,
+      .phone-master-title,
+      .master-phone-switch,
+      .phone-guidance,
+      .master-reader {
+        display: none;
+      }
+      @media (max-width: 849px) {
+        .shell,
+        body.master-mode .shell {
+          padding: 0 max(10px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
+            max(10px, env(safe-area-inset-left));
+        }
+        header,
+        body.master-mode header {
+          padding-top: max(8px, env(safe-area-inset-top));
+        }
+        .mast,
+        body.master-mode .mast {
+          margin-bottom: 8px;
+        }
+        .date,
+        .nav,
+        body.master-mode .nav,
+        .notice {
+          display: none;
+        }
+        .brand {
+          gap: 8px;
+          font-size: 14px;
+        }
+        .brand .small {
+          font-size: 12px;
+        }
+        .logo {
+          width: 32px;
+          height: 32px;
+        }
+        .phone-bar {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+        .phone-bar select {
+          width: 100%;
+        }
+        .phone-review {
+          margin: 0;
+          padding: 0;
+          border: 0;
+        }
+        .phone-review summary {
+          min-height: 44px;
+          padding: 11px 8px;
+          font-size: 13px;
+        }
+        .phone-review[open] {
+          grid-column: 1 / -1;
+        }
+        .phone-review p {
+          margin: 8px 0;
+          font-size: 14px;
+        }
+        .hero {
+          margin-bottom: 10px;
+        }
+        .hero h1 {
+          font-size: 23px;
+        }
+        .hero .eyebrow,
+        .hero .subtitle,
+        .hero .stats {
+          display: none;
+        }
+        button,
+        .btn,
+        select,
+        input:not([type="checkbox"]) {
+          min-height: 44px;
+        }
+        input:not([type="checkbox"]),
+        select {
+          font-size: 16px;
+        }
+        .panel {
+          padding: 14px;
+        }
+        .master-frame {
+          padding: 10px;
+        }
+        .master-heading {
+          gap: 8px;
+          align-items: center;
+        }
+        .master-heading > div {
+          min-width: 0;
+        }
+        .master-heading h1 {
+          font-size: 18px;
+          line-height: 1.25;
+        }
+        .full-master-title {
+          display: none;
+        }
+        .phone-master-title {
+          display: inline;
+        }
+        #master-description {
+          display: none;
+        }
+        .phone-guidance {
+          display: block;
+          margin: 4px 0 10px;
+          font-size: 12px;
+          line-height: 1.4;
+        }
+        #master-focus {
+          padding: 8px;
+          font-size: 13px;
+          min-width: 86px;
+        }
+        .master-phone-switch {
+          display: flex;
+          position: sticky;
+          top: 0;
+          z-index: 25;
+          gap: 4px;
+          padding: 6px 0;
+          background: #fff;
+        }
+        .master-phone-switch .btn {
+          flex: 1;
+          min-height: 44px;
+          font-size: 15px;
+        }
+        .master-phone-switch [aria-pressed="true"] {
+          color: #fff;
+          background: #245b55;
+          border-color: #245b55;
+        }
+        .master-toolbar {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 6px;
+          margin-bottom: 10px;
+        }
+        .master-search-group {
+          grid-column: 1 / -1;
+          width: 100%;
+          gap: 4px;
+        }
+        .master-search-group input {
+          flex: 1;
+          width: 0;
+          min-width: 0;
+        }
+        .master-search-group .btn {
+          flex: 0 0 44px;
+          padding: 8px;
+        }
+        #master-matches {
+          min-width: 28px;
+          max-width: 42px;
+          font-size: 11px;
+        }
+        #master-jump {
+          width: 100%;
+          max-width: none;
+        }
+        .master-tools {
+          grid-column: 2;
+          grid-row: 2;
+        }
+        .master-tools summary {
+          padding: 9px 8px;
+        }
+        .master-tools-body {
+          max-width: calc(100vw - 50px);
+        }
+        .master-tools-body label {
+          min-height: 44px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 0;
+          font-size: 14px;
+        }
+        .master-tools-body input {
+          width: 22px;
+          height: 22px;
+        }
+        .master-scale {
+          grid-column: 1 / -1;
+          display: flex;
+          flex-wrap: nowrap;
+          gap: 4px;
+        }
+        .master-scale [data-master-zoom="width"] {
+          display: none;
+        }
+        .master-scale .btn {
+          font-size: 12px;
+          padding: 8px;
+          flex: 1;
+        }
+        .master-scale [data-master-zoom="out"],
+        .master-scale [data-master-zoom="in"] {
+          flex: 0 0 44px;
+          font-size: 18px;
+        }
+        .master-zoom-label {
+          min-width: 30px;
+          font-size: 12px;
+        }
+        .master-viewport {
+          min-height: 180px;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+        }
+        .master-hint {
+          max-width: 100%;
+          font-size: 11px;
+          left: 6px;
+          right: 6px;
+          text-align: center;
+        }
+        .master-frame.focus-mode {
+          inset: 0;
+          padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+        }
+        .steps-mode .master-surface,
+        .steps-mode .master-scale {
+          display: none;
+        }
+        .steps-mode .master-reader {
+          display: block;
+          min-width: 0;
+        }
+        .reader-note {
+          font-size: 13px;
+          line-height: 1.5;
+          margin: 4px 0 12px;
+          color: #445950;
+        }
+        .reader-cards {
+          display: grid;
+          gap: 10px;
+        }
+        .reader-card {
+          display: block;
+          width: 100%;
+          padding: 14px;
+          text-align: left;
+          background: #fff;
+          border: 1px solid var(--line);
+          border-left: 4px solid var(--lane);
+          border-radius: 10px;
+        }
+        .reader-card[aria-current="true"] {
+          background: #e8f2ed;
+          outline: 2px solid #245b55;
+        }
+        .reader-card .symbol-row {
+          display: flex;
+          gap: 8px;
+          font-size: 16px;
+          line-height: 1.4;
+        }
+        .reader-card .symbol {
+          width: 16px;
+          height: 16px;
+          flex: 0 0 16px;
+          margin-top: 3px;
+        }
+        .reader-card small {
+          display: block;
+          font-size: 13px;
+          line-height: 1.5;
+          margin-top: 6px;
+        }
+        .reader-card .reader-lane {
+          color: #445950;
+          font-size: 12px;
+          margin-top: 10px;
+        }
+        .mobile-dialog {
+          width: 100%;
+          max-width: none;
+          height: 100dvh;
+          max-height: 100dvh;
+          margin: 0;
+          padding: 0;
+          border: 0;
+          border-radius: 0;
+          overflow: auto;
+          overscroll-behavior: contain;
+        }
+        .mobile-dialog .dialog-actions {
+          position: sticky;
+          top: 0;
+          z-index: 30;
+          padding: max(10px, env(safe-area-inset-top)) 14px 10px;
+          background: #fff;
+          border-bottom: 1px solid var(--line);
+        }
+        #mobile-detail-body {
+          padding: 16px 16px max(24px, env(safe-area-inset-bottom));
+        }
+        #mobile-detail-body .btn {
+          width: 100%;
+          margin: 5px 0;
+          padding: 12px;
+          font-size: 14px;
+          white-space: normal;
+        }
+        #mobile-detail-body p {
+          font-size: 15px;
+          line-height: 1.6;
+        }
+        #mobile-detail-body h3 {
+          font-size: 20px;
+          line-height: 1.35;
+        }
+        footer {
+          gap: 6px;
+          padding-top: 0;
+          margin-top: 8px;
+        }
+        body.master-mode footer #provenance {
+          display: none;
+        }
+      }
+      @media print {
+        .phone-bar,
+        .master-phone-switch,
+        .master-reader {
+          display: none !important;
+        }
+        .steps-mode .master-surface {
+          display: block !important;
+        }
+      }
+      @media (max-width: 849px) and (max-height: 500px) {
+        .master-frame {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 250px;
+          gap: 6px;
+        }
+        .master-heading {
+          grid-column: 1;
+        }
+        .phone-guidance {
+          display: none;
+        }
+        .master-phone-switch {
+          grid-column: 2;
+          position: static;
+          padding: 0;
+        }
+        .master-toolbar {
+          grid-column: 1 / -1;
+          grid-template-columns: minmax(0, 1fr) minmax(240px, 1fr);
+        }
+        .master-search-group {
+          grid-column: 1;
+          grid-row: 1;
+        }
+        .master-scale {
+          grid-column: 2;
+          grid-row: 1;
+        }
+        #master-jump {
+          grid-column: 1;
+          grid-row: 2;
+        }
+        .master-tools {
+          grid-column: 2;
+          grid-row: 2;
+          justify-self: start;
+        }
+        .master-layout {
+          grid-column: 1 / -1;
+        }
+      }
       @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -1483,16 +1868,47 @@
           ><button type="button" data-view="connections">All connections</button
           ><button type="button" data-view="review">Review & sources</button>
         </nav>
+        <div class="phone-bar">
+          <label class="sr-only" for="phone-view">Wireframe view</label>
+          <select id="phone-view">
+            <option value="master">Master map</option>
+            <option value="overall">Overall journey</option>
+            <option value="map">WA care pathways</option>
+            <option value="journey">Trace a journey</option>
+            <option value="connections">All connections</option>
+            <option value="review">Review &amp; sources</option>
+          </select>
+          <details class="phone-review">
+            <summary>About this</summary>
+            <p>
+              Review diagram · synthetic data only. Every route has conditions. A drawn link does not guarantee
+              eligibility, a bed, a legal power or an implemented app feature. Services can share care without moving
+              the person.
+            </p>
+            <p>
+              Reviewed 13 October 2026. Blue dots mark current review notes; other boxes retain earlier workflow
+              wording.
+            </p>
+          </details>
+        </div>
       </header>
       <div class="workspace" id="workspace">
         <main id="content" tabindex="-1">
           <section id="view-master" class="panel master-frame" aria-labelledby="master-title">
             <div class="master-heading">
               <div>
-                <h1 id="master-title" tabindex="-1">Patient flow master map</h1>
+                <h1 id="master-title" tabindex="-1">
+                  <span class="full-master-title">Patient flow master map</span
+                  ><span class="phone-master-title">Master map</span>
+                </h1>
                 <p class="tiny muted" id="master-description"></p>
               </div>
               <button class="btn" id="master-focus" type="button" aria-pressed="false">Focus map</button>
+            </div>
+            <p class="phone-guidance">Full map and every branch. Choose Read steps for larger cards.</p>
+            <div class="master-phone-switch" role="group" aria-label="Master map reading mode">
+              <button class="btn" type="button" data-master-mode="map" aria-pressed="true">Map</button>
+              <button class="btn" type="button" data-master-mode="steps" aria-pressed="false">Read steps</button>
             </div>
             <div class="master-toolbar">
               <div class="master-search-group">
@@ -1540,6 +1956,10 @@
               </details>
             </div>
             <div class="master-layout" id="master-layout">
+              <section class="master-reader" aria-label="Readable master map steps">
+                <p class="reader-note" id="reader-count" role="status"></p>
+                <div class="reader-cards" id="reader-cards"></div>
+              </section>
               <div class="master-surface">
                 <div
                   class="master-viewport"
@@ -1714,6 +2134,7 @@
         journeyEdges: [],
         masterNode: null,
         masterDetailsOpen: false,
+        masterMode: "map",
         masterQuery: "",
         masterMatch: null,
         masterZoom: "width",
@@ -1753,11 +2174,13 @@
         if (state.node) params.set("place", state.node);
         if (state.edge) params.set("link", state.edge);
         if (state.masterNode && state.view === "master") params.set("box", state.masterNode);
+        if (state.masterMode === "steps" && state.view === "master") params.set("reading", "steps");
         history.replaceState(null, "", `#${params}`);
       }
       function view(next, focus = true) {
         if ($("#mobile-details").open) $("#mobile-details").close();
         state.view = next;
+        $("#phone-view").value = next;
         document.body.classList.toggle("master-mode", next === "master");
         if (next !== "master") setMasterFocus(false);
         $("#workspace").classList.toggle("wide", ["overall", "master"].includes(next));
@@ -1896,6 +2319,7 @@
       }
       function scaleMaster() {
         if (state.view !== "master") return 1;
+        if (innerWidth < 850 && state.masterMode === "steps") return masterActualZoom;
         const stages = DATA.prototype.stages;
         const viewport = $("#master-viewport");
         let zoom = state.masterZoom;
@@ -2021,6 +2445,56 @@
           if (match) matches++;
         }
         $("#master-matches").textContent = query ? `${matches} matches` : `${DATA.prototype.nodes} boxes`;
+        renderMasterReader();
+      }
+      function renderMasterReader() {
+        const query = normaliseSearch(state.masterQuery);
+        const all = DATA.prototype.stages.nodes.filter((node) => node.lane !== "heading");
+        const nodes = all
+          .filter(
+            (node) =>
+              !query ||
+              query
+                .split(" ")
+                .every((term) =>
+                  normaliseSearch(
+                    `${node.label} ${node.sub || ""} ${node.id} ${DATA.review?.displayOverrides[node.id] || ""}`,
+                  ).includes(term),
+                ),
+          )
+          .sort((a, b) => a.y - b.y || a.x - b.x);
+        $("#reader-count").textContent =
+          `${nodes.length} of ${all.length} steps. This is a catalogue, not a single route. Select a card to read its full wording, incoming links and onward paths.`;
+        $("#reader-cards").innerHTML = nodes.length
+          ? nodes
+              .map((node) => {
+                const text = DATA.review?.displayOverrides[node.id] || node.sub || "";
+                const preview = text.length > 160 ? text.slice(0, 160) + "…" : text;
+                return `<button class="reader-card" type="button" data-master-node="${node.id}" data-step-id="${node.id}" aria-label="Read workflow step: ${escape(node.label)}" aria-current="${node.id === state.masterNode}" style="--lane:${masterColour(node.lane)}"><span class="symbol-row">${symbol(node.lane)}<b>${escape(node.label)}</b></span>${preview ? `<small>${escape(preview)}</small>` : ""}<small class="reader-lane">${escape((masterLanes[node.lane] || masterLanes.expected)[1])} · ${DATA.review?.comparisons.some((row) => row.nodes.includes(node.id)) ? "Current review note" : "Earlier source snapshot"} · Open step →</small></button>`;
+              })
+              .join("")
+          : '<p class="reader-note">No steps match this search. Clear or change the search to see more steps.</p>';
+      }
+      function setMasterReadingMode(mode, scroll = true) {
+        state.masterMode = mode === "steps" ? "steps" : "map";
+        $("#view-master").classList.toggle("steps-mode", state.masterMode === "steps");
+        document
+          .querySelectorAll("[data-master-mode]")
+          .forEach((button) =>
+            button.setAttribute("aria-pressed", String(button.dataset.masterMode === state.masterMode)),
+          );
+        renderMasterReader();
+        updateHash();
+        requestAnimationFrame(() => {
+          if (scroll && innerWidth < 850) {
+            $("#view-master").scrollTop = 0;
+            window.scrollTo({ top: 0 });
+          }
+          if (state.masterMode === "map") {
+            sizeMasterSurface();
+            scaleMaster();
+          }
+        });
       }
       function selectMaster(id) {
         if (!masterById.has(id)) return;
@@ -2037,10 +2511,15 @@
         const zoom = scaleMaster();
         $("#master-viewport").scrollTo(scroll);
         centreMaster(id, zoom);
-        const box = $(`[data-original-id="${id}"]`);
+        const box =
+          innerWidth < 850 && state.masterMode === "steps"
+            ? $(`[data-step-id="${id}"]`) || $("#master-search")
+            : $(`[data-original-id="${id}"]`);
         box.focus({ preventScroll: true });
         if (innerWidth < 850) {
-          $("#mobile-detail-body").innerHTML = $("#master-detail").innerHTML;
+          $("#mobile-detail-body").innerHTML =
+            $("#master-detail").innerHTML +
+            `<button class="btn" type="button" data-read-on-map="${id}">Show this step on the map</button>`;
           $("#mobile-details").setAttribute("aria-label", "Selected workflow step");
           $("#mobile-details").showModal();
         }
@@ -2078,7 +2557,11 @@
         if (state.view !== "master") return;
         const viewport = $("#master-viewport");
         const bottom = $("#view-master").classList.contains("focus-mode") ? 30 : 66;
-        const height = Math.max(280, innerHeight - viewport.getBoundingClientRect().top - bottom);
+        const screenHeight = Math.min(innerHeight, window.visualViewport?.height || innerHeight);
+        const height = Math.max(
+          innerWidth < 850 ? 180 : 280,
+          screenHeight - viewport.getBoundingClientRect().top - bottom,
+        );
         viewport.style.height = `${height}px`;
         $("#master-inspector").style.maxHeight = `${height}px`;
       }
@@ -2116,6 +2599,7 @@
       }
       function renderMinimap() {
         const { nodes, width, height } = DATA.prototype.stages;
+        $("#master-minimap").hidden = !$("#master-minimap-toggle").checked;
         $("#master-minimap-svg").setAttribute("viewBox", `0 0 ${width} ${height}`);
         $("#master-minimap-svg").innerHTML =
           nodes
@@ -2174,6 +2658,7 @@
       $("#master-read-selected").addEventListener("click", () => zoomMaster("readable"));
       $("#master-highlight-toggle").addEventListener("change", highlightMaster);
       $("#master-minimap-toggle").addEventListener("change", () => {
+        minimapChosen = true;
         $("#master-minimap").hidden = !$("#master-minimap-toggle").checked;
       });
       $("#master-viewport").addEventListener("scroll", updateMinimap, { passive: true });
@@ -2183,6 +2668,16 @@
             ? DATA.prototype.stages.nodes.find((n) => n.lane === "record").id
             : event.target.value;
         if (masterById.has(id)) {
+          if (innerWidth < 850 && state.masterMode === "steps") {
+            state.masterQuery = "";
+            $("#master-search").value = "";
+            updateMasterMatches();
+            const card = $(`[data-step-id="${id}"]`);
+            card?.scrollIntoView({ block: "center" });
+            card?.focus({ preventScroll: true });
+            event.target.value = "";
+            return;
+          }
           centreMaster(id);
           $("#master-viewport").focus({ preventScroll: true });
           announce(`Map moved to ${masterById.get(id).label}.`);
@@ -2385,6 +2880,20 @@
       document.addEventListener("click", (event) => {
         const button = event.target.closest("button");
         if (!button) return;
+        if (button.dataset.masterMode) {
+          setMasterReadingMode(button.dataset.masterMode);
+          return;
+        }
+        if (button.dataset.readOnMap) {
+          $("#mobile-details").close();
+          setMasterReadingMode("map");
+          state.masterZoom = 1;
+          requestAnimationFrame(() => {
+            centreMaster(button.dataset.readOnMap, scaleMaster());
+            $("#master-viewport").focus({ preventScroll: true });
+          });
+          return;
+        }
         if (button.dataset.masterNode) {
           selectMaster(button.dataset.masterNode);
           return;
@@ -2516,6 +3025,14 @@
       });
       $("#print-button").addEventListener("click", () => window.print());
       $("#close-mobile-details").addEventListener("click", () => $("#mobile-details").close());
+      $("#mobile-details").addEventListener("close", () => {
+        if (!$("#mobile-details").open && state.view === "master" && innerWidth < 850 && state.masterMode === "steps")
+          ($(`[data-step-id="${state.masterNode}"]`) || $("#master-search")).focus({ preventScroll: true });
+      });
+      $("#phone-view").addEventListener("change", (event) => {
+        view(event.target.value);
+        window.scrollTo({ top: 0 });
+      });
       $("#download-links").addEventListener("click", () =>
         download("wa-mental-health-pathways.csv", [
           ["id", "from", "to", "interaction", "route", "evidence_basis", "conditions", "source_ids"],
@@ -2564,7 +3081,14 @@
         }
       });
       let resizeFrame;
+      let minimapChosen = false;
+      $("#master-minimap-toggle").checked = innerWidth >= 850;
+      window.visualViewport?.addEventListener("resize", sizeMasterSurface);
       window.addEventListener("resize", () => {
+        if (!minimapChosen) {
+          $("#master-minimap-toggle").checked = innerWidth >= 850;
+          $("#master-minimap").hidden = innerWidth < 850;
+        }
         cancelAnimationFrame(resizeFrame);
         resizeFrame = requestAnimationFrame(drawConnections);
         if (state.view === "master")
@@ -2590,6 +3114,13 @@
       function restoreHash() {
         if (location.hash === "#content") return;
         const hash = new URLSearchParams(location.hash.slice(1));
+        state.masterMode = hash.get("reading") === "steps" ? "steps" : "map";
+        $("#view-master").classList.toggle("steps-mode", state.masterMode === "steps");
+        document
+          .querySelectorAll("[data-master-mode]")
+          .forEach((button) =>
+            button.setAttribute("aria-pressed", String(button.dataset.masterMode === state.masterMode)),
+          );
         state.node = nodeById.has(hash.get("place")) ? hash.get("place") : null;
         state.edge = edgeById.has(hash.get("link")) ? hash.get("link") : null;
         state.masterNode = DATA.prototype.stages.nodes.some((n) => n.id === hash.get("box")) ? hash.get("box") : null;

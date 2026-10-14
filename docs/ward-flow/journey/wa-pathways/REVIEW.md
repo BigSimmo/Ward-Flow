@@ -2,6 +2,26 @@
 
 Task: `01a11902-8a33-7663-9fde-058cdaf3063b`. Owning project: Ward Flow.
 
+_Updated 15 October 2026 — phone controls and a readable master-step catalogue; Ward Flow wireframe task owns._
+
+## Phone use — 15 October 2026
+
+The master map still opens first, with every original box and path. On smaller screens, a labelled
+view menu replaces the six-row navigation, controls have at least 44-pixel targets, and inputs use
+16-pixel text. **Read steps** shows the same 106 non-heading master boxes as readable cards, retaining
+their symbols and evidence labels. This is a catalogue, not a new recommended patient journey.
+Search filters the cards; section jumps move to the corresponding card. Opening one shows its full
+source wording, actors and connected steps in a full-screen dialog, with a persistent back control.
+**Show this step on the map** returns to its original position at readable zoom. The overview navigator
+starts hidden on small screens and remains available in Map tools. Native panning and browser pinch
+zoom remain permitted. Landscape controls use two columns, and Focus map provides additional room.
+
+The 111-box original geometry, 161 paths, nine earlier continuations, 48 care categories, 469 links,
+42 references and 11 examples are unchanged. Browser emulation checks cover small-phone, standard
+phone, larger-phone, landscape and tablet sizes; real iPhone/Safari and assistive-technology acceptance
+remain unrun. The public site is maintained at
+[the Cloudflare wireframe address](https://ward-flow-wireframe.joshsimpson.workers.dev/).
+
 Open [the revised interactive wireframe](explorer.html). It is a self-contained local HTML
 diagram with no external assets, patient records or service calls. It works without the app.
 The original [Journey Explorer](../ward-journey-explorer.html) is preserved.
