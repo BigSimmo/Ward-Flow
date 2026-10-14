@@ -322,10 +322,12 @@ export function WardDemoClockPopover({
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
-      <div
+      <button
+        type="button"
         className={className}
         title={title ?? `Board time ${clockText} AWST`}
         aria-label={ariaLabel ?? `Board time ${clockText} AWST`}
+        aria-expanded={open}
         data-testid={testId}
         onClick={() => setOpen((prev) => !prev)}
       >
@@ -334,7 +336,7 @@ export function WardDemoClockPopover({
             <span>Board time</span> <b>{clockText}</b> <span>AWST</span>
           </>
         )}
-      </div>
+      </button>
       {open ? (
         <div
           className={`glass ${styles.menu}`}
