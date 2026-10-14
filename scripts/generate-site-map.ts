@@ -198,7 +198,7 @@ function renderSiteMapRaw(data = collectSiteMapData()) {
         : ["- No page-level redirects discovered."],
     ),
     ...section("Known caveats and stale-path flags", [
-      "- `/mockups/ward-flow` (and `/mockups/ward-flow/*`) and `/mockups/ward-flow-sign-in` are publicly reachable in production via `isWardFlowPublicPath` in `src/proxy.ts`. Non-Ward `/mockups/*` routes are development-only: in production `src/proxy.ts` returns 404 unless `NEXT_PUBLIC_MOCKUPS_ENABLED=true`, except the developer-gated subtrees named in `src/lib/developer-area/headers.ts`, which carry their own gate, and the isolated offline Playwright server. Responses under `/mockups/:path*` carry `X-Robots-Tag: noindex, nofollow`.",
+      "- The subtrees listed in `DEVELOPER_GATED_PATH_PREFIXES` in `src/lib/developer-area/headers.ts` are publicly reachable in production when matched by `isDeveloperGatedPath`. Every other `/mockups/*` path returns 404 unless the isolated Playwright server runs with both `PLAYWRIGHT_OFFLINE_MODE=true` and `NEXT_PUBLIC_MOCKUPS_ENABLED=true`. Responses under `/mockups/:path*` carry `X-Robots-Tag: noindex, nofollow`.",
     ]),
     ...section("Route ownership/source map", [
       "| Area | Source |",
