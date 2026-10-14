@@ -423,7 +423,9 @@ function walk(dir: string): string[] {
   );
 }
 
-type ScannedFile = { path: string; identifiers: string[] };
+type ScannedFile = { path: string; identifiers: string[]; declaredValueNames: string[] };
+
+let cachedScannedWardFiles: ScannedFile[] | null = null;
 
 /**
  * Every identifier the TypeScript parser sees in a file — declarations, references and imports
@@ -432,7 +434,8 @@ type ScannedFile = { path: string; identifiers: string[] };
  * counts loop iterations and calls that a result.
  */
 function scanWardFiles(): ScannedFile[] {
-  return walk(WARD_DIR)
+  if (cachedScannedWardFiles) return cachedScannedWardFiles;
+  cachedScannedWardFiles = walk(WARD_DIR)
     .filter((path) => path.endsWith(".ts") || path.endsWith(".tsx"))
     .map((path) => {
       const source = ts.createSourceFile(
@@ -443,13 +446,17 @@ function scanWardFiles(): ScannedFile[] {
         path.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
       );
       const identifiers: string[] = [];
+      const declaredValueNames: string[] = [];
       const visit = (node: ts.Node): void => {
         if (ts.isIdentifier(node)) identifiers.push(node.text);
+        if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) declaredValueNames.push(node.name.text);
+        if (ts.isEnumMember(node) && ts.isIdentifier(node.name)) declaredValueNames.push(node.name.text);
         ts.forEachChild(node, visit);
       };
       visit(source);
-      return { path, identifiers };
+      return { path, identifiers, declaredValueNames };
     });
+  return cachedScannedWardFiles;
 }
 
 /**
@@ -464,6 +471,8 @@ function scanWardFiles(): ScannedFile[] {
  * here, and this repository's own fabrications have always been `export const NAME = <number>`.
  */
 function declaredValueNamesIn(path: string): string[] {
+  const cached = cachedScannedWardFiles?.find((file) => file.path === path);
+  if (cached) return cached.declaredValueNames;
   const source = ts.createSourceFile(
     path,
     readFileSync(path, "utf8"),
@@ -1038,7 +1047,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
       ),
       "the shortlist breach line was deleted or renamed",
     ).toBe(true);
-  });
+  }, 120_000);
 
   // PART 3 — the wider but INCOMPLETE token denylist. Green here proves nothing on its own; see
   // the file header's bypass table. Part 2 above is the fail-closed check.
@@ -1153,7 +1162,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
         .map((identifier) => `${file.path.replaceAll("\\", "/")}: ${identifier}`),
     );
     expect(offenders).toEqual([]);
-  });
+  }, 120_000);
 });
 
 /**

@@ -8292,15 +8292,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         }
         if (event.role === "ed" && event.actingPlaceId !== undefined) {
           const originEdId = referralReferrer(referral)?.placeId;
-          if (
-            referral.originSiteCode !== undefined &&
-            event.actingPlaceId !== referral.originSiteCode &&
-            event.actingPlaceId !== originEdId
-          ) {
+          if (originEdId === undefined || event.actingPlaceId !== originEdId) {
             return reject(
               state,
               event,
-              `caller ED ${event.actingPlaceId} is not the referral origin ED (${originEdId ?? referral.originSiteCode}); only the sending ED or coordinator may withdraw it`,
+              `caller ED ${event.actingPlaceId} is not the referral origin ED (${originEdId ?? referral.originSiteCode ?? "unknown"}); only the sending ED or coordinator may withdraw it`,
             );
           }
         }
@@ -8539,15 +8535,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
       if (event.role === "ed" && event.actingPlaceId !== undefined) {
         const originEdId = referralReferrer(referral)?.placeId;
-        if (
-          referral.originSiteCode !== undefined &&
-          event.actingPlaceId !== referral.originSiteCode &&
-          event.actingPlaceId !== originEdId
-        ) {
+        if (originEdId === undefined || event.actingPlaceId !== originEdId) {
           return reject(
             state,
             event,
-            `caller ED ${event.actingPlaceId} is not the referral origin ED (${originEdId ?? referral.originSiteCode}); only origin ED or coordinator may add corrections`,
+            `caller ED ${event.actingPlaceId} is not the referral origin ED (${originEdId ?? referral.originSiteCode ?? "unknown"}); only origin ED or coordinator may add corrections`,
           );
         }
       }

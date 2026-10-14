@@ -2354,7 +2354,7 @@ describe("bed release privacy", () => {
       const edMismatch = wardFlowReducer(edReferralState, {
         type: "RECORD_REFERRER_WITHDRAWAL",
         role: "ed",
-        actingPlaceId: "FSH",
+        actingPlaceId: "fsh-ed",
         now: NOW,
         referralId: referral.id,
         reason: "referred_in_error",
@@ -2395,7 +2395,7 @@ describe("bed release privacy", () => {
       const correctionMismatch = wardFlowReducer(edReferralState, {
         type: "ADD_REFERRAL_CORRECTION",
         role: "ed",
-        actingPlaceId: "FSH",
+        actingPlaceId: "fsh-ed",
         now: NOW,
         referralId: referral.id,
         note: "Correction note",

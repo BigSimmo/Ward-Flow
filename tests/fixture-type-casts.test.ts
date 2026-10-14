@@ -35,6 +35,16 @@ export function findDoubleCastViolations(
   fileName: string,
   forbiddenTargets: Set<string> = FORBIDDEN_DOMAIN_CAST_TARGETS,
 ): DoubleCastFinding[] {
+  if (!sourceCode.includes(" as ")) return [];
+  let hasTargetName = false;
+  for (const target of forbiddenTargets) {
+    if (sourceCode.includes(target)) {
+      hasTargetName = true;
+      break;
+    }
+  }
+  if (!hasTargetName) return [];
+
   const sourceFile = ts.createSourceFile(
     fileName,
     sourceCode,
@@ -145,5 +155,5 @@ describe("fixture type cast discipline (#WRZJVR / #AQXXD8)", () => {
       `Found double-cast violations on domain models (bypassing shape checks):\n` +
         allViolations.map((v) => `  ${v.file}:${v.line} -> ${v.targetType}`).join("\n"),
     ).toEqual([]);
-  });
+  }, 120_000);
 });

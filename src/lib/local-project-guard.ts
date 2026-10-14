@@ -180,8 +180,8 @@ export function localProjectRequestIdentityPayload(request: Request): LocalProje
         reason: "non-local-host",
         localServer: {
           ...payload.localServer,
-          currentUrl: null,
-          currentPort: null,
+          currentUrl: requestUrl.origin,
+          currentPort: portFor(requestUrl),
           safeLocalOrigin: false,
           reason: "non-local-host",
           requestOrigin,

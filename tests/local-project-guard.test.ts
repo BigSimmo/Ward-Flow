@@ -231,8 +231,8 @@ describe("local project guard", () => {
       const payload = localProjectRequestIdentityPayload(evilReq);
 
       expect(payload.localServer).toMatchObject({
-        currentUrl: null,
-        currentPort: null,
+        currentUrl: "http://127.0.0.1:3000",
+        currentPort: 3000,
         safeLocalOrigin: false,
         reason: "non-local-host",
       });
@@ -243,8 +243,8 @@ describe("local project guard", () => {
       const boundEvilReq = request(boundUrl(projectPortStart), { host: "evil.example.com" });
       const boundPayload = localProjectRequestIdentityPayload(boundEvilReq);
       expect(boundPayload.localServer).toMatchObject({
-        currentUrl: null,
-        currentPort: null,
+        currentUrl: `http://0.0.0.0:${projectPortStart}`,
+        currentPort: projectPortStart,
         safeLocalOrigin: false,
         reason: "non-local-host",
       });
