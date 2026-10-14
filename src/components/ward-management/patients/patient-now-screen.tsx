@@ -557,7 +557,8 @@ export function PatientNowScreen({
               const originUnitId = liveMovement.referralId
                 ? referrals.find((referral) => referral.id === liveMovement.referralId)?.originUnitId
                 : undefined;
-              const sourceUnitId = originUnitId ?? admissions.find((admission) => admission.id === liveMovement.admissionId)?.unitId;
+              const sourceUnitId =
+                originUnitId ?? admissions.find((admission) => admission.id === liveMovement.sourceAdmissionId)?.unitId;
               return sourceUnitId ? { actingUnitId: sourceUnitId } : {};
             })()
           : {}),

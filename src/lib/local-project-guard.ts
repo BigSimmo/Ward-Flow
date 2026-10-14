@@ -125,9 +125,11 @@ function judgedRequestUrl(request: Request): URL {
   const requestUrl = new URL(request.url);
   const host = request.headers.get("host");
   if (!host) return requestUrl;
+  const cleanHost = host.trim();
+  if (!/^(?:\[[0-9a-fA-F:]+\]|[a-zA-Z0-9.-]+)(?::\d+)?$/.test(cleanHost)) return requestUrl;
 
   try {
-    const fromHost = new URL(`${requestUrl.protocol}//${host}`);
+    const fromHost = new URL(`${requestUrl.protocol}//${cleanHost}`);
     // Only a loopback Host is believed (12 October 2026 review, A4-13). A caller can put anything
     // in Host — a DNS-rebinding page sends its own domain — and a non-loopback value would mark
     // the request "not local" and skip the port rule entirely. So a non-loopback Host never
@@ -151,16 +153,19 @@ export function localProjectRequestIdentityPayload(request: Request): LocalProje
   const payload = localProjectIdentityPayload(request.url);
 
   if (hostHeader !== null) {
+    const cleanHost = hostHeader.trim();
+    const validHostSyntax = /^(?:\[[0-9a-fA-F:]+\]|[a-zA-Z0-9.-]+)(?::\d+)?$/.test(cleanHost);
     let parsedHost: URL | null = null;
-    try {
-      parsedHost = new URL(`${requestUrl.protocol}//${hostHeader}`);
-    } catch {
-      parsedHost = null;
+    if (validHostSyntax) {
+      try {
+        parsedHost = new URL(`${requestUrl.protocol}//${cleanHost}`);
+      } catch {
+        parsedHost = null;
+      }
     }
     // If a Host header is explicitly present on a local request and its hostname is NOT a loopback hostname
     // (or cannot be parsed as a valid host), the guard immediately rejects with reason: "non-local-host" (A4-13).
-    const localDevelopmentBind = isLocalUrl(requestUrl) || requestUrl.hostname === "0.0.0.0";
-    if ((!parsedHost || !parsedHost.hostname || !isLocalUrl(parsedHost)) && localDevelopmentBind) {
+    if ((!parsedHost || !parsedHost.hostname || !isLocalUrl(parsedHost)) && isLocalUrl(requestUrl)) {
       return {
         ...payload,
         reason: "non-local-host",

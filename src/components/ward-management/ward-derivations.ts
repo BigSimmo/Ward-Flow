@@ -265,12 +265,9 @@ export function isOpen(movement: Movement): boolean {
 export function examinationRevokedWhileBedHeld(movement: Movement): boolean {
   const outcome = movement.examination?.outcome;
   if (outcome !== "community_order" && outcome !== "revoked") return false;
-  return (
-    movement.stage === "pulled" ||
-    movement.stage === "handover_ready" ||
-    movement.stage === "moving" ||
-    movement.admissionId !== undefined
-  );
+  if (movement.admissionId !== undefined) return true;
+  if (movement.closure !== undefined) return false;
+  return movement.stage === "pulled" || movement.stage === "handover_ready" || movement.stage === "moving";
 }
 
 /**

@@ -601,7 +601,7 @@ export function referralEligibility(
   // is a suitability question and does not change between "can this ward take them in principle"
   // and "can this person come now", so both paths ask it identically. `ward.secureBedNeeded` is
   // this path's counterpart of `movement.security === "Secure"`.
-  const securityMet = !ward.secureBedNeeded || lockedBedsFree(unit) > 0;
+  const securityMet = !ward.secureBedNeeded || unitHasLockedBeds(unit);
   // See the `legal_status` gate's own comment below for why this is an accepts-rule, never an
   // equality: a referral that does not need an involuntary bed is accepted by ANY bed, including
   // an authorised one — `unit.authorised` is a capability a bed has, not a value to match against.

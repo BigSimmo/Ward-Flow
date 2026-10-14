@@ -50,7 +50,7 @@ export function PatientTransitOperations({
   /** Inside a sheet that already names it (the Patient Now mockups): no section heading. */
   bare?: boolean;
 }) {
-  const { units, admissions, dispatch, rejections, readAuditEvents } = useWardFlow();
+  const { units, admissions, referrals, dispatch, rejections, readAuditEvents } = useWardFlow();
   const now = useWardFlowClock();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
   const gate = useRoleGate();
@@ -58,9 +58,19 @@ export function PatientTransitOperations({
   // names who acted rather than a borrowed ward, ED or officer.
   const routeRole = useRouteRole();
   // A ward acts for the ward the patient is accepted at; the other roles name no unit.
-  const wardActing =
+  const wardActing = routeRole === "ward" ? { actingUnitId: movement.acceptedUnitId } : {};
+  // For BOOK_TRANSPORT, a ward acts for the sending ward (referral origin or source admission unit).
+  const wardSendingActing =
     routeRole === "ward"
-      ? { actingUnitId: (movement as { originUnitId?: string }).originUnitId ?? admissions.find((admission) => admission.id === movement.admissionId)?.unitId }
+      ? (() => {
+          const originUnitId =
+            (movement.referralId
+              ? referrals.find((referral) => referral.id === movement.referralId)?.originUnitId
+              : undefined) ??
+            admissions.find((admission) => admission.id === movement.sourceAdmissionId)?.unitId ??
+            (movement as { originUnitId?: string }).originUnitId;
+          return originUnitId ? { actingUnitId: originUnitId } : {};
+        })()
       : {};
   const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
   const holdGate = gate("PULL_PATIENT");
@@ -541,7 +551,7 @@ export function PatientTransitOperations({
                 dispatch({
                   type: "BOOK_TRANSPORT",
                   role: routeRole,
-                  ...wardActing,
+                  ...wardSendingActing,
                   now,
                   movementId: movement.id,
                   provider,

@@ -8271,7 +8271,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
         const callerUnitId = event.actingUnitId ?? event.actingPlaceId;
-        if (callerUnitId === undefined || referral.originUnitId === undefined || callerUnitId !== referral.originUnitId) {
+        if (
+          callerUnitId === undefined ||
+          referral.originUnitId === undefined ||
+          callerUnitId !== referral.originUnitId
+        ) {
           return reject(
             state,
             event,
@@ -8300,7 +8304,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           if (
             referral.sendingTeamName !== undefined &&
             event.actingPlaceId !== referral.sendingTeamName &&
-            event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName))
+            event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName)
           ) {
             return reject(
               state,
@@ -8530,7 +8534,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
       if (event.role === "ed") {
-        if (event.actingPlaceId === undefined || referral.originSiteCode === undefined || event.actingPlaceId !== referral.originSiteCode) {
+        if (
+          event.actingPlaceId === undefined ||
+          referral.originSiteCode === undefined ||
+          event.actingPlaceId !== referral.originSiteCode
+        ) {
           return reject(
             state,
             event,
@@ -9412,7 +9420,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const examinationOutcome = movement.examination?.outcome;
       const isRevokedExamHold =
         (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
-        movementHoldsBedByStage(movement);
+        (movement.admissionId !== undefined || (movement.closure === undefined && movementHoldsBedByStage(movement)));
       const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
 
       if (!isStoppedTransport && !isRevokedExamHold && !awaitingRelease) {
@@ -9425,7 +9433,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // A stopped journey or revoked-exam hold holds a bed until explicitly released.
       const heldBedOutstanding =
         movement.admissionId !== undefined ||
-        movementHoldsBedByStage(movement) ||
+        (movement.closure === undefined && movementHoldsBedByStage(movement)) ||
         movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||
         movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
       if (!heldBedOutstanding) {
@@ -9445,6 +9453,21 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const released: Movement = {
         ...movement,
         admissionId: undefined,
+        ...(isRevokedExamHold || awaitingRelease
+          ? {
+              acceptedUnitId: undefined,
+              referredUnitIds: [],
+              ...(movement.transport && movement.transport.cancelledAt === undefined
+                ? {
+                    transport: {
+                      ...movement.transport,
+                      cancelledAt: event.now,
+                      cancelledReason: "examination_revoked",
+                    },
+                  }
+                : {}),
+            }
+          : {}),
         // Nothing is blocking any more — the release this sentence describes is the one thing that
         // was outstanding.
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,

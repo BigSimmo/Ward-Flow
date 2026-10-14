@@ -158,7 +158,10 @@ function decidedWaitLabel(referral: Referral): string {
 }
 
 function outcomeLabel(referral: Referral): string {
-  if (referral.destinations.length > 0 && referral.destinations.every((addressing) => addressing.withdrawnAt !== undefined)) {
+  if (
+    referral.destinations.length > 0 &&
+    referral.destinations.every((addressing) => addressing.withdrawnAt !== undefined)
+  ) {
     return "Withdrawn";
   }
   const state = referralState(referral);
