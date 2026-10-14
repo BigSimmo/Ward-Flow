@@ -3,8 +3,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { SharedView } from "./ward-shared-client";
-import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
+import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi, releasePhonePush } from "./shell/ward-phone-push";
 import type { WardFlowEvent } from "./ward-flow-events";
+import { SharedWorkspaceClient } from "./ward-shared-client";
+import { resolveWardAuthProvider } from "../../lib/security-headers";
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
 import styles from "./ward-shared-access.module.css";
 
@@ -45,34 +47,79 @@ export function WardDataModeSlot({ className }: { className?: string }) {
 export const PHONE_RELEASE_WAIT_MS = 2000;
 
 function useWardEntraShared(enabled: boolean): WardSharedConnection {
-  const pushApi = useMemo<PhonePushApi>(() => {
-    const unavailable = () => Promise.reject(new Error("Shared workspace not connected"));
-    return {
-      pushKey: unavailable,
-      pushStatus: unavailable,
-      pushSubscribe: unavailable,
-      pushUnsubscribe: unavailable,
+  const [view, setView] = useState<SharedView>({ snapshot: null, receivedAt: 0, status: "loading", error: null });
+  const [signedIn, setSignedIn] = useState(false);
+  const client = useRef<SharedWorkspaceClient | null>(null);
+  const auth = useRef<any>(null);
+  const boot = useRef<Promise<void> | null>(null);
+  const connect = useCallback(async (account: any) => {
+    const instance = auth.current;
+    const token = async () => {
+      const result = await instance.acquireTokenSilent({
+        account,
+        scopes: [process.env.NEXT_PUBLIC_WARD_API_SCOPE ?? `${process.env.NEXT_PUBLIC_WARD_CLIENT_ID}/.default`],
+      });
+      return result.accessToken;
     };
+    const next = new SharedWorkspaceClient({
+      baseUrl: (process.env.NEXT_PUBLIC_WARD_API_BASE_URL ?? "").replace(/\/$/, ""),
+      token,
+      changed: setView,
+    });
+    client.current?.dispose();
+    client.current = next;
+    setSignedIn(true);
+    await next.refresh();
   }, []);
-
+  useEffect(() => {
+    if (!enabled) return;
+    let closed = false;
+    boot.current = (async () => {
+      try {
+        const { PublicClientApplication } = await import("@azure/msal-browser");
+        const instance = new PublicClientApplication({
+          auth: {
+            clientId: process.env.NEXT_PUBLIC_WARD_CLIENT_ID ?? "",
+            authority: `https://login.microsoftonline.com/${process.env.NEXT_PUBLIC_WARD_TENANT_ID}`,
+            redirectUri: window.location.origin + "/mockups/ward-flow",
+          },
+          cache: { cacheLocation: "sessionStorage" },
+        });
+        await instance.initialize();
+        auth.current = instance;
+        const result = await instance.handleRedirectPromise();
+        const account = result?.account ?? instance.getAllAccounts()[0];
+        if (account && !closed) await connect(account);
+        else if (!closed) setView((old) => ({ ...old, status: "ready" }));
+      } catch (error) {
+        if (!closed) setView((old) => ({ ...old, status: "unavailable", error: error instanceof Error ? error.message : "Microsoft sign-in is unavailable." }));
+      }
+    })();
+    return () => {
+      closed = true;
+      client.current?.dispose();
+      client.current = null;
+      auth.current = null;
+      setSignedIn(false);
+    };
+  }, [connect, enabled]);
+  const pushApi = useMemo<PhonePushApi>(() => ({
+    pushKey: async () => { if (!client.current) throw new Error("Shared workspace not connected"); return client.current.pushKey(); },
+    pushStatus: async (endpoint) => { if (!client.current) throw new Error("Shared workspace not connected"); return client.current.pushStatus(endpoint); },
+    pushSubscribe: async (subscription) => { if (!client.current) throw new Error("Shared workspace not connected"); return client.current.pushSubscribe(subscription); },
+    pushUnsubscribe: async (endpoint) => { if (!client.current) throw new Error("Shared workspace not connected"); return client.current.pushUnsubscribe(endpoint); },
+  }), []);
   return {
-    snapshot: null,
-    receivedAt: 0,
-    status: enabled ? "unavailable" : "loading",
-    error: enabled ? "Microsoft sign-in or shared workspace configuration is unavailable." : null,
-    enabled,
-    signedIn: false,
-    signIn: () => {},
-    signOut: () => {},
-    retry: () => {},
-    dispatch: () => {},
-    pushApi,
+    ...view, enabled, signedIn, pushApi,
+    signIn: () => { void auth.current?.loginRedirect({ scopes: [process.env.NEXT_PUBLIC_WARD_API_SCOPE ?? `${process.env.NEXT_PUBLIC_WARD_CLIENT_ID}/.default`], prompt: "select_account" }); },
+    signOut: () => { void releasePhonePush(pushApi).catch(() => {}).finally(() => auth.current?.logoutRedirect({ postLogoutRedirectUri: window.location.origin + "/mockups/ward-flow" })); },
+    retry: () => { void boot.current; void client.current?.retry(); },
+    dispatch: (event) => client.current?.dispatch(event),
   };
 }
 
 export function useWardShared(enabled: boolean): WardSharedConnection {
-  // Match the CSP selector: blank defaults to Supabase; unknown providers never boot either adapter.
-  const provider = process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim() || "supabase";
+  const provider = resolveWardAuthProvider();
   const supabaseMode = provider === "supabase";
   const entra = useWardEntraShared(enabled && provider === "entra");
   const supabase = useWardSupabaseShared(enabled && supabaseMode);

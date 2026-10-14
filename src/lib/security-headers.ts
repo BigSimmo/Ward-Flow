@@ -43,6 +43,17 @@ export type ContentSecurityPolicyOptions = SecurityHeaderFlags & {
 /** Microsoft sign-in, which the shared workspace's MSAL client calls for tokens. */
 export const MICROSOFT_SIGN_IN_ORIGIN = "https://login.microsoftonline.com";
 
+/** Select the browser provider using the same legacy Entra fallback as the backend. */
+export function resolveWardAuthProvider(): "entra" | "supabase" | string {
+  const selected = process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim();
+  if (selected) return selected;
+  const legacyEntra =
+    !!process.env.NEXT_PUBLIC_WARD_TENANT_ID?.trim() &&
+    !!process.env.NEXT_PUBLIC_WARD_CLIENT_ID?.trim() &&
+    !process.env.NEXT_PUBLIC_WARD_SUPABASE_URL?.trim();
+  return legacyEntra ? "entra" : "supabase";
+}
+
 // Browser auth and the workspace API are scoped to configured exact origins.
 // HTTP is permitted only for an explicitly configured loopback API in development.
 // NEXT_PUBLIC_* is fixed at build time; no provider wildcard is allowed.
@@ -57,8 +68,7 @@ export function resolveSharedWorkspaceOrigins(
     return [];
   }
   if (url.username || url.password) return [];
-  // Blank means unset (offline wrappers blank it), matching the client's Supabase default.
-  const provider = process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim() || "supabase";
+  const provider = resolveWardAuthProvider();
   const loopback =
     process.env.NODE_ENV === "development" &&
     url.protocol === "http:" &&
