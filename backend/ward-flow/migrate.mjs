@@ -12,13 +12,17 @@ export async function migrate(pool) {
     if (!rows[0].relation)
       await client.query(await readFile(new URL("./migrations/001-shared-workspace.sql", import.meta.url), "utf8"));
     const version = await client.query("SELECT max(version) AS version FROM ward_flow.migrations");
-    if (![1, 2, 3, 4].includes(version.rows[0].version)) throw new Error("Unsupported database migration version");
+    if (![1, 2, 3, 4, 5].includes(version.rows[0].version)) throw new Error("Unsupported database migration version");
     if (version.rows[0].version === 1)
       await client.query(await readFile(new URL("./migrations/002-workspace-data-mode.sql", import.meta.url), "utf8"));
     if (version.rows[0].version <= 2)
       await client.query(await readFile(new URL("./migrations/003-push-subscriptions.sql", import.meta.url), "utf8"));
     if (version.rows[0].version <= 3)
       await client.query(await readFile(new URL("./migrations/004-trigger-search-path.sql", import.meta.url), "utf8"));
+    if (version.rows[0].version <= 4)
+      await client.query(
+        await readFile(new URL("./migrations/005-retention-and-indexes.sql", import.meta.url), "utf8"),
+      );
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");

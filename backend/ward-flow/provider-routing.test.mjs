@@ -169,10 +169,19 @@ for (const databaseProvider of ["azure", "supabase", "postgres"]) {
   }
 }
 
-test("omitted selectors retain Azure/Entra and invalid or live configuration is refused", () => {
+test("omitted selectors default to Supabase, retain legacy Azure/Entra fallback, and refuse invalid or live configuration", () => {
+  const supabaseDefault = environment("supabase", "supabase");
+  delete supabaseDefault.WARD_DATABASE_PROVIDER;
+  delete supabaseDefault.WARD_AUTH_PROVIDER;
+  assert.equal(readConfig(supabaseDefault).databaseProvider, "supabase");
+  assert.equal(readConfig(supabaseDefault).authProvider, "supabase");
+
   const env = environment("azure", "entra");
   delete env.WARD_DATABASE_PROVIDER;
   delete env.WARD_AUTH_PROVIDER;
+  delete env.WARD_SUPABASE_PROJECT_REF;
+  delete env.WARD_SUPABASE_URL;
+  delete env.WARD_SUPABASE_DATABASE_URL;
   assert.equal(readConfig(env).databaseProvider, "azure");
   assert.equal(readConfig(env).authProvider, "entra");
   for (const patch of [
@@ -183,11 +192,12 @@ test("omitted selectors retain Azure/Entra and invalid or live configuration is 
     { AzureWebJobsStorage__accountName: "otherstorage" },
   ])
     assert.throws(() => readConfig({ ...env, ...patch }));
-  for (const provider of ["postgres", "supabase"])
-    assert.throws(
-      () => readConfig({ ...environment(provider, "supabase"), WARD_SHARED_ENABLED: "false" }),
-      /requires the shared/,
-    );
+  // With the shared workspace off, the database selector is accepted but no PostgreSQL target is read.
+  for (const provider of ["postgres", "supabase"]) {
+    const config = readConfig({ ...environment(provider, "supabase"), WARD_SHARED_ENABLED: "false" });
+    assert.equal(config.shared, false);
+    assert.equal(config.postgres, null);
+  }
 });
 
 test("provider startup cleans up the created pool on verification or engine failure", async () => {

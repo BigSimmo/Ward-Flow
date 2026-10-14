@@ -4,7 +4,7 @@ Ward Flow supports Azure PostgreSQL, the approved Supabase preset and a generic 
 
 ## Administrator prerequisites
 
-Runtime startup never applies migrations. Shared readiness requires migrations **1 through 4**, including the fixed search paths on the audit and workspace-mode trigger functions. An existing Azure installation at migration 2 or 3 must receive migration 4 through its separately authorised administrator workflow before using this runtime. Keep a new runtime stopped until the schema and runtime grants are ready. Existing Azure resources and their deployed runtime remain unchanged while Azure work is paused; any future Azure upgrade requires its own approval.
+Runtime startup never applies migrations. Shared readiness requires migrations **1 through 5**, including the fixed search paths on the audit and workspace-mode trigger functions and the composite push/command indexes. An existing Azure installation at an earlier migration must receive migrations through 5 via its separately authorised administrator workflow before using this runtime. Keep a new runtime stopped until the schema and runtime grants are ready. Existing Azure resources and their deployed runtime remain unchanged while Azure work is paused; any future Azure upgrade requires its own approval.
 
 Inspect the exact database target, ownership and contents first. Preserve a recoverable backup before a migration. A matching migration number alone is insufficient. The generic PostgreSQL CLI checks the existing `ward_flow` catalogue and refuses unfamiliar tables, functions, constraints, triggers, sequences, ownership or migration histories. Do not delete an unexpected namespace to make setup pass.
 

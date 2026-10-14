@@ -2,15 +2,16 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import type { PublicClientApplication, AccountInfo } from "@azure/msal-browser";
-import { SharedWorkspaceClient, type SharedView } from "./ward-shared-client";
+import type { AccountInfo, PublicClientApplication } from "@azure/msal-browser";
+import type { SharedView } from "./ward-shared-client";
 import {
   PhonePushAccessContext,
-  releasePhonePush,
   type PhonePushAccess,
   type PhonePushApi,
+  releasePhonePush,
 } from "./shell/ward-phone-push";
 import type { WardFlowEvent } from "./ward-flow-events";
+import { SharedWorkspaceClient } from "./ward-shared-client";
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
 import styles from "./ward-shared-access.module.css";
 
@@ -48,7 +49,7 @@ export function WardDataModeSlot({ className }: { className?: string }) {
 }
 
 /** How long sign-out waits for this device's phone alerts to be released. */
-const PHONE_RELEASE_WAIT_MS = 2000;
+export const PHONE_RELEASE_WAIT_MS = 2000;
 
 function useWardEntraShared(enabled: boolean): WardSharedConnection {
   const [view, setView] = useState<SharedView>({ snapshot: null, receivedAt: 0, status: "loading", error: null });
@@ -189,9 +190,24 @@ function useWardEntraShared(enabled: boolean): WardSharedConnection {
   };
 }
 
+/**
+ * The browser sign-in provider. Blank selects legacy Entra only when its tenant and client IDs are
+ * set and no Supabase URL is, otherwise Supabase. This mirrors `resolveWardAuthProvider` in
+ * src/lib/security-headers.ts (the CSP side); Ward Flow may not import outside its folders, so
+ * tests/security-headers.test.ts keeps the two in step.
+ */
+export function selectWardAuthProvider(): string {
+  const selected = process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim();
+  if (selected) return selected;
+  const legacyEntra =
+    !!process.env.NEXT_PUBLIC_WARD_TENANT_ID?.trim() &&
+    !!process.env.NEXT_PUBLIC_WARD_CLIENT_ID?.trim() &&
+    !process.env.NEXT_PUBLIC_WARD_SUPABASE_URL?.trim();
+  return legacyEntra ? "entra" : "supabase";
+}
+
 export function useWardShared(enabled: boolean): WardSharedConnection {
-  // Match the CSP selector: blank defaults to Entra; unknown providers never boot either adapter.
-  const provider = process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim() || "entra";
+  const provider = selectWardAuthProvider();
   const supabaseMode = provider === "supabase";
   const entra = useWardEntraShared(enabled && provider === "entra");
   const supabase = useWardSupabaseShared(enabled && supabaseMode);
@@ -201,10 +217,10 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       return supabase.client.current;
     };
     return {
-      pushKey: () => connected().pushKey(),
-      pushStatus: (endpoint) => connected().pushStatus(endpoint),
-      pushSubscribe: (subscription) => connected().pushSubscribe(subscription),
-      pushUnsubscribe: (endpoint) => connected().pushUnsubscribe(endpoint),
+      pushKey: async () => connected().pushKey(),
+      pushStatus: async (endpoint) => connected().pushStatus(endpoint),
+      pushSubscribe: async (subscription) => connected().pushSubscribe(subscription),
+      pushUnsubscribe: async (endpoint) => connected().pushUnsubscribe(endpoint),
     };
   }, [supabase.client]);
   if (provider !== "entra" && !supabaseMode)

@@ -38,6 +38,12 @@ DO $$ DECLARE column_grant record; browser_role text; BEGIN
   END LOOP;
 END $$;
 REVOKE ALL ON SCHEMA ward_flow FROM PUBLIC, anon, authenticated, wardflow_backend;
+-- Stock Supabase projects grant CREATE on the public schema to PUBLIC; NOINHERIT does not block PUBLIC grants.
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'public') THEN
+    REVOKE CREATE ON SCHEMA public FROM PUBLIC, wardflow_backend;
+  END IF;
+END $$;
 REVOKE ALL ON ALL TABLES IN SCHEMA ward_flow FROM PUBLIC, anon, authenticated, wardflow_backend;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA ward_flow FROM PUBLIC, anon, authenticated, wardflow_backend;
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA ward_flow FROM PUBLIC, anon, authenticated, wardflow_backend;
@@ -56,3 +62,7 @@ GRANT USAGE, SELECT ON SEQUENCE ward_flow.push_subscriptions_id_seq TO wardflow_
 -- cannot cancel PostgreSQL's global PUBLIC EXECUTE default; no global change is made here.
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON TABLES FROM PUBLIC, anon, authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON SEQUENCES FROM PUBLIC, anon, authenticated;
+-- Role-level execution and lock deadlines protect the 4-connection pool and workspace FOR UPDATE lock.
+ALTER ROLE wardflow_backend SET statement_timeout = '10s';
+ALTER ROLE wardflow_backend SET idle_in_transaction_session_timeout = '10s';
+ALTER ROLE wardflow_backend SET lock_timeout = '5s';

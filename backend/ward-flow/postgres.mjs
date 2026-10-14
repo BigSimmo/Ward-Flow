@@ -1,20 +1,24 @@
 import { createHash } from "node:crypto";
 import { Pool } from "pg";
-import { DefaultAzureCredential } from "@azure/identity";
 import { errorFields, freshAlerts } from "./push.mjs";
 
 const SUBSCRIPTION_PAGE = 200;
 /** A device whose sends keep failing for a reason that may pass is tried this many times. */
 export const MAX_DELIVERY_ATTEMPTS = 5;
 
-export function createPostgresPool(config, credential = new DefaultAzureCredential()) {
+export function createPostgresPool(config, credential) {
+  let resolvedCredential = credential;
   const pool = new Pool({
     host: config.host,
     database: config.database,
     user: config.user,
     port: 5432,
     password: async () => {
-      const token = await credential.getToken("https://ossrdbms-aad.database.windows.net/.default");
+      if (!resolvedCredential) {
+        const { DefaultAzureCredential } = await import("@azure/identity");
+        resolvedCredential = new DefaultAzureCredential();
+      }
+      const token = await resolvedCredential.getToken("https://ossrdbms-aad.database.windows.net/.default");
       if (!token) throw new Error("Database identity unavailable");
       return token.token;
     },
@@ -23,6 +27,12 @@ export function createPostgresPool(config, credential = new DefaultAzureCredenti
     connectionTimeoutMillis: 6000,
     idleTimeoutMillis: 30000,
     statement_timeout: 10000,
+    query_timeout: 12000,
+    idle_in_transaction_session_timeout: 10000,
+    lock_timeout: 5000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
+    application_name: "wardflow_backend",
   });
   pool.on("error", () => {
     console.error("Ward Flow database connection unavailable");
@@ -71,32 +81,43 @@ export function createWorkspaceStore(
   });
   async function transaction(run) {
     const client = await pool.connect();
+    let rollbackFailure;
     try {
       await client.query("BEGIN");
       const result = await run(client, clock());
       await client.query("COMMIT");
       return result;
     } catch (error) {
-      await client.query("ROLLBACK");
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        rollbackFailure = rollbackError;
+      }
       throw error;
     } finally {
-      client.release();
+      client.release(rollbackFailure);
     }
   }
   async function lock(client, actorId, at) {
-    const created = await client.query(
-      "INSERT INTO ward_flow.workspaces(id, revision, payload) VALUES ($1, 1, $2) ON CONFLICT DO NOTHING RETURNING id",
-      [workspaceId, engine.seedWorld(at)],
-    );
-    if (created.rowCount)
-      await client.query(
-        "INSERT INTO ward_flow.audit(workspace_id, actor_id, action, outcome, prior_revision, revision, changes) VALUES ($1, $2, 'INITIALISE_WORKSPACE', 'accepted', 0, 1, '{}')",
-        [workspaceId, actorId],
-      );
-    const { rows } = await client.query(
+    let { rows } = await client.query(
       "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
       [workspaceId],
     );
+    if (!rows.length) {
+      const created = await client.query(
+        "INSERT INTO ward_flow.workspaces(id, revision, payload) VALUES ($1, 1, $2) ON CONFLICT DO NOTHING RETURNING id",
+        [workspaceId, engine.seedWorld(at)],
+      );
+      if (created.rowCount)
+        await client.query(
+          "INSERT INTO ward_flow.audit(workspace_id, actor_id, action, outcome, prior_revision, revision, changes) VALUES ($1, $2, 'INITIALISE_WORKSPACE', 'accepted', 0, 1, '{}')",
+          [workspaceId, actorId],
+        );
+      ({ rows } = await client.query(
+        "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
+        [workspaceId],
+      ));
+    }
     if (rows[0]?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");
     if (!engine.validWorld(rows[0]?.payload)) throw new Error("Stored workspace is incompatible");
     return rows[0];
@@ -112,26 +133,34 @@ export function createWorkspaceStore(
   async function evaluatePush(client, world, before, at, excludeActorId) {
     if (!push) return false;
     const current = engine.actNowAlerts(world, at);
+    const currentIds = current.map((alert) => alert.id);
     const stored = await client.query(
       "SELECT item_ids FROM ward_flow.push_baselines WHERE workspace_id=$1 AND data_mode='prototype' FOR UPDATE",
       [workspaceId],
     );
     const reset = before.state.worldGeneration !== world.state.worldGeneration;
     const previous = reset
-      ? current.map((alert) => alert.id)
+      ? currentIds
       : stored.rowCount
         ? stored.rows[0].item_ids
         : engine.actNowAlerts(before, at).map((alert) => alert.id);
-    await client.query(
-      "INSERT INTO ward_flow.push_baselines(workspace_id, item_ids, evaluated_at) VALUES ($1, $2, $3) ON CONFLICT (workspace_id) DO UPDATE SET item_ids=EXCLUDED.item_ids, evaluated_at=EXCLUDED.evaluated_at",
-      [workspaceId, JSON.stringify(current.map((alert) => alert.id)), at],
-    );
+    const baselineUnchanged =
+      stored.rowCount > 0 &&
+      Array.isArray(stored.rows[0].item_ids) &&
+      stored.rows[0].item_ids.length === currentIds.length &&
+      stored.rows[0].item_ids.every((id, index) => id === currentIds[index]);
+    if (!baselineUnchanged) {
+      await client.query(
+        "INSERT INTO ward_flow.push_baselines(workspace_id, item_ids, evaluated_at) VALUES ($1, $2, $3) ON CONFLICT (workspace_id) DO UPDATE SET item_ids=EXCLUDED.item_ids, evaluated_at=EXCLUDED.evaluated_at",
+        [workspaceId, JSON.stringify(currentIds), at],
+      );
+    }
     // An item no longer red is never announced late; its rows go, so the table stays small. Done
     // here, under the workspace and baseline locks, so it can never race a commit that has just
     // queued a new item (deliver() reads the world without a lock and could hold a stale red set).
     await client.query(
       "DELETE FROM ward_flow.push_deliveries d USING ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND s.workspace_id=$1 AND NOT (d.item_id = ANY($2::text[]))",
-      [workspaceId, current.map((alert) => alert.id)],
+      [workspaceId, currentIds],
     );
     const fresh = freshAlerts(previous, current);
     if (!fresh.length) return false;
@@ -246,14 +275,21 @@ export function createWorkspaceStore(
   return {
     pushEnabled: !!push,
     async ready() {
-      const version = 4;
+      const version = 5;
       const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=$1", [version]);
       if (!rows.length) throw new Error("Shared schema unavailable");
     },
     async subscribe(actorId, subscription) {
       if (!push) throw new Error("push-disabled");
       return transaction(async (client, at) => {
-        await lock(client, actorId, at);
+        // Workspace key-share locks do not conflict with one another; serialize the
+        // per-account count and insert so the device limit cannot be exceeded.
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2))", [workspaceId, actorId]);
+        const present = await client.query(
+          "SELECT 1 FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR KEY SHARE",
+          [workspaceId],
+        );
+        if (!present.rowCount) await lock(client, actorId, at);
         const owned = await client.query(
           "SELECT count(*)::int AS count FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND actor_id=$2 AND revoked_at IS NULL AND endpoint <> $3",
           [workspaceId, actorId, subscription.endpoint],
@@ -295,11 +331,15 @@ export function createWorkspaceStore(
     },
     async unsubscribe(actorId, endpoint) {
       if (!push) throw new Error("push-disabled");
-      const { rowCount } = await pool.query(
-        "UPDATE ward_flow.push_subscriptions SET revoked_at=$4 WHERE workspace_id=$1 AND actor_id=$2 AND endpoint=$3 AND revoked_at IS NULL",
-        [workspaceId, actorId, endpoint, clock()],
-      );
-      return rowCount ? "unsubscribed" : "not-found";
+      return transaction(async (client, at) => {
+        const { rows, rowCount } = await client.query(
+          "UPDATE ward_flow.push_subscriptions SET revoked_at=$4 WHERE workspace_id=$1 AND actor_id=$2 AND endpoint=$3 AND revoked_at IS NULL RETURNING id",
+          [workspaceId, actorId, endpoint, at],
+        );
+        if (rowCount && rows[0]?.id !== undefined)
+          await client.query("DELETE FROM ward_flow.push_deliveries WHERE subscription_id=$1", [rows[0].id]);
+        return rowCount ? "unsubscribed" : "not-found";
+      });
     },
     /** Whether this account has an active phone alert record for this device endpoint. */
     async pushStatus(actorId, endpoint) {
@@ -428,7 +468,7 @@ export function createWorkspaceStore(
   };
 }
 
-/** Azure startup gate: shared traffic needs the complete migration 1-4 ledger, including the trigger hardening. */
+/** Azure startup gate: shared traffic needs the complete migration 1-5 ledger, including the trigger hardening and retention indexes. */
 export async function verifyAzureMigrations(pool) {
   let versions;
   try {
@@ -439,6 +479,6 @@ export async function verifyAzureMigrations(pool) {
   } catch {
     throw new Error("Azure database runtime verification unavailable");
   }
-  if (!Array.isArray(versions) || versions.length !== 4 || !versions.every((version, index) => version === index + 1))
+  if (!Array.isArray(versions) || versions.length !== 5 || !versions.every((version, index) => version === index + 1))
     throw new Error("Unsafe or unprepared Azure database runtime");
 }
