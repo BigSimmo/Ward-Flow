@@ -686,8 +686,9 @@ export function UndoHairline({
 import {
   CommandPalette,
   UndoHairlineExpiryEffect,
+  filterCommandPaletteItems,
   type CommandPaletteItem,
   type CommandPaletteProps,
 } from "./v10-command-palette";
 
-export { CommandPalette, type CommandPaletteItem, type CommandPaletteProps };
+export { CommandPalette, filterCommandPaletteItems, type CommandPaletteItem, type CommandPaletteProps };

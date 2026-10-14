@@ -1,4 +1,4 @@
-import type { CommandPaletteItem } from "@/components/wf";
+import { filterCommandPaletteItems, type CommandPaletteItem } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   DEFAULT_BROADCAST_DURATION_MINUTES,
@@ -10,6 +10,7 @@ import {
   initialWardBroadcastState,
   wardBroadcastReducer,
 } from "@/components/ward-management/alerts/ward-broadcast-reducer";
+import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import {
   DISCHARGE_DELAY_REASONS,
   dischargeDelayMetadata,
@@ -36,6 +37,7 @@ import {
   type EddDriftBadge,
 } from "@/components/ward-management/ward-discharge-dates";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import {
   SUPPORT_SERVICE_TYPES,
   dispatchParallelDischargeSupport,
@@ -73,6 +75,8 @@ export {
   // #21 EDD Drift & Confidence Indicator
   deriveEddDriftBadge,
   type EddDriftBadge,
+  // #22 Global Command Palette Filter
+  filterCommandPaletteItems,
   // #25 Broadcast Alert Auto-Expiry & Stand-Down Lifecycle
   DEFAULT_BROADCAST_DURATION_MINUTES,
   DEFAULT_BROADCAST_EXTENSION_MINUTES,
@@ -296,9 +300,14 @@ export function deriveStepDownPullBoard(
     if (!isStepDownReady) continue;
     const compatibleOpenUnitIds = units
       .filter((u) => {
-        const sec = "securityLevel" in u && u.securityLevel ? u.securityLevel : "security" in u ? u.security : "Open";
-        const avail =
-          "availableBeds" in u && typeof u.availableBeds === "number"
+        const isRealUnit = "lockedBeds" in u;
+        const open = isRealUnit
+          ? unitHasOpenBeds(u as Unit)
+          : ("securityLevel" in u && u.securityLevel ? u.securityLevel : "security" in u ? u.security : "Open") ===
+            "Open";
+        const avail = isRealUnit
+          ? boundedBedAvailability(u as Unit).available
+          : "availableBeds" in u && typeof u.availableBeds === "number"
             ? u.availableBeds
             : "allocatable" in u && typeof u.allocatable === "number"
               ? u.allocatable
@@ -310,7 +319,7 @@ export function deriveStepDownPullBoard(
                 ? u.allocatable.value
                 : 0;
         const unitCohort = "cohort" in u && u.cohort ? u.cohort : "ageBand" in u ? u.ageBand : "Adult";
-        return sec === "Open" && avail > 0 && unitCohort === cand.cohort;
+        return open && avail > 0 && unitCohort === cand.cohort;
       })
       .map((u) => u.id);
     if (compatibleOpenUnitIds.length > 0) {
@@ -782,23 +791,6 @@ export function deriveMaroonedPatientDossier(
       estimatedBedDaysSaved: c.daysDelayed,
       escalationSummary: `${c.umrn ? `[${c.umrn}] ` : ""}${c.daysDelayed}d delayed (${c.barrierCategory}) — ready for executive escalation dossier`,
     }));
-}
-
-// ============================================================================
-// #22 — Global Command Palette (`Cmd+K` / `/`) Jump-to-Patient & Quick-Action
-// ============================================================================
-
-export function filterCommandPaletteItems(items: readonly CommandPaletteItem[], query: string): CommandPaletteItem[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return [...items];
-  return items.filter((item) => {
-    if (item.label.toLowerCase().includes(q)) return true;
-    if (item.umrn?.toLowerCase().includes(q)) return true;
-    if (item.category?.toLowerCase().includes(q)) return true;
-    if (item.detail?.toLowerCase().includes(q)) return true;
-    if (item.keywords?.some((kw) => kw.toLowerCase().includes(q))) return true;
-    return false;
-  });
 }
 
 // ============================================================================

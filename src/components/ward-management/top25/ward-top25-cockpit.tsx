@@ -484,22 +484,8 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
             }),
           ),
       },
-      ...state.units.slice(0, 5).map((u) => ({
-        id: `cmd-unit-${u.id}`,
-        label: `Jump to ${u.name}`,
-        category: "Ward",
-        keywords: [u.siteCode, u.cohort],
-        onSelect: () =>
-          setUndoWindow(
-            createUndoWindowState({
-              actionId: `undo-jump-${u.id}`,
-              label: `Jumped to ${u.name}`,
-              createdAtMs: Date.now(),
-            }),
-          ),
-      })),
     ],
-    [topCompatibleWards, afternoonDischarges, state.units],
+    [topCompatibleWards, afternoonDischarges],
   );
 
   const loungeCandidateId = loungeEligible[0]?.id ?? "dl-1";
@@ -551,6 +537,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
       {/* #17 8-Second Undo Hairline Window */}
       {undoWindow ? (
         <UndoHairline
+          key={`${undoWindow.actionId}-${undoWindow.createdAtMs}`}
           message={undoWindow.label}
           durationMs={undoWindow.durationMs}
           onUndo={clearUndoWindow}

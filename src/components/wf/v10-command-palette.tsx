@@ -32,6 +32,24 @@ export type CommandPaletteProps = {
   className?: string;
 };
 
+export function filterCommandPaletteItems(items: readonly CommandPaletteItem[], query: string): CommandPaletteItem[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [...items];
+  return items.filter((item) => {
+    const haystack = [
+      item.label,
+      item.detail ?? "",
+      item.category ?? "",
+      ...(item.keywords ?? []),
+      item.umrn ?? "",
+      item.kind ?? "",
+    ]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  });
+}
+
 /**
  * Keyboard-first Ctrl+K / Cmd+K command palette (Top 25 #22, D-39).
  * Searches patient UMRN, ward name, or quick operational action without requiring mouse scroll.
@@ -123,25 +141,7 @@ export function CommandPalette({
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [enableGlobalShortcut, open, onClose, onOpenChange, onOpenRequest]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return items.slice(0, 12);
-    return items
-      .filter((item) => {
-        const haystack = [
-          item.label,
-          item.detail ?? "",
-          item.category ?? "",
-          ...(item.keywords ?? []),
-          item.umrn ?? "",
-          item.kind ?? "",
-        ]
-          .join(" ")
-          .toLowerCase();
-        return haystack.includes(q);
-      })
-      .slice(0, 12);
-  }, [items, query]);
+  const filtered = useMemo(() => filterCommandPaletteItems(items, query).slice(0, 12), [items, query]);
 
   if (!open) return null;
 

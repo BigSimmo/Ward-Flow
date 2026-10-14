@@ -52,6 +52,7 @@ export {
   NeedsYou,
   UndoHairline,
   CommandPalette,
+  filterCommandPaletteItems,
   type CheckingItem,
   type CheckingFootProps,
   type StepState,
