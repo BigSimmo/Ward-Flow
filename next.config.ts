@@ -92,6 +92,13 @@ const nextConfig: NextConfig = {
         source: "/mockups/:path*",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
+      {
+        // The root-level design mockups in public/ (mockup.html, capacity-table-mockup.html,
+        // referral-board-mockup.html) are served as static files in production too. They stay
+        // retrievable for sharing but must never be indexed (12 October 2026 review, A4-7).
+        source: "/:file([^/]+\\.html)",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
     ];
   },
 };

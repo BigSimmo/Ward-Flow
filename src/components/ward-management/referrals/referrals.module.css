@@ -5465,3 +5465,12 @@
 .v10AskActions .confirmActionRow > button {
   min-width: 0;
 }
+
+/* Touch targets: last in the file so the base .cancelBtn and .confirmAcceptBtn rules cannot override them. */
+@media (pointer: coarse), (max-width: 640px) {
+  .acceptPresentationBtn,
+  .confirmAcceptBtn,
+  .cancelBtn {
+    min-height: 48px;
+  }
+}

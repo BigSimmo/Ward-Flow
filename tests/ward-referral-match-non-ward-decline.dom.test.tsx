@@ -1,10 +1,11 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ReferralMatchView } from "@/components/ward-management/referrals/referral-match";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import {
   COMMUNITY_DECLINE_REASONS,
+  ED_DECLINE_REASONS,
   REFERRAL_DECLINE_REASONS,
   type Referral,
   type Unit,
@@ -97,6 +98,89 @@ const ED_AND_COMMUNITY_REFERRAL: Referral = {
     { destination: { kind: "community_team", teamName: "Inner City Clinic" }, state: "queued" },
   ],
 };
+
+describe("ED decline drafts across the ward, desktop ED and phone ED branches", () => {
+  it.each(["desktop", "phone"])("preserves the ED reason separately from the ward reason on %s", (mode) => {
+    const units = allUnits();
+    const dispatch = vi.fn();
+    const edReferral: Referral = {
+      ...ED_AND_COMMUNITY_REFERRAL,
+      destinations: [ED_AND_COMMUNITY_REFERRAL.destinations[0]],
+    };
+    const mixedReferral: Referral = {
+      ...edReferral,
+      destinations: [
+        {
+          destination: {
+            kind: "psychiatric_ward",
+            unitId: units[0].id,
+            sex: "Not recorded",
+            secureBedNeeded: false,
+            involuntaryBedNeeded: false,
+            highAcuityNursingNeeded: false,
+          },
+          state: "queued",
+        },
+        ...edReferral.destinations,
+      ],
+    };
+    const match = (referral: Referral, phone?: React.ReactNode) => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ReferralMatchView
+          referral={referral}
+          units={units}
+          now={NOW_ANCHOR}
+          dispatch={dispatch}
+          rejections={[]}
+          phone={phone}
+        />
+      </WardFlowProvider>
+    );
+    const view = render(match(mixedReferral));
+    const edReason = ED_DECLINE_REASONS[0];
+    const wardReason = REFERRAL_DECLINE_REASONS[0];
+    expect(edReason).not.toBe(wardReason);
+    fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason-emergency_department"), {
+      target: { value: edReason },
+    });
+    fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason"), { target: { value: wardReason } });
+    expect(screen.getByTestId("ward-referral-match-decline-reason")).toHaveValue(wardReason);
+
+    view.rerender(match(edReferral, mode === "phone" ? <span>Phone details</span> : undefined));
+    if (mode === "phone") {
+      fireEvent.click(screen.getByRole("button", { name: "Decline" }));
+      expect(screen.getByTestId(`ward-referral-match-phone-decline-${edReason}`)).toHaveAttribute(
+        "aria-checked",
+        "true",
+      );
+      const chosen = ED_DECLINE_REASONS[1];
+      fireEvent.click(screen.getByTestId(`ward-referral-match-phone-decline-${chosen}`));
+      fireEvent.click(screen.getByTestId("ward-referral-match-decline-emergency_department"));
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "DECLINE_REFERRAL",
+          destinationKind: "emergency_department",
+          reason: chosen,
+        }),
+      );
+    } else {
+      expect(screen.getByTestId("ward-referral-match-decline-reason-emergency_department")).toHaveValue(edReason);
+      const chosen = ED_DECLINE_REASONS[1];
+      fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason-emergency_department"), {
+        target: { value: chosen },
+      });
+      fireEvent.click(screen.getByTestId("ward-referral-match-decline-emergency_department"));
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "DECLINE_REFERRAL",
+          destinationKind: "emergency_department",
+          reason: chosen,
+        }),
+      );
+    }
+    expect(dispatch).toHaveBeenCalledOnce();
+  });
+});
 
 /** Same shape as `COMMUNITY_ONLY_REFERRAL`, but `gp`-sourced — the "not a bed question" branch's
  *  own specimen for RB1's GP non-contact notice (see `ward-referral-match-suburb.dom.test.tsx`

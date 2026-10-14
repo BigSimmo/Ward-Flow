@@ -1,3 +1,4 @@
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
   designationSummary,
@@ -161,8 +162,10 @@ function article(word: string) {
  * `capacityBreakdown`.
  */
 function readyBedsNow(unit: Unit): number {
-  const availableNow = Math.min(unit.allocatable.value, unit.empty.value);
-  return availableNow;
+  // Owner ruling 13 Oct 2026 (R-B-09): the same shared helper as the PULL_PATIENT gate
+  // (`openBedsNow`) and the bed grid, so a ward is never offered a bed it could not be pulled to,
+  // closed wards included.
+  return boundedBedAvailability(unit).available;
 }
 
 export function eligibility(movement: Movement, unit: Unit, now: Instant): EligibilityVerdict {

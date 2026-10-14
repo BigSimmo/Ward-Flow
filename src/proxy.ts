@@ -27,8 +27,11 @@ import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspace
 //      `Sec-Fetch-Site: cross-site` alone is not enough).
 //   3. Developer-area and Ward Flow trust markers. Strips any client-supplied
 //      copy of the developer-area and Ward Flow offline headers and restores
-//      them only for the matching request path, so a client cannot spoof its
-//      way past `DeveloperAreaGate` or Ward Flow's database-free runtime.
+//      them only for the matching request path, so a client cannot spoof the
+//      production mockup exemption or Ward Flow's database-free runtime. There
+//      is no sign-in gate behind these markers: the developer key was removed on
+//      28 September 2026 at the owner's request, and the Ward Flow subtrees are
+//      public synthetic-data prototypes (see src/app/mockups/ward-flow/layout.tsx).
 
 /**
  * Retired paths that forward, query string intact, to the surface that
@@ -82,8 +85,8 @@ export async function proxy(request: NextRequest) {
     headers.set("x-nonce", nonce);
     headers.set("content-security-policy", csp);
     // Untrusted: strip unconditionally so a client cannot set this header itself
-    // and spoof past the parent `/mockups` layout's production gate on a route
-    // that is not actually one of the developer-gated subtrees listed in
+    // and spoof past the parent `/mockups` layout's production block on a route
+    // that is not actually one of the publicly exempt subtrees listed in
     // DEVELOPER_GATED_PATH_PREFIXES. Deliberately not re-listed here: the
     // enumeration went stale when a fourth prefix was added and the comment was
     // not (2026-09-02 audit, L76). Read the constant.
@@ -126,10 +129,11 @@ export function shouldBlockProductionMockups(
 ) {
   if (!pathname.startsWith("/mockups") || environment.NODE_ENV !== "production") return false;
 
-  // Every subtree listed in DEVELOPER_GATED_PATH_PREFIXES carries its own
-  // signed-in-administrator gate (`DeveloperAreaGate`, applied in each subtree's
-  // layout via the x-developer-area header set above), so let them through this
-  // blanket block and let that gate run instead of a bare 404. The prefixes are
+  // Every subtree listed in DEVELOPER_GATED_PATH_PREFIXES is deliberately public
+  // in production: the owner removed the developer key (and with it the former
+  // signed-in-administrator gate) on 28 September 2026, so Ward Flow's synthetic
+  // prototype opens without one. The constant's name predates that decision; it
+  // now lists the exempt subtrees, not gated ones. The prefixes are
   // named once, in `src/lib/developer-area/headers.ts`, and not re-listed here:
   // this comment kept naming a smaller set for months after a fourth prefix was
   // added (2026-09-02 audit, L76). The match is exact-or-slash, so a look-alike path
@@ -146,10 +150,10 @@ export function shouldBlockProductionMockups(
 }
 
 export const config = {
-  // API routes always run through the proxy, even when the last path segment
-  // looks like a static image. Extension skips apply only to non-API assets.
-  matcher: [
-    "/api/:path*",
-    "/((?!api(?:/|$)|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
-  ],
+  // API routes always run through the proxy. Only real static assets skip it:
+  // Next's own build output and image optimiser, and the two root icon files the
+  // app ships (src/app/favicon.ico, src/app/icon.svg). There is no blanket image
+  // extension skip any more (A4-6): a page route whose last segment merely ends
+  // in .png or .svg must still get the CSP and the trust-header stripping.
+  matcher: ["/api/:path*", "/((?!api(?:/|$)|_next/static/|_next/image(?:/|$)|favicon\\.ico$|icon\\.svg$).*)"],
 };

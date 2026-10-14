@@ -6,6 +6,7 @@ import {
   BellOff,
   BellRing,
   ClipboardList,
+  Copy,
   Database,
   Download,
   EyeOff,
@@ -647,6 +648,7 @@ export function DataPane({
   eventCount,
   thresholds,
   onExport,
+  onCopyDiagnostics,
   onImport,
   onClearSession,
   onRestore,
@@ -658,6 +660,7 @@ export function DataPane({
   eventCount: number;
   thresholds: readonly PublishedThreshold[];
   onExport: () => void;
+  onCopyDiagnostics?: () => void;
   onImport: (event: ChangeEvent<HTMLInputElement>) => void;
   onClearSession: () => void;
   onRestore: () => void;
@@ -691,6 +694,18 @@ export function DataPane({
                 <Download size={14} aria-hidden="true" />
                 Export
               </button>
+              {onCopyDiagnostics ? (
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "sec", size: "sm", className: styles.pill })}
+                  onClick={onCopyDiagnostics}
+                  data-setting="copy-diagnostics"
+                  data-testid="btn-copy-diagnostics"
+                >
+                  <Copy size={14} aria-hidden="true" />
+                  Copy diagnostics
+                </button>
+              ) : null}
               <label
                 className={buttonClass({ variant: "sec", size: "sm", className: styles.pill })}
                 data-setting="import"

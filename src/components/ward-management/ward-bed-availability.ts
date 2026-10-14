@@ -1,6 +1,9 @@
 import { dayOf, MINUTES_PER_DAY, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { EVENING_SHIFT_END_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+
+export { boundedBedAvailability };
 
 /**
  * Every figure the capacity board shows, derived in one place so no screen computes its own
@@ -166,8 +169,8 @@ export function bedsPendingPreparation(unitId: string, releases: BedRelease[]): 
  * that matters is that the pull is refused.
  */
 export function openBedsNow(unit: Unit, releases: BedRelease[]): number {
-  const availableNow = Math.min(unit.allocatable.value, unit.empty.value);
-  return Math.max(0, availableNow - bedsPendingPreparation(unit.id, releases));
+  const { available } = boundedBedAvailability(unit);
+  return Math.max(0, available - bedsPendingPreparation(unit.id, releases));
 }
 
 export function capacityBreakdown(
@@ -176,10 +179,8 @@ export function capacityBreakdown(
   leave: LeaveBed[],
   now: Instant,
 ): CapacityBreakdown {
-  // Copied verbatim from `unitCapacity` in ward-derivations.ts — the one number a coordinator
-  // acts on must not drift from the five-state bed grid's own arithmetic.
-  const availableNow = Math.min(unit.allocatable.value, unit.empty.value);
-  const held = Math.max(unit.empty.value - availableNow, 0);
+  // Shared with the five-state bed grid so stale counts cannot make this screen disagree.
+  const { available: availableNow, held } = boundedBedAvailability(unit);
 
   const unitReleases = releases.filter((release) => release.unitId === unit.id);
 

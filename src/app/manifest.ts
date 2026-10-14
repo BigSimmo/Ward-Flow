@@ -18,6 +18,8 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "en-AU",
     dir: "ltr",
     display: "standalone",
+    background_color: "#0f172a",
+    theme_color: "#0f172a",
     // Prefer the standalone window but allow a graceful minimal-ui fallback on
     // platforms that cannot honour it; never fall back to fullscreen.
     display_override: ["standalone", "minimal-ui"],
