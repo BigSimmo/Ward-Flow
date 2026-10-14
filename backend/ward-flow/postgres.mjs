@@ -282,6 +282,9 @@ export function createWorkspaceStore(
     async subscribe(actorId, subscription) {
       if (!push) throw new Error("push-disabled");
       return transaction(async (client, at) => {
+        // Workspace key-share locks do not conflict with one another; serialize the
+        // per-account count and insert so the device limit cannot be exceeded.
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2))", [workspaceId, actorId]);
         const present = await client.query(
           "SELECT 1 FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR KEY SHARE",
           [workspaceId],
@@ -328,14 +331,15 @@ export function createWorkspaceStore(
     },
     async unsubscribe(actorId, endpoint) {
       if (!push) throw new Error("push-disabled");
-      const { rows, rowCount } = await pool.query(
-        "UPDATE ward_flow.push_subscriptions SET revoked_at=$4 WHERE workspace_id=$1 AND actor_id=$2 AND endpoint=$3 AND revoked_at IS NULL RETURNING id",
-        [workspaceId, actorId, endpoint, clock()],
-      );
-      if (rowCount && rows[0]?.id !== undefined) {
-        await pool.query("DELETE FROM ward_flow.push_deliveries WHERE subscription_id=$1", [rows[0].id]);
-      }
-      return rowCount ? "unsubscribed" : "not-found";
+      return transaction(async (client, at) => {
+        const { rows, rowCount } = await client.query(
+          "UPDATE ward_flow.push_subscriptions SET revoked_at=$4 WHERE workspace_id=$1 AND actor_id=$2 AND endpoint=$3 AND revoked_at IS NULL RETURNING id",
+          [workspaceId, actorId, endpoint, at],
+        );
+        if (rowCount && rows[0]?.id !== undefined)
+          await client.query("DELETE FROM ward_flow.push_deliveries WHERE subscription_id=$1", [rows[0].id]);
+        return rowCount ? "unsubscribed" : "not-found";
+      });
     },
     /** Whether this account has an active phone alert record for this device endpoint. */
     async pushStatus(actorId, endpoint) {
