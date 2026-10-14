@@ -10,7 +10,7 @@
  * - Community Teams (`COMMUNITY_TEAM_PAGES` from `community/community-derivations.ts`) - name
  * - Legal Forms (`SELECTABLE_LEGAL_FORMS` from `ward-legal-forms.ts`) - code, official title via `legalFormName`
  * - Core Views/Tools (`CORE_SEARCH_VIEWS`) - navigation routes and tool pages
- * - Action Inbox Tasks (`buildActionInbox(movements.filter(isOpen), now ?? NOW_ANCHOR, units)`) - task summary, title, keyword "task"
+ * - Action Inbox Tasks (`buildActionInbox(movements.filter(isOpen), now ?? 0, units)`) - task summary, title, keyword "task"
  *
  * STANDARD §8.6 ENFORCEMENT:
  * - Unranked candidate discipline: within a group, a prefix or word-start match is listed before a
@@ -33,7 +33,7 @@ import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-managem
 import type { EmergencyDepartment, LegalForm, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { findPatients, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
-import { NOW_ANCHOR, allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES, type CommunityTeam } from "@/components/ward-management/community/community-derivations";
 import { teamHref, unitHref } from "../shell/ward-facade";
 
@@ -653,7 +653,7 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     input.precomputedTasks ??
     buildActionInbox(
       input.movements.filter(isOpen),
-      input.now ?? NOW_ANCHOR,
+      input.now ?? 0,
       input.units,
       input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
     );

@@ -97,7 +97,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import styles from "./ward.module.css";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
-import { openDecisionCount } from "./ward-decisions-cockpit";
+import { openDecisionCount } from "./ward-decision-count";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
@@ -136,7 +136,14 @@ const WardNotificationCenter = dynamic(
 );
 const WardAnswerView = dynamic(() => import("./ward-answer-view").then((m) => m.WardAnswerView), {
   ssr: false,
-  loading: () => <p role="status">Loading ward answer…</p>,
+  // The loading state keeps the page's one main landmark and one h1; the loaded view replaces it
+  // wholesale, so neither is ever duplicated.
+  loading: () => (
+    <main id="main-content">
+      <h1>Ward answer</h1>
+      <p role="status">Loading ward answer…</p>
+    </main>
+  ),
 });
 const WardDecisionsCockpit = dynamic(() => import("./ward-decisions-cockpit").then((m) => m.WardDecisionsCockpit), {
   ssr: false,
