@@ -667,20 +667,24 @@ test("workspace store lock() reads existing row with FOR UPDATE before seeding a
 
   // Verify unsubscribe() immediately prunes push_deliveries for the revoked subscription ID
   const unsubQueries = [];
-  const unsubStore = createWorkspaceStore(
-    {
-      connect: async () => fastClient,
-      query: async (sql, args) => {
-        unsubQueries.push([sql, args]);
-        if (sql.includes("UPDATE ward_flow.push_subscriptions SET revoked_at")) {
-          return { rowCount: 1, rows: [{ id: 42 }] };
-        }
-        return { rowCount: 1, rows: [] };
-      },
+  const unsubClient = {
+    query: async (sql, args) => {
+      unsubQueries.push([sql, args]);
+      if (sql.includes("UPDATE ward_flow.push_subscriptions SET revoked_at")) {
+        return { rowCount: 1, rows: [{ id: 42 }] };
+      }
+      return { rowCount: 1, rows: [] };
     },
+    release: () => {},
+  };
+  const unsubStore = createWorkspaceStore(
+    { connect: async () => unsubClient, query: async () => ({ rows: [] }) },
     { workspaceId: randomUUID(), engine: {}, push: { coordinatorIds: [] } },
   );
   assert.equal(await unsubStore.unsubscribe("coordinator-1", "https://fcm.googleapis.com/fcm/send/e1"), "unsubscribed");
-  assert.equal(unsubQueries.length, 2);
-  assert.deepEqual(unsubQueries[1], ["DELETE FROM ward_flow.push_deliveries WHERE subscription_id=$1", [42]]);
+  assert.deepEqual(
+    unsubQueries.map(([sql]) => sql.split(" ")[0]),
+    ["BEGIN", "UPDATE", "DELETE", "COMMIT"],
+  );
+  assert.deepEqual(unsubQueries[2], ["DELETE FROM ward_flow.push_deliveries WHERE subscription_id=$1", [42]]);
 });

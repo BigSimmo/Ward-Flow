@@ -42,3 +42,7 @@
 b7e1674808dbe0b48459aa0fe65778e933674122:backend/ward-flow/shared-http.test.mjs:generic-api-key:125
 b7e1674808dbe0b48459aa0fe65778e933674122:backend/ward-flow/azure-setup.mjs:generic-api-key:30
 67f1fe7801c4b55f61f8e040cab03c610f05267c:backend/ward-flow/provider-routing.test.mjs:generic-api-key:27
+
+# WARD_API_AUDIENCE in the commented Azure block of backend/ward-flow/.env.example is the public Entra
+# API client ID (not a credential); the same value is already allowed inline in azure-setup.mjs.
+0c441badbbf827df83fcf05a1703646dc9f2027e:backend/ward-flow/.env.example:generic-api-key:55
