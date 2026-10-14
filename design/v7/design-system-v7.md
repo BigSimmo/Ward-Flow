@@ -1,5 +1,9 @@
 # Ward Flow design system v7 (v7.1)
 
+> [!NOTE]
+> **SUPERSEDED — Historical Revision**
+> This earlier design-system revision (v7 / v7.1) is retained for provenance only and has been superseded by [`design/v9/design-system-v9.md`](../v9/design-system-v9.md) and the current rendered application on `main` (see [`AGENTS.md`](../../AGENTS.md), owner rulings of 2 & 5 October 2026).
+
 Synthetic prototype, not a medical device. v7 builds on v6 (`../v6/`, left untouched). Tokens and component classes are in `ward-flow-v7.css` in this folder. The live board is the "Ward Flow design system v7" Artifact.
 
 Grounding: Ward Flow coordinates beds, referrals and movements for WA mental health services. Each screen answers one of four questions fast: where is a bed, who is waiting and for how long, whose move is it, what must happen this shift. v7 was reviewed against that, against Josh's standing rules in project memory, and against the design work merged or mocked up on 8 and 9 Oct (PRs #127 to #137, Ward Hub, Delays, Patient and Global search mockups).

@@ -38,14 +38,62 @@ Local PR verification and Ward CI also run the maintained architecture and scrip
 | [Public CI](ward-flow/PUBLIC-CI.md)                                                                       | Ward workflow scope and acceptance evidence                                                          |
 | [Railway operations](ward-flow/RAILWAY-OPERATIONS.md)                                                     | Diagnosis of separately authorised Ward hosting tasks                                                |
 
+## Ward Flow Documentation Map
+
+| Area                            | Key documents                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Root & AI Entry Points**      | [`../AGENTS.md`](../AGENTS.md) · [`../PROJECT-INSTRUCTIONS-CONTINUATION.md`](../PROJECT-INSTRUCTIONS-CONTINUATION.md) · [`../CLAUDE.md`](../CLAUDE.md) · [`../GEMINI.md`](../GEMINI.md) · [`ward-flow/README.md`](ward-flow/README.md)                                                                                                           |
+| **Builder & Coordinator Guide** | [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md) · [`ward-flow/LOCAL-FIRST-RUN.md`](ward-flow/LOCAL-FIRST-RUN.md) · [`ward-flow/coordinator-guide-v2.md`](ward-flow/coordinator-guide-v2.md) (`ward-flow/FOR-A-BED-COORDINATOR.md`) · [`ward-flow/START-LOCAL-CHAT.md`](ward-flow/START-LOCAL-CHAT.md) (`ward-flow/FOR-NEW-DEVELOPERS.md`) |
+| **User Testing & Demo**         | [`ward-flow/clinician-check-questions.md`](ward-flow/clinician-check-questions.md) (`ward-flow/USER-TESTING-GUIDE.md`) · [`ward-flow/DEMO-SCRIPT.md`](ward-flow/DEMO-SCRIPT.md) (`ward-flow/DEMO-PRESENTATION-SCRIPT.md`) · [`../WARD-MOCKUPS-BRIEF.md`](../WARD-MOCKUPS-BRIEF.md)                                                               |
+| **Decisions & Task Ledger**     | [`ward-flow/OWNER-RULINGS.md`](ward-flow/OWNER-RULINGS.md) · [`ward-flow/decisions.md`](ward-flow/decisions.md) · [`task-receipts.md`](task-receipts.md) · [`ward-flow-task-ledger.md`](ward-flow-task-ledger.md) · [`ward-flow/STATUS.md`](ward-flow/STATUS.md)                                                                                 |
+| **Design System (v9/v10)**      | [`../design/v9/design-system-v9.md`](../design/v9/design-system-v9.md) · [`ward-flow/SCREEN-DEFINITION-OF-DONE.md`](ward-flow/SCREEN-DEFINITION-OF-DONE.md) · [`ward-flow/SCREEN-VERIFICATION.md`](ward-flow/SCREEN-VERIFICATION.md)                                                                                                             |
+| **Screens, Routes & Code Map**  | [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md) · [`ward-flow/code-map/README.md`](ward-flow/code-map/README.md) · [`codebase-index.md`](codebase-index.md) · [`site-map.md`](site-map.md) · [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) (`ward-flow/ORGANISATION.md`)                                   |
+| **Reference Data & Sources**    | [`ward-flow/reference-data/PACK_README.md`](ward-flow/reference-data/PACK_README.md) (`ward-flow/reference-data/README.md`) · [`ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md`](ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md) (`ward-flow/reference-data/SOURCES.md`)                                                       |
+| **Backend, CI & Hosting**       | [`../backend/ward-flow/README.md`](../backend/ward-flow/README.md) · [`ward-flow/PUBLIC-CI.md`](ward-flow/PUBLIC-CI.md) · [`ward-flow/RAILWAY-OPERATIONS.md`](ward-flow/RAILWAY-OPERATIONS.md) · [`hosting.md`](hosting.md)                                                                                                                      |
+| **Historical Archives**         | [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md) · [`ward-flow/RULES.md`](ward-flow/RULES.md) · [`ward-flow-safety-checklist.md`](ward-flow-safety-checklist.md)                                                                                                                                                                         |
+
+## Architecture
+
+- [`codebase-index.md`](codebase-index.md) — maintained Ward Flow directory orientation and module map
+- [`ward-flow/code-map/README.md`](ward-flow/code-map/README.md) — detailed code and test ownership snapshot across Ward Flow subsystems
+- [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md) — generated screen, route, and mockup inventory
+- [`../design/v9/design-system-v9.md`](../design/v9/design-system-v9.md) — Ward Flow v9/v10 `--wf-*` design tokens and `src/components/wf/` primitive specification
+- [`wiring-conventions.md`](wiring-conventions.md) — page/button wiring conventions, pre-commit checks, and dead-button / orphan-route gates
+- [`../backend/ward-flow/README.md`](../backend/ward-flow/README.md) — synthetic-only Azure Function and shared-state backend contract
+
+## Governance, safety, privacy
+
+- [`../SECURITY.md`](../SECURITY.md) — repository security policy, synthetic-data-only boundary, and vulnerability reporting
+- [`ward-flow/governance/CLINICAL-SAFETY-CASE.md`](ward-flow/governance/CLINICAL-SAFETY-CASE.md) — ISO 14971 / DCB0129 clinical hazard log and safety case (stakeholder reference per Prototype Operating Mode §2)
+- [`ward-flow/governance/WA-MENTAL-HEALTH-ACT-COMPLIANCE.md`](ward-flow/governance/WA-MENTAL-HEALTH-ACT-COMPLIANCE.md) — WA Mental Health Act 2014 statutory boundary and D5 / D-29 compliance reference
+- [`ward-flow/governance/ABORIGINAL-CULTURAL-SAFETY-CHARTER.md`](ward-flow/governance/ABORIGINAL-CULTURAL-SAFETY-CHARTER.md) — Aboriginal cultural safety charter, ALO coordination, and country/kinship design safeguards
+- [`ward-flow/governance/PRODUCTION-READINESS.md`](ward-flow/governance/PRODUCTION-READINESS.md) — prototype vs production-pilot boundary and parked external review gates
+- [`ward-flow/pre-pilot-site-checklist.md`](ward-flow/pre-pilot-site-checklist.md) — pre-pilot site readiness checklist for WA Health hospital deployments
+
+## Process and review
+
+- [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md) — daily builder loop, file sign-out, commits, and fold gate selection
+- [`ward-flow/PUBLIC-CI.md`](ward-flow/PUBLIC-CI.md) — GitHub Actions workflow (`ward-flow.yml`) jobs, shards, and local equivalents
+- [`testing.md`](testing.md) — fast local unit testing (`npx vitest run <path>`), focused/slotted runs, and Playwright journeys
+- [`development-speed-playbook.md`](development-speed-playbook.md) — fast local iteration, gate selection, and worktree reuse
+- [`process-hardening.md`](process-hardening.md) — verification gates, CI expectations, and process safeguards
+- [`task-receipts.md`](task-receipts.md) — task lifecycle, canonical checkpoints, and sanitized receipt handoff
+- [`agents/`](agents/) — delegated agent workflow rules (`verification-gates.md`, `task-efficiency.md`, `wiring-and-bundle-budget.md`, `dead-code-deletion.md`, `test-deletion-guard.md`, `external-skill-precedence.md`, `claude-hook-scripts.md`, `codex-desktop-worktree-setup.md`, `codex-reasoning-effort.md`, `bug-hunter-shortcut.md`, `upload-shortcut.md`, `figma-sync.md`)
+
+## Maintenance rules
+
+- Generated files ([`site-map.md`](site-map.md), [`scripts-index.md`](scripts-index.md), and the Ward Flow generated indexes listed in [`DOCS-SYSTEM.md`](DOCS-SYSTEM.md)) are updated only via their generator scripts.
+- When adding a doc, add it to the matching section here; date the filename if it is a point-in-time record.
+- When a maintained doc is superseded, mark it with a top `SUPERSEDED` banner, fence retired script/path sections with paired `docs-script-refs:historical-start` / `docs-script-refs:historical-end` HTML comments, or move dated Ward Flow records to `docs/ward-flow/archive/` as documented in [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md). Run `npm run docs:check-links` and `npm run docs:check-scripts` to verify inbound links and script references.
+
 ## Historical discovery catalogue
 
-Entries below include inherited and dated material. Open a document's boundary and current
+Entries below include inherited PsychSift and dated material. Open a document's boundary and current
 consumers before applying its advice; keep original incident commands/results as evidence.
 
 <!-- docs-script-refs:historical-start -->
 
-## Architecture
+### Historical architecture & design catalogue
 
 - [wiring-conventions.md](wiring-conventions.md) — page/button wiring conventions and the dead-button / orphan-route gates
 - [search-chrome-behaviour.md](search-chrome-behaviour.md) — shared search-chrome contract: composer ownership, phone edge-to-edge dock, hide/reveal reserves
@@ -67,9 +115,7 @@ Every remaining tracked document in this category (architecture and design, plus
 - [design-system/HANDOVER-2026-08-07.md](design-system/HANDOVER-2026-08-07.md) — Design system — handover, 7 August 2026 — Read AGENTS.md first — it is the highest-priority source of truth for rules and gates.
 - [decisions/ccz4hb-review-coverage.md](decisions/ccz4hb-review-coverage.md) — Decision: restoring automated review coverage (#CCZ4HB) — the row closed — but see the 2026-09-02 correction below, which removes the premise that decision rested on.
 
-## Governance, safety, privacy
-
-## Process and review
+### Historical process & review catalogue
 
 - [process-hardening.md](process-hardening.md) — verification gates, CI expectations, known debts
 - [testing.md](testing.md) — test execution, focused/live commands, Playwright ownership, flake policy
@@ -133,9 +179,10 @@ Every remaining tracked document in this category (the Ward Flow developer-gated
 
 | Directory                    | What lives there                                                                                                           |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [ward-flow/](ward-flow/)     | Dedicated Ward Flow product, design, governance, reference-data, code-map, and archive documentation                       |
 | [agents/](agents/)           | Agent-rule reference files `AGENTS.md` delegates to by name — the full text of rules its always-loaded core only points at |
 | [audit/](audit/)             | One kept point-in-time repository audit (the rest left with PsychSift on 26 September 2026)                                |
-| [superpowers/](superpowers/) | Agent-authored plans and specs                                                                                             |
+| [superpowers/](superpowers/) | Historical agent-authored plans and specs                                                                                  |
 
 ## Point-in-time records (historical — do not update)
 
@@ -213,14 +260,5 @@ Every remaining tracked document in this category (dated records and the `superp
 - [ward-flow-phase-3-workspace/transport-leg-helper-report.md](ward-flow-phase-3-workspace/transport-leg-helper-report.md) — Transport leg helper — report — Scope: add one small pure function separating the discrete transport leg from transportStatusLabel's provider narrative, plus unit tests.
 - [ward-flow-phase-3-workspace/transport-stage-coherence-report.md](ward-flow-phase-3-workspace/transport-stage-coherence-report.md) — Transport stage/stamp coherence fix — report — Commit: 1349c213fa6f3294a6a8fc22b0aded8c186e8429 Branch:
 - [ward-flow-phase-3-workspace/whole-branch-review.md](ward-flow-phase-3-workspace/whole-branch-review.md) — Ward Flow Phase 3 — whole-branch review — Reviewer: independent whole-branch pass at 916816089, branch codex/ward-management-design.
-
-## Maintenance rules
-
-- Generated files (`site-map.md`) are updated only via their generator scripts.
-- When adding a doc, add it to the matching section here; date the filename if
-  it is a point-in-time record.
-- When a maintained doc is superseded, mark it historical in place or replace
-  it with a new dated document — there is no `archive/` folder on this line,
-  and no automated check for inbound links, so update or remove them by hand.
 
 <!-- docs-script-refs:historical-end -->

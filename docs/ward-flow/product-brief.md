@@ -67,11 +67,13 @@ journeys that matter most:
    logging the phone call (CAD number, voluntary or involuntary, estimated time — all required),
    handover ready, crew collects, ward marks arrived, patient is on the ward.
 3. **When it goes wrong.** A ward declines, an acceptance is withdrawn, the held bed is given back,
-   transport is cancelled or stopped after collection, or the bed search is abandoned. The
-   coordinator can place anyway with a recorded reason; a non-binary patient can be placed on a
-   single-gender ward with a coordinator's reason and a nurse unit manager's tick. The one bed check
-   that can never be forced is a bed whose sex or gender designation does not match the patient's
-   record; every other check can be overridden with a recorded reason.
+   transport is cancelled or stopped after collection, or the bed search is abandoned. Three
+   bed-eligibility checks are **non-overridable**: `authorisation` (authorized destination for
+   involuntary forms), `sex_and_gender` (binary single-sex room/wing protection; non-binary /
+   `X` / `not_stated` placements require coordinator review and a nurse unit manager's tick per
+   `D-31` / `R2-2`), and `allocatable_bed` (closed/pulled/occupied bed state). By contrast,
+   `cohort` (age/specialty) and `security` (open vs secure) can be overridden by a coordinator
+   with a logged clinical reason (`D-16`, `D-37`, `ward-eligibility.ts`).
 4. **Leaving the ward.** Two tracks run side by side: the person leaves (to the community, another
    ward, a general hospital, residential care, custody, and other endings) and the bed is released
    and prepared. What is holding a discharge up is recorded and shown on the delays board.
@@ -80,6 +82,9 @@ journeys that matter most:
    coordinator's inbox, ward capacity, the shift handover sheet, and statistics.
 
 ## Where it stands today
+
+> [!NOTE]
+> **Historical snapshot (25 September 2026):** The bullets below reflect the state of the prototype on 25 September 2026 when this product brief was drafted. For live route counts, shared prototype workspace support, and current test suite counts, see [`docs/ward-flow/STATUS.md`](STATUS.md).
 
 - **Built on synthetic data only.** 34 screens each have a design drawing, and all 34 were looked
   at in a browser on 21 September; some still differ from their drawing in detail (see
@@ -134,10 +139,12 @@ treat them as starting drafts.
    catchment data above is approved.
 5. **A downtime plan**: what staff do if Ward Flow is unavailable (the whiteboard stays until the
    pilot proves itself).
-6. **Settle three open design points** listed in the repository's issue list (they may already be
-   settled elsewhere): ward eligibility is not checked when a patient is placed (Josh ruled on 21
-   September to keep "invite, then the ward refuses"); sex and gender identity are one field that
-   drives bed matching; and whether the tool should ever suggest a ward.
+6. **Settle open design points** listed in the repository's issue list (and note what is already
+   settled in the engine): ward eligibility at referral raise follows "invite, then the ward
+   refuses" (Josh ruled on 21 September) while hard placement gates run at acceptance/pull; Ward
+   Flow implements the **`D-8` two-field sex and gender model** (`sex` and `gender` recorded as
+   distinct fields, supporting binary single-sex room enforcement and coordinator review for
+   `X` / `non_binary` / `not_stated` per `D-31`); and whether the tool should ever suggest a ward.
 
 ### 3. The shape of the pilot
 

@@ -1,5 +1,11 @@
 # Ward Answers — the questions chat
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 > SUPERSEDED on 2026-09-28 by [`docs/ward-flow/HOW-WE-WORK.md`](HOW-WE-WORK.md) and repository [`AGENTS.md`](../../AGENTS.md). Historical prompt for former Database worktree setup; do not follow.
 
 A fourth Ward Flow chat whose only job is to **answer the owner's questions about the project**. It
@@ -67,3 +73,5 @@ a sign the question belongs to a different chat.
 It is pinned to a commit, so it sees the master line as of the moment it was created. **It does not need
 refreshing.** `git show <branch>:<path>` always reads the live branch regardless of where the folder is
 pinned — which is exactly how Ward Verifier reads current code without ever moving.
+
+<!-- docs-script-refs:historical-end -->

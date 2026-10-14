@@ -1,5 +1,11 @@
 # The PsychSift logo
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](../ward-flow/README.md), [`docs/ward-flow/STATUS.md`](../ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 The files in `public/brand/` are the master artwork. They are true vectors — every curve is a
 circular arc with an exact centre and radius, so the mark is identical at 16 px and at billboard
 size, and the primary file is 863 bytes.
@@ -292,3 +298,5 @@ a reason those three do not already answer.
   "Clinical clarity. Evidence. Better care." in the footer. The lockup uses the first.
 - The sheet specifies Inter throughout; the application uses Geist. That difference should be
   settled deliberately rather than left to drift.
+
+<!-- docs-script-refs:historical-end -->

@@ -4,6 +4,8 @@ Synthetic prototype, not a medical device. This file is the written v9 standard.
 
 **Status.** This is the standard. v9 replaces v8 to v8.2 as one document, so nobody has to apply a chain of amendments. v8 (`../v8/`) and v7 (`../v7/`) stay unchanged for provenance. The app loads the v9 tokens (phase 1 of the rollout) and the core shared parts follow them (phase 2). Screens move onto v9 one at a time next (section 15).
 
+> **Code naming note (`v10-parts.tsx` vs `design-system-v9.md`):** **Sections 8 to 14** of this document (`design/v9/design-system-v9.md`) are implemented in code as [`src/components/wf/v10-parts.tsx`](../../src/components/wf/v10-parts.tsx). That module and [`docs/ward-flow/STATUS.md`](../../docs/ward-flow/STATUS.md) historically referred to the 10 October 2026 Elevate/appraisal additions as "v10 sections 8 to 14"; there is no separate `design/v10/` directory.
+
 **Why v9.** On 10 October 2026 Josh asked for the design system to be perfected. The review (artifact `66mvgLJYqmC6WqVGHNKftt`, source `design/appraisal-10oct/design-system-v9-proposal.html` in the project files) found 45 issues: the spec read as a changelog, the sheet contradicted its own rules, glass was heavy, motion barely existed, and layout and content had no rules. Josh approved every recommendation at 00:39Z, with one change: glass stays largely opaque, at about 80%.
 
 ## Changes 10 Oct 2026
@@ -157,6 +159,8 @@ Quick in, quicker out. Nothing moves without a reason, and nothing bounces on da
 
 ## 8. Accessibility
 
+> **Implementation note:** Sections 8 to 14 of `design-system-v9.md` are implemented in code as [`src/components/wf/v10-parts.tsx`](../../src/components/wf/v10-parts.tsx) (historically referred to in `v10-parts.tsx` and `STATUS.md` as "v10 sections 8 to 14"; there is no separate `design/v10/` directory).
+
 - **Focus.** A 2px ring with a 2px gap, so it never touches a red edge, a tint or a selection. Parts whose ring sits inside (tabs, menu items, rows, `.ring-in`) draw the gap inside too. A ring is never clipped: inside a parent with `overflow: hidden` the ring is inset. On the hero the ring is light and the hero sets its own focus gap. In forced colours the ring is `Highlight`, and a selected item keeps its selection with a `Highlight` border.
 - **Contrast.** Measured on composited values with the WCAG 2.2 formula. v8 section 6 figures carry over. New in v9: `ink-2` on the worst glass backdrop 4.6:1 (bar, night) or better. Pressed tones on the night light chip 3.5:1 or better. White on every primary stop, hover and press included, 4.9:1 or better. Meta on night raised 5.9:1.
 - **Live updates.** One polite live region per page, batched once a minute, announcing only act now changes, such as "2 new act now". Never a running tally.
@@ -300,7 +304,7 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 ## 15. Next steps
 
 1. **Load v9 in the app.** Done in phase 1: `src/app/ward-flow-v9-tokens.css` loads after the v6 tokens. Phase 2 added the one theme key (`clinical-kb-theme`, written only by `setThemePreference` in `src/lib/theme-client.ts`) and a Glare mode switch in Settings (`clinical-kb-glare`, painted before first render as `data-mode="glare"`).
-2. **Move the shared parts** onto it so every page lifts at once: hero chip, Badge, status words, tabs with the capsule, focus, live chip, toast and density.
+2. **Move the shared parts** onto it so every page lifts at once: hero chip, Badge, status words, tabs with the capsule, focus, live chip, toast and density. The shared parts for **Sections 8 to 14** of `design-system-v9.md` live in `src/components/wf/v10-parts.tsx` (historically referred to in `v10-parts.tsx` and `STATUS.md` as "v10 sections 8 to 14"; there is no separate `design/v10/` directory).
 3. **Point the in-app Design showcase at the v9 tokens file**, so it can no longer teach v6.
 4. **Rebuild pages against v9**, weakest first, as the 10 October appraisal set out. Bring in each Elevate part with the first page that needs it.
 5. **Check Night shift mode for contrast** before it is built.

@@ -31,16 +31,16 @@ Historically, the source monorepo held **two products that shared one Next.js ap
 Ward Flow borrows the app frame (Next.js, the request proxy, a developer access gate, a handful
 of shared UI pieces) and nothing else. Nothing in PsychSift imports Ward Flow.
 
-| Area (tracked files, `git ls-files`)                         |  Files | Size                                               |
-| ------------------------------------------------------------ | -----: | -------------------------------------------------- |
-| Ward Flow engine + screens `src/components/ward-management/` |    315 | ~153,000 lines of `.ts/.tsx` (plus 99 CSS modules) |
-| Ward Flow routes `src/app/mockups/ward-flow/`                |     49 | 42 `page.tsx`                                      |
-| Ward Flow tests `tests/ward-*`, `tests/ui-ward-*`            |    648 | ~188,700 lines (635 unit/DOM + 13 browser)         |
-| Ward Flow scripts `scripts/ward-flow/`                       |     49 | 45 top-level + `audit/`                            |
-| Ward Flow docs `docs/ward-flow/`                             |  1,272 | incl. 140 files of design drawings                 |
-| PsychSift `src/` (all, incl. Ward)                           |  1,765 | —                                                  |
-| PsychSift tests (non-Ward)                                   | ~1,085 | 769 unit + 46 browser specs                        |
-| `supabase/migrations/`                                       |    234 | none mention Ward Flow                             |
+| Area (tracked files, `git ls-files`)                         |  Files | Size                                                                                                                          |
+| ------------------------------------------------------------ | -----: | ----------------------------------------------------------------------------------------------------------------------------- |
+| Ward Flow engine + screens `src/components/ward-management/` |    315 | ~153,000 lines of `.ts/.tsx` (plus 99 CSS modules and `src/components/wf/` shared v10 primitives)                             |
+| Ward Flow routes `src/app/mockups/ward-flow/`                |     57 | **50 `page.tsx`** (**52 total routes** incl. `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
+| Ward Flow tests `tests/ward-*`, `tests/ui-ward-*`            |    648 | ~188,700 lines (635 unit/DOM + 13 browser)                                                                                    |
+| Ward Flow scripts `scripts/ward-flow/`                       |     49 | 45 top-level + `audit/`                                                                                                       |
+| Ward Flow docs `docs/ward-flow/`                             |  1,272 | incl. 140 files of design drawings                                                                                            |
+| PsychSift `src/` (all, incl. Ward)                           |  1,765 | —                                                                                                                             |
+| PsychSift tests (non-Ward)                                   | ~1,085 | 769 unit + 46 browser specs                                                                                                   |
+| `supabase/migrations/`                                       |    234 | none mention Ward Flow                                                                                                        |
 
 ### How the pieces fit
 
@@ -53,7 +53,7 @@ Browser request /mockups/ward-flow/...
   └─ src/app/mockups/ward-flow/layout.tsx
         WardFlowProvider          (the engine: useReducer + sessionStorage + clock)
           WardLiveRegion, WardRail, WardBarMount, WardBroadcastBanner   (the chrome)
-          WardGround → {page}     (one of 42 routes → one screen component)
+          WardGround → {page}     (one of 50 routes → one screen component or redirect)
 
 Screen ──dispatch(event)──▶ wardFlowReducer ──▶ new WardFlowState
    ▲                          (role check → stale check → eligibility/legal guards;
@@ -73,13 +73,13 @@ self-contained: only three engine files import anything from outside Ward Flow
 
 **The core five (more than half of all engine lines):**
 
-| File                   | Lines | What it is                                                                                                                                                                   |
-| ---------------------- | ----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ward-flow-reducer.ts` | 8,741 | The reducer `wardFlowReducer(state, event)`, `seedWardFlowState` / `seedWardFlowStateAt`, 145 `case` labels (97 in the event switch; corrected), all guards and audit writes |
-| `ward-movements.ts`    | 3,123 | Despite the name, the **seed fixtures**: movements, bed releases, leave beds, referrals                                                                                      |
-| `ward-model.ts`        | 3,040 | Every entity type and fixed vocabulary (`Movement`, `Referral`, `Unit`, `Site`, `Decline`, `Override`, `BedRelease`, `LegalForm`, `Notice`, stages, tunables)                |
-| `ward-flow-events.ts`  | 2,452 | The `WardFlowEvent` union (97 event types) and `EVENT_ROLE`, the who-may-do-what table                                                                                       |
-| `ward-derivations.ts`  | 2,034 | 53 pure selectors shared by screens (`isOpen`, `stageSummaries`, `referralBlockedReason`, …)                                                                                 |
+| File                   | Lines | What it is                                                                                                                                                                                                                                     |
+| ---------------------- | ----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ward-flow-reducer.ts` | 8,741 | The reducer `wardFlowReducer(state, event)`, `seedWardFlowState` / `seedWardFlowStateAt`, **127 event types** in `WardFlowEvent` / `EVENT_ROLE` (97 in the 25 Sept baseline plus 30 added in the 9–13 Oct passes), all guards and audit writes |
+| `ward-movements.ts`    | 3,123 | Despite the name, the **seed fixtures**: movements, bed releases, leave beds, referrals                                                                                                                                                        |
+| `ward-model.ts`        | 3,040 | Every entity type and fixed vocabulary (`Movement`, `Referral`, `Unit`, `Site`, `Decline`, `Override`, `BedRelease`, `LegalForm`, `Notice`, stages, tunables)                                                                                  |
+| `ward-flow-events.ts`  | 2,986 | The `WardFlowEvent` union (**127 event types**) and `EVENT_ROLE`, the who-may-do-what table                                                                                                                                                    |
+| `ward-derivations.ts`  | 2,034 | 53 pure selectors shared by screens (`isOpen`, `stageSummaries`, `referralBlockedReason`, …)                                                                                                                                                   |
 
 **Wiring and persistence:**
 
@@ -148,21 +148,21 @@ go through the provider.
 
 ### 2.3 Actions, state and guards
 
-**97 event types** (unique `type:` literals in `ward-flow-events.ts`, re-counted for this map),
+**127 event types** (unique `type:` literals in `ward-flow-events.ts` on current `main` — 97 in the 25 Sept baseline below plus 30 added in the 9–13 October passes, including 15 `UNDO_*` events, planned admissions, global Pull Now/broadcast replies, support notifications, bed placement, and AWOL/CTO/inbox ownership events),
 grouped:
 
-- **Movement and bed pipeline (~21):** `RAISE_REFERRAL`, `REFER_TO_UNITS`, `ACCEPT_IN_PRINCIPLE`,
-  `PULL_PATIENT`, `RELEASE_PULL`, `DECLINE`, `RELEASE_AND_REOPEN_SEARCH`, blockers, step-back,
+- **Movement and bed pipeline (~21 baseline + bed placement/undo):** `RAISE_REFERRAL`, `REFER_TO_UNITS`, `ACCEPT_IN_PRINCIPLE`,
+  `PULL_PATIENT`, `RELEASE_PULL`, `DECLINE`, `RELEASE_AND_REOPEN_SEARCH`, `PLACE_IN_BED`, blockers, step-back,
   diversion, arrival and ED arrive/leave/outcome events.
 - **Referrals (~9):** receive, accept, decline, withdraw, referrer withdrawal, refer to community
   team, local bed sought, no referral, correction.
-- **Legal (~10):** change status, form written/received/expiry/continuation, country extension,
-  correct receipt, flag/override mismatch, examination.
-- **Capacity and bed release (~13):** confirm capacity, flag/confirm/revert/block/clear bed
-  release, preparation, leave beds, intake constraints, refresh request, morning roll-up.
+- **Legal (~9):** change status, form written/received/expiry/continuation, country extension,
+  correct receipt, flag mismatch (non-overridable per `D-16`; `OVERRIDE_LEGAL_MISMATCH` was removed), examination.
+- **Capacity, bed release and planned admissions (~17):** confirm capacity, flag/confirm/revert/block/clear bed
+  release, preparation, leave beds, intake constraints, refresh request, morning roll-up, and `BOOK_`/`CHANGE_`/`CANCEL_`/`CONVERT_PLANNED_ADMISSION`.
 - **Transport (7):** need, book, accepted, en route, collected, cancel, stop.
-- **Discharge (5), urgency/gender/clinical (~10), patients (1),** and **handover, broadcast,
-  inbox, repatriation (~13).**
+- **Discharge, absence, CTO, and support notifications (~12), urgency/gender/clinical (~10), patients (1),** and **handover, broadcast (`RAISE_PULL_NOW`, `REPLY_BROADCAST_ALERT`),
+  inbox (`TAKE_INBOX_ITEM_OWNERSHIP`, `SNOOZE_INBOX_ITEM`, `UNSNOOZE_INBOX_ITEM`), repatriation (~18), plus 15 `UNDO_*` events.**
 - **World (5):** `ADVANCE_CLOCK` (demo role only), `RESET_SCENARIO`, `SET_SCENARIO`,
   `SET_CONFIGURATION`, `REVIEW_AUDIT_EVENT`.
 
@@ -234,47 +234,49 @@ bar's Tools drawer. The rail's "clinical persona" popover is cosmetic.
 
 ## 3. Routes, shell and navigation
 
-### 3.1 Routes (42 `page.tsx` under `src/app/mockups/ward-flow/`)
+### 3.1 Routes (50 `page.tsx` under `src/app/mockups/ward-flow/`, 52 total including sign-in and digest)
 
-Every page file is a server component that renders one client screen.
+Every page file is a server component that renders one client screen (or redirects).
 
-| URL under `/mockups/ward-flow`                                                           | Screen (folder)                                                          |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `/` (home)                                                                               | `CoordinatorScreen` (coordinator)                                        |
-| `/alerts`                                                                                | `AlertsScreen` (alerts)                                                  |
-| `/board/[unitId]`                                                                        | `WardBoard` (board)                                                      |
-| `/capacity`                                                                              | `CapacityScreen` (capacity)                                              |
-| `/community`                                                                             | `CommunityIndex` (community)                                             |
-| `/community/[teamId]`                                                                    | `CommunityScreen` (community)                                            |
-| `/delays`                                                                                | `DelaysScreen` (delays) — absorbed queue, exceptions, escalation         |
-| `/discharges`                                                                            | `DischargeBoard` (discharges)                                            |
-| `/ed/[edId]`                                                                             | `EdScreen` (ed)                                                          |
-| `/governance`                                                                            | `WardModeWorkspace` mode "governance" (root `ward-management-modes.tsx`) |
-| `/handover`                                                                              | `HandoverPage` (handover)                                                |
-| `/hub`                                                                                   | `HubScreen` (hub) — "Search hub"                                         |
-| `/legal-forms`                                                                           | `LegalFormsScreen` (legal-forms)                                         |
-| `/movements`                                                                             | `MovementsScreen` (movements) — absorbed the transport tracker           |
-| `/movements/[movementId]`                                                                | `WardPatientWorkspace` (root `ward-management-console.tsx`, 3,287 lines) |
-| `/network`                                                                               | `WardModeWorkspace` mode "network"                                       |
-| `/on-call`                                                                               | `OnCallScreen` (on-call) — separate from PsychSift's on-call             |
-| `/out-of-area`                                                                           | `OutOfAreaBoard` (out-of-area)                                           |
-| `/people/[patientId]`                                                                    | `PersonScreen` + `PatientNowScreen` (patients)                           |
-| `/people/new`                                                                            | `AddPatientForm` (patients)                                              |
-| `/referrals`                                                                             | `ReferralBoard` (referrals)                                              |
-| `/referrals/new`                                                                         | `ReferralBoard` + referral slide-out (referrals)                         |
-| `/search`                                                                                | `PatientSearchPage` (search)                                             |
-| `/settings`                                                                              | `SettingsScreen` (settings)                                              |
-| `/sovereign`                                                                             | `SovereignShowcaseScreen` — chrome showcase, no link to it anywhere      |
-| `/statistics`                                                                            | `StatisticsScreen` (statistics hub)                                      |
-| `/statistics/overview`, `/compare`                                                       | overview and compare screens (linked from the hub only)                  |
-| `/statistics/ward/[unitId]`, `/ed/[edId]`, `/service/[serviceId]`, `/community/[teamId]` | per-place statistics screens                                             |
-| `/transport/officer`                                                                     | `OfficerScreen` (officer) — phone-first                                  |
-| `/ward/[unitId]` and `/ward/[unitId]/answer`                                             | `WardScreen` (ward), two presentations                                   |
-| `/wards`                                                                                 | `WardIndex` (wards)                                                      |
+| URL under `/mockups/ward-flow`                                                           | Screen (folder)                                                           |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `/` (home) and `/command` (redirect alias)                                               | `CoordinatorScreen` (coordinator)                                         |
+| `/alerts`                                                                                | `AlertsScreen` (alerts)                                                   |
+| `/board/[unitId]`                                                                        | `WardBoard` (board)                                                       |
+| `/capacity`                                                                              | `CapacityScreen` (capacity)                                               |
+| `/community`                                                                             | `CommunityIndex` (community)                                              |
+| `/community/[teamId]`                                                                    | `CommunityScreen` (community)                                             |
+| `/delays`                                                                                | `DelaysScreen` (delays) — absorbed queue, exceptions, escalation          |
+| `/discharges`                                                                            | `DischargeBoard` (discharges)                                             |
+| `/ed`                                                                                    | `EdIndex` (`ed/ed-index.tsx`)                                             |
+| `/ed/[edId]`                                                                             | `EdScreen` (ed)                                                           |
+| `/governance`                                                                            | `WardModeWorkspace` mode "governance" (root `ward-management-modes.tsx`)  |
+| `/handover`                                                                              | `HandoverPage` (handover)                                                 |
+| `/hub`                                                                                   | `HubScreen` (hub) — "Search hub"                                          |
+| `/legal-forms`                                                                           | `LegalFormsScreen` (legal-forms)                                          |
+| `/movements`                                                                             | `MovementsScreen` (movements) — absorbed the transport tracker            |
+| `/movements/[movementId]`                                                                | `WardPatientWorkspace` (root `ward-management-console.tsx`, 3,287 lines)  |
+| `/network`                                                                               | `WardModeWorkspace` mode "network"                                        |
+| `/on-call`                                                                               | `OnCallScreen` (on-call) — separate from PsychSift's on-call              |
+| `/out-of-area`                                                                           | `OutOfAreaBoard` (out-of-area)                                            |
+| `/people/[patientId]`                                                                    | `PersonScreen` + `PatientNowScreen` (patients)                            |
+| `/people/new`                                                                            | `AddPatientForm` (patients)                                               |
+| `/referrals`                                                                             | `ReferralBoard` (referrals)                                               |
+| `/referrals/new`                                                                         | `ReferralBoard` + referral slide-out (referrals)                          |
+| `/reports/chronology`                                                                    | `PatientChronologyScreen` (`reports/patient-chronology-screen.tsx`)       |
+| `/reports/downtime`                                                                      | `DowntimePackScreen` (`reports/downtime-pack-screen.tsx`)                 |
+| `/search`                                                                                | `PatientSearchPage` (search)                                              |
+| `/settings`                                                                              | `SettingsScreen` (settings)                                               |
+| `/sovereign`                                                                             | `SovereignShowcaseScreen` — chrome showcase, no link to it anywhere       |
+| `/statistics`                                                                            | `StatisticsScreen` (statistics hub, **12 statistics routes total**)       |
+| `/statistics/overview`, `/compare`, `/weekly`                                            | overview, compare, and weekly report (`reports/weekly-report-screen.tsx`) |
+| `/statistics/wards`, `/eds`, `/teams`, `/services`                                       | directory indexes (`statistics-*-index.tsx`)                              |
+| `/statistics/ward/[unitId]`, `/ed/[edId]`, `/service/[serviceId]`, `/community/[teamId]` | per-place statistics screens                                              |
+| `/transport/officer`                                                                     | `OfficerScreen` (officer) — phone-first                                   |
+| `/ward/[unitId]` and `/ward/[unitId]/answer`                                             | `WardScreen` (ward), two presentations                                    |
+| `/wards`                                                                                 | `WardIndex` (wards)                                                       |
 
-**Six redirect stubs** keep old links working: `/constellation` → `/network`, `/ed` →
-`/ed/fremantle-ed`, `/escalation`, `/exceptions`, `/queue` → `/delays?from=…`, `/transport` →
-`/movements`.
+**Six redirect stubs** under `/mockups/ward-flow/` keep old links and aliases working: `/command` → `/mockups/ward-flow`, `/constellation` → `/network`, `/escalation`, `/exceptions`, `/queue` → `/delays?from=…`, `/transport` → `/movements`. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/mockups/ward-flow/`, `/mockups/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/mockups/ward-flow`.
 
 **Error boundaries:** `error.tsx` at the root, a nearer one for `statistics/**`, and
 `sovereign/` has its own error and loading pair. A throw inside the provider's initialiser or at
@@ -313,7 +315,7 @@ are the only files that import PsychSift's `BrandMark`.
 
 **Shared UI primitives** at the root: `ward-panel`, `ward-chip` (six worded states; throws
 without text), `ward-bar.tsx` (a small stacked-bar chart; **not** the same as `shell/ward-bar.tsx`),
-`ward-figure`, `ward-record-row`, `ward-controls`, `ward-freshness`, `ward-table/`.
+`ward-figure`, `ward-record-row`, `ward-controls`, `ward-freshness`, `ward-table/`, plus `src/components/wf/` (v10 design-system primitives).
 
 ### 3.4 Styling
 
@@ -331,34 +333,35 @@ stylesheets: `delays` 5,406, `ward` 5,233, `board` 4,847, `referrals` 4,802 line
 Line counts are `.ts/.tsx` only (CSS excluded), measured for this map. "Actions" are reducer
 events the screen dispatches.
 
-| Folder                                                                |      Lines | What the user does there                                                                                           | Actions                            |
-| --------------------------------------------------------------------- | ---------: | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
-| `statistics/`                                                         |     16,363 | Read-only reporting: hub, overview, compare, per ward/ED/service/team                                              | none                               |
-| `referrals/`                                                          |      9,260 | Referral board, match view, referral slide-out (the one place a referral is written since 8 Oct 2026)              | 10 types                           |
-| `community/`                                                          |      7,093 | Team directory and one team's caseload, referrals, transport                                                       | 7 types                            |
-| `ward/`                                                               |      6,924 | The per-ward operational screen (`ward-screen.tsx` 5,034): bed release, pulls, morning roll-up, intake constraints | **20 types, 29 call sites (most)** |
-| `ed/`                                                                 |      6,409 | ED board (`ed-screen.tsx` 5,810, the largest file): referral, legal forms, clearance, transport, outcomes          | 20 types                           |
-| `search/`                                                             |      4,924 | Patient search, typeahead, record preview                                                                          | none                               |
-| `shell/`                                                              |      4,719 | See §3.3                                                                                                           | —                                  |
-| `coordinator/`                                                        |      4,565 | Home: ED pressure, priority queue, flow diagram, shortlist panel (2,093), exception drawer                         | 7 types                            |
-| `patients/`                                                           |      4,464 | Person record, patient-now summary, add a patient                                                                  | 2 types                            |
-| `board/`                                                              |      4,234 | Bed board for one unit (`ward-board.tsx` 3,629), printable daily sheet                                             | 10 types                           |
-| `movements/`                                                          |      4,173 | Movements list, 48-hour Gantt, traffic diagram, drawer                                                             | 2 types                            |
-| `handover/`                                                           |      3,537 | Shift handover with sign-off                                                                                       | 1                                  |
-| `capacity/`                                                           |      3,263 | Network bed capacity and bed map                                                                                   | 1                                  |
-| `delays/`                                                             |      2,654 | "Why is this person still waiting"                                                                                 | none                               |
-| `settings/`                                                           |      2,407 | Configuration and simulated operator switch                                                                        | 1                                  |
-| `reference/`                                                          |      1,847 | Data only (see §2.1), no screen                                                                                    | —                                  |
-| `tools/`                                                              |      1,785 | Catchment resolver and MHA calculator, opened from the top bar                                                     | none                               |
-| `legal-forms/`                                                        |      1,761 | MHA form receipt and expiry tracking                                                                               | 2                                  |
-| `alerts/`                                                             |      1,672 | Inbox of decisions and WA-wide broadcasts                                                                          | 3                                  |
-| `hub/`                                                                |      1,647 | Search hub with provenance and recents                                                                             | none                               |
-| `discharges/`                                                         |      1,444 | Expected discharges grouped by readiness                                                                           | 1                                  |
-| `officer/`                                                            |      1,212 | Transport officer console                                                                                          | 5                                  |
-| `wards/`                                                              |      1,031 | Ward directory with capacity cards                                                                                 | none                               |
-| `on-call/`                                                            |        959 | On-call roster and contacts                                                                                        | 1                                  |
-| `out-of-area/`                                                        |        950 | Repatriation ledger                                                                                                | 1                                  |
-| `escalation/`, `tracker/`, `governance/`, `sovereign/`, `ward-table/` | < 250 each | See below                                                                                                          | —                                  |
+| Folder                                                                |      Lines | What the user does there                                                                                                                     | Actions                            |
+| --------------------------------------------------------------------- | ---------: | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `statistics/`                                                         |     16,363 | Read-only reporting: hub, overview, compare, 4 directory indexes (`wards`, `eds`, `teams`, `services`), and per ward/ED/service/team         | none                               |
+| `referrals/`                                                          |      9,260 | Referral board, match view, referral slide-out (the one place a referral is written since 8 Oct 2026)                                        | 10 types                           |
+| `community/`                                                          |      7,093 | Team directory and one team's caseload, referrals, transport                                                                                 | 7 types                            |
+| `ward/`                                                               |      6,924 | The per-ward operational screen (`ward-screen.tsx` 5,034): bed release, pulls, morning roll-up, intake constraints                           | **20 types, 29 call sites (most)** |
+| `ed/`                                                                 |      6,409 | ED index (`ed-index.tsx`) and ED board (`ed-screen.tsx` 5,810, the largest file): referral, legal forms, clearance, transport, outcomes      | 20 types                           |
+| `search/`                                                             |      4,924 | Patient search, typeahead, record preview                                                                                                    | none                               |
+| `shell/`                                                              |      4,719 | See §3.3                                                                                                                                     | —                                  |
+| `coordinator/`                                                        |      4,565 | Home: ED pressure, priority queue, flow diagram, shortlist panel (2,093), exception drawer                                                   | 7 types                            |
+| `patients/`                                                           |      4,464 | Person record, patient-now summary, add a patient                                                                                            | 2 types                            |
+| `board/`                                                              |      4,234 | Bed board for one unit (`ward-board.tsx` 3,629), printable daily sheet                                                                       | 10 types                           |
+| `movements/`                                                          |      4,173 | Movements list, 48-hour Gantt, traffic diagram, drawer                                                                                       | 2 types                            |
+| `handover/`                                                           |      3,537 | Shift handover with sign-off                                                                                                                 | 1                                  |
+| `capacity/`                                                           |      3,263 | Network bed capacity and bed map                                                                                                             | 1                                  |
+| `delays/`                                                             |      2,654 | "Why is this person still waiting"                                                                                                           | none                               |
+| `settings/`                                                           |      2,407 | Configuration and simulated operator switch                                                                                                  | 1                                  |
+| `reference/`                                                          |      1,847 | Data only (see §2.1), no screen                                                                                                              | —                                  |
+| `tools/`                                                              |      1,785 | Catchment resolver and MHA calculator, opened from the top bar                                                                               | none                               |
+| `legal-forms/`                                                        |      1,761 | MHA form receipt and expiry tracking                                                                                                         | 2                                  |
+| `alerts/`                                                             |      1,672 | Inbox of decisions and WA-wide broadcasts                                                                                                    | 3                                  |
+| `hub/`                                                                |      1,647 | Search hub with provenance and recents                                                                                                       | none                               |
+| `discharges/`                                                         |      1,444 | Expected discharges grouped by readiness                                                                                                     | 1                                  |
+| `officer/`                                                            |      1,212 | Transport officer console                                                                                                                    | 5                                  |
+| `wards/`                                                              |      1,031 | Ward directory with capacity cards                                                                                                           | none                               |
+| `on-call/`                                                            |        959 | On-call roster and contacts                                                                                                                  | 1                                  |
+| `out-of-area/`                                                        |        950 | Repatriation ledger                                                                                                                          | 1                                  |
+| `reports/`                                                            |        850 | Patient chronology (`patient-chronology-screen.tsx`), downtime pack (`downtime-pack-screen.tsx`), weekly report (`weekly-report-screen.tsx`) | none                               |
+| `escalation/`, `tracker/`, `governance/`, `sovereign/`, `ward-table/` | < 250 each | See below                                                                                                                                    | —                                  |
 
 Root-level screens: `ward-management-console.tsx` (3,287; movement workspace),
 `governance-registers.tsx` (1,928; dispatches `REVIEW_AUDIT_EVENT`), `ward-management-modes.tsx`
@@ -377,7 +380,7 @@ deletion needs the owner.
 ### 5.1 Daily loop
 
 ```bash
-npm run ward:dev                               # organisation check, then prints the local URL
+npm run ensure                                 # start or verify local server and print the URL
 node scripts/ward-flow/serve-mockups.mjs       # serve the drawings (never double-click them)
 node scripts/run-vitest.mjs <affected-files>   # focused tests: changed files + up to 3 importers
 node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit

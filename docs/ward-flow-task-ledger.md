@@ -1340,7 +1340,7 @@ before checking.** **It measured the LABEL and was about to conclude about the C
 ## 👑 AUTHORITATIVE WARD FLOW MASTER LEDGER — RECONCILED 2026-09-13
 
 **Evidence Cut-off:** 13 September 2026, 22:11 AWST  
-**Master Sources:** [`C:\\Users\\joshs\\OneDrive\\Ward_Flow_Master_2026-09-13.md`](file:///C:/Users/joshs/OneDrive/Ward_Flow_Master_2026-09-13.md) (Version 1.0, 65 pages), [`Ward_Flow_Master_Tracker.xlsx`](file:///C:/Users/joshs/OneDrive/Ward_Flow_Master_Tracker.xlsx), and live worktree `codex/task-ward-flow-live-state-20260831` at commit `1ef9ed3975078b789e9b5d70b3f000c64edc3809`.
+**Master Sources:** `C:\Users\joshs\OneDrive\Ward_Flow_Master_2026-09-13.md` (Version 1.0, 65 pages), `C:\Users\joshs\OneDrive\Ward_Flow_Master_Tracker.xlsx` (`Ward_Flow_Master_Tracker.xlsx`), and live worktree `codex/task-ward-flow-live-state-20260831` at commit `1ef9ed3975078b789e9b5d70b3f000c64edc3809`.
 
 ### VERIFICATION SUMMARY AT A GLANCE
 
@@ -7807,7 +7807,7 @@ All active background subagents have been cleanly stopped (`kill_all`) to preven
 
 ---
 
-## §7.69 · Estate-Wide Review & Hardening of Alert Behaviours Across Ward Flow and System Surfaces
+## §7.69b · Estate-Wide Review & Hardening of Alert Behaviours Across Ward Flow and System Surfaces
 
 **Audit & Alignment Completed: 25 September 2026**
 
@@ -7849,7 +7849,7 @@ Comprehensive review and verification of alerts throughout the project to ensure
 
 ---
 
-## §7.70 · Full-Estate 41-Route and Interactive Component Audit Closeout
+## §7.70b · Full-Estate 41-Route and Interactive Component Audit Closeout
 
 **Audit & Alignment Completed: 25 September 2026**
 
@@ -8103,7 +8103,7 @@ evidence is under `.local/drawers/live/` in `/workspace/Ward-Flow-live`.
 
 ---
 
-## §7.70 · WF-BANNER-20261005 — Universal Curved Synthetic Prototype Banner & Symmetrical Master Search Hub (PR #65, PR #66)
+## §7.70c · WF-BANNER-20261005 — Universal Curved Synthetic Prototype Banner & Symmetrical Master Search Hub (PR #65, PR #66)
 
 Completed implementation and estate-wide integration of the universal curved prototype banner, symmetrical master search hub, and associated screen polish. PR #65 (`2683a5f`) unified the bottom prototype banner across all 40+ estate screens; PR #66 (`5f6c8e1`, task branch `feat/curved-synthetic-prototype-banner` based on verified main `9da4193` / `2683a5f`) deployed the curved banner styling, symmetrical search hub header, Direction 3 Floating Glass Command Horizon, live Discharges board overhaul, Ward Bed Dossier drawer extraction, and Referral Detail inspector.
 

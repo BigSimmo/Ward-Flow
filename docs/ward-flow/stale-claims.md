@@ -1,5 +1,11 @@
 # Everything you are told is slightly out of date, and that is not a fault to fix
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 Written 2026-09-01 by Ward Builder, after three chats spent an afternoon correcting each other about
 claims that were all true when made. Nobody was careless. **The corrections cost more than the errors
 did.**
@@ -77,3 +83,5 @@ caught it was one chat **running the rule's state machine** instead of reading i
 
 **Read the artifact, not the report about the artifact — then say which version you read.** Both
 halves. The first without the second is how a correct reading becomes a wrong claim.
+
+<!-- docs-script-refs:historical-end -->

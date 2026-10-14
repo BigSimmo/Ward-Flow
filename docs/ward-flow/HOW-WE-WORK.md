@@ -51,14 +51,13 @@ on unchanged code, following the React mockup rule in `AGENTS.md`.
   `main` tip, so threads never share a working tree. Check the branch, status and base before editing.
   Read-only threads (reviews, questions, reports) need no worktree.
 - **Sign out files before editing** in `D:/Repos/ward-flow-logs/sign-out.md` (outside git,
-  one copy for every tool). An overlap needs the other owner's release or Josh's explicit scoped
+  one copy for every tool; enforced by default in `.githooks/pre-commit`). An overlap needs the other owner's release or Josh's explicit scoped
   takeover approval. For a takeover, record each exact file as
   `path/to/file (approved takeover by Josh: <scope>)` on your own line, preserve the other session's
   edits and reconcile them through the authorised integration process. A folder-wide marker does not grant a takeover.
   Once the exact task ownership is handed back or integrated, append `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow` to the shared
-  append-only log. Follow [AGENTS.md](../../AGENTS.md) for the single-user exception:
-  `SKIP_SIGNOUT_GUARD=1` is an explicit per-commit opt-in, never a hook default. Concurrent
-  agent work retains sign-out and overlap protection. On another machine, `WARD_SIGNOUT_FILE`
+  append-only log. Follow [AGENTS.md](../../AGENTS.md) for the single-user interactive exception:
+  `SKIP_SIGNOUT_GUARD=1` is an explicit per-commit opt-in (`SKIP_SIGNOUT_GUARD=1 git commit ...`), never a hook default and never used for concurrent multi-agent work. On another machine, `WARD_SIGNOUT_FILE`
   selects that environment's shared local log; never treat an unavailable desktop log as clearance.
 - Reuse dependencies only from a trusted checkout of the same Ward Flow commit and lockfile.
   Never link to the old Database checkout; follow the current repository setup instructions.
@@ -186,7 +185,7 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   or free-text field needs review.
 - **Privacy wording.** Never write that something is not stored, private or anonymised unless a test
   proves it. No patient names or typed text in URLs, logs, screenshots, commit messages or memory.
-- **Design tokens only, no hex.** Tap targets 48px via `var(--ward-tap)` or `var(--spacing-tap, 3rem)`.
+- **Design tokens only, no hex.** In Ward Flow v9/v10 (`design/v9/design-system-v9.md`, owner ruling 9 Oct 2026: _"Check the 48px PsychSift knob. Ward is 44"_), standard rows use `--wf-row-default: 44px`, touch/phone rows use `--wf-row-touch: 52px`, and desktop buttons use `--wf-target: 28px`; legacy `--ward-*` surfaces retain `--ward-tap: 48px` (`var(--spacing-tap, 3rem)`).
 - **Preserve the accepted app design.** Historical edge-bar, typography, card, masthead, punctuation
   and mockup prescriptions do not authorise reverting it or starting a redesign. Keep synthetic
   disclosure and understandable status. Compact badges still need meaningful accessible labels.

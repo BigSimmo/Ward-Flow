@@ -1,5 +1,11 @@
 # How the Ward Flow chats talk to each other
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 > **SUPERSEDED on 17 Sept 2026 by `docs/ward-flow/HOW-WE-WORK.md`.** Kept for history; do not follow.
 
 **Written 2026-09-01 after a day in which every serious near-miss was a communication failure rather
@@ -169,3 +175,5 @@ right: _"I am protected from drift by you narrating it, not by anything I can ch
 **Merge the master line into your branch whenever you finish a piece.** You never needed permission.
 A status board and a talkative integrator are both memory, and memory going stale is the single
 theme of this entire project.
+
+<!-- docs-script-refs:historical-end -->

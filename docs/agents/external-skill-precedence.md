@@ -1,5 +1,7 @@
 # External Skill Precedence and Evidence
 
+> **Ward Flow scope note (3 October 2026):** Repository contracts in [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](../ward-flow/README.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md) outrank generic external skills and output-style plugins. Historical PsychSift examples below (`docs/search-chrome-behaviour.md`, `ui-smoke`) are retained for provenance; for Ward Flow v9/v10 screens, standard row height is `--wf-row-default: 44px`, touch row height is `--wf-row-touch: 52px`, and desktop button height is `--wf-target: 28px` (owner ruling 9 Oct 2026: _"Check the 48px PsychSift knob. Ward is 44"_).
+
 <!-- BEGIN:external-skill-precedence -->
 
 # External skill precedence
@@ -16,11 +18,10 @@ system, developer, user, security, or compliance requirements, which remain high
   `src/app/globals.css`, and any committed test.
 - **Never regress a fixed flake to satisfy a generic rule.** Known collision: generic touch-target
   guidance often teaches the WCAG 2.1/2.2 AAA-level "enhanced" criterion (2.5.5: 44×44 px, which is
-  `min-h-11` in Tailwind), though the AA-level minimum is 24×24 px (2.5.8). This repo's production
-  tap targets use `min-h-12` (48 px) — exceeding both the AA minimum and the AAA enhanced criterion —
-  because `min-h-11` (44 px) hit a sub-pixel rounding flake in `ui-smoke`. Design-scratch mockups
-  (`*-mockups.tsx`) still carry `min-h-11` and are gate-exempt. Do not "fix" production back to
-  `min-h-11` to satisfy the generic rule.
+  `min-h-11` in Tailwind), though the AA-level minimum is 24×24 px (2.5.8). Legacy `--ward-*` surfaces
+  and historical PsychSift screens use `min-h-12` (48 px) — exceeding both the AA minimum and the AAA enhanced criterion —
+  because `min-h-11` (44 px) hit a sub-pixel rounding flake in `ui-smoke`, whereas Ward Flow v9/v10 uses `--wf-row-default: 44px`, `--wf-row-touch: 52px`, and `--wf-target: 28px` (`design/v9/design-system-v9.md`). Design-scratch mockups
+  (`*-mockups.tsx`) still carry `min-h-11` and are gate-exempt. Do not "fix" committed tokens or tests to satisfy a generic rule.
 - **Unlayered CSS is deliberate.** Component classes in `globals.css` intentionally override
   Tailwind utilities. Generic specificity and utility-first advice does not apply here.
 - **Cite the source when applying an external rule.** If a checklist rule drives a change, name the

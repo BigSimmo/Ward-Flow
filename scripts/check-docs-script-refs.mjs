@@ -48,6 +48,7 @@ export const MAINTAINED_ROOT_DOCS = Object.freeze([
   "README.local-source.md",
   "SECURITY.md",
   "PROJECT-INSTRUCTIONS-CONTINUATION.md",
+  "WARD-MOCKUPS-BRIEF.md",
 ]);
 
 // Script tokens that appear in docs as illustrative placeholders, or real scripts

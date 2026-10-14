@@ -1,5 +1,11 @@
 # Sweep fix — visible live regions (SPEC.md §9.2)
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](../ward-flow/README.md), [`docs/ward-flow/STATUS.md`](../ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 Closes finding 4 of `sweep-2026-08-29-unenforced-rules.md`. The sweep counted "19 further" visible
 `aria-live` nodes beyond its named counterexample. A follow-up verification pass re-audited the
 whole claim and found it undercounted: **28 candidate instances across ~26 files**, none fixed by
@@ -328,3 +334,5 @@ Playwright-covered follow-up round rather than a source-only fix.
   this round because the figures block is already stale from other in-flight sessions' metrics and
   regenerating it now would overwrite their uncommitted edits; whichever round refreshes
   `GATES.md` next should add this metric's row at the same time (finding 6's own rule).
+
+<!-- docs-script-refs:historical-end -->

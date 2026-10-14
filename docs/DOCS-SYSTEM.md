@@ -1,8 +1,8 @@
-﻿# Documentation system
+# Documentation system
 
 How Documentation keeps Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
 
-_Updated 2026-10-08 - maintained-section link and architecture gates; Documentation owns._
+_Updated 2026-10-14 - generated-files inventory, 7-gate documentation verification pipeline, and archival standard; Documentation owns._
 
 ## Principles
 
@@ -24,21 +24,47 @@ Stage **docs paths only** - never mix unrelated product WIP. A push or pull requ
 
 | Doc                                                            | Role                                |
 | -------------------------------------------------------------- | ----------------------------------- |
-| [`ward-flow/README.md`](ward-flow/README.md)                   | Only product entry                  |
+| [`ward-flow/README.md`](ward-flow/README.md)                   | Product and design entry point      |
 | [`ward-flow/LOCAL-FIRST-RUN.md`](ward-flow/LOCAL-FIRST-RUN.md) | UI boot                             |
 | [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md)       | Live vs archive map                 |
 | [`task-receipts.md`](task-receipts.md)                         | Current task/evidence handoff       |
 | [`ward-flow/STATUS.md`](ward-flow/STATUS.md)                   | Historical status and owner context |
-| [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)         | Builder workflow                    |
+| [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)         | Builder workflow handbook           |
 | [`ward-flow-task-ledger.md`](ward-flow-task-ledger.md)         | Task ledger                         |
 
-**Doc checks:** `npm run docs:check-links` validates inline local paths and supported heading
-anchors in every tracked Markdown file's maintained sections. Stage new owned documents first.
-`npm run ward:check-docs` (= `check:ward-doc-links`) retains the Ward tree's separate historical
-path check. Paired markers exclude history only in explicit/maintained selection; banners alone
-do not. Neither check validates web availability, reference-style links or semantic freshness.
-Local acceptance and Ward CI also run `docs:check-scripts`, `docs:check-index` and
-`docs:check-inventory`; check failures are not fresh evidence.
+## Generated documentation & manifests
+
+Never hand-edit generated files. Run `npm run docs:maintain` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --write`) to regenerate all derived Ward Flow and repository indexes, recompute `pack_manifest.json` digests, and run every documentation and organisation gate in one pass (`npm run docs:maintain:check` runs the read-only verification pass, and `npm run ward:classify -- <path>` classifies any existing or proposed file path against `docs/ward-flow/organisation/registry.json`):
+
+| Generated file                                                                                          | Write / refresh command                                                                                  | Check command                                            |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| [`site-map.md`](site-map.md)                                                                            | `npx tsx scripts/generate-site-map.ts --write`                                                           | `npm run sitemap:check`                                  |
+| [`scripts-index.md`](scripts-index.md)                                                                  | `node scripts/update-docs-inventory.mjs`                                                                 | `npm run docs:check-inventory`                           |
+| [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md)                                                    | `node scripts/ward-flow/screen-map.mjs --write`                                                          | `node scripts/ward-flow/screen-map.mjs --check`          |
+| [`ward-flow/SCREEN-VERIFICATION.md`](ward-flow/SCREEN-VERIFICATION.md)                                  | `node scripts/ward-flow/screen-verification.mjs --write`                                                 | `node scripts/ward-flow/screen-verification.mjs --check` |
+| [`ward-flow/mockups/MANIFEST.json`](ward-flow/mockups/MANIFEST.json)                                    | `node scripts/ward-flow/mockup-manifest.mjs --write`                                                     | `node scripts/ward-flow/mockup-manifest.mjs --check`     |
+| [`ward-flow/OWNER-RULINGS.md`](ward-flow/OWNER-RULINGS.md)                                              | `node scripts/ward-flow/owner-rulings-index.mjs --write`                                                 | `node scripts/ward-flow/owner-rulings-index.mjs --check` |
+| [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                              | `node scripts/ward-flow/rules-index.mjs --write`                                                         | `node scripts/ward-flow/rules-index.mjs --check`         |
+| `<git-dir>/ward-organisation/ORGANISATION.md` ([`registry.json`](ward-flow/organisation/registry.json)) | `npm run ward:organise` (`node scripts/ward-flow/organisation.mjs --write-report --source working-tree`) | `npm run ward:organise:check`                            |
+
+## 7-Gate documentation verification pipeline
+
+1. **Maintained script references (`npm run docs:check-scripts`):** executes `node scripts/check-docs-script-refs.mjs` across `MAINTAINED_ROOT_DOCS`, `docs/`, and `.github/` outside paired historical markers to verify every `npm run <script>` exists in `package.json`.
+2. **Maintained local links & anchors (`npm run docs:check-links`):** executes `node scripts/check-maintained-doc-links.mjs` across all Git-tracked Markdown files (and `MAINTAINED_ROOT_DOCS`) outside historical markers.
+3. **Architecture & codebase index (`npm run docs:check-index`):** executes `node scripts/check-codebase-index-coverage.mjs` to verify `docs/codebase-index.md` matches current `src/` directories.
+4. **Scripts & command inventory (`npm run docs:check-inventory`):** executes `node scripts/update-docs-inventory.mjs --check` to verify `docs/scripts-index.md` matches `scripts/` and `package.json`.
+5. **Ward Flow relative doc links (`npm run check:ward-doc-links`):** executes `node scripts/ward-flow/check-doc-links.mjs` across `docs/ward-flow/` (including archived files).
+6. **Staged / stale generator drift (`node scripts/check-stale-docs.mjs` & `node scripts/check-staged-docs.mjs`):** verifies in `.githooks/pre-commit` and CI that generated Ward Flow indexes and manifests match their inputs without mutating the working tree.
+7. **Ward organisation registry (`npm run ward:organise:check`):** executes `node scripts/ward-flow/organisation.mjs --check` against [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) to validate canonical source paths, hashes, and ownership classifications.
+
+## Archival & historical fencing standard
+
+When retiring or superseding a document (or preserving inherited PsychSift material):
+
+1. Place a top-of-file `> **SUPERSEDED ...**` or `> **Historical ...**` callout banner naming the current live replacement.
+2. Wrap historical body sections that reference retired `npm run` scripts or removed PsychSift paths in paired HTML comments (`docs-script-refs:historical-start` and `docs-script-refs:historical-end`, each on its own comment line).
+   Paired markers exclude historical command and path references from `docs:check-scripts` and `docs:check-links`; a prose banner alone does not exclude text.
+3. Move dated Ward Flow records under [`ward-flow/archive/`](ward-flow/archive/) (indexed in [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md)).
 
 Use the existing [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json)
 `canonicalSources` for reviewed canonical references and this index for navigation. Add metadata

@@ -1,5 +1,13 @@
 # Mockup retirement policy
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../AGENTS.md), [`docs/ward-flow/README.md`](ward-flow/README.md), [`docs/ward-flow/STATUS.md`](ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../design/v9/design-system-v9.md).
+>
+> **Ward Flow production routing note:** In `BigSimmo/Ward-Flow`, `/mockups/ward-flow` and `/mockups/ward-flow-sign-in` are publicly reachable demonstration routes in production via [`src/proxy.ts`](../src/proxy.ts) without `DeveloperAreaGate`. The inherited PsychSift RAG/mockup retirement rules below are historical context only.
+
+<!-- docs-script-refs:historical-start -->
+
 When a mockup may be deleted, who decides, where it goes, and what evidence is required.
 
 Enforced by `npm run check:mockups` (`scripts/check-mockup-retirement.mjs`), which runs in
@@ -166,3 +174,5 @@ written record the gate and refuses everything the record does not cover.
   safe: its mockup-route guard is skipped entirely when `.next/server/app/mockups` is absent,
   so a total removal measures zero and passes. Use a before/after `--json` pair on a cold
   build (`rm -rf .next` first) as the evidence of what was saved.
+
+<!-- docs-script-refs:historical-end -->

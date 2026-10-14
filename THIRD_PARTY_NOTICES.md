@@ -18,11 +18,10 @@ in material it does not own or control.
 
 ## Official forms, publications, and source material
 
-- `public/forms-pdf/` contains official Western Australian Mental Health Act
-  forms.
-- `data/forms-page-snapshot.json`, `data/mha-2014-sections.source.json`, and
-  related source datasets contain or describe text and metadata derived from
-  official publications.
+- `data/mha-2014-sections.source.json` and Ward Flow reference-data files under
+  [`docs/ward-flow/reference-data/`](docs/ward-flow/reference-data/PACK_README.md) contain or describe text and metadata
+  derived from official Western Australian publications.
+- Historical PsychSift artifacts (`public/forms-pdf/` and `data/forms-page-snapshot.json`) belonged to the retired PsychSift application (`26 September 2026`) and are not shipped in `BigSimmo/Ward-Flow`.
 
 Copyright and other rights in an official form, publication, excerpt, logo, or
 source record remain with the State, the Chief Psychiatrist of Western
@@ -40,8 +39,7 @@ the Repository Owner can authorise reuse of that material.
   licences including MIT, Apache-2.0, BSD, ISC, MPL-2.0, LGPL, Creative Commons,
   and other terms. Each package's own licence and notice control. The lockfile
   is not a substitute for preserving required notices in a distribution.
-- Python and worker dependencies identified by the repository's requirements
-  and lock material remain under their respective upstream terms.
+- Historical Python and ingestion-worker lockfiles belonged to the retired PsychSift application and are not shipped in `BigSimmo/Ward-Flow`.
 - Names, logos, icons, and marks used to identify GitHub, OpenAI, Anthropic,
   Supabase, Vercel, Google, Microsoft, and other products or services remain the
   property of their respective owners. Their presence does not imply

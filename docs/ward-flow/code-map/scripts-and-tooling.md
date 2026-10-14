@@ -348,17 +348,13 @@ line.
   per batch. Written after a worker crash produced `83 passed (83)` — a pass line that agreed with
   itself and not with its 84-file input, and exited 0. Exit codes: 0 all ran and passed, 1 a real
   failure, 2 a coverage discrepancy (deliberately distinct from 1).
-- **`scripts/guard-push.mjs`** (1,785 lines total) — Ward Flow is Guard 0 of six pre-push guards
-  (the schema drift guard was retired on 26 September 2026).
-  Header doc comment: lines 11–20. Guard 0 implementation — `isMainBranch`, `isWardFlowBranch`,
-  `isWardFlowFile`, `wardFlowPushVerdict`, `wardFlowPushGuard`: lines 268–478. Call site inside
-  `main()`'s guard chain: line 1532. Self-test assertions for the ward guard: lines 1705–~1769.
-  Blocks pushing anything `isWardFlowFile` recognises (or any push from a branch matching
-  `/ward[-_]?flow|ward[-_]?lead|\bward\b/i`) to `origin/main` (override
-  `CONFIRM_WARD_FLOW_PUSH_TO_MAIN=I_CONFIRM_FOLD_TO_ORIGIN_MAIN`) or to any other remote branch
-  (override `CONFIRM_WARD_FLOW_REMOTE=I_CONFIRM_WARD_FLOW_REMOTE`) — because Ward Flow branches
-  exist on this disk only, with no remote copy, and "fold into main" in this context always means
-  the local ward line.
+- **`scripts/guard-push.mjs`** (1,785 lines total) — Pre-push guard enforcing repository boundary
+  and CI readiness. Following the repository split to `BigSimmo/Ward-Flow`, `origin/main` is Ward
+  Flow's public main branch (the pre-split `BigSimmo/Database` Guard 0 rule that treated Ward Flow
+  as local-disk-only is historical). Run directly, `guard-push.mjs` verifies the `BigSimmo/Ward-Flow`
+  remote identity and blocks a push while a required CI run is active on the branch (bypass per push
+  with `SKIP_IN_FLIGHT_CI_GUARD=1`; the installed `.githooks/pre-push` exports that bypass by default
+  for fast iteration unless `PREPUSH_CI_STRICT=1` is set).
 - **`scripts/ci-change-scope.mjs`** (1,543 lines total) — Repo-wide CI scope classifier
   (`check:ci-scope`), not Ward-owned, but its advisory-mockup arm has a dedicated, commented Ward
   section: `wardAdvisorySpecs` (~lines 111–156) derives the `ui-ward-*.spec.ts` alternation from
@@ -459,12 +455,9 @@ is staged.
   - `screen-verification.mjs` ← `docs/ward-flow/screen-verification.json`,
     `docs/ward-flow/SCREEN-VERIFICATION.md`, `scripts/ward-flow/screen-pairs.mjs`,
     `docs/ward-flow/mockups/MANIFEST.json`
-- **Lines 61–85: local-`main` fold guard.** If the current branch is `main`/`master` and any staged
-  file matches the Ward Flow path set (`src/components/ward-management/`,
-  `src/app/mockups/ward-flow/`, `docs/ward-flow/`, `scripts/ward-flow/`,
-  `scripts/run-ward-tests.mjs`, `tests/(helpers/|ui-)?ward-*`), the commit is blocked unless
-  `CONFIRM_WARD_FLOW_FOLD_TO_MAIN=I_CONFIRM_FOLD_TO_MAIN` is set. This is the commit-time twin of
-  `guard-push.mjs`'s Guard 0 at push time.
+- **Lines 61–85: task-branch / `main` commit guard.** Direct commits on `main`/`master` are guarded
+  (work happens on a dedicated task branch in `BigSimmo/Ward-Flow`, where `origin/main` is Ward
+  Flow's public main branch).
 - **`SKIP_DOCS_SYNC_HOOK=1`** (line 6) skips the entire hook, generated-index checks included.
 
 ## `docs/ward-flow/journey/*.mjs` — the journey-explorer build chain

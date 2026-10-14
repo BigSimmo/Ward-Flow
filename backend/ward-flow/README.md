@@ -1,50 +1,65 @@
 # Ward Flow development backend
 
-The shared synthetic workspace supports independent database (`azure`, `supabase`, `postgres`) and identity (`entra`, `supabase`) selectors. Node and Azure Functions use the same backend factory. See [PostgreSQL setup and recovery](SETUP-POSTGRES.md) and [Supabase/Azure presets](SETUP-SUPABASE.md). Runtime never auto-migrates or substitutes an administrator. **Every shared preset requires migration 4 before readiness**, including existing Azure installations. These source changes do not establish a current hosted connection or deployment. The Azure-only material below remains retained setup/history.
+> [!IMPORTANT]
+> **Repository & Provider Boundary:** **Ward Flow must never connect to PsychSift's Supabase or Railway resources.** For Ward Flow's optional shared prototype workspace (`backend/ward-flow/` and the configured `/v1/workspace*` backend routes), it uses either its **dedicated Ward Flow synthetic-only Supabase project (`zakzoemeedfepxcstsou`)** or its **dedicated Ward Flow Azure Functions / PostgreSQL backend**, operating exclusively on 100% synthetic data. Never enter or upload real patient information.
 
-This package stores synthetic Ward Flow demonstration sessions in the existing
-`wflowdev7273a083aue` Azure Storage account. It is a development service.
-Never enter or upload real patient information.
+The shared synthetic workspace supports independent database (`WARD_DATABASE_PROVIDER`: `azure` | `postgres` | `supabase`) and identity (`WARD_AUTH_PROVIDER`: `entra` | `supabase`) selectors. Node (`server.mjs`) and Azure Functions (`function.mjs`) use the same backend factory (`providers.mjs`). See [Supabase/Azure presets](SETUP-SUPABASE.md), [PostgreSQL setup and recovery](SETUP-POSTGRES.md), [shared Azure setup](SETUP-SHARED-AZURE.md), and [read-only MCP database access](SETUP-MCP-READONLY.md). Runtime never auto-migrates or substitutes an administrator. **Every shared preset requires schema migration version `4` (`001` through `004`) before `/readyz` readiness**, including existing Azure installations. These source files do not establish a current hosted connection or deployment.
 
-## Status note (3 October 2026)
+## How the UI connects (`local` mode vs shared workspace)
 
-### Shared coordinator implementation, 7 October 2026
+- **Default in-browser mode (`local`):** By default (`NEXT_PUBLIC_WARD_SHARED_ENABLED` unset or `false`), the Next.js app runs entirely in-browser using synthetic state persisted to `sessionStorage` in `src/components/ward-management/ward-flow-provider.tsx`. Saving to `sessionStorage` stops for the rest of the session once typed free text is dispatched (owner decision D-18), and refusal records are never stored.
+- **Opt-in shared workspace mode (`shared`):** When `WARD_SHARED_ENABLED=true` and `NEXT_PUBLIC_WARD_SHARED_ENABLED=true` are configured, the Next.js UI connects to the shared workspace via `src/components/ward-management/ward-shared-client.ts`, `src/components/ward-management/use-ward-supabase-shared.ts`, and `src/components/ward-management/ward-shared-access.tsx` (talking to the configured backend base URL at `/v1/workspace`, `/v1/workspace/commands`, `/v1/workspace/audit`, and `/v1/workspace/push-*`).
+- **Dormant owner-private Blob snapshot API (`/v1/sessions/:uuid`):** In the `azure` database preset, this package also retains the earlier owner-private Azure Blob Storage session snapshot store (`wflowdev7273a083aue`, `database.mjs`, client in `src/lib/cloud-scenario-vault.ts`). Only that legacy per-owner Blob snapshot vault remains dormant and disconnected from the active screens; the shared PostgreSQL/Supabase workspace is wired into the UI behind the opt-in shared-mode flags.
 
-An opt-in PostgreSQL shared workspace and Microsoft coordinator sign-in are now implemented in
-this branch. The app default remains the local synthetic demo until the reviewed Azure setup is
-applied and shared mode is enabled. Use [the shared Azure setup guide](SETUP-SHARED-AZURE.md).
-It discovers/reuses existing Ward Flow databases before creating anything. No live Azure inventory,
-migration, connection or deployment was verified in this implementation session.
+## Package file and migration inventory
 
-The older notes below describe the owner-specific Blob backend, which remains separate. Its
-unapplied `schema.sql` is historical scaffolding; the new shared adapter uses `migrations/` and
-`migrate.mjs`. It does not apply that old schema automatically.
-
-- Demo refresh persistence already exists in the browser: the app saves the
-  synthetic ward state to `sessionStorage` in
-  `src/components/ward-management/ward-flow-provider.tsx`. Saving stops for the
-  rest of the session once typed free text is dispatched (owner decision D-18),
-  and refusal records are never stored.
-- This Azure backend implements owner-private synthetic snapshots but is deliberately **not** connected to
-  the UI. Connecting it waits on WF-29 (privacy and service-scoped access) and a
-  later owner decision.
-- No Azure action was taken when this note was written.
+- **Documentation & runbooks:**
+  - `README.md` — package overview, architecture, and local test commands
+  - `SETUP-SUPABASE.md` — dedicated Ward Flow synthetic Supabase (`zakzoemeedfepxcstsou`) and Azure preset guide
+  - `SETUP-SHARED-AZURE.md` — coordinator-only shared Azure PostgreSQL (`wardflow-dev-aue` / `wardflow_dev`), Entra sign-in, and Web Push guide
+  - `SETUP-POSTGRES.md` — portable PostgreSQL setup, migration preflight, and recovery guide
+  - `SETUP-MCP-READONLY.md` — private VNet and least-privilege Entra read-only database verification runbook
+- **Runtime, providers & HTTP handlers:**
+  - `config.mjs` — environment configuration and allowlist validation (`WARD_DATABASE_PROVIDER`: `azure` | `postgres` | `supabase`; `WARD_AUTH_PROVIDER`: `entra` | `supabase`)
+  - `providers.mjs` — lazy backend factory wiring the selected database pool, runtime-role verifier, authenticator, shared workspace store, and optional Web Push sender
+  - `server.mjs`, `function.mjs`, `function-runtime.mjs`, `host.json` — standalone Node HTTP server and Azure Functions v4 entry points (`/healthz`, `/readyz`, `/v1/workspace*`, `/v1/sessions/:uuid`, and `wardFlowPushSweep` timer)
+  - `shared-http.mjs` — shared workspace HTTP handler (`/v1/workspace`, `/v1/workspace/commands`, `/v1/workspace/audit`, `/v1/workspace/push-*`)
+  - `engine.ts` & `build-engine.mjs` — shared Ward Flow domain reducer/validator compiled to `dist/engine.mjs`
+  - `push.mjs` — optional Web Push (VAPID) notification builder and sender for act-now alerts
+- **Database & authentication adapters:**
+  - `postgres.mjs`, `postgres-config.mjs`, `postgres-preflight.mjs` — shared PostgreSQL workspace store, CAS/idempotency/audit transactions, schema readiness (`version = 4`), and catalogue preflight
+  - `portable-postgres.mjs` — generic TLS PostgreSQL pool and runtime-role privilege verifier (`postgres` preset)
+  - `supabase-config.mjs`, `supabase-postgres.mjs`, `supabase-auth.mjs` (and `supabase-bootstrap.mjs` / `infra/supabase-*.sql` helpers) — dedicated Ward Flow Supabase (`zakzoemeedfepxcstsou`) pool, runtime-role verifier, and Auth token verifier (`supabase` preset)
+  - `database.mjs`, `auth.mjs` — Azure Blob Storage snapshot adapter (`wflowdev7273a083aue`) and Entra v2 JWT verifier (`azure` / `entra` presets)
+- **Setup, migration & packaging CLIs:**
+  - `migrate.mjs`, `migrate-postgres.mjs` — schema migration runners for Azure Entra and portable PostgreSQL
+  - `azure-setup.mjs`, `az-command.mjs` — Azure CLI inspection, provisioning, configuration, and verification helpers
+  - `package-deployment.mjs` — builds the deployment zip archive (`dist/wardflow-backend.zip`)
+- **Versioned SQL migrations (`migrations/`, all 4 required for `/readyz`):**
+  - `migrations/001-shared-workspace.sql` — `ward_flow` schema, `migrations`, `workspaces`, `commands`, and append-only `audit` tables (`001`–`004` also correspond to `004_ward_flow_shared_workspace.sql` in earlier notes)
+  - `migrations/002-workspace-data-mode.sql` — `data_mode` (`prototype` | `live`) column and reclassification-prevention trigger
+  - `migrations/003-push-subscriptions.sql` — `push_subscriptions`, `push_baselines`, and `push_deliveries` tables for Web Push alerts
+  - `migrations/004-trigger-search-path.sql` — hardens `search_path = pg_catalog, ward_flow` on `ward_flow` trigger functions (`schema.sql` at the package root is unapplied historical Blob-era scaffolding)
+- **Infrastructure templates (`infra/`):**
+  - `infra/azure-settings.example.json`, `infra/database.bicep`, `infra/frontend.env.example`
+  - `infra/postgres-settings.example.env`, `infra/postgres-runtime-role.sql`
+  - `infra/supabase-settings.template.env`, `infra/supabase-runtime-role.sql`, `infra/supabase-security-hardening.sql`
+  - `infra/verify-reader.sql` (also referenced as `003_ward_flow_mcp_readonly_role.sql` in read-only role runbooks)
 
 ## Boundaries
 
 - The Azure Functions host is `wardflow-dev-api-aue` in `rg-wardflow-dev-aue`.
   Its existing Entra authentication requires Josh's identity. The API also
-  verifies the v2 access token, tenant, audience, `WardFlow.Access` scope and owner.
-- The Function's existing managed identity accesses a private blob container in
-  its existing storage account. Sessions are stored under owner-specific paths.
+  verifies the v2 access token, tenant, audience, `WardFlow.Access` scope and owner/coordinator allowlist.
+- In the `azure` preset, the Function's existing managed identity accesses a private blob container in
+  its existing storage account (`wflowdev7273a083aue`) for `/v1/sessions/:uuid`, and connects to Azure Database for PostgreSQL (`wardflow-dev-aue` / `wardflow_dev`) for `/v1/workspace*`.
   No storage key or password is stored in the backend.
-- The PostgreSQL `schema.sql` remains unapplied historical Blob-era scaffolding
-  and is not used by the Blob API. The opt-in shared backend already includes
-  the `pg` dependency, the `postgres.mjs` adapter, versioned `migrations/` and
-  the `migrate.mjs` runner.
-- Each session has an owner UUID and a revision. `PUT` uses an expected revision;
+- The root `schema.sql` remains unapplied historical Blob-era scaffolding
+  and is not used by runtime. The shared workspace adapter uses `postgres.mjs`, versioned `migrations/` (`001` through `004`), and
+  `migrate.mjs` / `migrate-postgres.mjs`.
+- Each Blob session has an owner UUID and a revision. `PUT` uses an expected revision;
   a stale save returns `409` and does not replace the current blob.
-- The API accepts only the `synthetic` classification. This label and basic
+- The API accepts only the `synthetic` classification (`WARD_DATA_MODE=prototype`). This label and basic
   shape checks do **not** establish that arbitrary JSON is truly synthetic.
   Keep this service limited to invented demonstration content and do not treat
   it as approved clinical storage.
@@ -52,7 +67,7 @@ unapplied `schema.sql` is historical scaffolding; the new shared adapter uses `m
 ## Local checks
 
 From the repository root, `npm run test:backend` runs the focused API tests without connecting
-to Azure. From `backend/ward-flow/`, the equivalent command is `npm test`; root `npm test`
+to Azure or Supabase. From `backend/ward-flow/`, the equivalent command is `npm test`; root `npm test`
 instead runs the UI repository's unit suite. The backend package accepts Node `>=22`, while
 the root toolchain requires Node `>=24.15.0 <25` and npm `11.x`.
 Copy `.env.example` to an ignored `.env` only for local use;

@@ -3,14 +3,16 @@
  * Reuses the Ward parser's root/symlink checks and explicit history exclusion.
  * Importing this module does not enumerate files or run Git. */
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { extname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { MAINTAINED_ROOT_DOCS } from "./check-docs-script-refs.mjs";
 import { main as checkLinks } from "./ward-flow/check-doc-links.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 export function checkMaintainedDocLinks(root = ROOT) {
-  const files = execFileSync("git", ["ls-files", "-z"], {
+  const trackedFiles = execFileSync("git", ["ls-files", "-z"], {
     cwd: root,
     encoding: "utf8",
     timeout: 30_000,
@@ -18,6 +20,8 @@ export function checkMaintainedDocLinks(root = ROOT) {
   })
     .split("\0")
     .filter((file) => file && extname(file).toLowerCase() === ".md");
+  const rootDocs = MAINTAINED_ROOT_DOCS.filter((file) => existsSync(resolve(root, file)));
+  const files = [...new Set([...trackedFiles, ...rootDocs])];
   if (!files.length) throw new Error("No tracked Markdown files: maintained documentation scope is unavailable.");
   // In-process arguments preserve names with spaces/newlines and avoid shell/ARG_MAX limits.
   return checkLinks(["--anchors", ...files.flatMap((file) => ["--file", file])], root);

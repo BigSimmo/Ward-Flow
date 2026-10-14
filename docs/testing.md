@@ -10,7 +10,7 @@
 > [!NOTE]
 > **Historical Testing Reference (PsychSift Monorepo):**
 > This document describes testing infrastructure and verification gates developed for the PsychSift monorepo (including live Supabase/OpenAI test suites and migration checks).
-> In the dedicated **Ward Flow** repository (`BigSimmo/Ward-Flow`), Ward Flow uses synthetic browser/offline data. Day-to-day testing uses focused Vitest (`node scripts/run-vitest.mjs <files>`) and browser journeys (`npm run test:e2e:ward-journeys`). For current Ward Flow verification rules, see [`AGENTS.md`](../AGENTS.md) and [`docs/ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md).
+> In the dedicated **Ward Flow** repository (`BigSimmo/Ward-Flow`), Ward Flow uses synthetic browser/offline data. For fast local unit testing during development, run `npx vitest run <path/to/test.ts>` directly (~250ms, executing in isolation without waiting on machine-wide heavy locks or `test:focused` selector restrictions). Use `node scripts/run-vitest.mjs <files>` / `npm run test:focused` for slotted runs, `npm run test:e2e:ward-journeys` for browser journeys, and `npm run verify:pr-local` for pre-push readiness. For current Ward Flow verification rules, see [`AGENTS.md`](../AGENTS.md) and [`docs/ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md).
 
 ## Safe local execution
 

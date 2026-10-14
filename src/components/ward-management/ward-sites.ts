@@ -59,6 +59,11 @@ export const JURISDICTION_LABEL = "WA";
  *     alb-adult-open    (Great Southern APU)      8 → 17   published 16   (2023-08-17)
  *     brm-adult-secure  (Mabu Liyan, Broome)      6 → 12   published 13   (no date recorded)
  *
+ * ℹ️ The default `STANDARD_WARD_SITES` network contains 23 inpatient units and 304
+ * synthetic/sample beds. These figures are intentionally separate from the external reference
+ * pack (`docs/ward-flow/reference-data/capacity_assertions.json`); no reference-pack capacity
+ * is imported into the runtime model.
+ *
  * 🔴 **NOT ONE OF THEM EQUALS ITS PUBLISHED FIGURE, AND THAT IS THE DESIGN, NOT AN
  * APPROXIMATION.** Every one is deliberately one off. A number equal to a published figure is a
  * CLAIM about a real ward; a number beside it is a plausible sample. The offset is what keeps this

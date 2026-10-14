@@ -1,5 +1,11 @@
 # Ward Flow assignment register
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **One line per task, one owner, written down before work starts.** Created 2026-09-06 after I
 dispatched the same census section to two chats, both built it, and only a merge conflict made it
 visible.
@@ -193,3 +199,5 @@ collision flagged earlier the same evening — and this one was missed on the fi
 **Ward Builder Two has put "count the files on disk at the moment of editing, never bump the
 previous literal" into their own task brief**, so their side is handled by instruction rather than by
 anybody remembering.
+
+<!-- docs-script-refs:historical-end -->

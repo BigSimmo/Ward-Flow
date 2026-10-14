@@ -1,5 +1,11 @@
 # Ward Flow Next.js React Engine Synchronization Analysis (Option B)
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **Date:** 2026-09-16  
 **Architect:** Antigravity React & Systems Architecture Suite  
 **Target Codebase:** `src/components/ward-management/` and `src/app/mockups/ward-flow/`  
@@ -108,3 +114,5 @@ The component tree is organized into 27 functional subdirectories:
 
 **Begin with Phase 1 of Option B (Tokens, Shell & Navigation Rail Alignment).**  
 Phase 1 immediately gives the entire React application the perfected third-edition visual identity, typography, and responsive mobile navigation without altering underlying business logic or risking state regressions.
+
+<!-- docs-script-refs:historical-end -->

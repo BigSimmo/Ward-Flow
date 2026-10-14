@@ -53,13 +53,13 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   Capacity    Triage     Placement     Transit     Handover
 ```
 
-| Act       | In-Story Clock | Stage Duration          | Route Path                      | Core Clinical Focus                                                |
-| --------- | -------------- | ----------------------- | ------------------------------- | ------------------------------------------------------------------ |
-| **Act 1** | 09:00 - 09:12  | Min 0:00 - 2:00 (120s)  | `/capacity`                     | 09:00 Morning Statewide Bed Meeting & Network Capacity Rollup      |
-| **Act 2** | 10:30          | Min 2:00 - 4:00 (120s)  | `/ed/rph-ed` & `/referrals`     | Acute ED Presentation, Triage & Form 1A Statutory Recording        |
-| **Act 3** | 11:45          | Min 4:00 - 6:00 (120s)  | `/referrals` (Bed Match)        | Intelligent Bed Matching, Acuity Gates & Bed Reservation           |
-| **Act 4** | 13:15          | Min 6:00 - 8:00 (120s)  | `/movements`                    | St John WA Transfer Booking, CAD Integration & Transit Flight Deck |
-| **Act 5** | 14:30          | Min 8:00 - 10:00 (120s) | `/handover` & `/board/[unitId]` | Inpatient Ward Arrival, ISBAR Handover & Real-Time Board Occupancy |
+| Act       | In-Story Clock | Stage Duration          | Route Path                                                          | Core Clinical Focus                                                |
+| --------- | -------------- | ----------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Act 1** | 09:00 - 09:12  | Min 0:00 - 2:00 (120s)  | `/mockups/ward-flow/capacity`                                       | 09:00 Morning Statewide Bed Meeting & Network Capacity Rollup      |
+| **Act 2** | 10:30          | Min 2:00 - 4:00 (120s)  | `/mockups/ward-flow/ed/rph-ed` & `/mockups/ward-flow/referrals`     | Acute ED Presentation, Triage & Form 1A Paper Expiry Recording     |
+| **Act 3** | 11:45          | Min 4:00 - 6:00 (120s)  | `/mockups/ward-flow/referrals` (Bed Match)                          | Intelligent Bed Matching, Acuity Gates & Bed Reservation           |
+| **Act 4** | 13:15          | Min 6:00 - 8:00 (120s)  | `/mockups/ward-flow/movements`                                      | St John WA Transfer Booking, CAD Integration & Transit Flight Deck |
+| **Act 5** | 14:30          | Min 8:00 - 10:00 (120s) | `/mockups/ward-flow/handover` & `/mockups/ward-flow/board/[unitId]` | Inpatient Ward Arrival, ISBAR Handover & Real-Time Board Occupancy |
 
 ---
 
@@ -69,7 +69,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Time:** 09:00 AM (Duration: 2 Minutes / 0:00 - 2:00)
 - **Clinical Role:** Statewide Mental Health Bed Flow Coordinator
-- **Screen:** Capacity Screen & Morning Bed-Meeting Sheet (`/capacity`)
+- **Screen:** Capacity Screen & Morning Bed-Meeting Sheet (`/mockups/ward-flow/capacity`)
 - **Key Health Services Highlighted:** North Metro (SCGH MHU, Graylands), South Metro (Fiona Stanley, Alma St Fremantle, Rockingham), East Metro (Royal Perth Dabakarn, Armadale Moodjar, Bentley Ward 7 & EMyU), WACHS (Albany, Bunbury, Broome).
 
 ```
@@ -91,7 +91,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 0:00 - 0:30 · Opening & Executive Welcome
 
-- **Presenter Action:** Display the primary navigation shell at `/capacity`. Ensure the Service Scope bar is set to `All Services`. Hover cursor gently across the top metric ribbon.
+- **Presenter Action:** Display the primary navigation shell at `/mockups/ward-flow/capacity`. Ensure the Service Scope bar is set to `All Services`. Hover cursor gently across the top metric ribbon.
 - **Presenter Spoken Dialogue:**
   > "Good morning, colleagues, Clinical Directors, and Executive leadership. It is 09:00 on a Tuesday morning. Across Western Australia, mental health executives, bed coordinators, and ED directors are dialing into the daily statewide bed meeting.
   >
@@ -120,7 +120,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   > Bed managers can print this directly onto a single physical page or project it onto the briefing room screen. In under two minutes, executive leadership shares an identical clinical baseline without a single telephone call.
   >
   > Now, let us see what happens when acute demand strikes our emergency network."
-- **Presenter Action:** Press `Esc` to close the modal. Transition via primary navigation to `/ed/rph-ed` (or `/referrals`).
+- **Presenter Action:** Press `Esc` to close the modal. Transition via primary navigation to `/mockups/ward-flow/ed/rph-ed` (or `/mockups/ward-flow/referrals`).
 
 ---
 
@@ -130,25 +130,25 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Time:** 10:30 AM (Duration: 2 Minutes / 2:00 - 4:00)
 - **Clinical Role:** Emergency Psychiatric Liaison Nurse (EPLN) / ED Psychiatric Registrar
-- **Screen:** Emergency Department Console (`/ed/rph-ed`) & Referral Intake Drawer (`/referrals/new` or `/referrals`)
+- **Screen:** Emergency Department Console (`/mockups/ward-flow/ed/rph-ed`) & Referral Intake Drawer (`/mockups/ward-flow/referrals/new` or `/mockups/ward-flow/referrals`)
 - **Patient Profile:**
-  - **Name:** Sarah Jenkins (synthetic UMRN `UM100088`)
-  - **Demographics:** 28-year-old Female, resident of Bayswater (East Metropolitan Catchment)
+  - **Name:** Callum Halloway (UM100001) on movement `WF-301`
+  - **Demographics:** Adult resident of Bayswater (East Metropolitan Catchment)
   - **Triage:** Australasian Triage Scale (ATS) Category 2 (Emergency — 10-minute medical assessment)
   - **Clinical Picture:** Severe acute psychotic exacerbation, persecutory delusions, extreme agitation, poor oral intake, refusing voluntary treatment.
-  - **Legal Status:** Form 1A (_Referral for Examination by a Psychiatrist_) executed under the WA _Mental Health Act 2014_ at 10:15 AM by ED Senior Medical Officer.
+  - **Legal Status:** Form 1A (_Referral for Examination by a Psychiatrist_) executed under the WA _Mental Health Act 2014_ at 10:15 AM by ED Senior Medical Officer, with clinician-entered paper expiry time recorded on the form.
 
 ```
 +----------------------------------------------------------------------------------------------------+
 | ROYAL PERTH HOSPITAL · EMERGENCY DEPARTMENT (ED) INFLOW                          Time: 10:30 AM    |
 +----------------------------------------------------------------------------------------------------+
 | ACTIVE ED MENTAL HEALTH PRESENTATIONS: 5 Patients Waiting                                           |
-| [!] URGENT | JENKINS, Sarah (28F) | ATS Cat 2 | Wait: 1h 15m | Form 1A Exp: 70h 45m | East Metro   |
+| [!] URGENT | Callum Halloway (UM100001) | ATS Cat 2 | Wait: 1h 15m | Paper Expiry: 18 Aug 10:15   |
 +----------------------------------------------------------------------------------------------------+
-| REFERRAL INTAKE INSPECTOR (JENKINS, Sarah)                                                         |
+| REFERRAL INTAKE INSPECTOR (Callum Halloway · UM100001 · Movement WF-301)                           |
 | - Origin: Royal Perth Hospital Emergency Department (RPH-ED)                                       |
-| - Legal Status: Involuntary Patient · Form 1A (Referral for examination by a psychiatrist)         |
-| - Statutory Clock: Commenced 10:15 AM · Valid for 72 Hours (Synthetic Regulatory Display)         |
+| - Legal Status: Referred for psychiatric examination · Form 1A                                     |
+| - Paper Form Expiry: Clinician-entered paper expiry timestamp (Not legally checked; per D-29)      |
 | - Catchment: East Metropolitan Health Service (Home Suburb: Bayswater)                             |
 | - Bed Requirement: Adult Acute (Secure / HDU Capable requested due to acute behavioural acuity)     |
 +----------------------------------------------------------------------------------------------------+
@@ -158,37 +158,37 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 2:00 - 2:45 · ED Inflow & Clinical Crisis Presentation
 
-- **Presenter Action:** Navigate to the RPH Emergency Department screen (`/ed/rph-ed`). Point to the acute mental health patient corridor. Click on patient card `Sarah Jenkins`.
+- **Presenter Action:** Navigate to the RPH Emergency Department screen (`/mockups/ward-flow/ed/rph-ed`). Point to the acute mental health patient corridor. Click on patient card `Callum Halloway (UM100001)` (seeded on RPH ED movement `WF-301`).
 - **Presenter Spoken Dialogue:**
   > "It is now 10:30 AM. At Royal Perth Hospital Emergency Department, an acute clinical crisis has arrived.
   >
-  > Meet Sarah Jenkins. Sarah is a 28-year-old woman brought in by ambulance, accompanied by WA Police. She is presenting with acute persecutory delusions, intense behavioural agitation, and marked distress. The ED triage team categorised her as **ATS Category 2**—requiring emergency intervention within 10 minutes.
+  > Meet Callum Halloway (`UM100001`). Callum was brought in by ambulance, accompanied by WA Police. He is presenting with acute persecutory delusions, intense behavioural agitation, and marked distress. The ED triage team categorised him as **ATS Category 2**—requiring emergency intervention within 10 minutes.
   >
-  > Following medical clearance by the ED team, Dr Chen, the emergency consultant, determined that Sarah lacks capacity, presents a significant risk of physical deterioration and self-harm, and requires an involuntary psychiatric examination under the Western Australian _Mental Health Act 2014_."
+  > Following medical clearance by the ED team, Dr Chen, the emergency consultant, determined that Callum lacks capacity, presents a significant risk of physical deterioration and self-harm, and requires an involuntary psychiatric examination under the Western Australian _Mental Health Act 2014_."
 
-#### 2:45 - 3:30 · Recording the Statutory Form 1A
+#### 2:45 - 3:30 · Recording the Form 1A Paper Expiry (Owner Ruling D-29)
 
-- **Presenter Action:** Open the Referral Intake Drawer. Show the **Legal Forms** dropdown selector. Highlight the selection of **Form 1A (Referral for examination by a psychiatrist)**. Note the statutory countdown timer badge.
+- **Presenter Action:** Open the Referral Intake Drawer. Show the **Legal Forms** selector and the clinician-entered paper expiry field (`legalFormExpiryIso`). Note how statutory duration reference calculators are isolated to `/mockups/ward-flow/legal-forms`.
 - **Presenter Spoken Dialogue:**
-  > "Observe how Ward Flow handles Western Australian statutory compliance.
+  > "Observe how Ward Flow handles Western Australian statutory recording under Owner Ruling `D-29`.
   >
-  > In the intake drawer, the emergency team records the legal status. Under our _Mental Health Act 2014_, a Form 1A authorizes detaining an individual for up to 72 hours for examination by an authorized psychiatrist.
+  > In the intake drawer, the emergency team records the legal status (`Referred for psychiatric examination`) and the form identifier (**Form 1A**).
   >
   > Notice what Ward Flow does—and what it steadfastly refuses to do:
-  > It records the exact recorded timestamp when Dr Chen completed the paper Form 1A: 10:15 AM. It displays a clear statutory awareness badge showing 70 hours and 45 minutes remaining.
+  > The ED movement row **does not** calculate a 72-hour Form 1A countdown from duration. Per `D-29`, the main operational engine never computes deadlines from statutory durations: the movement row displays only the **clinician-entered paper expiry time** written on the physical form (labelled _Not legally checked_).
   >
-  > But critically—in strict alignment with our clinical governance rules—Ward Flow **never invents or guesses a legal expiry deadline**. It shows only recorded facts. If Sarah is transported across country borders or requires a continuation form, clinicians enter that paper authority explicitly. The software never makes an autonomous legal assumption."
+  > Meanwhile, statutory duration reference tables and calculators live solely in the isolated `/mockups/ward-flow/legal-forms` reference demo. In operational screens, the software never makes an autonomous legal duration assumption."
 
-#### 3:30 - 4:00 · Catchment Routing & Clinical Acuity Indicators
+#### 3:30 - 4:00 · Catchment Routing, UM1xxxxx Identifiers & Clinical Acuity Indicators
 
-- **Presenter Action:** Highlight the automated catchment resolver. Show that Sarah’s home suburb of Bayswater routes her primary psychiatric catchment to East Metropolitan Health Service. Point to the High Acuity and Specialling requirement flags.
+- **Presenter Action:** Highlight the automated catchment resolver and the synthetic UMRN format (`UM100001`, or sibling synthetic UMRNs such as `UM100041` per `D-39`). Show that Callum’s home suburb of Bayswater routes his primary psychiatric catchment to East Metropolitan Health Service. Point to the High Acuity and Specialling requirement flags.
 - **Presenter Spoken Dialogue:**
-  > "Sarah resides in Bayswater. Ward Flow’s internal catchment engine instantly resolves her home catchment to East Metro Health Service.
+  > "Every patient on screen is identified by a synthetic `UM1xxxxx` UMRN—such as `UM100001` for Callum Halloway or `UM100041` for another synthetic cohort record—while internal movement IDs like `WF-301` govern the journey behind the scenes. Callum resides in Bayswater, and Ward Flow’s internal catchment engine instantly resolves his home catchment to East Metro Health Service.
   >
-  > Because Sarah is severely agitated and requires intensive nursing supervision, the triage team marks her clinical requirements: **Adult Acute**, **HDU / Secure Capable**, and **High Acuity Nursing Ratio**.
+  > Because Callum is severely agitated and requires intensive nursing supervision, the triage team marks his clinical requirements: **Adult Acute**, **HDU / Secure Capable**, and **High Acuity Nursing Ratio**.
   >
-  > The referral is signed off in ED and submitted to the statewide flow queue. Instantaneously, without a single phone call or faxed referral sheet, Sarah Jenkins appears on the Statewide Flow Coordinator’s radar. Let us step into the Coordinator’s shoes."
-- **Presenter Action:** Close the intake drawer and navigate to `/referrals`.
+  > The referral is signed off in ED and submitted to the statewide flow queue. Instantaneously, without a single phone call or faxed referral sheet, Callum Halloway (`UM100001`) appears on the Statewide Flow Coordinator’s radar. Let us step into the Coordinator’s shoes."
+- **Presenter Action:** Close the intake drawer and navigate to `/mockups/ward-flow/referrals`.
 
 ---
 
@@ -198,16 +198,16 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Time:** 11:45 AM (Duration: 2 Minutes / 4:00 - 6:00)
 - **Clinical Role:** Senior Statewide Bed Allocation Coordinator
-- **Screen:** Statewide Referral Inspector & Bed Match Engine (`/referrals` -> Click Row `Jenkins, Sarah` -> Inspector Tab `Placement / Bed Match`)
+- **Screen:** Statewide Referral Inspector & Bed Match Engine (`/mockups/ward-flow/referrals` -> Click Row `Callum Halloway (UM100001)` -> Inspector Tab `Placement / Bed Match`)
 - **Key System Mechanics:** Multi-gate eligibility evaluation, gender-safety rules, travel bands, clinician override reasoning, one-click bed hold.
 
 ```
 +----------------------------------------------------------------------------------------------------+
-| REFERRAL INSPECTOR: JENKINS, Sarah (28F) · UMRN: UM100088 · ATS Cat 2                             |
+| REFERRAL INSPECTOR: Callum Halloway (UM100001) · Movement WF-301 · ATS Cat 2                       |
 +----------------------------------------------------------------------------------------------------+
 | [ Placement & Match ]  [ Clinical History ]  [ Legal Paperwork ]  [ Actions ]                     |
 |                                                                                                    |
-| SEARCH PARAMETERS: Female · Adult · Acute Secure / HDU · Authorised Unit · East Metro Preferred     |
+| SEARCH PARAMETERS: Adult · Acute Secure / HDU · Authorised Unit · East Metro Preferred             |
 +----------------------------------------------------------------------------------------------------+
 | MATCH CANDIDATES GROUPED BY TRAVEL BAND:                                                           |
 |                                                                                                    |
@@ -217,7 +217,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 |                                                                                                    |
 | ▼ TRAVEL BAND 2: 30 TO 60 MINUTES                                                                  |
 |   [3] SCGH MHU (Adult Mixed)     | North Metro | 2 Ready Beds| GATES: All Passed     | [ SHORTLIST] |
-|   [4] FSH Adult Secure           | South Metro | 3 Ready Beds| REFUSED: Male-Only Bed| [ EXCLUDED ] |
+|   [4] Geraldton / Single-Sex Wing| Regional/SM | Ready Bed   | REFUSED: Single-Sex   | [ EXCLUDED ] |
 |   [5] Fremantle Maali 4.2        | South Metro | 3 Ready Beds| GATE: Open Ward Only  | [ OVERRIDE ] |
 +----------------------------------------------------------------------------------------------------+
 ```
@@ -226,41 +226,41 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 4:00 - 4:45 · The Intelligent Eligibility Matching Engine
 
-- **Presenter Action:** On `/referrals`, click the top row corresponding to `Sarah Jenkins`. The right-side inspector drawer smoothly expands. Click the **[Bed Match]** tab.
+- **Presenter Action:** On `/mockups/ward-flow/referrals`, click the row corresponding to `Callum Halloway (UM100001)`. The right-side inspector drawer smoothly expands. Click the **[Bed Match]** tab.
 - **Presenter Spoken Dialogue:**
-  > "At 11:45 AM, our Statewide Bed Coordinator opens Sarah Jenkins’ referral. We immediately open the **Bed Match Engine**.
+  > "At 11:45 AM, our Statewide Bed Coordinator opens Callum Halloway’s referral (`UM100001`). We immediately open the **Bed Match Engine**.
   >
-  > Watch what happened behind the scenes in milliseconds. Rather than forcing a coordinator to mentally cross-reference 23 hospital units, Ward Flow evaluated Sarah’s clinical profile against thirteen explicit clinical safety gates:
-  > Age cohort match, involuntary authorized unit status, gender designation, current sex mix balance, high-acuity nursing capacity, and travel proximity.
+  > Watch what happened behind the scenes in milliseconds. Rather than forcing a coordinator to mentally cross-reference 23 hospital units, Ward Flow evaluated Callum’s clinical profile against explicit clinical safety gates:
+  > Age cohort match, involuntary authorized unit status, single-sex room/wing designation, current sex mix balance, high-acuity nursing capacity, and travel proximity.
   >
   > Notice the intelligent travel bands:
   > In Travel Band 1—under 30 minutes from Royal Perth ED—we have two viable candidates: Royal Perth’s own secure unit, **Dabakarn**, and **Bentley Health Service Ward 7**."
 
 #### 4:45 - 5:15 · Absolute Gender Safety & Inviolable Safeguards
 
-- **Presenter Action:** Scroll down to the excluded units in Travel Band 2. Hover over Fiona Stanley Hospital (FSH) Adult Secure. Point to the red gate refusal indicator: `REFUSED: Male-only bed designation`.
+- **Presenter Action:** Scroll down to the excluded single-sex units/rooms in the candidate list. Point to the red gate refusal indicator for a mismatched binary single-sex ward or room designation (`R7` / `D-31`).
 - **Presenter Spoken Dialogue:**
-  > "Here is a crucial clinical safety feature: look at Fiona Stanley Hospital Adult Secure. FSH has three allocatable secure beds right now.
+  > "Here is a crucial clinical safety feature: look at how Ward Flow handles single-sex wards and room wings (such as Fiona Stanley’s male-only secure unit or Geraldton’s female-only open unit).
   >
-  > Why does Ward Flow refuse to place Sarah there? Because FSH Adult Secure currently holds a designated male-only room cluster to maintain gender separation and trauma-informed safety.
+  > Why does Ward Flow refuse a binary sex mismatch automatically? Because single-sex room and wing designations are maintained for gender separation and trauma-informed safety.
   >
-  > In Ward Flow, **gender safety is an inviolable gate**. The system will not allow an automated placement to breach sex-mix safety rules. It protects both the patient and our health service from catastrophic clinical incidents."
+  > In Ward Flow, **binary single-sex room/wing protection is a non-overridable gate** (`R7` / `D-31`), while gender-diverse (`X` / `non_binary` / `not_stated`) placements require recorded coordinator review (`R2-2`). The system will never allow a placement to breach binary sex-mix safety rules."
 
 #### 5:15 - 6:00 · Bed Allocation, Clinician Rationale & 4-Hour Hold
 
-- **Presenter Action:** Return to Candidate 1: **Royal Perth Hospital Dabakarn**. Click **[Hold Bed for Patient]**. A confirmation popover appears requiring confirmation of the 4-hour statutory hold. Click **[Confirm Hold]**.
+- **Presenter Action:** Return to Candidate 1: **Royal Perth Hospital Dabakarn**. Click **[Hold Bed for Patient]**. A confirmation popover appears requiring confirmation of the 4-hour hold. Click **[Confirm Hold]**.
 - **Presenter Spoken Dialogue:**
-  > "The coordinator evaluates Dabakarn at Royal Perth. It is in Sarah’s home service of East Metro, located on the same hospital campus, minimizing transit trauma. Dabakarn has one locked bed ready and confirms 1:1 high-acuity nursing availability.
+  > "The coordinator evaluates Dabakarn at Royal Perth. It is in Callum’s home service of East Metro, located on the same hospital campus, minimizing transit trauma. Dabakarn has one locked bed ready and confirms 1:1 high-acuity nursing availability.
   >
   > The coordinator clicks **Hold Bed for Patient**.
   >
   > Instantly, Ward Flow executes three coordinated transactions across the network:
   > First, Dabakarn’s allocatable bed count drops from 1 to 0 across every dashboard in WA.
-  > Second, a 4-hour countdown hold is stamped on the bed, preventing any other hospital from double-booking it while ED prepares Sarah.
+  > Second, a 4-hour countdown hold is stamped on the bed, preventing any other hospital from double-booking it while ED prepares Callum.
   > Third, an auditable clinical log is generated: who held the bed, at what minute, and against what clinical criteria.
   >
   > The bed is secured. Now, we must coordinate safe inter-hospital logistics."
-- **Presenter Action:** Transition via navigation to `/movements`.
+- **Presenter Action:** Transition via navigation to `/mockups/ward-flow/movements`.
 
 ---
 
@@ -270,8 +270,8 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Time:** 13:15 PM (Duration: 2 Minutes / 6:00 - 8:00)
 - **Clinical Role:** Transport Logistics Officer & Mental Health Flight Deck Controller
-- **Screen:** Movements Flight Deck & Transit Cockpit (`/movements`)
-- **Key System Mechanics:** St John WA CAD transfer integration, departure verification, real-time transit status, zero-data-loss client state guard.
+- **Screen:** Movements Flight Deck & Transit Cockpit (`/mockups/ward-flow/movements`)
+- **Key System Mechanics:** St John WA CAD transfer integration, departure verification, real-time transit status, structured `sessionStorage` persistence and `D-18` free-text privacy guard.
 
 ```
 +----------------------------------------------------------------------------------------------------+
@@ -279,7 +279,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 +----------------------------------------------------------------------------------------------------+
 | ACTIVE TRANSITS: 4 In Transit | 3 Booked Awaiting Dispatch | 2 Held Awaiting Transport             |
 +----------------------------------------------------------------------------------------------------+
-| [ACTIVE TRANSFER] JENKINS, Sarah (28F)                                                             |
+| [ACTIVE TRANSFER] Callum Halloway (UM100001) · Movement WF-301                                     |
 | - Origin: Royal Perth Hospital ED  -->  Destination: RPH Dabakarn Secure Unit                      |
 | - Transport Mode: St John WA Mental Health Patient Transfer Service (Specialist Crew)             |
 | - Dispatch Identifier: CAD-20260815-8842  |  Vehicle: SJ-VAN-04                                    |
@@ -293,37 +293,36 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 6:00 - 6:45 · The Movements Flight Deck & Transport Bottlenecks
 
-- **Presenter Action:** Navigate to `/movements`. Point out the horizontal corridor visualization (`MovementHorizonGantt`) and the active transit rows.
+- **Presenter Action:** Navigate to `/mockups/ward-flow/movements`. Point out the horizontal corridor visualization (`MovementHorizonGantt`) and the active transit rows.
 - **Presenter Spoken Dialogue:**
   > "It is now 13:15 PM. We are on the **Movements Flight Deck**.
   >
   > In mental health operations, the period between deciding to admit a patient and their physical arrival on the ward is historically a black hole. Patients get stuck in ED corridors waiting for transport; beds on wards sit empty and staffed while charge nurses wonder if the patient is ever coming.
   >
-  > Ward Flow eliminates this blindness through the Movements Flight Deck. Every active movement across Western Australia is tracked across five distinct clinical milestones:
-  > Referral Accepted -> Bed Held -> Transport Booked -> Departed ED -> Arrived on Ward."
+  > Ward Flow eliminates this blindness through the Movements Flight Deck. Every active movement across Western Australia is tracked across distinct clinical milestones from referral acceptance and bed hold through transport booking, departure, and ward arrival."
 
 #### 6:45 - 7:30 · St John WA CAD Integration & Live Transit
 
-- **Presenter Action:** Click on Sarah Jenkins’ active movement row. The **Movement Workspace Cockpit** drawer expands. Highlight the **Transport Details** card showing dispatch identifier `CAD-20260815-8842` and the live ETA counter.
+- **Presenter Action:** Click on Callum Halloway’s (`UM100001`, movement `WF-301`) active movement row. The **Movement Workspace Cockpit** drawer expands. Highlight the **Transport Details** card showing dispatch identifier `CAD-20260815-8842` and the live ETA counter.
 - **Presenter Spoken Dialogue:**
-  > "Look at Sarah’s transport record. At 12:45, the ED liaison team booked an inter-facility transfer with St John WA.
+  > "Look at Callum’s transport record. At 12:45, the ED liaison team booked an inter-facility transfer with St John WA.
   >
   > Notice that Ward Flow requires a genuine Computer Aided Dispatch—or CAD—incident number: here, `CAD-20260815-8842`. Our clinical safety audit rules specifically reject generic placeholders like 'ambulance called' or 'pending'.
   >
   > At 13:12, the St John transfer vehicle departed the ED ambulance bay. The transfer officer tapped 'Confirm Departure'.
   >
-  > Instantly, Sarah’s status shifted to **In Transit**. Look at the destination ward: Dabakarn’s dashboard immediately updated with an ETA countdown: arrival expected in 10 minutes. The receiving ward nurse unit manager can see the vehicle is rolling, prepare the seclusion room or high-dependency bed, allocate the 1:1 admitting nurse, and ensure the medical registrar is present for reception."
+  > Instantly, Callum’s status shifted to **In Transit**. Look at the destination ward: Dabakarn’s dashboard immediately updated with an ETA countdown: arrival expected in 10 minutes. The receiving ward nurse unit manager can see the vehicle is rolling, prepare the seclusion room or high-dependency bed, allocate the 1:1 admitting nurse, and ensure the medical registrar is present for reception."
 
-#### 7:30 - 8:00 · Zero-Data-Loss State Resilience
+#### 7:30 - 8:00 · Structured Session Persistence & The D-18 Free-Text Privacy Safeguard
 
-- **Presenter Action:** In the browser, make a minor edit in a form note field, then deliberately simulate an accidental page refresh (`F5` or `Ctrl+R`). Show how the dirty-state guard intercepts, and upon reload, the entire application state is instantaneously restored from local session persistence.
+- **Presenter Action:** Perform a **structured action** (such as toggling a bed state or assigning a structured blocker/step—do **not** type into a free-text note field), then press `F5` (or `Ctrl+R`) to demonstrate `sessionStorage` recovery of structured actions. Separately point out the `D-18` privacy safeguard (`eventCarriesFreeText()`).
 - **Presenter Spoken Dialogue:**
-  > "A quick word on engineering resilience: in clinical environments, computers are shared, browsers are accidentally closed, and Wi-Fi drops out in lead-lined hospital corridors.
+  > "A quick word on session persistence and clinical privacy: when a coordinator performs **structured actions**—such as holding a bed, toggling a bed state, or assigning a structured blocker or step—and refreshes the tab (`F5`), Ward Flow restores that structured state from `sessionStorage`.
   >
-  > Ward Flow incorporates an aggressive **Zero-Data-Loss State Guard**. If a clinician accidentally hits refresh or navigates away mid-entry, our dirty-state interceptor prevents data loss, and local session memory restores the exact flight deck state within milliseconds.
+  > Equally important is Owner Ruling **`D-18`** (`eventCarriesTypedTextPayload(event)`): dispatching **any event that can carry typed free text**, whether the event is accepted or refused, makes Ward Flow intentionally clear the central demo snapshot and `wf-draft:*` caches, then disable browser persistence for the remainder of that session as a strict privacy safeguard against leaving free-text notes in shared workstation browser storage.
   >
-  > Now, Sarah’s transport vehicle has arrived at Dabakarn. Let us move to the inpatient unit for receiving and handover."
-- **Presenter Action:** Close the movement cockpit and navigate to `/handover`.
+  > Now, Callum’s transport vehicle has arrived at Dabakarn. Let us move to the inpatient unit for receiving and handover."
+- **Presenter Action:** Close the movement cockpit and navigate to `/mockups/ward-flow/handover`.
 
 ---
 
@@ -333,7 +332,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Time:** 14:30 PM (Duration: 2 Minutes / 8:00 - 10:00)
 - **Clinical Role:** Nurse Unit Manager (NUM) & Inpatient Admitting Psychiatric Nurse
-- **Screen:** Clinical Handover Flight Deck (`/handover`) & Inpatient Ward Bed Board (`/board/rph-adult-secure`)
+- **Screen:** Clinical Handover Flight Deck (`/mockups/ward-flow/handover`) & Inpatient Ward Bed Board (`/mockups/ward-flow/board/rph-adult-secure`)
 - **Key System Mechanics:** Clinical ISBAR handover completion, Form 1A custody receipt, physical arrival confirmation, bed status transition to "Occupied", instantaneous network synchronization.
 
 ```
@@ -342,7 +341,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 +----------------------------------------------------------------------------------------------------+
 | UNIT CAPACITY: 20 Beds Total | 19 Occupied | 1 Empty (Allocating) | 0 Beds Ready Now               |
 +----------------------------------------------------------------------------------------------------+
-| BED 04: JENKINS, Sarah (28F) | Involuntary (Form 1A) | High Acuity 1:1 | Admitted: 14:28 PM        |
+| BED 04: Callum Halloway (UM100001) | Involuntary (Form 1A) | High Acuity 1:1 | Admitted: 14:28 PM  |
 | - Primary Consultant: Dr K. Farrow (Covering) | Admitting Nurse: RN T. O'Shea                      |
 | - Legal Status: Form 1A Received & Verified | Physical Custody Transferred from St John WA Crew     |
 | - Clinical Handover: ISBAR Completed (ED Liaison -> Ward Nurse)                                   |
@@ -356,32 +355,32 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 8:00 - 8:45 · Clinical ISBAR Handover Verification
 
-- **Presenter Action:** On the `/handover` screen, select `Dabakarn` from the Ward Scope dropdown. Highlight the arrivals corridor card for Sarah Jenkins.
+- **Presenter Action:** On the `/mockups/ward-flow/handover` screen, select `Dabakarn` from the Ward Scope dropdown. Highlight the arrivals corridor card for `Callum Halloway (UM100001)`.
 - **Presenter Spoken Dialogue:**
-  > "It is 14:30 PM. Sarah Jenkins has arrived at the sally port of Dabakarn Secure Unit.
+  > "It is 14:30 PM. Callum Halloway (`UM100001`) has arrived at the sally port of Dabakarn Secure Unit.
   >
   > The admitting psychiatric nurse opens Ward Flow’s **Handover Flight Deck**. In mental health, handover is the most vulnerable point in patient care. Ward Flow structures this exchange around the national Australian clinical standard: **ISBAR**—Identification, Situation, Background, Assessment, and Recommendation.
   >
-  > With one glance, the admitting nurse verifies Sarah’s identifiers, her ATS triage history, her allergy status, and the physical handover of the statutory Form 1A paper order from the transport crew.
+  > With one glance, the admitting nurse verifies Callum’s identifiers, his ATS triage history, his allergy status, and the physical handover of the statutory Form 1A paper order from the transport crew.
   >
   > The nurse checks the legal form verification box, confirming that the hard-copy Form 1A is in the physical hospital chart."
 
 #### 8:45 - 9:30 · Completing Arrival & Transition to "Occupied"
 
-- **Presenter Action:** Click the prominent **[Confirm Inpatient Arrival]** action button. A confirmation toast appears, and Sarah moves smoothly from the _Arrivals Corridor_ into _Admitted Inpatients_. Immediately navigate via the breadcrumb link to Dabakarn’s Ward Board (`/board/rph-adult-secure`).
+- **Presenter Action:** Click the prominent **[Confirm Inpatient Arrival]** action button. A confirmation toast appears, and Callum moves smoothly from the _Arrivals Corridor_ into _Admitted Inpatients_. Immediately navigate via the breadcrumb link to Dabakarn’s Ward Board (`/mockups/ward-flow/board/rph-adult-secure`).
 - **Presenter Spoken Dialogue:**
   > "The nurse clicks **Confirm Inpatient Arrival**.
   >
   > Watch the immediate ripple effect across the entire software ecosystem:
-  > Sarah’s movement closes successfully. Her bed status at Dabakarn transitions from 'Held / In Transit' to **'Occupied'**.
+  > Callum’s movement (`WF-301`) closes successfully. His bed status at Dabakarn transitions from 'Pulled' to **'Occupied'**.
   >
-  > On Dabakarn’s live Ward Board, Sarah Jenkins is now registered in Bed 04. Her high-acuity nursing flag is activated, her legal status countdown continues smoothly, and her primary consultant psychiatrist is notified.
+  > On Dabakarn’s live Ward Board, Callum Halloway (`UM100001`) is now registered in Bed 04. His high-acuity nursing flag is activated, his clinician-entered legal form paper expiry remains clearly recorded, and his primary consultant psychiatrist is notified.
   >
   > Simultaneously, on the Statewide Capacity screen we opened at 09:00, Dabakarn’s ready bed counter updates to zero. Coordinators in Joondalup, Albany, and Fremantle see in real time that this bed is occupied. No phone call was made. No fax was sent. The feedback loop is closed."
 
 #### 9:30 - 10:00 · Conclusion & Presentation Close
 
-- **Presenter Action:** Return to the primary coordinator overview (`/`) or `/capacity`. Allow the clean, high-density dashboard to fill the screen.
+- **Presenter Action:** Return to the primary coordinator overview (`/mockups/ward-flow`) or `/mockups/ward-flow/capacity`. Allow the clean, high-density dashboard to fill the screen.
 - **Presenter Spoken Dialogue:**
   > "In ten minutes, we have walked through a complete psychiatric patient journey:
   >
@@ -415,7 +414,7 @@ To satisfy the stringent standards of the WA Health Clinical Governance Director
 
 ### 1. The Synthetic Isolation Guarantee
 
-- **100% Synthetic Records:** Every patient identifier (`UM100088`), name (`Sarah Jenkins`), address (`No. 7, Bayswater`), and clinician name is generated from synthetic dictionaries. Surnames are deliberately chosen so that no real Western Australian citizen is identified.
+- **100% Synthetic Records:** Every patient identifier (`UM100001`, `UM100041`), name (`Callum Halloway`), address (`No. 7, Bayswater`), and clinician name is generated from curated synthetic dictionaries. Surnames are deliberately chosen and checked by unit tests against common Western Australian surnames so that no real citizen is identified.
 - **Zero Production EHR Integration:** In this prototype demonstration mode, there is zero network bridge to WebPAS, PSOLIS, TOPAS, or St John WA production servers.
 
 ### 2. Clinician Supremacy & Anti-Automation Bias
@@ -425,8 +424,8 @@ To satisfy the stringent standards of the WA Health Clinical Governance Director
 
 ### 3. Statutory Fidelity (WA _Mental Health Act 2014_)
 
-- Under WA law, the legal authority to detain or examine a psychiatric patient resides exclusively in the signed statutory instrument (e.g. Form 1A, Form 3A, Form 3D).
-- Ward Flow functions as a **statutory recorder**, not an automated legal arbiter. It records the date and time written on the physical form by the doctor. It never computes an artificial statutory expiry date that could mislead clinicians regarding legal custody.
+- Under WA law, the legal authority to detain or examine a psychiatric patient resides exclusively in the signed statutory instrument (e.g. Form 1A, Form 3A, Form 6A).
+- Per Owner Ruling `D-29`, Ward Flow’s operational engine functions as a **statutory recorder**, not an automated legal arbiter: movement screens display only the paper expiry date and time typed from the physical form by the clinician, while statutory duration reference calculators live solely in the isolated `/mockups/ward-flow/legal-forms` demo.
 
 ### 4. Honest Denominators & Anti-Alarm Fatigue
 
@@ -472,9 +471,9 @@ To satisfy the stringent standards of the WA Health Clinical Governance Director
 >
 > Actions are handled by a central state reducer. When browser storage is available and the demo's privacy lock permits saving, the central demo snapshot is saved as plain JSON in this tab's session storage; it is not encrypted by the application. A valid saved snapshot may be restored on a same-day reload while that browser session remains available. Restoration after a tab closes, a browser crash or a workstation reboot is not guaranteed.
 >
-> Once an event that can carry typed text is dispatched, whether accepted or refused, the central demo snapshot is cleared and further snapshot saving stops until a genuine demo reset or scenario reseed. If snapshot storage is unavailable, state changes remain in memory and may be lost when the page closes.
+> Under Owner Ruling `D-18` (`eventCarriesTypedTextPayload(event)`), once an event that can carry typed free text is dispatched, whether accepted or refused, the central demo snapshot in `sessionStorage` and any `wf-draft:*` draft caches are cleared and further snapshot saving stops until a genuine demo reset or scenario reseed. If snapshot storage is unavailable, state changes remain in memory and may be lost when the page closes.
 >
-> Eligible unsaved drafts in forms configured with `useDirtyStateGuard` can still be cached independently as unencrypted text under separate `wf-draft:*` session-storage keys and restored on reload while that browser session remains available. For example, a refused broadcast can retain its draft even after the central snapshot is cleared. Draft caching does not guarantee recovery.
+> Typed drafts are not restored from browser storage after that point: D-18 removes any `wf-draft:*` entries together with the central snapshot, so unsaved typed text remains in memory only and may be lost on reload.
 >
 > Where a form marks unsaved changes, `useDirtyStateGuard` can request a browser warning before leaving the page. That warning does not guarantee recovery or prevent loss after a crash. Use synthetic data only."
 
@@ -550,11 +549,11 @@ To satisfy the stringent standards of the WA Health Clinical Governance Director
 +----------------------------------------------------------------------------------------------------+
 | QUICK NAVIGATION URLS                                                                              |
 +----------------------------------------------------------------------------------------------------+
-| ACT 1: CAPACITY & MORNING SHEET      -->  /capacity                                                |
-| ACT 2: ED INFLOW & REFERRAL INTAKE   -->  /ed/rph-ed   (or /referrals)                             |
-| ACT 3: BED MATCHING ENGINE           -->  /referrals   --> Click Jenkins Row --> [Bed Match]       |
-| ACT 4: MOVEMENTS FLIGHT DECK         -->  /movements   --> Click Jenkins Row --> [Cockpit]         |
-| ACT 5: INPATIENT HANDOVER & BOARD    -->  /handover    --> /board/rph-adult-secure                 |
+| ACT 1: CAPACITY & MORNING SHEET      -->  /mockups/ward-flow/capacity                              |
+| ACT 2: ED INFLOW & REFERRAL INTAKE   -->  /mockups/ward-flow/ed/rph-ed (or /mockups/ward-flow/referrals) |
+| ACT 3: BED MATCHING ENGINE           -->  /mockups/ward-flow/referrals --> Click Callum Halloway (UM100001) Row --> [Bed Match] |
+| ACT 4: MOVEMENTS FLIGHT DECK         -->  /mockups/ward-flow/movements --> Click Callum Halloway (UM100001) Row --> [Cockpit]   |
+| ACT 5: INPATIENT HANDOVER & BOARD    -->  /mockups/ward-flow/handover  --> /mockups/ward-flow/board/rph-adult-secure            |
 +----------------------------------------------------------------------------------------------------+
 ```
 

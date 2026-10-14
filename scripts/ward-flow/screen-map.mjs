@@ -18,7 +18,7 @@
 
 import { readFileSync, readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join, relative } from "node:path";
-import { PAIRS, SUPERSEDED } from "./screen-pairs.mjs";
+import { PAIRS, ROUTE_COMPONENTS, SUPERSEDED } from "./screen-pairs.mjs";
 
 const ROOT = process.cwd();
 const MOCKUPS = join(ROOT, "docs", "ward-flow", "mockups");
@@ -61,7 +61,7 @@ const routes = ROUTE_SOURCES.flatMap(({ root, prefix, file }) =>
   walk(root)
     .filter((f) => f.endsWith(file))
     .map((f) => {
-      const suffix = relative(root, f).split(/[\\/]/).slice(0, -1).join("/");
+      const suffix = relative(root, f).replaceAll("\\", "/").split("/").slice(0, -1).join("/");
       if (prefix) return suffix ? `${prefix}/${suffix}` : prefix;
       return suffix ? `/${suffix}` : "/";
     }),
@@ -75,7 +75,7 @@ const screenDirs = existsSync(SCREENS)
 
 const mapped = { mockups: new Set(), routes: new Set(), screens: new Set() };
 for (const [m, r, s] of PAIRS) {
-  mapped.mockups.add(m);
+  if (m) mapped.mockups.add(m);
   if (r) mapped.routes.add(r);
   if (s) mapped.screens.add(s);
 }
@@ -83,7 +83,13 @@ for (const [m, r, s] of PAIRS) {
 const unmappedMockups = mockups.filter((m) => !mapped.mockups.has(m) && !SUPERSEDED.includes(m));
 const unmappedRoutes = routes.filter((r) => !mapped.routes.has(r));
 const missingRoutes = PAIRS.filter(([, r, , c]) => c && r && !routes.includes(r)).map(([m, r]) => `${r} (for ${m})`);
-const missingMockups = PAIRS.filter(([m]) => !mockups.includes(m)).map(([m]) => m);
+const missingMockups = PAIRS.filter(([m]) => m && !mockups.includes(m)).map(([m]) => m);
+
+const routeComponentByRoute = new Map(ROUTE_COMPONENTS.map((entry) => [entry.route, entry]));
+const missingRouteComponentEntries = routes.filter((r) => !routeComponentByRoute.has(r));
+const missingReactComponentFiles = ROUTE_COMPONENTS.filter(
+  ({ react }) => react && !existsSync(join(SCREENS, ...react.split("/"))),
+).map(({ route, react }) => `${react} (for ${route})`);
 
 /** UNREACHABLE — a screen component nothing imports. The `ed-home.tsx` shape. */
 const allSource = walk(join(ROOT, "src")).filter((f) => /\.(tsx|ts)$/.test(f));
@@ -91,7 +97,8 @@ const sourceText = new Map(allSource.map((f) => [f, readFileSync(f, "utf8")]));
 const unreachable = [];
 for (const f of allSource) {
   const base = f
-    .split(/[\\/]/)
+    .replaceAll("\\", "/")
+    .split("/")
     .pop()
     .replace(/\.(tsx|ts)$/, "");
   if (!/-(screen|home|board|index|page)$/.test(base)) continue;
@@ -104,7 +111,7 @@ for (const f of allSource) {
       break;
     }
   }
-  if (!imported) unreachable.push(relative(ROOT, f).split(/[\\/]/).join("/"));
+  if (!imported) unreachable.push(relative(ROOT, f).replaceAll("\\", "/"));
 }
 
 const lines = [
@@ -145,6 +152,10 @@ const problems = [];
 if (missingMockups.length) problems.push(["🔴 MAPPED MOCKUP NOT ON DISK — renamed or deleted", missingMockups]);
 if (unmappedMockups.length) problems.push(["🔴 MOCKUP WITH NO ENTRY — add it to PAIRS", unmappedMockups]);
 if (missingRoutes.length) problems.push(["🔴 BUILD-CONTRACT SCREEN WITH NO ROUTE", missingRoutes]);
+if (missingRouteComponentEntries.length)
+  problems.push(["🔴 ROUTE MISSING FROM ROUTE_COMPONENTS — add it to screen-pairs.mjs", missingRouteComponentEntries]);
+if (missingReactComponentFiles.length)
+  problems.push(["🔴 MAPPED REACT COMPONENT NOT ON DISK", missingReactComponentFiles]);
 if (unmappedRoutes.length) problems.push(["⚠️ ROUTE WITH NO MOCKUP — undrawn, or needs an entry", unmappedRoutes]);
 // ⚠️ WARNING, NOT A HARD FAIL, AND THAT IS DELIBERATE. These are pre-existing. A gate that can
 // never pass gets switched off, and then it protects nothing — which is its own recorded lesson.

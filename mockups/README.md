@@ -1,19 +1,23 @@
 # Project Mockups
 
-This folder collects notes for mockup routes that live under `src/app/mockups/`.
+> **SUPERSEDED / Historical PsychSift Catalogue (26 September 2026):**
+> All PsychSift design-study mockups listed below were retired when `BigSimmo/Ward-Flow` split from PsychSift. In this repository, only the **Ward Flow** prototype routes (`/mockups/ward-flow/*` and `/mockups/ward-flow-sign-in`) exist.
+> For the live Ward Flow route and screen inventory, see [`docs/ward-flow/SCREEN-MAP.md`](../docs/ward-flow/SCREEN-MAP.md) and [`docs/site-map.md`](../docs/site-map.md).
 
 ## Authoritative route list
 
-The generated route map in [`docs/site-map.md`](../docs/site-map.md) (mockups section) is the source of truth for runnable mockup URLs. Regenerate it after adding or removing mockup routes:
+The generated route map in [`docs/site-map.md`](../docs/site-map.md) (mockups section) and [`docs/ward-flow/SCREEN-MAP.md`](../docs/ward-flow/SCREEN-MAP.md) are the sources of truth for runnable Ward Flow URLs. Regenerate the site map after adding or removing routes:
 
 ```bash
-npm run sitemap:update
+npm run docs:update
 npm run sitemap:check
 ```
 
-## Mockup index, by topic
+<!-- docs-script-refs:historical-start -->
 
-**25 September 2026:** 25 PsychSift design studies left the Ward Flow line (see "Retired mockups"). Entries below may still name them until this index is retired with the rest of PsychSift; the plan is `docs/ward-flow/plans/2026-09-25-psychsift-retirement.md`.
+## Mockup index, by topic (Historical PsychSift record)
+
+**25 September 2026:** 25 PsychSift design studies left the Ward Flow line (see "Retired mockups"). Entries below preserve the historical PsychSift catalogue for provenance only; see `docs/ward-flow/archive/plans/2026-09-25-psychsift-retirement.md`.
 
 A quick-scan catalogue of every route under `src/app/mockups/` and what state it's in, so
 nobody has to open every folder to find out what's still useful. `docs/site-map.md` remains
@@ -629,3 +633,5 @@ One deliberate departure from the services study: the per-option count here is t
 mechanisms carry that domain), not "the total if I added this". Domains are a single OR group, so the union contract
 reports the unchanged total for an empty domain — Cultural would read `7`, indistinguishable from a full one. The
 commit button remains the thing that predicts the outcome.
+
+<!-- docs-script-refs:historical-end -->

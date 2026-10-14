@@ -1,5 +1,11 @@
 # Changeable data — one place per fact
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../AGENTS.md), [`docs/ward-flow/README.md`](ward-flow/README.md), [`docs/ward-flow/STATUS.md`](ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **Owner instruction, 2026-08-29, stated twice and widened the second time:**
 
 > "The number of beds will change later… it is only example data for now. I will tell you the exact
@@ -242,3 +248,5 @@ the same discipline as the fact-versus-record rule above, applied to instruction
 
 **This is a sibling of the undated-verbatim-list trap** — both are cases where a document faithfully
 reproduces something true and loses the one piece of context that makes it usable.
+
+<!-- docs-script-refs:historical-end -->

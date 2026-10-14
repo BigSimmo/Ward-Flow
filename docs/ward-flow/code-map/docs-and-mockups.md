@@ -86,8 +86,9 @@ where marked "(inferred)". Back to [the code map index](README.md).
   never here.
 - **`RULES.md`** (249 lines) — `node scripts/ward-flow/rules-index.mjs`. Generated from the 207-lesson
   store copied into `lessons/` (see that folder below); edit a lesson there.
-- **`SCREEN-MAP.md`** (116 lines) — `node scripts/ward-flow/screen-map.mjs`. "68 mockups · 44 routes ·
-  29 screen folders." The mockup-to-route pairing is hand-authored (no rule derives it); completeness
+- **`SCREEN-MAP.md`** (124 lines) — `node scripts/ward-flow/screen-map.mjs`. "68 mockups · 52 routes ·
+  32 screen folders" (50 routes under `/mockups/ward-flow/*` plus `/mockups/ward-flow-sign-in` and
+  `/mockups/ward-flow-digest`). The mockup-to-route pairing is hand-authored (no rule derives it); completeness
   (which files exist) is discovered from disk. This is the file the mockups section below is built
   from.
 - **`SCREEN-VERIFICATION.md`** (82 lines) — `node scripts/ward-flow/screen-verification.mjs`, edited
