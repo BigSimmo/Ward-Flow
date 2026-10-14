@@ -3936,6 +3936,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           examination: { at: event.now, outcome: event.outcome },
           supersededExaminations,
           blocker: STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease,
+          examRevoked: event.outcome === "revoked" ? true : movement.examRevoked,
         };
         const next = replaceMovement(state, movement.id, flagged);
         // Item 48, Q3 (owner, 2026-09-17): the accepting ward is told, but only for a `"revoked"`
@@ -3983,6 +3984,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ...movement,
         examination: { at: event.now, outcome: event.outcome },
         supersededExaminations,
+        examRevoked: event.outcome === "revoked" ? true : movement.examRevoked,
         transport:
           movement.transport && movement.transport.cancelledAt === undefined
             ? { ...movement.transport, cancelledAt: event.now }
@@ -4418,6 +4420,38 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `movement ${movement.id} has already closed and cannot be withdrawn`);
       }
+      // A place claim must match the recorded sender before either closure path can run.
+      // A ward transfer's sourceAdmissionId identifies a stay, not the caller who owns it.
+      const caller = event as { role: WardFlowRole; placeId?: string; actingPlaceId?: string };
+      const callerPlaceId = caller.placeId ?? caller.actingPlaceId;
+      const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+      // Verified senders: a transfer from a recorded stay is the sending ward's alone. Otherwise the
+      // ED that raised the journey (`originEdId`) owns it, and for a ward-sent referral the sending
+      // ward (`referral.originUnitId`) may also withdraw — an ED-raised journey on a ward referral
+      // must not lock out the ED that owns it (qodo, 13 Oct).
+      const senders: { role: WardFlowRole; placeId: string | undefined }[] =
+        movement.sourceAdmissionId !== undefined
+          ? [{ role: "ward", placeId: movementSourceAdmission(state, movement)?.unitId }]
+          : [
+              { role: "ed", placeId: movement.originEdId },
+              ...(referral?.source === "psychiatric_ward"
+                ? [{ role: "ward" as WardFlowRole, placeId: referral.originUnitId }]
+                : []),
+            ];
+      const senderPlaceId = senders.find((sender) => sender.role === event.role)?.placeId;
+      if (
+        event.role !== "coordinator" &&
+        (!callerPlaceId ||
+          !senders.some(
+            (sender) => sender.role === event.role && sender.placeId !== undefined && sender.placeId === callerPlaceId,
+          ))
+      ) {
+        return reject(
+          state,
+          event,
+          `caller ${callerPlaceId ?? "without a place ID"} is not the referral origin site (${senderPlaceId ?? "not recorded"}) for role ${event.role}; only the referrer or the coordinator may withdraw it`,
+        );
+      }
 
       /*
        * 🔴 WLQ-38 (owner, 2026-09-15), verbatim: *"This should also be the referring doctors
@@ -4434,15 +4468,6 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
        * would refuse this branch's own happy path with the wrong reason.
        */
       if (movement.acceptedUnitId) {
-        /*
-         * ⚠️ **`ed` IS PERMITTED BY ROLE ALONE, NOT CHECKED AGAINST `movement.originEdId`.** The
-         * referrer for a movement is the emergency department it began in, but this event (like
-         * every other ED-raised event except `RAISE_REFERRAL` itself) carries no acting-ED
-         * identity field to compare — the same absence `EVENT_ROLE.CANCEL_TRANSPORT`'s own comment
-         * already names for `community` ("no event carries which community team is acting", R2, no
-         * viewer identity). Widening this model to let one ED tell itself apart from another is an
-         * owner decision, not an implementer's.
-         */
         if (event.role !== "coordinator" && event.role !== "ed") {
           return reject(
             state,
@@ -4739,6 +4764,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           overrides: pullOverrides(movement, restoreUnit, admissionsExcludingOwn, event, false),
           stage: "pulled",
           waitlistedUnitIds: undefined,
+          pullExpiresAt: event.now + state.configuration.pullHoldMinutes,
+          allocatedBed: movement.allocatedBed ?? held.id,
           stageChanges: [
             ...movement.stageChanges,
             { at: event.now, from: movement.stage, to: "pulled", by: event.role },
@@ -5126,6 +5153,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         stage: "pulled",
         waitlistedUnitIds: undefined,
         pullExpiresAt: event.now + state.configuration.pullHoldMinutes,
+        allocatedBed: admission.id,
         // The join `RELEASE_PULL` needs to undo exactly this record, and `PATIENT_ARRIVED` needs to
         // mark exactly this one as having arrived. See `Movement.admissionId`.
         admissionId: admission.id,
@@ -6076,6 +6104,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot record a blocker for a closed movement (${movement.closure.reason})`);
       }
+      // Owner ruling 13 Oct 2026: a new blocker is accepted while an examination-revoked hold
+      // stands. The hold is not lost: `examinationRevokedWhileBedHeld` is derived from the records
+      // (never from this prose), so the ED, movement console and officer screens keep warning.
       const blocker = event.blocker.trim();
       if (blocker.length === 0) {
         return reject(state, event, `RECORD_MOVEMENT_BLOCKER blocker must say something — a blank is not a statement`);
@@ -6141,6 +6172,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot clear the blocker on a closed movement (${movement.closure.reason})`);
       }
+      const examinationOutcome = movement.examination?.outcome;
+      const examinationRevokedHoldingBed =
+        (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
+        movement.admissionId !== undefined;
+      const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+      if (examinationRevokedHoldingBed || awaitingRelease) {
+        return reject(
+          state,
+          event,
+          `cannot clear statutory hold on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
+        );
+      }
       // Refused rather than accepted as a no-op, the same discipline as the flag pair above: a
       // control that reports success for an act that changed nothing is the untruth this prototype
       // names as mattering most. `"None — cleared"` and the other sentinels are all already
@@ -6148,7 +6191,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === movement.blocker.trim())) {
         return reject(state, event, `movement ${movement.id} already records that nothing is holding it up`);
       }
-      return replaceMovement(state, movement.id, { ...movement, blocker: "None — cleared" });
+      return replaceMovement(state, movement.id, {
+        ...movement,
+        blocker: "None — cleared",
+        examRevoked: movement.examRevoked,
+      });
     }
 
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT": {
@@ -8541,6 +8588,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // sentence is only ever about the latter.
         blocker: STAGE_TRANSITION_BLOCKERS.accepted,
         pullExpiresAt: undefined,
+        allocatedBed: undefined,
         // The record the pull created was deleted above (by the shared helper), so the join to it
         // goes with it. A surviving id pointing at a deleted admission is the dangling reference
         // this whole fix is about.
@@ -9308,6 +9356,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot step back a closed movement (${movement.closure.reason})`);
       }
+      if (!MOVEMENT_STAGES.includes(event.to)) {
+        return reject(state, event, `STEP_BACK_STAGE target must be chosen from MOVEMENT_STAGES`);
+      }
       const fromIndex = MOVEMENT_STAGES.indexOf(movement.stage);
       const toIndex = MOVEMENT_STAGES.indexOf(event.to);
       if (toIndex >= fromIndex) {
@@ -10066,6 +10117,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         acceptedUnitId: undefined,
         acceptedAt: undefined,
         admissionId: undefined,
+        allocatedBed: undefined,
         pullExpiresAt: undefined,
         waitlistedUnitIds: undefined,
         referredUnitIds: [],
@@ -10090,31 +10142,35 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       const next = replaceMovement(withoutPhantom, movement.id, updatedMovement);
       const reasonText = event.reason.replace(/_/g, " ");
-      if (!heldBed) {
-        // No bed was held, so there is no bed release to announce. The accepting ward is told its
-        // acceptance was released when someone else (the coordinator) made that call.
-        if (event.role === "ward" || releasedUnitId === undefined) return next;
-        return appendNotices(next, [
+      // Clinical owner ruling, 14 Oct 2026: the ED is ALWAYS notified, whether a bed was released
+      // or only an acceptance was withdrawn.
+      const notices = [
+        makeNotice(
+          event.now,
+          state.notices.length,
+          heldBed ? "bed_pull_released" : "acceptance_withdrawn_referrer",
+          { role: "ed", placeId: movement.originEdId },
+          { movementId: movement.id, unitId: releasedUnitId },
+          heldBed
+            ? `Bed released and search reopened for ${movement.id} (${reasonText}).`
+            : `Acceptance withdrawn and search reopened for ${movement.id} (${reasonText}).`,
+        ),
+      ];
+      // No bed was held: the accepting ward is told its acceptance was released when someone else
+      // (the coordinator) made that call (main's ruling, 2026-10-13 22:13 AWST).
+      if (!heldBed && releasedUnitId !== undefined && event.role !== "ward") {
+        notices.push(
           makeNotice(
             event.now,
-            state.notices.length,
+            state.notices.length + 1,
             "acceptance_withdrawn_ward",
             { role: "ward", placeId: releasedUnitId },
             { movementId: movement.id, unitId: releasedUnitId },
             `The acceptance for ${movement.id} was released and the search reopened (${reasonText}).`,
           ),
-        ]);
+        );
       }
-      return appendNotices(next, [
-        makeNotice(
-          event.now,
-          state.notices.length,
-          "bed_pull_released",
-          { role: "ed", placeId: movement.originEdId },
-          { movementId: movement.id, unitId: releasedUnitId },
-          `Bed released and search reopened for ${movement.id} (${reasonText}).`,
-        ),
-      ]);
+      return appendNotices(next, notices);
     }
 
     case "CLEAR_EXPECT_FLAG": {

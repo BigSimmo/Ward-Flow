@@ -218,18 +218,21 @@ describe("API CSRF guard beyond Sec-Fetch-Site: cross-site (L28)", () => {
     expect(response.status).not.toBe(403);
   });
 
-  it("allows a non-browser client that sends neither Fetch Metadata, Origin nor Referer", async () => {
+  // A4-12 (12 October 2026 review): a mutation with no Fetch Metadata, Origin or Referer is
+  // refused. Ward Flow has no non-browser API client, so the former pass was only an open door.
+  it("refuses a mutation that sends neither Fetch Metadata, Origin nor Referer", async () => {
     const response = await proxy(mutation({}));
-    expect(response.status).not.toBe(403);
+    expect(response.status).toBe(403);
   });
 
-  it("does not apply the Origin check to webhook routes", async () => {
+  // A4-15: the blanket /api/webhooks/** exemption is gone; it would fail open for any future route.
+  it("applies the Origin check to webhook-shaped routes too", async () => {
     const request = new NextRequest(new URL("http://localhost/api/webhooks/supabase"), {
       method: "POST",
       headers: { origin: "https://attacker.example" },
     });
     const response = await proxy(request);
-    expect(response.status).not.toBe(403);
+    expect(response.status).toBe(403);
   });
 });
 
