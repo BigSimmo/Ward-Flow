@@ -79,8 +79,9 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
    * ⚠️ THE EXACT COUNTS, MEASURED AGAINST THE LIVE FIXTURE, NOT GUESSED. At this offset the
    * fixture also carries the expired bed hold, the declined set and seven overdue decision
    * targets, so "Act now" is 10 while WF-014 is still open and drops to 9, not 0, once it closes.
-   * Clinical owner ruling, 14 Oct 2026: the fixture's two waiting patients with no eligible bed now
-   * notify the bed coordinator as act-now rows, so the figures are 12 and 11.
+   * Clinical owner ruling, 14 Oct 2026: the fixture's waiting patient with no eligible bed (WF-308)
+   * notifies the bed coordinator as an act-now row, so the figures are 11 and 10. WF-009 raises no
+   * row: one of its wards failed only a prior decline, so the coordinator can still refer there.
    */
   it("counts and shows the alert while the movement is still open", () => {
     renderScreen();
@@ -91,8 +92,8 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
 
     expect(
       actNowFigure(),
-      "WF-014's breach plus the fixture's other act-now items must read 12 while it is still open",
-    ).toBe(12);
+      "WF-014's breach plus the fixture's other act-now items must read 11 while it is still open",
+    ).toBe(11);
   });
 
   it("drops the alert, and excludes the movement from the count, once it closes", () => {
@@ -109,6 +110,6 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
     expect(
       actNowFigure(),
       "the Act now figure did not drop by one once the breached movement closed, so it still counts WF-014",
-    ).toBe(11);
+    ).toBe(10);
   });
 });

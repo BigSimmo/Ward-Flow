@@ -1370,9 +1370,13 @@ export function buildActionInbox(
       units.length > 0 &&
       // A ward refused ONLY because its capacity figure is stale is not "no eligible bed": the bed may
       // well be there. Such a ward keeps the movement off this row, so a stale feed cannot flood the
-      // coordinator with false "nowhere" notices.
+      // coordinator with false "nowhere" notices. The same goes for a ward that failed only an
+      // informational gate (an earlier decline): the coordinator may still refer there with nothing
+      // recorded, so the network is not out of beds.
       eligibleCandidatesAmong(movement, units, now, units.length).every((candidate) =>
-        candidate.verdict.gates.some((gate) => !gate.pass && gate.gate !== "capacity_freshness"),
+        candidate.verdict.gates.some(
+          (gate) => !gate.pass && gate.gate !== "capacity_freshness" && !INFORMATIONAL_GATES.includes(gate.gate),
+        ),
       ),
   );
   for (const movement of noEligibleBed) {

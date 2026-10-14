@@ -659,6 +659,14 @@ function AlertsWorkspace() {
         "Watches accepted destinations against an authorised-hospital check for the patient's current recorded status.",
     },
     {
+      key: "nobed",
+      kind: "nobed",
+      label: "No eligible bed",
+      n: countKind("nobed"),
+      scope:
+        "Watches open movements still waiting for a ward where no ward in the network is currently eligible. The patient stays on the waitlist and the bed coordinator is notified.",
+    },
+    {
       key: "hold",
       kind: "hold",
       label: "Bed hold expired",

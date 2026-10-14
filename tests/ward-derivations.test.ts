@@ -6,6 +6,7 @@ import {
   buildActionInbox,
   destinationNoLongerLawful,
   eligibleCandidatesAmong,
+  INFORMATIONAL_GATES,
   isOpen,
   restrictionNotice,
   transportLeg,
@@ -316,7 +317,7 @@ describe("buildActionInbox", () => {
           (unit) =>
             unit.cohort === movement.cohort &&
             eligibility(movement, unit, NOW_ANCHOR).gates.every(
-              (gate) => gate.pass || gate.gate === "capacity_freshness",
+              (gate) => gate.pass || gate.gate === "capacity_freshness" || INFORMATIONAL_GATES.includes(gate.gate),
             ),
         ),
     ).length;
