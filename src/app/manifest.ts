@@ -42,7 +42,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: "Coordinator Hub",
         short_name: "Coordinator",
         description: "Statewide psychiatric bed coordination and patient flow queue",
-        url: "/mockups/ward-flow/coordinator",
+        url: "/mockups/ward-flow",
       },
       {
         name: "Capacity Matrix",
