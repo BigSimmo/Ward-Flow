@@ -1299,11 +1299,7 @@ function NetworkRow({
   // request and a confirmation in the same minute cannot be ordered; that tie counts as still outstanding, which
   // prevents a duplicate request rather than allowing one.
   const latestRequest = refreshRequests.filter((request) => request.unitId === row.unit.id).at(-1);
-  const asked =
-    latestRequest !== undefined &&
-    (latestRequest.allocatableRevision !== undefined
-      ? (row.unit.allocatable.revision ?? 0) <= latestRequest.allocatableRevision
-      : latestRequest.at >= row.unit.allocatable.confirmedAt);
+  const asked = latestRequest !== undefined && latestRequest.at >= row.unit.allocatable.confirmedAt;
   const site = siteByCode(row.unit.siteCode);
   /*
    * Wards are always named, never shown as a bare code. The unresolved sentence comes from
