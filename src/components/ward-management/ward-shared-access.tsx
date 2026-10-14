@@ -12,7 +12,6 @@ import {
 } from "./shell/ward-phone-push";
 import type { WardFlowEvent } from "./ward-flow-events";
 import { SharedWorkspaceClient } from "./ward-shared-client";
-import { resolveWardAuthProvider } from "../../lib/security-headers";
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
 import styles from "./ward-shared-access.module.css";
 
@@ -191,8 +190,24 @@ function useWardEntraShared(enabled: boolean): WardSharedConnection {
   };
 }
 
+/**
+ * The browser sign-in provider. Blank selects legacy Entra only when its tenant and client IDs are
+ * set and no Supabase URL is, otherwise Supabase. This mirrors `resolveWardAuthProvider` in
+ * src/lib/security-headers.ts (the CSP side); Ward Flow may not import outside its folders, so
+ * tests/security-headers.test.ts keeps the two in step.
+ */
+export function selectWardAuthProvider(): string {
+  const selected = process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim();
+  if (selected) return selected;
+  const legacyEntra =
+    !!process.env.NEXT_PUBLIC_WARD_TENANT_ID?.trim() &&
+    !!process.env.NEXT_PUBLIC_WARD_CLIENT_ID?.trim() &&
+    !process.env.NEXT_PUBLIC_WARD_SUPABASE_URL?.trim();
+  return legacyEntra ? "entra" : "supabase";
+}
+
 export function useWardShared(enabled: boolean): WardSharedConnection {
-  const provider = resolveWardAuthProvider();
+  const provider = selectWardAuthProvider();
   const supabaseMode = provider === "supabase";
   const entra = useWardEntraShared(enabled && provider === "entra");
   const supabase = useWardSupabaseShared(enabled && supabaseMode);
