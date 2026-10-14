@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { type CSSProperties, type HTMLAttributes, type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "./button";
 import { cx } from "./cx";
-import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./overlay.module.css";
+import { StatusGlyph, type WfTone } from "./status-glyph";
 
 /**
  * An Undo window on the toast. A 2px line under the toast shrinks over `durationMs` and pauses
@@ -158,7 +158,14 @@ export function ToastView({
   return (
     <div
       className={cx(styles.glass, styles.toast, undo && styles.toastUndo, className)}
-      style={undo ? ({ ...style, "--wf-undo-ms": `${Math.max(0, undo.durationMs)}ms` } as CSSProperties) : style}
+      style={
+        undo
+          ? ({
+              ...style,
+              "--wf-undo-ms": `${Math.max(0, undo.durationMs)}ms`,
+            } as CSSProperties)
+          : style
+      }
       data-undo={undo ? phase : undefined}
       data-paused={undo && paused ? "true" : undefined}
       // The phone pill reads the tone to drop the success and info glyph; a caller's own wins.
@@ -189,11 +196,8 @@ export function ToastView({
             href={nextStep.href}
             className={styles.toastAction}
             data-testid="toast-next-step"
-            onClick={(event) => {
-              if (nextStep.onNextStep) {
-                event.preventDefault();
-                nextStep.onNextStep();
-              }
+            onClick={() => {
+              nextStep.onNextStep?.();
             }}
           >
             {nextStep.label}

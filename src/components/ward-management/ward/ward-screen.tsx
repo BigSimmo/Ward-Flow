@@ -1,13 +1,5 @@
 "use client";
 
-import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
-import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { WardReferralInbox } from "../referrals/ward-referral-inbox";
-
-import dynamic from "next/dynamic";
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { hasOpenSheet } from "@/components/ui/sheet-focus";
 import {
   ArrowLeftRight,
   Bell,
@@ -21,28 +13,55 @@ import {
   Search,
   Send,
 } from "lucide-react";
-import { useEffect, useCallback, useRef, useState, type FormEvent } from "react";
-
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { hasOpenSheet } from "@/components/ui/sheet-focus";
+import { handoverScopeValue } from "@/components/ward-management/handover/handover-scope";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
+import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { useOnlineStatus } from "@/components/ward-management/use-online-status";
+import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {
-  type BedReleaseBlocker,
-  type ReleasePullReason,
-  OVERRIDE_REASONS,
-  type OverrideReason,
-  wardIntakeConstraintLabels,
-} from "@/components/ward-management/ward-change-reasons";
-import {
-  calendarDateOf,
-  formatInstant,
-  formatInstantWithDay,
-  formatRemaining,
-  minutesUntil,
-} from "@/components/ward-management/ward-clock";
+  daysInBed as admissionStayDays,
+  isPastExpectedDischarge,
+  LEAVING_DESTINATIONS,
+  type LeavingDestination,
+  stayBand,
+} from "@/components/ward-management/ward-admissions";
 import {
   bedsPendingPreparation,
   capacityBreakdown,
   releaseBand,
 } from "@/components/ward-management/ward-bed-availability";
 import { designationSummary } from "@/components/ward-management/ward-bed-designation";
+import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
+import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import {
+  currentShift,
+  dayShiftEndInstant,
+  releasesDueByShiftEnd,
+} from "@/components/ward-management/ward-board-time-features";
+import {
+  type BedReleaseBlocker,
+  OVERRIDE_REASONS,
+  type OverrideReason,
+  type ReleasePullReason,
+  wardIntakeConstraintLabels,
+} from "@/components/ward-management/ward-change-reasons";
+import {
+  calendarDateOf,
+  dayOf,
+  formatInstant,
+  formatInstantWithDay,
+  formatRemaining,
+  type Instant,
+  minuteOfDay,
+  minutesUntil,
+} from "@/components/ward-management/ward-clock";
 import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
   isOpen,
@@ -51,84 +70,63 @@ import {
   stageCopy,
   unitCapacity,
 } from "@/components/ward-management/ward-derivations";
-import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
+import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { setDeskRole, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
-import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
-import { referralSuburbIsKnown, wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
-import {
-  CheckingFoot,
-  Hero,
-  LiveChip,
-  Menu,
-  ScrollRow,
-  TextInput,
-  buttonClass,
-  useIsPhone,
-  useOptionalToast,
-  durMinutes,
-} from "@/components/wf";
-import {
-  currentShift,
-  dayShiftEndInstant,
-  releasesDueByShiftEnd,
-} from "@/components/ward-management/ward-board-time-features";
-import { unitHref } from "@/components/ward-management/shell/ward-facade";
+import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
-import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import {
-  RECORDED_SEXES,
   type DeclineReason,
   type Movement,
+  RECORDED_SEXES,
   type RecordedSex,
   type Rejection,
 } from "@/components/ward-management/ward-model";
-import { edById, siteByCode, WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
-import {
-  daysInBed as admissionStayDays,
-  stayBand,
-  isPastExpectedDischarge,
-  LEAVING_DESTINATIONS,
-  type LeavingDestination,
-} from "@/components/ward-management/ward-admissions";
-import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
-import { patientAgeYears } from "@/components/ward-management/ward-patients";
-import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
-import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-
-import { handoverScopeValue } from "@/components/ward-management/handover/handover-scope";
-import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
-import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import styles from "./ward.module.css";
-import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
-import { openDecisionCount } from "./ward-decision-count";
-import type { BedItem } from "./ward-beds-matrix";
-import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
-import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
-import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
-import type { WaitingReferral } from "./ward-bed-board";
-import {
-  bedFits,
-  bedNumberLabel,
-  fitCount,
-  pickedUpSay,
-  whyBedDoesNotFit,
-  type BoardPick,
-} from "./ward-bed-board-logic";
-import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
-import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
-
-import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   LEAVE_BED_OPEN_WARNING_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
   UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
+import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import { patientAgeYears } from "@/components/ward-management/ward-patients";
+import { referralSuburbIsKnown, wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
+import { setDeskRole, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { unitHealthService } from "@/components/ward-management/ward-service-scope";
+import { edById, siteByCode, WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
+import {
+  buttonClass,
+  CheckingFoot,
+  durMinutes,
+  Hero,
+  LiveChip,
+  Menu,
+  ScrollRow,
+  TextInput,
+  useIsPhone,
+  useOptionalToast,
+} from "@/components/wf";
+import { WardReferralInbox } from "../referrals/ward-referral-inbox";
+import styles from "./ward.module.css";
+import type { WaitingReferral } from "./ward-bed-board";
+import {
+  type BoardPick,
+  bedFits,
+  bedNumberLabel,
+  fitCount,
+  pickedUpSay,
+  whyBedDoesNotFit,
+} from "./ward-bed-board-logic";
+import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
+import type { BedItem } from "./ward-beds-matrix";
+import { openDecisionCount } from "./ward-decision-count";
+import { type WardFlowTab, WardHomeTab, type WardShiftView, wardActNowCount } from "./ward-home-tab";
+import { type WardBedFilter, WardTelemetryRibbon } from "./ward-telemetry-ribbon";
 
 const WardDailySheetDialog = dynamic(
   () => import("@/components/ward-management/board/ward-daily-sheet").then((m) => m.WardDailySheetDialog),
@@ -179,7 +177,13 @@ type BoardCheck = {
 /** The undo event for what the Bed board placed or moved (v10 pass 2 and 3). */
 function boardUndoEvent(undo: NonNullable<BoardCheck["undo"]>, now: Instant): WardFlowEvent {
   if (undo.kind === "stay")
-    return { type: "UNDO_PLACE_IN_BED", role: "ward", now, admissionId: undo.admissionId, actingUnitId: undo.unitId };
+    return {
+      type: "UNDO_PLACE_IN_BED",
+      role: "ward",
+      now,
+      admissionId: undo.admissionId,
+      actingUnitId: undo.unitId,
+    };
   if (undo.kind === "movement")
     return {
       type: "UNDO_ACCEPT_IN_PRINCIPLE",
@@ -249,7 +253,11 @@ function shiftLine(now: Instant): string {
   return `${name} ${clock(shift.startMinute)} to ${clock(shift.endMinute)}`;
 }
 
-type WardScreenProps = { departurePlanning?: boolean; unitId: string; presentation?: "overview" | "answer" };
+type WardScreenProps = {
+  departurePlanning?: boolean;
+  unitId: string;
+  presentation?: "overview" | "answer";
+};
 
 function originPlaceLabel(originEdId: string): string {
   return edById(originEdId)?.name ?? originEdId;
@@ -734,7 +742,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setConfirmNumbersOpen(false);
     setTimeout(() => {
       const opener = capacityOpenerRef.current;
-      (opener?.isConnected ? opener : confirmTriggerRef.current)?.focus({ preventScroll: true });
+      (opener?.isConnected ? opener : confirmTriggerRef.current)?.focus({
+        preventScroll: true,
+      });
       capacityOpenerRef.current = null;
     }, 0);
   }, []);
@@ -1467,13 +1477,23 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const heldBeds = [
     ...inboxEntries.flatMap((entry) =>
       entry.state === "accepted" && entry.heldBedNumber !== undefined
-        ? [{ bed: entry.heldBedNumber, name: resolvePatientIdentity(entry).displayName }]
+        ? [
+            {
+              bed: entry.heldBedNumber,
+              name: resolvePatientIdentity(entry).displayName,
+            },
+          ]
         : [],
     ),
     // v10 pass 3: a coordinator-sent person this ward accepted into a numbered bed.
     ...accepted.flatMap((movement) =>
       movement.heldBedNumber !== undefined && movement.stage !== "moving"
-        ? [{ bed: movement.heldBedNumber, name: resolvePatientIdentity(movement).displayName }]
+        ? [
+            {
+              bed: movement.heldBedNumber,
+              name: resolvePatientIdentity(movement).displayName,
+            },
+          ]
         : [],
     ),
   ];
@@ -1489,7 +1509,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     isMixed ? lockedBeds : 0,
   );
   const bedNumbers = layoutBedNumbers(
-    rawBeds.map((bed) => ({ stayAdmissionId: bed.stayAdmissionId, free: bed.status === "ready" })),
+    rawBeds.map((bed) => ({
+      stayAdmissionId: bed.stayAdmissionId,
+      free: bed.status === "ready",
+    })),
     (admissionId) => recordedBeds.get(admissionId),
     heldBeds.map((held) => held.bed),
     (admissionId) => seatedBeds.get(admissionId),
@@ -1576,7 +1599,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       if (targetBed?.gender === "Female") return "Female";
       if (targetBed?.gender === "Male") return "Male";
       if (targetBed?.gender === "Non-binary" || targetBed?.gender === "Different term") return "Another term";
-      return "Female";
+      return "Not recorded";
     })();
 
     const legalBasisText = stayMovement?.legalStatus ?? targetBed?.legalStatus ?? targetBed?.legalStatusLabel ?? "";
@@ -1705,7 +1728,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         prior: rejections.length,
         bed: bedNumber,
         success: `Moved ${pick.name} from bed ${bedNumberLabel(pick.fromBed)} to bed ${bedNumberLabel(bedNumber)}.`,
-        undo: { kind: "stay", admissionId: pick.admissionId, unitId: boardUnitId },
+        undo: {
+          kind: "stay",
+          admissionId: pick.admissionId,
+          unitId: boardUnitId,
+        },
       };
       dispatch({
         type: "PLACE_IN_BED",
@@ -1721,7 +1748,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         prior: rejections.length,
         bed: bedNumber,
         success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Accepted in principle.`,
-        undo: { kind: "movement", movementId: pick.movementId, unitId: boardUnitId },
+        undo: {
+          kind: "movement",
+          movementId: pick.movementId,
+          unitId: boardUnitId,
+        },
       };
       dispatch({
         type: "ACCEPT_IN_PRINCIPLE",
@@ -1737,7 +1768,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         prior: rejections.length,
         bed: bedNumber,
         success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Referral accepted.`,
-        undo: { kind: "referral", referralId: pick.referralId, unitId: boardUnitId },
+        undo: {
+          kind: "referral",
+          referralId: pick.referralId,
+          unitId: boardUnitId,
+        },
       };
       dispatch({
         type: "ACCEPT_REFERRAL",
@@ -1775,7 +1810,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    */
   const overridesHere = overridesAgainstUnit(movements, unit.id).map((entry) => ({
     movement: entry.movement,
-    override: { ...entry.override, unitIds: entry.override.unitIds.filter((id) => id === unit.id) },
+    override: {
+      ...entry.override,
+      unitIds: entry.override.unitIds.filter((id) => id === unit.id),
+    },
   }));
 
   function toggleDecline(movementId: string) {
@@ -2116,13 +2154,25 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // legal-transition gating in the render below), so the reducer is never asked for a transition
   // the row does not itself offer.
   function confirmBedRelease(releaseId: string) {
-    dispatch({ type: "CONFIRM_BED_RELEASE", role: "ward", now, releaseId, actingUnitId: unitId });
+    dispatch({
+      type: "CONFIRM_BED_RELEASE",
+      role: "ward",
+      now,
+      releaseId,
+      actingUnitId: unitId,
+    });
   }
 
   // Bed-model rework (2026-08-28): lifting the blocked flag. The stage is untouched — a confirmed
   // discharge that becomes unstuck is still confirmed.
   function clearBedReleaseBlock(releaseId: string) {
-    dispatch({ type: "CLEAR_BED_RELEASE_BLOCK", role: "ward", now, releaseId, actingUnitId: unitId });
+    dispatch({
+      type: "CLEAR_BED_RELEASE_BLOCK",
+      role: "ward",
+      now,
+      releaseId,
+      actingUnitId: unitId,
+    });
   }
 
   // Josh, 26 Sept 2026 (1A). RELEASE_BED can no longer be accepted while the person is in the bed,
@@ -2173,7 +2223,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // screen's own route parameter, and the reducer compares it against the leave bed's own
   // `unitId` before ending it.
   function endLeaveBed(leaveBedId: string) {
-    dispatch({ type: "END_LEAVE_BED", role: "ward", now, leaveBedId, actingUnitId: unitId });
+    dispatch({
+      type: "END_LEAVE_BED",
+      role: "ward",
+      now,
+      leaveBedId,
+      actingUnitId: unitId,
+    });
   }
 
   // L2 (site review, 12 Oct 2026): only the discharges the ward figures count for today, from the
@@ -2265,7 +2321,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }
 
   // Audit A3-1: this ward's absences on an order, the same rows the shared task list raises.
-  const absencesOnOrder = absentOnOrder({ leaveBeds: unitLeaveBeds, admissions, movements, patients });
+  const absencesOnOrder = absentOnOrder({
+    leaveBeds: unitLeaveBeds,
+    admissions,
+    movements,
+    patients,
+  });
   const actNowCount = wardActNowCount({
     absences: absencesOnOrder.length,
     alerts: liveFormAlerts.length,
@@ -2742,7 +2803,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                           onClose={() => {
                             setNotificationCenterOpen(false);
                             setTimeout(() => {
-                              notificationTriggerRef.current?.focus({ preventScroll: true });
+                              notificationTriggerRef.current?.focus({
+                                preventScroll: true,
+                              });
                             }, 0);
                           }}
                         />
@@ -3293,7 +3356,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       ? (admissionId, blocker) => {
                           const pendingRelease = pendingBedReleases.find((r) => r.admissionId === admissionId);
                           if (blocker === null) {
-                            setStayBlockers((prev) => ({ ...prev, [admissionId]: null }));
+                            setStayBlockers((prev) => ({
+                              ...prev,
+                              [admissionId]: null,
+                            }));
                             if (pendingRelease && pendingRelease.blocker !== null) {
                               dispatch({
                                 type: "CLEAR_BED_RELEASE_BLOCK",
@@ -3307,7 +3373,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                             return;
                           }
                           const validBlocker = blocker as BedReleaseBlocker;
-                          setStayBlockers((prev) => ({ ...prev, [admissionId]: validBlocker }));
+                          setStayBlockers((prev) => ({
+                            ...prev,
+                            [admissionId]: validBlocker,
+                          }));
                           if (pendingRelease) {
                             dispatch({
                               type: "BLOCK_BED_RELEASE",
@@ -3433,7 +3502,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     <h3 className={styles.sectionHeading}>Bed roster &amp; census overview</h3>
                     <span
                       className={styles.statusPillBadge}
-                      style={{ color: "var(--ink)", borderColor: "var(--line-strong)" }}
+                      style={{
+                        color: "var(--ink)",
+                        borderColor: "var(--line-strong)",
+                      }}
                     >
                       {unit.name}
                     </span>

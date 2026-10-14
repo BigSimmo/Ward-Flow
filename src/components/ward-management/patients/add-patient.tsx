@@ -1,8 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import {
   BusFront,
   ChevronLeft,
@@ -17,15 +14,31 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { type FormEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
+import { TENTATIVE_DIAGNOSIS_BLOCKS } from "@/components/ward-management/ward-diagnosis";
+import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import {
+  duplicateCandidates,
+  GENDERS,
+  type Gender,
+  type Patient,
+  patientAddedOnDayOf,
+} from "@/components/ward-management/ward-patients";
 import {
   Avatar,
   Badge,
   Button,
+  buttonClass,
   Card,
   CardBody,
   CardFoot,
   CardHead,
+  type ChoiceItem,
+  cx,
   Field,
   Frac,
   Hero,
@@ -37,26 +50,12 @@ import {
   Select,
   Sheet,
   StatusGlyph,
-  TextInput,
   Textarea,
-  buttonClass,
-  cx,
+  TextInput,
   useIsPhone,
   useIsTabletPortrait,
-  type ChoiceItem,
+  useOptionalToast,
 } from "@/components/wf";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import {
-  duplicateCandidates,
-  GENDERS,
-  patientAddedOnDayOf,
-  type Gender,
-  type Patient,
-} from "@/components/ward-management/ward-patients";
-import { useOptionalToast } from "@/components/wf";
-import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
-import { TENTATIVE_DIAGNOSIS_BLOCKS } from "@/components/ward-management/ward-diagnosis";
-import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
 
 import styles from "./add-patient.module.css";
@@ -79,7 +78,10 @@ type PatientDraft = {
   dateOfBirth: string;
 };
 
-const REQUIRED_FIELDS: readonly { readonly key: keyof PatientDraft; readonly name: string }[] = [
+const REQUIRED_FIELDS: readonly {
+  readonly key: keyof PatientDraft;
+  readonly name: string;
+}[] = [
   { key: "umrn", name: "Record number" },
   { key: "givenName", name: "Given name" },
   { key: "familyName", name: "Family name" },
@@ -87,7 +89,12 @@ const REQUIRED_FIELDS: readonly { readonly key: keyof PatientDraft; readonly nam
 ];
 
 function initialDraft(prefillGivenName = ""): PatientDraft {
-  return { umrn: "", givenName: prefillGivenName, familyName: "", dateOfBirth: "" };
+  return {
+    umrn: "",
+    givenName: prefillGivenName,
+    familyName: "",
+    dateOfBirth: "",
+  };
 }
 
 function unansweredFieldNames(draft: PatientDraft): string[] {
@@ -157,9 +164,18 @@ const LEGAL_ITEMS: ChoiceItem<StatutoryLegalStatus>[] = [
 
 const INDIGENOUS_STATUS_OPTIONS = [
   { value: "not-stated", label: "Not stated" },
-  { value: "neither", label: "Neither Aboriginal nor Torres Strait Islander origin" },
-  { value: "aboriginal", label: "Aboriginal but not Torres Strait Islander origin" },
-  { value: "torres-strait", label: "Torres Strait Islander but not Aboriginal origin" },
+  {
+    value: "neither",
+    label: "Neither Aboriginal nor Torres Strait Islander origin",
+  },
+  {
+    value: "aboriginal",
+    label: "Aboriginal but not Torres Strait Islander origin",
+  },
+  {
+    value: "torres-strait",
+    label: "Torres Strait Islander but not Aboriginal origin",
+  },
   { value: "both", label: "Both Aboriginal and Torres Strait Islander origin" },
 ] as const;
 
@@ -260,7 +276,10 @@ export function AddPatientForm() {
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
   const [phoneSheet, setPhoneSheet] = useState<"larger" | null>(null);
-  const priorSubmissionRef = useRef<{ patients: typeof patients; rejectionCount: number } | null>(null);
+  const priorSubmissionRef = useRef<{
+    patients: typeof patients;
+    rejectionCount: number;
+  } | null>(null);
   const submitIntentRef = useRef<"profile" | "refer">("profile");
   const [submitIntent, setSubmitIntent] = useState<"profile" | "refer">("profile");
 
@@ -429,7 +448,10 @@ export function AddPatientForm() {
     }
     setIsSubmitting(true);
     setLastRejection(undefined);
-    priorSubmissionRef.current = { patients, rejectionCount: rejections.length };
+    priorSubmissionRef.current = {
+      patients,
+      rejectionCount: rejections.length,
+    };
     const suburbTrimmed = suburb.trim();
     dispatch({
       type: "ADD_PATIENT",
@@ -458,9 +480,24 @@ export function AddPatientForm() {
     setDraft((current) => ({ ...current, [key]: value }));
 
   const resetSummary = [
-    { key: "identity", on: identityChanged, label: "Identity", meta: "Number, names, birth date, gender" },
-    { key: "place", on: placeChanged, label: "Address and facility", meta: "Address, suburb, service" },
-    { key: "intake", on: intakeChanged, label: "Clinical intake", meta: "ATS, legal status, notes" },
+    {
+      key: "identity",
+      on: identityChanged,
+      label: "Identity",
+      meta: "Number, names, birth date, gender",
+    },
+    {
+      key: "place",
+      on: placeChanged,
+      label: "Address and facility",
+      meta: "Address, suburb, service",
+    },
+    {
+      key: "intake",
+      on: intakeChanged,
+      label: "Clinical intake",
+      meta: "ATS, legal status, notes",
+    },
   ];
 
   const duplicateCheck = (
@@ -543,7 +580,10 @@ export function AddPatientForm() {
                       {patient.suburb ? <span> · {patient.suburb}</span> : null}
                     </span>
                     <Link
-                      className={buttonClass({ size: "sm", className: styles.dupOpen })}
+                      className={buttonClass({
+                        size: "sm",
+                        className: styles.dupOpen,
+                      })}
                       href={`/mockups/ward-flow/people/${patient.id}`}
                     >
                       Use this record
@@ -576,7 +616,13 @@ export function AddPatientForm() {
             data-testid="ward-add-patient-phone-hero"
             // Device audit 11 Oct 2026: the landing shows no figures (a "0/4 Required" for a form that is
             // not shown read as a result); the short form shows only its own required count.
-            figures={[{ id: "required", value: `${answeredCount}/${REQUIRED_FIELDS.length}`, label: "Required" }]}
+            figures={[
+              {
+                id: "required",
+                value: `${answeredCount}/${REQUIRED_FIELDS.length}`,
+                label: "Required",
+              },
+            ]}
           />
         ) : null}
         <PhoneSheet

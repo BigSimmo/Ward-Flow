@@ -1,8 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   ArrowRight,
   Check,
@@ -16,36 +13,40 @@ import {
   Settings,
   SunMoon,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Sheet } from "@/components/ui/sheet";
 import { Tooltip } from "@/components/ui/tooltip";
+import {
+  OperatorSwitcherModal,
+  WARD_PERSONA_SYNC_EVENT,
+} from "@/components/ward-management/settings/operator-switcher-modal";
+import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
+import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
+import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import type { HealthService } from "@/components/ward-management/ward-model";
+import { WARD_CAPACITY_HREF, WARD_HOME_HREF, WARD_VIEWS } from "@/components/ward-management/ward-nav";
+import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
+import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
+import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { Dot, durMinutes } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
-import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { type HealthService } from "@/components/ward-management/ward-model";
-import { WARD_HOME_HREF, WARD_VIEWS, WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
-import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
-
 import {
   applyGlareToDocument,
   applyThemeToDocument,
   readStoredGlarePreference,
   readStoredThemePreference,
 } from "@/lib/theme-client";
-
-import { announceToWardShell } from "./ward-live-region";
 import { applyAppearance, useAppearanceStore, useGlareStore } from "./ward-bar";
+import { closeWardDrawer, isPhoneViewport, openWardDrawer, subscribeWardMenu } from "./ward-drawer-bus";
 import { handoverHref, settingsHref } from "./ward-facade";
-import {
-  OperatorSwitcherModal,
-  WARD_PERSONA_SYNC_EVENT,
-} from "@/components/ward-management/settings/operator-switcher-modal";
-import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
-import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
+import { announceToWardShell } from "./ward-live-region";
+import styles from "./ward-rail.module.css";
+import { RAIL_OPEN_STORAGE_KEY, readWardRailEarlyShape } from "./ward-rail-early";
+import { isActiveRailEntry, RAIL_GROUPS, type RailEntry, railEntries } from "./ward-rail-entries";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
   bedAlertSiteLabel,
@@ -55,9 +56,6 @@ import {
   type ServiceBedAlert,
 } from "./ward-service-bed-alerts";
 import { useServiceScope } from "./ward-service-store";
-import { openWardDrawer, closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
-import { RAIL_OPEN_STORAGE_KEY, readWardRailEarlyShape } from "./ward-rail-early";
-import styles from "./ward-rail.module.css";
 
 export type { ServiceBedAlert } from "./ward-service-bed-alerts";
 
@@ -539,7 +537,11 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
 
   function renderEntry(
     entry: RailEntry,
-    options: { compactExtra?: boolean; sheet?: boolean; firstInSheet?: boolean } = {},
+    options: {
+      compactExtra?: boolean;
+      sheet?: boolean;
+      firstInSheet?: boolean;
+    } = {},
   ) {
     const Icon = entry.icon;
     const active = isActiveRailEntry(pathname, entry);
@@ -814,7 +816,6 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               names are in the label and the list that opens below. */}
           <button
             type="button"
-            ref={alertsTriggerRef}
             className={styles.capacityPulseStrip}
             data-open={alertsOpen ? "true" : undefined}
             data-alert={alertCount > 0 ? "true" : undefined}
@@ -936,7 +937,11 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 ) : null}
               </div>
               <ul className={styles.railList}>
-                {group.entries.map((entry) => renderEntry(entry, { compactExtra: !compactPrimaryIds.has(entry.id) }))}
+                {group.entries.map((entry) =>
+                  renderEntry(entry, {
+                    compactExtra: !compactPrimaryIds.has(entry.id),
+                  }),
+                )}
               </ul>
             </section>
           ))}
@@ -1237,7 +1242,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               <p className={styles.eyebrow}>{group.label}</p>
               <ul className={styles.moreList}>
                 {remaining.map((entry) =>
-                  renderEntry(entry, { sheet: true, firstInSheet: entry.id === groups[0]?.entries[0]?.id }),
+                  renderEntry(entry, {
+                    sheet: true,
+                    firstInSheet: entry.id === groups[0]?.entries[0]?.id,
+                  }),
                 )}
               </ul>
             </section>
