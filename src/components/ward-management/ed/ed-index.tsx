@@ -835,9 +835,9 @@ function EdCard({
         data-testid={`ed-index-preview-${row.summary.ed.id}`}
       />
       <div className={styles.cardHead}>
-        <h3 className={styles.edTitle} title={summary.ed.name}>
+        <h2 className={styles.edTitle} title={summary.ed.name}>
           {row.short}
-        </h3>
+        </h2>
         <span className={styles.service}>{summary.service}</span>
       </div>
       <div className={styles.siteRow}>
@@ -987,7 +987,7 @@ function EdLanes({
       </div>
       {groups.map((group) => (
         <section key={group.name} aria-label={group.name} className={styles.laneGroup}>
-          <h3 className={styles.eyebrow}>{group.name}</h3>
+          <h2 className={styles.eyebrow}>{group.name}</h2>
           {group.rows.map((row) => (
             <div key={row.summary.ed.id} className={styles.lane} data-dim={isDim(row) ? "true" : undefined}>
               <Link href={edHref(row.summary.ed.id)} className={styles.laneLabel}>
@@ -1173,9 +1173,9 @@ function ServicePicker({
   const mean = bars.length ? bars.reduce((sum, bar) => sum + bar.waiting, 0) / bars.length : 0;
   return (
     <Card className={styles.serviceCard} as="section" aria-labelledby="ed-index-by-service">
-      <h3 id="ed-index-by-service" className={styles.eyebrow}>
+      <h2 id="ed-index-by-service" className={styles.eyebrow}>
         Waiting by service
-      </h3>
+      </h2>
       <BarList
         label="Highlight a health service"
         rows={bars.map((bar) => ({

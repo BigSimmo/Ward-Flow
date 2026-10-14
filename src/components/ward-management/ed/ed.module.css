@@ -2761,7 +2761,9 @@
   z-index: 40;
   pointer-events: auto;
   width: min(540px, 100vw);
-  height: 100vh;
+  height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
   background: var(--surface);
   border-left: 1px solid var(--line);
   box-shadow: var(--lift);
@@ -3582,6 +3584,14 @@
   background: var(--surface-2);
   cursor: pointer;
 }
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .tableActionGroup select,
+  .thinSelect {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .compactForm .thinSelect {
   color: var(--accent);
   font-family: var(--mono);

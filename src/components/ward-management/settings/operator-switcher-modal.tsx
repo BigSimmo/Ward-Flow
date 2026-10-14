@@ -59,6 +59,15 @@ export interface OperatorSwitcherModalProps {
   readonly onClose: () => void;
   /** Says a Preview control is not built yet, through the page's own toast. */
   readonly onPreview?: (name: string) => void;
+  /** Optional callback to sync the clinical persona/role when a desk is selected. */
+  readonly onSelectRole?: (role: DeskRole) => void;
+}
+
+export const WARD_PERSONA_SYNC_EVENT = "ward-flow-persona-sync";
+
+export function dispatchPersonaSyncForRole(role: DeskRole) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<{ role: DeskRole }>(WARD_PERSONA_SYNC_EVENT, { detail: { role } }));
 }
 
 const ROLE_ICON: Record<DeskRole, LucideIcon> = {
@@ -92,7 +101,7 @@ function useSafePathname(): string {
  * every hospital with its ED and wards. A click expands a desk in place with its live figures and
  * what that role can do; Open desk (or a double click) navigates to that role's own home.
  */
-export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSwitcherModalProps) {
+export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole }: OperatorSwitcherModalProps) {
   const { movements, units, bedReleases, admissions, leaveBeds, patients, referrals, focusMovementId, configuration } =
     useWardFlow();
   const now = useWardFlowClock();
@@ -127,6 +136,8 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
 
   function open(desk: Desk) {
     rememberDesk(desk.id);
+    onSelectRole?.(desk.role);
+    dispatchPersonaSyncForRole(desk.role);
     onClose();
   }
 
@@ -549,27 +560,40 @@ function DeskRow({
   const previewId = `workstation-desk-${desk.id}`;
   return (
     <div className={styles.desk} data-open={isOpen ? "true" : undefined} data-here={isHere ? "true" : undefined}>
-      <button
-        type="button"
-        className={styles.deskHead}
-        aria-expanded={isOpen}
-        aria-controls={previewId}
-        onClick={onToggle}
-        onDoubleClick={onGo}
-        data-testid={`workstation-desk-${desk.id}`}
-      >
-        <Icon icon={ROLE_ICON[desk.role]} size={14} className={styles.rowIcon} />
-        <span className={styles.deskName} title={desk.name}>
-          {label ?? desk.name}
-        </span>
-        {isHere ? (
-          <Badge tone="success" size="sm">
-            Current
-          </Badge>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+        <button
+          type="button"
+          className={styles.deskHead}
+          style={{ flex: 1, minWidth: 0 }}
+          aria-expanded={isOpen}
+          aria-controls={previewId}
+          onClick={onToggle}
+          onDoubleClick={onGo}
+          data-testid={`workstation-desk-${desk.id}`}
+        >
+          <Icon icon={ROLE_ICON[desk.role]} size={14} className={styles.rowIcon} />
+          <span className={styles.deskName} title={desk.name}>
+            {label ?? desk.name}
+          </span>
+          {isHere ? (
+            <Badge tone="success" size="sm">
+              Current
+            </Badge>
+          ) : null}
+          <DeskFigure desk={desk} now={now} accessTargetMinutes={accessTargetMinutes} />
+          <Icon icon={ChevronDown} size={14} className={styles.chev} />
+        </button>
+        {!isAtHome ? (
+          <Link
+            href={desk.href}
+            className={buttonClass({ variant: "sec", size: "sm" })}
+            onClick={onOpen}
+            data-testid={`workstation-quick-open-${desk.id}`}
+          >
+            Open →
+          </Link>
         ) : null}
-        <DeskFigure desk={desk} now={now} accessTargetMinutes={accessTargetMinutes} />
-        <Icon icon={ChevronDown} size={14} className={styles.chev} />
-      </button>
+      </div>
       {isOpen ? (
         <div id={previewId} className={styles.preview2}>
           {/* Audit settings-23: a phone already shows the figure in the row, so it skips the fact grid

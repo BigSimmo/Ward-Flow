@@ -179,6 +179,9 @@ function MovementPreview({
   const needs = [movement.cohort, movement.security, movement.specialling ? "specialling" : null]
     .filter(Boolean)
     .join(" · ");
+  const linkedReferral = (lookup.referrals ?? []).find(
+    (ref) => ref.id === movement.referralId || (patient !== undefined && ref.patientId === patient.id),
+  );
 
   return (
     <>
@@ -251,6 +254,15 @@ function MovementPreview({
             Open patient
           </Action>
         ) : null}
+        {linkedReferral ? (
+          <Action
+            href={`/mockups/ward-flow/referrals?referralId=${encodeURIComponent(linkedReferral.id)}`}
+            onOpen={onOpen}
+            testId="ward-global-search-preview-open-referral"
+          >
+            Open referral in inbox →
+          </Action>
+        ) : null}
       </div>
     </>
   );
@@ -279,6 +291,11 @@ function PersonPreview({
   const origin = openMovement ? edById(openMovement.originEdId) : undefined;
   const destination = openMovement ? destinationUnit(openMovement, units) : undefined;
   const wait = openMovement ? waited(openMovement, now) : null;
+  const linkedReferral = (lookup.referrals ?? []).find(
+    (ref) =>
+      resolveSubjectPatient(ref, lookup).patient?.id === patient.id ||
+      (openMovement !== undefined && ref.id === openMovement.referralId),
+  );
 
   return (
     <>
@@ -342,6 +359,15 @@ function PersonPreview({
         {openMovement ? (
           <Action href={movementHref(openMovement.id)} onOpen={onOpen}>
             Open movement
+          </Action>
+        ) : null}
+        {linkedReferral ? (
+          <Action
+            href={`/mockups/ward-flow/referrals?referralId=${encodeURIComponent(linkedReferral.id)}`}
+            onOpen={onOpen}
+            testId="ward-global-search-preview-open-referral"
+          >
+            Open referral in inbox →
           </Action>
         ) : null}
       </div>

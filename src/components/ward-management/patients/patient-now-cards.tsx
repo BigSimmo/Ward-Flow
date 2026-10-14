@@ -46,7 +46,7 @@ export function PatientWhyCard({
   return (
     <Card data-testid="ward-patient-why-card">
       <CardHead
-        level={3}
+        level={2}
         icon={MessageSquare}
         title={title}
         aside={chip ? <span className={styles.chip}>{chip}</span> : null}
@@ -160,9 +160,9 @@ export function PatientLegalNowCard({
     return (
       <section className={styles.phSection} data-testid="ward-patient-legal-now" aria-labelledby="pn-legal-now">
         <div className={styles.phHeadRow}>
-          <h3 id="pn-legal-now" className={styles.phHead}>
+          <h2 id="pn-legal-now" className={styles.phHead}>
             Legal now
-          </h3>
+          </h2>
           <button type="button" className={styles.phLink} onClick={onAllForms}>
             All forms
           </button>
@@ -211,7 +211,7 @@ export function PatientLegalNowCard({
   return (
     <Card data-testid="ward-patient-legal-now">
       <CardHead
-        level={3}
+        level={2}
         icon={Scale}
         title="Legal now"
         action={
@@ -265,9 +265,9 @@ export function PatientContactsCard({ rows, framed = false }: { rows: ContactRow
        number is held, so a row cannot dial and must not look as if it does (device audit, 11 Oct 2026). */
     return (
       <section className={styles.phFramed} data-testid="ward-patient-who-to-call" aria-labelledby="pn-who-to-call">
-        <h3 id="pn-who-to-call" className={styles.phFramedHead}>
+        <h2 id="pn-who-to-call" className={styles.phFramedHead}>
           Who to call
-        </h3>
+        </h2>
         {rows.length > 0 ? (
           <ul className={styles.phFramedList}>
             {rows.map((row) => (
@@ -288,9 +288,9 @@ export function PatientContactsCard({ rows, framed = false }: { rows: ContactRow
     /* v10 Patient, phone: "Who to call" heads a plain list, the name over the role. */
     return (
       <section className={styles.phSection} data-testid="ward-patient-who-to-call" aria-labelledby="pn-who-to-call">
-        <h3 id="pn-who-to-call" className={styles.phHead}>
+        <h2 id="pn-who-to-call" className={styles.phHead}>
           Who to call
-        </h3>
+        </h2>
         {rows.length > 0 ? (
           <ul className={styles.phList}>
             {rows.map((row) => (
@@ -311,7 +311,7 @@ export function PatientContactsCard({ rows, framed = false }: { rows: ContactRow
     );
   return (
     <Card data-testid="ward-patient-who-to-call">
-      <CardHead level={3} icon={Phone} title="Who to call" />
+      <CardHead level={2} icon={Phone} title="Who to call" />
       <CardBody flush>
         {rows.length > 0 ? (
           <ul className={styles.list}>
@@ -352,9 +352,9 @@ export function PatientLeaveCard({
     /* v10 Patient, phone: the three steps under a page heading, numbered, the last with its action. */
     return (
       <section className={styles.phSection} data-testid="ward-patient-leave-card" aria-labelledby="pn-leave-steps">
-        <h3 id="pn-leave-steps" className={styles.phHead}>
+        <h2 id="pn-leave-steps" className={styles.phHead}>
           If not back by {dueBack}
-        </h3>
+        </h2>
         <ol className={styles.phList}>
           <li className={styles.phItem}>
             <span className={styles.phStep}>1</span>
@@ -384,7 +384,7 @@ export function PatientLeaveCard({
     );
   return (
     <Card data-testid="ward-patient-leave-card">
-      <CardHead level={3} icon={Clock} title={`If not back by ${dueBack}`} />
+      <CardHead level={2} icon={Clock} title={`If not back by ${dueBack}`} />
       <ol className={styles.list}>
         <li className={styles.item}>
           <span className={styles.itemText}>
@@ -426,7 +426,7 @@ export function PatientLastSeenCard({
 }) {
   return (
     <Card data-testid="ward-patient-last-seen">
-      <CardHead level={3} icon={MapPin} title="Absence recorded" aside={<span className={styles.time}>{since}</span>} />
+      <CardHead level={2} icon={MapPin} title="Absence recorded" aside={<span className={styles.time}>{since}</span>} />
       <div className={styles.rows}>
         <Row label="Bed held on">{wardName ?? notRecorded}</Row>
         <Row label="Recorded">{since}, when the ward recorded the absence</Row>

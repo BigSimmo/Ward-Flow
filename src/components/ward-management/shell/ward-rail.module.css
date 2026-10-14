@@ -2012,6 +2012,7 @@
   .rail[data-rail="closed"] .compactAlertPip {
     display: inline-flex;
     width: 2.75rem;
+    min-height: 2.75rem;
     border-color: transparent;
     background: transparent;
     box-shadow: none;
@@ -2057,7 +2058,7 @@
     justify-content: center;
     gap: 0;
     width: 2.75rem;
-    min-height: 2.25rem;
+    min-height: 2.75rem;
     padding: 0;
   }
 
@@ -2070,7 +2071,7 @@
    * top right, ringed in the rail colour so it never blurs into the icon. Urgent counts carry an
    * amber edge in place of the dot. */
   .rail[data-rail="closed"] .railLink[data-two-line="true"] {
-    min-height: 2.5rem;
+    min-height: 2.75rem;
   }
 
   .rail[data-rail="closed"] .tag {
@@ -2120,7 +2121,8 @@
 
   .rail[data-rail="closed"] .utilityLink {
     justify-content: center;
-    width: 2.5rem;
+    width: 2.75rem;
+    min-height: 2.75rem;
     padding: 0;
   }
 
@@ -2131,8 +2133,8 @@
 
   .rail[data-rail="closed"] .userProfileCard {
     justify-content: center;
-    width: 2.5rem;
-    min-height: 2.5rem;
+    width: 2.75rem;
+    min-height: 2.75rem;
     padding: 0;
     border-radius: 50%;
   }

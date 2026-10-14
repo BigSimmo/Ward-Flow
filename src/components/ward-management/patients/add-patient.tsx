@@ -55,6 +55,7 @@ import {
 } from "@/components/ward-management/ward-patients";
 import { useOptionalToast } from "@/components/wf";
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
+import { TENTATIVE_DIAGNOSIS_BLOCKS } from "@/components/ward-management/ward-diagnosis";
 
 import styles from "./add-patient.module.css";
 
@@ -189,6 +190,26 @@ const PRESENTING_COMPLAINTS = [
   { value: "other", label: "Other acute presentation" },
 ] as const;
 
+const FACILITY_TO_SITE_CODE: Record<string, string> = {
+  "rph-ed": "RPH",
+  "scgh-ed": "SCGH",
+  "fsh-ed": "FSH",
+  "arm-ed": "AHS",
+  "sjgm-ed": "MID",
+  "rgh-ed": "RGH",
+  "jhc-ed": "JHC",
+  "peel-ed": "PHC",
+};
+
+const COMPLAINT_TO_DIAGNOSIS_BLOCK: Record<string, string> = {
+  psychosis: TENTATIVE_DIAGNOSIS_BLOCKS[0].code,
+  mood: TENTATIVE_DIAGNOSIS_BLOCKS[1].code,
+  safety: TENTATIVE_DIAGNOSIS_BLOCKS[2].code,
+  behavioral: TENTATIVE_DIAGNOSIS_BLOCKS[3].code,
+  assessment: TENTATIVE_DIAGNOSIS_BLOCKS[8].code,
+  other: TENTATIVE_DIAGNOSIS_BLOCKS[8].code,
+};
+
 type MatchKind = "record-number" | "same-name-same-dob" | "same-name" | "near";
 
 const MATCH_LABEL: Record<MatchKind, string> = {
@@ -238,6 +259,8 @@ export function AddPatientForm() {
   const isTabletPortrait = useIsTabletPortrait();
   const [phoneSheet, setPhoneSheet] = useState<"larger" | null>(null);
   const priorSubmissionRef = useRef<{ patients: typeof patients; rejectionCount: number } | null>(null);
+  const submitIntentRef = useRef<"profile" | "refer">("profile");
+  const [submitIntent, setSubmitIntent] = useState<"profile" | "refer">("profile");
 
   const identityChanged =
     draft.umrn.trim().length > 0 ||
@@ -323,6 +346,8 @@ export function AddPatientForm() {
     setD4Notice(null);
     setIsSubmitting(false);
     priorSubmissionRef.current = null;
+    submitIntentRef.current = "profile";
+    setSubmitIntent("profile");
     setShowResetConfirm(false);
   };
 
@@ -380,8 +405,23 @@ export function AddPatientForm() {
       tone: "success",
       title: `${added[0].givenName} ${added[0].familyName} added, ${added[0].umrn}`,
     });
+    if (submitIntentRef.current === "refer") {
+      submitIntentRef.current = "profile";
+      const params = new URLSearchParams();
+      params.set("new", "1");
+      params.set("patientId", added[0].id);
+      const siteCode = FACILITY_TO_SITE_CODE[facility];
+      if (siteCode) params.set("site", siteCode);
+      if (healthService.trim()) params.set("service", healthService.trim());
+      params.set("ats", triageUrgency);
+      params.set("legal", legalStatus);
+      const diagBlock = COMPLAINT_TO_DIAGNOSIS_BLOCK[presentingComplaint];
+      if (diagBlock) params.set("complaint", diagBlock);
+      router.push(`/mockups/ward-flow/referrals?${params.toString()}`);
+      return;
+    }
     router.push(`/mockups/ward-flow/people/${added[0].id}`);
-  }, [patients, rejections, router, toast]);
+  }, [patients, rejections, router, toast, facility, healthService, triageUrgency, legalStatus, presentingComplaint]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -831,6 +871,15 @@ export function AddPatientForm() {
                 action={<span className={styles.muted}>Shows the layout only</span>}
               />
               <CardBody className={styles.intakeGrid}>
+                <p
+                  className={cx(styles.spanAll, styles.intakeHandoffNote)}
+                  data-testid="ward-add-patient-intake-handoff-note"
+                >
+                  Structured selections (presenting facility, health service, ATS category, legal status, presenting
+                  complaint) carry forward into the Referral Drawer when you choose{" "}
+                  <strong>Register &amp; start referral →</strong>. Clinical narrative is captured via the Referral
+                  Drawer&apos;s structured intake checklist (Ruling D-18: no free-text storage on patient registration).
+                </p>
                 <div className={styles.choiceField}>
                   <div className={styles.choiceLabelRow}>
                     <span className={styles.choiceLabel}>Triage category</span>
@@ -914,13 +963,33 @@ export function AddPatientForm() {
                 </Button>
                 <Button
                   type="submit"
+                  variant="sec"
+                  icon={FileText}
+                  className={answered && !isSubmitting ? undefined : styles.submitOff}
+                  data-testid="ward-add-patient-register-and-refer"
+                  aria-disabled={answered && !isSubmitting ? undefined : "true"}
+                  aria-describedby={answered ? undefined : UNAVAILABLE_REASON_ID}
+                  onClick={(event) => {
+                    submitIntentRef.current = "refer";
+                    setSubmitIntent("refer");
+                    ignoreUnavailableActivation(event);
+                  }}
+                >
+                  {isSubmitting && submitIntent === "refer" ? "Starting referral..." : "Register & start referral →"}
+                </Button>
+                <Button
+                  type="submit"
                   variant="pri"
                   icon={UserPlus}
                   className={answered && !isSubmitting ? undefined : styles.submitOff}
                   data-testid="ward-add-patient-submit"
                   aria-disabled={answered && !isSubmitting ? undefined : "true"}
                   aria-describedby={answered ? undefined : UNAVAILABLE_REASON_ID}
-                  onClick={ignoreUnavailableActivation}
+                  onClick={(event) => {
+                    submitIntentRef.current = "profile";
+                    setSubmitIntent("profile");
+                    ignoreUnavailableActivation(event);
+                  }}
                 >
                   {isSubmitting ? "Adding patient..." : "Add patient"}
                 </Button>

@@ -208,7 +208,7 @@
 .kpiCard .kpiLabel {
   color: color-mix(in srgb, var(--on-accent) 85%, transparent);
   font-weight: 500;
-  font-size: var(--t-0, 11px);
+  font-size: var(--t-0, 12px);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   line-height: 1.3;

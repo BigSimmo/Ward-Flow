@@ -33,6 +33,7 @@ import Link from "next/link";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formTitleForCode } from "@/lib/form-register";
@@ -300,11 +301,12 @@ function sampleProfile(
   };
   if (!movement && registered) {
     const years = patientAgeYears(registered, calendarDateOf(now, record.dayZero));
+    const sexOrGender = registered.sex ?? registered.gender;
     return {
       ...blank,
       name: `${registered.familyName}, ${registered.givenName}`,
       age: Number.isFinite(years) && years >= 0 ? String(years) : "",
-      gender: registered.sex ? registered.sex.charAt(0).toUpperCase() : "",
+      gender: sexOrGender ? sexOrGender.charAt(0).toUpperCase() : "",
       umrn: registered.umrn || NOT_RECORDED,
       dob: registered.dateOfBirth || NOT_RECORDED,
       origin: NOT_RECORDED,
@@ -361,11 +363,13 @@ function sampleProfile(
   const patient = info.patient;
   const years = patient ? patientAgeYears(patient, calendarDateOf(now, record.dayZero)) : Number.NaN;
   const dueAt = movement.legalForm?.dueAt;
+  const movementSexOrGender = patient?.sex ?? patient?.gender ?? movement.sex;
   return {
     ...blank,
     name: info.displayName,
     age: Number.isFinite(years) && years >= 0 ? String(years) : "",
-    gender: patient?.sex ? patient.sex.charAt(0).toUpperCase() : "",
+    gender:
+      movementSexOrGender && movementSexOrGender !== "Not recorded" ? movementSexOrGender.charAt(0).toUpperCase() : "",
     umrn: info.umrn,
     dob: patient?.dateOfBirth ?? NOT_RECORDED,
     origin: edById(movement.originEdId)?.name ?? NOT_RECORDED,
@@ -390,6 +394,7 @@ function ageSexLabel(profile: MockPatientProfile): string {
 
 export type WardCapacityRecord = {
   unitId: string;
+  siteCode: string;
   name: string;
   hospital: string;
   healthService: HealthService | undefined;
@@ -431,6 +436,7 @@ export function useWardCapacity(): WardCapacityRecord[] {
       const states = bedStates(unit, admissions ?? [], bedReleases, leaveBeds ?? []);
       return {
         unitId: unit.id,
+        siteCode: unit.siteCode,
         name: unit.name,
         hospital: siteByCode(unit.siteCode)?.name ?? unit.siteCode,
         healthService: unitHealthService(unit),
@@ -792,17 +798,33 @@ function WardReferralDrawerContent({
   } = useWardFlow();
   const now = useWardFlowClock();
 
+  const urlPrefill = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    const patientId = params.get("patientId")?.trim() || undefined;
+    const site = params.get("site")?.trim() || undefined;
+    const service = params.get("service")?.trim() || undefined;
+    const atsRaw = Number(params.get("ats"));
+    const ats = ATS_CATEGORIES.find((value) => value === atsRaw);
+    const legal = params.get("legal")?.trim() || undefined;
+    const complaint = params.get("complaint")?.trim() || undefined;
+    if (!patientId && !site && !service && !ats && !legal && !complaint) return null;
+    return { patientId, site, service, ats, legal, complaint };
+  }, []);
+  const effectiveInitialPatientId = initialPatientId ?? urlPrefill?.patientId;
+  const effectiveInitialOriginSiteCode = initialOriginSiteCode ?? urlPrefill?.site;
+
   const [prefillKey] = useState(() =>
-    initialPatientId ? patientKeyFor(initialPatientId, { movements, patients, referrals }) : null,
+    effectiveInitialPatientId ? patientKeyFor(effectiveInitialPatientId, { movements, patients, referrals }) : null,
   );
   // A Refer link names its person: it reopens a kept draft only when that draft is for the same
   // person, and never someone else's.
   const [storedDraft] = useState(() => readKeptReferralDraft<KeptDraft>());
   const kept =
-    !initialPatientId ||
+    !effectiveInitialPatientId ||
     (storedDraft !== null &&
       ((prefillKey !== null && storedDraft.activePatientKey === prefillKey) ||
-        storedDraft.activePatientKey === `${PATIENT_KEY_PREFIX}${initialPatientId}`))
+        storedDraft.activePatientKey === `${PATIENT_KEY_PREFIX}${effectiveInitialPatientId}`))
       ? storedDraft
       : null;
   // Another person's kept draft stays as it was: this sheet does not autosave over it.
@@ -860,12 +882,12 @@ function WardReferralDrawerContent({
   const sampleProfiles = useMemo(
     () =>
       Object.fromEntries(
-        [...Object.keys(SAMPLE_PATIENTS), ...extraPatientKeys].map((key) => [
+        [...new Set([...Object.keys(SAMPLE_PATIENTS), ...extraPatientKeys, activePatientKey])].map((key) => [
           key,
           sampleProfile(key, { movements, patients, referrals, dayZero }, now),
         ]),
       ) as Record<string, MockPatientProfile>,
-    [movements, patients, referrals, dayZero, now, extraPatientKeys],
+    [movements, patients, referrals, dayZero, now, extraPatientKeys, activePatientKey],
   );
   const defaultPatient = sampleProfiles[initialPatientKey]!;
   const [arrivalPlanOpen, setArrivalPlanOpen] = useState(false);
@@ -886,7 +908,10 @@ function WardReferralDrawerContent({
     if (kept?.contact) return kept.contact;
     const lastSent = readLastReferrerContact<ReferralContact>();
     if (lastSent) return lastSent;
-    if ((initialPatientId || initialOriginSiteCode || initialSendingTeam) && myProfile.status === "available") {
+    if (
+      (effectiveInitialPatientId || effectiveInitialOriginSiteCode || initialSendingTeam) &&
+      myProfile.status === "available"
+    ) {
       const { name, role, phone, email, location } = myProfile.profile;
       return { name, role, phone, email, location };
     }
@@ -898,7 +923,9 @@ function WardReferralDrawerContent({
   const [catchmentTeam, setCatchmentTeam] = useState(
     kept?.catchmentTeam ?? (initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment),
   );
-  const [catchmentService, setCatchmentService] = useState<HealthService | "">(kept?.catchmentService ?? "");
+  const [catchmentService, setCatchmentService] = useState<HealthService | "">(
+    kept?.catchmentService ?? HEALTH_SERVICES.find((service) => service === urlPrefill?.service) ?? "",
+  );
   // From an entry point, a catchment the suburb lookup or the record names counts as confirmed;
   // Change on the catchment card reopens it.
   const [catchmentConfirmed, setCatchmentConfirmed] = useState(
@@ -916,15 +943,18 @@ function WardReferralDrawerContent({
   const liveOriginSite = liveMovement ? edById(liveMovement.originEdId)?.siteCode : undefined;
   const [sourceKind, setSourceKind] = useState<"community" | "ed">(
     (initialSendingTeam ? "community" : undefined) ??
-      (initialOriginSiteCode ? undefined : kept?.sourceKind) ??
+      (effectiveInitialOriginSiteCode ? "ed" : kept?.sourceKind) ??
       (liveOriginSite || initialCategory === "ed" ? "ed" : "community"),
   );
   const [originSiteCode, setOriginSiteCode] = useState(
-    initialOriginSiteCode ?? kept?.originSiteCode ?? liveOriginSite ?? "",
+    effectiveInitialOriginSiteCode ?? kept?.originSiteCode ?? liveOriginSite ?? "",
   );
   const [sendingTeam, setSendingTeam] = useState(initialSendingTeam ?? kept?.sendingTeam ?? "");
   const [referralSex, setReferralSex] = useState<RecordedSex>(
-    kept?.referralSex ?? RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ?? "Not recorded",
+    kept?.referralSex ??
+      RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ??
+      RECORDED_SEXES.find((sex) => sex === patientRecord?.gender) ??
+      "Not recorded",
   );
   const [referralGender, setReferralGender] = useState<ReferralGender | "">(
     kept?.referralGender ?? patientRecord?.gender ?? "",
@@ -935,18 +965,27 @@ function WardReferralDrawerContent({
   // Form field state - fully synced and editable
   const [legalStatus, setLegalStatus] = useState(
     kept?.legalStatus ??
+      urlPrefill?.legal ??
       (defaultPatient.legalStatus.startsWith("Form")
         ? defaultPatient.legalStatus.split(" ").slice(0, 2).join(" ")
         : destType === "community" && defaultPatient.legalStatus === NOT_RECORDED
           ? "Voluntary"
           : defaultPatient.legalStatus),
   );
-  const [urgency, setUrgency] = useState(kept?.urgency ?? defaultPatient.urgency);
-  const [atsCategory, setAtsCategory] = useState<AtsCategory | undefined>(kept?.atsCategory);
+  const [urgency, setUrgency] = useState(
+    kept?.urgency ??
+      (urlPrefill?.ats ? (urlPrefill.ats <= 2 ? "1" : urlPrefill.ats === 3 ? "2" : "3") : defaultPatient.urgency),
+  );
+  const [atsCategory, setAtsCategory] = useState<AtsCategory | undefined>(kept?.atsCategory ?? urlPrefill?.ats);
   const [security, setSecurity] = useState(
     kept?.security ?? (defaultPatient.security.toLowerCase().includes("secure") ? "Secure" : "Open"),
   );
-  const [provisionalDiag, setProvisionalDiag] = useState(kept?.provisionalDiag ?? defaultPatient.provisionalDiag);
+  const [provisionalDiag, setProvisionalDiag] = useState(
+    kept?.provisionalDiag ??
+      (urlPrefill?.complaint && isTentativeDiagnosisBlock(urlPrefill.complaint)
+        ? urlPrefill.complaint
+        : defaultPatient.provisionalDiag),
+  );
   const [doctorNote, setDoctorNote] = useState(kept?.doctorNote ?? defaultPatient.doctorNote);
   const [clinicalSummary, setClinicalSummary] = useState(kept?.clinicalSummary ?? defaultPatient.clinicalSummary);
   const [transport, setTransport] = useState(kept?.transport ?? defaultPatient.transportVal);
@@ -1032,6 +1071,9 @@ function WardReferralDrawerContent({
     initialKeptAt: initialKept?.at ?? null,
     initialKeptJson: initialKept?.json ?? null,
   });
+  useDirtyStateGuard({
+    isDirty: !sentReferralId && (dirty || draftKeptAt !== null || storedDraft !== null),
+  });
   const requestClose = useCallback(() => {
     if (guardOpen) setGuardOpen(false);
     else if (dirty) setGuardOpen(true);
@@ -1110,7 +1152,11 @@ function WardReferralDrawerContent({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onViewChange]);
 
-  const currentPatient = sampleProfiles[activePatientKey] ?? sampleProfiles["WF-009"]!;
+  const rawCurrentPatient = sampleProfiles[activePatientKey] ?? sampleProfiles["WF-009"]!;
+  const currentPatient: MockPatientProfile =
+    !rawCurrentPatient.gender && referralSex !== "Not recorded"
+      ? { ...rawCurrentPatient, gender: referralSex.charAt(0).toUpperCase() }
+      : rawCurrentPatient;
 
   function handleSelectPatient(key: string) {
     const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
@@ -1136,12 +1182,17 @@ function WardReferralDrawerContent({
       setSourceKind("ed");
       setOriginSiteCode(originSite);
     }
-    const record = resolveSubjectPatient(movements.find((movement) => movement.id === key) ?? {}, {
-      patients,
-      referrals,
-      movements,
-    }).patient;
-    setReferralSex(RECORDED_SEXES.find((sex) => sex === record?.sex) ?? "Not recorded");
+    const matchedMovement = movements.find((movement) => movement.id === key);
+    const record = matchedMovement
+      ? resolveSubjectPatient(matchedMovement, { patients, referrals, movements }).patient
+      : key.startsWith(PATIENT_KEY_PREFIX)
+        ? patients.find((patient) => patient.id === key.slice(PATIENT_KEY_PREFIX.length))
+        : undefined;
+    setReferralSex(
+      RECORDED_SEXES.find((sex) => sex === record?.sex) ??
+        RECORDED_SEXES.find((sex) => sex === record?.gender) ??
+        "Not recorded",
+    );
     setReferralGender(record?.gender ?? "");
     setHighAcuity(false);
     setArrivalEta("");
@@ -1981,6 +2032,49 @@ function WardReferralDrawerContent({
                   );
                 })}
               </div>
+              {!sentReferralId &&
+              !noPatientChosen &&
+              Boolean(
+                patientRecord || liveMovement || fromEntryPoint || (initialUnitIds && initialUnitIds.length > 0),
+              ) ? (
+                <div className={styles.fastTrackBar} data-testid="ward-referral-fast-track">
+                  <span className={styles.fastTrackText}>
+                    ✓ Patient &amp; referral details pre-filled from record — Jump to Clearance / Wards →
+                  </span>
+                  <div className={styles.fastTrackActions}>
+                    <button
+                      type="button"
+                      className={styles.fastTrackBtn}
+                      data-testid="ward-referral-jump-clearance"
+                      onClick={() => {
+                        if (catchmentTeam.trim()) {
+                          setCatchmentConfirmed(true);
+                          setCatchmentEditing(false);
+                        }
+                        if (isPhone) phOpenStep("documentation");
+                        else selectSection("documentation");
+                      }}
+                    >
+                      Jump to Clearance →
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.fastTrackBtn}
+                      data-testid="ward-referral-jump-placement"
+                      onClick={() => {
+                        if (catchmentTeam.trim()) {
+                          setCatchmentConfirmed(true);
+                          setCatchmentEditing(false);
+                        }
+                        if (isPhone) phOpenStep("placement");
+                        else selectSection("placement");
+                      }}
+                    >
+                      {`Jump to ${sectionLabel("placement", destType)} →`}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </>
           ) : (
             <div className={styles.inboxPicker}>
@@ -3347,7 +3441,8 @@ function WardReferralDrawerContent({
                           {/* Audit round 2 (A2-8): no closed total. No listed ward shows a closed bed,
                               so the figure matched nothing on the step. */}
                           <span className={styles.legendAside}>
-                            {currentPatient.cohort} · {security.toLowerCase()} · {realTimeMatch.sortedUnits.length}{" "}
+                            {effectiveCohort || currentPatient.cohort} · {security.toLowerCase()} ·{" "}
+                            {realTimeMatch.sortedUnits.length}{" "}
                             {realTimeMatch.sortedUnits.length === 1 ? "ward" : "wards"}
                           </span>
                         </div>
@@ -3432,7 +3527,7 @@ function WardReferralDrawerContent({
                                         : " · Catchment not confirmed"}
                                     <span className={styles.wardMetaMore}>
                                       {unit.healthService ? ` · ${unit.healthService}` : ""} ·{" "}
-                                      <span className={styles.mono}>{unit.unitId}</span>
+                                      <span className={styles.mono}>{unit.siteCode}</span>
                                     </span>
                                   </span>
                                 </span>
@@ -3928,16 +4023,26 @@ function WardReferralDrawerContent({
                 {/* Audit 11 Oct 2026: Save draft keeps the referral in this tab and closes, so a
                     referrer called away does not lose it. */}
                 {confirmationOpen ? null : (
-                  <button
-                    type="button"
-                    className={styles.btnCancelReferral}
-                    data-testid="ward-referral-save-draft"
-                    disabled={sendPending || !dirty}
-                    title={dirty ? "Keep this draft until the tab reloads" : "Nothing typed yet"}
-                    onClick={keepAndClose}
-                  >
-                    Save draft
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className={styles.btnCancelReferral}
+                      data-testid="ward-referral-save-draft"
+                      aria-disabled={sendPending || !dirty ? "true" : undefined}
+                      aria-describedby={sendPending || !dirty ? `${sectionId}-save-draft-waits` : undefined}
+                      title={dirty ? "Keep this draft until the tab reloads" : "Nothing typed yet"}
+                      onClick={sendPending || !dirty ? ignoreUnavailableActivation : keepAndClose}
+                    >
+                      Save draft
+                    </button>
+                    {sendPending || !dirty ? (
+                      <span className="sr-only" id={`${sectionId}-save-draft-waits`}>
+                        {sendPending
+                          ? "Sending referral in progress."
+                          : "Make a change to the referral before saving a draft."}
+                      </span>
+                    ) : null}
+                  </>
                 )}
                 {/* Audit 11 Oct 2026: Send is always visible; until every item is in it stays locked
                     and says what it waits on. */}

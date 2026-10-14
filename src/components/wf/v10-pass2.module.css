@@ -258,6 +258,7 @@
   display: inline-flex;
   gap: 4px;
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-2);
   white-space: nowrap;
 }
@@ -301,8 +302,20 @@
   top: 62px;
   transform: translateX(-50%);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);
   white-space: nowrap;
+}
+
+@media (pointer: coarse), (max-width: 48rem) {
+  .railBayMark {
+    min-height: 2.75rem;
+  }
+
+  .railMark {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
 }
 
 .railTick[data-first="true"] {

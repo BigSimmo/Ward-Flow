@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
@@ -427,6 +428,13 @@ export function OfficerScreen() {
 
   const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
   const jobs = movements.filter(isOfficerJob);
+  const readyToBookMovements = movements.filter(
+    (movement) =>
+      !movement.closure &&
+      movement.stage !== "arrived" &&
+      movement.transport === undefined &&
+      (movement.stage === "pulled" || movement.pullExpiresAt !== undefined || movement.acceptedUnitId !== undefined),
+  );
   const cancellations = officerCancellationNotices(notices ?? [], now);
   const collectCheck = collectCheckId ? movements.find((movement) => movement.id === collectCheckId) : undefined;
   const unitFor = (movement: Movement): Unit | undefined =>
@@ -1613,6 +1621,34 @@ export function OfficerScreen() {
             <ul>
               {cancellations.map((notice) => (
                 <li key={notice.id}>{notice.sentence}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {readyToBookMovements.length > 0 ? (
+          <section
+            id="ready-to-book"
+            className={styles.nextCard}
+            aria-label="Ready to Book Transport"
+            data-testid="ward-officer-ready-to-book"
+          >
+            <div className={styles.nextCardHead}>
+              <h2 className={styles.eyebrow}>Ready to Book Transport ({readyToBookMovements.length})</h2>
+            </div>
+            <ul>
+              {readyToBookMovements.map((movement) => (
+                <li key={movement.id} className={styles.nextCardLine}>
+                  <strong>{officerPatientName(movement)}</strong>{" "}
+                  <span className={styles.mono}>{umrnFor(movement)}</span> · {originShortFor(movement)} to{" "}
+                  {destinationLabelFor(movement)} ·{" "}
+                  <Link
+                    href={`/patient/${encodeURIComponent(movement.id)}`}
+                    data-testid={`ward-officer-book-transport-${movement.id}`}
+                  >
+                    Book transport →
+                  </Link>
+                </li>
               ))}
             </ul>
           </section>

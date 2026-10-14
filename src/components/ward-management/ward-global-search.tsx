@@ -21,6 +21,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { handOffPatientSearchText, isNewTabClick } from "@/components/ward-management/search/patient-query-handoff";
 import { refusalFor } from "@/components/ward-management/search/search-refusals";
 import {
   CORE_SEARCH_VIEWS,
@@ -39,6 +40,7 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-management/ward-derivations";
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
+import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { formatDateOfBirth, patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import {
@@ -600,10 +602,13 @@ export function WardGlobalSearch({
   const [top, setTop] = useState(0);
   const [barBox, setBarBox] = useState<{ top: number; height: number }>({ top: 0, height: 0 });
   const [recentsVersion, setRecentsVersion] = useState(0);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const trimmed = deferredQuery.trim();
   const lookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const isStart = trimmed.length === 0;
+  const showQuickCommands = isStart || /^(switch|clock|reset|handover|shortcuts|\?)/i.test(trimmed);
+  const shortcutsExpanded = showShortcuts || trimmed === "?" || /^shortcuts/i.test(trimmed);
 
   const smartResults = useMemo(
     () =>
@@ -858,6 +863,7 @@ export function WardGlobalSearch({
       // An open sheet keeps its own keys: the phone referral's "/" opens its patient step. Search
       // stays live over that sheet (shell, `headerLiveOverSheet`) for a tap, not for the shortcut.
       if (event.defaultPrevented || hasOpenSheet()) return;
+      if (slashShortcut && document.querySelector('[data-testid="ward-patient-typeahead-input"]')) return;
       const target = event.target as HTMLElement | null;
       if (
         target &&
@@ -1181,6 +1187,137 @@ export function WardGlobalSearch({
                 ))}
               </ul>
             )}
+
+            {showQuickCommands && !refusal ? (
+              <div
+                role="group"
+                aria-label="Quick commands"
+                className={styles.quickCommands}
+                data-testid="ward-global-search-quick-commands"
+              >
+                <span className={styles.group} data-testid="ward-global-search-group-commands">
+                  <span>Quick commands</span>
+                </span>
+                <div className={styles.commandList}>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    data-testid="ward-global-search-cmd-advance-clock"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("ward-flow:advance-clock", { detail: { minutes: 15 } }));
+                      }
+                      close();
+                    }}
+                  >
+                    <span className={styles.commandLabel}>Advance demo clock +15m</span>
+                    <kbd className={styles.hintKbd}>+15m</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    data-testid="ward-global-search-cmd-desk-coordinator"
+                    onClick={() => {
+                      setDeskRole("coordinator", typeof window !== "undefined" ? window.location.pathname : "");
+                      select("/mockups/ward-flow");
+                    }}
+                  >
+                    <span className={styles.commandLabel}>Switch to Coordinator desk</span>
+                    <kbd className={styles.hintKbd}>Coordinator</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    data-testid="ward-global-search-cmd-desk-ward"
+                    onClick={() => {
+                      setDeskRole("ward", typeof window !== "undefined" ? window.location.pathname : "");
+                      select("/mockups/ward-flow/wards");
+                    }}
+                  >
+                    <span className={styles.commandLabel}>Switch to Ward desk</span>
+                    <kbd className={styles.hintKbd}>Ward</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    data-testid="ward-global-search-cmd-desk-ed"
+                    onClick={() => {
+                      setDeskRole("ed", typeof window !== "undefined" ? window.location.pathname : "");
+                      select("/mockups/ward-flow/ed");
+                    }}
+                  >
+                    <span className={styles.commandLabel}>Switch to ED desk</span>
+                    <kbd className={styles.hintKbd}>ED</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    data-testid="ward-global-search-cmd-desk-officer"
+                    onClick={() => {
+                      setDeskRole("officer", typeof window !== "undefined" ? window.location.pathname : "");
+                      select("/mockups/ward-flow/transport/officer");
+                    }}
+                  >
+                    <span className={styles.commandLabel}>Switch to Transport desk</span>
+                    <kbd className={styles.hintKbd}>Transport</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    data-testid="ward-global-search-cmd-handover"
+                    onClick={() => select("/mockups/ward-flow/handover")}
+                  >
+                    <span className={styles.commandLabel}>Open Handover sheet</span>
+                    <kbd className={styles.hintKbd}>/handover</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    aria-expanded={shortcutsExpanded}
+                    data-testid="ward-global-search-cmd-shortcuts"
+                    onClick={() => setShowShortcuts((prev) => !prev)}
+                  >
+                    <span className={styles.commandLabel}>Keyboard shortcuts (?)</span>
+                    <kbd className={styles.hintKbd}>?</kbd>
+                  </button>
+                </div>
+                {shortcutsExpanded ? (
+                  <div
+                    className={styles.shortcutsSheet}
+                    role="region"
+                    aria-label="Keyboard shortcuts"
+                    data-testid="ward-global-search-shortcuts-sheet"
+                  >
+                    <span className={styles.shortcutRow}>
+                      <span>Global search &amp; commands</span>
+                      <span>
+                        <kbd className={styles.hintKbd}>Ctrl+K</kbd> <kbd className={styles.hintKbd}>/</kbd>
+                      </span>
+                    </span>
+                    <span className={styles.shortcutRow}>
+                      <span>New referral</span>
+                      <kbd className={styles.hintKbd}>Shift+R</kbd>
+                    </span>
+                    <span className={styles.shortcutRow}>
+                      <span>Tasks drawer</span>
+                      <kbd className={styles.hintKbd}>Shift+T</kbd>
+                    </span>
+                    <span className={styles.shortcutRow}>
+                      <span>Activity drawer</span>
+                      <kbd className={styles.hintKbd}>Shift+A</kbd>
+                    </span>
+                    <span className={styles.shortcutRow}>
+                      <span>Toggle navigation rail</span>
+                      <kbd className={styles.hintKbd}>[</kbd>
+                    </span>
+                    <span className={styles.shortcutRow}>
+                      <span>Dismiss / clear</span>
+                      <kbd className={styles.hintKbd}>Esc</kbd>
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           {previewItem ? (
@@ -1227,7 +1364,10 @@ export function WardGlobalSearch({
           <Link
             href={PATIENT_SEARCH_HREF}
             className={styles.fullSearch}
-            onClick={(event) => onOptionClick(event, PATIENT_SEARCH_HREF)}
+            onClick={(event) => {
+              handOffPatientSearchText(isNewTabClick(event) ? undefined : query);
+              onOptionClick(event, PATIENT_SEARCH_HREF);
+            }}
             data-testid="ward-global-search-full"
           >
             Full patient search

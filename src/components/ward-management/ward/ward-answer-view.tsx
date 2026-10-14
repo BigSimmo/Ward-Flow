@@ -24,6 +24,7 @@ import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-b
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
@@ -174,6 +175,15 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
   // Hooks run before the early return below; the accept sheet only opens on a ward's incoming answer.
   useWardPageScrollLock(acceptModalOpen && unit !== undefined);
+  const hasUnsavedAnswerDraft = Boolean(
+    declineReason !== undefined ||
+    overrideReason !== undefined ||
+    numConsulted ||
+    (capacityDraft?.unitId === unitId &&
+      capacityDraft.revision === capacityRevision &&
+      capacityDraft.value !== String(unit?.allocatable.value ?? 0)),
+  );
+  useDirtyStateGuard({ isDirty: hasUnsavedAnswerDraft });
 
   if (!unit) {
     return (
@@ -601,7 +611,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             aria-label="Awaiting your answer"
             className={activeMovement ? styles.answerSplit : styles.panel}
             data-empty={incoming.length === 0}
-            tabIndex={0}
           >
             {activeMovement || isPhone ? null : (
               <div className={styles.panelHeader}>
@@ -1208,12 +1217,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               "Confirm your beds",
               `Allocatable ${unit.allocatable.value} · ${durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} since confirmed`,
               unit.allocatable.value,
-              <section
-                className={styles.panel}
-                data-answer-panel="capacity"
-                aria-label="Confirm your beds"
-                tabIndex={0}
-              >
+              <section className={styles.panel} data-answer-panel="capacity" aria-label="Confirm your beds">
                 <div className={styles.panelHeader}>
                   <h2 className={styles.panelTitle}>Confirm your beds</h2>
                 </div>
@@ -1379,7 +1383,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 ? `${recentAnswers[0].outcome}${recentAnswers[0].at !== undefined ? ` at ${formatInstantWithDay(recentAnswers[0].at, now)}` : ""}`
                 : "None recorded yet",
               recentAnswers.length,
-              <section className={styles.panel} data-answer-panel="history" aria-label="Recent answers" tabIndex={0}>
+              <section className={styles.panel} data-answer-panel="history" aria-label="Recent answers">
                 <div className={styles.panelHeader}>
                   <h2 className={styles.panelTitle}>Recent answers</h2>
                 </div>

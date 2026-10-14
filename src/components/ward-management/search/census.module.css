@@ -44,14 +44,14 @@
   position: relative;
   flex: 1 1 300px;
   max-width: 400px;
-  min-width: 300px;
+  min-width: min(300px, 100%);
 }
 
 /* The typeahead's own label is kept for screen readers; the pill shows the icon instead. */
 /* With the date of birth open, the name keeps room to be read; the group pills scroll instead. */
 .searchForm:has(.dobSeg) {
   flex-basis: 400px;
-  min-width: 380px;
+  min-width: min(380px, 100%);
 }
 
 .searchForm > div > label {
@@ -69,7 +69,8 @@
 .searchForm > div > div:first-of-type {
   min-width: 0;
   min-height: 36px;
-  height: 36px;
+  height: auto;
+  flex-wrap: wrap;
   gap: var(--wf-s-2);
   padding: 0 4px 0 12px;
   border-radius: var(--wf-r-pill);
@@ -144,6 +145,13 @@
   font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .searchForm input,
+  .searchForm .dobInput {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .count {
   display: inline-flex;
   flex: none;
@@ -157,6 +165,7 @@
   background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
   color: var(--wf-hero-2);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .dobToggle {

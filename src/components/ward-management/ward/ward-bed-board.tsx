@@ -72,18 +72,40 @@ function surname(name: string | undefined): string {
  * the initial never truncates, so eight "Ferrowm…" beds in move mode read "Ferrowm…, E" and
  * "Ferrowm…, I" and stay distinguishable beside their bed numbers.
  */
-function occupantParts(name: string | undefined): { surname: string; initial: string } | null {
+function occupantParts(
+  name: string | undefined,
+  umrn?: string | null,
+  collidingPairs?: ReadonlySet<string>,
+): { surname: string; initial: string } | null {
   if (!name) return null;
   const parts = name.trim().split(/\s+/);
   if (parts.length < 2) return null;
-  return { surname: parts[parts.length - 1]!, initial: parts[0]!.charAt(0).toUpperCase() };
+  const last = parts[parts.length - 1]!;
+  const firstWord = parts[0]!;
+  const init1 = firstWord.charAt(0).toUpperCase();
+  const key = `${last.toLowerCase()}|${init1}`;
+  if (collidingPairs?.has(key)) {
+    const init2 = firstWord.slice(0, 2);
+    const tail = init2.length >= 2 ? `${init2.charAt(0).toUpperCase()}${init2.charAt(1).toLowerCase()}` : init1;
+    const umrnTail = umrn ? ` · ${umrn.slice(-2)}` : "";
+    return { surname: last, initial: `${tail}${umrnTail}` };
+  }
+  return { surname: last, initial: init1 };
 }
 
-function CellWord({ bed, discreet }: { bed: BedItem; discreet: boolean }) {
+function CellWord({
+  bed,
+  discreet,
+  collidingPairs,
+}: {
+  bed: BedItem;
+  discreet: boolean;
+  collidingPairs?: ReadonlySet<string>;
+}) {
   const occupant =
     bed.status === "ready" || bed.status === "closed" || bed.status === "incoming"
       ? null
-      : occupantParts(bed.patientAlias);
+      : occupantParts(bed.patientAlias, bed.umrn, collidingPairs);
   if (occupant === null) return <span className={styles.cellWord}>{cellWord(bed)}</span>;
   // A2-20: Discreet names on phone. A bed cell is too narrow for a UMRN, so it shows initials; the
   // bed number beside it and the bed panel still identify the person.
@@ -219,6 +241,21 @@ export function WardBedBoard({
   const nameFor = usePatientNameDisplay();
   const discreet = useDiscreetNamesOnPhone();
   const pods = podsOf(beds, unit, isMixed);
+  const collidingPairs = (() => {
+    const counts = new Map<string, number>();
+    for (const bed of beds) {
+      if (bed.status === "ready" || bed.status === "closed" || bed.status === "incoming") continue;
+      const parts = bed.patientAlias?.trim().split(/\s+/) ?? [];
+      if (parts.length < 2) continue;
+      const key = `${parts[parts.length - 1]!.toLowerCase()}|${parts[0]!.charAt(0).toUpperCase()}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    const set = new Set<string>();
+    for (const [key, count] of counts) {
+      if (count > 1) set.add(key);
+    }
+    return set;
+  })();
   const free = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined && !bed.preparing).length;
   const leavingToday = beds.filter(
     (bed) =>
@@ -346,6 +383,7 @@ export function WardBedBoard({
                   const source = picked?.kind === "stay" && picked.fromBed === Number(bed.bedNumber);
                   const glyph = bedGlyphTone(bed);
                   const dim = picked ? !fits && !source : !matchesQuery(bed, query);
+                  const label = cellLabel(bed, fits, nameFor);
                   return (
                     <button
                       key={bed.bedNumber}
@@ -357,7 +395,8 @@ export function WardBedBoard({
                       data-dim={dim ? "true" : undefined}
                       data-placed={placedBed === Number(bed.bedNumber) ? "true" : undefined}
                       aria-pressed={source ? true : undefined}
-                      aria-label={cellLabel(bed, fits, nameFor)}
+                      aria-label={label}
+                      title={label}
                       data-testid={`ward-board-bed-${bed.bedNumber}`}
                       onClick={() => {
                         onBedPress(bed);
@@ -370,7 +409,7 @@ export function WardBedBoard({
                         ) : (
                           <span className={styles.swatch} aria-hidden="true" />
                         )}
-                        <CellWord bed={bed} discreet={discreet} />
+                        <CellWord bed={bed} discreet={discreet} collidingPairs={collidingPairs} />
                       </span>
                     </button>
                   );

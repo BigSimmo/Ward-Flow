@@ -1597,8 +1597,8 @@
 .shortlistConfirmButton,
 .shortlistOverrideButton {
   display: inline-flex;
-  min-height: 2.125rem;
-  height: 2.125rem;
+  min-height: 2.75rem;
+  height: auto;
   flex: 1 1 auto;
   align-items: center;
   justify-content: center;

@@ -162,6 +162,12 @@
   cursor: pointer;
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .serviceFilterSelect {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .serviceFilterSelect:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;

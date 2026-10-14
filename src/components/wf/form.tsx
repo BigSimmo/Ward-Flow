@@ -61,7 +61,7 @@ export function Field({ label, hint, help, error, id: idProp, children, classNam
         </div>
         {children}
         {error ? (
-          <span id={errorId} className={cx(styles.help, styles.error)}>
+          <span id={errorId} role="alert" className={cx(styles.help, styles.error, styles.errorText)}>
             <StatusGlyph tone="danger" size={9} />
             {error}
           </span>
@@ -118,7 +118,16 @@ export function TextInput({
   return (
     <div className={cx(styles.in, fieldProps["aria-invalid"] && styles.invalid, locked && styles.locked, boxClassName)}>
       {icon ? <Icon icon={icon} size={16} className={styles.adorn} /> : null}
-      <input className={cx(styles.control, className)} readOnly={locked || readOnly} {...fieldProps} {...rest} />
+      <input
+        className={cx(styles.control, className)}
+        readOnly={locked || readOnly}
+        spellCheck={false}
+        data-gramm="false"
+        data-gramm_editor="false"
+        data-enable-grammarly="false"
+        {...fieldProps}
+        {...rest}
+      />
       {trailing ? <span className={styles.adorn}>{trailing}</span> : null}
       {locked ? (
         <span className={styles.adorn}>
@@ -156,6 +165,10 @@ export function Textarea({
       <textarea
         className={cx(styles.control, styles.areaControl, className)}
         maxLength={maxLength}
+        spellCheck={false}
+        data-gramm="false"
+        data-gramm_editor="false"
+        data-enable-grammarly="false"
         onChange={(event) => {
           setLength(event.target.value.length);
           onChange?.(event);

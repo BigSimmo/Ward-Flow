@@ -21,7 +21,9 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { useRef, useState, type Dispatch } from "react";
+import { WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, durMinutes, useIsPhone, useOptionalToast, type WfTone } from "@/components/wf";
@@ -1065,6 +1067,51 @@ export function WardTasksDrawer({
             </section>
           ) : null}
         </div>
+
+        <nav
+          aria-label="Network exception boards"
+          data-testid="ward-tasks-quick-jumps"
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "6px",
+            padding: "8px 14px",
+            borderTop: "1px solid var(--wf-line-1, var(--line))",
+            background: "var(--wf-surface-2, var(--bg-2))",
+            fontSize: "0.75rem",
+          }}
+        >
+          <Link
+            href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/mockups/ward-flow/delays"}
+            onClick={onClose}
+            data-testid="ward-tasks-jump-delays"
+            style={{ color: "var(--wf-ink-1, var(--ink))", textDecoration: "none", fontWeight: 600 }}
+          >
+            Delays board →
+          </Link>
+          <span aria-hidden="true" style={{ color: "var(--wf-ink-3, var(--ink-dim))" }}>
+            ·
+          </span>
+          <Link
+            href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? "/mockups/ward-flow/alerts"}
+            onClick={onClose}
+            data-testid="ward-tasks-jump-alerts"
+            style={{ color: "var(--wf-ink-1, var(--ink))", textDecoration: "none", fontWeight: 600 }}
+          >
+            Alerts &amp; watches →
+          </Link>
+          <span aria-hidden="true" style={{ color: "var(--wf-ink-3, var(--ink-dim))" }}>
+            ·
+          </span>
+          <Link
+            href={WARD_HOME_HREF}
+            onClick={onClose}
+            data-testid="ward-tasks-jump-coordinator"
+            style={{ color: "var(--wf-ink-1, var(--ink))", textDecoration: "none", fontWeight: 600 }}
+          >
+            Coordinator workspace →
+          </Link>
+        </nav>
 
         <div className={styles.drawerFoot}>
           <span id="taskDrawerSummary">Seen is not resolved</span>

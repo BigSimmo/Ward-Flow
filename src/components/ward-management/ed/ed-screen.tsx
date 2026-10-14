@@ -4517,9 +4517,9 @@ export function EdScreen({ edId }: EdScreenProps) {
                               onKeyDown={handleTransportDialogKeyDown}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <h4 id={`ward-ed-book-transport-title-${movement.id}`} className={styles.declineLegend}>
+                              <h2 id={`ward-ed-book-transport-title-${movement.id}`} className={styles.declineLegend}>
                                 Log the transport booking made by phone for {patientInfo.displayName}
-                              </h4>
+                              </h2>
                               <label
                                 className={styles.referralField}
                                 htmlFor={`ward-ed-transport-provider-${movement.id}`}
@@ -6504,13 +6504,13 @@ export function EdScreen({ edId }: EdScreenProps) {
                  * feature works; the distinct prefix is what keeps them passing while proving something new.
                  */}
                 <div className={styles.referredSubSection} data-testid="ward-ed-answered">
-                  <h3 className={styles.sectionHeading}>
+                  <h2 className={styles.sectionHeading}>
                     Recent &middot;{" "}
                     {answeredAll.length > ANSWERED_VISIBLE_CAP
                       ? `${answered.length} of ${answeredAll.length}`
                       : answeredAll.length}{" "}
                     referral{answeredAll.length === 1 ? "" : "s"}
-                  </h3>
+                  </h2>
                   <p className={styles.unitMeta}>
                     Accepted, declined or cancelled referrals, most recently decided first. Shows the latest{" "}
                     {ANSWERED_VISIBLE_CAP}; the heading counts all.

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
 import {
   Activity,
@@ -14,6 +14,7 @@ import {
   Plus,
   Search,
   Settings,
+  Truck,
   UserPlus,
   Wrench,
 } from "lucide-react";
@@ -117,7 +118,14 @@ const OVERDUE_NEED_IDS = ["delays", "discharges"] as const;
  * a delay is logged on its patient, so the row says it starts by choosing them. `href` names a page
  * that is not a Menu entry.
  */
-const CREATE_LINKS: readonly { id: string; label: string; meta: string; icon: LucideIcon; href?: string }[] = [
+const CREATE_LINKS: readonly {
+  id: string;
+  label: string;
+  meta: string;
+  icon: LucideIcon;
+  href?: string;
+  asButton?: boolean;
+}[] = [
   { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
   { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
   {
@@ -126,6 +134,14 @@ const CREATE_LINKS: readonly { id: string; label: string; meta: string; icon: Lu
     meta: "New record with a UMRN",
     icon: UserPlus,
     href: WARD_ADD_PERSON_HREF,
+  },
+  {
+    id: "book-transport",
+    label: "Book transport",
+    meta: "Ready-to-book queue on Transport",
+    icon: Truck,
+    href: "/mockups/ward-flow/transport/officer#ready-to-book",
+    asButton: true,
   },
 ];
 
@@ -561,6 +577,7 @@ function CreateSheet({
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
 }) {
+  const router = useRouter();
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/mockups\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   return (
@@ -596,18 +613,34 @@ function CreateSheet({
           return entry
             ? [
                 <li key={item.id}>
-                  <Link
-                    href={
-                      item.id === "wards" && currentUnitId !== undefined
-                        ? unitHref(decodeURIComponent(currentUnitId))
-                        : entry.href
-                    }
-                    className={styles.row}
-                    onClick={onClose}
-                  >
-                    <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
-                    <Chevron />
-                  </Link>
+                  {item.asButton ? (
+                    <button
+                      type="button"
+                      className={styles.row}
+                      data-testid={`ward-phone-create-${item.id}`}
+                      onClick={() => {
+                        onClose();
+                        router.push(entry.href);
+                        announceToWardShell(`${item.label}: ${item.meta}.`);
+                      }}
+                    >
+                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
+                      <Chevron />
+                    </button>
+                  ) : (
+                    <Link
+                      href={
+                        item.id === "wards" && currentUnitId !== undefined
+                          ? unitHref(decodeURIComponent(currentUnitId))
+                          : entry.href
+                      }
+                      className={styles.row}
+                      onClick={onClose}
+                    >
+                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
+                      <Chevron />
+                    </Link>
+                  )}
                 </li>,
               ]
             : [];

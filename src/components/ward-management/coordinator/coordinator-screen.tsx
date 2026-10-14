@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { createBrowserStore } from "@/lib/client-store-factory";
@@ -591,9 +591,11 @@ export function CoordinatorScreen() {
     );
   }
 
+  const deferredPanelMovement = useDeferredValue(panelMovement) ?? panelMovement;
+
   const bedflowNode = (
     <HomeBedflow
-      movement={panelMovement}
+      movement={deferredPanelMovement}
       units={units}
       movements={movements}
       bedReleases={bedReleases}
@@ -664,7 +666,7 @@ export function CoordinatorScreen() {
               <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
             ) : (
               <ShortlistPanel
-                movement={panelMovement}
+                movement={deferredPanelMovement}
                 now={liveNow}
                 units={units}
                 bedReleases={bedReleases}
@@ -676,7 +678,9 @@ export function CoordinatorScreen() {
                 dispatch={dispatch}
                 parallelReferralCap={configuration.parallelReferralCap}
                 pullHoldMinutes={configuration.pullHoldMinutes}
-                onRefer={panelMovement ? (unitIds) => referFromSheet(panelMovement, unitIds) : undefined}
+                onRefer={
+                  deferredPanelMovement ? (unitIds) => referFromSheet(deferredPanelMovement, unitIds) : undefined
+                }
               />
             )}
           </aside>

@@ -264,9 +264,9 @@ export function PatientWardChangeCard({
   if (isPhone)
     return (
       <section className={styles.phSection} data-testid="ward-patient-change-card" aria-labelledby="pn-ward-change">
-        <h3 id="pn-ward-change" className={styles.phHead}>
+        <h2 id="pn-ward-change" className={styles.phHead}>
           Record a change
-        </h3>
+        </h2>
         {chipRow}
         {refusal ? (
           <p className={styles.refusal} role="alert">
@@ -298,7 +298,7 @@ export function PatientWardChangeCard({
 
   return (
     <Card data-testid="ward-patient-change-card" aria-labelledby="pn-ward-change">
-      <CardHead id="pn-ward-change" level={3} title="Record a change" meta="Ward" />
+      <CardHead id="pn-ward-change" level={2} title="Record a change" meta="Ward" />
       {chipRow}
       {form !== "none" ? formElement : null}
       {refusal ? (

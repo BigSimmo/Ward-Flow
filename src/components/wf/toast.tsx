@@ -25,6 +25,12 @@ export type ToastUndo = {
   onExpire?: () => void;
 };
 
+export type ToastNextStep = {
+  label: string;
+  href?: string;
+  onNextStep?: () => void;
+};
+
 export type ToastViewProps = {
   tone?: WfTone;
   title: ReactNode;
@@ -34,6 +40,8 @@ export type ToastViewProps = {
   meta?: ReactNode;
   /** One action (Undo, Release). A toast with an action stays until dismissed. */
   action?: { label: string; onAction: () => void };
+  /** Optional 1-click next-step desk action link (e.g. "Next step: Open [Desk] →"). */
+  nextStep?: ToastNextStep;
   /** Undo with a time window and its shrinking line. */
   undo?: ToastUndo;
   onClose?: () => void;
@@ -136,6 +144,7 @@ export function ToastView({
   body,
   meta,
   action,
+  nextStep,
   undo,
   onClose,
   closeLabel = "Dismiss",
@@ -173,6 +182,33 @@ export function ToastView({
         <Button variant="ghost" size="sm" className={styles.toastAction} onClick={action.onAction}>
           {action.label}
         </Button>
+      ) : null}
+      {nextStep ? (
+        nextStep.href ? (
+          <a
+            href={nextStep.href}
+            className={styles.toastAction}
+            data-testid="toast-next-step"
+            onClick={(event) => {
+              if (nextStep.onNextStep) {
+                event.preventDefault();
+                nextStep.onNextStep();
+              }
+            }}
+          >
+            {nextStep.label}
+          </a>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={styles.toastAction}
+            data-testid="toast-next-step"
+            onClick={() => nextStep.onNextStep?.()}
+          >
+            {nextStep.label}
+          </Button>
+        )
       ) : null}
       {undo ? <UndoButton undo={undo} phase={phase} finish={finish} /> : null}
       {onClose ? (

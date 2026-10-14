@@ -425,6 +425,10 @@ export function EdPresentation({
           <textarea
             id={`${id}-text`}
             maxLength={1200}
+            spellCheck={false}
+            data-gramm="false"
+            data-gramm_editor="false"
+            data-enable-grammarly="false"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
           />

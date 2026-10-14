@@ -1,15 +1,52 @@
 "use client";
 
 import { ArrowLeftRight } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
+import { officerHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import type { Movement, Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./ward-role-switcher.module.css";
+
+export type WardRoleNextStep = {
+  label: string;
+  href: string;
+  onSelect?: () => void;
+};
+
+/**
+ * Derives a 1-click "Next step: Open [Desk] →" destination for confirmation toasts or workflow
+ * transitions (referral sent, bed pulled, transport booked), pointing only to a role's own home
+ * route (FD-23).
+ */
+export function deriveNextStepDesk(
+  movement: Movement | undefined,
+  units: readonly Unit[],
+  isCoordinatorRoute: boolean,
+): WardRoleNextStep | null {
+  if (!movement || !isOpenMovement(movement)) return null;
+  if (movement.transport && movement.stage !== "arrived") {
+    return {
+      label: "Next step: Open Transport →",
+      href: officerHref(),
+    };
+  }
+  if (!isCoordinatorRoute) return null;
+  const targetUnitId = movement.acceptedUnitId ?? movement.referredUnitIds[0];
+  if (!targetUnitId) return null;
+  const unit = units.find((candidate) => candidate.id === targetUnitId);
+  if (!unit) return null;
+  return {
+    label: `Next step: Open ${unit.name} →`,
+    href: unitHref(unit.id),
+  };
+}
 
 /**
  * "Change view": the rail's and Tools drawer's trigger for the Switch workstation drawer
@@ -42,7 +79,7 @@ import styles from "./ward-role-switcher.module.css";
  * `tests/ward-role-switch-architecture.test.ts` pins the architectural facts above so that a
  * change attempting the shortcut fails a test instead of quietly reopening the leak.
  */
-export function WardRoleSwitcher() {
+export function WardRoleSwitcher({ nextStep }: { nextStep?: WardRoleNextStep } = {}) {
   const { movements, units, focusMovementId } = useWardFlow();
   const [open, setOpen] = useState(false);
   // Owner answer 38 (17 Sept 2026): other wards in the switcher are coordinators-only. `?? ""` is
@@ -164,6 +201,16 @@ export function WardRoleSwitcher() {
           </span>
         ) : null}
       </button>
+      {nextStep ? (
+        <Link
+          href={nextStep.href}
+          className={styles.trigger}
+          data-testid="ward-role-switcher-next-step"
+          onClick={() => nextStep.onSelect?.()}
+        >
+          {nextStep.label}
+        </Link>
+      ) : null}
       {open ? <OperatorSwitcherModal isOpen onClose={() => setOpen(false)} /> : null}
     </div>
   );

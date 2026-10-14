@@ -36,6 +36,12 @@
   transition: transform var(--wf-m-fast, 120ms) var(--wf-ease);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .groupChevron {
+    transition: none;
+  }
+}
+
 .groupChevron[data-open="true"] {
   transform: rotate(90deg);
 }
@@ -50,6 +56,7 @@
 .groupCount {
   flex: none;
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-2);
 }
 
@@ -82,7 +89,21 @@
 }
 
 .row[data-dim="true"] {
-  opacity: 0.45;
+  background: var(--wf-surface-2);
+  color: var(--wf-dim);
+}
+
+.row[data-dim="true"] .name,
+.row[data-dim="true"] .sub,
+.row[data-dim="true"] .mono,
+.row[data-dim="true"] .figureNote,
+.row[data-dim="true"] .next {
+  color: var(--wf-dim);
+}
+
+.row[data-dim="true"] .lead,
+.row[data-dim="true"] .chevron {
+  color: var(--wf-glyph-dim);
 }
 
 /* Act now (#249, site review 12 Oct 2026): the approved faint coral tint and a rounded coral
@@ -201,6 +222,7 @@
 .triggerSummary {
   margin-left: var(--wf-s-2);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-2);
 }
 

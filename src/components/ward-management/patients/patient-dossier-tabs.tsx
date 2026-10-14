@@ -239,7 +239,7 @@ export function PatientHistoryTab({
       <div className={styles.cols}>
         <Card>
           <CardHead
-            level={3}
+            level={2}
             icon={List}
             title="Episodes"
             meta={`${items.length} shown`}
@@ -358,7 +358,7 @@ export function PatientHistoryTab({
         </Card>
         <Card aria-label="Journey event log">
           <CardHead
-            level={3}
+            level={2}
             icon={History}
             title="This presentation"
             aside={movement ? <span className={styles.chip}>{open ? "Open" : "Closed"}</span> : null}
@@ -419,7 +419,7 @@ function WardStaysCard({
   const newestFirst = [...stays].sort((a, b) => (b.arrivedAt ?? b.leftAt ?? 0) - (a.arrivedAt ?? a.leftAt ?? 0));
   return (
     <Card aria-label="Ward stays" data-testid="ward-patient-ward-stays">
-      <CardHead level={3} icon={BedDouble} title="Ward stays" meta={`${stays.length}`} />
+      <CardHead level={2} icon={BedDouble} title="Ward stays" meta={`${stays.length}`} />
       <div className={styles.rows}>
         {newestFirst.map((stay) => {
           const from = stay.arrivedAt != null ? dayLabel(stay.arrivedAt, dayZero) : undefined;
@@ -491,7 +491,7 @@ export function PatientCommunityTab({
         <div className={styles.col}>
           <Card aria-label="Recorded care directory">
             <CardHead
-              level={3}
+              level={2}
               icon={Users}
               title="Care team"
               meta={patient?.suburb ? `Lives in ${patient.suburb}` : undefined}
@@ -507,7 +507,7 @@ export function PatientCommunityTab({
           </Card>
           <Card className={styles.dashed}>
             <CardHead
-              level={3}
+              level={2}
               icon={Users}
               title="Family and carers"
               aside={<span className={styles.preview}>Preview, not in the record yet</span>}
@@ -527,7 +527,7 @@ export function PatientCommunityTab({
         </div>
         <div className={styles.col}>
           <Card>
-            <CardHead level={3} icon={CalendarDays} title="Community plan" />
+            <CardHead level={2} icon={CalendarDays} title="Community plan" />
             <div className={styles.rows}>
               <Row k="Follow-up">{record.community.followUp}</Row>
               <Row k="Next review">
@@ -593,7 +593,7 @@ export function PatientCommunityTab({
           </Card>
           {movement && (
             <Card>
-              <CardHead level={3} icon={Phone} title="Transfer coordination contacts" meta="Service roles" />
+              <CardHead level={2} icon={Phone} title="Transfer coordination contacts" meta="Service roles" />
               <div className={styles.rows}>
                 <Row k="Sending location">{edById(movement.originEdId)?.name ?? notRecorded}</Row>
                 <Row k="Receiving ward">
@@ -676,7 +676,7 @@ export function PatientDetailsTab({
     <section className={styles.pane} aria-label="Patient details" data-layout="details">
       <Card>
         <CardHead
-          level={3}
+          level={2}
           icon={IdCard}
           title="Record details"
           aside={
@@ -720,7 +720,7 @@ export function PatientDetailsTab({
       <div className={styles.cols}>
         {groups.map((g, i) => (
           <Card key={g.title} data-testid={i === 0 ? "ward-person-placement-details" : undefined}>
-            <CardHead level={3} title={g.title} />
+            <CardHead level={2} title={g.title} />
             <dl className={styles.fields}>
               {g.facts
                 .filter(([, v]) => !missingOnly || !v)
@@ -738,7 +738,7 @@ export function PatientDetailsTab({
         ))}
         <Card className={styles.dashed}>
           <CardHead
-            level={3}
+            level={2}
             icon={Wrench}
             title="Not in the record yet"
             aside={<span className={styles.preview}>Preview</span>}
@@ -857,7 +857,7 @@ export function PatientDocumentsTab({
     <section className={styles.pane} aria-label="Documents and legal authority" data-layout="documents">
       <Card>
         <CardHead
-          level={3}
+          level={2}
           icon={Scale}
           title="Legal forms"
           aside={<span className={styles.chip}>Current {current}</span>}
@@ -915,7 +915,7 @@ export function PatientDocumentsTab({
       </Card>
       <Card>
         <CardHead
-          level={3}
+          level={2}
           icon={FileText}
           title="Documents"
           aside={<span className={styles.chip}>{rows.length}</span>}

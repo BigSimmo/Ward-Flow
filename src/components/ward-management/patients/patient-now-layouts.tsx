@@ -116,7 +116,7 @@ function CallButton({ row }: { row: CallRow }) {
 export function PatientCallCard({ rows, title = "Who to call" }: { rows: CallRow[]; title?: string }) {
   return (
     <Card data-testid="ward-patient-who-to-call">
-      <CardHead level={3} icon={Phone} title={title} meta="Mock numbers" />
+      <CardHead level={2} icon={Phone} title={title} meta="Mock numbers" />
       {rows.length > 0 ? (
         <ul className={styles.calls}>
           {rows.map((row) => (

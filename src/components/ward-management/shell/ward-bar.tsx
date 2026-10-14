@@ -26,12 +26,21 @@ import {
   Wrench,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
-import { canRestoreFocusTo, isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
+import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import {
   StatusGlyph,
   WF_BAND_SCROLLED_PX,
@@ -79,7 +88,8 @@ import {
   STATISTICS_COMPARE_HREF,
   STATISTICS_OVERVIEW_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
-import { WardDemoControls } from "@/components/ward-management/ward-demo-controls";
+import { WardDemoClockPopover, WardDemoControls } from "@/components/ward-management/ward-demo-controls";
+export { WardDemoClockPopover };
 import { WardRoleSwitcher } from "@/components/ward-management/ward-role-switcher";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
@@ -600,6 +610,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     "overview",
   );
   const [activityQuery, setActivityQuery] = useState("");
+  const deferredActivityQuery = useDeferredValue(activityQuery);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [activityPart, setActivityPart] = useState<ActivityPart>("activity");
   const [activityCategoryFilter, setActivityCategoryFilter] = useState<ActivityCategoryFilter>("all");
@@ -800,13 +811,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, [shownActivity?.changes]);
   const filteredActivityChanges = useMemo(() => {
     const changes = shownActivity?.changes ?? [];
-    const query = activityQuery.trim().toLowerCase();
+    const query = deferredActivityQuery.trim().toLowerCase();
     return changes.filter(
       (change) =>
         (activityCategoryFilter === "all" || activityChangeCategory(change) === activityCategoryFilter) &&
         `${change.text} ${change.time}`.toLowerCase().includes(query),
     );
-  }, [shownActivity?.changes, activityCategoryFilter, activityQuery]);
+  }, [shownActivity?.changes, activityCategoryFilter, deferredActivityQuery]);
   const scopedNotices = useMemo(
     () =>
       notices
@@ -820,7 +831,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const visibleNotices = scopedNotices.filter(
     (notice) =>
       (!unreadOnly || notice.readAt === undefined) &&
-      noticeText(notice.sentence).toLowerCase().includes(activityQuery.trim().toLowerCase()),
+      noticeText(notice.sentence).toLowerCase().includes(deferredActivityQuery.trim().toLowerCase()),
   );
   // Item 48, Q2 (owner answer 48, 2026-09-17): "counts show unread only" — `scopedNotices` itself
   // still carries every notice this chrome may see, read or not (read notices stay in the list),
@@ -861,36 +872,39 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     return () => document.removeEventListener("click", onClick, true);
   }, []);
 
-  const closePopover = useCallback((id: WardBarPopoverId, announce = true) => {
-    // Do not issue another Back while the first one is still waiting for popstate.
-    if (closingViaHistoryRef.current !== null) return;
-    if (typeof window === "undefined" || !window.history) {
-      setOpenPanel((current) => (current === id ? null : current));
-      if (announce) announceToWardShell("Closed.");
-      return;
-    }
-    const step = drawerCloseHistoryStep({
-      drawerEntryIsCurrent: Boolean(window.history.state?.wardDrawer),
-      navigationPending: navigationPendingRef.current,
-      canGoBack: typeof window.history.back === "function",
-    });
-    if (step === "back") {
-      // Keep the sheet and its background lock until popstate completes the close.
-      closingViaHistoryRef.current = { id, announce };
-      window.history.back();
-    } else {
-      setOpenPanel((current) => (current === id ? null : current));
-      if (announce) announceToWardShell("Closed.");
-      if (step === "clear") {
-        const nextState = { ...window.history.state };
-        delete nextState.wardDrawer;
-        window.history.replaceState(nextState, "");
+  const closePopover = useCallback(
+    (id: WardBarPopoverId, announce = true) => {
+      // Do not issue another Back while the first one is still waiting for popstate.
+      if (closingViaHistoryRef.current !== null) return;
+      if (typeof window === "undefined" || !window.history) {
+        setOpenPanel((current) => (current === id ? null : current));
+        if (announce) announceToWardShell("Closed.");
+        return;
       }
-    }
-    // Used once: a link whose own handler stopped the page change (a menu that opens a drawer
-    // instead) must not keep later closes from stepping back.
-    navigationPendingRef.current = false;
-  }, []);
+      const step = drawerCloseHistoryStep({
+        drawerEntryIsCurrent: Boolean(window.history.state?.wardDrawer),
+        navigationPending: navigationPendingRef.current,
+        canGoBack: typeof window.history.back === "function",
+      });
+      if (step === "back") {
+        // Keep the sheet and its background lock until popstate completes the close.
+        closingViaHistoryRef.current = { id, announce };
+        window.history.back();
+      } else {
+        setOpenPanel((current) => (current === id ? null : current));
+        if (announce) announceToWardShell("Closed.");
+        if (step === "clear") {
+          const nextState = { ...window.history.state };
+          delete nextState.wardDrawer;
+          window.history.replaceState(nextState, "");
+        }
+      }
+      // Used once: a link whose own handler stopped the page change (a menu that opens a drawer
+      // instead) must not keep later closes from stepping back.
+      navigationPendingRef.current = false;
+    },
+    [setOpenPanel],
+  );
 
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {
@@ -920,7 +934,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // fixed sentences names an announcement for CHOOSING or CLEARING a service, never for opening
       // the selector itself.
     },
-    [scopedNotices.length, shownActivity?.changes.length, tasksActiveCount],
+    [scopedNotices.length, setOpenPanel, shownActivity?.changes.length, tasksActiveCount],
   );
 
   /**
@@ -945,7 +959,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     // The page changes next, so closing must not step back through history first.
     navigationPendingRef.current = true;
     closePopover("referral");
-    router.replace(REFERRAL_BOARD_HREF);
+    startTransition(() => {
+      router.replace(REFERRAL_BOARD_HREF);
+    });
   }, [closePopover, pathname, router]);
 
   // Arriving on the slide-out route (a typed URL, a new tab, a router push) opens the slide-out once,
@@ -1038,8 +1054,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // The rail's Escape reaches here before the Sheet's own Escape handler. An open referral
       // slide-out leaves Escape to that handler, which asks before an unsent draft is lost.
       if (referralCloseRef.current) return;
-      setOpenPanel(null);
-      announceToWardShell("Closed.");
+      setOpenPanel((current) => {
+        if (current !== null) announceToWardShell("Closed.");
+        return null;
+      });
     });
     return () => {
       unsubOpen();
@@ -1076,12 +1094,14 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         delete nextState.wardDrawer;
         window.history.replaceState(nextState, "");
       }
-      router.push(
-        href ??
-          `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
-      );
+      startTransition(() => {
+        router.push(
+          href ??
+            `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+        );
+      });
     },
-    [router],
+    [router, setOpenPanel],
   );
 
   // A discharge notification task opens the stay's checklist on the discharges board.
@@ -1093,9 +1113,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         delete nextState.wardDrawer;
         window.history.replaceState(nextState, "");
       }
-      router.push(dischargeHref(admissionId));
+      startTransition(() => {
+        router.push(dischargeHref(admissionId));
+      });
     },
-    [router],
+    [router, setOpenPanel],
   );
 
   // Close the Service selector, or the "New referral" popover, on an outside click — the three
@@ -1194,6 +1216,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         triggerRef.current?.focus();
         return;
       }
+      if (hasOpenSheet()) return;
       if (service !== null) {
         // Exact wording, build plan §3 "Escape": now that S2 wires the choice to a real store, the
         // old "not wired" clause is false — the fixed alternative is telling the owner what widening
@@ -1671,9 +1694,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           isPhone ? undefined : (
             <p className={styles.drawerFoot}>
               <span>Synthetic events · newest first</span>
-              <span className={styles.footClock}>
-                Demo time <b>{formatInstant(now)}</b>
-              </span>
+              <WardDemoClockPopover>
+                <span className={styles.footClock}>
+                  Demo time <b>{formatInstant(now)}</b>
+                </span>
+              </WardDemoClockPopover>
             </p>
           )
         }
@@ -1753,7 +1778,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                   className={styles.filterChip}
                   aria-pressed={activityCategoryFilter === chip.id}
                   data-testid={`ward-bar-activity-filter-${chip.id}`}
-                  onClick={() => setActivityCategoryFilter(chip.id)}
+                  onClick={() => startTransition(() => setActivityCategoryFilter(chip.id))}
                 >
                   {chip.label}
                   <span className={styles.chipCount}>{activityCategoryCounts[chip.id]}</span>
@@ -1993,23 +2018,25 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetTasks}`}
         bodyClassName={styles.tasksCarrierBody}
       >
-        <div ref={setTasksBodyRef} className={styles.tasksBody}>
-          <WardTasksDrawer
-            items={tasksItems}
-            acknowledgements={inboxAcknowledgements}
-            completions={inboxCompletions}
-            ownership={inboxOwnership}
-            snoozes={inboxSnoozes}
-            configuration={configuration}
-            role={shellRole}
-            now={now}
-            dispatch={dispatch}
-            onClose={() => closePopover("tasks")}
-            onSelectMovement={openMovement}
-            onSelectDischarge={openDischarge}
-            records={{ movements, admissions, patients, referrals, units }}
-          />
-        </div>
+        {openPanel === "tasks" ? (
+          <div ref={setTasksBodyRef} className={styles.tasksBody}>
+            <WardTasksDrawer
+              items={tasksItems}
+              acknowledgements={inboxAcknowledgements}
+              completions={inboxCompletions}
+              ownership={inboxOwnership}
+              snoozes={inboxSnoozes}
+              configuration={configuration}
+              role={shellRole}
+              now={now}
+              dispatch={dispatch}
+              onClose={() => closePopover("tasks")}
+              onSelectMovement={openMovement}
+              onSelectDischarge={openDischarge}
+              records={{ movements, admissions, patients, referrals, units }}
+            />
+          </div>
+        ) : null}
       </Sheet>
 
       <Sheet
@@ -2038,12 +2065,14 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         closeButtonClassName={styles.drawerClose}
         bodyClassName={styles.drawerBody}
         footer={
-          <p className={styles.drawerFoot}>
+          <div className={styles.drawerFoot}>
             <span>Whole network · synthetic prototype</span>
-            <span className={styles.footClock}>
-              Demo time <b>{formatInstant(now)}</b>
-            </span>
-          </p>
+            <WardDemoClockPopover>
+              <span className={styles.footClock}>
+                Demo time <b>{formatInstant(now)}</b>
+              </span>
+            </WardDemoClockPopover>
+          </div>
         }
         footerClassName={styles.drawerFooter}
       >
@@ -2182,7 +2211,16 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             <OperationalLinks onNavigate={() => closePopover("tools", false)} />
           </section>
           <section className={`${styles.toolsSection} ${styles.referenceSection}`} aria-label="Reference page">
-            <a href={digestHref()} className={styles.toolItem}>
+            <a
+              href={digestHref()}
+              className={styles.toolItem}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                setOpenPanel((current) => (current === "tools" ? null : current));
+                closePopover("tools", false);
+              }}
+            >
               <span className={styles.toolIcon} aria-hidden="true">
                 <BookOpen aria-hidden="true" strokeWidth={1.75} />
               </span>
@@ -2249,17 +2287,19 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetReferral}`}
         bodyClassName={styles.referralCarrierBody}
       >
-        <WardReferralDrawer
-          key={referralRequest.id}
-          initialCategory={referralRequest.category}
-          initialDestination={referralRequest.destination}
-          initialPatientId={referralRequest.personId}
-          initialOriginSiteCode={referralRequest.originSiteCode}
-          initialSendingTeam={referralRequest.sendingTeam}
-          initialUnitIds={referralRequest.unitIds}
-          closeRequestRef={referralCloseRef}
-          onClose={closeReferral}
-        />
+        {openPanel === "referral" ? (
+          <WardReferralDrawer
+            key={referralRequest.id}
+            initialCategory={referralRequest.category}
+            initialDestination={referralRequest.destination}
+            initialPatientId={referralRequest.personId}
+            initialOriginSiteCode={referralRequest.originSiteCode}
+            initialSendingTeam={referralRequest.sendingTeam}
+            initialUnitIds={referralRequest.unitIds}
+            closeRequestRef={referralCloseRef}
+            onClose={closeReferral}
+          />
+        ) : null}
       </Sheet>
     </header>
   );

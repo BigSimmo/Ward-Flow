@@ -101,9 +101,11 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
             configuration.edAccessTargetMinutes,
           );
 
-          const spoken = [`${edShortName(row.ed)} (${serviceAcronym || rawService || "Department"})`];
+          const waitText = row.waiting > 0 ? durMinutes(row.longestWaitMinutes) : "No wait";
+          const visibleSummary = `${row.ed.siteCode}${serviceAcronym ? ` ${serviceAcronym}` : ""}, ${row.waiting} waiting, ${waitText}, ${deadline.text}`;
+          const spoken = [visibleSummary, `${edShortName(row.ed)} (${serviceAcronym || rawService || "Department"})`];
           if (row.waiting === 0) spoken.push("no patients waiting");
-          else spoken.push(`${row.waiting} waiting`, `longest ${splitDuration(row.longestWaitMinutes)}`);
+          else spoken.push(`longest ${splitDuration(row.longestWaitMinutes)}`);
           spoken.push(deadline.spoken);
 
           return (
@@ -124,7 +126,12 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
               >
                 <span className={styles.edTop} aria-hidden="true">
                   <strong className={styles.edCode}>{row.ed.siteCode}</strong>
-                  {serviceAcronym ? <span className={styles.edService}>{serviceAcronym}</span> : null}
+                  {serviceAcronym ? (
+                    <>
+                      {" "}
+                      <span className={styles.edService}>{serviceAcronym}</span>
+                    </>
+                  ) : null}
                 </span>
                 <span className={styles.edWaiting} aria-hidden="true">
                   <span className={styles.edWaitingValue}>{row.waiting}</span> waiting

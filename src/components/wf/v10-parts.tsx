@@ -453,7 +453,7 @@ export function SinceYouLooked({
       <CardHead
         title="Since you looked"
         meta={<>at {isClockLike(since) ? <b className={styles.sinceClock}>{since}</b> : since}</>}
-        level={3}
+        level={2}
         action={
           onCopy ? (
             <Button variant="ghost" size="sm" icon={Copy} onClick={onCopy}>

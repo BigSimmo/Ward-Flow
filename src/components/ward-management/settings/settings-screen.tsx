@@ -50,6 +50,7 @@ import {
   type WardConfiguration,
 } from "@/components/ward-management/ward-configuration";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import {
   ED_ACCESS_TARGET_RANGE_MINUTES,
@@ -473,6 +474,7 @@ export function SettingsScreen() {
   const diffs = useMemo(() => ruleDiffs(configuration, draft), [configuration, draft]);
   const unsavedCount = diffs.length;
   const hasUnsavedRules = unsavedCount > 0;
+  useDirtyStateGuard({ isDirty: hasUnsavedRules });
   const isSurge = isSurgePreset(draft);
 
   // The ED row's effect: who waits past the target now, at the draft value and at the saved one.

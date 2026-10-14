@@ -135,6 +135,12 @@
   font-size: var(--t-2, 0.9375rem);
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .control {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .presets {
   display: flex;
   flex-wrap: wrap;

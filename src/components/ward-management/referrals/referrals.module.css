@@ -2821,7 +2821,7 @@
     border-left: 0.0625rem solid var(--ward-border);
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: var(--ward-space-16);
+    padding: var(--ward-space-16) var(--ward-space-16) calc(var(--ward-space-16) + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     animation: referralDetailSlideOver 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
@@ -4002,7 +4002,7 @@
 
 .correctionMetaText {
   margin: 0;
-  font-size: var(--t-0, 11px);
+  font-size: var(--t-0, 12px);
   color: var(--muted);
   font-family: var(--mono);
 }

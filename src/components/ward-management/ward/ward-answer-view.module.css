@@ -1585,7 +1585,7 @@
     background: var(--wf-surface);
     color: var(--wf-ink-1);
     font-family: var(--wf-mono);
-    font-size: var(--wf-fs-13);
+    font-size: max(1rem, 16px);
     text-align: center;
   }
 

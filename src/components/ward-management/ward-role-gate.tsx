@@ -5,15 +5,90 @@
  * `useRoleGate()` rather than reading `EVENT_ROLE` itself; the rule lives in
  * `ward-role-permissions.ts`, and the reducer remains the gate that actually refuses.
  */
-import { useCallback, useId, type ReactNode } from "react";
+import { useCallback, useId, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { DisabledReason } from "@/components/wf";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { dispatchPermission, type WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 
-/** The role this route gives. Nothing is stored; a deep link and a navigation agree. */
+type DeskRoleOverride = {
+  pathname: string;
+  role: WardChromeRole;
+} | null;
+
+let currentDeskOverride: DeskRoleOverride = null;
+const deskRoleListeners = new Set<() => void>();
+
+function subscribeDeskRole(listener: () => void): () => void {
+  deskRoleListeners.add(listener);
+  return () => {
+    deskRoleListeners.delete(listener);
+    if (deskRoleListeners.size === 0) {
+      currentDeskOverride = null;
+    }
+  };
+}
+
+function getDeskRoleSnapshot(): DeskRoleOverride {
+  return currentDeskOverride;
+}
+
+/** Switch the active desk role in-place for the current route. */
+export function setDeskRole(role: WardChromeRole, pathname = ""): void {
+  currentDeskOverride = { pathname, role };
+  for (const listener of deskRoleListeners) {
+    listener();
+  }
+}
+
+const ROLE_DESK_LABELS: Record<WardChromeRole, string> = {
+  coordinator: "Coordinator",
+  bed_manager: "Coordinator",
+  executive: "Executive",
+  ward: "Ward",
+  ed: "ED",
+  officer: "Transport",
+  community: "Community",
+};
+
+/** Map a gated event type or permission refusal reason to the required desk role and label. */
+export function requiredRoleForPermission(
+  eventType: WardFlowEventType,
+  reason?: string,
+): { role: WardChromeRole; label: string } {
+  const text = reason ?? "";
+  if (/emergency department|\bed\b/i.test(text) && dispatchPermission("ed", eventType).allowed) {
+    return { role: "ed", label: ROLE_DESK_LABELS.ed };
+  }
+  if (/accepting ward|\bward\b/i.test(text) && dispatchPermission("ward", eventType).allowed) {
+    return { role: "ward", label: ROLE_DESK_LABELS.ward };
+  }
+  if (/transport|officer/i.test(text) && dispatchPermission("officer", eventType).allowed) {
+    return { role: "officer", label: ROLE_DESK_LABELS.officer };
+  }
+  if (/community/i.test(text) && dispatchPermission("community", eventType).allowed) {
+    return { role: "community", label: ROLE_DESK_LABELS.community };
+  }
+  if (/coordinator|bed manager/i.test(text) && dispatchPermission("coordinator", eventType).allowed) {
+    return { role: "coordinator", label: ROLE_DESK_LABELS.coordinator };
+  }
+  const candidates: WardChromeRole[] = ["ed", "ward", "officer", "community", "coordinator"];
+  for (const candidate of candidates) {
+    if (dispatchPermission(candidate, eventType).allowed) {
+      return { role: candidate, label: ROLE_DESK_LABELS[candidate] };
+    }
+  }
+  return { role: "coordinator", label: ROLE_DESK_LABELS.coordinator };
+}
+
+/** The role this route gives, or the active in-page desk switch override for this pathname. */
 export function useRouteRole(): WardChromeRole {
-  return wardChromeRole(usePathname() ?? "");
+  const pathname = usePathname() ?? "";
+  const override = useSyncExternalStore(subscribeDeskRole, getDeskRoleSnapshot, () => null);
+  if (override && override.pathname === pathname) {
+    return override.role;
+  }
+  return wardChromeRole(pathname);
 }
 
 export type RoleGate = {
@@ -32,6 +107,7 @@ export type RoleGate = {
  * controls for the same event at once (for example a row per ward).
  */
 export function useRoleGate(): (eventType: WardFlowEventType, key?: string) => RoleGate {
+  const pathname = usePathname() ?? "";
   const role = useRouteRole();
   const baseId = useId();
   return useCallback(
@@ -39,13 +115,26 @@ export function useRoleGate(): (eventType: WardFlowEventType, key?: string) => R
       const permission = dispatchPermission(role, eventType);
       if (permission.allowed) return { allowed: true, buttonProps: {}, note: null };
       const id = `${baseId}-${eventType}${key ? `-${key}` : ""}`;
+      const required = requiredRoleForPermission(eventType, permission.reason);
       return {
         allowed: false,
         reason: permission.reason,
         buttonProps: { disabled: true, "aria-describedby": id },
-        note: <DisabledReason id={id}>{permission.reason}</DisabledReason>,
+        note: (
+          <span className="lockline">
+            <DisabledReason id={id}>{permission.reason}</DisabledReason>{" "}
+            <button
+              type="button"
+              className="lockline"
+              onClick={() => setDeskRole(required.role, pathname)}
+              data-testid={`ward-role-switch-${required.role}`}
+            >
+              Switch to {required.label} desk →
+            </button>
+          </span>
+        ),
       };
     },
-    [role, baseId],
+    [role, baseId, pathname],
   );
 }

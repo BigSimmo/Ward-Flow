@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import {
+  memo,
+  useDeferredValue,
   useEffect,
   useRef,
   useState,
@@ -318,6 +320,8 @@ export function rowTestId(row: CensusRow): string {
 
 export function CensusTable(props: CensusTableProps) {
   const { rows, searching, highlight, lifted, openGroups, tab } = props;
+  const deferredNeedle = useDeferredValue(props.needle);
+  const effectiveNeedle = props.needle === "" ? "" : deferredNeedle;
   const lifting = highlight !== null;
   const groups = CENSUS_GROUPS.map((group) => ({ group, rows: rows.filter((row) => row.group === group.id) }));
   const groupsFound = groups.filter((entry) => entry.rows.length > 0).length;
@@ -471,7 +475,7 @@ export function CensusTable(props: CensusTableProps) {
                           <CensusTableRow
                             key={row.key}
                             row={row}
-                            needle={props.needle}
+                            needle={effectiveNeedle}
                             selected={row.key === props.selectedKey}
                             lifted={lifting && lifted(row)}
                             flash={row.key === props.flashKey}
@@ -516,7 +520,7 @@ export function CensusTable(props: CensusTableProps) {
   );
 }
 
-function CensusTableRow({
+const CensusTableRow = memo(function CensusTableRow({
   row,
   needle,
   selected,
@@ -620,7 +624,7 @@ function CensusTableRow({
       </td>
     </tr>
   );
-}
+});
 
 function TimeCell({ row }: { row: CensusRow }) {
   if (!row.timeText) return <CensusGlyphMark glyph="off" />;
