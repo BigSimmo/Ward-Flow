@@ -2,16 +2,29 @@ export const APPROVED_SUPABASE_PROJECT = "zakzoemeedfepxcstsou";
 export const APPROVED_SUPABASE_URL = `https://${APPROVED_SUPABASE_PROJECT}.supabase.co`;
 export const APPROVED_SUPABASE_POOLER = "aws-0-ap-southeast-2.pooler.supabase.com";
 
-export function validateSupabaseDatabaseUrl(connectionString) {
+export function validateSupabaseDatabaseUrl(connectionString, { runtime = true } = {}) {
+  if (typeof connectionString !== "string" || /[\r\n]|\?$|#$/.test(connectionString))
+    throw new Error("Invalid shared database configuration");
   let url;
   try {
     url = new URL(connectionString);
   } catch {
     throw new Error("Invalid shared database configuration");
   }
-  const direct = url.hostname === `db.${APPROVED_SUPABASE_PROJECT}.supabase.co` && url.username === "wardflow_backend";
+  const user = decodeURIComponent(url.username);
+  const direct =
+    url.hostname === `db.${APPROVED_SUPABASE_PROJECT}.supabase.co` &&
+    (runtime ? user === "wardflow_backend" : Boolean(user && user !== "wardflow_backend"));
+  const poolerSuffix = `.${APPROVED_SUPABASE_PROJECT}`;
   const pooler =
-    url.hostname === APPROVED_SUPABASE_POOLER && url.username === `wardflow_backend.${APPROVED_SUPABASE_PROJECT}`;
+    url.hostname === APPROVED_SUPABASE_POOLER &&
+    (runtime
+      ? user === `wardflow_backend${poolerSuffix}`
+      : Boolean(
+          user.endsWith(poolerSuffix) &&
+          user.length > poolerSuffix.length &&
+          user !== `wardflow_backend${poolerSuffix}`,
+        ));
   if (
     !["postgres:", "postgresql:"].includes(url.protocol) ||
     (!direct && !pooler) ||

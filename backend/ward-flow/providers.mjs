@@ -33,7 +33,7 @@ async function postgresFactories() {
 
 /** Provider setup is lazy: Supabase never opens Blob Storage or constructs an Azure credential. */
 export async function createBackend(config, dependencies = {}) {
-  const provider = config.databaseProvider ?? "azure";
+  const provider = config.databaseProvider ?? "supabase";
   const loaders = {
     azure: dependencies.azure ?? azureFactories,
     supabase: dependencies.supabase ?? supabaseFactories,
@@ -43,7 +43,7 @@ export async function createBackend(config, dependencies = {}) {
   const factories = await loaders[provider]();
   let pool;
   try {
-    const authProvider = config.authProvider ?? "entra";
+    const authProvider = config.authProvider ?? "supabase";
     let createAuthenticator;
     if (
       (provider === "supabase" && authProvider === "supabase") ||

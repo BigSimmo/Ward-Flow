@@ -143,14 +143,17 @@ describe("security headers", () => {
 
   // The shared Azure workspace is the only browser-side cross-origin caller:
   // its Function and Microsoft sign-in, and only when that Function is configured.
-  describe("shared Azure workspace origins", () => {
+  describe("shared workspace origins", () => {
+    afterEach(() => vi.unstubAllEnvs());
+
     const directive = (csp: string, name: string) =>
       csp
         .split(";")
         .map((part) => part.trim())
         .find((part) => part.startsWith(`${name} `));
 
-    it("adds only the configured Function origin and Microsoft sign-in", () => {
+    it("adds only the configured Function origin and Microsoft sign-in when entra is selected", () => {
+      vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "entra");
       const sharedOrigins = resolveSharedWorkspaceOrigins("https://wardflow-dev-api-aue.azurewebsites.net/api/");
       expect(sharedOrigins).toEqual([
         "https://wardflow-dev-api-aue.azurewebsites.net",
@@ -170,25 +173,25 @@ describe("security headers", () => {
       expect(directive(csp, "img-src")).toBe("img-src 'self' data: blob:");
     });
 
-    it("treats a blank auth provider as the Entra default", () => {
+    it("treats a blank auth provider as the Supabase default", () => {
       vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "");
-      expect(resolveSharedWorkspaceOrigins("https://wardflow-dev-api-aue.azurewebsites.net/api/")).toEqual([
-        "https://wardflow-dev-api-aue.azurewebsites.net",
-        "https://login.microsoftonline.com",
+      vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://zakzoemeedfepxcstsou.supabase.co");
+      expect(resolveSharedWorkspaceOrigins("https://wardflow-api.example.test/api/")).toEqual([
+        "https://wardflow-api.example.test",
+        "https://zakzoemeedfepxcstsou.supabase.co",
       ]);
-      vi.unstubAllEnvs();
     });
 
-    it("keeps connect-src same-origin when the Function is missing, invalid or not https", () => {
+    it("keeps connect-src same-origin when the API is missing, invalid or not https", () => {
       // undefined reads the build's own setting, so pin it for this test.
       vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "");
+      vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://zakzoemeedfepxcstsou.supabase.co");
       for (const value of [undefined, "", "not a url", "http://ward-api.example"]) {
         expect(resolveSharedWorkspaceOrigins(value)).toEqual([]);
       }
       const csp = buildContentSecurityPolicy({ isDevelopment: false, isLocalHttpRuntime: false, nonce: NONCE });
       expect(directive(csp, "connect-src")).toBe("connect-src 'self'");
       expect(directive(csp, "frame-src")).toBeUndefined();
-      vi.unstubAllEnvs();
     });
   });
 

@@ -41,10 +41,15 @@ export function useWardSupabaseShared(enabled: boolean) {
     if (!enabled) return;
     let closed = false;
     let timer: ReturnType<typeof setInterval> | undefined;
+    let onVisibilityChange: (() => void) | undefined;
     let auth: SupabaseWardAuth | null = null;
     const disconnect = () => {
       if (timer) clearInterval(timer);
       timer = undefined;
+      if (onVisibilityChange && typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+      onVisibilityChange = undefined;
       connection.current?.dispose();
       connection.current = null;
       if (!closed) {
@@ -86,7 +91,16 @@ export function useWardSupabaseShared(enabled: boolean) {
       connection.current = client;
       await client.refresh();
       if (closed || connection.current !== client) return;
+      onVisibilityChange = () => {
+        if (!closed && connection.current === client && document.visibilityState === "visible") {
+          void client.refresh();
+        }
+      };
+      if (typeof document !== "undefined") {
+        document.addEventListener("visibilitychange", onVisibilityChange);
+      }
       timer = setInterval(() => {
+        if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
         void client.refresh();
       }, 3000);
     };

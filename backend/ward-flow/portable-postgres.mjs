@@ -25,6 +25,11 @@ function createVerifiedPool(config, dependencies, runtime) {
     idleTimeoutMillis: 30000,
     statement_timeout: 10000,
     query_timeout: 12000,
+    idle_in_transaction_session_timeout: 10000,
+    lock_timeout: 5000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
+    application_name: runtime ? "wardflow_backend" : "wardflow_migrate",
   });
   pool.on("error", () => console.error("Ward Flow database connection unavailable"));
   return pool;
@@ -222,7 +227,7 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "sequence_restricted",
     ].every((field) => row[field] === true) ||
     !Array.isArray(row.versions) ||
-    row.versions.length !== 4 ||
+    row.versions.length !== 5 ||
     !row.versions.every((version, index) => version === index + 1)
   )
     throw new Error(unsafeMessage);
