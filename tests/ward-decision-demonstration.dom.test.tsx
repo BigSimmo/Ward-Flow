@@ -133,7 +133,7 @@ describe("ward decision demonstration boundaries", () => {
       closedReason: "transport_stopped" as const,
       pulledUnitId: unit.id,
       pulledBedReleasedAt: undefined,
-    } as typeof base;
+    } as unknown as typeof base;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardHomeTab
